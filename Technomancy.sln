@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Technomancy", "Technomancy\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Technomancy.Domain", "Technomancy.Domain\Technomancy.Domain.csproj", "{E0C446EA-F860-4B2E-AD36-800A76947B28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Technomancy.Persistance", "Technomancy.Persistance\Technomancy.Persistance.csproj", "{739233E4-7E28-48DD-A966-415F62C18B33}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Technomancy.Persistance", "Technomancy.Persistence\Technomancy.Persistence.csproj", "{739233E4-7E28-48DD-A966-415F62C18B33}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Technomancy.Core", "Technomancy.Core\Technomancy.Core.csproj", "{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}"
 EndProject
