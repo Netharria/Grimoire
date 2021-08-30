@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cybermancy.Domain\Cybermancy.Domain.csproj" />
-    <ProjectReference Include="..\Technomancy.Domain\Cybermancy.Domain.csproj" />
   </ItemGroup>
 
 </Project>
