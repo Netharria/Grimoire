@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31410.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cybermancy", "Cybermancy\Cybermancy.csproj", "{81EE6B0A-C466-474E-BC02-77AE780B942E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cybermancy.Domain", "Cybermancy.Domain\Cybermancy.Domain.csproj", "{E0C446EA-F860-4B2E-AD36-800A76947B28}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cybermancy.Persistence", "Cybermancy.Persistence\Cybermancy.Persistence.csproj", "{739233E4-7E28-48DD-A966-415F62C18B33}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cybermancy.Core", "Cybermancy.Core\Cybermancy.Core.csproj", "{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81EE6B0A-C466-474E-BC02-77AE780B942E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81EE6B0A-C466-474E-BC02-77AE780B942E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81EE6B0A-C466-474E-BC02-77AE780B942E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81EE6B0A-C466-474E-BC02-77AE780B942E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0C446EA-F860-4B2E-AD36-800A76947B28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0C446EA-F860-4B2E-AD36-800A76947B28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0C446EA-F860-4B2E-AD36-800A76947B28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0C446EA-F860-4B2E-AD36-800A76947B28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{739233E4-7E28-48DD-A966-415F62C18B33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{739233E4-7E28-48DD-A966-415F62C18B33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{739233E4-7E28-48DD-A966-415F62C18B33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{739233E4-7E28-48DD-A966-415F62C18B33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {835FE126-D2E0-4DCB-BE5B-4BC35DD682C3}
+	EndGlobalSection
+EndGlobal
