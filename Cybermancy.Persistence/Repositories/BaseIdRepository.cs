@@ -11,12 +11,12 @@ namespace Cybermancy.Persistance.Repositories
 
         public bool Exists(ulong id)
         {
-            return _technomancyDb.Set<T>().Any(x => x.Id == id);
+            return _cybermancyDb.Set<T>().Any(x => x.Id == id);
         }
 
         public virtual async Task<T> GetByIdAsync(ulong id)
         {
-            return await _technomancyDb.Set<T>().FindAsync(id);
+            return await _cybermancyDb.Set<T>().FindAsync(id);
         }
     }
 }

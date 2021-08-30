@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Cybermancy.Domain;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Cybermancy.Persistance.Configuration
 {
+    [ExcludeFromCodeCoverage]
     public class SinConfiguration : IEntityTypeConfiguration<Sin>
     {
         public void Configure(EntityTypeBuilder<Sin> builder)

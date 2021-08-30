@@ -7,36 +7,36 @@ namespace Cybermancy.Persistance.Repositories
 {
     public class BaseRepository<T> : IAsyncRepository<T> where T : class
     {
-        protected readonly CybermancyDbContext _technomancyDb;
+        protected readonly CybermancyDbContext _cybermancyDb;
 
         public BaseRepository(CybermancyDbContext technomancyDb)
         {
-            _technomancyDb = technomancyDb;
+            _cybermancyDb = technomancyDb;
         }
 
         public async Task<IReadOnlyList<T>> GetAllAsync()
         {
-            return await _technomancyDb.Set<T>().ToListAsync();
+            return await _cybermancyDb.Set<T>().ToListAsync();
         }
 
         public async Task<T> AddAsync(T entity)
         {
-            await _technomancyDb.Set<T>().AddAsync(entity);
-            await _technomancyDb.SaveChangesAsync();
+            await _cybermancyDb.Set<T>().AddAsync(entity);
+            await _cybermancyDb.SaveChangesAsync();
 
             return entity;
         }
 
         public async Task UpdateAsync(T entity)
         {
-            _technomancyDb.Entry(entity).State = EntityState.Modified;
-            await _technomancyDb.SaveChangesAsync();
+            _cybermancyDb.Entry(entity).State = EntityState.Modified;
+            await _cybermancyDb.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(T entity)
         {
-            _technomancyDb.Set<T>().Remove(entity);
-            await _technomancyDb.SaveChangesAsync();
+            _cybermancyDb.Set<T>().Remove(entity);
+            await _cybermancyDb.SaveChangesAsync();
         }
     }
 }

@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cybermancy.Persistence", "C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cybermancy.Core", "Cybermancy.Core\Cybermancy.Core.csproj", "{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cybermancy.Persistence.Tests", "Cybermancy.Persistence.Tests\Cybermancy.Persistence.Tests.csproj", "{682CF8D4-7258-4EFE-87A8-62C1416E2C20}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC9BB427-BBE1-43B9-B1C8-D47CA18C0401}.Release|Any CPU.Build.0 = Release|Any CPU
+		{682CF8D4-7258-4EFE-87A8-62C1416E2C20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{682CF8D4-7258-4EFE-87A8-62C1416E2C20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{682CF8D4-7258-4EFE-87A8-62C1416E2C20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{682CF8D4-7258-4EFE-87A8-62C1416E2C20}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

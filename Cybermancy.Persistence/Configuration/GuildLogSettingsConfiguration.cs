@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Cybermancy.Domain;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Cybermancy.Persistance.Configuration
 {
+    [ExcludeFromCodeCoverage]
     public class GuildLogSettingsConfiguration : IEntityTypeConfiguration<GuildLogSettings>
     {
         public void Configure(EntityTypeBuilder<GuildLogSettings> builder)

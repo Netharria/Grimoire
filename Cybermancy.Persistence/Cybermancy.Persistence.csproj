@@ -13,8 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cybermancy.Core\Cybermancy.Core.csproj" />
     <ProjectReference Include="..\Cybermancy.Domain\Cybermancy.Domain.csproj" />
-    <ProjectReference Include="..\Cybermancy.Application\Cybermancy.Core.csproj" />
   </ItemGroup>
 
 </Project>

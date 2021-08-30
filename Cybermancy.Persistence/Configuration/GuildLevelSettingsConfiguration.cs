@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Cybermancy.Domain;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Cybermancy.Persistance.Configuration
 {
+    [ExcludeFromCodeCoverage]
     public class GuildLevelSettingsConfiguration : IEntityTypeConfiguration<GuildLevelSettings>
     {
         public void Configure(EntityTypeBuilder<GuildLevelSettings> builder)

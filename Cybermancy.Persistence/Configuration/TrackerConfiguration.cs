@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Cybermancy.Domain;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Cybermancy.Persistance.Configuration
 {
+    [ExcludeFromCodeCoverage]
     public class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
     {
         public void Configure(EntityTypeBuilder<Tracker> builder)

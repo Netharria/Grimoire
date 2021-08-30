@@ -1,8 +1,10 @@
 ﻿using Cybermancy.Domain;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Cybermancy.Persistance
 {
+    [ExcludeFromCodeCoverage]
     public class CybermancyDbContext : DbContext
     {
         public CybermancyDbContext(DbContextOptions<CybermancyDbContext> options) : base(options) { }
