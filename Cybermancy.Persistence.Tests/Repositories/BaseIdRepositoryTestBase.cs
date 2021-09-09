@@ -1,11 +1,10 @@
-﻿using Cybermancy.Domain.Shared;
-using Cybermancy.Persistance;
-using Cybermancy.Persistance.Repositories;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Cybermancy.Domain.Shared;
+using Cybermancy.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using MockQueryable.Moq;
 using Moq;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Cybermancy.Persistence.Tests.Repositories
 {
@@ -14,6 +13,7 @@ namespace Cybermancy.Persistence.Tests.Repositories
         protected BaseIdRepository<T> MockRepository { get; private set; }
         protected Mock<CybermancyDbContext> MockDbContext { get; private set; }
         protected Mock<DbSet<T>> MockDbSet { get; private set; }
+
         public void InstatiateMocks(List<T> list)
         {
             MockDbSet = list.AsQueryable().BuildMockDbSet();

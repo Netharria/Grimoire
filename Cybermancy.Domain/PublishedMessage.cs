@@ -7,8 +7,11 @@ namespace Cybermancy.Domain
         Ban,
         Unban
     }
-    public class PublishedMessage : Identifiable
+
+    public class PublishedMessage
     {
+        public ulong MessageId { get; set; }
+        public ulong SinId { get; set; }
         public Sin Sin { get; set; }
         public PublishType PublishType { get; set; }
     }

@@ -1,17 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using System.Diagnostics.CodeAnalysis;
 using Cybermancy.Domain;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Cybermancy.Persistance.Configuration
+namespace Cybermancy.Persistence.Configuration
 {
     [ExcludeFromCodeCoverage]
     public class PardonConfiguration : IEntityTypeConfiguration<Pardon>
     {
         public void Configure(EntityTypeBuilder<Pardon> builder)
         {
-            builder.HasKey(e => e.Sin);
+            builder.HasKey(e => e.SinId);
             builder.HasOne(e => e.Sin).WithOne(e => e.Pardon)
+                .HasForeignKey<Pardon>(e => e.SinId)
                 .IsRequired();
             builder.HasOne(e => e.Moderator).WithMany(e => e.SinsPardoned);
         }

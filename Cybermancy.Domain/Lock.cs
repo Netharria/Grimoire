@@ -4,6 +4,7 @@ namespace Cybermancy.Domain
 {
     public class Lock
     {
+        public ulong ChannelId { get; set; }
         public Channel Channel { get; set; }
         public bool? PreviousSetting { get; set; }
         public User Moderator { get; set; }

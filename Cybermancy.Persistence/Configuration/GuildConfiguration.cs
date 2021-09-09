@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using System.Diagnostics.CodeAnalysis;
 using Cybermancy.Domain;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Cybermancy.Persistance.Configuration
+namespace Cybermancy.Persistence.Configuration
 {
     [ExcludeFromCodeCoverage]
     public class GuildConfiguration : IEntityTypeConfiguration<Guild>
@@ -11,6 +11,7 @@ namespace Cybermancy.Persistance.Configuration
         public void Configure(EntityTypeBuilder<Guild> builder)
         {
             builder.HasKey(e => e.Id);
+            builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
             builder.HasMany(e => e.Channels).WithOne(e => e.Guild);
             builder.HasMany(e => e.Roles).WithOne(e => e.Guild);
             builder.HasMany(e => e.Messages).WithOne(e => e.Guild);

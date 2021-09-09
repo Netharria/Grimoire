@@ -1,5 +1,5 @@
-﻿using Cybermancy.Domain.Shared;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Core.Contracts.Persistence
 {

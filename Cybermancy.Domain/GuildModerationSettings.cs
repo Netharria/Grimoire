@@ -6,8 +6,10 @@
         Months = 2,
         Years = 3
     }
+
     public class GuildModerationSettings
     {
+        public ulong GuildId { get; set; }
         public Guild Guild { get; set; }
         public ulong? PublicBanLog { get; set; }
         public Duration DurationType { get; set; }

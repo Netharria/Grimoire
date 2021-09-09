@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using System.Diagnostics.CodeAnalysis;
 using Cybermancy.Domain;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Cybermancy.Persistance.Configuration
+namespace Cybermancy.Persistence.Configuration
 {
     [ExcludeFromCodeCoverage]
     public class SinConfiguration : IEntityTypeConfiguration<Sin>

@@ -10,7 +10,8 @@ namespace Cybermancy.Domain
         Mute,
         Ban
     }
-    public class Sin: Identifiable
+
+    public class Sin : Identifiable
     {
         public ulong UserId { get; set; }
         public User User { get; set; }
@@ -23,6 +24,5 @@ namespace Cybermancy.Domain
         public Mute Mute { get; set; }
         public Pardon Pardon { get; set; }
         public ICollection<PublishedMessage> PublishMessages { get; set; }
-
     }
 }

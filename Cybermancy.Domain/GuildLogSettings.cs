@@ -2,6 +2,7 @@
 {
     public class GuildLogSettings
     {
+        public ulong GuildId { get; set; }
         public Guild Guild { get; set; }
 
         public ulong? JoinChannelLog { get; set; }

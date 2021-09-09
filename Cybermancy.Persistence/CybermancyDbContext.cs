@@ -1,13 +1,18 @@
 ﻿using Cybermancy.Domain;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.CodeAnalysis;
 
-namespace Cybermancy.Persistance
+namespace Cybermancy.Persistence
 {
-    [ExcludeFromCodeCoverage]
     public class CybermancyDbContext : DbContext
     {
-        public CybermancyDbContext(DbContextOptions<CybermancyDbContext> options) : base(options) { }
+        public CybermancyDbContext()
+        {
+        }
+
+        public CybermancyDbContext(DbContextOptions<CybermancyDbContext> options)
+            : base(options)
+        {
+        }
 
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<Channel> Channels { get; set; }
@@ -26,5 +31,15 @@ namespace Cybermancy.Persistance
         public DbSet<Tracker> Trackers { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserLevels> UserLevels { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlite("Data Source=Cybermancy.db;Cache=Shared");
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
+        }
     }
 }

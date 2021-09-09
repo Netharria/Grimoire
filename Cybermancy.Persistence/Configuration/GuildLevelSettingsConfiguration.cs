@@ -1,17 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using System.Diagnostics.CodeAnalysis;
 using Cybermancy.Domain;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Cybermancy.Persistance.Configuration
+namespace Cybermancy.Persistence.Configuration
 {
     [ExcludeFromCodeCoverage]
     public class GuildLevelSettingsConfiguration : IEntityTypeConfiguration<GuildLevelSettings>
     {
         public void Configure(EntityTypeBuilder<GuildLevelSettings> builder)
         {
-            builder.HasKey(e => e.Guild);
+            builder.HasKey(x => x.GuildId);
             builder.HasOne(e => e.Guild).WithOne(e => e.LevelSettings)
+                .HasForeignKey<GuildLevelSettings>(x => x.GuildId)
                 .IsRequired();
             builder.Property(e => e.TextTime)
                 .HasDefaultValue(3);

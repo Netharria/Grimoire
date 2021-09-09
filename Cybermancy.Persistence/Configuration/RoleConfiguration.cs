@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using System.Diagnostics.CodeAnalysis;
 using Cybermancy.Domain;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Cybermancy.Persistance.Configuration
+namespace Cybermancy.Persistence.Configuration
 {
     [ExcludeFromCodeCoverage]
     public class RoleConfiguration : IEntityTypeConfiguration<Role>
@@ -11,6 +11,7 @@ namespace Cybermancy.Persistance.Configuration
         public void Configure(EntityTypeBuilder<Role> builder)
         {
             builder.HasKey(e => e.Id);
+            builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
             builder.HasOne(e => e.Guild).WithMany(e => e.Roles);
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(false);

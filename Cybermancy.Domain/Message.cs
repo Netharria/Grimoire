@@ -4,7 +4,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Message: Identifiable
+    public class Message : Identifiable
     {
         public User User { get; set; }
         public Channel Channel { get; set; }

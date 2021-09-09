@@ -17,6 +17,5 @@ namespace Cybermancy.Domain
         public ICollection<Mute> ActiveMutes { get; set; }
         public ICollection<Lock> ChannelsLocked { get; set; }
         public ICollection<Pardon> SinsPardoned { get; set; }
-
     }
 }

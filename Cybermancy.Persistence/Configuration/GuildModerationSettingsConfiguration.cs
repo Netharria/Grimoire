@@ -1,17 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using System.Diagnostics.CodeAnalysis;
 using Cybermancy.Domain;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Cybermancy.Persistance.Configuration
+namespace Cybermancy.Persistence.Configuration
 {
     [ExcludeFromCodeCoverage]
-    class GuildModerationSettingsConfiguration : IEntityTypeConfiguration<GuildModerationSettings>
+    internal class GuildModerationSettingsConfiguration : IEntityTypeConfiguration<GuildModerationSettings>
     {
         public void Configure(EntityTypeBuilder<GuildModerationSettings> builder)
         {
-            builder.HasKey(e => e.Guild);
+            builder.HasKey(e => e.GuildId);
             builder.HasOne(e => e.Guild).WithOne(e => e.ModerationSettings)
+                .HasForeignKey<GuildModerationSettings>(x => x.GuildId)
                 .IsRequired();
 
             builder.Property(e => e.DurationType)

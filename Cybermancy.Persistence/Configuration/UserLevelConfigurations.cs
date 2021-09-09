@@ -1,16 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using System.Diagnostics.CodeAnalysis;
 using Cybermancy.Domain;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Cybermancy.Persistance.Configuration
+namespace Cybermancy.Persistence.Configuration
 {
     [ExcludeFromCodeCoverage]
     public class UserLevelConfigurations : IEntityTypeConfiguration<UserLevels>
     {
         public void Configure(EntityTypeBuilder<UserLevels> builder)
         {
-            builder.HasIndex(e => new { e.Guild, e.User }).IsUnique();
+            builder.HasKey(e => e.Id);
+            builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
+            builder.HasIndex(e => new {e.GuildId, e.UserId}).IsUnique();
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(false);
         }
