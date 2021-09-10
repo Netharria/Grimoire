@@ -25,7 +25,11 @@ namespace Cybermancy.Core
                     }
                 )
                 .AddDiscordHostedService()
-                .AddDiscordSlashCommands(extension:
+                .AddDiscordSlashCommands((config =>
+                    {
+                        //How to add services to be dependency injected into slash commmands.
+                        //config.Services = new ServiceCollection().AddSingleton<Random>().BuildServiceProvider();
+                    })
                     (extension =>
                     {
                         extension.RegisterCommands<ExampleSlashCommand>(ulong.Parse(configuration["guildId"]));
