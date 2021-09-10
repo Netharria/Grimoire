@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using DSharpPlus;
+using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 
 namespace Cybermancy.Core
@@ -8,6 +10,7 @@ namespace Cybermancy.Core
         [SlashCommand("test", "A slash command made to test the DSharpPlusSlashCommands library!")]
         public async Task TestCommand(InteractionContext ctx)
         {
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Success!"));
         }
     }
 }
