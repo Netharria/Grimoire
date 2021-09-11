@@ -1,7 +1,6 @@
 using Cybermancy.Core.Contracts.Services;
 using Cybermancy.Core.Services;
 using DSharpPlus;
-using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -36,9 +35,9 @@ namespace Cybermancy.Core
                 .AddDiscordHostedService()
                 .AddDiscordSlashCommands((config =>
                     {
-                        //How to add services to be dependency injected into slash commmands.
-                        config.Services = services;
-                    })
+                        //How to add services to be dependency injected into slash commands.
+                        config.Services = services.BuildServiceProvider();
+                    }),
                     (extension =>
                     {
                         extension.RegisterCommands<ExampleSlashCommand>(ulong.Parse(configuration["guildId"]));

@@ -16,6 +16,8 @@ namespace Cybermancy.Persistence
 
             services.AddScoped(typeof(IAsyncRepository<>), typeof(BaseRepository<>));
             services.AddScoped(typeof(IAsyncIdRepository<>), typeof(BaseIdRepository<>));
+            services.AddScoped<IRewardRepository, RewardRepository>();
+            services.AddScoped<IUserLevelRepository, UserLevelRepository>();
 
             return services;
         }
