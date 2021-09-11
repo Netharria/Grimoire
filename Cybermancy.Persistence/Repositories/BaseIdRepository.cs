@@ -11,9 +11,9 @@ namespace Cybermancy.Persistence.Repositories
         {
         }
 
-        public bool Exists(ulong id)
+        public Task<bool> Exists(ulong id)
         {
-            return CybermancyDb.Set<T>().Any(x => x.Id == id);
+            return Task.FromResult(CybermancyDb.Set<T>().Any(x => x.Id == id));
         }
 
         public virtual async Task<T> GetByIdAsync(ulong id)

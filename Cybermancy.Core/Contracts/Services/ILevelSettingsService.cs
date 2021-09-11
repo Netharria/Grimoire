@@ -14,5 +14,6 @@ namespace Cybermancy.Core.Contracts.Services
             DiscordEmbed embed = null,
             DateTime? timeStamp = null);
         Task<GuildLevelSettings> Update(GuildLevelSettings guildLevelSettings);
+        Task<bool> IsLevelingEnabled(ulong guildId);
     }
 }

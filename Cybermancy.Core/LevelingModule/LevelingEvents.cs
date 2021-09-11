@@ -36,7 +36,8 @@ namespace Cybermancy.Core.LevelingModule
             if (args.Author is not DiscordMember member) return;
             if(member.IsBot) return;
             if (await _channelService.IsChannelIgnored(args.Channel)) return;
-            if(await _roleService.AreAnyRolesIgnored(member.Roles.ToList())) return;
+            if(await _levelSettingsService.IsLevelingEnabled(member.Guild.Id)) return;
+            if(_roleService.AreAnyRolesIgnored(member.Roles.ToList(), member.Guild)) return;
             var userLevel = await _userLevelService.GetUserLevels(member.Id, member.Guild.Id);
             if(userLevel.IsXpIgnored) return;
             if(userLevel.TimeOut > DateTime.UtcNow) return;

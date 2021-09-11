@@ -7,7 +7,8 @@ namespace Cybermancy.Core.Contracts.Services
 {
     public interface IRoleService
     {
-        Task<bool> AreAnyRolesIgnored(ICollection<DiscordRole> roles);
+        bool AreAnyRolesIgnored(ICollection<DiscordRole> roles, DiscordGuild guild);
         Task<Role> Save(Role role);
+        Task<Role> GetRole(DiscordRole role, DiscordGuild guild);
     }
 }

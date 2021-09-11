@@ -21,10 +21,10 @@ namespace Cybermancy.Persistence.Tests.Repositories
         }
 
         [Test]
-        public void WhenCheckingIfEntityExists_ReturnCorrectResult()
+        public async Task WhenCheckingIfEntityExists_ReturnCorrectResult()
         {
-            Assert.IsTrue(MockRepository.Exists(1), "Expected Item to exist and it did not.");
-            Assert.IsFalse(MockRepository.Exists(3), "Expected Item to not exist and it did.");
+            Assert.IsTrue(await MockRepository.Exists(1), "Expected Item to exist and it did not.");
+            Assert.IsFalse(await MockRepository.Exists(3), "Expected Item to not exist and it did.");
         }
 
         [Test]

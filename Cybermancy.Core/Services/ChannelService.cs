@@ -19,7 +19,7 @@ namespace Cybermancy.Core.Services
         public async Task<bool> IsChannelIgnored(DiscordChannel channel)
         {
             Channel databaseChannel;
-            if (_channelRepository.Exists(channel.Id))
+            if (await _channelRepository.Exists(channel.Id))
             {
                 databaseChannel = await _channelRepository.GetByIdAsync(channel.Id);
             }
@@ -39,7 +39,7 @@ namespace Cybermancy.Core.Services
 
         public async Task<Channel> Save(Channel channel)
         {
-            if (_channelRepository.Exists(channel.Id))
+            if (await _channelRepository.Exists(channel.Id))
                 return await _channelRepository.UpdateAsync(channel);
             return await _channelRepository.AddAsync(channel);
         }

@@ -1,3 +1,5 @@
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Core.Services;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +16,13 @@ namespace Cybermancy.Core
     {
         public static IServiceCollection AddCoreServices(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddScoped<IChannelService, ChannelService>();
+            services.AddScoped<IGuildService, GuildService>();
+            services.AddScoped<ILevelSettingsService, LevelSettingsService>();
+            services.AddScoped<IRewardService, RewardService>();
+            services.AddScoped<IRoleService, RoleService>();
+            services.AddScoped<IUserLevelService, UserLevelService>();
+            services.AddScoped<IUserService, UserService>();
             services.AddSingleton<ITracer>(provider => new MockTracer());
             services.AddDiscord(options =>
                     {
@@ -28,12 +37,13 @@ namespace Cybermancy.Core
                 .AddDiscordSlashCommands((config =>
                     {
                         //How to add services to be dependency injected into slash commmands.
-                        //config.Services = new ServiceCollection().AddSingleton<Random>().BuildServiceProvider();
+                        config.Services = services;
                     })
                     (extension =>
                     {
                         extension.RegisterCommands<ExampleSlashCommand>(ulong.Parse(configuration["guildId"]));
                     }));
+            
             return services;
         }
     }

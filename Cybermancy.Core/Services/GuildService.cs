@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Services
         }
         public async Task<Guild> GetGuildAndSetupIfDoesntExist(DiscordGuild guild)
         {
-            if (_guildRepository.Exists(guild.Id)) return await _guildRepository.GetByIdAsync(guild.Id);
+            if (await _guildRepository.Exists(guild.Id)) return await _guildRepository.GetByIdAsync(guild.Id);
             await _guildRepository.AddAsync(new Guild()
             {
                 Id = guild.Id

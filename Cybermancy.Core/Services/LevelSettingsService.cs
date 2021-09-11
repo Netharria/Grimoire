@@ -1,5 +1,4 @@
 using System;
-using System.Data;
 using System.Threading.Tasks;
 using Cybermancy.Core.Contracts.Persistence;
 using Cybermancy.Core.Contracts.Services;
@@ -17,7 +16,8 @@ namespace Cybermancy.Core.Services
         private readonly IAsyncIdRepository<Guild> _guildRepository;
         private readonly IDiscordClientService _discordClientService;
 
-        public LevelSettingsService(IAsyncRepository<GuildLevelSettings> guildLevelSettingsRepository, IAsyncIdRepository<Guild> guildRepository, IDiscordClientService discordClientService)
+        public LevelSettingsService(IAsyncRepository<GuildLevelSettings> guildLevelSettingsRepository,
+            IAsyncIdRepository<Guild> guildRepository, IDiscordClientService discordClientService)
         {
             _guildLevelSettingsRepository = guildLevelSettingsRepository;
             _guildRepository = guildRepository;
@@ -62,6 +62,12 @@ namespace Cybermancy.Core.Services
         public async Task<GuildLevelSettings> Update(GuildLevelSettings guildLevelSettings)
         {
             return await _guildLevelSettingsRepository.UpdateAsync(guildLevelSettings);
+        }
+
+        public async Task<bool> IsLevelingEnabled(ulong guildId)
+        {
+            var guild = await _guildRepository.GetByIdAsync(guildId);
+            return guild.LevelSettings.IsLevelingEnabled;
         }
     }
 }
