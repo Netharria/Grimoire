@@ -3,7 +3,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class UserLevels : Identifiable, IXpIgnore
+    public class UserLevel : Identifiable, IXpIgnore
     {
         public ulong GuildId { get; set; }
         public Guild Guild { get; set; }

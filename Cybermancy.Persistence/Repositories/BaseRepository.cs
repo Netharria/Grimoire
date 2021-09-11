@@ -27,10 +27,11 @@ namespace Cybermancy.Persistence.Repositories
             return entity;
         }
 
-        public async Task UpdateAsync(T entity)
+        public async Task<T> UpdateAsync(T entity)
         {
             CybermancyDb.Entry(entity).State = EntityState.Modified;
             await CybermancyDb.SaveChangesAsync();
+            return entity;
         }
 
         public async Task DeleteAsync(T entity)

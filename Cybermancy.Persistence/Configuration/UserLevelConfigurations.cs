@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Cybermancy.Persistence.Configuration
 {
     [ExcludeFromCodeCoverage]
-    public class UserLevelConfigurations : IEntityTypeConfiguration<UserLevels>
+    public class UserLevelConfigurations : IEntityTypeConfiguration<UserLevel>
     {
-        public void Configure(EntityTypeBuilder<UserLevels> builder)
+        public void Configure(EntityTypeBuilder<UserLevel> builder)
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();

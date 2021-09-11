@@ -13,7 +13,7 @@ namespace Cybermancy.Domain
         public ICollection<OldLogMessage> OldLogMessages { get; set; }
         public ICollection<Tracker> Trackers { get; set; }
         public ICollection<Reward> Rewards { get; set; }
-        public ICollection<UserLevels> UserLevels { get; set; }
+        public ICollection<UserLevel> UserLevels { get; set; }
         public ICollection<Sin> Sins { get; set; }
         public ICollection<Mute> ActiveMutes { get; set; }
         public ICollection<Lock> LockedChannels { get; set; }

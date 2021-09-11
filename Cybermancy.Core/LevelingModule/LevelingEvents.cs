@@ -1,7 +1,9 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Cybermancy.Core.Contracts.Persistence;
-using Cybermancy.Domain;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Core.Enums;
+using Cybermancy.Core.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -13,13 +15,19 @@ namespace Cybermancy.Core.LevelingModule
     [DiscordMessageEventsSubscriber]
     public class LevelingEvents : IDiscordMessageEventsSubscriber
     {
-        private readonly IAsyncIdRepository<Channel> _channelRepo;
-        private readonly IAsyncIdRepository<Role> _roleRepo;
+        private readonly IChannelService _channelService;
+        private readonly IRoleService _roleService;
+        private readonly IUserLevelService _userLevelService;
+        private readonly IRewardService _rewardService;
+        private readonly ILevelSettingsService _levelSettingsService;
 
-        public LevelingEvents(IAsyncIdRepository<Channel> channelRepo, IAsyncIdRepository<Role> roleRepo)
+        public LevelingEvents(IChannelService channelService, IRoleService roleService, IUserLevelService userLevelService, IRewardService rewardService, ILevelSettingsService levelSettingsService)
         {
-            _channelRepo = channelRepo;
-            _roleRepo = roleRepo;
+            _channelService = channelService;
+            _roleService = roleService;
+            _userLevelService = userLevelService;
+            _rewardService = rewardService;
+            _levelSettingsService = levelSettingsService;
         }
 
         public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
@@ -27,13 +35,35 @@ namespace Cybermancy.Core.LevelingModule
             if(args.Message.MessageType is not MessageType.Default or MessageType.Reply) return; 
             if (args.Author is not DiscordMember member) return;
             if(member.IsBot) return;
-            var channel = await _channelRepo.GetByIdAsync(args.Channel.Id);
-            if (channel is null) return;
-            var roles = member.Roles
-                .Select(async x => await _roleRepo.GetByIdAsync(x.Id))
-                .Where(x => x.Result.IsXpIgnored).ToList();
-            if(roles.Any()) return;
-            
+            if (await _channelService.IsChannelIgnored(args.Channel)) return;
+            if(await _roleService.AreAnyRolesIgnored(member.Roles.ToList())) return;
+            var userLevel = await _userLevelService.GetUserLevels(member.Id, member.Guild.Id);
+            if(userLevel.IsXpIgnored) return;
+            if(userLevel.TimeOut > DateTime.UtcNow) return;
+            var previousLevel = userLevel.GetLevel();
+            userLevel.GrantXp();
+            await _userLevelService.Save(userLevel);
+            var rewardsGranted = await _rewardService.GrantRewardsMissingFromUser(member);
+            if (previousLevel < userLevel.GetLevel())
+            {
+                await _levelSettingsService.SendLevelingLog(
+                    member.Guild.Id, CybermancyColor.Purple,
+                    title: $"{member.Username}#{member.Discriminator}",
+                    message: $"{member.Mention} has leveled to level {userLevel.GetLevel()}.",
+                    footer: $"{member.Id}"
+                );
+            }
+
+            if (rewardsGranted.Any())
+            {
+                await _levelSettingsService.SendLevelingLog(
+                    member.Guild.Id, CybermancyColor.Gold,
+                    title: $"{member.Username}#{member.Discriminator}",
+                    message: $"{member.Mention} has earned {rewardsGranted.Select(x => x.Mention)}",
+                    footer: $"{member.Id}"
+                );
+            }
+
         }
 
         #region UnusedEvents

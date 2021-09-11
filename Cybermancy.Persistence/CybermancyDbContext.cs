@@ -30,7 +30,7 @@ namespace Cybermancy.Persistence
         public DbSet<Sin> Sins { get; set; }
         public DbSet<Tracker> Trackers { get; set; }
         public DbSet<User> Users { get; set; }
-        public DbSet<UserLevels> UserLevels { get; set; }
+        public DbSet<UserLevel> UserLevels { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

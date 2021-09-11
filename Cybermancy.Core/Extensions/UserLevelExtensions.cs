@@ -5,16 +5,16 @@ namespace Cybermancy.Core.Extensions
 {
     public static class UserLevelExtensions
     {
-        public static int GetLevel(this UserLevels userLevels)
+        public static int GetLevel(this UserLevel userLevel)
         {
             var i = 0;
             while (true)
             {
-                var xpNeeded = userLevels.Guild.LevelSettings.Base + (
-                    (int)Math.Round(userLevels.Guild.LevelSettings.Base * 
-                                    (userLevels.Guild.LevelSettings.Modifier / 100.0) * i) * i
+                var xpNeeded = userLevel.Guild.LevelSettings.Base + (
+                    (int)Math.Round(userLevel.Guild.LevelSettings.Base * 
+                                    (userLevel.Guild.LevelSettings.Modifier / 100.0) * i) * i
                 );
-                if (userLevels.Xp < xpNeeded)
+                if (userLevel.Xp < xpNeeded)
                 {
                     return i + 1;
                 }
@@ -23,24 +23,24 @@ namespace Cybermancy.Core.Extensions
             }
         }
 
-        public static int GetXpNeeded(this UserLevels userLevels, int levelModifier = 0)
+        public static int GetXpNeeded(this UserLevel userLevel, int levelModifier = 0)
         {
-            var level = userLevels.GetLevel() - 2 + levelModifier;
+            var level = userLevel.GetLevel() - 2 + levelModifier;
             return level switch
             {
-                0 => userLevels.Guild.LevelSettings.Base,
+                0 => userLevel.Guild.LevelSettings.Base,
                 < 0 => 0,
-                _ => userLevels.Guild.LevelSettings.Base + ((int) Math.Round(userLevels.Guild.LevelSettings.Base *
-                                                                             (userLevels.Guild.LevelSettings.Modifier /
+                _ => userLevel.Guild.LevelSettings.Base + ((int) Math.Round(userLevel.Guild.LevelSettings.Base *
+                                                                             (userLevel.Guild.LevelSettings.Modifier /
                                                                               100.0) * level) * level)
             };
         }
 
-        public static void GrantXp(this UserLevels userLevels, int? xpAmount = null)
+        public static void GrantXp(this UserLevel userLevel, int? xpAmount = null)
         {
-            xpAmount ??= userLevels.Guild.LevelSettings.Amount;
-            userLevels.Xp += xpAmount.Value;
-            userLevels.TimeOut = userLevels.Guild.LevelSettings.GetTextTimeout();
+            xpAmount ??= userLevel.Guild.LevelSettings.Amount;
+            userLevel.Xp += xpAmount.Value;
+            userLevel.TimeOut = userLevel.Guild.LevelSettings.GetTextTimeout();
         }
     }
 }
