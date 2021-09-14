@@ -12,7 +12,9 @@ namespace Cybermancy.Persistence.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
-            builder.HasOne(e => e.Guild).WithMany(e => e.Roles);
+            builder.HasOne(e => e.Guild).WithMany(e => e.Roles)
+                .HasForeignKey(x => x.GuildId)
+                .OnDelete(DeleteBehavior.Cascade);
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(false);
             builder.HasOne(e => e.Reward).WithOne(e => e.Role)

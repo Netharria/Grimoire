@@ -13,6 +13,14 @@ namespace Cybermancy.Persistence.Configuration
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
             builder.HasIndex(e => new {e.GuildId, e.UserId}).IsUnique();
+            builder.HasOne(e => e.Guild).WithMany(e => e.UserLevels)
+                .HasForeignKey(e => e.GuildId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+            builder.HasOne(e => e.User).WithMany(e => e.UserLevels)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(false);
         }

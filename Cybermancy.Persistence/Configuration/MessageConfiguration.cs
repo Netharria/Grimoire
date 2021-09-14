@@ -12,9 +12,18 @@ namespace Cybermancy.Persistence.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
-            builder.HasOne(e => e.User).WithMany(e => e.Messages);
-            builder.HasOne(e => e.Channel).WithMany(e => e.Messages);
-            builder.HasOne(e => e.Guild).WithMany(e => e.Messages);
+            builder.HasOne(e => e.User).WithMany(e => e.Messages)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+            builder.HasOne(e => e.Channel).WithMany(e => e.Messages)
+                .HasForeignKey(e => e.ChannelId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+            builder.HasOne(e => e.Guild).WithMany(e => e.Messages)
+                .HasForeignKey(e => e.GuildId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
 
             builder.HasMany(e => e.Attachments).WithOne(e => e.Message);
         }

@@ -14,10 +14,12 @@ namespace Cybermancy.Persistence.Configuration
             builder.Property(e => e.Id).ValueGeneratedNever()
                 .IsRequired();
 
-            builder.Property(e => e.Name)
-                .IsRequired();
+            builder.Property(e => e.Name).IsRequired();
 
-            builder.HasOne(e => e.Guild).WithMany(e => e.Channels).IsRequired();
+            builder.HasOne(e => e.Guild).WithMany(e => e.Channels)
+                .HasForeignKey(x => x.GuildId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
 
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(false);

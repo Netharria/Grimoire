@@ -7,6 +7,7 @@ namespace Cybermancy.Core.Contracts.Services
     public interface IUserService
     {
         //Task<bool> IsUserIgnored(DiscordMember member);
-        //Task<User> Save(User user);
+        Task<User> GetUser(DiscordMember member);
+        Task<User> Save(User user);
     }
 }

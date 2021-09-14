@@ -26,6 +26,13 @@ namespace Cybermancy.Persistence.Repositories
 
             return entity;
         }
+        public async Task<ICollection<T>> AddMultipleAsync(ICollection<T> entities)
+        {
+            await CybermancyDb.Set<T>().AddRangeAsync(entities);
+            await CybermancyDb.SaveChangesAsync();
+
+            return entities;
+        }
 
         public async Task<T> UpdateAsync(T entity)
         {
@@ -38,6 +45,11 @@ namespace Cybermancy.Persistence.Repositories
         {
             CybermancyDb.Set<T>().Remove(entity);
             await CybermancyDb.SaveChangesAsync();
+        }
+
+        public async Task<T> GetByPrimaryKey(params object[] keys)
+        {
+            return await CybermancyDb.Set<T>().FindAsync(keys);
         }
     }
 }

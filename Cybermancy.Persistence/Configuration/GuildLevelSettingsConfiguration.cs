@@ -11,8 +11,10 @@ namespace Cybermancy.Persistence.Configuration
         public void Configure(EntityTypeBuilder<GuildLevelSettings> builder)
         {
             builder.HasKey(x => x.GuildId);
+            builder.Property(x => x.IsLevelingEnabled).HasDefaultValue(false);
             builder.HasOne(e => e.Guild).WithOne(e => e.LevelSettings)
                 .HasForeignKey<GuildLevelSettings>(x => x.GuildId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.Property(e => e.TextTime)
                 .HasDefaultValue(3);

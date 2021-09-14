@@ -17,6 +17,7 @@ namespace Cybermancy.Domain
         public User User { get; set; }
         public ulong ModeratorId { get; set; }
         public User Moderator { get; set; }
+        public ulong GuildId { get; set; }
         public Guild Guild { get; set; }
         public string Reason { get; set; }
         public DateTime InfractionOn { get; set; }

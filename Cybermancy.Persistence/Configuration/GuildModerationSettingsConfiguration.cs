@@ -13,6 +13,7 @@ namespace Cybermancy.Persistence.Configuration
             builder.HasKey(e => e.GuildId);
             builder.HasOne(e => e.Guild).WithOne(e => e.ModerationSettings)
                 .HasForeignKey<GuildModerationSettings>(x => x.GuildId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
 
             builder.Property(e => e.DurationType)

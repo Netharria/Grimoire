@@ -12,6 +12,9 @@ namespace Cybermancy.Persistence.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
+            builder.Property(e => e.UserName).IsRequired();
+            builder.Property(e => e.DisplayName).IsRequired();
+            builder.Property(e => e.AvatarUrl).IsRequired();
             builder.HasMany(e => e.Guilds).WithMany(e => e.Users);
             builder.HasMany(e => e.Messages).WithOne(e => e.User);
             builder.HasMany(e => e.Trackers).WithOne(e => e.User).HasForeignKey(e => e.UserId);

@@ -20,14 +20,16 @@ namespace Cybermancy.Core.LevelingModule
         private readonly IUserLevelService _userLevelService;
         private readonly IRewardService _rewardService;
         private readonly ILevelSettingsService _levelSettingsService;
+        private readonly IUserService _userService;
 
-        public LevelingEvents(IChannelService channelService, IRoleService roleService, IUserLevelService userLevelService, IRewardService rewardService, ILevelSettingsService levelSettingsService)
+        public LevelingEvents(IChannelService channelService, IRoleService roleService, IUserLevelService userLevelService, IRewardService rewardService, ILevelSettingsService levelSettingsService, IUserService userService)
         {
             _channelService = channelService;
             _roleService = roleService;
             _userLevelService = userLevelService;
             _rewardService = rewardService;
             _levelSettingsService = levelSettingsService;
+            _userService = userService;
         }
 
         public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
@@ -36,8 +38,9 @@ namespace Cybermancy.Core.LevelingModule
             if (args.Author is not DiscordMember member) return;
             if(member.IsBot) return;
             if (await _channelService.IsChannelIgnored(args.Channel)) return;
-            if(await _levelSettingsService.IsLevelingEnabled(member.Guild.Id)) return;
+            if(!await _levelSettingsService.IsLevelingEnabled(member.Guild.Id)) return;
             if(_roleService.AreAnyRolesIgnored(member.Roles.ToList(), member.Guild)) return;
+            var user = await _userService.GetUser(member);
             var userLevel = await _userLevelService.GetUserLevels(member.Id, member.Guild.Id);
             if(userLevel.IsXpIgnored) return;
             if(userLevel.TimeOut > DateTime.UtcNow) return;

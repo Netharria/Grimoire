@@ -13,12 +13,17 @@ namespace Cybermancy.Persistence.Configuration
             builder.HasKey(e => e.ChannelId);
             builder.HasOne(e => e.Channel).WithOne(e => e.Lock)
                 .HasForeignKey<Lock>(x => x.ChannelId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
 
             builder.HasOne(e => e.Moderator).WithMany(e => e.ChannelsLocked)
+                .HasForeignKey(e => e.ModeratorId)
+                .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
             builder.HasOne(e => e.Guild).WithMany(e => e.LockedChannels)
+                .HasForeignKey(e => e.GuildId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
         }
     }

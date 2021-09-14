@@ -9,23 +9,24 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Cybermancy.Persistence.Migrations
 {
     [DbContext(typeof(CybermancyDbContext))]
-    [Migration("20210909232245_Initalization")]
-    partial class Initalization
+    [Migration("20210914022641_Init")]
+    partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasAnnotation("Relational:MaxIdentifierLength", 64)
                 .HasAnnotation("ProductVersion", "5.0.9");
 
             modelBuilder.Entity("Cybermancy.Domain.Attachment", b =>
                 {
                     b.Property<ulong>("MessageId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<string>("AttachmentUrl")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.HasKey("MessageId");
 
@@ -35,19 +36,19 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Channel", b =>
                 {
                     b.Property<ulong>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("GuildId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<bool>("IsXpIgnored")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -59,10 +60,10 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Guild", b =>
                 {
                     b.Property<ulong>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("ModChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("Id");
 
@@ -72,29 +73,34 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.GuildLevelSettings", b =>
                 {
                     b.Property<ulong>("GuildId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<int>("Amount")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasDefaultValue(5);
 
                     b.Property<int>("Base")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasDefaultValue(15);
 
+                    b.Property<bool>("IsLevelingEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
                     b.Property<ulong?>("LevelChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<int>("Modifier")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasDefaultValue(50);
 
                     b.Property<int>("TextTime")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasDefaultValue(3);
 
                     b.HasKey("GuildId");
@@ -105,31 +111,31 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.GuildLogSettings", b =>
                 {
                     b.Property<ulong>("GuildId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("AvatarChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("BulkDeleteChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("DeleteChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("EditChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("JoinChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("LeaveChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("NicknameChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("UsernameChannelLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("GuildId");
 
@@ -139,23 +145,23 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.GuildModerationSettings", b =>
                 {
                     b.Property<ulong>("GuildId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<int>("Duration")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasDefaultValue(30);
 
                     b.Property<int>("DurationType")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasDefaultValue(3);
 
                     b.Property<ulong?>("MuteRole")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("PublicBanLog")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("GuildId");
 
@@ -165,22 +171,22 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Lock", b =>
                 {
                     b.Property<ulong>("ChannelId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<DateTime>("EndTime")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("GuildId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("ModeratorId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<bool?>("PreviousSetting")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("reason")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.HasKey("ChannelId");
 
@@ -194,22 +200,22 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Message", b =>
                 {
                     b.Property<ulong>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("ChannelId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("ChannelId")
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<string>("Content")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
-                    b.Property<ulong?>("GuildId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("GuildId")
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("UserId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("UserId")
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("Id");
 
@@ -225,16 +231,16 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Mute", b =>
                 {
                     b.Property<ulong>("SinId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<DateTime>("EndTime")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
-                    b.Property<ulong?>("GuildId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("GuildId")
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("UserId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("UserId")
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("SinId");
 
@@ -248,16 +254,16 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.OldLogMessage", b =>
                 {
                     b.Property<ulong>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("ChannelId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
-                    b.Property<ulong?>("GuildId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("GuildId")
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("Id");
 
@@ -269,16 +275,16 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Pardon", b =>
                 {
                     b.Property<ulong>("SinId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("ModeratorId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("ModeratorId")
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<DateTime>("PardonDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Reason")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.HasKey("SinId");
 
@@ -290,13 +296,13 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.PublishedMessage", b =>
                 {
                     b.Property<ulong>("MessageId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<int>("PublishType")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<ulong>("SinId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("MessageId");
 
@@ -309,13 +315,13 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Reward", b =>
                 {
                     b.Property<ulong>("RoleId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("GuildId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("GuildId")
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<int>("RewardLevel")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("RoleId");
 
@@ -327,14 +333,14 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Role", b =>
                 {
                     b.Property<ulong>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("GuildId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("GuildId")
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<bool>("IsXpIgnored")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
                     b.HasKey("Id");
@@ -348,25 +354,25 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("GuildId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("GuildId")
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<DateTime>("InfractionOn")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("ModeratorId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<string>("Reason")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("SinType")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<ulong>("UserId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("Id");
 
@@ -383,22 +389,22 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<DateTime>("EndTime")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("GuildId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("LogChannelId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("LogChannelId")
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("ModeratorId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("UserId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("Id");
 
@@ -417,43 +423,46 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("Cybermancy.Domain.User", b =>
                 {
                     b.Property<ulong>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<string>("AvatarUrl")
-                        .HasColumnType("TEXT");
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("DisplayName")
-                        .HasColumnType("TEXT");
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("UserName")
-                        .HasColumnType("TEXT");
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Cybermancy.Domain.UserLevels", b =>
+            modelBuilder.Entity("Cybermancy.Domain.UserLevel", b =>
                 {
                     b.Property<ulong>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("GuildId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<bool>("IsXpIgnored")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime>("TimeOut")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("UserId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<int>("Xp")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -468,10 +477,10 @@ namespace Cybermancy.Persistence.Migrations
             modelBuilder.Entity("GuildUser", b =>
                 {
                     b.Property<ulong>("GuildsId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("UsersId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
                     b.HasKey("GuildsId", "UsersId");
 
@@ -552,7 +561,7 @@ namespace Cybermancy.Persistence.Migrations
                     b.HasOne("Cybermancy.Domain.User", "Moderator")
                         .WithMany("ChannelsLocked")
                         .HasForeignKey("ModeratorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Channel");
@@ -566,15 +575,21 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.HasOne("Cybermancy.Domain.Channel", "Channel")
                         .WithMany("Messages")
-                        .HasForeignKey("ChannelId");
+                        .HasForeignKey("ChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.Guild", "Guild")
                         .WithMany("Messages")
-                        .HasForeignKey("GuildId");
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.User", "User")
                         .WithMany("Messages")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Channel");
 
@@ -587,15 +602,20 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.HasOne("Cybermancy.Domain.Guild", "Guild")
                         .WithMany("ActiveMutes")
-                        .HasForeignKey("GuildId");
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.Sin", "Sin")
                         .WithOne("Mute")
-                        .HasForeignKey("Cybermancy.Domain.Mute", "SinId");
+                        .HasForeignKey("Cybermancy.Domain.Mute", "SinId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Cybermancy.Domain.User", "User")
                         .WithMany("ActiveMutes")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Guild");
 
@@ -608,7 +628,9 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.HasOne("Cybermancy.Domain.Guild", "Guild")
                         .WithMany("OldLogMessages")
-                        .HasForeignKey("GuildId");
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Guild");
                 });
@@ -617,11 +639,14 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.HasOne("Cybermancy.Domain.User", "Moderator")
                         .WithMany("SinsPardoned")
-                        .HasForeignKey("ModeratorId");
+                        .HasForeignKey("ModeratorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.Sin", "Sin")
                         .WithOne("Pardon")
-                        .HasForeignKey("Cybermancy.Domain.Pardon", "SinId");
+                        .HasForeignKey("Cybermancy.Domain.Pardon", "SinId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Moderator");
 
@@ -643,11 +668,14 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.HasOne("Cybermancy.Domain.Guild", "Guild")
                         .WithMany("Rewards")
-                        .HasForeignKey("GuildId");
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.Role", "Role")
                         .WithOne("Reward")
-                        .HasForeignKey("Cybermancy.Domain.Reward", "RoleId");
+                        .HasForeignKey("Cybermancy.Domain.Reward", "RoleId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Guild");
 
@@ -658,7 +686,9 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.HasOne("Cybermancy.Domain.Guild", "Guild")
                         .WithMany("Roles")
-                        .HasForeignKey("GuildId");
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Guild");
                 });
@@ -667,12 +697,14 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     b.HasOne("Cybermancy.Domain.Guild", "Guild")
                         .WithMany("Sins")
-                        .HasForeignKey("GuildId");
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.User", "Moderator")
                         .WithMany("ModeratedSins")
                         .HasForeignKey("ModeratorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.User", "User")
@@ -698,12 +730,14 @@ namespace Cybermancy.Persistence.Migrations
 
                     b.HasOne("Cybermancy.Domain.Channel", "LogChannel")
                         .WithMany("Trackers")
-                        .HasForeignKey("LogChannelId");
+                        .HasForeignKey("LogChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.User", "Moderator")
                         .WithMany("TrackedUsers")
                         .HasForeignKey("ModeratorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.User", "User")
@@ -721,7 +755,7 @@ namespace Cybermancy.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Cybermancy.Domain.UserLevels", b =>
+            modelBuilder.Entity("Cybermancy.Domain.UserLevel", b =>
                 {
                     b.HasOne("Cybermancy.Domain.Guild", "Guild")
                         .WithMany("UserLevels")
@@ -730,7 +764,7 @@ namespace Cybermancy.Persistence.Migrations
                         .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.User", "User")
-                        .WithMany()
+                        .WithMany("UserLevels")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -827,6 +861,8 @@ namespace Cybermancy.Persistence.Migrations
                     b.Navigation("TrackedUsers");
 
                     b.Navigation("Trackers");
+
+                    b.Navigation("UserLevels");
 
                     b.Navigation("UserSins");
                 });

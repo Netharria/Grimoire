@@ -1,11 +1,10 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using Cybermancy.Core;
+﻿using Cybermancy.Core;
 using Cybermancy.Persistence;
 using DSharpPlus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace Cybermancy
 {
@@ -13,9 +12,15 @@ namespace Cybermancy
     {
         public DiscordClient Client;
 
-        public static async Task Main()
+        public static void Main(string[] args)
         {
-            var builder = new HostBuilder()
+            var host = CreateHostBuilder(args).Build();
+            host.Run();
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration(x =>
                 {
                     var configuration = new ConfigurationBuilder()
@@ -32,15 +37,10 @@ namespace Cybermancy
                 .ConfigureServices((context, services) =>
                 {
                     services
-                        .AddCoreServices(context.Configuration)
-                        .AddPersistenceServices(context.Configuration);
+                        .AddPersistenceServices(context.Configuration)
+                        .AddCoreServices(context.Configuration);
                 })
                 .UseConsoleLifetime();
-            var host = builder.Build();
-            using (host)
-            {
-                await host.RunAsync();
-            }
         }
     }
 }

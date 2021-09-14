@@ -13,6 +13,7 @@ namespace Cybermancy.Persistence.Configuration
             builder.HasKey(e => e.MessageId);
             builder.HasOne(e => e.Message).WithMany(x => x.Attachments)
                 .HasForeignKey(e => e.MessageId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
 
             builder.Property(e => e.AttachmentUrl)

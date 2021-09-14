@@ -8,14 +8,15 @@ namespace Cybermancy.Domain
         public string UserName { get; set; }
         public string DisplayName { get; set; }
         public string AvatarUrl { get; set; }
-        public ICollection<Guild> Guilds { get; set; }
-        public ICollection<Message> Messages { get; set; }
-        public ICollection<Tracker> Trackers { get; set; }
-        public ICollection<Tracker> TrackedUsers { get; set; }
-        public ICollection<Sin> UserSins { get; set; }
-        public ICollection<Sin> ModeratedSins { get; set; }
-        public ICollection<Mute> ActiveMutes { get; set; }
-        public ICollection<Lock> ChannelsLocked { get; set; }
-        public ICollection<Pardon> SinsPardoned { get; set; }
+        public virtual ICollection<Guild> Guilds { get; set; } = new List<Guild>();
+        public virtual ICollection<Message> Messages { get; set; }
+        public virtual ICollection<Tracker> Trackers { get; set; }
+        public virtual ICollection<Tracker> TrackedUsers { get; set; }
+        public virtual ICollection<Sin> UserSins { get; set; }
+        public virtual ICollection<Sin> ModeratedSins { get; set; }
+        public virtual ICollection<Mute> ActiveMutes { get; set; }
+        public virtual ICollection<Lock> ChannelsLocked { get; set; }
+        public virtual ICollection<Pardon> SinsPardoned { get; set; }
+        public virtual ICollection<UserLevel> UserLevels { get; set; }
     }
 }

@@ -15,7 +15,9 @@ namespace Cybermancy.Persistence.Configuration
             builder.HasIndex(e => new {e.SinId, e.PublishType})
                 .IsUnique();
             builder.HasOne(e => e.Sin).WithMany(e => e.PublishMessages)
-                .HasForeignKey(e => e.SinId);
+                .HasForeignKey(e => e.SinId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
         }
     }
 }

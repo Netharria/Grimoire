@@ -9,6 +9,7 @@ namespace Cybermancy.Domain
         public User User { get; set; }
         public ulong GuildId { get; set; }
         public Guild Guild { get; set; }
+        public ulong LogChannelId { get; set; }
         public Channel LogChannel { get; set; }
         public DateTime EndTime { get; set; }
         public ulong ModeratorId { get; set; }

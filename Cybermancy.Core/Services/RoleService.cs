@@ -39,10 +39,32 @@ namespace Cybermancy.Core.Services
             if(await _roleRepository.Exists(role.Id)) return await _roleRepository.GetByIdAsync(role.Id);
             var newRole = new Role()
             {
-                Guild = await _guildService.GetGuildAndSetupIfDoesntExist(guild),
+                GuildId = guild.Id,
                 Id = role.Id
             };
             return await Save(newRole);
+        }
+
+        public async Task<Role> GetRole(ulong roleId)
+        {
+            return await _roleRepository.GetByIdAsync(roleId);
+        }
+
+        public async Task SetupAllRoles(IEnumerable<DiscordGuild> guilds)
+        {
+            var newRoles = new List<Role>();
+            foreach(var guild in guilds)
+            {
+                foreach(var role in guild.Roles.Values.Where(x => !_roleRepository.Exists(x.Id).Result))
+                {
+                    newRoles.Add(new Role()
+                    {
+                        GuildId = guild.Id,
+                        Id = role.Id
+                    });
+                }
+            }
+            await _roleRepository.AddMultipleAsync(newRoles);
         }
     }
 }

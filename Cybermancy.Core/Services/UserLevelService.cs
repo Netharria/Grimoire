@@ -9,6 +9,7 @@ namespace Cybermancy.Core.Services
     public class UserLevelService : IUserLevelService
     {
         private readonly IUserLevelRepository _userLevelRepository;
+        private readonly IAsyncIdRepository<User> _userRepository;
 
         public UserLevelService(IUserLevelRepository userLevelRepository)
         {

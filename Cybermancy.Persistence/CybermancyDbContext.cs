@@ -5,9 +5,9 @@ namespace Cybermancy.Persistence
 {
     public class CybermancyDbContext : DbContext
     {
-        public CybermancyDbContext()
-        {
-        }
+        //public CybermancyDbContext()
+        //{
+        //}
 
         public CybermancyDbContext(DbContextOptions<CybermancyDbContext> options)
             : base(options)
@@ -31,11 +31,6 @@ namespace Cybermancy.Persistence
         public DbSet<Tracker> Trackers { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserLevel> UserLevels { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlite("Data Source=Cybermancy.db;Cache=Shared");
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

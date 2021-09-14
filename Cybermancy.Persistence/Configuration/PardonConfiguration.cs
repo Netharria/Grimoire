@@ -13,8 +13,12 @@ namespace Cybermancy.Persistence.Configuration
             builder.HasKey(e => e.SinId);
             builder.HasOne(e => e.Sin).WithOne(e => e.Pardon)
                 .HasForeignKey<Pardon>(e => e.SinId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.Moderator).WithMany(e => e.SinsPardoned);
+            builder.HasOne(e => e.Moderator).WithMany(e => e.SinsPardoned)
+                .HasForeignKey(e => e.ModeratorId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
         }
     }
 }

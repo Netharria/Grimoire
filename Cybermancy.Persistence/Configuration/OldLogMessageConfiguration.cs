@@ -13,7 +13,10 @@ namespace Cybermancy.Persistence.Configuration
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
             builder.Property(e => e.ChannelId).IsRequired();
-            builder.HasOne(e => e.Guild).WithMany(e => e.OldLogMessages);
+            builder.HasOne(e => e.Guild).WithMany(e => e.OldLogMessages)
+                .HasForeignKey(x => x.GuildId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

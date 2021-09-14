@@ -1,46 +1,56 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Cybermancy.Persistence.Migrations
 {
-    public partial class Initalization : Migration
+    public partial class Init : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AlterDatabase()
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.CreateTable(
                 name: "Guilds",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    ModChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    ModChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Guilds", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    UserName = table.Column<string>(type: "TEXT", nullable: true),
-                    DisplayName = table.Column<string>(type: "TEXT", nullable: true),
-                    AvatarUrl = table.Column<string>(type: "TEXT", nullable: true)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    UserName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DisplayName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AvatarUrl = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Channels",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    IsXpIgnored = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -51,18 +61,20 @@ namespace Cybermancy.Persistence.Migrations
                         principalTable: "Guilds",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "GuildLevelSettings",
                 columns: table => new
                 {
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    TextTime = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 3),
-                    Base = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 15),
-                    Modifier = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 50),
-                    Amount = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 5),
-                    LevelChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true)
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    IsLevelingEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
+                    TextTime = table.Column<int>(type: "int", nullable: false, defaultValue: 3),
+                    Base = table.Column<int>(type: "int", nullable: false, defaultValue: 15),
+                    Modifier = table.Column<int>(type: "int", nullable: false, defaultValue: 50),
+                    Amount = table.Column<int>(type: "int", nullable: false, defaultValue: 5),
+                    LevelChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -73,21 +85,22 @@ namespace Cybermancy.Persistence.Migrations
                         principalTable: "Guilds",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "GuildLogSettings",
                 columns: table => new
                 {
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    JoinChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    LeaveChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    DeleteChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    BulkDeleteChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    EditChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    UsernameChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    NicknameChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    AvatarChannelLog = table.Column<ulong>(type: "INTEGER", nullable: true)
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    JoinChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    LeaveChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    DeleteChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    BulkDeleteChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    EditChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    UsernameChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    NicknameChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    AvatarChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -98,17 +111,18 @@ namespace Cybermancy.Persistence.Migrations
                         principalTable: "Guilds",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "GuildModerationSettings",
                 columns: table => new
                 {
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    PublicBanLog = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    DurationType = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 3),
-                    Duration = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 30),
-                    MuteRole = table.Column<ulong>(type: "INTEGER", nullable: true)
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    PublicBanLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    DurationType = table.Column<int>(type: "int", nullable: false, defaultValue: 3),
+                    Duration = table.Column<int>(type: "int", nullable: false, defaultValue: 30),
+                    MuteRole = table.Column<ulong>(type: "bigint unsigned", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -119,16 +133,17 @@ namespace Cybermancy.Persistence.Migrations
                         principalTable: "Guilds",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "OldLogMessages",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    ChannelId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    ChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -138,16 +153,17 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.GuildId,
                         principalTable: "Guilds",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Role",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    IsXpIgnored = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -157,15 +173,16 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.GuildId,
                         principalTable: "Guilds",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "GuildUser",
                 columns: table => new
                 {
-                    GuildsId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    UsersId = table.Column<ulong>(type: "INTEGER", nullable: false)
+                    GuildsId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    UsersId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -182,20 +199,22 @@ namespace Cybermancy.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Sins",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    UserId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    ModeratorId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    Reason = table.Column<string>(type: "TEXT", nullable: true),
-                    InfractionOn = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    SinType = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    ModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    Reason = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    InfractionOn = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    SinType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -205,31 +224,32 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.GuildId,
                         principalTable: "Guilds",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Sins_Users_ModeratorId",
                         column: x => x.ModeratorId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Sins_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "UserLevels",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    UserId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    Xp = table.Column<int>(type: "INTEGER", nullable: false),
-                    TimeOut = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    IsXpIgnored = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    Xp = table.Column<int>(type: "int", nullable: false),
+                    TimeOut = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -246,18 +266,20 @@ namespace Cybermancy.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Locks",
                 columns: table => new
                 {
-                    ChannelId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    PreviousSetting = table.Column<bool>(type: "INTEGER", nullable: true),
-                    ModeratorId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    reason = table.Column<string>(type: "TEXT", nullable: true),
-                    EndTime = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    ChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    PreviousSetting = table.Column<bool>(type: "tinyint(1)", nullable: true),
+                    ModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    reason = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -279,19 +301,21 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.ModeratorId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Messages",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    UserId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    ChannelId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    Content = table.Column<string>(type: "TEXT", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    ChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    Content = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -301,32 +325,33 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.ChannelId,
                         principalTable: "Channels",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Messages_Guilds_GuildId",
                         column: x => x.GuildId,
                         principalTable: "Guilds",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Messages_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Trackers",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    UserId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    LogChannelId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    EndTime = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    ModeratorId = table.Column<ulong>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    LogChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -336,7 +361,7 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.LogChannelId,
                         principalTable: "Channels",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Trackers_Guilds_GuildId",
                         column: x => x.GuildId,
@@ -348,22 +373,23 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.ModeratorId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Trackers_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Rewards",
                 columns: table => new
                 {
-                    RoleId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    RewardLevel = table.Column<int>(type: "INTEGER", nullable: false)
+                    RoleId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    RewardLevel = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -373,23 +399,24 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.GuildId,
                         principalTable: "Guilds",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Rewards_Role_RoleId",
                         column: x => x.RoleId,
                         principalTable: "Role",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Mutes",
                 columns: table => new
                 {
-                    SinId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: true)
+                    SinId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -399,7 +426,7 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.GuildId,
                         principalTable: "Guilds",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Mutes_Sins_SinId",
                         column: x => x.SinId,
@@ -411,17 +438,19 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Pardons",
                 columns: table => new
                 {
-                    SinId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    ModeratorId = table.Column<ulong>(type: "INTEGER", nullable: true),
-                    PardonDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Reason = table.Column<string>(type: "TEXT", nullable: true)
+                    SinId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    ModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    PardonDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Reason = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -431,22 +460,23 @@ namespace Cybermancy.Persistence.Migrations
                         column: x => x.SinId,
                         principalTable: "Sins",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Pardons_Users_ModeratorId",
                         column: x => x.ModeratorId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "PublishedMessages",
                 columns: table => new
                 {
-                    MessageId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    SinId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    PublishType = table.Column<int>(type: "INTEGER", nullable: false)
+                    MessageId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    SinId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    PublishType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -457,14 +487,16 @@ namespace Cybermancy.Persistence.Migrations
                         principalTable: "Sins",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Attachments",
                 columns: table => new
                 {
-                    MessageId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    AttachmentUrl = table.Column<string>(type: "TEXT", nullable: false)
+                    MessageId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    AttachmentUrl = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -475,7 +507,8 @@ namespace Cybermancy.Persistence.Migrations
                         principalTable: "Messages",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Channels_GuildId",

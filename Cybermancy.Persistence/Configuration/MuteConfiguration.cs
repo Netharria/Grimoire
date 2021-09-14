@@ -13,9 +13,16 @@ namespace Cybermancy.Persistence.Configuration
             builder.HasKey(e => e.SinId);
             builder.HasOne(e => e.Sin).WithOne(e => e.Mute)
                 .HasForeignKey<Mute>(e => e.SinId)
+                .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
-            builder.HasOne(e => e.User).WithMany(e => e.ActiveMutes);
-            builder.HasOne(e => e.Guild).WithMany(e => e.ActiveMutes);
+            builder.HasOne(e => e.User).WithMany(e => e.ActiveMutes)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+            builder.HasOne(e => e.Guild).WithMany(e => e.ActiveMutes)
+                .HasForeignKey(e => e.GuildId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
         }
     }
 }
