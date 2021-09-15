@@ -3,7 +3,7 @@
     public class GuildLevelSettings
     {
         public ulong GuildId { get; set; }
-        public Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; }
         public bool IsLevelingEnabled { get; set; }
         public int TextTime { get; set; }
         public int Base { get; set; }

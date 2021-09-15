@@ -13,7 +13,7 @@ namespace Cybermancy.Persistence.Repositories
 
         public Task<UserLevel> GetUserLevel(ulong userId, ulong guildId)
         {
-            var result = CybermancyDb.UserLevels.First(x => x.UserId == userId && x.GuildId == guildId);
+            var result = CybermancyDb.UserLevels.FirstOrDefault(x => x.UserId == userId && x.GuildId == guildId);
             return Task.FromResult(result);
         }
 

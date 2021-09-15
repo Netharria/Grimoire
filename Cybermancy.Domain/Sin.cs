@@ -14,16 +14,16 @@ namespace Cybermancy.Domain
     public class Sin : Identifiable
     {
         public ulong UserId { get; set; }
-        public User User { get; set; }
+        public virtual User User { get; set; }
         public ulong ModeratorId { get; set; }
-        public User Moderator { get; set; }
+        public virtual User Moderator { get; set; }
         public ulong GuildId { get; set; }
-        public Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; }
         public string Reason { get; set; }
         public DateTime InfractionOn { get; set; }
         public SinType SinType { get; set; }
-        public Mute Mute { get; set; }
-        public Pardon Pardon { get; set; }
-        public ICollection<PublishedMessage> PublishMessages { get; set; }
+        public virtual Mute Mute { get; set; }
+        public virtual Pardon Pardon { get; set; }
+        public virtual ICollection<PublishedMessage> PublishMessages { get; set; }
     }
 }

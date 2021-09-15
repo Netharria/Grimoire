@@ -11,5 +11,6 @@ namespace Cybermancy.Core.Contracts.Services
         Task<ICollection<DiscordRole>> GrantRewardsMissingFromUser(DiscordMember member);
         
         Task<Reward> Save(Reward reward);
+        Task<ICollection<Reward>> GetAllGuildRewards(ulong guildId);
     }
 }

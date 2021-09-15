@@ -8,9 +8,9 @@ namespace Cybermancy.Domain
         public string Name { get; set; }
         public bool IsXpIgnored { get; set; }
         public ulong GuildId { get; set; }
-        public Guild Guild { get; set; }
-        public ICollection<Message> Messages { get; set; }
-        public ICollection<Tracker> Trackers { get; set; }
-        public Lock Lock { get; set; }
+        public virtual Guild Guild { get; set; }
+        public virtual ICollection<Message> Messages { get; set; }
+        public virtual ICollection<Tracker> Trackers { get; set; }
+        public virtual Lock Lock { get; set; }
     }
 }

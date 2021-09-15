@@ -12,7 +12,7 @@ namespace Cybermancy.Domain
     {
         public ulong MessageId { get; set; }
         public ulong SinId { get; set; }
-        public Sin Sin { get; set; }
+        public virtual Sin Sin { get; set; }
         public PublishType PublishType { get; set; }
     }
 }

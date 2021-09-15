@@ -1,4 +1,5 @@
 using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Core.LevelingModule;
 using Cybermancy.Core.Services;
 using DSharpPlus;
 using Microsoft.Extensions.Configuration;
@@ -20,7 +21,7 @@ namespace Cybermancy.Core
             services.AddScoped<ILevelSettingsService, LevelSettingsService>();
             services.AddScoped<IRewardService, RewardService>();
             services.AddScoped<IRoleService, RoleService>();
-            services.AddScoped<IUserLevelService, UserLevelService>();
+            services.AddSingleton<IUserLevelService, UserLevelService>();
             services.AddScoped<IUserService, UserService>();
             services.AddSingleton<ITracer>(provider => new MockTracer());
             services.AddDiscord(options =>
@@ -41,6 +42,7 @@ namespace Cybermancy.Core
                     (extension =>
                     {
                         extension.RegisterCommands<ExampleSlashCommand>(ulong.Parse(configuration["guildId"]));
+                        extension.RegisterCommands<UserLevelCommands>(ulong.Parse(configuration["guildId"]));
                     }));
             
             return services;

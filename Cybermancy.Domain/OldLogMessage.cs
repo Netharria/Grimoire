@@ -7,7 +7,7 @@ namespace Cybermancy.Domain
     {
         public ulong ChannelId { get; set; }
         public ulong GuildId { get; set; }
-        public Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

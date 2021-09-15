@@ -23,9 +23,9 @@ namespace Cybermancy.Core
 
         public Task DiscordOnReady(DiscordClient sender, ReadyEventArgs args)
         {
-            _guildService.SetupAllGuild(sender.Guilds.Values);
-            _roleService.SetupAllRoles(sender.Guilds.Values);
-            _channelService.SetupAllChannels(sender.Guilds.Values);
+            Task.Run(() =>  _guildService.SetupAllGuild(sender.Guilds.Values));
+            Task.Run(() => _roleService.SetupAllRoles(sender.Guilds.Values));
+            Task.Run(() => _channelService.SetupAllChannels(sender.Guilds.Values));
             return Task.CompletedTask;
         }
 

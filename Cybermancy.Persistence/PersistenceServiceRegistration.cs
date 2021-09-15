@@ -12,10 +12,15 @@ namespace Cybermancy.Persistence
         public static IServiceCollection AddPersistenceServices(this IServiceCollection services,
             IConfiguration configuration)
         {
-            var serverVersion = new MariaDbServerVersion(new System.Version(10, 4, 17));
             services.AddDbContext<CybermancyDbContext>(options =>
-                options.UseMySql(configuration.GetConnectionString("CybermancyConnectionString"), serverVersion)
-                .UseLazyLoadingProxies());
+                options.UseMySql(configuration.GetConnectionString("CybermancyConnectionString"), 
+                ServerVersion.AutoDetect(configuration.GetConnectionString("CybermancyConnectionString")))
+                .UseLazyLoadingProxies()
+#if DEBUG
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors()
+#endif
+                );
 
             services.AddScoped(typeof(IAsyncRepository<>), typeof(BaseRepository<>));
             services.AddScoped(typeof(IAsyncIdRepository<>), typeof(BaseIdRepository<>));

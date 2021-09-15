@@ -22,6 +22,7 @@ namespace Cybermancy.Core.Services
             if (await _userRepository.Exists(member.Id)) return await _userRepository.GetByIdAsync(member.Id);
             var newUser = new User()
             {
+                Id = member.Id,
                 UserName = $"{member.Username}#{member.Discriminator}",
                 DisplayName = member.DisplayName,
                 AvatarUrl = member.AvatarUrl

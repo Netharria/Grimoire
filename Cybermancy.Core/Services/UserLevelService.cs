@@ -18,7 +18,18 @@ namespace Cybermancy.Core.Services
 
         public async Task<UserLevel> GetUserLevels(ulong userId, ulong guildId)
         {
-            if (_userLevelRepository.Exists(userId, guildId)) return await _userLevelRepository.GetUserLevel(userId, guildId);
+            return await _userLevelRepository.GetUserLevel(userId, guildId);
+        }
+
+        public async Task<UserLevel> Save(UserLevel userLevel)
+        {
+            if (_userLevelRepository.Exists(userLevel.UserId, userLevel.GuildId))
+                return await _userLevelRepository.UpdateAsync(userLevel);
+            return await _userLevelRepository.AddAsync(userLevel);
+        }
+
+        public async Task<UserLevel> AddUser(ulong userId, ulong guildId)
+        {
             var newUserLevel = new UserLevel()
             {
                 GuildId = guildId,
@@ -27,13 +38,6 @@ namespace Cybermancy.Core.Services
                 Xp = 0
             };
             return await Save(newUserLevel);
-        }
-
-        public async Task<UserLevel> Save(UserLevel userLevel)
-        {
-            if (_userLevelRepository.Exists(userLevel.UserId, userLevel.GuildId))
-                return await _userLevelRepository.UpdateAsync(userLevel);
-            return await _userLevelRepository.AddAsync(userLevel);
         }
     }
 }

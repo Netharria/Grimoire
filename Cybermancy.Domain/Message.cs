@@ -7,13 +7,13 @@ namespace Cybermancy.Domain
     public class Message : Identifiable
     {
         public ulong UserId { get; set; }
-        public User User { get; set; }
-        public ulong ChannelId { get; set; }
-        public Channel Channel { get; set; }
+        public virtual User User { get; set; }
+        public virtual ulong ChannelId { get; set; }
+        public virtual Channel Channel { get; set; }
         public ulong GuildId { get; set; }
-        public Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; }
         public string Content { get; set; }
         public DateTime CreatedAt { get; set; }
-        public ICollection<Attachment> Attachments { get; set; }
+        public virtual ICollection<Attachment> Attachments { get; set; }
     }
 }

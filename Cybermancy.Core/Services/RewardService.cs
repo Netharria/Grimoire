@@ -23,6 +23,12 @@ namespace Cybermancy.Core.Services
             _roleRepository = roleRepository;
         }
 
+        public async Task<ICollection<Reward>> GetAllGuildRewards(ulong guildId)
+        {
+            var guild = await _guildRepository.GetByIdAsync(guildId);
+            return guild.Rewards;
+        }
+
         public async Task<ICollection<DiscordRole>> GrantRewardsMissingFromUser(DiscordMember member)
         {
             var guild = await _guildRepository.GetByIdAsync(member.Guild.Id);

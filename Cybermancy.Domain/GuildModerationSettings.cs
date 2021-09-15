@@ -10,7 +10,7 @@
     public class GuildModerationSettings
     {
         public ulong GuildId { get; set; }
-        public Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; }
         public ulong? PublicBanLog { get; set; }
         public Duration DurationType { get; set; }
         public int Duration { get; set; }
