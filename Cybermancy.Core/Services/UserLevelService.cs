@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cybermancy.Core.Contracts.Persistence;
 using Cybermancy.Core.Contracts.Services;
@@ -16,9 +17,13 @@ namespace Cybermancy.Core.Services
             _userLevelRepository = userLevelRepository;
         }
 
-        public async Task<UserLevel> GetUserLevels(ulong userId, ulong guildId)
+        public async Task<UserLevel> GetUserLevel(ulong userId, ulong guildId)
         {
-            return await _userLevelRepository.GetUserLevel(userId, guildId);
+            var result = await _userLevelRepository.GetUserLevel(userId, guildId);
+            if (result is not null)
+                return result;
+            await AddUser(userId, guildId);
+            return await GetUserLevel(userId, guildId);
         }
 
         public async Task<UserLevel> Save(UserLevel userLevel)
@@ -38,6 +43,11 @@ namespace Cybermancy.Core.Services
                 Xp = 0
             };
             return await Save(newUserLevel);
+        }
+
+        public async Task<IList<UserLevel>> GetRankedUsers(ulong guildId)
+        {
+            return await _userLevelRepository.GetRankedGuildUsers(guildId);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Cybermancy.Core.Contracts.Persistence;
@@ -20,6 +21,12 @@ namespace Cybermancy.Persistence.Repositories
         public bool Exists(ulong userId, ulong guildId)
         {
             return CybermancyDb.UserLevels.Any(x => x.UserId == userId && x.GuildId == guildId);
+        }
+
+        public Task<IList<UserLevel>> GetRankedGuildUsers(ulong guildId)
+        {
+            IList<UserLevel> result = CybermancyDb.UserLevels.Where(x => x.GuildId == guildId).OrderByDescending(x => x.Xp).ToList();
+            return Task.FromResult(result);
         }
     }
 }

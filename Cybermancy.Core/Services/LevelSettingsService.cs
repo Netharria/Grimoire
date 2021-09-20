@@ -69,5 +69,10 @@ namespace Cybermancy.Core.Services
             var guildLevelSettings = await _guildLevelSettingsRepository.GetByPrimaryKey(guildId);
             return guildLevelSettings.IsLevelingEnabled;
         }
+
+        public async Task<GuildLevelSettings> GetGuild(ulong guildId)
+        {
+            return await _guildLevelSettingsRepository.GetByPrimaryKey(guildId);
+        }
     }
 }

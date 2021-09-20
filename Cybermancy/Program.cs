@@ -29,10 +29,10 @@ namespace Cybermancy
                         .Build();
                     x.AddConfiguration(configuration);
                 })
-                .ConfigureLogging(x =>
+                .ConfigureLogging((context, x)  =>
                 {
                     x.AddConsole();
-                    x.SetMinimumLevel(LogLevel.Debug);
+                    x.AddConfiguration(context.Configuration);
                 })
                 .ConfigureServices((context, services) =>
                 {

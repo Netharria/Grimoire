@@ -15,5 +15,6 @@ namespace Cybermancy.Core.Contracts.Services
             DateTime? timeStamp = null);
         Task<GuildLevelSettings> Update(GuildLevelSettings guildLevelSettings);
         Task<bool> IsLevelingEnabled(ulong guildId);
+        Task<GuildLevelSettings> GetGuild(ulong guildId);
     }
 }

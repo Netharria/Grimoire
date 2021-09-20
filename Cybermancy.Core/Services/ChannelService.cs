@@ -16,25 +16,46 @@ namespace Cybermancy.Core.Services
         {
             _channelRepository = channelRepository;
         }
-        public async Task<bool> IsChannelIgnored(DiscordChannel channel)
+
+        public async Task<Channel> GetChannel(ulong channelId)
         {
-            Channel databaseChannel;
-            if (await _channelRepository.Exists(channel.Id))
-            {
-                databaseChannel = await _channelRepository.GetByIdAsync(channel.Id);
-            }
+            return await _channelRepository.GetByIdAsync(channelId);
+        }
+
+        public async Task<Channel> GetChannel(DiscordChannel discordChannel)
+        {
+            if (await _channelRepository.Exists(discordChannel.Id))
+                return await _channelRepository.GetByIdAsync(discordChannel.Id);
             else
             {
                 var newChannel = new Channel()
                 {
-                    Id = channel.Id,
-                    GuildId = channel.GuildId.Value,
-                    Name = channel.Name
+                    Id = discordChannel.Id,
+                    GuildId = discordChannel.GuildId.Value,
+                    Name = discordChannel.Name
                 };
-                databaseChannel = await Save(newChannel);
+                await Save(newChannel);
             }
 
-            return databaseChannel.IsXpIgnored;
+            return await _channelRepository.GetByIdAsync(discordChannel.Id);
+        }
+
+        public async Task<bool> IsChannelIgnored(DiscordChannel discordChannel)
+        {
+            if (await _channelRepository.Exists(discordChannel.Id))
+                return (await _channelRepository.GetByIdAsync(discordChannel.Id)).IsXpIgnored ;
+            else
+            {
+                var newChannel = new Channel()
+                {
+                    Id = discordChannel.Id,
+                    GuildId = discordChannel.GuildId.Value,
+                    Name = discordChannel.Name
+                };
+                await Save(newChannel);
+            }
+
+            return (await _channelRepository.GetByIdAsync(discordChannel.Id)).IsXpIgnored;
         }
 
         public async Task<Channel> Save(Channel channel)

@@ -3,14 +3,16 @@ using System;
 using Cybermancy.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Cybermancy.Persistence.Migrations
 {
     [DbContext(typeof(CybermancyDbContext))]
-    partial class CybermancyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210919110100_MakeUserLevelIdAutoGenerate")]
+    partial class MakeUserLevelIdAutoGenerate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

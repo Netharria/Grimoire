@@ -41,7 +41,7 @@ namespace Cybermancy.Core.LevelingModule
             if(!await _levelSettingsService.IsLevelingEnabled(member.Guild.Id)) return;
             if(_roleService.AreAnyRolesIgnored(member.Roles.ToList(), member.Guild)) return;
             var user = await _userService.GetUser(member);
-            var userLevel = await _userLevelService.GetUserLevels(member.Id, member.Guild.Id);
+            var userLevel = await _userLevelService.GetUserLevel(member.Id, member.Guild.Id);
             if(userLevel.IsXpIgnored) return;
             if(userLevel.TimeOut > DateTime.UtcNow) return;
             var previousLevel = userLevel.GetLevel();
@@ -67,7 +67,6 @@ namespace Cybermancy.Core.LevelingModule
                     footer: $"{member.Id}"
                 );
             }
-
         }
 
         #region UnusedEvents
