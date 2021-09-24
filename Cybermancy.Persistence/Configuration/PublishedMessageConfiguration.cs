@@ -1,10 +1,17 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Cybermancy.Domain;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿// -----------------------------------------------------------------------
+// <copyright file="PublishedMessageConfiguration.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Persistence.Configuration
 {
+    using System.Diagnostics.CodeAnalysis;
+    using Cybermancy.Domain;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
     [ExcludeFromCodeCoverage]
     public class PublishedMessageConfiguration : IEntityTypeConfiguration<PublishedMessage>
     {
@@ -12,7 +19,7 @@ namespace Cybermancy.Persistence.Configuration
         {
             builder.HasKey(e => e.MessageId);
             builder.Property(e => e.MessageId).ValueGeneratedNever().IsRequired();
-            builder.HasIndex(e => new {e.SinId, e.PublishType})
+            builder.HasIndex(e => new { e.SinId, e.PublishType })
                 .IsUnique();
             builder.HasOne(e => e.Sin).WithMany(e => e.PublishMessages)
                 .HasForeignKey(e => e.SinId)

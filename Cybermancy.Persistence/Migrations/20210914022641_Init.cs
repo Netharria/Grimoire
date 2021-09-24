@@ -1,9 +1,16 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿// -----------------------------------------------------------------------
+// <copyright file="20210914022641_Init.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Persistence.Migrations
 {
+    using System;
+    using Microsoft.EntityFrameworkCore.Metadata;
+    using Microsoft.EntityFrameworkCore.Migrations;
+
     public partial class Init : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,7 +23,7 @@ namespace Cybermancy.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    ModChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true)
+                    ModChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
                 },
                 constraints: table =>
                 {
@@ -34,7 +41,7 @@ namespace Cybermancy.Persistence.Migrations
                     DisplayName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AvatarUrl = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                 },
                 constraints: table =>
                 {
@@ -50,7 +57,7 @@ namespace Cybermancy.Persistence.Migrations
                     Name = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
-                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -74,7 +81,7 @@ namespace Cybermancy.Persistence.Migrations
                     Base = table.Column<int>(type: "int", nullable: false, defaultValue: 15),
                     Modifier = table.Column<int>(type: "int", nullable: false, defaultValue: 50),
                     Amount = table.Column<int>(type: "int", nullable: false, defaultValue: 5),
-                    LevelChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true)
+                    LevelChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
                 },
                 constraints: table =>
                 {
@@ -100,7 +107,7 @@ namespace Cybermancy.Persistence.Migrations
                     EditChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
                     UsernameChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
                     NicknameChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
-                    AvatarChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true)
+                    AvatarChannelLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
                 },
                 constraints: table =>
                 {
@@ -122,7 +129,7 @@ namespace Cybermancy.Persistence.Migrations
                     PublicBanLog = table.Column<ulong>(type: "bigint unsigned", nullable: true),
                     DurationType = table.Column<int>(type: "int", nullable: false, defaultValue: 3),
                     Duration = table.Column<int>(type: "int", nullable: false, defaultValue: 30),
-                    MuteRole = table.Column<ulong>(type: "bigint unsigned", nullable: true)
+                    MuteRole = table.Column<ulong>(type: "bigint unsigned", nullable: true),
                 },
                 constraints: table =>
                 {
@@ -143,7 +150,7 @@ namespace Cybermancy.Persistence.Migrations
                     Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     ChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -163,7 +170,7 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false)
+                    IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
                 },
                 constraints: table =>
                 {
@@ -182,7 +189,7 @@ namespace Cybermancy.Persistence.Migrations
                 columns: table => new
                 {
                     GuildsId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    UsersId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                    UsersId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -214,7 +221,7 @@ namespace Cybermancy.Persistence.Migrations
                     Reason = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     InfractionOn = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    SinType = table.Column<int>(type: "int", nullable: false)
+                    SinType = table.Column<int>(type: "int", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -249,7 +256,7 @@ namespace Cybermancy.Persistence.Migrations
                     UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     Xp = table.Column<int>(type: "int", nullable: false),
                     TimeOut = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false)
+                    IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
                 },
                 constraints: table =>
                 {
@@ -279,7 +286,7 @@ namespace Cybermancy.Persistence.Migrations
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     reason = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -315,7 +322,7 @@ namespace Cybermancy.Persistence.Migrations
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     Content = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -351,7 +358,7 @@ namespace Cybermancy.Persistence.Migrations
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     LogChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                    ModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -389,7 +396,7 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     RoleId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    RewardLevel = table.Column<int>(type: "int", nullable: false)
+                    RewardLevel = table.Column<int>(type: "int", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -416,7 +423,7 @@ namespace Cybermancy.Persistence.Migrations
                     SinId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -450,7 +457,7 @@ namespace Cybermancy.Persistence.Migrations
                     ModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     PardonDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     Reason = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                 },
                 constraints: table =>
                 {
@@ -476,7 +483,7 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     MessageId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     SinId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    PublishType = table.Column<int>(type: "int", nullable: false)
+                    PublishType = table.Column<int>(type: "int", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -496,7 +503,7 @@ namespace Cybermancy.Persistence.Migrations
                 {
                     MessageId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     AttachmentUrl = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                 },
                 constraints: table =>
                 {

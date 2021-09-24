@@ -1,10 +1,17 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Cybermancy.Domain;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿// -----------------------------------------------------------------------
+// <copyright file="RoleConfiguration.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Persistence.Configuration
 {
+    using System.Diagnostics.CodeAnalysis;
+    using Cybermancy.Domain;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
     [ExcludeFromCodeCoverage]
     public class RoleConfiguration : IEntityTypeConfiguration<Role>
     {
@@ -16,7 +23,7 @@ namespace Cybermancy.Persistence.Configuration
                 .HasForeignKey(x => x.GuildId)
                 .OnDelete(DeleteBehavior.Cascade);
             builder.Property(e => e.IsXpIgnored)
-                .HasDefaultValue(false);
+                .HasDefaultValue(value: false);
             builder.HasOne(e => e.Reward).WithOne(e => e.Role)
                 .IsRequired(false);
         }

@@ -1,24 +1,37 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Cybermancy.Core.Contracts.Persistence;
-using Cybermancy.Domain.Shared;
+﻿// -----------------------------------------------------------------------
+// <copyright file="BaseIdRepository.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Persistence.Repositories
 {
-    public class BaseIdRepository<T> : BaseRepository<T>, IAsyncIdRepository<T> where T : Identifiable
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Cybermancy.Core.Contracts.Persistence;
+    using Cybermancy.Domain.Shared;
+
+    public class BaseIdRepository<T> : BaseRepository<T>, IAsyncIdRepository<T>
+        where T : Identifiable
     {
-        public BaseIdRepository(CybermancyDbContext cybermancyDb) : base(cybermancyDb)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseIdRepository{T}"/> class.
+        /// </summary>
+        /// <param name="cybermancyDb"></param>
+        public BaseIdRepository(CybermancyDbContext cybermancyDb)
+            : base(cybermancyDb)
         {
         }
 
-        public Task<bool> Exists(ulong id)
+        public Task<bool> ExistsAsync(ulong id)
         {
-            return Task.FromResult(CybermancyDb.Set<T>().Any(x => x.Id == id));
+            return Task.FromResult(this.CybermancyDb.Set<T>().Any(x => x.Id == id));
         }
 
-        public virtual async Task<T> GetByIdAsync(ulong id)
+        public virtual ValueTask<T> GetByIdAsync(ulong id)
         {
-            return await CybermancyDb.Set<T>().FindAsync(id);
+            return this.CybermancyDb.Set<T>().FindAsync(id);
         }
     }
 }

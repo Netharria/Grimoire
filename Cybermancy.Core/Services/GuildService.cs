@@ -1,86 +1,107 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Cybermancy.Core.Contracts.Persistence;
-using Cybermancy.Core.Contracts.Services;
-using Cybermancy.Domain;
-using DSharpPlus.Entities;
+// -----------------------------------------------------------------------
+// <copyright file="GuildService.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Core.Services
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Cybermancy.Core.Contracts.Persistence;
+    using Cybermancy.Core.Contracts.Services;
+    using Cybermancy.Domain;
+    using DSharpPlus.Entities;
+
     public class GuildService : IGuildService
     {
-        private readonly IAsyncIdRepository<Guild> _guildRepository;
-        private readonly IAsyncRepository<GuildLevelSettings> _guildLevelRepository;
-        private readonly IAsyncRepository<GuildModerationSettings> _guildModerationRepository;
-        private readonly IAsyncRepository<GuildLogSettings> _guildLogRepository;
+        private readonly IAsyncIdRepository<Guild> guildRepository;
+        private readonly IAsyncRepository<GuildLevelSettings> guildLevelRepository;
+        private readonly IAsyncRepository<GuildModerationSettings> guildModerationRepository;
+        private readonly IAsyncRepository<GuildLogSettings> guildLogRepository;
 
-        public GuildService(IAsyncIdRepository<Guild> guildRepository, IAsyncRepository<GuildLevelSettings> guildLevelRepository, 
-            IAsyncRepository<GuildModerationSettings> guildModerationRepository, IAsyncRepository<GuildLogSettings> guildLogRepository)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GuildService"/> class.
+        /// </summary>
+        /// <param name="guildRepository"></param>
+        /// <param name="guildLevelRepository"></param>
+        /// <param name="guildModerationRepository"></param>
+        /// <param name="guildLogRepository"></param>
+        public GuildService(
+            IAsyncIdRepository<Guild> guildRepository,
+            IAsyncRepository<GuildLevelSettings> guildLevelRepository,
+            IAsyncRepository<GuildModerationSettings> guildModerationRepository,
+            IAsyncRepository<GuildLogSettings> guildLogRepository)
         {
-            _guildRepository = guildRepository;
-            _guildLevelRepository = guildLevelRepository;
-            _guildModerationRepository = guildModerationRepository;
-            _guildLogRepository = guildLogRepository;
-        }
-        public async Task<Guild> GetGuild(DiscordGuild guild)
-        {
-            if (await _guildRepository.Exists(guild.Id)) return await _guildRepository.GetByIdAsync(guild.Id);
-            await _guildRepository.AddAsync(new Guild()
-            {
-                Id = guild.Id
-            });
-            await _guildLevelRepository.AddAsync(new GuildLevelSettings()
-            {
-                GuildId = guild.Id
-            });
-            await _guildLogRepository.AddAsync(new GuildLogSettings()
-            {
-                GuildId = guild.Id
-            });
-            await _guildModerationRepository.AddAsync(new GuildModerationSettings()
-            {
-                GuildId = guild.Id
-            });
-
-            return await _guildRepository.GetByIdAsync(guild.Id);
+            this.guildRepository = guildRepository;
+            this.guildLevelRepository = guildLevelRepository;
+            this.guildModerationRepository = guildModerationRepository;
+            this.guildLogRepository = guildLogRepository;
         }
 
-        public async Task<Guild> GetGuild(ulong guildId)
+        public async ValueTask<Guild> GetGuildAsync(DiscordGuild guild)
         {
-            return await _guildRepository.GetByIdAsync(guildId);
+            if (await this.guildRepository.ExistsAsync(guild.Id)) return await this.guildRepository.GetByIdAsync(guild.Id);
+            await this.guildRepository.AddAsync(new Guild()
+            {
+                Id = guild.Id,
+            });
+            await this.guildLevelRepository.AddAsync(new GuildLevelSettings()
+            {
+                GuildId = guild.Id,
+            });
+            await this.guildLogRepository.AddAsync(new GuildLogSettings()
+            {
+                GuildId = guild.Id,
+            });
+            await this.guildModerationRepository.AddAsync(new GuildModerationSettings()
+            {
+                GuildId = guild.Id,
+            });
+
+            return await this.guildRepository.GetByIdAsync(guild.Id);
         }
 
-        public async Task SetupAllGuild(IEnumerable<DiscordGuild> guilds)
+        public ValueTask<Guild> GetGuildAsync(ulong guildId)
+        {
+            return this.guildRepository.GetByIdAsync(guildId);
+        }
+
+        public async Task SetupAllGuildAsync(IEnumerable<DiscordGuild> guilds)
         {
             var guildsToAdd = new List<Guild>();
             var guildLevelSettingsToAdd = new List<GuildLevelSettings>();
             var guildLogSettingsToAdd = new List<GuildLogSettings>();
             var guildModerationSettingsToAdd = new List<GuildModerationSettings>();
-            foreach(var guild in guilds.Where(x => !_guildRepository.Exists(x.Id).Result))
+            foreach (var guild in guilds)
             {
-                guildsToAdd.Add(new Guild()
+                if (!await this.guildRepository.ExistsAsync(guild.Id))
                 {
-                    Id = guild.Id
-                });
-                guildLevelSettingsToAdd.Add(new GuildLevelSettings()
-                {
-                    GuildId = guild.Id
-                });
-                guildLogSettingsToAdd.Add(new GuildLogSettings()
-                {
-                    GuildId = guild.Id
-                });
-                guildModerationSettingsToAdd.Add(new GuildModerationSettings()
-                {
-                    GuildId = guild.Id
-                });
+                    guildsToAdd.Add(new Guild()
+                    {
+                        Id = guild.Id,
+                    });
+                    guildLevelSettingsToAdd.Add(new GuildLevelSettings()
+                    {
+                        GuildId = guild.Id,
+                    });
+                    guildLogSettingsToAdd.Add(new GuildLogSettings()
+                    {
+                        GuildId = guild.Id,
+                    });
+                    guildModerationSettingsToAdd.Add(new GuildModerationSettings()
+                    {
+                        GuildId = guild.Id,
+                    });
+                }
             }
 
-            await _guildRepository.AddMultipleAsync(guildsToAdd);
-            await _guildLevelRepository.AddMultipleAsync(guildLevelSettingsToAdd);
-            await _guildLogRepository.AddMultipleAsync(guildLogSettingsToAdd);
-            await _guildModerationRepository.AddMultipleAsync(guildModerationSettingsToAdd);
+            await this.guildRepository.AddMultipleAsync(guildsToAdd);
+            await this.guildLevelRepository.AddMultipleAsync(guildLevelSettingsToAdd);
+            await this.guildLogRepository.AddMultipleAsync(guildLogSettingsToAdd);
+            await this.guildModerationRepository.AddMultipleAsync(guildModerationSettingsToAdd);
         }
     }
 }

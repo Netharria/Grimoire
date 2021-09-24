@@ -1,55 +1,68 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Cybermancy.Core.Contracts.Persistence;
-using Microsoft.EntityFrameworkCore;
+﻿// -----------------------------------------------------------------------
+// <copyright file="BaseRepository.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Persistence.Repositories
 {
-    public class BaseRepository<T> : IAsyncRepository<T> where T : class
-    {
-        protected readonly CybermancyDbContext CybermancyDb;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Cybermancy.Core.Contracts.Persistence;
+    using Microsoft.EntityFrameworkCore;
 
+    public class BaseRepository<T> : IAsyncRepository<T>
+        where T : class
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseRepository{T}"/> class.
+        /// </summary>
+        /// <param name="cybermancyDb"></param>
         public BaseRepository(CybermancyDbContext cybermancyDb)
         {
-            CybermancyDb = cybermancyDb;
+            this.CybermancyDb = cybermancyDb;
         }
+
+        protected CybermancyDbContext CybermancyDb { get; }
 
         public async Task<IReadOnlyList<T>> GetAllAsync()
         {
-            return await CybermancyDb.Set<T>().ToListAsync();
+            return await this.CybermancyDb.Set<T>().ToListAsync();
         }
 
         public async Task<T> AddAsync(T entity)
         {
-            await CybermancyDb.Set<T>().AddAsync(entity);
-            await CybermancyDb.SaveChangesAsync();
+            await this.CybermancyDb.Set<T>().AddAsync(entity);
+            await this.CybermancyDb.SaveChangesAsync();
 
             return entity;
         }
+
         public async Task<ICollection<T>> AddMultipleAsync(ICollection<T> entities)
         {
-            await CybermancyDb.Set<T>().AddRangeAsync(entities);
-            await CybermancyDb.SaveChangesAsync();
+            await this.CybermancyDb.Set<T>().AddRangeAsync(entities);
+            await this.CybermancyDb.SaveChangesAsync();
 
             return entities;
         }
 
         public async Task<T> UpdateAsync(T entity)
         {
-            CybermancyDb.Entry(entity).State = EntityState.Modified;
-            await CybermancyDb.SaveChangesAsync();
+            this.CybermancyDb.Entry(entity).State = EntityState.Modified;
+            await this.CybermancyDb.SaveChangesAsync();
             return entity;
         }
 
-        public async Task DeleteAsync(T entity)
+        public Task DeleteAsync(T entity)
         {
-            CybermancyDb.Set<T>().Remove(entity);
-            await CybermancyDb.SaveChangesAsync();
+            this.CybermancyDb.Set<T>().Remove(entity);
+            return this.CybermancyDb.SaveChangesAsync();
         }
 
-        public async Task<T> GetByPrimaryKey(params object[] keys)
+        public ValueTask<T> GetByPrimaryKeyAsync(params object[] keys)
         {
-            return await CybermancyDb.Set<T>().FindAsync(keys);
+            return this.CybermancyDb.Set<T>().FindAsync(keys);
         }
     }
 }

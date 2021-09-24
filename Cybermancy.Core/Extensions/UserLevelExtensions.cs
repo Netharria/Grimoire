@@ -1,8 +1,15 @@
-using System;
-using Cybermancy.Domain;
+// -----------------------------------------------------------------------
+// <copyright file="UserLevelExtensions.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Core.Extensions
 {
+    using System;
+    using Cybermancy.Domain;
+
     public static class UserLevelExtensions
     {
         public static int GetLevel(this UserLevel userLevel)
@@ -11,9 +18,8 @@ namespace Cybermancy.Core.Extensions
             while (true)
             {
                 var xpNeeded = userLevel.Guild.LevelSettings.Base + (
-                    (int)Math.Round(userLevel.Guild.LevelSettings.Base * 
-                                    (userLevel.Guild.LevelSettings.Modifier / 100.0) * i) * i
-                );
+                    (int)Math.Round(userLevel.Guild.LevelSettings.Base *
+                                    (userLevel.Guild.LevelSettings.Modifier / 100.0) * i) * i);
                 if (userLevel.Xp < xpNeeded)
                 {
                     return i + 1;
@@ -30,7 +36,7 @@ namespace Cybermancy.Core.Extensions
             {
                 0 => userLevel.Guild.LevelSettings.Base,
                 < 0 => 0,
-                _ => userLevel.Guild.LevelSettings.Base + ((int) Math.Round(userLevel.Guild.LevelSettings.Base *
+                _ => userLevel.Guild.LevelSettings.Base + ((int)Math.Round(userLevel.Guild.LevelSettings.Base *
                                                                              (userLevel.Guild.LevelSettings.Modifier /
                                                                               100.0) * level) * level)
             };

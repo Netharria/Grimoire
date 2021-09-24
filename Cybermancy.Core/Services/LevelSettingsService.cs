@@ -1,44 +1,67 @@
-using System;
-using System.Threading.Tasks;
-using Cybermancy.Core.Contracts.Persistence;
-using Cybermancy.Core.Contracts.Services;
-using Cybermancy.Core.Enums;
-using Cybermancy.Core.Utilities;
-using Cybermancy.Domain;
-using DSharpPlus.Entities;
-using Nefarius.DSharpPlus.Extensions.Hosting;
+// -----------------------------------------------------------------------
+// <copyright file="LevelSettingsService.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Core.Services
 {
+    using System;
+    using System.Threading.Tasks;
+    using Cybermancy.Core.Contracts.Persistence;
+    using Cybermancy.Core.Contracts.Services;
+    using Cybermancy.Core.Enums;
+    using Cybermancy.Core.Utilities;
+    using Cybermancy.Domain;
+    using DSharpPlus.Entities;
+    using Nefarius.DSharpPlus.Extensions.Hosting;
+
     public class LevelSettingsService : ILevelSettingsService
     {
-        private readonly IAsyncRepository<GuildLevelSettings> _guildLevelSettingsRepository;
-        private readonly IAsyncIdRepository<Guild> _guildRepository;
-        private readonly IDiscordClientService _discordClientService;
+        private readonly IAsyncRepository<GuildLevelSettings> guildLevelSettingsRepository;
+        private readonly IAsyncIdRepository<Guild> guildRepository;
+        private readonly IDiscordClientService discordClientService;
 
-        public LevelSettingsService(IAsyncRepository<GuildLevelSettings> guildLevelSettingsRepository,
-            IAsyncIdRepository<Guild> guildRepository, IDiscordClientService discordClientService)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LevelSettingsService"/> class.
+        /// </summary>
+        /// <param name="guildLevelSettingsRepository"></param>
+        /// <param name="guildRepository"></param>
+        /// <param name="discordClientService"></param>
+        public LevelSettingsService(
+            IAsyncRepository<GuildLevelSettings> guildLevelSettingsRepository,
+            IAsyncIdRepository<Guild> guildRepository,
+            IDiscordClientService discordClientService)
         {
-            _guildLevelSettingsRepository = guildLevelSettingsRepository;
-            _guildRepository = guildRepository;
-            _discordClientService = discordClientService;
+            this.guildLevelSettingsRepository = guildLevelSettingsRepository;
+            this.guildRepository = guildRepository;
+            this.discordClientService = discordClientService;
         }
 
-        public async Task SendLevelingLog(ulong guildId, CybermancyColor color, string message = null, string title = null,
-            string footer = null, DiscordEmbed embed = null, DateTime? timeStamp = null)
+        public async Task SendLevelingLogAsync(
+            ulong guildId,
+            CybermancyColor color,
+            string message = null,
+            string title = null,
+            string footer = null,
+            DiscordEmbed embed = null,
+            DateTime? timeStamp = null)
         {
-            var guild = await _guildRepository.GetByIdAsync(guildId);
+            var guild = await this.guildRepository.GetByIdAsync(guildId);
             if (guild.LevelSettings.LevelChannelLog is null) return;
             DiscordChannel channel = null;
             try
             {
-                channel = await _discordClientService.Client.GetChannelAsync(guild.LevelSettings.LevelChannelLog.Value);
+                channel = await this.discordClientService.Client.GetChannelAsync(guild.LevelSettings.LevelChannelLog.Value);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
             }
-            if (channel is null) return;
+
+            if (channel is null)
+                return;
             timeStamp ??= DateTime.UtcNow;
             embed ??= new DiscordEmbedBuilder()
                 .WithColor(ColorUtility.GetColor(color))
@@ -50,29 +73,27 @@ namespace Cybermancy.Core.Services
             try
             {
                 await channel.SendMessageAsync(embed);
-
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
             }
-
         }
 
-        public async Task<GuildLevelSettings> Update(GuildLevelSettings guildLevelSettings)
+        public Task<GuildLevelSettings> UpdateAsync(GuildLevelSettings guildLevelSettings)
         {
-            return await _guildLevelSettingsRepository.UpdateAsync(guildLevelSettings);
+            return this.guildLevelSettingsRepository.UpdateAsync(guildLevelSettings);
         }
 
-        public async Task<bool> IsLevelingEnabled(ulong guildId)
+        public async Task<bool> IsLevelingEnabledAsync(ulong guildId)
         {
-            var guildLevelSettings = await _guildLevelSettingsRepository.GetByPrimaryKey(guildId);
+            var guildLevelSettings = await this.guildLevelSettingsRepository.GetByPrimaryKeyAsync(guildId);
             return guildLevelSettings.IsLevelingEnabled;
         }
 
-        public async Task<GuildLevelSettings> GetGuild(ulong guildId)
+        public ValueTask<GuildLevelSettings> GetGuildAsync(ulong guildId)
         {
-            return await _guildLevelSettingsRepository.GetByPrimaryKey(guildId);
+            return this.guildLevelSettingsRepository.GetByPrimaryKeyAsync(guildId);
         }
     }
 }

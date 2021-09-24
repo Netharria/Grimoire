@@ -1,32 +1,44 @@
-﻿using Cybermancy.Core.Contracts.Services;
-using DSharpPlus;
-using DSharpPlus.EventArgs;
-using Nefarius.DSharpPlus.Extensions.Hosting.Attributes;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
-using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+// <copyright file="SharedManagementModule.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Core
 {
+    using System.Threading.Tasks;
+    using Cybermancy.Core.Contracts.Services;
+    using DSharpPlus;
+    using DSharpPlus.EventArgs;
+    using Nefarius.DSharpPlus.Extensions.Hosting.Attributes;
+    using Nefarius.DSharpPlus.Extensions.Hosting.Events;
+
     [DiscordWebSocketEventSubscriber]
     public class SharedManagementModule : IDiscordWebSocketEventSubscriber
     {
-        private readonly IGuildService _guildService;
-        private readonly IRoleService _roleService;
-        private readonly IChannelService _channelService;
+        private readonly IGuildService guildService;
+        private readonly IRoleService roleService;
+        private readonly IChannelService channelService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
+        /// </summary>
+        /// <param name="guildService"></param>
+        /// <param name="roleService"></param>
+        /// <param name="channelService"></param>
         public SharedManagementModule(IGuildService guildService, IRoleService roleService, IChannelService channelService)
         {
-            _guildService = guildService;
-            _roleService = roleService;
-            _channelService = channelService;
+            this.guildService = guildService;
+            this.roleService = roleService;
+            this.channelService = channelService;
         }
 
-        public Task DiscordOnReady(DiscordClient sender, ReadyEventArgs args)
+        public async Task DiscordOnReady(DiscordClient sender, ReadyEventArgs args)
         {
-            Task.Run(() =>  _guildService.SetupAllGuild(sender.Guilds.Values));
-            Task.Run(() => _roleService.SetupAllRoles(sender.Guilds.Values));
-            Task.Run(() => _channelService.SetupAllChannels(sender.Guilds.Values));
-            return Task.CompletedTask;
+            await Task.Run(() => this.guildService.SetupAllGuildAsync(sender.Guilds.Values));
+            await Task.Run(() => this.roleService.SetupAllRolesAsync(sender.Guilds.Values));
+            await Task.Run(() => this.channelService.SetupAllChannelsAsync(sender.Guilds.Values));
         }
 
         #region UnusedEvents
@@ -35,7 +47,6 @@ namespace Cybermancy.Core
         {
             return Task.CompletedTask;
         }
-
 
         public Task DiscordOnResumed(DiscordClient sender, ReadyEventArgs args)
         {

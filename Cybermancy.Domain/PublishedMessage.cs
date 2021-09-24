@@ -1,18 +1,28 @@
-﻿using Cybermancy.Domain.Shared;
+﻿// -----------------------------------------------------------------------
+// <copyright file="PublishedMessage.cs" company="Netharia">
+// Copyright (c) Netharia. All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Cybermancy.Domain
 {
+    using Cybermancy.Domain.Shared;
+
     public enum PublishType
     {
         Ban,
-        Unban
+        Unban,
     }
 
     public class PublishedMessage
     {
         public ulong MessageId { get; set; }
+
         public ulong SinId { get; set; }
+
         public virtual Sin Sin { get; set; }
+
         public PublishType PublishType { get; set; }
     }
 }
