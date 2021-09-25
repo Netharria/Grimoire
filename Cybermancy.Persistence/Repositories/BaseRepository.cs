@@ -5,13 +5,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 namespace Cybermancy.Persistence.Repositories
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Microsoft.EntityFrameworkCore;
-
     public class BaseRepository<T> : IAsyncRepository<T>
         where T : class
     {
@@ -26,10 +26,7 @@ namespace Cybermancy.Persistence.Repositories
 
         protected CybermancyDbContext CybermancyDb { get; }
 
-        public async Task<IReadOnlyList<T>> GetAllAsync()
-        {
-            return await this.CybermancyDb.Set<T>().ToListAsync();
-        }
+        public async Task<IReadOnlyList<T>> GetAllAsync() => await this.CybermancyDb.Set<T>().ToListAsync();
 
         public async Task<T> AddAsync(T entity)
         {
@@ -60,9 +57,6 @@ namespace Cybermancy.Persistence.Repositories
             return this.CybermancyDb.SaveChangesAsync();
         }
 
-        public ValueTask<T> GetByPrimaryKeyAsync(params object[] keys)
-        {
-            return this.CybermancyDb.Set<T>().FindAsync(keys);
-        }
+        public ValueTask<T> GetByPrimaryKeyAsync(params object[] keys) => this.CybermancyDb.Set<T>().FindAsync(keys);
     }
 }

@@ -5,11 +5,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Core.Extensions
 {
-    using System;
-    using Cybermancy.Domain;
-
     public static class RewardExtension
     {
         public static int GetXpNeeded(this Reward reward)

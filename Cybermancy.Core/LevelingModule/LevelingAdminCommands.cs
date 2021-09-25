@@ -1,30 +1,30 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="LevelingAdminCommands.cs" company="Netharia">
 // Copyright (c) Netharia. All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Core.Enums;
+using Cybermancy.Core.Extensions;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
+
 namespace Cybermancy.Core.LevelingModule
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Core.Enums;
-    using Cybermancy.Core.Extensions;
-    using DSharpPlus;
-    using DSharpPlus.Entities;
-    using DSharpPlus.SlashCommands;
-    using DSharpPlus.SlashCommands.Attributes;
-
     [SlashRequireGuild]
     [SlashRequireUserPermissions(Permissions.ManageMessages)]
     public class LevelingAdminCommands : ApplicationCommandModule
     {
-        private readonly IUserLevelService userLevelService;
-        private readonly IChannelService channelService;
-        private readonly IRoleService roleService;
+        private readonly IUserLevelService _userLevelService;
+        private readonly IChannelService _channelService;
+        private readonly IRoleService _roleService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LevelingAdminCommands"/> class.
@@ -34,9 +34,9 @@ namespace Cybermancy.Core.LevelingModule
         /// <param name="roleService"></param>
         public LevelingAdminCommands(IUserLevelService userLevelService, IChannelService channelService, IRoleService roleService)
         {
-            this.userLevelService = userLevelService;
-            this.channelService = channelService;
-            this.roleService = roleService;
+            this._userLevelService = userLevelService;
+            this._channelService = channelService;
+            this._roleService = roleService;
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Cybermancy.Core.LevelingModule
                 return;
             }
 
-            var userLevel = await this.userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
+            var userLevel = await this._userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
             if (userLevel is null)
             {
                 await ctx.ReplyAsync(CybermancyColor.Orange, message: $"{user.Mention} was not found. Have they been on the server before?");
@@ -63,7 +63,7 @@ namespace Cybermancy.Core.LevelingModule
             }
 
             userLevel.GrantXp(amount);
-            await this.userLevelService.SaveAsync(userLevel);
+            await this._userLevelService.SaveAsync(userLevel);
             await ctx.ReplyAsync(CybermancyColor.Gold, message: $"{user.Mention} has been awarded{amount} xp.");
         }
 
@@ -77,7 +77,7 @@ namespace Cybermancy.Core.LevelingModule
         [SlashCommand("Reclaim", "Takes away xp from user.")]
         public async Task ReclaimAsync(InteractionContext ctx, [Option("User", "User to take xp away from.")] DiscordUser user, [Option("XP", "The amount of xp to Take.")] string amount)
         {
-            var userLevel = await this.userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
+            var userLevel = await this._userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
             if (userLevel is null)
             {
                 await ctx.ReplyAsync(CybermancyColor.Orange, message: $"{user.Mention} was not found. Have they been on the server before?");
@@ -102,7 +102,7 @@ namespace Cybermancy.Core.LevelingModule
             }
 
             userLevel.Xp -= xpToTake;
-            await this.userLevelService.SaveAsync(userLevel);
+            await this._userLevelService.SaveAsync(userLevel);
             await ctx.ReplyAsync(CybermancyColor.Gold, message: $"{amount} xp has been taken from {user.Mention}.");
         }
 
@@ -117,7 +117,7 @@ namespace Cybermancy.Core.LevelingModule
         {
             if (snowflake is DiscordUser user)
             {
-                var userLevel = await this.userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
+                var userLevel = await this._userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
                 if (userLevel is null)
                 {
                     await ctx.ReplyAsync(CybermancyColor.Orange, message: $"{user.Mention} was not found. Have they been on the server before?");
@@ -125,13 +125,13 @@ namespace Cybermancy.Core.LevelingModule
                 }
 
                 userLevel.IsXpIgnored = true;
-                await this.userLevelService.SaveAsync(userLevel);
+                await this._userLevelService.SaveAsync(userLevel);
                 await ctx.ReplyAsync(CybermancyColor.Green, message: $"{user.Mention} is now ignored for xp gain.");
             }
 
             if (snowflake is DiscordChannel discordChannel)
             {
-                var channel = await this.channelService.GetChannelAsync(discordChannel);
+                var channel = await this._channelService.GetChannelAsync(discordChannel);
                 if (channel is null)
                 {
                     await ctx.ReplyAsync(CybermancyColor.Orange, message: $"{discordChannel.Mention} was not found.");
@@ -139,13 +139,13 @@ namespace Cybermancy.Core.LevelingModule
                 }
 
                 channel.IsXpIgnored = true;
-                await this.channelService.SaveAsync(channel);
+                await this._channelService.SaveAsync(channel);
                 await ctx.ReplyAsync(CybermancyColor.Green, message: $"{discordChannel.Mention} is now ignored for xp gain.");
             }
 
             if (snowflake is DiscordRole discordRole)
             {
-                var role = await this.roleService.GetRoleAsync(discordRole, ctx.Guild);
+                var role = await this._roleService.GetRoleAsync(discordRole, ctx.Guild);
                 if (role is null)
                 {
                     await ctx.ReplyAsync(CybermancyColor.Orange, message: $"{discordRole.Mention} was not found.");
@@ -153,7 +153,7 @@ namespace Cybermancy.Core.LevelingModule
                 }
 
                 role.IsXpIgnored = true;
-                await this.roleService.SaveAsync(role);
+                await this._roleService.SaveAsync(role);
                 await ctx.ReplyAsync(CybermancyColor.Green, message: $"{discordRole.Mention} is now ignored for xp gain.");
             }
         }
@@ -169,7 +169,7 @@ namespace Cybermancy.Core.LevelingModule
         {
             if (snowflake is DiscordUser user)
             {
-                var userLevel = await this.userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
+                var userLevel = await this._userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
                 if (userLevel is null)
                 {
                     await ctx.ReplyAsync(CybermancyColor.Orange, message: $"{user.Mention} was not found. Have they been on the server before?");
@@ -177,13 +177,13 @@ namespace Cybermancy.Core.LevelingModule
                 }
 
                 userLevel.IsXpIgnored = false;
-                await this.userLevelService.SaveAsync(userLevel);
+                await this._userLevelService.SaveAsync(userLevel);
                 await ctx.ReplyAsync(CybermancyColor.Green, message: $"{ctx.Guild.CurrentMember.DisplayName} is now watching {user.Mention} for xp again.");
             }
 
             if (snowflake is DiscordChannel discordChannel)
             {
-                var channel = await this.channelService.GetChannelAsync(discordChannel);
+                var channel = await this._channelService.GetChannelAsync(discordChannel);
                 if (channel is null)
                 {
                     await ctx.ReplyAsync(CybermancyColor.Orange, message: $"{discordChannel.Mention} was not found.");
@@ -191,13 +191,13 @@ namespace Cybermancy.Core.LevelingModule
                 }
 
                 channel.IsXpIgnored = false;
-                await this.channelService.SaveAsync(channel);
+                await this._channelService.SaveAsync(channel);
                 await ctx.ReplyAsync(CybermancyColor.Green, message: $"{ctx.Guild.CurrentMember.DisplayName} is now watching {discordChannel.Mention} for xp again.");
             }
 
             if (snowflake is DiscordRole discordRole)
             {
-                var role = await this.roleService.GetRoleAsync(discordRole, ctx.Guild);
+                var role = await this._roleService.GetRoleAsync(discordRole, ctx.Guild);
                 if (role is null)
                 {
                     await ctx.ReplyAsync(CybermancyColor.Orange, message: $"{discordRole.Mention} was not found.");
@@ -205,7 +205,7 @@ namespace Cybermancy.Core.LevelingModule
                 }
 
                 role.IsXpIgnored = false;
-                await this.roleService.SaveAsync(role);
+                await this._roleService.SaveAsync(role);
                 await ctx.ReplyAsync(CybermancyColor.Green, message: $"{ctx.Guild.CurrentMember.DisplayName} is now watching {discordRole.Mention} for xp again.");
             }
         }

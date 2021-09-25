@@ -5,10 +5,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Domain
 {
-    using Cybermancy.Domain.Shared;
-
     public class Role : Identifiable, IXpIgnore
     {
         public ulong GuildId { get; set; }

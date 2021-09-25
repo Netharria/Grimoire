@@ -5,12 +5,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
+
 namespace Cybermancy.Persistence.Migrations
 {
-    using System;
-    using Microsoft.EntityFrameworkCore.Metadata;
-    using Microsoft.EntityFrameworkCore.Migrations;
-
     public partial class Init : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

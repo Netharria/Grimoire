@@ -5,11 +5,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Cybermancy.Domain;
+using Microsoft.EntityFrameworkCore;
+
 namespace Cybermancy.Persistence
 {
-    using Cybermancy.Domain;
-    using Microsoft.EntityFrameworkCore;
-
     public class CybermancyDbContext : DbContext
     {
         /// <summary>
@@ -55,9 +55,6 @@ namespace Cybermancy.Persistence
 
         public DbSet<UserLevel> UserLevels { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
-        }
+        protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
     }
 }

@@ -1,28 +1,28 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="LevelCommands.cs" company="Netharia">
 // Copyright (c) Netharia. All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Core.Enums;
+using Cybermancy.Core.Extensions;
+using Cybermancy.Core.Services;
+using Cybermancy.Domain;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
+
 namespace Cybermancy.Core.LevelingModule
 {
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Core.Enums;
-    using Cybermancy.Core.Extensions;
-    using Cybermancy.Core.Services;
-    using Cybermancy.Domain;
-    using DSharpPlus;
-    using DSharpPlus.Entities;
-    using DSharpPlus.SlashCommands;
-    using DSharpPlus.SlashCommands.Attributes;
-
     [SlashRequireGuild]
     public class LevelCommands : ApplicationCommandModule
     {
-        private readonly IUserLevelService userLevelService;
-        private readonly IRewardService rewardService;
+        private readonly IUserLevelService _userLevelService;
+        private readonly IRewardService _rewardService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LevelCommands"/> class.
@@ -31,8 +31,8 @@ namespace Cybermancy.Core.LevelingModule
         /// <param name="rewardService"></param>
         public LevelCommands(IUserLevelService userLevelService, IRewardService rewardService)
         {
-            this.userLevelService = userLevelService;
-            this.rewardService = rewardService;
+            this._userLevelService = userLevelService;
+            this._rewardService = rewardService;
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Cybermancy.Core.LevelingModule
             [Option("user", "User to get details from. Blank will return your info.")] DiscordUser user = null)
         {
             user ??= ctx.User;
-            var userLevel = await this.userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
+            var userLevel = await this._userLevelService.GetUserLevelAsync(user.Id, ctx.Guild.Id);
             if (userLevel is null)
             {
                 await ctx.ReplyAsync(CybermancyColor.Orange, message: "That user could not be found.");
@@ -56,7 +56,7 @@ namespace Cybermancy.Core.LevelingModule
 
             if (user is not DiscordMember member) return;
             var level = userLevel.GetLevel();
-            var rewards = await this.rewardService.GetAllGuildRewardsAsync(ctx.Guild.Id);
+            var rewards = await this._rewardService.GetAllGuildRewardsAsync(ctx.Guild.Id);
             Reward nextReward = null;
             foreach (var reward in rewards)
             {

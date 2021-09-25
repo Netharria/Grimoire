@@ -5,16 +5,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Linq;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Core.Extensions
 {
-    using System.Linq;
-    using Cybermancy.Domain;
-
     public static class UserExtensions
     {
-        public static UserLevel GetUserLevel(this User user, ulong guildId)
-        {
-            return user.UserLevels.FirstOrDefault(x => x.GuildId == guildId);
-        }
+        public static UserLevel GetUserLevel(this User user, ulong guildId) => user.UserLevels.FirstOrDefault(x => x.GuildId == guildId);
     }
 }

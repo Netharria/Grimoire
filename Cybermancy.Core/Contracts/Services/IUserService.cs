@@ -5,12 +5,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading.Tasks;
+using Cybermancy.Domain;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Contracts.Services
 {
-    using System.Threading.Tasks;
-    using Cybermancy.Domain;
-    using DSharpPlus.Entities;
-
     public interface IUserService
     {
         // Task<bool> IsUserIgnored(DiscordMember member);

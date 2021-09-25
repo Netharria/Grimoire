@@ -5,12 +5,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Core.Contracts.Persistence
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Cybermancy.Domain;
-
     public interface IUserLevelRepository : IAsyncRepository<UserLevel>
     {
         /// <summary>

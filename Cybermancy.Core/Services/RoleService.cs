@@ -5,22 +5,22 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Domain;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Services
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Domain;
-    using DSharpPlus.Entities;
-
     /// <summary>
     /// Service class that manages different role interactions.
     /// </summary>
     public class RoleService : IRoleService
     {
-        private readonly IAsyncIdRepository<Role> roleRepository;
+        private readonly IAsyncIdRepository<Role> _roleRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RoleService"/> class.
@@ -28,7 +28,7 @@ namespace Cybermancy.Core.Services
         /// <param name="roleRepository">The role repository. This should be dependancy injected.</param>
         public RoleService(IAsyncIdRepository<Role> roleRepository)
         {
-            this.roleRepository = roleRepository;
+            this._roleRepository = roleRepository;
         }
 
         /// <inheritdoc/>
@@ -46,15 +46,15 @@ namespace Cybermancy.Core.Services
         /// <inheritdoc/>
         public async Task<Role> SaveAsync(Role role)
         {
-            if (await this.roleRepository.ExistsAsync(role.Id))
-                return await this.roleRepository.UpdateAsync(role);
-            return await this.roleRepository.AddAsync(role);
+            if (await this._roleRepository.ExistsAsync(role.Id))
+                return await this._roleRepository.UpdateAsync(role);
+            return await this._roleRepository.AddAsync(role);
         }
 
         /// <inheritdoc/>
         public async ValueTask<Role> GetRoleAsync(DiscordRole role, DiscordGuild guild)
         {
-            if (await this.roleRepository.ExistsAsync(role.Id)) return await this.roleRepository.GetByIdAsync(role.Id);
+            if (await this._roleRepository.ExistsAsync(role.Id)) return await this._roleRepository.GetByIdAsync(role.Id);
             var newRole = new Role()
             {
                 GuildId = guild.Id,
@@ -64,10 +64,7 @@ namespace Cybermancy.Core.Services
         }
 
         /// <inheritdoc/>
-        public ValueTask<Role> GetRoleAsync(ulong roleId)
-        {
-            return this.roleRepository.GetByIdAsync(roleId);
-        }
+        public ValueTask<Role> GetRoleAsync(ulong roleId) => this._roleRepository.GetByIdAsync(roleId);
 
         /// <inheritdoc/>
         public Task SetupAllRolesAsync(IEnumerable<DiscordGuild> guilds)
@@ -75,7 +72,7 @@ namespace Cybermancy.Core.Services
             var newRoles = new List<Role>();
             foreach (var guild in guilds)
             {
-                foreach (var role in guild.Roles.Values.Where(x => !this.roleRepository.ExistsAsync(x.Id).Result))
+                foreach (var role in guild.Roles.Values.Where(x => !this._roleRepository.ExistsAsync(x.Id).Result))
                 {
                     newRoles.Add(new Role()
                     {
@@ -85,13 +82,10 @@ namespace Cybermancy.Core.Services
                 }
             }
 
-            return this.roleRepository.AddMultipleAsync(newRoles);
+            return this._roleRepository.AddMultipleAsync(newRoles);
         }
 
         /// <inheritdoc/>
-        public Task<ICollection<Role>> GetAllIgnoredRolesAsync(ulong guildId)
-        {
-            throw new System.NotImplementedException();
-        }
+        public Task<ICollection<Role>> GetAllIgnoredRolesAsync(ulong guildId) => throw new System.NotImplementedException();
     }
 }

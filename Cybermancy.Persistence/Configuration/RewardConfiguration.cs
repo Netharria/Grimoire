@@ -5,13 +5,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Diagnostics.CodeAnalysis;
+using Cybermancy.Domain;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace Cybermancy.Persistence.Configuration
 {
-    using System.Diagnostics.CodeAnalysis;
-    using Cybermancy.Domain;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
     [ExcludeFromCodeCoverage]
     public class RewardConfiguration : IEntityTypeConfiguration<Reward>
     {

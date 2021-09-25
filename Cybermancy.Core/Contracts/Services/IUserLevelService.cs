@@ -5,12 +5,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Core.Contracts.Services
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Cybermancy.Domain;
-
     /// <summary>
     /// Manages calls for getting and saving <see cref="UserLevel" />.
     /// </summary>

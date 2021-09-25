@@ -5,13 +5,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Linq;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Persistence.Repositories
 {
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Domain.Shared;
-
     public class BaseIdRepository<T> : BaseRepository<T>, IAsyncIdRepository<T>
         where T : Identifiable
     {
@@ -24,14 +24,8 @@ namespace Cybermancy.Persistence.Repositories
         {
         }
 
-        public Task<bool> ExistsAsync(ulong id)
-        {
-            return Task.FromResult(this.CybermancyDb.Set<T>().Any(x => x.Id == id));
-        }
+        public Task<bool> ExistsAsync(ulong id) => Task.FromResult(this.CybermancyDb.Set<T>().Any(x => x.Id == id));
 
-        public virtual ValueTask<T> GetByIdAsync(ulong id)
-        {
-            return this.CybermancyDb.Set<T>().FindAsync(id);
-        }
+        public virtual ValueTask<T> GetByIdAsync(ulong id) => this.CybermancyDb.Set<T>().FindAsync(id);
     }
 }

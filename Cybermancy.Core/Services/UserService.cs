@@ -5,18 +5,18 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Domain;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Services
 {
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Domain;
-    using DSharpPlus.Entities;
-
     public class UserService : IUserService
     {
-        private readonly IAsyncIdRepository<User> userRepository;
-        private readonly IGuildService guildService;
+        private readonly IAsyncIdRepository<User> _userRepository;
+        private readonly IGuildService _guildService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserService"/> class.
@@ -25,13 +25,13 @@ namespace Cybermancy.Core.Services
         /// <param name="guildService"></param>
         public UserService(IAsyncIdRepository<User> userRepository, IGuildService guildService)
         {
-            this.userRepository = userRepository;
-            this.guildService = guildService;
+            this._userRepository = userRepository;
+            this._guildService = guildService;
         }
 
         public async Task<User> GetUserAsync(DiscordMember member)
         {
-            if (await this.userRepository.ExistsAsync(member.Id)) return await this.userRepository.GetByIdAsync(member.Id);
+            if (await this._userRepository.ExistsAsync(member.Id)) return await this._userRepository.GetByIdAsync(member.Id);
             var newUser = new User()
             {
                 Id = member.Id,
@@ -39,15 +39,15 @@ namespace Cybermancy.Core.Services
                 DisplayName = member.DisplayName,
                 AvatarUrl = member.AvatarUrl,
             };
-            newUser.Guilds.Add(await this.guildService.GetGuildAsync(member.Guild.Id));
+            newUser.Guilds.Add(await this._guildService.GetGuildAsync(member.Guild.Id));
             return await this.SaveAsync(newUser);
         }
 
         public async Task<User> SaveAsync(User user)
         {
-            if (await this.userRepository.ExistsAsync(user.Id))
-                return await this.userRepository.UpdateAsync(user);
-            return await this.userRepository.AddAsync(user);
+            if (await this._userRepository.ExistsAsync(user.Id))
+                return await this._userRepository.UpdateAsync(user);
+            return await this._userRepository.AddAsync(user);
         }
     }
 }

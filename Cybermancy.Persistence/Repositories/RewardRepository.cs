@@ -5,12 +5,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Linq;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Persistence.Repositories
 {
-    using System.Linq;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Domain;
-
     public class RewardRepository : BaseRepository<Reward>, IRewardRepository
     {
         /// <summary>
@@ -22,9 +22,6 @@ namespace Cybermancy.Persistence.Repositories
         {
         }
 
-        public bool Exists(ulong roleId)
-        {
-            return this.CybermancyDb.Rewards.Any(x => x.RoleId == roleId);
-        }
+        public bool Exists(ulong roleId) => this.CybermancyDb.Rewards.Any(x => x.RoleId == roleId);
     }
 }

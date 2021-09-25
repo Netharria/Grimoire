@@ -5,13 +5,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cybermancy.Domain;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Contracts.Services
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Cybermancy.Domain;
-    using DSharpPlus.Entities;
-
     public interface IRewardService
     {
         // Task<Reward> GetAllGuildRewards(ulong guildId);

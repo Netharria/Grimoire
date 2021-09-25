@@ -1,28 +1,28 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="LeaderboardCommands.cs" company="Netharia">
 // Copyright (c) Netharia. All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Core.Enums;
+using Cybermancy.Core.Extensions;
+using Cybermancy.Domain;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
+
 namespace Cybermancy.Core.LevelingModule
 {
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Core.Enums;
-    using Cybermancy.Core.Extensions;
-    using Cybermancy.Domain;
-    using DSharpPlus;
-    using DSharpPlus.Entities;
-    using DSharpPlus.Interactivity.Enums;
-    using DSharpPlus.Interactivity.Extensions;
-    using DSharpPlus.SlashCommands;
-    using DSharpPlus.SlashCommands.Attributes;
-
     /// <summary>
     /// Slash Commands for leaderboard commands.
     /// </summary>
@@ -30,7 +30,7 @@ namespace Cybermancy.Core.LevelingModule
     [SlashRequireGuild]
     public class LeaderboardCommands : ApplicationCommandModule
     {
-        private readonly IUserLevelService userLevelService;
+        private readonly IUserLevelService _userLevelService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LeaderboardCommands"/> class.
@@ -38,7 +38,7 @@ namespace Cybermancy.Core.LevelingModule
         /// <param name="userLevelService">The service for managing getting the <see cref="UserLevel"/> from the database.</param>
         public LeaderboardCommands(IUserLevelService userLevelService)
         {
-            this.userLevelService = userLevelService;
+            this._userLevelService = userLevelService;
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Cybermancy.Core.LevelingModule
         [SlashCommand("Me", "Find out where you are on the Leaderboard.")]
         public async Task MeAsync(InteractionContext ctx)
         {
-            var guildRankedUsers = await this.userLevelService.GetRankedUsersAsync(ctx.Guild.Id);
+            var guildRankedUsers = await this._userLevelService.GetRankedUsersAsync(ctx.Guild.Id);
             var requestedUser = guildRankedUsers.FirstOrDefault(x => x.UserId == ctx.User.Id);
             if (requestedUser is null)
             {
@@ -89,7 +89,7 @@ namespace Cybermancy.Core.LevelingModule
         [SlashCommand("User", "Find out where someone are on the Leaderboard.")]
         public async Task UserAsync(InteractionContext ctx, [Option("User", "User to find on the leaderboard")] DiscordUser user)
         {
-            var guildRankedUsers = await this.userLevelService.GetRankedUsersAsync(ctx.Guild.Id);
+            var guildRankedUsers = await this._userLevelService.GetRankedUsersAsync(ctx.Guild.Id);
             var requestedUser = guildRankedUsers.FirstOrDefault(x => x.UserId == user.Id);
             if (requestedUser is null)
             {
@@ -128,7 +128,7 @@ namespace Cybermancy.Core.LevelingModule
         [SlashCommand("All", "Get the top xp earners for the server.")]
         public async Task AllAsync(InteractionContext ctx)
         {
-            var guildRankedUsers = await this.userLevelService.GetRankedUsersAsync(ctx.Guild.Id);
+            var guildRankedUsers = await this._userLevelService.GetRankedUsersAsync(ctx.Guild.Id);
             var leaderboardText = await BuildLeaderboardTextAsync(ctx, guildRankedUsers);
             var interactivity = ctx.Client.GetInteractivity();
             var embed = new DiscordEmbedBuilder()

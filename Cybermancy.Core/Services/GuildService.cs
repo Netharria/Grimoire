@@ -5,22 +5,22 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Domain;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Services
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Domain;
-    using DSharpPlus.Entities;
-
     public class GuildService : IGuildService
     {
-        private readonly IAsyncIdRepository<Guild> guildRepository;
-        private readonly IAsyncRepository<GuildLevelSettings> guildLevelRepository;
-        private readonly IAsyncRepository<GuildModerationSettings> guildModerationRepository;
-        private readonly IAsyncRepository<GuildLogSettings> guildLogRepository;
+        private readonly IAsyncIdRepository<Guild> _guildRepository;
+        private readonly IAsyncRepository<GuildLevelSettings> _guildLevelRepository;
+        private readonly IAsyncRepository<GuildModerationSettings> _guildModerationRepository;
+        private readonly IAsyncRepository<GuildLogSettings> _guildLogRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GuildService"/> class.
@@ -35,39 +35,36 @@ namespace Cybermancy.Core.Services
             IAsyncRepository<GuildModerationSettings> guildModerationRepository,
             IAsyncRepository<GuildLogSettings> guildLogRepository)
         {
-            this.guildRepository = guildRepository;
-            this.guildLevelRepository = guildLevelRepository;
-            this.guildModerationRepository = guildModerationRepository;
-            this.guildLogRepository = guildLogRepository;
+            this._guildRepository = guildRepository;
+            this._guildLevelRepository = guildLevelRepository;
+            this._guildModerationRepository = guildModerationRepository;
+            this._guildLogRepository = guildLogRepository;
         }
 
         public async ValueTask<Guild> GetGuildAsync(DiscordGuild guild)
         {
-            if (await this.guildRepository.ExistsAsync(guild.Id)) return await this.guildRepository.GetByIdAsync(guild.Id);
-            await this.guildRepository.AddAsync(new Guild()
+            if (await this._guildRepository.ExistsAsync(guild.Id)) return await this._guildRepository.GetByIdAsync(guild.Id);
+            await this._guildRepository.AddAsync(new Guild()
             {
                 Id = guild.Id,
             });
-            await this.guildLevelRepository.AddAsync(new GuildLevelSettings()
+            await this._guildLevelRepository.AddAsync(new GuildLevelSettings()
             {
                 GuildId = guild.Id,
             });
-            await this.guildLogRepository.AddAsync(new GuildLogSettings()
+            await this._guildLogRepository.AddAsync(new GuildLogSettings()
             {
                 GuildId = guild.Id,
             });
-            await this.guildModerationRepository.AddAsync(new GuildModerationSettings()
+            await this._guildModerationRepository.AddAsync(new GuildModerationSettings()
             {
                 GuildId = guild.Id,
             });
 
-            return await this.guildRepository.GetByIdAsync(guild.Id);
+            return await this._guildRepository.GetByIdAsync(guild.Id);
         }
 
-        public ValueTask<Guild> GetGuildAsync(ulong guildId)
-        {
-            return this.guildRepository.GetByIdAsync(guildId);
-        }
+        public ValueTask<Guild> GetGuildAsync(ulong guildId) => this._guildRepository.GetByIdAsync(guildId);
 
         public async Task SetupAllGuildAsync(IEnumerable<DiscordGuild> guilds)
         {
@@ -77,7 +74,7 @@ namespace Cybermancy.Core.Services
             var guildModerationSettingsToAdd = new List<GuildModerationSettings>();
             foreach (var guild in guilds)
             {
-                if (!await this.guildRepository.ExistsAsync(guild.Id))
+                if (!await this._guildRepository.ExistsAsync(guild.Id))
                 {
                     guildsToAdd.Add(new Guild()
                     {
@@ -98,10 +95,10 @@ namespace Cybermancy.Core.Services
                 }
             }
 
-            await this.guildRepository.AddMultipleAsync(guildsToAdd);
-            await this.guildLevelRepository.AddMultipleAsync(guildLevelSettingsToAdd);
-            await this.guildLogRepository.AddMultipleAsync(guildLogSettingsToAdd);
-            await this.guildModerationRepository.AddMultipleAsync(guildModerationSettingsToAdd);
+            await this._guildRepository.AddMultipleAsync(guildsToAdd);
+            await this._guildLevelRepository.AddMultipleAsync(guildLevelSettingsToAdd);
+            await this._guildLogRepository.AddMultipleAsync(guildLogSettingsToAdd);
+            await this._guildModerationRepository.AddMultipleAsync(guildModerationSettingsToAdd);
         }
     }
 }

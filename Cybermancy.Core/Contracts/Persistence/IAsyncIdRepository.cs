@@ -5,11 +5,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading.Tasks;
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Core.Contracts.Persistence
 {
-    using System.Threading.Tasks;
-    using Cybermancy.Domain.Shared;
-
     public interface IAsyncIdRepository<T> : IAsyncRepository<T>
         where T : Identifiable
     {

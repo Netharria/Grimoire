@@ -1,19 +1,19 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Netharia">
 // Copyright (c) Netharia. All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.IO;
+using Cybermancy.Core;
+using Cybermancy.Persistence;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
 namespace Cybermancy
 {
-    using System.IO;
-    using Cybermancy.Core;
-    using Cybermancy.Persistence;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Hosting;
-    using Microsoft.Extensions.Logging;
-
     /// <summary>
     /// The startup class for Cybermancy.
     /// </summary>
@@ -45,17 +45,12 @@ namespace Cybermancy
                         .Build();
                     x.AddConfiguration(configuration);
                 })
-                .ConfigureLogging((context, x) =>
-                {
-                    x.AddConsole();
-                    x.AddConfiguration(context.Configuration);
-                })
-                .ConfigureServices((context, services) =>
-                {
-                    services
+                .ConfigureLogging((context, x) => x
+                .AddConsole()
+                .AddConfiguration(context.Configuration))
+                .ConfigureServices((context, services) => services
                         .AddPersistenceServices(context.Configuration)
-                        .AddCoreServices(context.Configuration);
-                })
+                        .AddCoreServices(context.Configuration))
                 .UseConsoleLifetime();
         }
     }

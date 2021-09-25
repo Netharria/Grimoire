@@ -5,11 +5,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Domain
 {
-    using System;
-    using Cybermancy.Domain.Shared;
-
     public class OldLogMessage : Identifiable
     {
         public ulong ChannelId { get; set; }

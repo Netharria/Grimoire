@@ -5,11 +5,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace Cybermancy.Core.Contracts.Persistence
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-
     public interface IAsyncRepository<T>
         where T : class
     {

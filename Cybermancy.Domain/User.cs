@@ -5,11 +5,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Domain
 {
-    using System.Collections.Generic;
-    using Cybermancy.Domain.Shared;
-
     public class User : Identifiable
     {
         public string UserName { get; set; }

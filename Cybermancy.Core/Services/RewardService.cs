@@ -5,22 +5,22 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Domain;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Domain;
-    using DSharpPlus.Entities;
-
     public class RewardService : IRewardService
     {
-        private readonly IRewardRepository rewardRepository;
-        private readonly IAsyncIdRepository<Guild> guildRepository;
-        private readonly IAsyncIdRepository<Role> roleRepository;
+        private readonly IRewardRepository _rewardRepository;
+        private readonly IAsyncIdRepository<Guild> _guildRepository;
+        private readonly IAsyncIdRepository<Role> _roleRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RewardService"/> class.
@@ -30,20 +30,20 @@ namespace Cybermancy.Core.Services
         /// <param name="roleRepository"></param>
         public RewardService(IRewardRepository rewardRepository, IAsyncIdRepository<Guild> guildRepository, IAsyncIdRepository<Role> roleRepository)
         {
-            this.rewardRepository = rewardRepository;
-            this.guildRepository = guildRepository;
-            this.roleRepository = roleRepository;
+            this._rewardRepository = rewardRepository;
+            this._guildRepository = guildRepository;
+            this._roleRepository = roleRepository;
         }
 
         public async Task<ICollection<Reward>> GetAllGuildRewardsAsync(ulong guildId)
         {
-            var guild = await this.guildRepository.GetByIdAsync(guildId);
+            var guild = await this._guildRepository.GetByIdAsync(guildId);
             return guild.Rewards;
         }
 
         public async Task<ICollection<DiscordRole>> GrantRewardsMissingFromUserAsync(DiscordMember member)
         {
-            var guild = await this.guildRepository.GetByIdAsync(member.Guild.Id);
+            var guild = await this._guildRepository.GetByIdAsync(member.Guild.Id);
             if (!guild.LevelSettings.IsLevelingEnabled) return new List<DiscordRole>();
             var rewardsToAdd = guild.Rewards.Where(x =>
                 member.Roles.All(a => a.Id != x.RoleId)).ToList();
@@ -53,7 +53,7 @@ namespace Cybermancy.Core.Services
                 {
                     var role = member.Guild.GetRole(x.RoleId);
                     if (role is not null) return role;
-                    await this.roleRepository.DeleteAsync(x.Role);
+                    await this._roleRepository.DeleteAsync(x.Role);
                     Console.WriteLine(
                         $"Role:{x.Role.Id} from Guild:{member.Guild.Name}({member.Guild.Id}) not found. " +
                         $"Removing from database");
@@ -77,9 +77,9 @@ namespace Cybermancy.Core.Services
 
         public Task<Reward> SaveAsync(Reward reward)
         {
-            if (this.rewardRepository.Exists(reward.RoleId))
-                return this.rewardRepository.UpdateAsync(reward);
-            return this.rewardRepository.AddAsync(reward);
+            if (this._rewardRepository.Exists(reward.RoleId))
+                return this._rewardRepository.UpdateAsync(reward);
+            return this._rewardRepository.AddAsync(reward);
         }
     }
 }

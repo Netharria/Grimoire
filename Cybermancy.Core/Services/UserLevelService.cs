@@ -5,18 +5,18 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Core.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Domain;
-
     public class UserLevelService : IUserLevelService
     {
-        private readonly IUserLevelRepository userLevelRepository;
+        private readonly IUserLevelRepository _userLevelRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserLevelService"/> class.
@@ -24,12 +24,12 @@ namespace Cybermancy.Core.Services
         /// <param name="userLevelRepository"></param>
         public UserLevelService(IUserLevelRepository userLevelRepository)
         {
-            this.userLevelRepository = userLevelRepository;
+            this._userLevelRepository = userLevelRepository;
         }
 
         public async Task<UserLevel> GetUserLevelAsync(ulong userId, ulong guildId)
         {
-            var result = await this.userLevelRepository.GetUserLevelAsync(userId, guildId);
+            var result = await this._userLevelRepository.GetUserLevelAsync(userId, guildId);
             if (result is not null)
                 return result;
             await this.AddUserAsync(userId, guildId);
@@ -38,9 +38,9 @@ namespace Cybermancy.Core.Services
 
         public Task<UserLevel> SaveAsync(UserLevel userLevel)
         {
-            if (this.userLevelRepository.Exists(userLevel.UserId, userLevel.GuildId))
-                return this.userLevelRepository.UpdateAsync(userLevel);
-            return this.userLevelRepository.AddAsync(userLevel);
+            if (this._userLevelRepository.Exists(userLevel.UserId, userLevel.GuildId))
+                return this._userLevelRepository.UpdateAsync(userLevel);
+            return this._userLevelRepository.AddAsync(userLevel);
         }
 
         /// <summary>
@@ -61,14 +61,8 @@ namespace Cybermancy.Core.Services
             return this.SaveAsync(newUserLevel);
         }
 
-        public Task<IList<UserLevel>> GetRankedUsersAsync(ulong guildId)
-        {
-            return this.userLevelRepository.GetRankedGuildUsersAsync(guildId);
-        }
+        public Task<IList<UserLevel>> GetRankedUsersAsync(ulong guildId) => this._userLevelRepository.GetRankedGuildUsersAsync(guildId);
 
-        public Task<ICollection<UserLevel>> GetAllIgnoredUsersAsync(ulong guildId)
-        {
-            throw new NotImplementedException();
-        }
+        public Task<ICollection<UserLevel>> GetAllIgnoredUsersAsync(ulong guildId) => throw new NotImplementedException();
     }
 }

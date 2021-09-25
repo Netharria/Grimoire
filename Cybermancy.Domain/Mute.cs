@@ -5,10 +5,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+
 namespace Cybermancy.Domain
 {
-    using System;
-
     public class Mute
     {
         public ulong SinId { get; set; }

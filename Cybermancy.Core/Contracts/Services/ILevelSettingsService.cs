@@ -5,14 +5,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Threading.Tasks;
+using Cybermancy.Core.Enums;
+using Cybermancy.Domain;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Contracts.Services
 {
-    using System;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Enums;
-    using Cybermancy.Domain;
-    using DSharpPlus.Entities;
-
     public interface ILevelSettingsService
     {
         /// <summary>

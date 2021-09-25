@@ -5,16 +5,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Text;
+using System.Threading.Tasks;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
+
 namespace Cybermancy.Core
 {
-    using System.Text;
-    using System.Threading.Tasks;
-    using DSharpPlus;
-    using DSharpPlus.Entities;
-    using DSharpPlus.Interactivity.Enums;
-    using DSharpPlus.Interactivity.Extensions;
-    using DSharpPlus.SlashCommands;
-
     /// <summary>
     /// Example commands used as simple versions of using the DSharpPlus slash commands in different ways.
     /// </summary>

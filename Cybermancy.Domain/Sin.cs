@@ -5,12 +5,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Domain
 {
-    using System;
-    using System.Collections.Generic;
-    using Cybermancy.Domain.Shared;
-
     public enum SinType
     {
         Warn,

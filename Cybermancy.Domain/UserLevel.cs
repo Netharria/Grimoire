@@ -5,11 +5,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Domain
 {
-    using System;
-    using Cybermancy.Domain.Shared;
-
     public class UserLevel : Identifiable, IXpIgnore
     {
         public ulong GuildId { get; set; }

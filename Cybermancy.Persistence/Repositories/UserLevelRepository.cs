@@ -5,14 +5,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Persistence.Repositories
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Domain;
-
     public class UserLevelRepository : BaseRepository<UserLevel>, IUserLevelRepository
     {
         /// <summary>
@@ -30,10 +30,7 @@ namespace Cybermancy.Persistence.Repositories
             return Task.FromResult(result);
         }
 
-        public bool Exists(ulong userId, ulong guildId)
-        {
-            return this.CybermancyDb.UserLevels.Any(x => x.UserId == userId && x.GuildId == guildId);
-        }
+        public bool Exists(ulong userId, ulong guildId) => this.CybermancyDb.UserLevels.Any(x => x.UserId == userId && x.GuildId == guildId);
 
         public Task<IList<UserLevel>> GetRankedGuildUsersAsync(ulong guildId)
         {

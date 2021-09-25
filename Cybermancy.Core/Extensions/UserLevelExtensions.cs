@@ -5,11 +5,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Core.Extensions
 {
-    using System;
-    using Cybermancy.Domain;
-
     public static class UserLevelExtensions
     {
         public static int GetLevel(this UserLevel userLevel)

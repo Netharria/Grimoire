@@ -5,14 +5,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Cybermancy.Persistence
 {
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Persistence.Repositories;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.DependencyInjection;
-
     public static class PersistenceServiceRegistration
     {
         public static IServiceCollection AddPersistenceServices(

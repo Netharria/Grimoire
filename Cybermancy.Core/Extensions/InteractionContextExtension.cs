@@ -5,16 +5,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Threading.Tasks;
+using Cybermancy.Core.Enums;
+using Cybermancy.Core.Utilities;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+
 namespace Cybermancy.Core.Extensions
 {
-    using System;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Enums;
-    using Cybermancy.Core.Utilities;
-    using DSharpPlus;
-    using DSharpPlus.Entities;
-    using DSharpPlus.SlashCommands;
-
     public static class InteractionContextExtension
     {
         /// <summary>

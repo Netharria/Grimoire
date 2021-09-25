@@ -5,12 +5,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Cybermancy.Core.Enums;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Utilities
 {
-    using System;
-    using Cybermancy.Core.Enums;
-    using DSharpPlus.Entities;
-
     public static class ColorUtility
     {
         public static DiscordColor GetColor(CybermancyColor color)

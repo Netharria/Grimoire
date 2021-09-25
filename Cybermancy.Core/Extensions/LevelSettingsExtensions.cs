@@ -5,16 +5,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Cybermancy.Domain;
+
 namespace Cybermancy.Core.Extensions
 {
-    using System;
-    using Cybermancy.Domain;
-
     public static class LevelSettingsExtensions
     {
-        public static DateTime GetTextTimeout(this GuildLevelSettings levelSettings)
-        {
-            return DateTime.UtcNow + TimeSpan.FromMinutes(levelSettings.TextTime);
-        }
+        public static DateTime GetTextTimeout(this GuildLevelSettings levelSettings) => DateTime.UtcNow + TimeSpan.FromMinutes(levelSettings.TextTime);
     }
 }

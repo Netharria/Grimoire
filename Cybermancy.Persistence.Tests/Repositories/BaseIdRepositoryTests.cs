@@ -1,38 +1,30 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="BaseIdRepositoryTests.cs" company="Netharia">
 // Copyright (c) Netharia. All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cybermancy.Domain;
+using Moq;
+using NUnit.Framework;
+
 namespace Cybermancy.Persistence.Tests.Repositories
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Cybermancy.Domain;
-    using Moq;
-    using NUnit.Framework;
-
-    /// <summary>
-    /// Tests for the method in <see cref="Persistence.Repositories.BaseIdRepository{T}"/>.
-    /// </summary>
     public class BaseIdRepositoryTests : BaseIdRepositoryTestBase<Guild>
     {
-        private Guild Guild1 { get; } = new () { Id = 1 };
+        private readonly Guild _guild1 = new () { Id = 1 };
+        private readonly Guild _guild2 =  new () { Id = 2 };
+        private readonly List<Guild> _list = new ();
 
-        private Guild Guild2 { get; } = new () { Id = 2 };
-
-        private List<Guild> List { get; } = new ();
-
-        /// <summary>
-        /// Runs the setup for needed for the tests.
-        /// </summary>
         [SetUp]
         public void SetUp()
         {
-            this.List.Add(this.Guild1);
-            this.List.Add(this.Guild2);
-            this.InstatiateMocks(this.List);
+            this._list.Add(this._guild1);
+            this._list.Add(this._guild2);
+            this.InstatiateMocks(this._list);
         }
 
         /// <summary>
@@ -53,9 +45,9 @@ namespace Cybermancy.Persistence.Tests.Repositories
         [Test]
         public async Task WhenGettingById_ReturnResultAsync()
         {
-            this.MockDbSet.Setup(x => x.FindAsync(1UL)).ReturnsAsync(this.Guild1);
+            this.MockDbSet.Setup(x => x.FindAsync(1UL)).ReturnsAsync(this._guild1);
             var result = await this.MockRepository.GetByIdAsync(1);
-            Assert.AreEqual(this.Guild1, result);
+            Assert.AreEqual(this._guild1, result);
         }
     }
 }

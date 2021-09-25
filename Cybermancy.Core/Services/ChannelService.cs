@@ -5,19 +5,19 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Cybermancy.Core.Contracts.Persistence;
+using Cybermancy.Core.Contracts.Services;
+using Cybermancy.Domain;
+using DSharpPlus.Entities;
+
 namespace Cybermancy.Core.Services
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cybermancy.Core.Contracts.Persistence;
-    using Cybermancy.Core.Contracts.Services;
-    using Cybermancy.Domain;
-    using DSharpPlus.Entities;
-
     public class ChannelService : IChannelService
     {
-        private readonly IAsyncIdRepository<Channel> channelRepository;
+        private readonly IAsyncIdRepository<Channel> _channelRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChannelService"/> class.
@@ -25,24 +25,18 @@ namespace Cybermancy.Core.Services
         /// <param name="channelRepository"></param>
         public ChannelService(IAsyncIdRepository<Channel> channelRepository)
         {
-            this.channelRepository = channelRepository;
+            this._channelRepository = channelRepository;
         }
 
-        public Task<ICollection<Channel>> GetAllIgnoredChannelsAsync(ulong guildId)
-        {
-            throw new System.NotImplementedException();
-        }
+        public Task<ICollection<Channel>> GetAllIgnoredChannelsAsync(ulong guildId) => throw new System.NotImplementedException();
 
-        public ValueTask<Channel> GetChannelAsync(ulong channelId)
-        {
-            return this.channelRepository.GetByIdAsync(channelId);
-        }
+        public ValueTask<Channel> GetChannelAsync(ulong channelId) => this._channelRepository.GetByIdAsync(channelId);
 
         public async Task<Channel> GetChannelAsync(DiscordChannel discordChannel)
         {
-            if (await this.channelRepository.ExistsAsync(discordChannel.Id))
+            if (await this._channelRepository.ExistsAsync(discordChannel.Id))
             {
-                return await this.channelRepository.GetByIdAsync(discordChannel.Id);
+                return await this._channelRepository.GetByIdAsync(discordChannel.Id);
             }
             else
             {
@@ -55,14 +49,14 @@ namespace Cybermancy.Core.Services
                 await this.SaveAsync(newChannel);
             }
 
-            return await this.channelRepository.GetByIdAsync(discordChannel.Id);
+            return await this._channelRepository.GetByIdAsync(discordChannel.Id);
         }
 
         public async Task<bool> IsChannelIgnoredAsync(DiscordChannel discordChannel)
         {
-            if (await this.channelRepository.ExistsAsync(discordChannel.Id))
+            if (await this._channelRepository.ExistsAsync(discordChannel.Id))
             {
-                return (await this.channelRepository.GetByIdAsync(discordChannel.Id)).IsXpIgnored;
+                return (await this._channelRepository.GetByIdAsync(discordChannel.Id)).IsXpIgnored;
             }
             else
             {
@@ -75,14 +69,14 @@ namespace Cybermancy.Core.Services
                 await this.SaveAsync(newChannel);
             }
 
-            return (await this.channelRepository.GetByIdAsync(discordChannel.Id)).IsXpIgnored;
+            return (await this._channelRepository.GetByIdAsync(discordChannel.Id)).IsXpIgnored;
         }
 
         public async Task<Channel> SaveAsync(Channel channel)
         {
-            if (await this.channelRepository.ExistsAsync(channel.Id))
-                return await this.channelRepository.UpdateAsync(channel);
-            return await this.channelRepository.AddAsync(channel);
+            if (await this._channelRepository.ExistsAsync(channel.Id))
+                return await this._channelRepository.UpdateAsync(channel);
+            return await this._channelRepository.AddAsync(channel);
         }
 
         public Task SetupAllChannelsAsync(IEnumerable<DiscordGuild> guilds)
@@ -90,7 +84,7 @@ namespace Cybermancy.Core.Services
             var newChannels = new List<Channel>();
             foreach (var guild in guilds)
             {
-                foreach (var channel in guild.Channels.Values.Where(x => this.channelRepository.ExistsAsync(x.Id).Result))
+                foreach (var channel in guild.Channels.Values.Where(x => this._channelRepository.ExistsAsync(x.Id).Result))
                 {
                     newChannels.Add(new Channel()
                     {
@@ -101,7 +95,7 @@ namespace Cybermancy.Core.Services
                 }
             }
 
-            return this.channelRepository.AddMultipleAsync(newChannels);
+            return this._channelRepository.AddMultipleAsync(newChannels);
         }
     }
 }

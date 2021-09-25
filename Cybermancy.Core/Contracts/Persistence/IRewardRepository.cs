@@ -5,10 +5,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Cybermancy.Domain;
+
 namespace Cybermancy.Core.Contracts.Persistence
 {
-    using Cybermancy.Domain;
-
     public interface IRewardRepository : IAsyncRepository<Reward>
     {
         bool Exists(ulong roleId);
