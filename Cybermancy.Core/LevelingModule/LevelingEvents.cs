@@ -1,9 +1,9 @@
-// -----------------------------------------------------------------------
-// <copyright file="LevelingEvents.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System;
 using System.Linq;
@@ -29,15 +29,6 @@ namespace Cybermancy.Core.LevelingModule
         private readonly ILevelSettingsService _levelSettingsService;
         private readonly IUserService _userService;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LevelingEvents"/> class.
-        /// </summary>
-        /// <param name="channelService"></param>
-        /// <param name="roleService"></param>
-        /// <param name="userLevelService"></param>
-        /// <param name="rewardService"></param>
-        /// <param name="levelSettingsService"></param>
-        /// <param name="userService"></param>
         public LevelingEvents(IChannelService channelService, IRoleService roleService, IUserLevelService userLevelService, IRewardService rewardService, ILevelSettingsService levelSettingsService, IUserService userService)
         {
             this._channelService = channelService;
@@ -56,7 +47,7 @@ namespace Cybermancy.Core.LevelingModule
             if (await this._channelService.IsChannelIgnoredAsync(args.Channel)) return;
             if (!await this._levelSettingsService.IsLevelingEnabledAsync(member.Guild.Id)) return;
             if (await this._roleService.AreAnyRolesIgnoredAsync(member.Roles.ToList(), member.Guild)) return;
-            var user = await this._userService.GetUserAsync(member);
+            var user = await this._userService.GetOrCreateUserAsync(member);
             var userLevel = await this._userLevelService.GetUserLevelAsync(member.Id, member.Guild.Id);
             if (userLevel.IsXpIgnored) return;
             if (userLevel.TimeOut > DateTime.UtcNow) return;

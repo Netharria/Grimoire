@@ -1,9 +1,9 @@
-// -----------------------------------------------------------------------
-// <copyright file="CoreServiceRegistration.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System;
 using Cybermancy.Core.Contracts.Services;
@@ -58,9 +58,11 @@ namespace Cybermancy.Core
                     extension =>
                     {
                         extension.RegisterCommands<ExampleSlashCommand>(ulong.Parse(configuration["guildId"]));
-                        extension.RegisterCommands<LevelCommands>();
+                        extension.RegisterCommands<LevelCommands>(ulong.Parse(configuration["guildId"]));
                         extension.RegisterCommands<LeaderboardCommands>(ulong.Parse(configuration["guildId"]));
                         extension.RegisterCommands<SettingsCommands>(ulong.Parse(configuration["guildId"]));
+                        extension.RegisterCommands<LevelingAdminCommands>(ulong.Parse(configuration["guildId"]));
+
                     })
                 .AddDiscordHostedService();
 

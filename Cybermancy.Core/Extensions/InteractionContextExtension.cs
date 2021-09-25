@@ -1,9 +1,9 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="InteractionContextExtension.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System;
 using System.Threading.Tasks;
@@ -17,18 +17,6 @@ namespace Cybermancy.Core.Extensions
 {
     public static class InteractionContextExtension
     {
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="ctx"></param>
-        /// <param name="color"></param>
-        /// <param name="message"></param>
-        /// <param name="title"></param>
-        /// <param name="footer"></param>
-        /// <param name="embed"></param>
-        /// <param name="timeStamp"></param>
-        /// <param name="ephemeral"></param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
         public static async Task ReplyAsync(
             this InteractionContext ctx,
             CybermancyColor color = CybermancyColor.Purple,

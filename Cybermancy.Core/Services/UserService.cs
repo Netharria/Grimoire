@@ -1,9 +1,9 @@
-// -----------------------------------------------------------------------
-// <copyright file="UserService.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
 using Cybermancy.Core.Contracts.Persistence;
@@ -29,7 +29,7 @@ namespace Cybermancy.Core.Services
             this._guildService = guildService;
         }
 
-        public async Task<User> GetUserAsync(DiscordMember member)
+        public async Task<User> GetOrCreateUserAsync(DiscordMember member)
         {
             if (await this._userRepository.ExistsAsync(member.Id)) return await this._userRepository.GetByIdAsync(member.Id);
             var newUser = new User()
@@ -40,6 +40,20 @@ namespace Cybermancy.Core.Services
                 AvatarUrl = member.AvatarUrl,
             };
             newUser.Guilds.Add(await this._guildService.GetGuildAsync(member.Guild.Id));
+            return await this.SaveAsync(newUser);
+        }
+
+        public async Task<User> GetOrCreateUserAsync(DiscordUser user, ulong guildId)
+        {
+            if (await this._userRepository.ExistsAsync(user.Id)) return await this._userRepository.GetByIdAsync(user.Id);
+            var newUser = new User()
+            {
+                Id = user.Id,
+                UserName = $"{user.Username}#{user.Discriminator}",
+                DisplayName = $"{user.Username}#{user.Discriminator}",
+                AvatarUrl = user.AvatarUrl,
+            };
+            newUser.Guilds.Add(await this._guildService.GetGuildAsync(guildId));
             return await this.SaveAsync(newUser);
         }
 

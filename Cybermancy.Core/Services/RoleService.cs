@@ -1,10 +1,11 @@
-// -----------------------------------------------------------------------
-// <copyright file="RoleService.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,14 +22,16 @@ namespace Cybermancy.Core.Services
     public class RoleService : IRoleService
     {
         private readonly IAsyncIdRepository<Role> _roleRepository;
+        private readonly IAsyncIdRepository<Guild> _guildRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RoleService"/> class.
         /// </summary>
         /// <param name="roleRepository">The role repository. This should be dependancy injected.</param>
-        public RoleService(IAsyncIdRepository<Role> roleRepository)
+        public RoleService(IAsyncIdRepository<Role> roleRepository, IAsyncIdRepository<Guild> guildRepository)
         {
             this._roleRepository = roleRepository;
+            this._guildRepository = guildRepository;
         }
 
         /// <inheritdoc/>
@@ -37,7 +40,7 @@ namespace Cybermancy.Core.Services
             List<Role> databaseRoles = new ();
             foreach (var role in roles)
             {
-                databaseRoles.Add(await this.GetRoleAsync(role, guild));
+                databaseRoles.Add(await this.GetOrCreateRoleAsync(role, guild));
             }
 
             return databaseRoles.Any(x => x.IsXpIgnored);
@@ -52,7 +55,7 @@ namespace Cybermancy.Core.Services
         }
 
         /// <inheritdoc/>
-        public async ValueTask<Role> GetRoleAsync(DiscordRole role, DiscordGuild guild)
+        public async ValueTask<Role> GetOrCreateRoleAsync(DiscordRole role, DiscordGuild guild)
         {
             if (await this._roleRepository.ExistsAsync(role.Id)) return await this._roleRepository.GetByIdAsync(role.Id);
             var newRole = new Role()
@@ -86,6 +89,12 @@ namespace Cybermancy.Core.Services
         }
 
         /// <inheritdoc/>
-        public Task<ICollection<Role>> GetAllIgnoredRolesAsync(ulong guildId) => throw new System.NotImplementedException();
+        public async Task<ICollection<Role>> GetAllIgnoredRolesAsync(ulong guildId)
+        {
+            var guild = await this._guildRepository.GetByIdAsync(guildId);
+            if (guild is null) throw new ArgumentNullException(nameof(guildId));
+            var roles = guild.Roles.Where(x => x.IsXpIgnored).ToList();
+            return roles;
+        }
     }
 }

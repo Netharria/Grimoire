@@ -1,9 +1,9 @@
-// -----------------------------------------------------------------------
-// <copyright file="IUserLevelRepository.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Contracts.Persistence
         /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
         Task<UserLevel> GetUserLevelAsync(ulong userId, ulong guildId);
 
-        bool Exists(ulong userId, ulong guildId);
+        Task<bool> Exists(ulong userId, ulong guildId);
 
         /// <summary>
         ///

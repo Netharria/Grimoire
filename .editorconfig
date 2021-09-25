@@ -40,7 +40,7 @@ tab_width = 4
 # Organize usings
 dotnet_separate_import_directive_groups = false
 dotnet_sort_system_directives_first = true
-file_header_template = Copyright (c) Netharia. All rights reserved.\nLicensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information."
+file_header_template = This file is part of the Cybermancy Project.\n\nCopyright (c) Netharia 2021-Present.\n\nAll rights reserved.\nLicensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 # this. and Me. preferences
 dotnet_style_qualification_for_event = true:error

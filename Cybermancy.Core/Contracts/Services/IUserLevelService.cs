@@ -1,13 +1,14 @@
-// -----------------------------------------------------------------------
-// <copyright file="IUserLevelService.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cybermancy.Domain;
+using DSharpPlus.Entities;
 
 namespace Cybermancy.Core.Contracts.Services
 {
@@ -32,6 +33,13 @@ namespace Cybermancy.Core.Contracts.Services
         /// <param name="guildId">The guild for which the user belongs.</param>
         /// <returns>The user who matches the Id.</returns>
         Task<UserLevel> GetUserLevelAsync(ulong userId, ulong guildId);
+
+        /// <summary>
+        /// Gets a <see cref="UserLevel" />. Creates a new <see cref="User"/> if one does not exist.
+        /// </summary>
+        /// <param name="member">The member who to get the user level for.</param>
+        /// <returns>The user who matches the Id.</returns>
+        Task<UserLevel> GetOrCreateUserLevelAsync(DiscordUser member, ulong guildId);
 
         /// <summary>
         /// Saves a <see cref="UserLevel" />.

@@ -1,12 +1,11 @@
-// -----------------------------------------------------------------------
-// <copyright file="GuildService.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Cybermancy.Core.Contracts.Persistence;
 using Cybermancy.Core.Contracts.Services;
@@ -41,7 +40,7 @@ namespace Cybermancy.Core.Services
             this._guildLogRepository = guildLogRepository;
         }
 
-        public async ValueTask<Guild> GetGuildAsync(DiscordGuild guild)
+        public async ValueTask<Guild> GetOrCreateGuildAsync(DiscordGuild guild)
         {
             if (await this._guildRepository.ExistsAsync(guild.Id)) return await this._guildRepository.GetByIdAsync(guild.Id);
             await this._guildRepository.AddAsync(new Guild()

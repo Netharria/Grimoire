@@ -1,15 +1,13 @@
-// -----------------------------------------------------------------------
-// <copyright file="SettingsCommands.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Cybermancy.Core.Contracts.Services;
@@ -133,7 +131,7 @@ namespace Cybermancy.Core.LevelingModule
 
                     break;
                 case LevelSettings.LogChannel:
-                    var parsedValue = Regex.Match(value, @"(\d{18})", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1)).Value;
+                    var parsedValue = Regex.Match(value, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
                     if (ulong.TryParse(parsedValue, NumberStyles.Number, new CultureInfo("en-us"), out var channelId))
                     {
                         if (ctx.Guild.Channels.Any(x => x.Key == channelId))

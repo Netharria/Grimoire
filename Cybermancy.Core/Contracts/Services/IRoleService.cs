@@ -1,9 +1,9 @@
-// -----------------------------------------------------------------------
-// <copyright file="IRoleService.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -45,7 +45,7 @@ namespace Cybermancy.Core.Contracts.Services
         /// <param name="role">The role to find in the database.</param>
         /// <param name="guild">The guild the role belongs to.</param>
         /// <returns>The role from the database.</returns>
-        ValueTask<Role> GetRoleAsync(DiscordRole role, DiscordGuild guild);
+        ValueTask<Role> GetOrCreateRoleAsync(DiscordRole role, DiscordGuild guild);
 
         /// <summary>
         /// Gets a role out of the database.

@@ -1,10 +1,11 @@
-// -----------------------------------------------------------------------
-// <copyright file="ChannelService.cs" company="Netharia">
-// Copyright (c) Netharia. All rights reserved.
+// This file is part of the Cybermancy Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-// </copyright>
-// -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,21 +19,29 @@ namespace Cybermancy.Core.Services
     public class ChannelService : IChannelService
     {
         private readonly IAsyncIdRepository<Channel> _channelRepository;
+        private readonly IAsyncIdRepository<Guild> _guildRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChannelService"/> class.
         /// </summary>
         /// <param name="channelRepository"></param>
-        public ChannelService(IAsyncIdRepository<Channel> channelRepository)
+        public ChannelService(IAsyncIdRepository<Channel> channelRepository, IAsyncIdRepository<Guild> guildRepository)
         {
             this._channelRepository = channelRepository;
+            this._guildRepository = guildRepository;
         }
 
-        public Task<ICollection<Channel>> GetAllIgnoredChannelsAsync(ulong guildId) => throw new System.NotImplementedException();
+        public async Task<ICollection<Channel>> GetAllIgnoredChannelsAsync(ulong guildId)
+        {
+            var guild = await this._guildRepository.GetByIdAsync(guildId);
+            if (guild is null) throw new ArgumentNullException(nameof(guildId));
+            var channels = guild.Channels.Where(x => x.IsXpIgnored).ToList();
+            return channels;
+        }
 
         public ValueTask<Channel> GetChannelAsync(ulong channelId) => this._channelRepository.GetByIdAsync(channelId);
 
-        public async Task<Channel> GetChannelAsync(DiscordChannel discordChannel)
+        public async Task<Channel> GetOrCreateChannelAsync(DiscordChannel discordChannel)
         {
             if (await this._channelRepository.ExistsAsync(discordChannel.Id))
             {
