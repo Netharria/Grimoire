@@ -364,9 +364,6 @@ FodyWeavers.xsd
 #Config File
 appsettings.json
 
-#Database File
-Cybermancy.db
-
 #JetBrainsConfig File
 Cybermancy.sln.DotSettings
 .idea/

@@ -1,7 +1,0 @@
-{
-  "token": "Bot Token Goes Here",
-  "ConnectionStrings": {
-    "CybermancyConnectionString": "Data Source=Cybermancy.db;Cache=Shared"
-  },
-  "guildId": 000000000000000000
-}
