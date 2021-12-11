@@ -5,22 +5,30 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System;
+using System.Reflection;
+using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cybermancy.Core.Extensions
 {
-    public static class UserLevelExtensions
+    public static class GuildUserExtensions
     {
-        public static int GetLevel(this UserLevel userLevel)
+        public static ICybermancyDbContext CybermancyDbContext { get; set; }
+        public static int GetLevel(this GuildUser guildUser)
         {
+            var levelSettings = CybermancyDbContext.GuildLevelSettings
+                .Where(x => x.GuildId == guildUser.GuildId)
+                .Select(x => new { x.Base, x.Modifier })
+                .First();
             var i = 0;
             while (true)
             {
-                var xpNeeded = userLevel.Guild.LevelSettings.Base + (
-                    (int)Math.Round(userLevel.Guild.LevelSettings.Base *
-                                    (userLevel.Guild.LevelSettings.Modifier / 100.0) * i) * i);
-                if (userLevel.Xp < xpNeeded)
+                var xpNeeded = levelSettings.Base + (
+                    (int)Math.Round(levelSettings.Base *
+                                    (levelSettings.Modifier / 100.0) * i) * i);
+                if (guildUser.Xp < xpNeeded)
                 {
                     return i + 1;
                 }
@@ -29,24 +37,32 @@ namespace Cybermancy.Core.Extensions
             }
         }
 
-        public static int GetXpNeeded(this UserLevel userLevel, int levelModifier = 0)
+        public static int GetXpNeeded(this GuildUser guildUser, int levelModifier = 0)
         {
-            var level = userLevel.GetLevel() - 2 + levelModifier;
+            var levelSettings = CybermancyDbContext.GuildLevelSettings
+                .Where(x => x.GuildId == guildUser.GuildId)
+                .Select(x => new { x.Base, x.Modifier })
+                .First();
+            var level = guildUser.GetLevel() - 2 + levelModifier;
             return level switch
             {
-                0 => userLevel.Guild.LevelSettings.Base,
+                0 => levelSettings.Base,
                 < 0 => 0,
-                _ => userLevel.Guild.LevelSettings.Base + ((int)Math.Round(userLevel.Guild.LevelSettings.Base *
-                                                                             (userLevel.Guild.LevelSettings.Modifier /
-                                                                              100.0) * level) * level)
+                _ => levelSettings.Base + ((int)Math.Round(levelSettings.Base *
+                                                (levelSettings.Modifier /
+                                                100.0) * level) * level)
             };
         }
 
-        public static void GrantXp(this UserLevel userLevel, int? xpAmount = null)
+        public static void GrantXp(this GuildUser guildUser, int? xpAmount = null)
         {
-            xpAmount ??= userLevel.Guild.LevelSettings.Amount;
-            userLevel.Xp += xpAmount.Value;
-            userLevel.TimeOut = userLevel.Guild.LevelSettings.GetTextTimeout();
+            var levelSettings = CybermancyDbContext.GuildLevelSettings
+                .Where(x => x.GuildId == guildUser.GuildId)
+                .Select(x => new { x.Amount, x.TextTime })
+                .First();
+            xpAmount ??= levelSettings.Amount;
+            guildUser.Xp += xpAmount.Value;
+            guildUser.TimeOut = DateTime.UtcNow + TimeSpan.FromMinutes(levelSettings.TextTime);
         }
     }
 }

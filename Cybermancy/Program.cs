@@ -1,57 +1,68 @@
-// This file is part of the Cybermancy Project.
-//
-// Copyright (c) Netharia 2021-Present.
-//
-// All rights reserved.
-// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-
-using System.IO;
+// See https://aka.ms/new-console-template for more information
+using Cybermancy;
 using Cybermancy.Core;
-using Cybermancy.Persistence;
+using Cybermancy.LevelingModule;
+using DSharpPlus;
+using DSharpPlus.Interactivity.Enums;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nefarius.DSharpPlus.Extensions.Hosting;
+using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
+using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
+using OpenTracing;
+using OpenTracing.Mock;
 
-namespace Cybermancy
-{
-    /// <summary>
-    /// The startup class for Cybermancy.
-    /// </summary>
-    public class Program
+Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration(x =>
     {
-        /// <summary>
-        /// Starts Cybermancy.
-        /// </summary>
-        /// <param name="args">This is an empty string array.</param>
-        public static void Main(string[] args)
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
+        x.AddConfiguration(configuration);
+    })
+    .ConfigureLogging((context, x) => x
+    .AddConsole()
+    .AddConfiguration(context.Configuration))
+    .ConfigureServices((context, services) => 
+        services
+        .AddCoreServices(context.Configuration)
+        .AddSingleton<ITracer>(provider => new MockTracer())
+        .AddDiscord(options =>
         {
-            var host = CreateHostBuilder(args).Build();
-            host.Run();
-        }
+            options.Token = context.Configuration["token"];
+            options.TokenType = TokenType.Bot;
 
-        /// <summary>
-        /// Initializes the hosted service for discord.
-        /// </summary>
-        /// <param name="args">Standard arguments from program startup.</param>
-        /// <returns>The Configured Host.</returns>
-        public static IHostBuilder CreateHostBuilder(string[] args)
+            options.AutoReconnect = true;
+            options.MinimumLogLevel = LogLevel.Debug;
+            options.Intents = DiscordIntents.All;
+        })
+        .AddDiscordInteractivity(options =>
         {
-            return Host.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration(x =>
-                {
-                    var configuration = new ConfigurationBuilder()
-                        .SetBasePath(Directory.GetCurrentDirectory())
-                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                        .Build();
-                    x.AddConfiguration(configuration);
-                })
-                .ConfigureLogging((context, x) => x
-                .AddConsole()
-                .AddConfiguration(context.Configuration))
-                .ConfigureServices((context, services) => services
-                        .AddPersistenceServices(context.Configuration)
-                        .AddCoreServices(context.Configuration))
-                .UseConsoleLifetime();
-        }
-    }
-}
+            options.PaginationBehaviour = PaginationBehaviour.WrapAround;
+            options.ResponseBehavior = InteractionResponseBehavior.Ack;
+            options.ResponseMessage = "That's not a valid button";
+            options.Timeout = TimeSpan.FromMinutes(2);
+            options.PaginationDeletion = PaginationDeletion.DeleteMessage;
+            options.AckPaginationButtons = true;
+        })
+        .AddDiscordSlashCommands(
+            config =>
+                // How to add services to be dependency injected into slash commands.
+                config.Services = services.BuildServiceProvider(),
+            extension =>
+            {
+                extension.RegisterCommands<ExampleSlashCommand>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<EmptySlashCommands>();
+                extension.RegisterCommands<LevelCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<LeaderboardCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<SettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<LevelingAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
+            })
+        .AddDiscordHostedService()
+    )
+    .UseConsoleLifetime()
+    .Build()
+    .Run();

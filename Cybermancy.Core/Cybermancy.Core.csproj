@@ -1,22 +1,31 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Cybermancy.Domain\Cybermancy.Domain.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="10.3.4" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.4" />
+    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="6.0.0" />
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01002" />
-        <PackageReference Include="DSharpPlus.Interactivity" Version="4.2.0-nightly-01002" />
-        <PackageReference Include="IDoEverything.DSharpPlus.SlashCommands" Version="2.0.4" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
-        <PackageReference Include="Nefarius.DSharpPlus.Extensions.Hosting" Version="1.0.46-beta" />
-        <PackageReference Include="Nefarius.DSharpPlus.Interactivity.Extensions.Hosting" Version="1.0.46-beta" />
-        <PackageReference Include="Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting" Version="1.0.46-beta" />
-    </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Exceptions\" />
+    <Folder Include="Features\Moderation\" />
+    <Folder Include="Features\Logging\" />
+    <Folder Include="Enums\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cybermancy.Doman\Cybermancy.Domain.csproj" />
+  </ItemGroup>
 
 </Project>
