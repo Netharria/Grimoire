@@ -20,26 +20,26 @@ namespace Cybermancy.Domain
     {
         public ulong UserId { get; set; }
 
-        public virtual User User { get; set; }
+        public virtual User User { get; set; } = null!;
 
         public ulong ModeratorId { get; set; }
 
-        public virtual User Moderator { get; set; }
+        public virtual User Moderator { get; set; } = null!;
 
         public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; } = null!;
 
-        public string Reason { get; set; }
+        public string Reason { get; set; } = string.Empty;
 
         public DateTime InfractionOn { get; set; }
 
         public SinType SinType { get; set; }
 
-        public virtual Mute Mute { get; set; }
+        public virtual Mute Mute { get; set; } = null!;
 
-        public virtual Pardon Pardon { get; set; }
+        public virtual Pardon Pardon { get; set; } = null!;
 
-        public virtual ICollection<PublishedMessage> PublishMessages { get; set; }
+        public virtual ICollection<PublishedMessage> PublishMessages { get; set; } = new List<PublishedMessage>();
     }
 }

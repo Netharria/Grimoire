@@ -29,37 +29,31 @@ namespace Cybermancy.LevelingModule
 
         public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
-            if (args.Message.MessageType is not MessageType.Default or MessageType.Reply) return;
-            if (args.Author is not DiscordMember member) return;
+            if (args.Message.MessageType is not MessageType.Default or MessageType.Reply ||
+                args.Author is not DiscordMember member) return;
             if (member.IsBot) return;
-            var response = await _mediator.Send(new GainUserXpCommand
+            var response = await this._mediator.Send(new GainUserXpCommand
             {
                 ChannelId = args.Channel.Id,
                 GuildId = args.Guild.Id,
                 UserId = member.Id,
                 RoleIds = member.Roles.Select(x => x.Id).ToArray()
             });
-            if (!response.Success)
-                return;
+            if (!response.Success) return;
 
-            var rewardsToAdd = response.EarnedRewards
-                .Where(x => !member.Roles.Select(x => x.Id).Contains(x))
+            var rolesToAdd = response.EarnedRewards
+                .Join(args.Guild.Roles, x => x, y => y.Key, (x, y) => y.Value)
+                .Concat(member.Roles)
+                .Distinct()
                 .ToArray();
 
-            var rolesToAdd = args.Guild.Roles
-                .Where(x => rewardsToAdd.Contains(x.Key))
-                .Select(x => x.Value);
+            if (rolesToAdd.Except(member.Roles).Any())
+                await member.ReplaceRolesAsync(rolesToAdd);
 
-            var roles = member.Roles.Concat(rolesToAdd);
-            await member.ReplaceRolesAsync(roles);
+            if (response.LoggingChannel is null) return;
 
-            if (response.LoggingChannel is null)
-                return;
-
-             args.Guild.Channels.TryGetValue(response.LoggingChannel.Value, out var loggingChannel);
-
-            if (loggingChannel is null)
-                return;
+            if (!args.Guild.Channels.TryGetValue(response.LoggingChannel.Value,
+                out var loggingChannel)) return;
 
             if (response.PreviousLevel < response.CurrentLevel)
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()

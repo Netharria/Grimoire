@@ -22,7 +22,6 @@ namespace Cybermancy.Core
                 .EnableDetailedErrors())
                 .AddScoped<ICybermancyDbContext, CybermancyDbContext>()
                 .AddMediatR(Assembly.GetExecutingAssembly());
-            GuildUserExtensions.CybermancyDbContext = services.BuildServiceProvider().GetRequiredService<ICybermancyDbContext>();
             return services;
         }
     }

@@ -8,9 +8,9 @@
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Commands.AwardUserXp;
 using Cybermancy.Core.Features.Leveling.Commands.ReclaimUserXp;
-using Cybermancy.Core.Features.Leveling.Commands.Shared;
 using Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain;
 using Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems;
+using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Enums;
 using Cybermancy.Extensions;
 using Cybermancy.SlashCommandAttributes;
@@ -31,18 +31,16 @@ namespace Cybermancy.LevelingModule
     public class LevelingAdminCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
-        private readonly DiscordClient _client;
 
-        public LevelingAdminCommands(IMediator mediator, DiscordClient client)
+        public LevelingAdminCommands(IMediator mediator)
         {
             this._mediator = mediator;
-            this._client = client;
         }
 
         [SlashCommand("Award", "Awards a user some xp.")]
         public async Task AwardAsync(InteractionContext ctx, [Option("User", "User to award xp.")] DiscordUser user, [Option("XP", "The amount of xp to grant.")] long xpToAward)
         {
-            var response = await _mediator.Send(new AwardUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward});
+            var response = await this._mediator.Send(new AwardUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward});
 
             if (!response.Success)
             {
@@ -57,7 +55,7 @@ namespace Cybermancy.LevelingModule
         [SlashCommand("Reclaim", "Takes away xp from user.")]
         public async Task ReclaimAsync(InteractionContext ctx, [Option("User", "User to take xp away from.")] DiscordUser user, [Option("XP", "The amount of xp to Take.")] string amount)
         {
-            var response = await _mediator.Send(new ReclaimUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToTake = amount});
+            var response = await this._mediator.Send(new ReclaimUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToTake = amount});
 
             if (!response.Success)
             {
@@ -107,11 +105,11 @@ namespace Cybermancy.LevelingModule
             }
 
             var userDtos = matchedIds["Users"]
-                .Select(x => this.BuildUserDto(x, ctx.Guild.Id))
+                .Select(x => this.BuildUserDto(ctx.Client, x, ctx.Guild.Id))
                 .Select(x => x.Result)
                 .OfType<UserDto>().ToList();
 
-            var response = await _mediator.Send(new UpdateIgnoreStateForXpGainCommand
+            var response = await this._mediator.Send(new UpdateIgnoreStateForXpGainCommand
             {
                 Users = userDtos,
                 RoleIds = matchedIds["Role"].Select(x => ulong.Parse(x)).ToArray(),
@@ -130,10 +128,10 @@ namespace Cybermancy.LevelingModule
             await ctx.ReplyAsync(CybermancyColor.Green, message: response.Result, ephemeral: false);
         }
 
-        private async Task<UserDto?> BuildUserDto(string idString, ulong guildId)
+        private async Task<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
         {
             var id = ulong.Parse(idString);
-            if (_client.Guilds[guildId].Members.TryGetValue(id, out var member))
+            if (client.Guilds[guildId].Members.TryGetValue(id, out var member))
                 return new UserDto
                 {
                     Id = member.Id,
@@ -143,7 +141,7 @@ namespace Cybermancy.LevelingModule
                 };
             try
             {
-                var user = await _client.GetUserAsync(id);
+                var user = await client.GetUserAsync(id);
                 if (user is not null)
                     return new UserDto
                     {

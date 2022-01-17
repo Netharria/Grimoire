@@ -42,7 +42,7 @@ namespace Cybermancy.LevelingModule
         [SlashCommand("View", "View the current settings for the leveling module.")]
         public async Task ViewAsync(InteractionContext ctx)
         {
-            var response = await _mediator.Send(new GetLevelSettingsQuery{ GuildId = ctx.Guild.Id });
+            var response = await this._mediator.Send(new GetLevelSettingsQuery{ GuildId = ctx.Guild.Id });
             var levelLogMention =
                     response.LevelChannelLog is null ?
                     "None" :
@@ -88,7 +88,7 @@ namespace Cybermancy.LevelingModule
                 }
             }
                 
-            var response = await _mediator.Send(new SetLevelSettingsCommand
+            var response = await this._mediator.Send(new SetLevelSettingsCommand
             {
                 GuildId = ctx.Guild.Id,
                 LevelSettings = levelSettings,

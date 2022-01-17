@@ -93,11 +93,13 @@ namespace Cybermancy
             {
                 var commandOptions = args.Context.Interaction.Data.Options;
                 var log = new StringBuilder();
-                log.Append("Error on Slash Command: ").Append(args.Context.Interaction.Data.Name).Append(' ');
                 if (commandOptions is not null)
-                    await BuildSlashCommandLogAsync(log, commandOptions);
-                log.Append('\n').Append(args.Exception.Message).Append('\n').Append(args.Exception.StackTrace);
-                this._logger.LogInformation(log.ToString());
+                    await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
+                this._logger.LogInformation("Error on SlashCommand: {InteractionName}{InteractionOptions}\n{Message}\n{StackTrace}",
+                    args.Context.Interaction.Data.Name,
+                    log.ToString(),
+                    args.Exception.Message,
+                    args.Exception.StackTrace);
             }
         }
 
@@ -105,10 +107,11 @@ namespace Cybermancy
         {
             var commandOptions = args.Context.Interaction.Data.Options;
             var log = new StringBuilder();
-            log.Append("Slash Command Invoked: ").Append(args.Context.Interaction.Data.Name).Append(' ');
             if (commandOptions is not null)
-                await BuildSlashCommandLogAsync(log, commandOptions);
-            this._logger.LogInformation(log.ToString());
+                await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
+            this._logger.LogInformation("Slash Command Invoked: {InteractionName}{InteractionOptions}",
+                args.Context.Interaction.Data.Name,
+                log.ToString());
         }
     }
 }

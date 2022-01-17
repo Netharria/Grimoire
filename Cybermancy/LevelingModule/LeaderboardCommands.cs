@@ -62,7 +62,7 @@ namespace Cybermancy.LevelingModule
                 GuildId = ctx.Guild.Id,
             };
 
-            var response = await _mediator.Send(getUserCenteredLeaderboardQuery);
+            var response = await this._mediator.Send(getUserCenteredLeaderboardQuery);
             if (response.Success)
                 await ctx.ReplyAsync(
                     color: CybermancyColor.Gold,
@@ -76,36 +76,5 @@ namespace Cybermancy.LevelingModule
                     message: response.Message,
                     ephemeral: true);
         }
-
-        /// <summary>
-        /// Gets the top of the leaderboard in a paginated format so that people can scroll through it.
-        /// </summary>
-        /// <param name="ctx">The context which initiated the interaction.</param>
-        /// <returns>The completed task.</returns>
-        //[SlashCommand("All", "Get the top xp earners for the server.")]
-        //public async Task AllAsync(InteractionContext ctx)
-        //{
-        //    var guildRankedUsers = await this._guildUserService.GetRankedGuildUsersAsync(ctx.Guild.Id);
-        //    var leaderboardText = await BuildLeaderboardTextAsync(ctx, guildRankedUsers);
-        //    var interactivity = ctx.Client.GetInteractivity();
-        //    var embed = new DiscordEmbedBuilder()
-        //        .WithTitle("LeaderBoard")
-        //        .WithFooter($"Total Users {guildRankedUsers.Count}");
-        //    var embedPages = interactivity.GeneratePagesInEmbed(input: leaderboardText, SplitType.Line, embed);
-        //    await interactivity.SendPaginatedResponseAsync(interaction: ctx.Interaction, ephemeral: !(ctx.User as DiscordMember).Permissions.HasPermission(Permissions.ManageMessages), user: ctx.User, pages: embedPages);
-        //}
-
-        //private static async Task<string> BuildLeaderboardTextAsync(InteractionContext ctx, IList<GuildUser> guildRankedUsers)
-        //{
-        //    var leaderboardText = new StringBuilder();
-        //    foreach (var (user, i) in guildRankedUsers.Select((x, i) => (x, i)))
-        //    {
-        //        var retrievedUser = await ctx.Client.GetUserAsync(user.UserId);
-        //        if (retrievedUser is not null)
-        //            leaderboardText.Append($"**{ i + 1}** { retrievedUser.Mention} **XP:** { user.Xp }\n");
-        //    }
-
-        //    return leaderboardText.ToString();
-        //}
     }
 }

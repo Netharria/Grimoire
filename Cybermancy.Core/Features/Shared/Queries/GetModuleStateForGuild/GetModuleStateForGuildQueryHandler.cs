@@ -23,13 +23,13 @@ namespace Cybermancy.Core.Features.Shared.Queries.GetModuleStateForGuild
 
         public async Task<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
         {
-            var query = _cybermancyDbContext.Guilds.Where(x => x.Id == request.GuildId);
+            var query = this._cybermancyDbContext.Guilds.AsNoTracking().Where(x => x.Id == request.GuildId);
             return request.Module switch
             {
-                Module.Leveling => await query.Select(x => x.LevelSettings.IsLevelingEnabled).FirstAsync(),
-                Module.Logging => await query.Select(x => x.LogSettings.IsLoggingEnabled).FirstAsync(),
-                Module.Moderation => await query.Select(x => x.ModerationSettings.IsModerationEnabled).FirstAsync(),
-                _ => throw new ArgumentOutOfRangeException(nameof(request.Module), request.Module, message: null)
+                Module.Leveling => await query.Select(x => x.LevelSettings.IsLevelingEnabled).FirstAsync(cancellationToken: cancellationToken),
+                Module.Logging => await query.Select(x => x.LogSettings.IsLoggingEnabled).FirstAsync(cancellationToken: cancellationToken),
+                Module.Moderation => await query.Select(x => x.ModerationSettings.IsModerationEnabled).FirstAsync(cancellationToken: cancellationToken),
+                _ => throw new ArgumentOutOfRangeException(nameof(request), request, message: null)
             };
         }
     }

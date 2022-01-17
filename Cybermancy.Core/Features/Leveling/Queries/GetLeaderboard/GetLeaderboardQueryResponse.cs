@@ -11,7 +11,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
 {
     public class GetLeaderboardQueryResponse : BaseResponse
     {
-        public string LeaderboardText { get; internal set; }
-        public int TotalUserCount { get; internal set; }
+        public string LeaderboardText { get; init; } = string.Empty;
+        public int TotalUserCount { get; init; }
     }
 }

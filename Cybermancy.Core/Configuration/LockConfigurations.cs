@@ -32,6 +32,8 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey(e => e.GuildId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
+            builder.Property(e => e.Reason)
+                .HasMaxLength(1000);
         }
     }
 }

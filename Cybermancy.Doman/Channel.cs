@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -11,18 +11,18 @@ namespace Cybermancy.Domain
 {
     public class Channel : Identifiable, IXpIgnore
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         public bool IsXpIgnored { get; set; }
 
         public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; } = null!;
 
-        public virtual ICollection<Message> Messages { get; set; }
+        public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
-        public virtual ICollection<Tracker> Trackers { get; set; }
+        public virtual ICollection<Tracker> Trackers { get; set; } = new List<Tracker>();
 
-        public virtual Lock Lock { get; set; }
+        public virtual Lock Lock { get; set; } = null!;
     }
 }

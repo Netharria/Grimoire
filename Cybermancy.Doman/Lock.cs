@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -11,19 +11,19 @@ namespace Cybermancy.Domain
     {
         public ulong ChannelId { get; set; }
 
-        public virtual Channel Channel { get; set; }
+        public virtual Channel Channel { get; set; } = null!;
 
         public bool? PreviousSetting { get; set; }
 
         public ulong ModeratorId { get; set; }
 
-        public virtual User Moderator { get; set; }
+        public virtual User Moderator { get; set; } = null!;
 
         public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; } = null!;
 
-        public string reason { get; set; }
+        public string Reason { get; set; } = string.Empty;
 
         public DateTime EndTime { get; set; }
     }

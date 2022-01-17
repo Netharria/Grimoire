@@ -17,48 +17,64 @@ namespace Cybermancy.Core
         /// Initializes a new instance of the <see cref="CybermancyDbContext"/> class.
         /// </summary>
         /// <param name="options"></param>
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public CybermancyDbContext(DbContextOptions<CybermancyDbContext> options)
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
             : base(options)
         {
         }
 
-        public DbSet<Attachment> Attachments { get; set; }
+        public DbSet<Attachment> Attachments
+            => this.Set<Attachment>();
 
-        public DbSet<Channel> Channels { get; set; }
+        public DbSet<Channel> Channels
+            => this.Set<Channel>();
 
-        public DbSet<Guild> Guilds { get; set; }
+        public DbSet<Guild> Guilds
+            => this.Set<Guild>();
 
-        public DbSet<GuildLevelSettings> GuildLevelSettings { get; set; }
+        public DbSet<GuildLevelSettings> GuildLevelSettings
+            => this.Set<GuildLevelSettings>();
 
-        public DbSet<GuildLogSettings> GuildLogSettings { get; set; }
+        public DbSet<GuildLogSettings> GuildLogSettings
+            => this.Set<GuildLogSettings>();
 
-        public DbSet<GuildModerationSettings> GuildModerationSettings { get; set; }
+        public DbSet<GuildModerationSettings> GuildModerationSettings
+            => this.Set<GuildModerationSettings>();
 
-        public DbSet<GuildUser> GuildUsers { get; set; }
+        public DbSet<GuildUser> GuildUsers
+            => this.Set<GuildUser>();
 
-        public DbSet<Lock> Locks { get; set; }
+        public DbSet<Lock> Locks
+            => this.Set<Lock>();
 
-        public DbSet<Message> Messages { get; set; }
+        public DbSet<Message> Messages
+            => this.Set<Message>();
 
-        public DbSet<Mute> Mutes { get; set; }
+        public DbSet<Mute> Mutes
+            => this.Set<Mute>();
 
-        public DbSet<OldLogMessage> OldLogMessages { get; set; }
+        public DbSet<OldLogMessage> OldLogMessages
+            => this.Set<OldLogMessage>();
 
-        public DbSet<Pardon> Pardons { get; set; }
+        public DbSet<Pardon> Pardons
+            => this.Set<Pardon>();
 
-        public DbSet<PublishedMessage> PublishedMessages { get; set; }
+        public DbSet<PublishedMessage> PublishedMessages
+            => this.Set<PublishedMessage>();
 
-        public DbSet<Reward> Rewards { get; set; }
+        public DbSet<Reward> Rewards
+            => this.Set<Reward>();
 
-        public DbSet<Role> Roles { get; set; }
+        public DbSet<Role> Roles
+            => this.Set<Role>();
 
-        public DbSet<Sin> Sins { get; set; }
+        public DbSet<Sin> Sins
+            => this.Set<Sin>();
 
-        public DbSet<Tracker> Trackers { get; set; }
+        public DbSet<Tracker> Trackers
+            => this.Set<Tracker>();
 
-        public DbSet<User> Users { get; set; }
+        public DbSet<User> Users
+            => this.Set<User>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
     }

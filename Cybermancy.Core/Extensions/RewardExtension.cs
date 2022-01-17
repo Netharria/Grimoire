@@ -23,5 +23,7 @@ namespace Cybermancy.Core.Extensions
                                                                          level) * level)
             };
         }
+
+        public static string Mention(this Reward reward) => $"<@&{reward.RoleId}>";
     }
 }

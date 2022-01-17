@@ -19,6 +19,9 @@ namespace Cybermancy.Core.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.HasIndex(e => new { e.GuildId, e.UserId }).IsUnique();
+            builder.Property(e => e.DisplayName)
+                .HasMaxLength(32)
+                .IsRequired();
             builder.HasOne(e => e.Guild).WithMany(e => e.GuildUsers)
                 .HasForeignKey(e => e.GuildId)
                 .OnDelete(DeleteBehavior.Cascade)

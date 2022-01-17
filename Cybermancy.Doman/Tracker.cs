@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -13,20 +13,20 @@ namespace Cybermancy.Domain
     {
         public ulong UserId { get; set; }
 
-        public virtual User User { get; set; }
+        public virtual User User { get; set; } = null!;
 
         public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; } = null!;
 
         public ulong LogChannelId { get; set; }
 
-        public virtual Channel LogChannel { get; set; }
+        public virtual Channel LogChannel { get; set; } = null!;
 
         public DateTime EndTime { get; set; }
 
         public ulong ModeratorId { get; set; }
 
-        public virtual User Moderator { get; set; }
+        public virtual User Moderator { get; set; } = null!;
     }
 }

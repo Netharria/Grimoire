@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -18,6 +18,7 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Pardon> builder)
         {
             builder.HasKey(e => e.SinId);
+            builder.Property(e => e.Reason).HasMaxLength(1000);
             builder.HasOne(e => e.Sin).WithOne(e => e.Pardon)
                 .HasForeignKey<Pardon>(e => e.SinId)
                 .OnDelete(DeleteBehavior.Cascade)

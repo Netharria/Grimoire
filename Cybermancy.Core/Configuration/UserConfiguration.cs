@@ -19,9 +19,10 @@ namespace Cybermancy.Core.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
-            builder.Property(e => e.UserName).IsRequired();
-            builder.Property(e => e.DisplayName).IsRequired();
-            builder.Property(e => e.AvatarUrl).IsRequired();
+            builder.Property(e => e.UserName)
+                .HasMaxLength(32)
+                .IsRequired();
+            builder.Property(e => e.AvatarUrl).HasMaxLength(300).IsRequired();
             builder.HasMany(e => e.Messages).WithOne(e => e.User);
             builder.HasMany(e => e.Trackers).WithOne(e => e.User).HasForeignKey(e => e.UserId);
             builder.HasMany(e => e.TrackedUsers).WithOne(e => e.Moderator).HasForeignKey(e => e.ModeratorId);

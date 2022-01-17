@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -19,7 +19,7 @@ namespace Cybermancy.Domain
 
         public ulong SinId { get; set; }
 
-        public virtual Sin Sin { get; set; }
+        public virtual Sin Sin { get; set; } = null!;
 
         public PublishType PublishType { get; set; }
     }

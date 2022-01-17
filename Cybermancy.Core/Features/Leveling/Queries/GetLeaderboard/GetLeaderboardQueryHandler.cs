@@ -24,34 +24,30 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
 
         public async Task<GetLeaderboardQueryResponse> Handle(GetLeaderboardQuery request, CancellationToken cancellationToken)
         {
-            var totalUserCount = await this._cybermancyDbContext.GuildUsers
-                .Where(x => x.GuildId == request.GuildId)
-                .CountAsync(cancellationToken: cancellationToken);
-            var usersPosition = 1;
-            if (request.UserId is not null)
-            {
-                var usersXp = await this._cybermancyDbContext.GuildUsers
-                    .Where(x => x.UserId == request.UserId && x.GuildId == request.GuildId)
-                    .Select(x => x.Xp)
-                    .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-
-                usersPosition = await this._cybermancyDbContext.GuildUsers
-                    .Where(x => x.GuildId == request.GuildId && x.Xp >= usersXp)
-                    .CountAsync(cancellationToken: cancellationToken);
-            }
-
             var guildRankedUsers = await this._cybermancyDbContext.GuildUsers
-                .GetRankedUsersAsync(request.GuildId, page: usersPosition / 15)
+                .Where(x => x.GuildId == request.GuildId)
+                .OrderByDescending(x => x.Xp)
                 .Select(x => new { x.UserId, x.Xp, Mention = x.User.Mention() })
                 .ToListAsync(cancellationToken: cancellationToken);
 
-            var user = guildRankedUsers.FirstOrDefault(x => x.UserId == request.UserId);
-            var userIndex = request.UserId is null || user is null ?  0 :
-                guildRankedUsers.IndexOf(user);
+            var totalUserCount = guildRankedUsers.Count;
 
+            var usersPosition = 0;
+
+            if (request.UserId is not null)
+                usersPosition = guildRankedUsers.FindIndex(x => x.UserId == request.UserId);
+
+            if (request.UserId is not null && usersPosition == -1)
+                return new GetLeaderboardQueryResponse { Success = false, Message = "Could not find user on leaderbaord." };
+
+            if(usersPosition == -1)
+                usersPosition++;
+
+            var startIndex = usersPosition - 5 < 0 ? 0 : usersPosition - 5;
             var leaderboardText = new StringBuilder();
-            foreach (var (guildUser, i) in guildRankedUsers.Select((value, i) => (value, i)))
-                leaderboardText.Append($"**{usersPosition - userIndex + i}** {guildUser.Mention} **XP:** {guildUser.Xp}\n");
+
+            for (var i = startIndex; i < 15 && i < totalUserCount; i++)
+                leaderboardText.Append($"**{i + 1}** {guildRankedUsers[i].Mention} **XP:** {guildRankedUsers[i].Xp}\n");                
 
             return new GetLeaderboardQueryResponse { Success = true, LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalUserCount };
         }

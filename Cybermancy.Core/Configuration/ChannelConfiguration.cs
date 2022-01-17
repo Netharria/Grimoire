@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Configuration
             builder.Property(e => e.Id).ValueGeneratedNever()
                 .IsRequired();
 
-            builder.Property(e => e.Name).IsRequired();
+            builder.Property(e => e.Name).HasMaxLength(100).IsRequired();
 
             builder.HasOne(e => e.Guild).WithMany(e => e.Channels)
                 .HasForeignKey(x => x.GuildId)

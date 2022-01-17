@@ -11,7 +11,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
 {
     public class GetLevelQuery : IRequest<GetLevelQueryResponse>
     {
-        public ulong UserId { get; internal set; }
-        public ulong GuildId { get; internal set; }
+        public ulong UserId { get; init; }
+        public ulong GuildId { get; init; }
     }
 }

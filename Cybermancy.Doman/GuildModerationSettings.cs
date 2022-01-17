@@ -18,7 +18,7 @@ namespace Cybermancy.Domain
     {
         public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; }
+        public virtual Guild Guild { get; set; } = null!;
 
         public ulong? PublicBanLog { get; set; }
 

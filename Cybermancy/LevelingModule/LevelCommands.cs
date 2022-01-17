@@ -43,7 +43,7 @@ namespace Cybermancy.LevelingModule
             user ??= ctx.User;
             if (user is not DiscordMember member) return;
 
-            var response = await _mediator.Send(new GetLevelQuery{});
+            var response = await this._mediator.Send(new GetLevelQuery{ UserId = user.Id, GuildId = member.Guild.Id});
 
             if (!response.Success)
             {

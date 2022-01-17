@@ -24,6 +24,7 @@ namespace Cybermancy.Core.Configuration
                 .IsRequired();
 
             builder.Property(e => e.AttachmentUrl)
+                .HasMaxLength(4000)
                 .IsRequired();
         }
     }

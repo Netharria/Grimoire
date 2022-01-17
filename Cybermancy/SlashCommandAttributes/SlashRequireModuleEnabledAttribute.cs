@@ -23,7 +23,7 @@ namespace Cybermancy.SlashCommandAttributes
         public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
         {
             if (ctx.Services.GetService(typeof(IMediator)) is not IMediator mediator)
-                throw new NullReferenceException($"Reflection was not able to grab a mediator instance to check if {Module.GetName()} was enabled.");
+                throw new NullReferenceException($"Reflection was not able to grab a mediator instance to check if {this.Module.GetName()} was enabled.");
             return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = Module });
         }
     }

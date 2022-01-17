@@ -4,6 +4,7 @@ using Cybermancy.Core;
 using Cybermancy.LevelingModule;
 using DSharpPlus;
 using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -49,17 +50,23 @@ Host.CreateDefaultBuilder(args)
             options.AckPaginationButtons = true;
         })
         .AddDiscordSlashCommands(
-            config =>
-                // How to add services to be dependency injected into slash commands.
-                config.Services = services.BuildServiceProvider(),
-            extension =>
+            x =>
             {
+                if (x is not SlashCommandsConfiguration config) return;
+                config.Services = services.BuildServiceProvider();
+            }
+                // How to add services to be dependency injected into slash commands.
+                ,
+            x =>
+            {
+                if (x is not SlashCommandsExtension extension) return;
                 extension.RegisterCommands<ExampleSlashCommand>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<EmptySlashCommands>();
                 extension.RegisterCommands<LevelCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<LeaderboardCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<SettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<LevelingAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<RewardCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
     )

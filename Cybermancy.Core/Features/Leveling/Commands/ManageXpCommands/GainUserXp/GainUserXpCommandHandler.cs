@@ -38,12 +38,13 @@ namespace Cybermancy.Core.Features.Leveling.Commands.GainUserXp
             if (user is null || user.TimeOut > DateTime.UtcNow)
                 return new GainUserXpCommandResponse { Success = false };
 
-            var previousLevel = user.GetLevel();
-            user.GrantXp();
-            var currentLevel = user.GetLevel();
+            var previousLevel = user.GetLevel(this._cybermancyDbContext);
+            user.GrantXp(this._cybermancyDbContext);
+            var currentLevel = user.GetLevel(this._cybermancyDbContext);
+
             this._cybermancyDbContext.GuildUsers.Update(user);
 
-            await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
+            var result = await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
             var earnedRewards = await this._cybermancyDbContext.Rewards
                 .Where(x => x.GuildId == request.GuildId)

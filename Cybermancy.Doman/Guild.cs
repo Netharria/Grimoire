@@ -13,30 +13,30 @@ namespace Cybermancy.Domain
     {
         public ulong? ModChannelLog { get; set; }
 
-        public virtual ICollection<Channel> Channels { get; set; }
+        public virtual ICollection<Channel> Channels { get; set; } = new List<Channel>();
 
-        public virtual ICollection<Role> Roles { get; set; }
+        public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
 
-        public virtual ICollection<Message> Messages { get; set; }
+        public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
-        public virtual ICollection<OldLogMessage> OldLogMessages { get; set; }
+        public virtual ICollection<OldLogMessage> OldLogMessages { get; set; } = new List<OldLogMessage>();
 
-        public virtual ICollection<Tracker> Trackers { get; set; }
+        public virtual ICollection<Tracker> Trackers { get; set; } = new List<Tracker>();
 
-        public virtual ICollection<Reward> Rewards { get; set; }
+        public virtual ICollection<Reward> Rewards { get; set; } = new List<Reward>();
 
-        public virtual ICollection<GuildUser> GuildUsers { get; set; }
+        public virtual ICollection<GuildUser> GuildUsers { get; set; } = new List<GuildUser>();
 
-        public virtual ICollection<Sin> Sins { get; set; }
+        public virtual ICollection<Sin> Sins { get; set; } = new List<Sin>();
 
-        public virtual ICollection<Mute> ActiveMutes { get; set; }
+        public virtual ICollection<Mute> ActiveMutes { get; set; } = new List<Mute>();
 
-        public virtual ICollection<Lock> LockedChannels { get; set; }
+        public virtual ICollection<Lock> LockedChannels { get; set; } = new List<Lock>();
 
-        public virtual GuildLogSettings LogSettings { get; set; }
+        public virtual GuildLogSettings LogSettings { get; set; } = null!;
 
-        public virtual GuildLevelSettings LevelSettings { get; set; }
+        public virtual GuildLevelSettings LevelSettings { get; set; } = null!;
 
-        public virtual GuildModerationSettings ModerationSettings { get; set; }
+        public virtual GuildModerationSettings ModerationSettings { get; set; } = null!;
     }
 }

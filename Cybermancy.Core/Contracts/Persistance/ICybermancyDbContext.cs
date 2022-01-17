@@ -5,41 +5,41 @@ namespace Cybermancy.Core.Contracts.Persistance
 {
     public interface ICybermancyDbContext
     {
-        public DbSet<Attachment> Attachments { get; set; }
+        public DbSet<Attachment> Attachments { get; }
 
-        public DbSet<Channel> Channels { get; set; }
+        public DbSet<Channel> Channels { get; }
 
-        public DbSet<Guild> Guilds { get; set; }
+        public DbSet<Guild> Guilds { get; }
 
-        public DbSet<GuildLevelSettings> GuildLevelSettings { get; set; }
+        public DbSet<GuildLevelSettings> GuildLevelSettings { get; }
 
-        public DbSet<GuildLogSettings> GuildLogSettings { get; set; }
+        public DbSet<GuildLogSettings> GuildLogSettings { get; }
 
-        public DbSet<GuildModerationSettings> GuildModerationSettings { get; set; }
+        public DbSet<GuildModerationSettings> GuildModerationSettings { get; }
 
-        public DbSet<GuildUser> GuildUsers { get; set; }
+        public DbSet<GuildUser> GuildUsers { get; }
 
-        public DbSet<Lock> Locks { get; set; }
+        public DbSet<Lock> Locks { get; }
 
-        public DbSet<Message> Messages { get; set; }
+        public DbSet<Message> Messages { get; }
 
-        public DbSet<Mute> Mutes { get; set; }
+        public DbSet<Mute> Mutes { get; }
 
-        public DbSet<OldLogMessage> OldLogMessages { get; set; }
+        public DbSet<OldLogMessage> OldLogMessages { get; }
 
-        public DbSet<Pardon> Pardons { get; set; }
+        public DbSet<Pardon> Pardons { get; }
 
-        public DbSet<PublishedMessage> PublishedMessages { get; set; }
+        public DbSet<PublishedMessage> PublishedMessages { get; }
 
-        public DbSet<Reward> Rewards { get; set; }
+        public DbSet<Reward> Rewards { get; }
 
-        public DbSet<Role> Roles { get; set; }
+        public DbSet<Role> Roles { get; }
 
-        public DbSet<Sin> Sins { get; set; }
+        public DbSet<Sin> Sins { get; }
 
-        public DbSet<Tracker> Trackers { get; set; }
+        public DbSet<Tracker> Trackers { get; }
 
-        public DbSet<User> Users { get; set; }
+        public DbSet<User> Users { get; }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

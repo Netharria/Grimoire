@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -11,8 +11,8 @@ namespace Cybermancy.Domain
     {
         public ulong MessageId { get; set; }
 
-        public virtual Message Message { get; set; }
+        public virtual Message Message { get; set; } = null!;
 
-        public string AttachmentUrl { get; set; }
+        public string AttachmentUrl { get; set; } = string.Empty;
     }
 }

@@ -86,13 +86,13 @@ namespace Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain
                         {
                             Id = x.Id,
                             UserName = x.UserName,
-                            DisplayName = x.DisplayName,
                             AvatarUrl = x.AvatarUrl,
 
                         };
                         user.GuildMembers.Add(new GuildUser
                         {
                             GuildId = request.GuildId,
+                            DisplayName = x.DisplayName,
                             IsXpIgnored = request.ShouldIgnore
                         });
                         newIgnoredItems.Append(user.Mention()).Append(' ');
@@ -103,7 +103,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain
                     this._cybermancyDbContext.Users.UpdateRange(newUserToBeAdded);
 
             }
-            await _cybermancyDbContext.SaveChangesAsync();
+            await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
 
             var notFoundInDatabase = new StringBuilder();

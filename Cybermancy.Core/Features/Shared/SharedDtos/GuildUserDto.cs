@@ -5,13 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Cybermancy.Core.Features.Leveling.Commands.Shared
+namespace Cybermancy.Core.Features.Shared.SharedDtos
 {
-    public class UserDto
+    public class GuildUserDto
     {
-        public ulong Id { get; set; }
-        public string UserName { get; set; } = string.Empty;
+        public ulong UserId { get; init; }
+        public ulong GuildId { get; init; }
         public string DisplayName { get; set; } = string.Empty;
-        public string AvatarUrl { get; set; } = string.Empty;
     }
 }
