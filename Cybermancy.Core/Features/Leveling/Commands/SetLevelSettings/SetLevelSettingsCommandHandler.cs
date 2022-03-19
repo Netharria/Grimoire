@@ -28,32 +28,32 @@ namespace Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings
             switch (request.LevelSettings)
             {
                 case LevelSettings.TextTime:
-                    if (int.TryParse(request.Value, out var textTime))
+                    if (uint.TryParse(request.Value, out var textTime))
                         guild.TextTime = textTime;
                     else
                         return new SetLevelSettingsCommandResponse { Success = false, Message = "Please give a valid number for TextTime." };
                     break;
                 case LevelSettings.Base:
-                    if (int.TryParse(request.Value, out var baseXp))
+                    if (uint.TryParse(request.Value, out var baseXp))
                         guild.Base = baseXp;
                     else
                         return new SetLevelSettingsCommandResponse { Success = false, Message = "Please give a valid number for base XP." };
                     break;
                 case LevelSettings.Modifier:
-                    if (int.TryParse(request.Value, out var modifier))
+                    if (uint.TryParse(request.Value, out var modifier))
                         guild.Modifier = modifier;
                     else
                         return new SetLevelSettingsCommandResponse { Success = false, Message = "Please give a valid number for Modifier." };
                     break;
                 case LevelSettings.Amount:
-                    if (int.TryParse(request.Value, out var amout))
+                    if (uint.TryParse(request.Value, out var amout))
                         guild.Amount = amout;
                     else
                         return new SetLevelSettingsCommandResponse { Success = false, Message = "Please give a valid number for Amount." };
                     break;
                 case LevelSettings.LogChannel:
                     var parsedValue = Regex.Match(request.Value, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
-                    guild.LevelChannelLog = ulong.Parse(parsedValue);
+                    guild.LevelChannelLogId = ulong.Parse(parsedValue);
                     break;
             }
             this._cybermancyDbContext.GuildLevelSettings.Update(guild);

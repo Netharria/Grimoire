@@ -13,6 +13,8 @@ namespace Cybermancy.Domain
     {
         public ulong ChannelId { get; set; }
 
+        public virtual Channel Channel { get; set; } = null!;
+
         public ulong GuildId { get; set; }
 
         public virtual Guild Guild { get; set; } = null!;

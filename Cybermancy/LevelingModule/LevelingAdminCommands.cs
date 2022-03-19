@@ -105,7 +105,7 @@ namespace Cybermancy.LevelingModule
             }
 
             var userDtos = matchedIds["Users"]
-                .Select(x => this.BuildUserDto(ctx.Client, x, ctx.Guild.Id))
+                .Select(x => BuildUserDto(ctx.Client, x, ctx.Guild.Id))
                 .Select(x => x.Result)
                 .OfType<UserDto>().ToList();
 
@@ -128,7 +128,7 @@ namespace Cybermancy.LevelingModule
             await ctx.ReplyAsync(CybermancyColor.Green, message: response.Result, ephemeral: false);
         }
 
-        private async Task<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
+        private async static Task<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
         {
             var id = ulong.Parse(idString);
             if (client.Guilds[guildId].Members.TryGetValue(id, out var member))

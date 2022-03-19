@@ -30,7 +30,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
                     x.Base,
                     x.Modifier,
                     x.Amount,
-                    x.LevelChannelLog
+                    x.LevelChannelLogId
                 }).FirstAsync(cancellationToken: cancellationToken);
             return new GetLevelSettingsResponse
             {
@@ -40,7 +40,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
                 Base = guildLevelSettings.Base,
                 Modifier = guildLevelSettings.Modifier,
                 Amount = guildLevelSettings.Amount,
-                LevelChannelLog = guildLevelSettings.LevelChannelLog
+                LevelChannelLog = guildLevelSettings.LevelChannelLogId
             };
         }
             

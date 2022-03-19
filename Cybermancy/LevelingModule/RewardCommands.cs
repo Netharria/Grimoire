@@ -43,7 +43,7 @@ namespace Cybermancy.LevelingModule
                 {
                     RoleId = role.Id,
                     GuildId = ctx.Guild.Id,
-                    RewardLevel = (int)level,
+                    RewardLevel = (uint)level,
                 });
 
             if(!response.Success)

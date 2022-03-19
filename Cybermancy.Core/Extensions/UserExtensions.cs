@@ -12,7 +12,7 @@ namespace Cybermancy.Core.Extensions
     public static class UserExtensions
     {
         public static GuildUser? GetGuildUser(this User user, ulong guildId) =>
-            user.GuildMembers.FirstOrDefault(x => x.GuildId == guildId);
+            user.GuildMemberProfiles.FirstOrDefault(x => x.GuildId == guildId);
         public static string Mention(this User user) => $"<@!{user.Id}>";
 
         public static string Mention(this GuildUser user) => $"<@!{user.Id}>";

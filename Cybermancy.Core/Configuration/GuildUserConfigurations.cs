@@ -18,18 +18,32 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<GuildUser> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.HasIndex(e => new { e.GuildId, e.UserId }).IsUnique();
-            builder.Property(e => e.DisplayName)
-                .HasMaxLength(32)
-                .IsRequired();
-            builder.HasOne(e => e.Guild).WithMany(e => e.GuildUsers)
+            builder.HasIndex(e => new { e.GuildId, e.UserId })
+                .IsUnique();
+            builder.HasOne(e => e.Guild)
+                .WithMany(e => e.GuildUsers)
                 .HasForeignKey(e => e.GuildId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.User).WithMany(e => e.GuildMembers)
+            builder.HasOne(e => e.User)
+                .WithMany(e => e.GuildMemberProfiles)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
+            builder.Property(e => e.DisplayName)
+                .HasField("_displayName")
+                .HasMaxLength(32)
+                .IsRequired();
+            builder.Property(e => e.GuildAvatarUrl)
+                .HasField("_guildAvatarUrl")
+                .HasMaxLength(300)
+                .IsRequired(false);
+            builder.Property(e => e.Xp)
+                .IsRequired()
+                .HasDefaultValue(value: 0);
+            builder.Property(e => e.TimeOut)
+                .IsRequired()
+                .HasDefaultValue(value: DateTime.UtcNow);
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(value: false);
         }

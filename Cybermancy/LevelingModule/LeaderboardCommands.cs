@@ -76,5 +76,11 @@ namespace Cybermancy.LevelingModule
                     message: response.Message,
                     ephemeral: true);
         }
+
+        [RepeatTask(seconds: 5)]
+        public async Task SomethingAsync()
+        {
+            Console.WriteLine($"LevelingModuleEnables: , Amount: ");
+        }
     }
 }

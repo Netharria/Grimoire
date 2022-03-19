@@ -15,22 +15,7 @@ namespace Cybermancy.Domain
 
         public string AvatarUrl { get; set; } = string.Empty;
 
-        public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
-
-        public virtual ICollection<Tracker> Trackers { get; set; } = new List<Tracker>();
-
-        public virtual ICollection<Tracker> TrackedUsers { get; set; } = new List<Tracker>();
-
-        public virtual ICollection<Sin> UserSins { get; set; } = new List<Sin>();
-
-        public virtual ICollection<Sin> ModeratedSins { get; set; } = new List<Sin>();
-
-        public virtual ICollection<Mute> ActiveMutes { get; set; } = new List<Mute>();
-
-        public virtual ICollection<Lock> ChannelsLocked { get; set; } = new List<Lock>();
-
-        public virtual ICollection<Pardon> SinsPardoned { get; set; } = new List<Pardon>();
-
-        public virtual ICollection<GuildUser> GuildMembers { get; set; } = new List<GuildUser>();
+        public virtual ICollection<GuildUser> GuildMemberProfiles { get; set; } = new List<GuildUser>();
+        public virtual ICollection<UsernameHistory> UsernameHistories { get; set; } = new List<UsernameHistory>();
     }
 }

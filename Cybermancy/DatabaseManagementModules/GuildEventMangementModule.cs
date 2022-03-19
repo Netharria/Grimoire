@@ -16,7 +16,8 @@ using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 namespace Cybermancy.DatabaseManagementModules
 {
     [DiscordGuildEventsSubscriber]
-    public class GuildEventMangementModule : IDiscordGuildEventsSubscriber
+    [DiscordChannelEventsSubscriber]
+    public class GuildEventMangementModule : IDiscordGuildEventsSubscriber, IDiscordChannelEventsSubscriber
     {
         private readonly IMediator _mediator;
 
@@ -45,6 +46,7 @@ namespace Cybermancy.DatabaseManagementModules
                     .Select(x => new ChannelDto { Id = x.Value.Id, GuildId = x.Value.GuildId.GetValueOrDefault(), Name = x.Value.Name })
             });
 
+        
         public Task DiscordOnGuildCreated(DiscordClient sender, GuildCreateEventArgs args) => Task.CompletedTask;
 
         public Task DiscordOnGuildUpdated(DiscordClient sender, GuildUpdateEventArgs args) => Task.CompletedTask;
@@ -57,6 +59,11 @@ namespace Cybermancy.DatabaseManagementModules
         public Task DiscordOnGuildIntegrationsUpdated(DiscordClient sender, GuildIntegrationsUpdateEventArgs args) => Task.CompletedTask;
         public Task DiscordOnGuildStickersUpdated(DiscordClient sender, GuildStickersUpdateEventArgs args) => Task.CompletedTask;
         public Task DiscordOnGuildUnavailable(DiscordClient sender, GuildDeleteEventArgs args) => Task.CompletedTask;
+        public Task DiscordOnChannelCreated(DiscordClient sender, ChannelCreateEventArgs args) => Task.CompletedTask;
+        public Task DiscordOnChannelUpdated(DiscordClient sender, ChannelUpdateEventArgs args) => Task.CompletedTask;
+        public Task DiscordOnChannelDeleted(DiscordClient sender, ChannelDeleteEventArgs args) => Task.CompletedTask;
+        public Task DiscordOnDmChannelDeleted(DiscordClient sender, DmChannelDeleteEventArgs args) => Task.CompletedTask;
+        public Task DiscordOnChannelPinsUpdated(DiscordClient sender, ChannelPinsUpdateEventArgs args) => Task.CompletedTask;
         #endregion
     }
 }

@@ -34,7 +34,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.AwardUserXp
                 return new BaseResponse { Success = false,
                     Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?" };
 
-            guildUser.GrantXp(this._cybermancyDbContext, (int)request.XpToAward);
+            guildUser.GrantXp(this._cybermancyDbContext, (uint)request.XpToAward);
 
             this._cybermancyDbContext.GuildUsers.Update(guildUser);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

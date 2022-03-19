@@ -11,9 +11,9 @@ namespace Cybermancy.Domain
 {
     public class Tracker : Identifiable
     {
-        public ulong UserId { get; set; }
+        public ulong GuildUserId { get; set; }
 
-        public virtual User User { get; set; } = null!;
+        public virtual GuildUser GuildUser { get; set; } = null!;
 
         public ulong GuildId { get; set; }
 
@@ -27,6 +27,6 @@ namespace Cybermancy.Domain
 
         public ulong ModeratorId { get; set; }
 
-        public virtual User Moderator { get; set; } = null!;
+        public virtual GuildUser Moderator { get; set; } = null!;
     }
 }

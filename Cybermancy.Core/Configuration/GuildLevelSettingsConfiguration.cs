@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -18,11 +18,12 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<GuildLevelSettings> builder)
         {
             builder.HasKey(x => x.GuildId);
-            builder.Property(x => x.IsLevelingEnabled).HasDefaultValue(value: false);
             builder.HasOne(e => e.Guild).WithOne(e => e.LevelSettings)
                 .HasForeignKey<GuildLevelSettings>(x => x.GuildId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
+            builder.Property(x => x.IsLevelingEnabled)
+                .HasDefaultValue(value: false);
             builder.Property(e => e.TextTime)
                 .HasDefaultValue(3);
             builder.Property(e => e.Base)
@@ -31,6 +32,8 @@ namespace Cybermancy.Core.Configuration
                 .HasDefaultValue(50);
             builder.Property(e => e.Amount)
                 .HasDefaultValue(5);
+            builder.Property(e => e.LevelChannelLogId)
+                .IsRequired(false);
         }
     }
 }

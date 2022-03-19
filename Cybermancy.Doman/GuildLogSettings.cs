@@ -13,21 +13,37 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public ulong? JoinChannelLog { get; set; }
+        public ulong? JoinChannelLogId { get; set; }
 
-        public ulong? LeaveChannelLog { get; set; }
+        public virtual Channel? JoinChannelLog { get; set; }
 
-        public ulong? DeleteChannelLog { get; set; }
+        public ulong? LeaveChannelLogId { get; set; }
 
-        public ulong? BulkDeleteChannelLog { get; set; }
+        public virtual Channel? LeaveChannelLog { get; set; }
 
-        public ulong? EditChannelLog { get; set; }
+        public ulong? DeleteChannelLogId { get; set; }
 
-        public ulong? UsernameChannelLog { get; set; }
+        public virtual Channel? DeleteChannelLog { get; set; }
 
-        public ulong? NicknameChannelLog { get; set; }
+        public ulong? BulkDeleteChannelLogId { get; set; }
 
-        public ulong? AvatarChannelLog { get; set; }
+        public virtual Channel? BulkDeleteChannelLog { get; set; }
+
+        public ulong? EditChannelLogId { get; set; }
+
+        public virtual Channel? EditChannelLog { get; set; }
+
+        public ulong? UsernameChannelLogId { get; set; }
+
+        public virtual Channel? UsernameChannelLog { get; set; }
+
+        public ulong? NicknameChannelLogId { get; set; }
+
+        public virtual Channel? NicknameChannelLog { get; set; }
+
+        public ulong? AvatarChannelLogId { get; set; }
+
+        public virtual Channel? AvatarChannelLog { get; set; }
         public bool IsLoggingEnabled { get; set; }
     }
 }

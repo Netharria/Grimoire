@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -18,12 +18,21 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<OldLogMessage> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
-            builder.Property(e => e.ChannelId).IsRequired();
-            builder.HasOne(e => e.Guild).WithMany(e => e.OldLogMessages)
+            builder.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .IsRequired();
+            builder.HasOne(e => e.Channel)
+                .WithMany(e => e.OldMessages)
+                .HasForeignKey(x => x.ChannelId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(e => e.Guild)
+                .WithMany(e => e.OldLogMessages)
                 .HasForeignKey(x => x.GuildId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.Property(e => e.CreatedAt)
+                .IsRequired();
         }
     }
 }

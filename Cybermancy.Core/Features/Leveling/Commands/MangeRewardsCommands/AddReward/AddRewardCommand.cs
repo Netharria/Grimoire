@@ -14,6 +14,6 @@ namespace Cybermancy.Core.Features.Leveling.Commands.AddReward
     {
         public ulong RoleId { get; init; }
         public ulong GuildId { get; init; }
-        public int RewardLevel { get; init; }
+        public uint RewardLevel { get; init; }
     }
 }

@@ -18,22 +18,28 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Lock> builder)
         {
             builder.HasKey(e => e.ChannelId);
-            builder.HasOne(e => e.Channel).WithOne(e => e.Lock)
+            builder.HasOne(e => e.Channel)
+                .WithOne(e => e.Lock)
                 .HasForeignKey<Lock>(x => x.ChannelId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-
-            builder.HasOne(e => e.Moderator).WithMany(e => e.ChannelsLocked)
+            builder.Property(e => e.PreviousSetting)
+                .IsRequired(false);
+            builder.HasOne(e => e.Moderator)
+                .WithMany(e => e.ChannelsLocked)
                 .HasForeignKey(e => e.ModeratorId)
+                .HasPrincipalKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
-
-            builder.HasOne(e => e.Guild).WithMany(e => e.LockedChannels)
+            builder.HasOne(e => e.Guild)
+                .WithMany(e => e.LockedChannels)
                 .HasForeignKey(e => e.GuildId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.Property(e => e.Reason)
                 .HasMaxLength(1000);
+            builder.Property(e => e.EndTime)
+                .IsRequired();
         }
     }
 }

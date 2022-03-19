@@ -54,7 +54,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.GainUserXp
 
             var loggingChannel = await this._cybermancyDbContext.GuildLevelSettings
                 .Where(x => x.GuildId == request.GuildId)
-                .Select(x => x.LevelChannelLog)
+                .Select(x => x.LevelChannelLogId)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
             return new GainUserXpCommandResponse {

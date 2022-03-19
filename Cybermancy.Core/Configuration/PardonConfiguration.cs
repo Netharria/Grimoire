@@ -18,14 +18,21 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Pardon> builder)
         {
             builder.HasKey(e => e.SinId);
-            builder.Property(e => e.Reason).HasMaxLength(1000);
-            builder.HasOne(e => e.Sin).WithOne(e => e.Pardon)
+            builder.HasOne(e => e.Sin)
+                .WithOne(e => e.Pardon)
                 .HasForeignKey<Pardon>(e => e.SinId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.Moderator).WithMany(e => e.SinsPardoned)
+            builder.HasOne(e => e.Moderator)
+                .WithMany(e => e.SinsPardoned)
                 .HasForeignKey(e => e.ModeratorId)
+                .HasPrincipalKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+            builder.Property(e => e.PardonDate)
+                .IsRequired();
+            builder.Property(e => e.Reason)
+                .HasMaxLength(1000)
                 .IsRequired();
         }
     }

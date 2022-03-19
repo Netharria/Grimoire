@@ -33,22 +33,22 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ReclaimUserXp
                     Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?"
                 };
 
-            int xpToTake;
+            ulong xpToTake;
             if (request.XpToTake.Equals("All", StringComparison.CurrentCultureIgnoreCase))
                 xpToTake = guildUser.Xp;
-            else if (!int.TryParse(request.XpToTake, out xpToTake))
-                return new BaseResponse
-                {
-                    Success = false,
-                    Message = "XP needs to be a valid number."
-                };
-
-            if (xpToTake < 0)
+            else if(request.XpToTake.Trim().StartsWith('-'))
                 return new BaseResponse
                 {
                     Success = false,
                     Message = "XP needs to be a positive value."
                 };
+            else if (!ulong.TryParse(request.XpToTake, out xpToTake))
+                return new BaseResponse
+                {
+                    Success = false,
+                    Message = "XP needs to be a valid number."
+                };
+                
             guildUser.Xp -= xpToTake;
             this._cybermancyDbContext.GuildUsers.Update(guildUser);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

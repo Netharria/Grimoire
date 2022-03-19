@@ -18,7 +18,8 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Attachment> builder)
         {
             builder.HasKey(e => e.MessageId);
-            builder.HasOne(e => e.Message).WithMany(x => x.Attachments)
+            builder.HasOne(e => e.Message)
+                .WithMany(x => x.Attachments)
                 .HasForeignKey(e => e.MessageId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();

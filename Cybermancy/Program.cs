@@ -27,10 +27,11 @@ Host.CreateDefaultBuilder(args)
     .ConfigureLogging((context, x) => x
     .AddConsole()
     .AddConfiguration(context.Configuration))
-    .ConfigureServices((context, services) => 
+    .ConfigureServices((context, services) =>
         services
         .AddCoreServices(context.Configuration)
         .AddSingleton<ITracer>(provider => new MockTracer())
+        .AddScoped<LeaderboardCommands>()
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"];
@@ -53,10 +54,9 @@ Host.CreateDefaultBuilder(args)
             x =>
             {
                 if (x is not SlashCommandsConfiguration config) return;
+                //Enables dependancy injection for commands
                 config.Services = services.BuildServiceProvider();
-            }
-                // How to add services to be dependency injected into slash commands.
-                ,
+            },
             x =>
             {
                 if (x is not SlashCommandsExtension extension) return;
@@ -69,6 +69,8 @@ Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<RewardCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
+        .BuildServiceProvider()
+        .RegisterRepeatingTasks()
     )
     .UseConsoleLifetime()
     .Build()

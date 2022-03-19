@@ -18,18 +18,15 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<User> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
+            builder.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .IsRequired();
             builder.Property(e => e.UserName)
                 .HasMaxLength(32)
                 .IsRequired();
-            builder.Property(e => e.AvatarUrl).HasMaxLength(300).IsRequired();
-            builder.HasMany(e => e.Messages).WithOne(e => e.User);
-            builder.HasMany(e => e.Trackers).WithOne(e => e.User).HasForeignKey(e => e.UserId);
-            builder.HasMany(e => e.TrackedUsers).WithOne(e => e.Moderator).HasForeignKey(e => e.ModeratorId);
-            builder.HasMany(e => e.UserSins).WithOne(e => e.User).HasForeignKey(e => e.UserId);
-            builder.HasMany(e => e.ModeratedSins).WithOne(e => e.Moderator).HasForeignKey(e => e.ModeratorId);
-            builder.HasMany(e => e.ChannelsLocked).WithOne(e => e.Moderator);
-            builder.HasMany(e => e.SinsPardoned).WithOne(e => e.Moderator);
+            builder.Property(e => e.AvatarUrl)
+                .HasMaxLength(300)
+                .IsRequired();
         }
     }
 }

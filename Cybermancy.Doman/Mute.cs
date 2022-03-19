@@ -13,6 +13,10 @@ namespace Cybermancy.Domain
 
         public virtual Sin Sin { get; set; } = null!;
 
+        public ulong UserId { get; set; }
+
+        public virtual GuildUser GuildUser { get; set; } = null!;
+
         public DateTime EndTime { get; set; }
     }
 }

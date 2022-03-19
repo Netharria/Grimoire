@@ -8,7 +8,6 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Shared.Commands.UpdateAllGuilds
 {
@@ -31,6 +30,12 @@ namespace Cybermancy.Core.Features.Shared.Commands.UpdateAllGuilds
                     AvatarUrl = x.AvatarUrl,
                     Id = x.Id,
                     UserName = x.UserName,
+                    UsernameHistories = new List<UsernameHistory> {
+                        new UsernameHistory {
+                            NewUsername = x.UserName,
+                            UserId = x.Id
+                        }
+                    }
                 });
 
             if(usersToAdd.Any())
@@ -82,8 +87,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.UpdateAllGuilds
                 .Select(x => new GuildUser
                 {
                     UserId = x.UserId,
-                    GuildId= x.GuildId,
-                    DisplayName = x.DisplayName
+                    GuildId= x.GuildId
                 });
 
             if(guildUsersToAdd.Any())

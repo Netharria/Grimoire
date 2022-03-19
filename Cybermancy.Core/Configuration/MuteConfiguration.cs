@@ -22,6 +22,13 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey<Mute>(e => e.SinId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
+            builder.HasOne(e => e.GuildUser)
+                .WithMany(e => e.ActiveMutes)
+                .HasForeignKey(e => e.UserId)
+                .HasPrincipalKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+            builder.Property(e => e.EndTime).IsRequired();
         }
     }
 }

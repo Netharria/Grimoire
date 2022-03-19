@@ -11,22 +11,32 @@ namespace Cybermancy.Domain
 {
     public class Message : Identifiable
     {
-        public ulong UserId { get; set; }
+        public ulong AuthorId { get; set; }
 
-        public virtual User User { get; set; } = null!;
+        public virtual GuildUser Author { get; set; } = null!;
 
-        public virtual ulong ChannelId { get; set; }
+        public ulong ChannelId { get; set; }
 
         public virtual Channel Channel { get; set; } = null!;
 
-        public ulong GuildId { get; set; }
-
-        public virtual Guild Guild { get; set; } = null!;
-
         public string Content { get; set; } = string.Empty;
 
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedTimestamp { get; set; }
+
+        public ulong? ReferencedMessageId { get; set; }
+
+        public virtual Message? ReferencedMessage { get; set; }
+
+        public virtual ICollection<Message> ReferencingMessages { get; set; } = new List<Message>();
+
+        public bool IsDeleted { get; set; }
+
+        public ulong? DeletedByModeratorId { get; set; }
+
+        public virtual GuildUser? DeletedByModerator { get; set; } = null!;
 
         public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+
+        public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
     }
 }

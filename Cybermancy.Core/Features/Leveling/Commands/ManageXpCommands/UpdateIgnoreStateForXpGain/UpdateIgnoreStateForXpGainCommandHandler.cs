@@ -67,7 +67,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain
                     .Select(x =>
                     {
                         newIgnoredItems.Append(x.Mention()).Append(' ');
-                        x.GuildMembers.Add(new GuildUser
+                        x.GuildMemberProfiles.Add(new GuildUser
                         {
                             GuildId = request.GuildId,
                             IsXpIgnored = request.ShouldIgnore
@@ -89,7 +89,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain
                             AvatarUrl = x.AvatarUrl,
 
                         };
-                        user.GuildMembers.Add(new GuildUser
+                        user.GuildMemberProfiles.Add(new GuildUser
                         {
                             GuildId = request.GuildId,
                             DisplayName = x.DisplayName,

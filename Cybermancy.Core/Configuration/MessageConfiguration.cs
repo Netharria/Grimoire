@@ -18,22 +18,35 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Message> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
-            builder.Property(e => e.Content).HasMaxLength(4000);
-            builder.HasOne(e => e.User).WithMany(e => e.Messages)
-                .HasForeignKey(e => e.UserId)
+            builder.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .IsRequired();
+            builder.HasOne(e => e.Author)
+                .WithMany(e => e.Messages)
+                .HasForeignKey(e => e.AuthorId)
+                .HasPrincipalKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.Channel).WithMany(e => e.Messages)
+            builder.HasOne(e => e.Channel)
+                .WithMany(e => e.Messages)
                 .HasForeignKey(e => e.ChannelId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.Guild).WithMany(e => e.Messages)
-                .HasForeignKey(e => e.GuildId)
-                .OnDelete(DeleteBehavior.Cascade)
+            builder.Property(e => e.Content)
+                .HasMaxLength(4000);
+            builder.Property(e => e.CreatedTimestamp)
                 .IsRequired();
-
-            builder.HasMany(e => e.Attachments).WithOne(e => e.Message);
+            builder.HasOne(e => e.ReferencedMessage)
+                .WithMany(e => e.ReferencingMessages)
+                .HasForeignKey(e => e.ReferencedMessageId)
+                .IsRequired(false);
+            builder.Property(x => x.IsDeleted)
+                .HasDefaultValue(false);
+            builder.HasOne(e => e.DeletedByModerator)
+                .WithMany(e => e.MessagesDeletedAsModerator)
+                .HasForeignKey(e => e.DeletedByModeratorId)
+                .HasPrincipalKey(e => e.UserId)
+                .IsRequired(false);
         }
     }
 }

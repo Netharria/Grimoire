@@ -11,6 +11,7 @@ namespace Cybermancy.Core.Extensions
 {
     public static class ChannelExtensions
     {
-        public static string Mention(this Channel channel) => $"<#{channel.Id}>";
+        public static string Mention(this Channel channel) => Mention(channel.Id);
+        public static string Mention(ulong id) => $"<#{id}>";
     }
 }

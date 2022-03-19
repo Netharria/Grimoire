@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -18,14 +18,18 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Role> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).ValueGeneratedNever().IsRequired();
-            builder.HasOne(e => e.Guild).WithMany(e => e.Roles)
+            builder.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .IsRequired();
+            builder.HasOne(e => e.Guild)
+                .WithMany(e => e.Roles)
                 .HasForeignKey(x => x.GuildId)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(e => e.Reward)
+                .WithOne(e => e.Role)
+                .IsRequired(false);
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(value: false);
-            builder.HasOne(e => e.Reward).WithOne(e => e.Role)
-                .IsRequired(false);
         }
     }
 }

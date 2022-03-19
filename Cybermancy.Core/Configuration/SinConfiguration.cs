@@ -18,22 +18,32 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Sin> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).ValueGeneratedOnAdd();
-            builder.Property(e => e.Reason).HasMaxLength(1000);
-            builder.HasOne(e => e.User).WithMany(e => e.UserSins)
+            builder.Property(e => e.Id)
+                .ValueGeneratedOnAdd();
+            builder.Property(e => e.Reason)
+                .HasMaxLength(1000);
+            builder.HasOne(e => e.GuildUser)
+                .WithMany(e => e.UserSins)
                 .HasForeignKey(e => e.UserId)
+                .HasPrincipalKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.Moderator).WithMany(e => e.ModeratedSins)
+            builder.HasOne(e => e.Moderator)
+                .WithMany(e => e.ModeratedSins)
                 .HasForeignKey(e => e.ModeratorId)
+                .HasPrincipalKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            builder.HasOne(e => e.Guild).WithMany(e => e.Sins)
+            builder.HasOne(e => e.Guild)
+                .WithMany(e => e.Sins)
                 .HasForeignKey(e => e.GuildId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.Mute).WithOne(e => e.Sin).IsRequired(false);
-            builder.HasOne(e => e.Pardon).WithOne(e => e.Sin).IsRequired(false);
-            builder.HasMany(e => e.PublishMessages).WithOne(e => e.Sin);
+            builder.HasOne(e => e.Mute)
+                .WithOne(e => e.Sin)
+                .IsRequired(false);
+            builder.HasOne(e => e.Pardon)
+                .WithOne(e => e.Sin)
+                .IsRequired(false);
         }
     }
 }

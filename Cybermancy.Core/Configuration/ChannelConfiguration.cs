@@ -18,23 +18,20 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Channel> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).ValueGeneratedNever()
+            builder.Property(e => e.Id)
+                .ValueGeneratedNever()
                 .IsRequired();
 
-            builder.Property(e => e.Name).HasMaxLength(100).IsRequired();
-
-            builder.HasOne(e => e.Guild).WithMany(e => e.Channels)
-                .HasForeignKey(x => x.GuildId)
-                .OnDelete(DeleteBehavior.Cascade)
+            builder.Property(e => e.Name)
+                .HasMaxLength(100)
                 .IsRequired();
 
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(value: false);
 
-            builder.HasMany(e => e.Messages).WithOne(e => e.Channel);
-            builder.HasMany(e => e.Trackers).WithOne(e => e.LogChannel);
-
-            builder.HasOne(e => e.Lock).WithOne(e => e.Channel).IsRequired(false);
+            builder.HasOne(e => e.Lock)
+                .WithOne(e => e.Channel)
+                .IsRequired(false);
         }
     }
 }

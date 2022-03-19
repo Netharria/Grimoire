@@ -17,7 +17,7 @@ namespace Cybermancy.Domain
 
         public ulong ModeratorId { get; set; }
 
-        public virtual User Moderator { get; set; } = null!;
+        public virtual GuildUser Moderator { get; set; } = null!;
 
         public ulong GuildId { get; set; }
 

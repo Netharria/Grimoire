@@ -9,14 +9,14 @@ namespace Cybermancy.Domain
 {
     public class Reward
     {
-        public ulong GuildId { get; set; }
-
-        public virtual Guild Guild { get; set; } = null!;
-
         public ulong RoleId { get; set; }
 
         public virtual Role Role { get; set; } = null!;
 
-        public int RewardLevel { get; set; }
+        public ulong GuildId { get; set; }
+
+        public virtual Guild Guild { get; set; } = null!;
+
+        public uint RewardLevel { get; set; }
     }
 }

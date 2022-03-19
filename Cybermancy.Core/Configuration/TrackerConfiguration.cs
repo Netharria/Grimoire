@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -18,22 +18,23 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Tracker> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.HasIndex(e => new { e.UserId, e.GuildId })
+            builder.HasIndex(e => new { e.GuildUserId, e.GuildId })
                 .IsUnique();
-            builder.HasOne(e => e.User).WithMany(e => e.Trackers)
-                .HasForeignKey(e => e.UserId)
+            builder.HasOne(e => e.GuildUser)
+                .WithMany(e => e.Trackers)
+                .HasForeignKey(e => e.GuildUserId)
+                .HasPrincipalKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.Guild).WithMany(e => e.Trackers)
-                .HasForeignKey(e => e.GuildId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.HasOne(e => e.LogChannel).WithMany(e => e.Trackers)
+            builder.HasOne(e => e.LogChannel)
+                .WithMany(e => e.Trackers)
                 .HasForeignKey(e => e.LogChannelId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.HasOne(e => e.Moderator).WithMany(e => e.TrackedUsers)
+            builder.HasOne(e => e.Moderator)
+                .WithMany(e => e.TrackedUsers)
                 .HasForeignKey(e => e.ModeratorId)
+                .HasPrincipalKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
         }

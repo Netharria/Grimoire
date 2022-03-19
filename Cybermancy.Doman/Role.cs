@@ -15,7 +15,7 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public virtual Reward Reward { get; set; } = null!;
+        public virtual Reward? Reward { get; set; }
 
         public bool IsXpIgnored { get; set; }
     }
