@@ -19,11 +19,6 @@ namespace Cybermancy.DatabaseManagementModules
 
         public Task DiscordOnReady(DiscordClient sender, ReadyEventArgs args) => Task.CompletedTask;
 
-        [RepeatTask(seconds: 15)]
-        public static void DoSomething()
-            => Console.WriteLine("This should print every 15 seconds");
-
-
         #region UnusedEvents
 
         public Task DiscordOnHeartbeated(DiscordClient sender, HeartbeatEventArgs args) => Task.CompletedTask;
