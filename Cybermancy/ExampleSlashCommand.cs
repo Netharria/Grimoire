@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
+using Cybermancy.Attributes;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings;
 using Cybermancy.Extensions;
 using DSharpPlus;
@@ -69,16 +70,14 @@ namespace Cybermancy
             return interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: true, ctx.Member, embedPages);
         }
 
-        [RepeatTask(seconds: 5)]
+        //[RepeatTask(seconds: 5)]
         public async static Task SomethingAsync()
         {
-            using (var scope = ServiceActivator.GetScope())
-            {
-                var mediator = (IMediator?)scope.ServiceProvider.GetService(typeof(IMediator));
-                if (mediator is null) throw new ArgumentNullException("Was Not able to get mediator service");
-                var result = await mediator.Send(new GetLevelSettingsQuery { GuildId = 639594402410659887 });
-                Console.WriteLine($"LevelingModuleEnables: {result.IsLevelingEnabled}, Amount: {result.Amount}");
-            }
+            using var scope = ServiceActivator.GetScope();
+            var mediator = (IMediator?)scope.ServiceProvider.GetService(typeof(IMediator));
+            if (mediator is null) throw new ArgumentNullException("Was Not able to get mediator service");
+            var result = await mediator.Send(new GetLevelSettingsQuery { GuildId = 639594402410659887 });
+            Console.WriteLine($"LevelingModuleEnables: {result.IsLevelingEnabled}, Amount: {result.Amount}");
         }
     }
 }

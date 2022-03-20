@@ -8,7 +8,7 @@
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using MediatR;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain
 {
     public class UpdateIgnoreStateForXpGainCommand : IRequest<UpdateIgnoreStateForXpGainResponse>
     {

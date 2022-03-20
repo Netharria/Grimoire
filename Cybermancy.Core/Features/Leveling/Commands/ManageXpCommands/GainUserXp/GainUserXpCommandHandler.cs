@@ -10,7 +10,7 @@ using Cybermancy.Core.Extensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.GainUserXp
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
 {
     public class GainUserXpCommandHandler : IRequestHandler<GainUserXpCommand, GainUserXpCommandResponse>
     {
@@ -57,7 +57,8 @@ namespace Cybermancy.Core.Features.Leveling.Commands.GainUserXp
                 .Select(x => x.LevelChannelLogId)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
-            return new GainUserXpCommandResponse {
+            return new GainUserXpCommandResponse
+            {
                 Success = true,
                 EarnedRewards = earnedRewards,
                 PreviousLevel = previousLevel,

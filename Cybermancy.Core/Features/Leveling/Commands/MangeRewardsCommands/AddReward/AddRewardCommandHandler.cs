@@ -12,7 +12,7 @@ using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.AddReward
+namespace Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.AddReward
 {
     public class AddRewardCommandHandler : IRequestHandler<AddRewardCommand, BaseResponse>
     {
@@ -26,7 +26,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.AddReward
         public async Task<BaseResponse> Handle(AddRewardCommand request, CancellationToken cancellationToken)
         {
             var reward = await this._cybermancyDbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == request.RoleId, cancellationToken: cancellationToken);
-            if(reward is null)
+            if (reward is null)
             {
                 reward = new Reward
                 {
@@ -36,7 +36,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.AddReward
                 };
                 await this._cybermancyDbContext.Rewards.AddAsync(reward, cancellationToken);
                 await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
-                return new BaseResponse { Success = true, Message = $"Added {reward.Mention()} reward at level {request.RewardLevel}"};
+                return new BaseResponse { Success = true, Message = $"Added {reward.Mention()} reward at level {request.RewardLevel}" };
             }
 
             reward.RewardLevel = request.RewardLevel;

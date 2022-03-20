@@ -5,15 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Attributes;
 using Cybermancy.Core.Enums;
-using Cybermancy.Core.Features.Leveling.Commands.AwardUserXp;
-using Cybermancy.Core.Features.Leveling.Commands.ReclaimUserXp;
-using Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain;
+using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
+using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
+using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
 using Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems;
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Enums;
 using Cybermancy.Extensions;
-using Cybermancy.SlashCommandAttributes;
 using Cybermancy.Utilities;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -105,8 +105,8 @@ namespace Cybermancy.LevelingModule
             }
 
             var userDtos = matchedIds["Users"]
-                .Select(x => BuildUserDto(ctx.Client, x, ctx.Guild.Id))
-                .Select(x => x.Result)
+                .Select(x => BuildUserDto(ctx.Client, x, ctx.Guild.Id)
+                            .GetAwaiter().GetResult())
                 .OfType<UserDto>().ToList();
 
             var response = await this._mediator.Send(new UpdateIgnoreStateForXpGainCommand

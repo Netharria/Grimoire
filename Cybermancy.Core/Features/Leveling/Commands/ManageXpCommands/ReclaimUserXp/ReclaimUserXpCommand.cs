@@ -8,7 +8,7 @@
 using Cybermancy.Core.Responses;
 using MediatR;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.ReclaimUserXp
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp
 {
     public class ReclaimUserXpCommand : IRequest<BaseResponse>
     {

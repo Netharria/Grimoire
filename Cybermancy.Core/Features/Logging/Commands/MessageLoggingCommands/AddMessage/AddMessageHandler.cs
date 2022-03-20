@@ -35,8 +35,8 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
                 ReferencedMessageId = request.ReferencedMessageId,
                 GuildId = request.GuildId
             };
-            await _cybermancyDbContext.Messages.AddAsync(message, cancellationToken);
-            await _cybermancyDbContext.SaveChangesAsync(cancellationToken);
+            await this._cybermancyDbContext.Messages.AddAsync(message, cancellationToken);
+            await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }
     }

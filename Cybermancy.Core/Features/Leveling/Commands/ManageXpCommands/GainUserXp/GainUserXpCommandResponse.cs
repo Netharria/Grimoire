@@ -7,7 +7,7 @@
 
 using Cybermancy.Core.Responses;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.GainUserXp
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
 {
     public class GainUserXpCommandResponse : BaseResponse
     {

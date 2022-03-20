@@ -1,5 +1,6 @@
 // See https://aka.ms/new-console-template for more information
 using Cybermancy;
+using Cybermancy.Attributes;
 using Cybermancy.Core;
 using Cybermancy.LevelingModule;
 using DSharpPlus;

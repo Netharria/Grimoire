@@ -26,6 +26,6 @@ namespace Cybermancy.Utilities
                     if(user != null) return "User";
                     return "Invalid";
                 })
-                .ToDictionary(k => k.Key.Result, v => v.ToArray());
+                .ToDictionary(k => k.Key.GetAwaiter().GetResult(), v => v.ToArray());
     }
 }

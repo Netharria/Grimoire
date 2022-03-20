@@ -8,7 +8,7 @@
 using System.Reflection;
 using Cybermancy.Extensions;
 
-namespace Cybermancy
+namespace Cybermancy.Attributes
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
     public class RepeatTaskAttribute : Attribute
@@ -47,7 +47,7 @@ namespace Cybermancy
             }
             return services;
         }
-        
+
     }
 
     internal static class Repeat
@@ -64,9 +64,7 @@ namespace Cybermancy
                 {
                     var periodicTimer = new PeriodicTimer(pollInterval);
                     while (await periodicTimer.WaitForNextTickAsync(token))
-                    {
                         action();
-                    }
                 }, token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
     }

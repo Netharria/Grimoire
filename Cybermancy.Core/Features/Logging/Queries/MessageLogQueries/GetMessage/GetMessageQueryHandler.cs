@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage
 
         public async Task<GetMessageQueryResponse> Handle(GetMessageQuery request, CancellationToken cancellationToken)
         {
-            var result = await _cybermancyDbContext.Messages
+            var result = await this._cybermancyDbContext.Messages
                 .Where(x => x.Id == request.MessageId)
                 .Select(x => new GetMessageQueryResponse
                 {

@@ -7,7 +7,7 @@
 
 using Cybermancy.Core.Responses;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain
 {
     public class UpdateIgnoreStateForXpGainResponse : BaseResponse
     {

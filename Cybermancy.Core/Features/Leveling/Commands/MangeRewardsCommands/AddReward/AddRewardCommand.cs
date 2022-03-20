@@ -8,7 +8,7 @@
 using Cybermancy.Core.Responses;
 using MediatR;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.AddReward
+namespace Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.AddReward
 {
     public class AddRewardCommand : IRequest<BaseResponse>
     {

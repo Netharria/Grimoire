@@ -11,7 +11,7 @@ using Cybermancy.Core.Extensions;
 using Cybermancy.Domain;
 using MediatR;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain
 {
     public class UpdateIgnoreStateForXpGainCommandHandler : IRequestHandler<UpdateIgnoreStateForXpGainCommand, UpdateIgnoreStateForXpGainResponse>
     {

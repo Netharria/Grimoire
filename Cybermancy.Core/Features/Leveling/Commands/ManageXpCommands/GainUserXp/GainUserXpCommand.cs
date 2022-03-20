@@ -7,7 +7,7 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.GainUserXp
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
 {
     public class GainUserXpCommand : IRequest<GainUserXpCommandResponse>
     {

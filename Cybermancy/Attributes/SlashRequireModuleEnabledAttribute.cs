@@ -10,7 +10,7 @@ using Cybermancy.Core.Features.Shared.Queries.GetModuleStateForGuild;
 using DSharpPlus.SlashCommands;
 using MediatR;
 
-namespace Cybermancy.SlashCommandAttributes
+namespace Cybermancy.Attributes
 {
     public class SlashRequireModuleEnabledAttribute : SlashCheckBaseAttribute
     {

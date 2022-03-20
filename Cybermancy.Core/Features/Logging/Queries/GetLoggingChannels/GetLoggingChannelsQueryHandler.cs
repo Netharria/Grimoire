@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetLoggingChannels
         }
 
         public Task<GetLoggingChannelsQueryResponse> Handle(GetLoggingChannelsQuery request, CancellationToken cancellationToken)
-            => _cybermancyDbContext.GuildLogSettings
+            => this._cybermancyDbContext.GuildLogSettings
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => new GetLoggingChannelsQueryResponse
             {

@@ -11,7 +11,7 @@ using Cybermancy.Core.Responses;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.ReclaimUserXp
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp
 {
     public class ReclaimUserXpCommandHandler : IRequestHandler<ReclaimUserXpCommand, BaseResponse>
     {
@@ -36,7 +36,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ReclaimUserXp
             ulong xpToTake;
             if (request.XpToTake.Equals("All", StringComparison.CurrentCultureIgnoreCase))
                 xpToTake = guildUser.Xp;
-            else if(request.XpToTake.Trim().StartsWith('-'))
+            else if (request.XpToTake.Trim().StartsWith('-'))
                 return new BaseResponse
                 {
                     Success = false,
@@ -48,7 +48,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ReclaimUserXp
                     Success = false,
                     Message = "XP needs to be a valid number."
                 };
-                
+
             guildUser.Xp -= xpToTake;
             this._cybermancyDbContext.GuildUsers.Update(guildUser);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

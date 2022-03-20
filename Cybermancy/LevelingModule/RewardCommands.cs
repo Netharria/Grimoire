@@ -5,13 +5,13 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Attributes;
 using Cybermancy.Core.Enums;
-using Cybermancy.Core.Features.Leveling.Commands.AddReward;
+using Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.AddReward;
 using Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.RemoveReward;
 using Cybermancy.Core.Features.Leveling.Queries.GetRewards;
 using Cybermancy.Enums;
 using Cybermancy.Extensions;
-using Cybermancy.SlashCommandAttributes;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;

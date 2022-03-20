@@ -11,7 +11,7 @@ using Cybermancy.Core.Responses;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.AwardUserXp
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp
 {
     public class AwardUserXpCommandHandler : IRequestHandler<AwardUserXpCommand, BaseResponse>
     {
@@ -31,8 +31,11 @@ namespace Cybermancy.Core.Features.Leveling.Commands.AwardUserXp
                 .SingleOrDefaultAsync(x => x.UserId == request.UserId && x.GuildId == request.GuildId, cancellationToken: cancellationToken);
 
             if (guildUser is null)
-                return new BaseResponse { Success = false,
-                    Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?" };
+                return new BaseResponse
+                {
+                    Success = false,
+                    Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?"
+                };
 
             guildUser.GrantXp(this._cybermancyDbContext, (uint)request.XpToAward);
 

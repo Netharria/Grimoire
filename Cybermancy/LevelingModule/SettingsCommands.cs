@@ -6,12 +6,12 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text.RegularExpressions;
+using Cybermancy.Attributes;
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings;
 using Cybermancy.Enums;
 using Cybermancy.Extensions;
-using Cybermancy.SlashCommandAttributes;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;

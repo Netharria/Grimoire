@@ -32,8 +32,9 @@ namespace Cybermancy.LoggingModule
         }
 
         public Task DiscordOnMessageAcknowledged(DiscordClient sender, MessageAcknowledgeEventArgs args) => Task.CompletedTask;
+
         public Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
-            => _mediator.Send(new AddMessageCommand
+            => this._mediator.Send(new AddMessageCommand
             {
                 Attachments = args.Message.Attachments.Select(x => x.Url).ToArray(),
                 AuthorId = args.Author.Id,
@@ -44,11 +45,12 @@ namespace Cybermancy.LoggingModule
                 ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
                 GuildId = args.Guild.Id
             });
+
         public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
         {
-            if (!await _mediator.Send(new GetModuleStateForGuildQuery { GuildId = args.Guild.Id, Module = Module.Logging }))
+            if (!await this._mediator.Send(new GetModuleStateForGuildQuery { GuildId = args.Guild.Id, Module = Module.Logging }))
                 return;
-            var loggingChannels = await _mediator.Send(new GetLoggingChannelsQuery { GuildId = args.Guild.Id });
+            var loggingChannels = await this._mediator.Send(new GetLoggingChannelsQuery { GuildId = args.Guild.Id });
             if (loggingChannels.DeleteChannelLogId is not ulong deleteChannelId)
                 return;
             DiscordChannel loggingChannel;
@@ -66,7 +68,7 @@ namespace Cybermancy.LoggingModule
                 //Delete channel from settings.
             }
 
-            var response = await _mediator.Send(new GetMessageQuery{ MessageId = args.Message.Id });
+            var response = await this._mediator.Send(new GetMessageQuery{ MessageId = args.Message.Id });
 
             var embeds = new List<DiscordEmbed>();
 
