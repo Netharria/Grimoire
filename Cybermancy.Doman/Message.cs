@@ -19,15 +19,15 @@ namespace Cybermancy.Domain
 
         public virtual Channel Channel { get; set; } = null!;
 
+        public ulong GuildId { get; set; }
+
+        public virtual Guild Guild { get; set; } = null!;
+
         public string Content { get; set; } = string.Empty;
 
-        public DateTime CreatedTimestamp { get; set; }
+        public DateTime CreatedTimestamp { get; set; } = DateTime.UtcNow;
 
         public ulong? ReferencedMessageId { get; set; }
-
-        public virtual Message? ReferencedMessage { get; set; }
-
-        public virtual ICollection<Message> ReferencingMessages { get; set; } = new List<Message>();
 
         public bool IsDeleted { get; set; }
 

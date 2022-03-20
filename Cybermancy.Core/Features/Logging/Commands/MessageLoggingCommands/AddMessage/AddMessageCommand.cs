@@ -18,5 +18,6 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
         public ICollection<string> Attachments { get; init; } = new List<string>();
         public DateTime CreatedTimestamp { get; init; }
         public ulong? ReferencedMessageId { get; init; }
+        public ulong GuildId { get; init; }
     }
 }

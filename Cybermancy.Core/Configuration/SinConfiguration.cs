@@ -24,14 +24,12 @@ namespace Cybermancy.Core.Configuration
                 .HasMaxLength(1000);
             builder.HasOne(e => e.GuildUser)
                 .WithMany(e => e.UserSins)
-                .HasForeignKey(e => e.UserId)
-                .HasPrincipalKey(e => e.UserId)
+                .HasForeignKey(e => new { e.UserId, e.GuildId })
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.HasOne(e => e.Moderator)
                 .WithMany(e => e.ModeratedSins)
-                .HasForeignKey(e => e.ModeratorId)
-                .HasPrincipalKey(e => e.UserId)
+                .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
                 .OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(e => e.Guild)
                 .WithMany(e => e.Sins)

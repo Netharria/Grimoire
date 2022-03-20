@@ -14,6 +14,6 @@ namespace Cybermancy.Domain
         public ulong UserId { get; set; }
         public virtual User User { get; set; } = null!;
         public string NewUsername { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }

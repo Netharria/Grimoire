@@ -17,6 +17,10 @@ namespace Cybermancy.Domain
 
         public virtual GuildUser GuildUser { get; set; } = null!;
 
+        public ulong GuildId { get; set; }
+
+        public virtual Guild Guild { get; set; } = null!;
+
         public DateTime EndTime { get; set; }
     }
 }

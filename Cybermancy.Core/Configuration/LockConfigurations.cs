@@ -27,8 +27,7 @@ namespace Cybermancy.Core.Configuration
                 .IsRequired(false);
             builder.HasOne(e => e.Moderator)
                 .WithMany(e => e.ChannelsLocked)
-                .HasForeignKey(e => e.ModeratorId)
-                .HasPrincipalKey(e => e.UserId)
+                .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
             builder.HasOne(e => e.Guild)

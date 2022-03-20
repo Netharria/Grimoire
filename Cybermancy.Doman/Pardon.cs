@@ -17,7 +17,10 @@ namespace Cybermancy.Domain
 
         public virtual GuildUser Moderator { get; set; } = null!;
 
-        public DateTime PardonDate { get; set; }
+        public ulong GuildId { get; set; }
+        public virtual Guild Guild { get; set; } = null!;
+
+        public DateTime PardonDate { get; set; } = DateTime.UtcNow;
 
         public string Reason { get; set; } = string.Empty;
     }

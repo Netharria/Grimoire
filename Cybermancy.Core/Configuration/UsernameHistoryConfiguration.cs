@@ -27,7 +27,6 @@ namespace Cybermancy.Core.Configuration
                 .HasMaxLength(32)
                 .IsRequired();
             builder.Property(x => x.Timestamp)
-                .HasDefaultValue(DateTime.UtcNow)
                 .IsRequired();
         }
     }

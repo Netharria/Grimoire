@@ -60,7 +60,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.UpdateIgnoreStateForXpGain
 
             if (allUsersToIgnore is not null && request.Users.Count() != allUsersToIgnore.Length)
             {
-                var usersNotUpdated = allUsersToIgnore.Select(x => x.Id).Except(userIds).ToArray();
+                var usersNotUpdated = allUsersToIgnore.Select(x => x.UserId).Except(userIds).ToArray();
                 var existingUsersToBeAddedToGuild = this._cybermancyDbContext.Users
                     .Where(x => usersNotUpdated.Contains(x.Id))
                     .ToArray()

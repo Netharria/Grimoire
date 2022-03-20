@@ -17,7 +17,7 @@ namespace Cybermancy.Core.Configuration
     {
         public void Configure(EntityTypeBuilder<Attachment> builder)
         {
-            builder.HasKey(e => e.MessageId);
+            builder.HasKey(e => new { e.MessageId, e.AttachmentUrl });
             builder.HasOne(e => e.Message)
                 .WithMany(x => x.Attachments)
                 .HasForeignKey(e => e.MessageId)
@@ -25,7 +25,7 @@ namespace Cybermancy.Core.Configuration
                 .IsRequired();
 
             builder.Property(e => e.AttachmentUrl)
-                .HasMaxLength(4000)
+                .HasMaxLength(400)
                 .IsRequired();
         }
     }

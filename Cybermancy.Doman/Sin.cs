@@ -32,7 +32,7 @@ namespace Cybermancy.Domain
 
         public string Reason { get; set; } = string.Empty;
 
-        public DateTime InfractionOn { get; set; }
+        public DateTime InfractionOn { get; set; } = DateTime.UtcNow;
 
         public SinType SinType { get; set; }
 

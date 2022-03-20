@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using Cybermancy.Extensions;
 
 namespace Cybermancy
 {
@@ -26,35 +27,32 @@ namespace Cybermancy
     {
 
         public static IServiceProvider RegisterRepeatingTasks(this IServiceProvider services)
-        { 
+        {
+            ServiceActivator.Configure(services);
             var methods = Assembly.GetExecutingAssembly()
                 .GetTypes()
                 .SelectMany(t => t.GetMethods())
                 .Where(m => m.GetCustomAttributes(typeof(RepeatTaskAttribute), false).Length > 0)
                 .ToArray();
-            //using(var scope = services.CreateScope())
-            //{
-            //    var cancellationTokenSource = new CancellationTokenSource();
-            //    foreach (var method in methods)
-            //    {
-                    
-            //        var nullableAttribute = Attribute.GetCustomAttribute(method, typeof(RepeatTaskAttribute));
-            //        if (nullableAttribute is not RepeatTaskAttribute attribute) continue;
-            //        if (method.DeclaringType is not Type type) continue;
-            //        Task.Run(() => Repeat.Interval(
-            //            attribute.TimeSpan,
-            //            () => method.Invoke(scope.ServiceProvider.GetService(type), null),
-            //            cancellationTokenSource.Token)
-            //        );
-            //    }
-            //}
+            var cancellationTokenSource = new CancellationTokenSource();
+            foreach (var method in methods)
+            {
+                var nullableAttribute = Attribute.GetCustomAttribute(method, typeof(RepeatTaskAttribute));
+                if (nullableAttribute is not RepeatTaskAttribute attribute) continue;
+                Task.Run(() => Repeat.IntervalAsync(
+                    attribute.TimeSpan,
+                    () => method.Invoke(null, null),
+                    cancellationTokenSource.Token)
+                );
+            }
             return services;
         }
+        
     }
 
     internal static class Repeat
     {
-        public static Task Interval(
+        public static Task IntervalAsync(
             TimeSpan pollInterval,
             Action action,
             CancellationToken token)
@@ -62,13 +60,11 @@ namespace Cybermancy
             // We don't use Observable.Interval:
             // If we block, the values start bunching up behind each other.
             return Task.Factory.StartNew(
-                () =>
+                async () =>
                 {
-                    for (; ; )
+                    var periodicTimer = new PeriodicTimer(pollInterval);
+                    while (await periodicTimer.WaitForNextTickAsync(token))
                     {
-                        if (token.WaitCancellationRequested(pollInterval))
-                            break;
-
                         action();
                     }
                 }, token, TaskCreationOptions.LongRunning, TaskScheduler.Default);

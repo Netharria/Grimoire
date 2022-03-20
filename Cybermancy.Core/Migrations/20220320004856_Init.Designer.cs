@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Cybermancy.Core.Migrations
 {
     [DbContext(typeof(CybermancyDbContext))]
-    [Migration("20220319230716_Init")]
+    [Migration("20220320004856_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,11 +27,10 @@ namespace Cybermancy.Core.Migrations
                         .HasColumnType("bigint unsigned");
 
                     b.Property<string>("AttachmentUrl")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("varchar(4000)");
+                        .HasMaxLength(400)
+                        .HasColumnType("varchar(400)");
 
-                    b.HasKey("MessageId");
+                    b.HasKey("MessageId", "AttachmentUrl");
 
                     b.ToTable("Attachments");
                 });
@@ -213,12 +212,13 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.GuildUser", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<ulong>("UserId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<string>("DisplayName")
-                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
 
@@ -226,31 +226,22 @@ namespace Cybermancy.Core.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("varchar(300)");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
-
                     b.Property<bool>("IsXpIgnored")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime>("TimeOut")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)")
-                        .HasDefaultValue(new DateTime(2022, 3, 19, 23, 7, 16, 735, DateTimeKind.Utc).AddTicks(7265));
-
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("Xp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint unsigned")
                         .HasDefaultValue(0ul);
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "GuildId");
 
-                    b.HasIndex("GuildId", "UserId")
-                        .IsUnique();
+                    b.HasIndex("GuildId");
 
                     b.ToTable("GuildUsers");
                 });
@@ -281,7 +272,7 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.HasIndex("ModeratorId");
+                    b.HasIndex("ModeratorId", "GuildId");
 
                     b.ToTable("Locks");
                 });
@@ -308,7 +299,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<ulong?>("DeletedByModeratorId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong?>("GuildId")
+                    b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<bool>("IsDeleted")
@@ -321,15 +312,13 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AuthorId");
-
                     b.HasIndex("ChannelId");
-
-                    b.HasIndex("DeletedByModeratorId");
 
                     b.HasIndex("GuildId");
 
-                    b.HasIndex("ReferencedMessageId");
+                    b.HasIndex("AuthorId", "GuildId");
+
+                    b.HasIndex("DeletedByModeratorId", "GuildId");
 
                     b.ToTable("Messages");
                 });
@@ -342,7 +331,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<ulong?>("GuildId")
+                    b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("UserId")
@@ -352,7 +341,7 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "GuildId");
 
                     b.ToTable("Mutes");
                 });
@@ -363,7 +352,7 @@ namespace Cybermancy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong>("GuildUserId")
+                    b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<string>("NewNickname")
@@ -374,9 +363,14 @@ namespace Cybermancy.Core.Migrations
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<ulong>("UserId")
+                        .HasColumnType("bigint unsigned");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("GuildUserId");
+                    b.HasIndex("GuildId");
+
+                    b.HasIndex("UserId", "GuildId");
 
                     b.ToTable("NicknameHistory");
                 });
@@ -409,6 +403,9 @@ namespace Cybermancy.Core.Migrations
                     b.Property<ulong>("SinId")
                         .HasColumnType("bigint unsigned");
 
+                    b.Property<ulong>("GuildId")
+                        .HasColumnType("bigint unsigned");
+
                     b.Property<ulong>("ModeratorId")
                         .HasColumnType("bigint unsigned");
 
@@ -422,39 +419,38 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasKey("SinId");
 
-                    b.HasIndex("ModeratorId");
+                    b.HasIndex("GuildId");
+
+                    b.HasIndex("ModeratorId", "GuildId");
 
                     b.ToTable("Pardons");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.PublishedMessage", b =>
                 {
-                    b.Property<ulong>("MessageId")
-                        .HasColumnType("bigint unsigned");
-
-                    b.Property<ulong>("MessageId1")
+                    b.Property<ulong>("SinId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<int>("PublishType")
                         .HasColumnType("int");
 
-                    b.Property<ulong>("SinId")
+                    b.Property<ulong>("MessageId")
                         .HasColumnType("bigint unsigned");
 
-                    b.HasKey("MessageId");
-
-                    b.HasIndex("MessageId1");
-
-                    b.HasIndex("SinId", "PublishType")
-                        .IsUnique();
+                    b.HasKey("SinId", "PublishType");
 
                     b.ToTable("PublishedMessages");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Reaction", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<ulong>("MessageId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("EmojiId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<ulong>("GuildUserId")
@@ -465,19 +461,16 @@ namespace Cybermancy.Core.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("varchar(300)");
 
-                    b.Property<ulong>("MessageId")
-                        .HasColumnType("bigint unsigned");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
 
-                    b.HasKey("Id");
+                    b.HasKey("MessageId", "EmojiId");
 
-                    b.HasIndex("GuildUserId");
+                    b.HasIndex("GuildId");
 
-                    b.HasIndex("MessageId");
+                    b.HasIndex("GuildUserId", "GuildId");
 
                     b.ToTable("Reaction");
                 });
@@ -550,27 +543,23 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.HasIndex("ModeratorId");
+                    b.HasIndex("ModeratorId", "GuildId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "GuildId");
 
                     b.ToTable("Sins");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Tracker", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<ulong>("GuildUserId")
                         .HasColumnType("bigint unsigned");
-
-                    b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong>("GuildUserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("LogChannelId")
                         .HasColumnType("bigint unsigned");
@@ -578,16 +567,13 @@ namespace Cybermancy.Core.Migrations
                     b.Property<ulong>("ModeratorId")
                         .HasColumnType("bigint unsigned");
 
-                    b.HasKey("Id");
+                    b.HasKey("GuildUserId", "GuildId");
 
                     b.HasIndex("GuildId");
 
                     b.HasIndex("LogChannelId");
 
-                    b.HasIndex("ModeratorId");
-
-                    b.HasIndex("GuildUserId", "GuildId")
-                        .IsUnique();
+                    b.HasIndex("ModeratorId", "GuildId");
 
                     b.ToTable("Trackers");
                 });
@@ -624,9 +610,7 @@ namespace Cybermancy.Core.Migrations
                         .HasColumnType("varchar(32)");
 
                     b.Property<DateTime>("Timestamp")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)")
-                        .HasDefaultValue(new DateTime(2022, 3, 19, 23, 7, 16, 750, DateTimeKind.Utc).AddTicks(2198));
+                        .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("UserId")
                         .HasColumnType("bigint unsigned");
@@ -782,8 +766,7 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasOne("Cybermancy.Domain.GuildUser", "Moderator")
                         .WithMany("ChannelsLocked")
-                        .HasForeignKey("ModeratorId")
-                        .HasPrincipalKey("UserId")
+                        .HasForeignKey("ModeratorId", "GuildId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -796,31 +779,27 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Message", b =>
                 {
-                    b.HasOne("Cybermancy.Domain.GuildUser", "Author")
-                        .WithMany("Messages")
-                        .HasForeignKey("AuthorId")
-                        .HasPrincipalKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Cybermancy.Domain.Channel", "Channel")
                         .WithMany("Messages")
                         .HasForeignKey("ChannelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cybermancy.Domain.Guild", "Guild")
+                        .WithMany("Messages")
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cybermancy.Domain.GuildUser", "Author")
+                        .WithMany("Messages")
+                        .HasForeignKey("AuthorId", "GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Cybermancy.Domain.GuildUser", "DeletedByModerator")
                         .WithMany("MessagesDeletedAsModerator")
-                        .HasForeignKey("DeletedByModeratorId")
-                        .HasPrincipalKey("UserId");
-
-                    b.HasOne("Cybermancy.Domain.Guild", null)
-                        .WithMany("Messages")
-                        .HasForeignKey("GuildId");
-
-                    b.HasOne("Cybermancy.Domain.Message", "ReferencedMessage")
-                        .WithMany("ReferencingMessages")
-                        .HasForeignKey("ReferencedMessageId");
+                        .HasForeignKey("DeletedByModeratorId", "GuildId");
 
                     b.Navigation("Author");
 
@@ -828,14 +807,16 @@ namespace Cybermancy.Core.Migrations
 
                     b.Navigation("DeletedByModerator");
 
-                    b.Navigation("ReferencedMessage");
+                    b.Navigation("Guild");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Mute", b =>
                 {
-                    b.HasOne("Cybermancy.Domain.Guild", null)
+                    b.HasOne("Cybermancy.Domain.Guild", "Guild")
                         .WithMany("ActiveMutes")
-                        .HasForeignKey("GuildId");
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.Sin", "Sin")
                         .WithOne("Mute")
@@ -844,10 +825,11 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasOne("Cybermancy.Domain.GuildUser", "GuildUser")
                         .WithMany("ActiveMutes")
-                        .HasForeignKey("UserId")
-                        .HasPrincipalKey("UserId")
+                        .HasForeignKey("UserId", "GuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Guild");
 
                     b.Navigation("GuildUser");
 
@@ -856,12 +838,19 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.NicknameHistory", b =>
                 {
-                    b.HasOne("Cybermancy.Domain.GuildUser", "GuildUser")
-                        .WithMany("NicknamesHistory")
-                        .HasForeignKey("GuildUserId")
-                        .HasPrincipalKey("UserId")
+                    b.HasOne("Cybermancy.Domain.Guild", "Guild")
+                        .WithMany()
+                        .HasForeignKey("GuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Cybermancy.Domain.GuildUser", "GuildUser")
+                        .WithMany("NicknamesHistory")
+                        .HasForeignKey("UserId", "GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Guild");
 
                     b.Navigation("GuildUser");
                 });
@@ -887,17 +876,24 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Pardon", b =>
                 {
-                    b.HasOne("Cybermancy.Domain.GuildUser", "Moderator")
-                        .WithMany("SinsPardoned")
-                        .HasForeignKey("ModeratorId")
-                        .HasPrincipalKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("Cybermancy.Domain.Guild", "Guild")
+                        .WithMany()
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.Sin", "Sin")
                         .WithOne("Pardon")
                         .HasForeignKey("Cybermancy.Domain.Pardon", "SinId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Cybermancy.Domain.GuildUser", "Moderator")
+                        .WithMany("SinsPardoned")
+                        .HasForeignKey("ModeratorId", "GuildId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Guild");
 
                     b.Navigation("Moderator");
 
@@ -906,30 +902,21 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.PublishedMessage", b =>
                 {
-                    b.HasOne("Cybermancy.Domain.Message", "Message")
-                        .WithMany()
-                        .HasForeignKey("MessageId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Cybermancy.Domain.Sin", "Sin")
                         .WithMany("PublishMessages")
                         .HasForeignKey("SinId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Message");
-
                     b.Navigation("Sin");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Reaction", b =>
                 {
-                    b.HasOne("Cybermancy.Domain.GuildUser", "GuildUser")
-                        .WithMany("Reactions")
-                        .HasForeignKey("GuildUserId")
-                        .HasPrincipalKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("Cybermancy.Domain.Guild", "Guild")
+                        .WithMany()
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.Message", "Message")
@@ -937,6 +924,14 @@ namespace Cybermancy.Core.Migrations
                         .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Cybermancy.Domain.GuildUser", "GuildUser")
+                        .WithMany("Reactions")
+                        .HasForeignKey("GuildUserId", "GuildId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Guild");
 
                     b.Navigation("GuildUser");
 
@@ -982,15 +977,13 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasOne("Cybermancy.Domain.GuildUser", "Moderator")
                         .WithMany("ModeratedSins")
-                        .HasForeignKey("ModeratorId")
-                        .HasPrincipalKey("UserId")
+                        .HasForeignKey("ModeratorId", "GuildId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.GuildUser", "GuildUser")
                         .WithMany("UserSins")
-                        .HasForeignKey("UserId")
-                        .HasPrincipalKey("UserId")
+                        .HasForeignKey("UserId", "GuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1009,23 +1002,21 @@ namespace Cybermancy.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cybermancy.Domain.GuildUser", "GuildUser")
-                        .WithMany("Trackers")
-                        .HasForeignKey("GuildUserId")
-                        .HasPrincipalKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Cybermancy.Domain.Channel", "LogChannel")
                         .WithMany("Trackers")
                         .HasForeignKey("LogChannelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Cybermancy.Domain.GuildUser", "GuildUser")
+                        .WithMany("Trackers")
+                        .HasForeignKey("GuildUserId", "GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Cybermancy.Domain.GuildUser", "Moderator")
                         .WithMany("TrackedUsers")
-                        .HasForeignKey("ModeratorId")
-                        .HasPrincipalKey("UserId")
+                        .HasForeignKey("ModeratorId", "GuildId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1123,8 +1114,6 @@ namespace Cybermancy.Core.Migrations
                     b.Navigation("Attachments");
 
                     b.Navigation("Reactions");
-
-                    b.Navigation("ReferencingMessages");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Role", b =>

@@ -24,8 +24,7 @@ namespace Cybermancy.Core.Configuration
                 .IsRequired();
             builder.HasOne(e => e.GuildUser)
                 .WithMany(e => e.ActiveMutes)
-                .HasForeignKey(e => e.UserId)
-                .HasPrincipalKey(e => e.UserId)
+                .HasForeignKey(e => new { e.UserId, e.GuildId })
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.Property(e => e.EndTime).IsRequired();

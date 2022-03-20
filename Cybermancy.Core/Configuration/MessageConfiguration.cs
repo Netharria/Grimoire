@@ -23,8 +23,7 @@ namespace Cybermancy.Core.Configuration
                 .IsRequired();
             builder.HasOne(e => e.Author)
                 .WithMany(e => e.Messages)
-                .HasForeignKey(e => e.AuthorId)
-                .HasPrincipalKey(e => e.UserId)
+                .HasForeignKey(e => new { e.AuthorId, e.GuildId })
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.HasOne(e => e.Channel)
@@ -36,16 +35,11 @@ namespace Cybermancy.Core.Configuration
                 .HasMaxLength(4000);
             builder.Property(e => e.CreatedTimestamp)
                 .IsRequired();
-            builder.HasOne(e => e.ReferencedMessage)
-                .WithMany(e => e.ReferencingMessages)
-                .HasForeignKey(e => e.ReferencedMessageId)
-                .IsRequired(false);
             builder.Property(x => x.IsDeleted)
                 .HasDefaultValue(false);
             builder.HasOne(e => e.DeletedByModerator)
                 .WithMany(e => e.MessagesDeletedAsModerator)
-                .HasForeignKey(e => e.DeletedByModeratorId)
-                .HasPrincipalKey(e => e.UserId)
+                .HasForeignKey(e => new { e.DeletedByModeratorId, e.GuildId })
                 .IsRequired(false);
         }
     }

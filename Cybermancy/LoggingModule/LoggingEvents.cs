@@ -41,7 +41,8 @@ namespace Cybermancy.LoggingModule
                 CreatedTimestamp = args.Message.CreationTimestamp.UtcDateTime,
                 MessageContent = args.Message.Content,
                 MessageId = args.Message.Id,
-                ReferencedMessageId = args.Message.ReferencedMessage.Id
+                ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
+                GuildId = args.Guild.Id
             });
         public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
         {

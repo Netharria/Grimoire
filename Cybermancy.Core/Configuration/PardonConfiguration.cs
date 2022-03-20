@@ -25,8 +25,7 @@ namespace Cybermancy.Core.Configuration
                 .IsRequired();
             builder.HasOne(e => e.Moderator)
                 .WithMany(e => e.SinsPardoned)
-                .HasForeignKey(e => e.ModeratorId)
-                .HasPrincipalKey(e => e.UserId)
+                .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
             builder.Property(e => e.PardonDate)

@@ -18,8 +18,7 @@ namespace Cybermancy.Core.Configuration
             builder.HasKey(x => x.Id);
             builder.HasOne(x => x.GuildUser)
                 .WithMany(x => x.NicknamesHistory)
-                .HasForeignKey(x => x.GuildUserId)
-                .HasPrincipalKey(x => x.UserId)
+                .HasForeignKey(x => new { x.UserId, x.GuildId })
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
             builder.Property(x => x.NewNickname)

@@ -32,7 +32,8 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
                 ChannelId = request.ChannelId,
                 Content = request.MessageContent,
                 CreatedTimestamp = request.CreatedTimestamp,
-                ReferencedMessageId = request.ReferencedMessageId
+                ReferencedMessageId = request.ReferencedMessageId,
+                GuildId = request.GuildId
             };
             await _cybermancyDbContext.Messages.AddAsync(message, cancellationToken);
             await _cybermancyDbContext.SaveChangesAsync(cancellationToken);

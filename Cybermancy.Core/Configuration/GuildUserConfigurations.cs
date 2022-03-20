@@ -17,9 +17,7 @@ namespace Cybermancy.Core.Configuration
     {
         public void Configure(EntityTypeBuilder<GuildUser> builder)
         {
-            builder.HasKey(e => e.Id);
-            builder.HasIndex(e => new { e.GuildId, e.UserId })
-                .IsUnique();
+            builder.HasKey(e => new { e.UserId, e.GuildId });
             builder.HasOne(e => e.Guild)
                 .WithMany(e => e.GuildUsers)
                 .HasForeignKey(e => e.GuildId)
@@ -33,7 +31,7 @@ namespace Cybermancy.Core.Configuration
             builder.Property(e => e.DisplayName)
                 .HasField("_displayName")
                 .HasMaxLength(32)
-                .IsRequired();
+                .IsRequired(false);
             builder.Property(e => e.GuildAvatarUrl)
                 .HasField("_guildAvatarUrl")
                 .HasMaxLength(300)
@@ -42,8 +40,7 @@ namespace Cybermancy.Core.Configuration
                 .IsRequired()
                 .HasDefaultValue(value: 0);
             builder.Property(e => e.TimeOut)
-                .IsRequired()
-                .HasDefaultValue(value: DateTime.UtcNow);
+                .IsRequired();
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(value: false);
         }

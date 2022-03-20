@@ -15,7 +15,7 @@ namespace Cybermancy.Core.Extensions
             user.GuildMemberProfiles.FirstOrDefault(x => x.GuildId == guildId);
         public static string Mention(this User user) => $"<@!{user.Id}>";
 
-        public static string Mention(this GuildUser user) => $"<@!{user.Id}>";
+        public static string Mention(this GuildUser user) => $"<@!{user.UserId}>";
         public static string Mention(ulong id) => $"<@!{id}>";
     }
 }

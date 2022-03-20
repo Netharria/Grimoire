@@ -9,7 +9,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class GuildUser : Identifiable, IXpIgnore
+    public class GuildUser : IXpIgnore
     {
         public ulong GuildId { get; set; }
 
@@ -36,7 +36,7 @@ namespace Cybermancy.Domain
 
         public ulong Xp { get; set; }
 
-        public DateTime TimeOut { get; set; }
+        public DateTime TimeOut { get; set; } = DateTime.UtcNow;
 
         public bool IsXpIgnored { get; set; }
 

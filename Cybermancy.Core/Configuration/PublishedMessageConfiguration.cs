@@ -17,12 +17,7 @@ namespace Cybermancy.Core.Configuration
     {
         public void Configure(EntityTypeBuilder<PublishedMessage> builder)
         {
-            builder.HasKey(e => e.MessageId);
-            builder.Property(e => e.MessageId)
-                .ValueGeneratedNever()
-                .IsRequired();
-            builder.HasIndex(e => new { e.SinId, e.PublishType })
-                .IsUnique();
+            builder.HasKey(e => new { e.SinId, e.PublishType });
             builder.HasOne(e => e.Sin)
                 .WithMany(e => e.PublishMessages)
                 .HasForeignKey(e => e.SinId)

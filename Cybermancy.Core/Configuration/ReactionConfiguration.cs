@@ -15,17 +15,14 @@ namespace Cybermancy.Core.Configuration
     {
         public void Configure(EntityTypeBuilder<Reaction> builder)
         {
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id)
-                .ValueGeneratedOnAdd();
+            builder.HasKey(x => new { x.MessageId, x.EmojiId});
             builder.HasOne(x => x.Message)
                 .WithMany(x => x.Reactions)
                 .HasForeignKey(x => x.MessageId)
                 .OnDelete(DeleteBehavior.Cascade);
             builder.HasOne(x => x.GuildUser)
                 .WithMany(x => x.Reactions)
-                .HasForeignKey(x => x.GuildUserId)
-                .HasPrincipalKey(x => x.UserId)
+                .HasForeignKey(x => new { x.GuildUserId, x.GuildId })
                 .OnDelete(DeleteBehavior.Restrict);
             builder.Property(x => x.Name)
                 .HasMaxLength(32)

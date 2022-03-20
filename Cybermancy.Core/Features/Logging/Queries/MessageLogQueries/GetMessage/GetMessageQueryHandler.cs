@@ -28,7 +28,7 @@ namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage
                 {
                     AttachmentUrls = x.Attachments.Select(x => x.AttachmentUrl).ToArray(),
                     AuthorAvatarUrl = x.Author.GuildAvatarUrl ?? x.Author.User.AvatarUrl,
-                    AuthorId = x.Author.Id,
+                    AuthorId = x.Author.UserId,
                     AuthorName = x.Author.User.UserName,
                     ChannelId = x.ChannelId,
                     ChannelName = x.Channel.Name,
