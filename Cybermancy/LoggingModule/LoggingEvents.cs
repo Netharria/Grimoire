@@ -16,13 +16,15 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
 using MediatR;
-using Nefarius.DSharpPlus.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.LoggingModule
 {
-    [DiscordMessageEventsSubscriber]
-    public class LoggingEvents : IDiscordMessageEventsSubscriber
+    [DiscordMessageCreatedEventSubscriber]
+    [DiscordMessageDeletedEventSubscriber]
+    public class LoggingEvents :
+        IDiscordMessageCreatedEventSubscriber,
+        IDiscordMessageDeletedEventSubscriber
     {
         private readonly IMediator _mediator;
 
@@ -30,8 +32,6 @@ namespace Cybermancy.LoggingModule
         {
             this._mediator = mediator;
         }
-
-        public Task DiscordOnMessageAcknowledged(DiscordClient sender, MessageAcknowledgeEventArgs args) => Task.CompletedTask;
 
         public Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
             => this._mediator.Send(new AddMessageCommand
@@ -103,7 +103,5 @@ namespace Cybermancy.LoggingModule
             
             //await _mediator.Send(new AddLogMessage{ MessageId = message.id })
         }
-        public Task DiscordOnMessagesBulkDeleted(DiscordClient sender, MessageBulkDeleteEventArgs args) => Task.CompletedTask;
-        public Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args) => Task.CompletedTask;
     }
 }

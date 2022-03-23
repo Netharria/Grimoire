@@ -8,11 +8,11 @@
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using MediatR;
 
-namespace Cybermancy.Core.Features.Shared.Commands.UpdateAllGuilds
+namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild
 {
-    public class UpdateAllGuildsQuery : IRequest
+    public class AddGuildCommand : IRequest
     {
-        public IEnumerable<GuildDto> Guilds { get; init; } = Enumerable.Empty<GuildDto>();
+        public ulong GuildId { get; init; }
         public IEnumerable<UserDto> Users { get; init; } = Enumerable.Empty<UserDto>();
         public IEnumerable<GuildUserDto> GuildUsers { get; init; } = Enumerable.Empty<GuildUserDto>();
         public IEnumerable<RoleDto> Roles { get; init; } = Enumerable.Empty<RoleDto>();

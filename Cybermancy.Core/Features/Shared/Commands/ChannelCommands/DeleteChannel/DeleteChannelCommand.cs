@@ -7,10 +7,10 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage
+namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.DeleteChannel
 {
-    public class GetMessageQuery : IRequest<GetMessageQueryResponse>
+    public class DeleteChannelCommand : IRequest
     {
-        public ulong MessageId { get; init; }
+        public ulong ChannelId { get; init; }
     }
 }

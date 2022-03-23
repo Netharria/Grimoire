@@ -12,13 +12,12 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using MediatR;
-using Nefarius.DSharpPlus.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.LevelingModule
 {
-    [DiscordMessageEventsSubscriber]
-    public class LevelingEvents : IDiscordMessageEventsSubscriber
+    [DiscordMessageCreatedEventSubscriber]
+    public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
     {
         private readonly IMediator _mediator;
 
@@ -74,14 +73,5 @@ namespace Cybermancy.LevelingModule
                     .WithTimestamp(DateTime.UtcNow)
                     .Build());
         }
-        #region UnusedEvents
-        public Task DiscordOnMessageAcknowledged(DiscordClient sender, MessageAcknowledgeEventArgs args) => Task.CompletedTask;
-
-        public Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args) => Task.CompletedTask;
-
-        public Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args) => Task.CompletedTask;
-
-        public Task DiscordOnMessagesBulkDeleted(DiscordClient sender, MessageBulkDeleteEventArgs args) => Task.CompletedTask;
-        #endregion
     }
 }

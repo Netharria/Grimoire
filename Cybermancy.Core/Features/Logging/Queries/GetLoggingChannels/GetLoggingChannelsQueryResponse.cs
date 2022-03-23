@@ -11,20 +11,20 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetLoggingChannels
 {
     public class GetLoggingChannelsQueryResponse : BaseResponse
     {
-        public ulong? JoinChannelLogId { get; set; }
+        public ulong? JoinChannelLogId { get; init; }
 
-        public ulong? LeaveChannelLogId { get; set; }
+        public ulong? LeaveChannelLogId { get; init; }
 
-        public ulong? DeleteChannelLogId { get; set; }
+        public ulong? DeleteChannelLogId { get; init; }
 
-        public ulong? BulkDeleteChannelLogId { get; set; }
+        public ulong? BulkDeleteChannelLogId { get; init; }
 
-        public ulong? EditChannelLogId { get; set; }
+        public ulong? EditChannelLogId { get; init; }
 
-        public ulong? UsernameChannelLogId { get; set; }
+        public ulong? UsernameChannelLogId { get; init; }
 
-        public ulong? NicknameChannelLogId { get; set; }
+        public ulong? NicknameChannelLogId { get; init; }
 
-        public ulong? AvatarChannelLogId { get; set; }
+        public ulong? AvatarChannelLogId { get; init; }
     }
 }

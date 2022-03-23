@@ -11,6 +11,6 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetLoggingChannels
 {
     public class GetLoggingChannelsQuery : IRequest<GetLoggingChannelsQueryResponse>
     {
-        public ulong GuildId { get; set; }
+        public ulong GuildId { get; init; }
     }
 }

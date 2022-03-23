@@ -7,11 +7,12 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
+namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel
 {
-    public class GetLeaderboardQuery : IRequest<GetLeaderboardQueryResponse>
+    public class AddChannelCommand : IRequest
     {
         public ulong GuildId { get; init; }
-        public ulong? UserId { get; init; }
+        public ulong ChannelId { get; init; }
+        public string ChannelName { get; init; } = string.Empty;
     }
 }

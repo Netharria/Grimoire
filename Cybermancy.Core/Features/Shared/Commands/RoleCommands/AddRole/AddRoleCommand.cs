@@ -7,10 +7,11 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage
+namespace Cybermancy.Core.Features.Shared.Commands.RoleCommands.AddRole
 {
-    public class GetMessageQuery : IRequest<GetMessageQueryResponse>
+    public class AddRoleCommand : IRequest
     {
-        public ulong MessageId { get; init; }
+        public ulong RoleId { get; init; }
+        public ulong GuildId { get; init; }
     }
 }

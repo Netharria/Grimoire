@@ -11,13 +11,13 @@ namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage
 {
     public class GetMessageQueryResponse : BaseResponse
     {
-        public ulong AuthorId { get; set; }
-        public string AuthorName { get; set; } = string.Empty;
-        public string AuthorAvatarUrl { get; set; } = string.Empty;
-        public ulong ChannelId { get; set; }
-        public string ChannelName { get; set; } = string.Empty;
-        public ulong MessageId { get; set; }
-        public string MessageContent { get; set; } = string.Empty;
-        public ICollection<string> AttachmentUrls { get; set; } = new List<string>();
+        public ulong AuthorId { get; init; }
+        public string AuthorName { get; init; } = string.Empty;
+        public string AuthorAvatarUrl { get; init; } = string.Empty;
+        public ulong ChannelId { get; init; }
+        public string ChannelName { get; init; } = string.Empty;
+        public ulong MessageId { get; init; }
+        public string MessageContent { get; init; } = string.Empty;
+        public ICollection<string> AttachmentUrls { get; init; } = new List<string>();
     }
 }

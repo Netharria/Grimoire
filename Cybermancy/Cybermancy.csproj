@@ -8,19 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01059" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="4.2.0-nightly-01059" />
-    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0-nightly-01059" />
+    <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01099" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.2.0-nightly-01099" />
+    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0-nightly-01099" />
     <PackageReference Include="MediatR" Version="10.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.0">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-    <PackageReference Include="Nefarius.DSharpPlus.Extensions.Hosting" Version="1.0.58-beta" />
-    <PackageReference Include="Nefarius.DSharpPlus.Interactivity.Extensions.Hosting" Version="1.0.58-beta" />
-    <PackageReference Include="Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting" Version="1.0.58-beta" />
+    <PackageReference Include="Nefarius.DSharpPlus.Extensions.Hosting" Version="2.0.94-beta" />
+    <PackageReference Include="Nefarius.DSharpPlus.Interactivity.Extensions.Hosting" Version="2.0.94-beta" />
+    <PackageReference Include="Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting" Version="2.0.94-beta" />
   </ItemGroup>
 
   <ItemGroup>

@@ -12,11 +12,11 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
 {
     public class UpdateIgnoreStateForXpGainCommand : IRequest<UpdateIgnoreStateForXpGainResponse>
     {
-        public ulong GuildId { get; set; }
-        public IEnumerable<UserDto> Users { get; set; } = Array.Empty<UserDto>();
-        public ulong[] RoleIds { get; set; } = Array.Empty<ulong>();
-        public ulong[] ChannelIds { get; set; } = Array.Empty<ulong>();
-        public string[] InvalidIds { get; set; } = Array.Empty<string>();
-        public bool ShouldIgnore { get; set; }
+        public ulong GuildId { get; init; }
+        public IEnumerable<UserDto> Users { get; init; } = Array.Empty<UserDto>();
+        public ulong[] RoleIds { get; init; } = Array.Empty<ulong>();
+        public ulong[] ChannelIds { get; init; } = Array.Empty<ulong>();
+        public string[] InvalidIds { get; init; } = Array.Empty<string>();
+        public bool ShouldIgnore { get; init; }
     }
 }

@@ -9,8 +9,8 @@ namespace Cybermancy.Core.Responses
 {
     public class BaseResponse
     {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public List<string> ValidationErrors { get; set; } = new List<string>();
+        public bool Success { get; init; }
+        public string Message { get; init; } = string.Empty;
+        public List<string> ValidationErrors { get; init; } = new List<string>();
     }
 }

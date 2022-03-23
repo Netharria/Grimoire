@@ -9,9 +9,9 @@ namespace Cybermancy.Core.Features.Shared.SharedDtos
 {
     public class UserDto
     {
-        public ulong Id { get; set; }
-        public string UserName { get; set; } = string.Empty;
-        public string AvatarUrl { get; set; } = string.Empty;
-        public string DisplayName { get; set; } = string.Empty;
+        public ulong Id { get; init; }
+        public string UserName { get; init; } = string.Empty;
+        public string AvatarUrl { get; init; } = string.Empty;
+        public string DisplayName { get; init; } = string.Empty;
     }
 }

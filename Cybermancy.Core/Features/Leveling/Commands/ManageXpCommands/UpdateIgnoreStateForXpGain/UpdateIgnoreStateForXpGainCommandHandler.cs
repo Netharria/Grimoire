@@ -87,13 +87,25 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
                             Id = x.Id,
                             UserName = x.UserName,
                             AvatarUrl = x.AvatarUrl,
-
+                            UsernameHistories = new List<UsernameHistory> {
+                                new UsernameHistory {
+                                    NewUsername = x.UserName,
+                                    UserId = x.Id
+                                }
+                            }
                         };
                         user.GuildMemberProfiles.Add(new GuildUser
                         {
                             GuildId = request.GuildId,
                             DisplayName = x.DisplayName,
-                            IsXpIgnored = request.ShouldIgnore
+                            IsXpIgnored = request.ShouldIgnore,
+                            NicknamesHistory = new List<NicknameHistory> {
+                                new NicknameHistory {
+                                    NewNickname = x.DisplayName,
+                                    GuildId = request.GuildId,
+                                    UserId = x.Id
+                                }
+                            }
                         });
                         newIgnoredItems.Append(user.Mention()).Append(' ');
                         return user;

@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Cybermancy.Attributes;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings;
 using Cybermancy.Extensions;
 using DSharpPlus;

@@ -7,10 +7,10 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage
+namespace Cybermancy.Core.Features.Shared.Commands.RoleCommands.DeleteRole
 {
-    public class GetMessageQuery : IRequest<GetMessageQueryResponse>
+    public class DeleteRoleCommand : IRequest
     {
-        public ulong MessageId { get; init; }
+        public ulong RoleId { get; init; }
     }
 }
