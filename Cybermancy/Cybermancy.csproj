@@ -21,6 +21,7 @@
     <PackageReference Include="Nefarius.DSharpPlus.Extensions.Hosting" Version="2.0.94-beta" />
     <PackageReference Include="Nefarius.DSharpPlus.Interactivity.Extensions.Hosting" Version="2.0.94-beta" />
     <PackageReference Include="Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting" Version="2.0.94-beta" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>

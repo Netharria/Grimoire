@@ -30,10 +30,18 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
                     .Select(x => new Attachment{ MessageId = request.MessageId, AttachmentUrl = x})
                     .ToArray(),
                 ChannelId = request.ChannelId,
-                Content = request.MessageContent,
                 CreatedTimestamp = request.CreatedTimestamp,
                 ReferencedMessageId = request.ReferencedMessageId,
-                GuildId = request.GuildId
+                GuildId = request.GuildId,
+                MessageHistory = new List<MessageHistory>{
+                    new MessageHistory
+                    {
+                        MessageId = request.MessageId,
+                        MessageContent = request.MessageContent,
+                        GuildId = request.GuildId,
+                        Action = MessageAction.Created
+                    }
+                }
             };
             await this._cybermancyDbContext.Messages.AddAsync(message, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

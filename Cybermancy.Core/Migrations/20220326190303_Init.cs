@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -29,11 +30,7 @@ namespace Cybermancy.Core.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    UserName = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    AvatarUrl = table.Column<string>(type: "varchar(300)", maxLength: 300, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -46,8 +43,6 @@ namespace Cybermancy.Core.Migrations
                 columns: table => new
                 {
                     Id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
                 },
@@ -112,10 +107,6 @@ namespace Cybermancy.Core.Migrations
                 {
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    DisplayName = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    GuildAvatarUrl = table.Column<string>(type: "varchar(300)", maxLength: 300, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Xp = table.Column<ulong>(type: "bigint unsigned", nullable: false, defaultValue: 0ul),
                     TimeOut = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     IsXpIgnored = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false)
@@ -123,6 +114,7 @@ namespace Cybermancy.Core.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GuildUsers", x => new { x.UserId, x.GuildId });
+                    table.UniqueConstraint("AK_GuildUsers_GuildId_UserId", x => new { x.GuildId, x.UserId });
                     table.ForeignKey(
                         name: "FK_GuildUsers_Guilds_GuildId",
                         column: x => x.GuildId,
@@ -355,12 +347,8 @@ namespace Cybermancy.Core.Migrations
                     AuthorId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     ChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    Content = table.Column<string>(type: "varchar(4000)", maxLength: 4000, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedTimestamp = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ReferencedMessageId = table.Column<ulong>(type: "bigint unsigned", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
-                    DeletedByModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: true)
+                    ReferencedMessageId = table.Column<ulong>(type: "bigint unsigned", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -383,11 +371,6 @@ namespace Cybermancy.Core.Migrations
                         principalTable: "GuildUsers",
                         principalColumns: new[] { "UserId", "GuildId" },
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Messages_GuildUsers_DeletedByModeratorId_GuildId",
-                        columns: x => new { x.DeletedByModeratorId, x.GuildId },
-                        principalTable: "GuildUsers",
-                        principalColumns: new[] { "UserId", "GuildId" });
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -398,7 +381,7 @@ namespace Cybermancy.Core.Migrations
                     Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     UserId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    NewNickname = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false)
+                    Nickname = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Timestamp = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
@@ -512,6 +495,44 @@ namespace Cybermancy.Core.Migrations
                     table.PrimaryKey("PK_Attachments", x => new { x.MessageId, x.AttachmentUrl });
                     table.ForeignKey(
                         name: "FK_Attachments_Messages_MessageId",
+                        column: x => x.MessageId,
+                        principalTable: "Messages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "MessageHistory",
+                columns: table => new
+                {
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    MessageId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    Action = table.Column<int>(type: "int", nullable: false),
+                    MessageContent = table.Column<string>(type: "varchar(4000)", maxLength: 4000, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DeletedByModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    TimeStamp = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MessageHistory", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MessageHistory_Guilds_GuildId",
+                        column: x => x.GuildId,
+                        principalTable: "Guilds",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MessageHistory_GuildUsers_GuildId_DeletedByModeratorId",
+                        columns: x => new { x.GuildId, x.DeletedByModeratorId },
+                        principalTable: "GuildUsers",
+                        principalColumns: new[] { "GuildId", "UserId" },
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MessageHistory_Messages_MessageId",
                         column: x => x.MessageId,
                         principalTable: "Messages",
                         principalColumn: "Id",
@@ -703,11 +724,6 @@ namespace Cybermancy.Core.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildUsers_GuildId",
-                table: "GuildUsers",
-                column: "GuildId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Locks_GuildId",
                 table: "Locks",
                 column: "GuildId");
@@ -718,6 +734,16 @@ namespace Cybermancy.Core.Migrations
                 columns: new[] { "ModeratorId", "GuildId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_MessageHistory_GuildId_DeletedByModeratorId",
+                table: "MessageHistory",
+                columns: new[] { "GuildId", "DeletedByModeratorId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MessageHistory_MessageId",
+                table: "MessageHistory",
+                column: "MessageId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Messages_AuthorId_GuildId",
                 table: "Messages",
                 columns: new[] { "AuthorId", "GuildId" });
@@ -726,11 +752,6 @@ namespace Cybermancy.Core.Migrations
                 name: "IX_Messages_ChannelId",
                 table: "Messages",
                 column: "ChannelId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Messages_DeletedByModeratorId_GuildId",
-                table: "Messages",
-                columns: new[] { "DeletedByModeratorId", "GuildId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_GuildId",
@@ -849,6 +870,9 @@ namespace Cybermancy.Core.Migrations
 
             migrationBuilder.DropTable(
                 name: "Locks");
+
+            migrationBuilder.DropTable(
+                name: "MessageHistory");
 
             migrationBuilder.DropTable(
                 name: "Mutes");

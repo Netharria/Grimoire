@@ -11,10 +11,6 @@ namespace Cybermancy.Domain
 {
     public class User : Identifiable
     {
-        public string UserName { get; set; } = string.Empty;
-
-        public string AvatarUrl { get; set; } = string.Empty;
-
         public virtual ICollection<GuildUser> GuildMemberProfiles { get; set; } = new List<GuildUser>();
         public virtual ICollection<UsernameHistory> UsernameHistories { get; set; } = new List<UsernameHistory>();
     }

@@ -19,21 +19,6 @@ namespace Cybermancy.Domain
 
         public virtual User User { get; set; } = null!;
 
-        private string? _displayName;
-
-        public string DisplayName
-        {
-            get => this._displayName ?? this.User.UserName;
-            set => this._displayName = value;
-        }
-
-        private string? _guildAvatarUrl;
-        public string GuildAvatarUrl
-        {
-            get => this._guildAvatarUrl ?? this.User.AvatarUrl;
-            set => this._guildAvatarUrl = value;
-        }
-
         public ulong Xp { get; set; }
 
         public DateTime TimeOut { get; set; } = DateTime.UtcNow;
@@ -59,6 +44,6 @@ namespace Cybermancy.Domain
         public virtual ICollection<Pardon> SinsPardoned { get; set; } = new List<Pardon>();
 
         public virtual ICollection<NicknameHistory> NicknamesHistory { get; set;} = new List<NicknameHistory>();
-        public virtual ICollection<Message> MessagesDeletedAsModerator { get; set; } = new List<Message>();
+        public virtual ICollection<MessageHistory> MessagesDeletedAsModerator { get; set; } = new List<MessageHistory>();
     }
 }

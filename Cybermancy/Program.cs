@@ -3,6 +3,7 @@ using Cybermancy;
 using Cybermancy.Attributes;
 using Cybermancy.Core;
 using Cybermancy.LevelingModule;
+using Cybermancy.LoggingModule;
 using DSharpPlus;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.SlashCommands;
@@ -65,9 +66,10 @@ Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<EmptySlashCommands>();
                 extension.RegisterCommands<LevelCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<LeaderboardCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<SettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<LevelSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<LevelingAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<RewardCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<LogSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
         .BuildServiceProvider()

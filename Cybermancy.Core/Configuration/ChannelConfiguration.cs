@@ -22,10 +22,6 @@ namespace Cybermancy.Core.Configuration
                 .ValueGeneratedNever()
                 .IsRequired();
 
-            builder.Property(e => e.Name)
-                .HasMaxLength(100)
-                .IsRequired();
-
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(value: false);
 

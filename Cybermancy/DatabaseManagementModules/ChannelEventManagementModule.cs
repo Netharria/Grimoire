@@ -7,7 +7,6 @@
 
 using Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel;
 using Cybermancy.Core.Features.Shared.Commands.ChannelCommands.DeleteChannel;
-using Cybermancy.Core.Features.Shared.Commands.ChannelCommands.UpdateChannel;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using MediatR;
@@ -17,11 +16,9 @@ namespace Cybermancy.DatabaseManagementModules
 {
     [DiscordChannelCreatedEventSubscriber]
     [DiscordChannelDeletedEventSubscriber]
-    [DiscordChannelUpdatedEventSubscriber]
     public class ChannelEventManagementModule :
         IDiscordChannelCreatedEventSubscriber,
-        IDiscordChannelDeletedEventSubscriber,
-        IDiscordChannelUpdatedEventSubscriber
+        IDiscordChannelDeletedEventSubscriber
     {
         private readonly IMediator _mediator;
 
@@ -39,7 +36,6 @@ namespace Cybermancy.DatabaseManagementModules
                 new AddChannelCommand
                 {
                     ChannelId = args.Channel.Id,
-                    ChannelName = args.Channel.Name,
                     GuildId = args.Guild.Id
                 });
 
@@ -48,15 +44,6 @@ namespace Cybermancy.DatabaseManagementModules
                 new DeleteChannelCommand
                 {
                     ChannelId = args.Channel.Id
-                });
-
-        public Task DiscordOnChannelUpdated(DiscordClient sender, ChannelUpdateEventArgs args)
-            => this._mediator.Send(
-                new UpdateChannelCommand
-                {
-                    ChannelId = args.ChannelAfter.Id,
-                    ChannelName = args.ChannelAfter.Name,
-                    GuildId = args.Guild.Id
                 });
     }
 }

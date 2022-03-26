@@ -24,7 +24,6 @@ namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel
             await this._cybermancyDbContext.Channels.AddAsync(new Channel
                 {
                     Id = request.ChannelId,
-                    Name = request.ChannelName,
                     GuildId = request.GuildId
                 }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

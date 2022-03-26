@@ -13,7 +13,7 @@ namespace Cybermancy.Domain
     {
         public ulong UserId { get; set; }
         public virtual GuildUser GuildUser { get; set; } = null!;
-        public string NewNickname { get; set; } = string.Empty;
+        public string Nickname { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         public ulong GuildId { get; set; }
         public virtual Guild Guild { get; set; } = null!;

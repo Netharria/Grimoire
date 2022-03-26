@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
-using Cybermancy.Domain;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using MediatR;
 
 namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds
@@ -22,87 +22,17 @@ namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds
 
         public async Task<Unit> Handle(UpdateAllGuildsCommand request, CancellationToken cancellationToken)
         {
-            var usersToAdd = request.Users
-                .ExceptBy(this._cybermancyDbContext.Users.Select(x => x.Id),
-                x => x.Id)
-                .Select(x => new User
-                {
-                    AvatarUrl = x.AvatarUrl,
-                    Id = x.Id,
-                    UserName = x.UserName,
-                    UsernameHistories = new List<UsernameHistory> {
-                        new UsernameHistory {
-                            NewUsername = x.UserName,
-                            UserId = x.Id
-                        }
-                    }
-                });
+            var usersAdded = await this._cybermancyDbContext.Users.AddMissingUsersAsync(request.Users, cancellationToken);
 
-            if (usersToAdd.Any())
-                await this._cybermancyDbContext.Users.AddRangeAsync(usersToAdd, cancellationToken);
+            var guildsAdded = await this._cybermancyDbContext.Guilds.AddMissingGuildsAsync(request.Guilds, cancellationToken);
 
-            var guildsToAdd = request.Guilds
-                .ExceptBy(
-                this._cybermancyDbContext.Guilds.Select(x => x.Id),
-                x => x.Id)
-                .Select(x => new Guild
-                {
-                    Id = x.Id,
-                    LevelSettings = new GuildLevelSettings(),
-                    ModerationSettings = new GuildModerationSettings(),
-                    LogSettings = new GuildLogSettings(),
-                });
+            var rolesAdded = await this._cybermancyDbContext.Roles.AddMissingRolesAsync(request.Roles, cancellationToken);
 
-            if (guildsToAdd.Any())
-                await this._cybermancyDbContext.Guilds.AddRangeAsync(guildsToAdd, cancellationToken);
+            var channelsAdded = await this._cybermancyDbContext.Channels.AddMissingChannelsAsync(request.Channels, cancellationToken);
 
-            var rolesToAdd = request.Roles
-                .ExceptBy(this._cybermancyDbContext.Roles.Select(x => x.Id),
-                x => x.Id)
-                .Select(x => new Role
-                {
-                    Id = x.Id,
-                    GuildId = x.GuildId
-                });
+            var guildUsersAdded = await this._cybermancyDbContext.GuildUsers.AddMissingGuildUsersAsync(request.GuildUsers, cancellationToken);
 
-            if (rolesToAdd.Any())
-                await this._cybermancyDbContext.Roles.AddRangeAsync(rolesToAdd, cancellationToken);
-
-            var channelsToAdd = request.Channels
-                .ExceptBy(this._cybermancyDbContext.Channels.Select(x => x.Id),
-                x => x.Id)
-                .Select(x => new Channel
-                {
-                    Id = x.Id,
-                    GuildId = x.GuildId,
-                    Name = x.Name,
-                });
-
-            if (channelsToAdd.Any())
-                await this._cybermancyDbContext.Channels.AddRangeAsync(channelsToAdd, cancellationToken);
-
-            var guildUsersToAdd = request.GuildUsers
-                .ExceptBy(this._cybermancyDbContext.GuildUsers.Select(x => new { x.UserId, x.GuildId }),
-                x => new { x.UserId, x.GuildId })
-                .Select(x => new GuildUser
-                {
-                    UserId = x.UserId,
-                    GuildId= x.GuildId,
-                    GuildAvatarUrl = x.GuildAvatarUrl,
-                    DisplayName = x.DisplayName,
-                    NicknamesHistory = new List<NicknameHistory> {
-                        new NicknameHistory{
-                            GuildId = x.GuildId,
-                            UserId = x.UserId,
-                            NewNickname = x.Nickname
-                        },
-                    }
-                });
-
-            if (guildUsersToAdd.Any())
-                await this._cybermancyDbContext.GuildUsers.AddRangeAsync(guildUsersToAdd, cancellationToken);
-
-            if (usersToAdd.Any() || guildsToAdd.Any() || rolesToAdd.Any() || channelsToAdd.Any() || guildUsersToAdd.Any())
+            if (usersAdded || guildsAdded || rolesAdded || channelsAdded || guildUsersAdded)
                 await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
             return Unit.Value;

@@ -11,14 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Cybermancy.Core.Migrations
 {
     [DbContext(typeof(CybermancyDbContext))]
-    [Migration("20220320004856_Init")]
+    [Migration("20220326190303_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.0")
+                .HasAnnotation("ProductVersion", "6.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Cybermancy.Domain.Attachment", b =>
@@ -47,11 +47,6 @@ namespace Cybermancy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
 
                     b.HasKey("Id");
 
@@ -218,14 +213,6 @@ namespace Cybermancy.Core.Migrations
                     b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(32)
-                        .HasColumnType("varchar(32)");
-
-                    b.Property<string>("GuildAvatarUrl")
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
-
                     b.Property<bool>("IsXpIgnored")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
@@ -240,8 +227,6 @@ namespace Cybermancy.Core.Migrations
                         .HasDefaultValue(0ul);
 
                     b.HasKey("UserId", "GuildId");
-
-                    b.HasIndex("GuildId");
 
                     b.ToTable("GuildUsers");
                 });
@@ -288,24 +273,11 @@ namespace Cybermancy.Core.Migrations
                     b.Property<ulong>("ChannelId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("varchar(4000)");
-
                     b.Property<DateTime>("CreatedTimestamp")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<ulong?>("DeletedByModeratorId")
-                        .HasColumnType("bigint unsigned");
-
                     b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(false);
 
                     b.Property<ulong?>("ReferencedMessageId")
                         .HasColumnType("bigint unsigned");
@@ -318,9 +290,42 @@ namespace Cybermancy.Core.Migrations
 
                     b.HasIndex("AuthorId", "GuildId");
 
-                    b.HasIndex("DeletedByModeratorId", "GuildId");
-
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("Cybermancy.Domain.MessageHistory", b =>
+                {
+                    b.Property<ulong>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<ulong?>("DeletedByModeratorId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("GuildId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<string>("MessageContent")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.Property<ulong>("MessageId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<DateTime>("TimeStamp")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("GuildId", "DeletedByModeratorId");
+
+                    b.ToTable("MessageHistory");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Mute", b =>
@@ -355,7 +360,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<string>("NewNickname")
+                    b.Property<string>("Nickname")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
@@ -583,16 +588,6 @@ namespace Cybermancy.Core.Migrations
                     b.Property<ulong>("Id")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<string>("AvatarUrl")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("varchar(32)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Users");
@@ -797,17 +792,38 @@ namespace Cybermancy.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cybermancy.Domain.GuildUser", "DeletedByModerator")
-                        .WithMany("MessagesDeletedAsModerator")
-                        .HasForeignKey("DeletedByModeratorId", "GuildId");
-
                     b.Navigation("Author");
 
                     b.Navigation("Channel");
 
+                    b.Navigation("Guild");
+                });
+
+            modelBuilder.Entity("Cybermancy.Domain.MessageHistory", b =>
+                {
+                    b.HasOne("Cybermancy.Domain.Guild", "Guild")
+                        .WithMany("MessageHistory")
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cybermancy.Domain.Message", "Message")
+                        .WithMany("MessageHistory")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cybermancy.Domain.GuildUser", "DeletedByModerator")
+                        .WithMany("MessagesDeletedAsModerator")
+                        .HasForeignKey("GuildId", "DeletedByModeratorId")
+                        .HasPrincipalKey("GuildId", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("DeletedByModerator");
 
                     b.Navigation("Guild");
+
+                    b.Navigation("Message");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Mute", b =>
@@ -1068,6 +1084,8 @@ namespace Cybermancy.Core.Migrations
                     b.Navigation("LogSettings")
                         .IsRequired();
 
+                    b.Navigation("MessageHistory");
+
                     b.Navigation("Messages");
 
                     b.Navigation("ModerationSettings")
@@ -1112,6 +1130,8 @@ namespace Cybermancy.Core.Migrations
             modelBuilder.Entity("Cybermancy.Domain.Message", b =>
                 {
                     b.Navigation("Attachments");
+
+                    b.Navigation("MessageHistory");
 
                     b.Navigation("Reactions");
                 });

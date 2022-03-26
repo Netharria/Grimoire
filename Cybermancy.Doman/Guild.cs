@@ -19,6 +19,8 @@ namespace Cybermancy.Domain
 
         public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
+        public virtual ICollection<MessageHistory> MessageHistory { get; set; } = new List<MessageHistory>();
+
         public virtual ICollection<OldLogMessage> OldLogMessages { get; set; } = new List<OldLogMessage>();
 
         public virtual ICollection<Tracker> Trackers { get; set; } = new List<Tracker>();

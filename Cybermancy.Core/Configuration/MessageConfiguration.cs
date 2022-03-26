@@ -31,16 +31,8 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey(e => e.ChannelId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.Property(e => e.Content)
-                .HasMaxLength(4000);
             builder.Property(e => e.CreatedTimestamp)
                 .IsRequired();
-            builder.Property(x => x.IsDeleted)
-                .HasDefaultValue(false);
-            builder.HasOne(e => e.DeletedByModerator)
-                .WithMany(e => e.MessagesDeletedAsModerator)
-                .HasForeignKey(e => new { e.DeletedByModeratorId, e.GuildId })
-                .IsRequired(false);
         }
     }
 }

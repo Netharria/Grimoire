@@ -5,6 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember;
+using Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember;
+using Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using MediatR;
@@ -13,12 +16,10 @@ using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 namespace Cybermancy.DatabaseManagementModules
 {
     [DiscordGuildMemberAddedEventSubscriber]
-    [DiscordGuildMemberRemovedEventSubscriber]
     [DiscordGuildMemberUpdatedEventSubscriber]
     [DiscordUserUpdatedEventSubscriber]
     internal class MemberEventManagementModule :
         IDiscordGuildMemberAddedEventSubscriber,
-        IDiscordGuildMemberRemovedEventSubscriber,
         IDiscordGuildMemberUpdatedEventSubscriber,
         IDiscordUserUpdatedEventSubscriber
     {
@@ -29,12 +30,31 @@ namespace Cybermancy.DatabaseManagementModules
             this._mediator = mediator;
         }
 
-        public Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args) => throw new NotImplementedException();
+        public Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
+            => this._mediator.Send(
+                new AddMemberCommand
+                {
+                    Nickname = string.IsNullOrWhiteSpace(args.Member.DisplayName) ? null : args.Member.DisplayName,
+                    GuildId = args.Guild.Id,
+                    UserId = args.Member.Id,
+                    UserName = args.Member.Username
+                });
 
-        public Task DiscordOnGuildMemberRemoved(DiscordClient sender, GuildMemberRemoveEventArgs args) => throw new NotImplementedException();
+        public Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
+            => this._mediator.Send(
+                new UpdateMemberCommand
+                {
+                    Nickname = string.IsNullOrWhiteSpace(args.NicknameAfter) ? null : args.NicknameAfter,
+                    GuildId = args.Guild.Id,
+                    UserId = args.Member.Id,
+                });
 
-        public Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args) => throw new NotImplementedException();
-
-        public Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args) => throw new NotImplementedException();
+        public Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args)
+            => this._mediator.Send(
+                new UpdateUserCommand
+                {
+                    UserId = args.UserAfter.Id,
+                    UserName = args.UserAfter.Username
+                });
     }
 }

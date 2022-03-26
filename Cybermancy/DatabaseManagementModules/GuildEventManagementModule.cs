@@ -40,17 +40,15 @@ namespace Cybermancy.DatabaseManagementModules
                     .DistinctBy(x => x.Value.Id).Select(x => x.Value)
                     .Select(x =>
                     new UserDto {
-                        AvatarUrl = x.AvatarUrl,
                         Id = x.Id,
-                        UserName = $"{x.Username}#{x.Discriminator}"
+                        UserName = $"{x.Username}#{x.Discriminator}",
+                        Nickname = x.Nickname,
                     }),
                 GuildUsers = args.Guilds.Values.SelectMany(x => x.Members)
                     .Select(x => x.Value).Select(x =>
                     new GuildUserDto {
                         GuildId = x.Guild.Id,
                         UserId = x.Id,
-                        DisplayName = x.DisplayName,
-                        GuildAvatarUrl = x.GuildAvatarUrl,
                         Nickname = x.Nickname
                     }),
                 Roles = args.Guilds.Values.Select(x => new { x.Id, x.Roles })
@@ -79,7 +77,6 @@ namespace Cybermancy.DatabaseManagementModules
                     .Select(x =>
                     new UserDto
                     {
-                        AvatarUrl = x.AvatarUrl,
                         Id = x.Id,
                         UserName = $"{x.Username}#{x.Discriminator}"
                     }),
@@ -90,8 +87,6 @@ namespace Cybermancy.DatabaseManagementModules
                     {
                         GuildId = x.Guild.Id,
                         UserId = x.Id,
-                        DisplayName = x.DisplayName,
-                        GuildAvatarUrl = x.GuildAvatarUrl,
                         Nickname = x.Nickname
                     }),
                 Roles = args.Guild.Roles

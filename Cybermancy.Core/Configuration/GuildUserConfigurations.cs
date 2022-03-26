@@ -28,14 +28,6 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.Property(e => e.DisplayName)
-                .HasField("_displayName")
-                .HasMaxLength(32)
-                .IsRequired(false);
-            builder.Property(e => e.GuildAvatarUrl)
-                .HasField("_guildAvatarUrl")
-                .HasMaxLength(300)
-                .IsRequired(false);
             builder.Property(e => e.Xp)
                 .IsRequired()
                 .HasDefaultValue(value: 0);

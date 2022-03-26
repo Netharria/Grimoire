@@ -30,23 +30,26 @@ namespace Cybermancy.LoggingModule
             if (discordClient is null) throw new ArgumentNullException(nameof(discordClient));
 
             var oldLogMessages = await mediator.Send(new GetOldLogMessagesQuery());
-            var result = oldLogMessages.Channels
-                    .AsParallel()
-                    .SelectMany(channel =>
-                        GetChannelAsync(discordClient, channel.ChannelId)
-                        .ContinueWith(discordChannel => channel.MessageIds
-                            .AsParallel()
-                            .Select(messageId => GetMessageAsync(discordChannel.Result, messageId)
-                                .ContinueWith(message =>
-                                    DeleteMessageAsync(message.Result)
-                                    .GetAwaiter().GetResult()
-                                ).GetAwaiter().GetResult()
-                            ).Where(x => x != default)
-                        ).GetAwaiter().GetResult())
-                    .ToArray();
+
+
+            var result = await oldLogMessages.Channels
+                .ToAsyncEnumerable()
+                .SelectAwait(async channel =>
+                    new {
+                        DiscordChannel = await GetChannelAsync(discordClient, channel.ChannelId),
+                        DatabaseChannel = channel
+                    })
+                .SelectMany(channelInfo =>
+                    channelInfo.DatabaseChannel.MessageIds
+                    .ToAsyncEnumerable()
+                    .SelectAwait(async messageId => await GetMessageAsync(channelInfo.DiscordChannel, messageId))
+                    .SelectAwait(async channel => await DeleteMessageAsync(channel))
+                    .Where(messageId => messageId != default)
+                    ).ToArrayAsync();
 
             await mediator.Send(new DeleteOldMessagesCommand());
-            await mediator.Send(new DeleteOldLogMessagesCommand { DeletedOldLogMessageIds = result });
+            if (result is ulong[] deletedMessageIds)
+                await mediator.Send(new DeleteOldLogMessagesCommand { DeletedOldLogMessageIds = deletedMessageIds });
         }
 
         private static async Task<ulong> DeleteMessageAsync(DiscordMessage? message)

@@ -49,11 +49,17 @@ namespace Cybermancy.Core
         public DbSet<Message> Messages
             => this.Set<Message>();
 
+        public DbSet<MessageHistory> MessageHistory
+            => this.Set<MessageHistory>();
+
         public DbSet<Mute> Mutes
             => this.Set<Mute>();
 
         public DbSet<OldLogMessage> OldLogMessages
             => this.Set<OldLogMessage>();
+
+        public DbSet<NicknameHistory> NicknameHistory
+            => this.Set<NicknameHistory>();
 
         public DbSet<Pardon> Pardons
             => this.Set<Pardon>();
@@ -75,7 +81,10 @@ namespace Cybermancy.Core
 
         public DbSet<User> Users
             => this.Set<User>();
+        public DbSet<UsernameHistory> UsernameHistory
+            => this.Set<UsernameHistory>();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
     }
 }

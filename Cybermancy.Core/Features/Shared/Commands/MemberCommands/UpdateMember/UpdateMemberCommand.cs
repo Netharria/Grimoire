@@ -7,12 +7,12 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.UpdateChannel
+namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember
 {
-    public class UpdateChannelCommand : IRequest
+    public class UpdateMemberCommand : IRequest
     {
+        public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
-        public ulong ChannelId { get; init; }
-        public string ChannelName { get; init; } = string.Empty;
+        public string? Nickname { get; init; }
     }
 }

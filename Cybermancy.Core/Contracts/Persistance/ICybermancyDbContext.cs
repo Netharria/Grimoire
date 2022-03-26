@@ -23,7 +23,11 @@ namespace Cybermancy.Core.Contracts.Persistance
 
         public DbSet<Message> Messages { get; }
 
+        public DbSet<MessageHistory> MessageHistory { get; }
+
         public DbSet<Mute> Mutes { get; }
+
+        public DbSet<NicknameHistory> NicknameHistory { get; }
 
         public DbSet<OldLogMessage> OldLogMessages { get; }
 
@@ -40,6 +44,8 @@ namespace Cybermancy.Core.Contracts.Persistance
         public DbSet<Tracker> Trackers { get; }
 
         public DbSet<User> Users { get; }
+
+        public DbSet<UsernameHistory> UsernameHistory { get; }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

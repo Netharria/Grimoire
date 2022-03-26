@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey(x => new { x.UserId, x.GuildId })
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
-            builder.Property(x => x.NewNickname)
+            builder.Property(x => x.Nickname)
                 .HasMaxLength(32)
                 .IsRequired();
             builder.Property(x => x.Timestamp)

@@ -25,11 +25,11 @@ namespace Cybermancy.LevelingModule
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Leveling)]
     [SlashRequirePermissions(Permissions.ManageGuild)]
-    public class SettingsCommands : ApplicationCommandModule
+    public class LevelSettingsCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
 
-        public SettingsCommands(IMediator mediator)
+        public LevelSettingsCommands(IMediator mediator)
         {
             this._mediator = mediator;
         }
@@ -48,7 +48,7 @@ namespace Cybermancy.LevelingModule
                     "None" :
                     ctx.Guild.GetChannel(response.LevelChannelLog.Value).Mention;
             await ctx.ReplyAsync(
-                title: "Current Level System settings",
+                title: "Current Level System Settings",
                 message: $"**Module Enabled:** {response.IsLevelingEnabled}\n" +
                 $"**Texttime:** {response.TextTime}\n" +
                 $"**Base:** {response.Base}\n" +
@@ -75,7 +75,7 @@ namespace Cybermancy.LevelingModule
                 var parsedValue = Regex.Match(value, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
                 if (ulong.TryParse(parsedValue, out var channelId))
                 {
-                    if (!ctx.Guild.Channels.Any(x => x.Key == channelId))
+                    if (!ctx.Guild.Channels.Any(x => x.Key == channelId) && channelId != 0)
                     {
                         await ctx.ReplyAsync(CybermancyColor.Orange, message: "Did not find that channel on this server.");
                         return;

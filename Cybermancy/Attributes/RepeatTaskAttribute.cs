@@ -56,17 +56,14 @@ namespace Cybermancy.Attributes
             TimeSpan pollInterval,
             Action action,
             CancellationToken token)
-        {
-            // We don't use Observable.Interval:
-            // If we block, the values start bunching up behind each other.
-            return Task.Factory.StartNew(
+            => Task.Factory.StartNew(
                 async () =>
                 {
                     var periodicTimer = new PeriodicTimer(pollInterval);
                     while (await periodicTimer.WaitForNextTickAsync(token))
                         action();
                 }, token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        }
+        
     }
 
     static class CancellationTokenExtensions

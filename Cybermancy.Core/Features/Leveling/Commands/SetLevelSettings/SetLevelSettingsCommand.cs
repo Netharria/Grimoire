@@ -5,11 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Core.Responses;
 using MediatR;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings
 {
-    public class SetLevelSettingsCommand : IRequest<SetLevelSettingsCommandResponse>
+    public class SetLevelSettingsCommand : IRequest<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public LevelSettings LevelSettings { get; init; }

@@ -21,12 +21,6 @@ namespace Cybermancy.Core.Configuration
             builder.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .IsRequired();
-            builder.Property(e => e.UserName)
-                .HasMaxLength(32)
-                .IsRequired();
-            builder.Property(e => e.AvatarUrl)
-                .HasMaxLength(300)
-                .IsRequired();
         }
     }
 }

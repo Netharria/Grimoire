@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,18 +26,18 @@ namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage
             var result = await this._cybermancyDbContext.Messages
                 .Where(x => x.Id == request.MessageId)
                 .Select(x => new GetMessageQueryResponse
-                {
-                    AttachmentUrls = x.Attachments.Select(x => x.AttachmentUrl).ToArray(),
-                    AuthorAvatarUrl = x.Author.GuildAvatarUrl ?? x.Author.User.AvatarUrl,
-                    AuthorId = x.Author.UserId,
-                    AuthorName = x.Author.User.UserName,
-                    ChannelId = x.ChannelId,
-                    ChannelName = x.Channel.Name,
-                    MessageContent = x.Content,
-                    MessageId = x.Id,
-                    Success = true
-
-                }).SingleOrDefaultAsync(cancellationToken);
+                    {
+                        AttachmentUrls = x.Attachments.Select(x => x.AttachmentUrl).ToArray(),
+                        AuthorId = x.Author.UserId,
+                        ChannelId = x.ChannelId,
+                        MessageId = x.Id,
+                        MessageContent = x.MessageHistory
+                            .Where(x => x.Action != MessageAction.Deleted)
+                            .OrderByDescending(x => x.TimeStamp)
+                            .First()
+                            .MessageContent,
+                        Success = true
+                    }).SingleOrDefaultAsync(cancellationToken);
             if(result is null)
                 return new GetMessageQueryResponse { Success = false };
             return result;

@@ -23,20 +23,13 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public string Content { get; set; } = string.Empty;
-
         public DateTime CreatedTimestamp { get; set; } = DateTime.UtcNow;
 
         public ulong? ReferencedMessageId { get; set; }
 
-        public bool IsDeleted { get; set; }
-
-        public ulong? DeletedByModeratorId { get; set; }
-
-        public virtual GuildUser? DeletedByModerator { get; set; } = null!;
-
         public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
 
         public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+        public virtual ICollection<MessageHistory> MessageHistory { get; set; } = new List<MessageHistory>();
     }
 }

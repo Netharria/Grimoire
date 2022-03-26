@@ -13,6 +13,5 @@ namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel
     {
         public ulong GuildId { get; init; }
         public ulong ChannelId { get; init; }
-        public string ChannelName { get; init; } = string.Empty;
     }
 }

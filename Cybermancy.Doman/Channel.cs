@@ -11,8 +11,6 @@ namespace Cybermancy.Domain
 {
     public class Channel : Identifiable, IXpIgnore
     {
-        public string Name { get; set; } = string.Empty;
-
         public bool IsXpIgnored { get; set; }
 
         public ulong GuildId { get; set; }

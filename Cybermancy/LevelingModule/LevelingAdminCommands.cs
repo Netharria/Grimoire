@@ -97,17 +97,18 @@ namespace Cybermancy.LevelingModule
 
         private async Task UpdateIgnoreState(InteractionContext ctx, string value, bool shouldIgnore)
         {
-            var matchedIds = DiscordSnowflakeParser.ParseStringIntoIdsAndGroupByType(ctx, value);
+            var matchedIds = await DiscordSnowflakeParser.ParseStringIntoIdsAndGroupByTypeAsync(ctx, value);
             if (!matchedIds.Any() || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
             {
                 await ctx.ReplyAsync(CybermancyColor.Orange, message: $"Could not parse any ids from the submited values.");
                 return;
             }
 
-            var userDtos = matchedIds["Users"]
-                .Select(x => BuildUserDto(ctx.Client, x, ctx.Guild.Id)
-                            .GetAwaiter().GetResult())
-                .OfType<UserDto>().ToList();
+            var userDtos = await matchedIds["Users"]
+                .ToAsyncEnumerable()
+                .Select(x => BuildUserDto(ctx.Client, x, ctx.Guild.Id))
+                .OfType<UserDto>()
+                .ToListAsync();
 
             var response = await this._mediator.Send(new UpdateIgnoreStateForXpGainCommand
             {
@@ -135,8 +136,7 @@ namespace Cybermancy.LevelingModule
                 return new UserDto
                 {
                     Id = member.Id,
-                    AvatarUrl = member.AvatarUrl,
-                    DisplayName = member.DisplayName,
+                    Nickname = member.Nickname,
                     UserName = $"{member.Username}${member.Discriminator}"
                 };
             try
@@ -146,8 +146,6 @@ namespace Cybermancy.LevelingModule
                     return new UserDto
                     {
                         Id = user.Id,
-                        AvatarUrl = user.AvatarUrl,
-                        DisplayName = user.Username,
                         UserName = $"{user.Username}${user.Discriminator}"
                     };
             }
