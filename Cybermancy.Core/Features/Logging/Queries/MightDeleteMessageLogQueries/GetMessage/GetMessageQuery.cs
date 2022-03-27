@@ -7,10 +7,10 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Logging.Queries.GetLoggingChannels
+namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessage
 {
-    public class GetLoggingChannelsQuery : IRequest<GetLoggingChannelsQueryResponse>
+    public class GetMessageQuery : IRequest<GetMessageQueryResponse>
     {
-        public ulong GuildId { get; init; }
+        public ulong MessageId { get; init; }
     }
 }

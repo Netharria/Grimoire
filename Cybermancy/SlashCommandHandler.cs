@@ -101,6 +101,7 @@ namespace Cybermancy
                     args.Exception.Message,
                     args.Exception.StackTrace);
             }
+            args.Handled = true;
         }
 
         public async Task SlashCommandsOnSlashCommandExecuted(SlashCommandsExtension sender, SlashCommandExecutedEventArgs args)

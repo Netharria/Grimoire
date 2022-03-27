@@ -113,7 +113,6 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
 
                 if (newUserToBeAdded.Any())
                     this._cybermancyDbContext.Users.UpdateRange(newUserToBeAdded);
-
             }
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 

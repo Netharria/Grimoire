@@ -5,8 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
 using Cybermancy.Enums;
+using Cybermancy.Extensions;
 using Cybermancy.Utilities;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -40,7 +42,11 @@ namespace Cybermancy.LevelingModule
             });
             if (!response.Success) return;
 
-            var rolesToAdd = response.EarnedRewards
+            var newRewards = response.EarnedRewards
+                .Where(x => !member.Roles.Any(y => y.Id == x))
+                .ToArray();
+
+            var rolesToAdd = newRewards
                 .Join(args.Guild.Roles, x => x, y => y.Key, (x, y) => y.Value)
                 .Concat(member.Roles)
                 .Distinct()
@@ -57,18 +63,18 @@ namespace Cybermancy.LevelingModule
             if (response.PreviousLevel < response.CurrentLevel)
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithColor(ColorUtility.GetColor(CybermancyColor.Purple))
-                    .WithTitle($"{member.Username}#{member.Discriminator}")
+                    .WithTitle(member.GetUsernameWithDiscriminator())
                     .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
                     .WithFooter($"{member.Id}")
                     .WithTimestamp(DateTime.UtcNow)
                     .Build());
-
             
-            if (rolesToAdd.Any())
+            if (newRewards.Any())
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithColor(ColorUtility.GetColor(CybermancyColor.Gold))
                     .WithTitle($"{member.Username}#{member.Discriminator}")
-                    .WithDescription($"{member.Mention} has earned {rolesToAdd.Select(x => x.Mention)}")
+                    .WithDescription($"{member.Mention} has earned " +
+                    $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x)))}")
                     .WithFooter($"{member.Id}")
                     .WithTimestamp(DateTime.UtcNow)
                     .Build());

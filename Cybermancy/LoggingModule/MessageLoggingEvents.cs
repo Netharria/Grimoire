@@ -6,18 +6,16 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Cybermancy.Core.Enums;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Features.Logging.Commands.AddLogMessage;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessage;
-using Cybermancy.Core.Features.Logging.Queries.GetLoggingChannels;
-using Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage;
-using Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessages;
-using Cybermancy.Core.Features.Shared.Queries.GetModuleStateForGuild;
+using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages;
+using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessage;
+using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage;
+using Cybermancy.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
@@ -43,11 +41,8 @@ namespace Cybermancy.LoggingModule
 
 
 
-        public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
-        {
-            if (!await this._mediator.Send(new GetModuleStateForGuildQuery { GuildId = args.Guild.Id, Module = Module.Logging }))
-                return;
-            await this._mediator.Send(new AddMessageCommand
+        public Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
+            => this._mediator.Send(new AddMessageCommand
             {
                 Attachments = args.Message.Attachments.Select(x => x.Url).ToArray(),
                 AuthorId = args.Author.Id,
@@ -58,46 +53,54 @@ namespace Cybermancy.LoggingModule
                 ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
                 GuildId = args.Guild.Id
             });
-        }
 
         public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
         {
-            if (!await this._mediator.Send(new GetModuleStateForGuildQuery { GuildId = args.Guild.Id, Module = Module.Logging }))
+            var auditLogEntry = await args.Guild.GetRecentAuditLogAsync(AuditLogActionType.MessageDelete);
+            var response = await this._mediator.Send(
+                new DeleteMessageCommand
+                {
+                    Id = args.Message.Id,
+                    DeletedByModerator = auditLogEntry?.UserResponsible?.Id,
+                    GuildId = args.Guild.Id
+                });
+            if (!response.Success || response.LoggingChannel is not ulong loggingChannelId)
                 return;
-            var loggingChannels = await this._mediator.Send(new GetLoggingChannelsQuery { GuildId = args.Guild.Id });
-            if (loggingChannels.DeleteChannelLogId is not ulong deleteChannelId)
+            var channel = await sender.GetChannelOrDefaultAsync(loggingChannelId);
+            if (channel is not DiscordChannel loggingChannel)
                 return;
-            DiscordChannel loggingChannel;
-
-            try
+            
+            string userName;
+            string avatarUrl;
+            if (args.Guild.Members.TryGetValue(response.AuthorId, out var member))
             {
-                loggingChannel = await sender.GetChannelAsync(deleteChannelId);
+                if (member.IsBot && !member.Roles.Any(x => x.Id == 732962687360827472)) return;
+                userName = member.GetUsernameWithDiscriminator();
+                avatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto);
             }
-            catch (Exception ex) when (ex is BadRequestException || ex is ServerErrorException)
+            else
             {
-                return;
+                var user = await sender.GetUserAsync(response.AuthorId);
+                if (user is null || user.IsBot) return;
+                userName = user.GetUsernameWithDiscriminator();
+                avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
             }
 
-            var response = await this._mediator.Send(new GetMessageQuery{ MessageId = args.Message.Id });
-            var author = args.Guild.Members[response.AuthorId];
             var embeds = new List<DiscordEmbed>();
 
             var embed = new DiscordEmbedBuilder()
-                .WithAuthor($"{author.DisplayName} ({response.AuthorId})")
-                .WithTitle($"Message deleted in #{ChannelExtensions.Mention(response.ChannelId)}")
+                .WithAuthor($"{userName} ({response.AuthorId})")
+                .WithTitle($"Message deleted in #{args.Channel.Name}")
                 .WithDescription($"**Author:** {UserExtensions.Mention(response.AuthorId)}\n" +
-                                $"**Channel:** {ChannelExtensions.Mention(response.ChannelId)}\n" +
-                                $"**Message Id:** {response.MessageId}")
+                                $"**Channel:** {ChannelExtensions.Mention(args.Channel.Id)}\n" +
+                                $"**Message Id:** {args.Message.Id}" +
+                                (auditLogEntry is null
+                                ? string.Empty
+                                : $"\n**Deleted By:** {auditLogEntry.UserResponsible.Mention}")
+                                )
                 .WithTimestamp(DateTime.UtcNow)
-                .WithThumbnail(
-                !string.IsNullOrWhiteSpace(author.GuildAvatarUrl)
-                ? author.GuildAvatarUrl
-                : !string.IsNullOrWhiteSpace(author.AvatarUrl)
-                ? author.AvatarUrl
-                : author.DefaultAvatarUrl);
-
-            if(!string.IsNullOrWhiteSpace(response.MessageContent))
-                embed.AddField("Content", response.MessageContent);
+                .WithThumbnail(avatarUrl)
+                .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
             if (response.AttachmentUrls.Any())
             {
@@ -105,10 +108,10 @@ namespace Cybermancy.LoggingModule
                     string.Join(' ', response.AttachmentUrls))
                     .WithImageUrl(response.AttachmentUrls.FirstOrDefault());
 
-                if (response.AttachmentUrls.Count > 1)
-                    for (var i = 1; i < response.AttachmentUrls.Count; i++)
+                if (response.AttachmentUrls.Length > 1)
+                    for (var i = 1; i < response.AttachmentUrls.Length; i++)
                         embeds.Add(new DiscordEmbedBuilder()
-                            .WithDescription($"**Message Id:** {response.MessageId}")
+                            .WithDescription($"**Message Id:** {args.Message.Id}")
                             .WithAuthor($"{UserExtensions.Mention(response.AuthorId)} ({response.AuthorId})")
                             .Build());
             }
@@ -128,44 +131,37 @@ namespace Cybermancy.LoggingModule
 
         public async Task DiscordOnMessagesBulkDeleted(DiscordClient sender, MessageBulkDeleteEventArgs args)
         {
-            if (!await this._mediator.Send(new GetModuleStateForGuildQuery { GuildId = args.Guild.Id, Module = Module.Logging }))
+            var response = await this._mediator.Send(
+                new BulkDeleteMessageCommand
+                {
+                    Ids = args.Messages.Select(x => x.Id).ToArray(),
+                    GuildId = args.Guild.Id
+                });
+            if (!response.Success || response.BulkDeleteLogChannelId is not ulong loggingChannelId)
                 return;
-            var loggingChannels = await this._mediator.Send(new GetLoggingChannelsQuery { GuildId = args.Guild.Id });
-            if (loggingChannels.BulkDeleteChannelLogId is not ulong bulkDeleteChannelLogId)
-                return;
-            DiscordChannel loggingChannel;
-
-            try
-            {
-                loggingChannel = await sender.GetChannelAsync(bulkDeleteChannelLogId);
-            }
-            catch (Exception ex) when (ex is BadRequestException || ex is ServerErrorException)
-            {
-                return;
-            }
-
-            var response = await this._mediator.Send(new GetMessagesQuery{ MesssageIds = args.Messages.Select(x => x.Id ).ToArray() });
-
+            var channel = await sender.GetChannelOrDefaultAsync(loggingChannelId);
+            if (channel is not DiscordChannel loggingChannel) return;
             if (!response.Messages.Any() || !response.Success) return;
 
             var embed = new DiscordEmbedBuilder()
-                .WithTitle("**Bulk Message Delete**")
+                .WithTitle("Bulk Message Delete")
                 .WithDescription($"**Message Count:** {response.Messages.Count()}\n" +
                                 $"**Channel:** {ChannelExtensions.Mention(response.Messages.First().ChannelId)}\n" +
                                 "Full message dump attached.");
             var stringBuilder = new StringBuilder();
             foreach (var message in response.Messages)
             {
-
                 var author = args.Guild.Members[message.AuthorId];
                 stringBuilder.AppendFormat(
                     "Author: {0} ({1})\n" +
                     "Id: {2}\n" +
-                    "Content: {3}\n",
-                    author.DisplayName,
+                    "Content: {3}\n" +
+                    (message.AttachmentUrls.Any() ? "Attachments: {4}\n": string.Empty),
+                    author.GetUsernameWithDiscriminator(),
                     message.AuthorId,
                     message.MessageId,
-                    message.MessageContent)
+                    message.MessageContent,
+                    message.AttachmentUrls)
                     .AppendLine();
             }
             using var memoryStream = new MemoryStream();
@@ -173,6 +169,7 @@ namespace Cybermancy.LoggingModule
             await writer.WriteAsync(stringBuilder);
             await writer.FlushAsync();
             memoryStream.Position = 0;
+
             try
             {
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
@@ -190,35 +187,61 @@ namespace Cybermancy.LoggingModule
 
         public async Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args)
         {
-            if (!await this._mediator.Send(new GetModuleStateForGuildQuery { GuildId = args.Guild.Id, Module = Module.Logging }))
+            if (args.Message.Content.Length == 0) return;
+            var response = await this._mediator.Send(
+                new UpdateMessageCommand
+                {
+                    MessageId = args.Message.Id,
+                    GuildId = args.Guild.Id,
+                    MessageContent = args.Message.Content
+                });
+            if (!response.Success
+                || response.UpdateMessageLogChannelId is not ulong loggingChannelId)
                 return;
-            var loggingChannels = await this._mediator.Send(new GetLoggingChannelsQuery { GuildId = args.Guild.Id });
-            if (loggingChannels.BulkDeleteChannelLogId is not ulong bulkDeleteChannelLogId)
+            var channel = await sender.GetChannelOrDefaultAsync(loggingChannelId);
+            if (channel is not DiscordChannel loggingChannel)
                 return;
-            DiscordChannel loggingChannel;
+            
+            string userName;
+            string avatarUrl;
+            if (args.Guild.Members.TryGetValue(response.AuthorId, out var member))
+            {
+                if (member.IsBot && !member.Roles.Any(x => x.Id == 732962687360827472)) return;
+                userName = member.GetUsernameWithDiscriminator();
+                avatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto);
+            }
+            else
+            {
+                var user = await sender.GetUserAsync(response.AuthorId);
+                if (user is null || user.IsBot) return;
+                userName = user.GetUsernameWithDiscriminator();
+                avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
+            }
+
+            var embed = new DiscordEmbedBuilder()
+                .WithTitle($"Message edited in #{args.Channel.Name}")
+                .WithDescription($"**Author:** {UserExtensions.Mention(response.AuthorId)}\n" +
+                                $"**Channel:** {args.Channel.Mention}\n" +
+                                $"**Message Id:** {response.MessageId}\n" +
+                                $"**[Jump Url]({args.Message.JumpLink})**")
+                .WithAuthor($"{userName} ({response.AuthorId})")
+                .WithTimestamp(DateTime.UtcNow)
+                .WithThumbnail(avatarUrl)
+                .AddMessageTextToFields("Before", response.MessageContent)
+                .AddMessageTextToFields("After", args.Message.Content);
 
             try
             {
-                loggingChannel = await sender.GetChannelAsync(bulkDeleteChannelLogId);
+                var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
+                .AddEmbed(embed));
+                if (message is null) return;
+                await _mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
-            catch (Exception ex) when (ex is BadRequestException || ex is ServerErrorException)
+            catch (Exception ex)
             {
-                return;
+                sender.Logger.Log(LogLevel.Warning, "Was not able to send edit message log to {ChannelName} : {Exception}", loggingChannel, ex);
+                throw;
             }
-
-
-            //try
-            //{
-            //    var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
-            //    .AddEmbed(embed));
-            //    if (message is null) return;
-            //    await _mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
-            //}
-            //catch (Exception ex)
-            //{
-            //    sender.Logger.Log(LogLevel.Warning, "Was not able to send edit message log to {ChannelName} : {Exception}", loggingChannel, ex);
-            //    throw;
-            //}
         }
     }
 }

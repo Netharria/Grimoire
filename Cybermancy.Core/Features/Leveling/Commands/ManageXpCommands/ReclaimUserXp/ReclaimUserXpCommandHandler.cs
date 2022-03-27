@@ -8,6 +8,7 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
+using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,9 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
         public async Task<BaseResponse> Handle(ReclaimUserXpCommand request, CancellationToken cancellationToken)
         {
             var guildUser = await this._cybermancyDbContext.GuildUsers
-                .SingleOrDefaultAsync(x => x.UserId == request.UserId && x.GuildId == request.GuildId, cancellationToken: cancellationToken);
+                .Where(x => x.UserId == request.UserId && x.GuildId == request.GuildId)
+                .Select(x => new { x.Xp })
+                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
             if (guildUser is null)
                 return new BaseResponse
                 {
@@ -42,16 +45,22 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
                     Success = false,
                     Message = "XP needs to be a positive value."
                 };
-            else if (!ulong.TryParse(request.XpToTake, out xpToTake))
+            else if (!ulong.TryParse(request.XpToTake.Trim(), out xpToTake))
                 return new BaseResponse
                 {
                     Success = false,
                     Message = "XP needs to be a valid number."
                 };
 
-            guildUser.Xp -= xpToTake;
-            this._cybermancyDbContext.GuildUsers.Update(guildUser);
-            await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
+            await this._cybermancyDbContext.UpdateItemPropertiesAsync(
+                new GuildUser
+                {
+                    UserId = request.UserId,
+                    GuildId = request.GuildId,
+                    Xp = guildUser.Xp - xpToTake
+
+                },
+                x => x.Xp);
 
             return new BaseResponse
             {

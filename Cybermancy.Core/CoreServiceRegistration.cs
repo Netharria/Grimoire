@@ -1,5 +1,6 @@
 using System.Reflection;
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.Features.Logging;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,7 @@ namespace Cybermancy.Core
                     ServerVersion.AutoDetect(configuration.GetConnectionString("CybermancyConnectionString")))
                 .EnableSensitiveDataLogging()
                 .EnableDetailedErrors())
+                .AddSingleton<IInviteService, InviteService>()
                 .AddScoped<ICybermancyDbContext, CybermancyDbContext>()
                 .AddMediatR(Assembly.GetExecutingAssembly());
             return services;

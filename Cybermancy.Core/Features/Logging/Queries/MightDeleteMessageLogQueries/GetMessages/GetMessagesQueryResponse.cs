@@ -8,7 +8,7 @@
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Core.Responses;
 
-namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessages
+namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessages
 {
     public class GetMessagesQueryResponse : BaseResponse
     {

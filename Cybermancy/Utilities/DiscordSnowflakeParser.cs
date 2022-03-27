@@ -28,8 +28,6 @@ namespace Cybermancy.Utilities
                     if(user != null) return "User";
                     return "Invalid";
                 })
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-                .ToDictionaryAwaitAsync(async k => k.Key, async v => await v.ToArrayAsync());
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+                .ToDictionaryAwaitAsync(k => new ValueTask<string>(k.Key), async v => await v.ToArrayAsync());
     }
 }

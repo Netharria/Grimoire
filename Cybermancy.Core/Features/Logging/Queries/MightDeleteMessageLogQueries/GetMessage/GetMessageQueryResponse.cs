@@ -7,7 +7,7 @@
 
 using Cybermancy.Core.Responses;
 
-namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessage
+namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessage
 {
     public class GetMessageQueryResponse : BaseResponse
     {

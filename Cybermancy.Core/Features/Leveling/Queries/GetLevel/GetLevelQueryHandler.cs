@@ -28,7 +28,8 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
                 .Select(x => new { x.Xp,
                     Level = x.GetLevel(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier),
                     LevelProgress = x.Xp - x.GetXpNeeded(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier, 0),
-                    TotalXpRequiredToLevel = x.GetXpNeeded(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier, 1) -
+                    TotalXpRequiredToLevel =
+                    x.GetXpNeeded(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier, 1) -
                         x.GetXpNeeded(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier, 0)
                 }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
@@ -51,7 +52,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
                 UsersXp = guildUser.Xp,
                 UsersLevel = guildUser.Level,
                 LevelProgress = guildUser.LevelProgress,
-                TotalXpRequiredToLevel = guildUser.TotalXpRequiredToLevel,
+                XpForNextLevel = guildUser.TotalXpRequiredToLevel,
                 NextRoleRewardId = nextReward?.RoleId,
                 NextRewardLevel = nextReward?.RewardLevel
             };

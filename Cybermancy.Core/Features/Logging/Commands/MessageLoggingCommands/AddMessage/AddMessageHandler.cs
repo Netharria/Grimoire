@@ -8,6 +8,7 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessage
 {
@@ -22,6 +23,11 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
 
         public async Task<Unit> Handle(AddMessageCommand request, CancellationToken cancellationToken)
         {
+            if (!await this._cybermancyDbContext.Guilds
+                .Where(x => x.Id == request.GuildId)
+                .AnyAsync(x => x.LogSettings.IsLoggingEnabled,
+                cancellationToken))
+                return Unit.Value;
             var message = new Message
             {
                 Id = request.MessageId,

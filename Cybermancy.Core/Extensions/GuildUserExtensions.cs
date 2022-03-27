@@ -22,18 +22,21 @@ namespace Cybermancy.Core.Extensions
         }
 
         public static uint GetLevel(this GuildUser guildUser, uint @base, uint modifier)
+            => GetLevel(guildUser.Xp, @base, modifier);
+
+        public static uint GetLevel(ulong xp, uint @base, uint modifier)
         {
-            uint i = 0;
-            if (guildUser.Xp > 1000)
-                i = (uint)Math.Floor(Math.Sqrt((guildUser.Xp - @base) * 100 /
+            var i = 0;
+            if (xp > 1000)
+                i = (int)Math.Floor(Math.Sqrt((xp - @base) * 100 /
                     (@base * modifier)));
             while (true)
             {
                 var xpNeeded = (ulong)(@base + (
-                    (uint)Math.Round(@base *
+                    (int)Math.Round(@base *
                                     (modifier / 100.0) * i) * i));
-                if (guildUser.Xp < xpNeeded)
-                    return i + 1;
+                if (xp < xpNeeded)
+                    return (uint)i + 1;
 
                 i += 1;
             }
@@ -49,13 +52,20 @@ namespace Cybermancy.Core.Extensions
         }
 
         public static ulong GetXpNeeded(this GuildUser guildUser, uint @base, uint modifier, uint levelModifier = 0)
+            => GetXpNeeded(guildUser.Xp, @base, modifier, levelModifier);
+
+        public static ulong GetXpNeeded(ulong xp, uint @base, uint modifier, uint levelModifier = 0)
         {
-            
-            var level = guildUser.GetLevel(@base, modifier) - 2 + levelModifier;
+            var currentLevel = GetLevel(xp, @base, modifier);
+
+            if ((int)currentLevel - 2 + (int)levelModifier < 0)
+                return 0;
+
+            var level = currentLevel - 2 + levelModifier;
             return level switch
             {
                 0 => @base,
-                _ => @base + ((uint)Math.Round(@base * (modifier / 100.0) * level) * level)
+                _ => @base + ((uint)Math.Round(@base * (modifier / 100.0) * (ulong)level) * (ulong)level)
             };
         }
 

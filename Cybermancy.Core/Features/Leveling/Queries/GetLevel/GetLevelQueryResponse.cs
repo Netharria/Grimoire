@@ -14,7 +14,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
         public ulong UsersXp { get; init; }
         public uint UsersLevel { get; init; }
         public ulong LevelProgress { get; init; }
-        public ulong TotalXpRequiredToLevel { get; init; }
+        public ulong XpForNextLevel { get; init; }
         public ulong? NextRoleRewardId { get; init; }
         public uint? NextRewardLevel { get; init; }
     }

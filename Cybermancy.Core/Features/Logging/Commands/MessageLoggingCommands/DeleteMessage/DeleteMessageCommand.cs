@@ -7,11 +7,12 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.MarkMessageAsDeleted
+namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessage
 {
-    public class MarkMessageAsDeletedCommand : IRequest
+    public class DeleteMessageCommand : IRequest<DeleteMessageCommandResponse>
     {
-        public ulong[] Ids { get; init; } = Array.Empty<ulong>();
+        public ulong Id { get; init; }
         public ulong GuildId { get; init; }
+        public ulong? DeletedByModerator { get; init; }
     }
 }

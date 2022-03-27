@@ -8,6 +8,7 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
+using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +29,11 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
                 return new BaseResponse { Success = false, Message = "Xp needs to be a positive value." };
 
             var guildUser = await this._cybermancyDbContext.GuildUsers
-                .SingleOrDefaultAsync(x => x.UserId == request.UserId && x.GuildId == request.GuildId, cancellationToken: cancellationToken);
+                .Where(
+                x => x.UserId == request.UserId
+                && x.GuildId == request.GuildId)
+                .Select(x => new { x.Xp })
+                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
             if (guildUser is null)
                 return new BaseResponse
@@ -37,10 +42,14 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
                     Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?"
                 };
 
-            guildUser.GrantXp(this._cybermancyDbContext, (uint)request.XpToAward);
-
-            this._cybermancyDbContext.GuildUsers.Update(guildUser);
-            await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
+            await this._cybermancyDbContext.UpdateItemPropertiesAsync(
+                new GuildUser
+                {
+                    UserId = request.UserId,
+                    GuildId = request.GuildId,
+                    Xp = guildUser.Xp + (ulong)request.XpToAward
+                },
+                x => x.Xp);
             return new BaseResponse { Success = true };
         }
     }

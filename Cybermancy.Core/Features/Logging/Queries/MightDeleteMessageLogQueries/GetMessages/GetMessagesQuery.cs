@@ -7,7 +7,7 @@
 
 using MediatR;
 
-namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessages
+namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessages
 {
     public class GetMessagesQuery : IRequest<GetMessagesQueryResponse>
     {

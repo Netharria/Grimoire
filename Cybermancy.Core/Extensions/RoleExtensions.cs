@@ -11,6 +11,7 @@ namespace Cybermancy.Core.Extensions
 {
     public static class RoleExtensions
     {
-        public static string Mention(this Role role) => $"<@&{role.Id}>";
+        public static string Mention(this Role role) => Mention(role.Id);
+        public static string Mention(ulong roleId) => $"<@&{roleId}>";
     }
 }

@@ -5,9 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Linq.Expressions;
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Cybermancy.Core
 {
@@ -86,5 +88,16 @@ namespace Cybermancy.Core
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
             => modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
+
+        public async Task UpdateItemPropertiesAsync<TEntity>(TEntity entry, params Expression<Func<TEntity, object>>[] properties) where TEntity : class
+        {
+            var entity = this.Set<TEntity>().Attach(entry);
+            foreach (var property in properties)
+            {
+                entity.Property(property).IsModified = true;
+            }
+            await this.SaveChangesAsync();
+            this.Entry(entry).State = EntityState.Detached;
+        }
     }
 }

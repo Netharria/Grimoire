@@ -1,5 +1,7 @@
+using System.Linq.Expressions;
 using Cybermancy.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Cybermancy.Core.Contracts.Persistance
 {
@@ -50,5 +52,9 @@ namespace Cybermancy.Core.Contracts.Persistance
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
         public Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default);
+
+        public EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
+
+        public Task UpdateItemPropertiesAsync<TEntity>(TEntity entry, params Expression<Func<TEntity, object>>[] properties) where TEntity : class;
     }
 }

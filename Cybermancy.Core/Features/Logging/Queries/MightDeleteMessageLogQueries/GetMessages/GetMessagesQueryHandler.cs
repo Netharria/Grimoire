@@ -10,7 +10,7 @@ using Cybermancy.Core.Features.Shared.SharedDtos;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cybermancy.Core.Features.Logging.Queries.MessageLogQueries.GetMessages
+namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessages
 {
     public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, GetMessagesQueryResponse>
     {

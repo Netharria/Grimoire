@@ -29,8 +29,9 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember
                 && x.GuildId == request.GuildId)
                 .OrderByDescending(x => x.Timestamp)
                 .Select(x => x.Nickname)
-                .FirstAsync(cancellationToken: cancellationToken);
+                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
             if (string.IsNullOrWhiteSpace(request.Nickname)
+                || string.IsNullOrWhiteSpace(currentNickname)
                 || currentNickname.Equals(request.Nickname, StringComparison.Ordinal))
                 return Unit.Value;
             await this._cybermancyDbContext.NicknameHistory.AddAsync(new NicknameHistory

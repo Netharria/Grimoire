@@ -7,6 +7,7 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
+using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,28 +24,40 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
 
         public async Task<GainUserXpCommandResponse> Handle(GainUserXpCommand request, CancellationToken cancellationToken)
         {
-            if (await this._cybermancyDbContext.Guilds
-                .Where(x => x.Id == request.GuildId)
-                .AnyAsync(x =>
-                x.Roles.Where(x => request.RoleIds.Contains(x.Id)).Any(y => y.IsXpIgnored) ||
-                x.Channels.Where(x => x.Id == request.ChannelId).Any(y => y.IsXpIgnored) ||
-                x.GuildUsers.Where(x => x.UserId == request.UserId).Any(y => y.IsXpIgnored) ||
-                !x.LevelSettings.IsLevelingEnabled, cancellationToken: cancellationToken))
-                return new GainUserXpCommandResponse { Success = false };
-
             var user = await this._cybermancyDbContext.GuildUsers
-                .FirstOrDefaultAsync(x => x.UserId == request.UserId, cancellationToken: cancellationToken);
+                .Where(x => x.UserId == request.UserId
+                && x.GuildId == request.GuildId)
+                .Where(x => x.Guild.LevelSettings.IsLevelingEnabled)
+                .Where(x => !x.IsXpIgnored)
+                .Where(x => !x.Guild.Roles.Where(x => request.RoleIds.Contains(x.Id)).Any(y => y.IsXpIgnored)
+                || !x.Guild.Channels.Where(x => x.Id == request.ChannelId).Any(y => y.IsXpIgnored))
+                .Select(x => new
+                {
+                    x.Xp,
+                    x.TimeOut,
+                    x.Guild.LevelSettings.Base,
+                    x.Guild.LevelSettings.Modifier,
+                    x.Guild.LevelSettings.Amount,
+                    x.Guild.LevelSettings.LevelChannelLogId,
+                    x.Guild.LevelSettings.TextTime
+                }).FirstOrDefaultAsync(cancellationToken);
 
             if (user is null || user.TimeOut > DateTime.UtcNow)
                 return new GainUserXpCommandResponse { Success = false };
 
-            var previousLevel = user.GetLevel(this._cybermancyDbContext);
-            user.GrantXp(this._cybermancyDbContext);
-            var currentLevel = user.GetLevel(this._cybermancyDbContext);
+            var previousLevel = GuildUserExtensions.GetLevel(user.Xp, user.Base, user.Modifier);
+            var currentLevel = GuildUserExtensions.GetLevel(user.Xp + user.Amount, user.Base, user.Modifier);
 
-            this._cybermancyDbContext.GuildUsers.Update(user);
-
-            var result = await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
+            await this._cybermancyDbContext.UpdateItemPropertiesAsync(
+                new GuildUser
+                {
+                    UserId = request.UserId,
+                    GuildId = request.GuildId,
+                    Xp = user.Xp + user.Amount,
+                    TimeOut = DateTime.UtcNow + TimeSpan.FromMinutes(user.TextTime)
+                },
+                x => x.Xp,
+                x => x.TimeOut);
 
             var earnedRewards = await this._cybermancyDbContext.Rewards
                 .Where(x => x.GuildId == request.GuildId)
@@ -52,18 +65,13 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
                 .Select(x => x.RoleId )
                 .ToArrayAsync(cancellationToken: cancellationToken);
 
-            var loggingChannel = await this._cybermancyDbContext.GuildLevelSettings
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(x => x.LevelChannelLogId)
-                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-
             return new GainUserXpCommandResponse
             {
                 Success = true,
                 EarnedRewards = earnedRewards,
                 PreviousLevel = previousLevel,
                 CurrentLevel = currentLevel,
-                LoggingChannel = loggingChannel
+                LoggingChannel = user.LevelChannelLogId
             };
 
         }

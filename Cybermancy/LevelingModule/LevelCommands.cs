@@ -60,7 +60,7 @@ namespace Cybermancy.LevelingModule
                 .WithTitle($"Level and EXP for {member.DisplayName}")
                 .AddField("XP", $"{response.UsersXp}", inline: true)
                 .AddField("Level", $"{response.UsersLevel}", inline: true)
-                .AddField("Progress", $"{response.LevelProgress}/{response.TotalXpRequiredToLevel}", inline: true)
+                .AddField("Progress", $"{response.LevelProgress}/{response.XpForNextLevel}", inline: true)
                 .AddField("Next Reward", roleReward is null ? "None" : $"{roleReward.Mention}\n at level {response.NextRewardLevel}", inline: true)
                 .WithThumbnail(member.AvatarUrl ?? member.DefaultAvatarUrl)
                 .WithFooter($"{ctx.Guild.Name}", ctx.Guild.IconUrl)
