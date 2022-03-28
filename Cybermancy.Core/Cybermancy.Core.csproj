@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Cybermancy.Doman\Cybermancy.Domain.csproj" />
+    <ProjectReference Include="..\Cybermancy.Domain\Cybermancy.Domain.csproj" />
   </ItemGroup>
 
 </Project>
