@@ -23,7 +23,7 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
                     Id = x.Id,
                     UsernameHistories = new List<UsernameHistory> {
                         new UsernameHistory {
-                            NewUsername = x.UserName,
+                            Username = x.UserName,
                             UserId = x.Id,
                         }
                     }

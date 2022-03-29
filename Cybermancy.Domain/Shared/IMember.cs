@@ -1,4 +1,4 @@
-﻿// This file is part of the Cybermancy Project.
+// This file is part of the Cybermancy Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -7,8 +7,9 @@
 
 namespace Cybermancy.Domain.Shared
 {
-    public abstract class Identifiable
+    public interface IMember
     {
-        public ulong Id { get; set; }
+        ulong UserId { get; set; }
+        ulong GuildId { get; set; }
     }
 }

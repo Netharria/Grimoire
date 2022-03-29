@@ -9,7 +9,7 @@ namespace Cybermancy.Core.Features.Shared.SharedDtos
 {
     public class MessageDto
     {
-        public ulong AuthorId { get; init; }
+        public ulong UserId { get; init; }
         public ulong ChannelId { get; init; }
         public ulong MessageId { get; init; }
         public string MessageContent { get; init; } = string.Empty;

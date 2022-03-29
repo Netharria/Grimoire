@@ -9,8 +9,10 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Role : Identifiable, IXpIgnore
+    public class Role : IIdentifiable, IXpIgnore, IMentionable
     {
+        public ulong Id { get; set; }
+
         public ulong GuildId { get; set; }
 
         public virtual Guild Guild { get; set; } = null!;

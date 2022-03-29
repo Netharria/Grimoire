@@ -14,9 +14,8 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
         public ulong MessageId { get; init; }
         public ulong ChannelId { get; init; }
         public string MessageContent { get; init; } = string.Empty;
-        public ulong AuthorId { get; init; }
+        public ulong UserId { get; init; }
         public ICollection<string> Attachments { get; init; } = new List<string>();
-        public DateTime CreatedTimestamp { get; init; }
         public ulong? ReferencedMessageId { get; init; }
         public ulong GuildId { get; init; }
     }

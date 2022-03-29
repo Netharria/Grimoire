@@ -14,10 +14,10 @@ namespace Cybermancy.Core.Features.Leveling
 {
     public static class LevelingExtensions
     {
-        public static IQueryable<GuildUser> GetRankedUsersAsync(
-            this IQueryable<GuildUser> guildUsers,
+        public static IQueryable<Member> GetRankedUsersAsync(
+            this IQueryable<Member> member,
             ulong guildId, int count = 15, int page = 0) =>
-            guildUsers.Where(x => x.GuildId == guildId)
+            member.Where(x => x.GuildId == guildId)
                 .OrderByDescending(x => x.Xp)
                 .Skip(page * 15)
                 .Take(count);

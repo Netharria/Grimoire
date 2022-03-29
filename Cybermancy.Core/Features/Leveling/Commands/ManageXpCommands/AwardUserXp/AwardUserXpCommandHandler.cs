@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
@@ -28,14 +29,12 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
             if (request.XpToAward < 0)
                 return new BaseResponse { Success = false, Message = "Xp needs to be a positive value." };
 
-            var guildUser = await this._cybermancyDbContext.GuildUsers
-                .Where(
-                x => x.UserId == request.UserId
-                && x.GuildId == request.GuildId)
+            var member = await this._cybermancyDbContext.Members
+                .WhereMemberHasId(request.UserId, request.GuildId)
                 .Select(x => new { x.Xp })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
-            if (guildUser is null)
+            if (member is null)
                 return new BaseResponse
                 {
                     Success = false,
@@ -43,11 +42,11 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
                 };
 
             await this._cybermancyDbContext.UpdateItemPropertiesAsync(
-                new GuildUser
+                new Member
                 {
                     UserId = request.UserId,
                     GuildId = request.GuildId,
-                    Xp = guildUser.Xp + (ulong)request.XpToAward
+                    Xp = member.Xp + (ulong)request.XpToAward
                 },
                 x => x.Xp);
             return new BaseResponse { Success = true };

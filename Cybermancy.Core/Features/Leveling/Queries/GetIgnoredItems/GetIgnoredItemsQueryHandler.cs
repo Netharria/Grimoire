@@ -9,6 +9,7 @@ using System.Text;
 using Cybermancy.Core.Contracts.Persistance;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Cybermancy.Core.DatabaseQueryHelpers;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
 {
@@ -25,15 +26,15 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
         {
 
             var ignoredItems = await this._cybermancyDbContext.Guilds
-                .Where(x => x.Id == request.GuildId)
+                .WhereIdIs(request.GuildId)
                 .Select(x => new
                 {
-                    IgnoredRoles = x.Roles.Where(x => x.IsXpIgnored).Select(x => x.Id),
-                    IgnoredChannels = x.Channels.Where(x => x.IsXpIgnored).Select(x => x.Id),
-                    IgnoredGuildUsers = x.GuildUsers.Where(x => x.IsXpIgnored).Select(x => x.UserId)
+                    IgnoredRoles = x.Roles.WhereIgnored().Select(x => x.Id),
+                    IgnoredChannels = x.Channels.WhereIgnored().Select(x => x.Id),
+                    IgnoredMembers = x.Members.WhereIgnored().Select(x => x.UserId)
                 }).FirstAsync(cancellationToken: cancellationToken);
 
-            if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredGuildUsers.Any())
+            if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredMembers.Any())
                 return new GetIgnoredItemsQueryResponse { Success = false, Message = "This server does not have any ignored channels, roles or users." };
 
             var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
@@ -43,7 +44,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
             foreach (var role in ignoredItems.IgnoredRoles) ignoredMessageBuilder.Append($"<@&{role}>").Append('\n');
 
             ignoredMessageBuilder.Append("\n**Users**\n");
-            foreach (var user in ignoredItems.IgnoredGuildUsers) ignoredMessageBuilder.Append($"<@!{user}>").Append('\n');
+            foreach (var member in ignoredItems.IgnoredMembers) ignoredMessageBuilder.Append($"<@!{member}>").Append('\n');
 
             return new GetIgnoredItemsQueryResponse { Success = true, ResultString = ignoredMessageBuilder.ToString() };
         }

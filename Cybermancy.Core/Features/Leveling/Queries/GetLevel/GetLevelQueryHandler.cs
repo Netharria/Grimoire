@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -23,17 +24,15 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
 
         public async Task<GetLevelQueryResponse> Handle(GetLevelQuery request, CancellationToken cancellationToken)
         {
-            var guildUser = await this._cybermancyDbContext.GuildUsers
-                .Where(x => x.UserId == request.UserId && x.GuildId == request.GuildId)
+            var member = await this._cybermancyDbContext.Members
+                .WhereMemberHasId(request.UserId, request.GuildId)
                 .Select(x => new { x.Xp,
-                    Level = x.GetLevel(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier),
-                    LevelProgress = x.Xp - x.GetXpNeeded(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier, 0),
-                    TotalXpRequiredToLevel =
-                    x.GetXpNeeded(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier, 1) -
-                        x.GetXpNeeded(x.Guild.LevelSettings.Base, x.Guild.LevelSettings.Modifier, 0)
+                    Level = x.GetLevel(),
+                    LevelProgress = x.Xp - x.GetXpNeeded(),
+                    TotalXpRequiredToLevel = x.GetXpNeeded(1) - x.GetXpNeeded()
                 }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
-            if (guildUser is null)
+            if (member is null)
                 return new GetLevelQueryResponse()
                 {
                     Success = false,
@@ -41,7 +40,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
                 };
 
             var nextReward = await this._cybermancyDbContext.Rewards
-                .Where(x => x.GuildId == request.GuildId && x.RewardLevel > guildUser.Level)
+                .Where(x => x.GuildId == request.GuildId && x.RewardLevel > member.Level)
                 .OrderBy(x => x.RewardLevel)
                 .Select(x => new { x.RoleId, x.RewardLevel })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
@@ -49,10 +48,10 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
             return new GetLevelQueryResponse
             {
                 Success = true,
-                UsersXp = guildUser.Xp,
-                UsersLevel = guildUser.Level,
-                LevelProgress = guildUser.LevelProgress,
-                XpForNextLevel = guildUser.TotalXpRequiredToLevel,
+                UsersXp = member.Xp,
+                UsersLevel = member.Level,
+                LevelProgress = member.LevelProgress,
+                XpForNextLevel = member.TotalXpRequiredToLevel,
                 NextRoleRewardId = nextReward?.RoleId,
                 NextRewardLevel = nextReward?.RewardLevel
             };

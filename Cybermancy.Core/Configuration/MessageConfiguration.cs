@@ -21,9 +21,9 @@ namespace Cybermancy.Core.Configuration
             builder.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .IsRequired();
-            builder.HasOne(e => e.Author)
+            builder.HasOne(e => e.Member)
                 .WithMany(e => e.Messages)
-                .HasForeignKey(e => new { e.AuthorId, e.GuildId })
+                .HasForeignKey(e => new { e.UserId, e.GuildId })
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.HasOne(e => e.Channel)

@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Configuration
                 .ValueGeneratedOnAdd();
             builder.Property(e => e.Reason)
                 .HasMaxLength(1000);
-            builder.HasOne(e => e.GuildUser)
+            builder.HasOne(e => e.Member)
                 .WithMany(e => e.UserSins)
                 .HasForeignKey(e => new { e.UserId, e.GuildId })
                 .OnDelete(DeleteBehavior.Cascade)

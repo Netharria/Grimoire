@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Domain;
 using MediatR;
@@ -24,13 +25,10 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
 
         public async Task<GainUserXpCommandResponse> Handle(GainUserXpCommand request, CancellationToken cancellationToken)
         {
-            var user = await this._cybermancyDbContext.GuildUsers
-                .Where(x => x.UserId == request.UserId
-                && x.GuildId == request.GuildId)
-                .Where(x => x.Guild.LevelSettings.IsLevelingEnabled)
-                .Where(x => !x.IsXpIgnored)
-                .Where(x => !x.Guild.Roles.Where(x => request.RoleIds.Contains(x.Id)).Any(y => y.IsXpIgnored)
-                || !x.Guild.Channels.Where(x => x.Id == request.ChannelId).Any(y => y.IsXpIgnored))
+            var member = await this._cybermancyDbContext.Members
+                .WhereMemberHasId(request.UserId, request.GuildId)
+                .WhereLevelingEnabled()
+                .WhereMemberNotIgnored(request.ChannelId, request.RoleIds)
                 .Select(x => new
                 {
                     x.Xp,
@@ -42,19 +40,19 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
                     x.Guild.LevelSettings.TextTime
                 }).FirstOrDefaultAsync(cancellationToken);
 
-            if (user is null || user.TimeOut > DateTime.UtcNow)
+            if (member is null || member.TimeOut > DateTime.UtcNow)
                 return new GainUserXpCommandResponse { Success = false };
 
-            var previousLevel = GuildUserExtensions.GetLevel(user.Xp, user.Base, user.Modifier);
-            var currentLevel = GuildUserExtensions.GetLevel(user.Xp + user.Amount, user.Base, user.Modifier);
+            var previousLevel = MemberExtensions.GetLevel(member.Xp, member.Base, member.Modifier);
+            var currentLevel = MemberExtensions.GetLevel(member.Xp + member.Amount, member.Base, member.Modifier);
 
             await this._cybermancyDbContext.UpdateItemPropertiesAsync(
-                new GuildUser
+                new Member
                 {
                     UserId = request.UserId,
                     GuildId = request.GuildId,
-                    Xp = user.Xp + user.Amount,
-                    TimeOut = DateTime.UtcNow + TimeSpan.FromMinutes(user.TextTime)
+                    Xp = member.Xp + member.Amount,
+                    TimeOut = DateTime.UtcNow + member.TextTime
                 },
                 x => x.Xp,
                 x => x.TimeOut);
@@ -71,7 +69,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
                 EarnedRewards = earnedRewards,
                 PreviousLevel = previousLevel,
                 CurrentLevel = currentLevel,
-                LoggingChannel = user.LevelChannelLogId
+                LoggingChannel = member.LevelChannelLogId
             };
 
         }

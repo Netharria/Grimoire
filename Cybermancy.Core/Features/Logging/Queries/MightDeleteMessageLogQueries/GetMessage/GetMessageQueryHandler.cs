@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -24,11 +25,11 @@ namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.
         public async Task<GetMessageQueryResponse> Handle(GetMessageQuery request, CancellationToken cancellationToken)
         {
             var result = await this._cybermancyDbContext.Messages
-            .Where(x => x.Id == request.MessageId)
+            .WhereIdIs(request.MessageId)
             .Select(x => new GetMessageQueryResponse
             {
                 AttachmentUrls = x.Attachments.Select(x => x.AttachmentUrl).ToArray(),
-                AuthorId = x.Author.UserId,
+                AuthorId = x.Member.UserId,
                 ChannelId = x.ChannelId,
                 MessageId = x.Id,
                 MessageContent = x.MessageHistory

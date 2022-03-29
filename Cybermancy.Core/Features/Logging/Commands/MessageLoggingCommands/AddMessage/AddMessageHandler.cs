@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -24,19 +25,18 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
         public async Task<Unit> Handle(AddMessageCommand request, CancellationToken cancellationToken)
         {
             if (!await this._cybermancyDbContext.Guilds
-                .Where(x => x.Id == request.GuildId)
-                .AnyAsync(x => x.LogSettings.IsLoggingEnabled,
+                .WhereIdIs(request.GuildId)
+                .AnyAsync(x => x.LogSettings.ModuleEnabled,
                 cancellationToken))
                 return Unit.Value;
             var message = new Message
             {
                 Id = request.MessageId,
-                AuthorId = request.AuthorId,
+                UserId = request.UserId,
                 Attachments = request.Attachments
                     .Select(x => new Attachment{ MessageId = request.MessageId, AttachmentUrl = x})
                     .ToArray(),
                 ChannelId = request.ChannelId,
-                CreatedTimestamp = request.CreatedTimestamp,
                 ReferencedMessageId = request.ReferencedMessageId,
                 GuildId = request.GuildId,
                 MessageHistory = new List<MessageHistory>{

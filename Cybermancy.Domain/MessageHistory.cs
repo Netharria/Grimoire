@@ -9,8 +9,9 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class MessageHistory : Identifiable
+    public class MessageHistory : IIdentifiable
     {
+        public ulong Id { get; set; }
         public ulong MessageId { get; set; }
         public Message Message { get; set; } = null!;
         public ulong GuildId { get; set; }
@@ -18,8 +19,8 @@ namespace Cybermancy.Domain
         public MessageAction Action { get; set; }
         public string MessageContent { get; set; } = string.Empty;
         public ulong? DeletedByModeratorId { get; set; }
-        public virtual GuildUser? DeletedByModerator { get; set; } = null!;
-        public DateTime TimeStamp { get; set; } = DateTime.UtcNow;
+        public virtual Member? DeletedByModerator { get; set; } = null!;
+        public DateTime TimeStamp { get; } = DateTime.UtcNow;
     }
 
     public enum MessageAction

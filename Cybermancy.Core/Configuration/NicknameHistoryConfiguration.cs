@@ -16,7 +16,7 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<NicknameHistory> builder)
         {
             builder.HasKey(x => x.Id);
-            builder.HasOne(x => x.GuildUser)
+            builder.HasOne(x => x.Member)
                 .WithMany(x => x.NicknamesHistory)
                 .HasForeignKey(x => new { x.UserId, x.GuildId })
                 .IsRequired()

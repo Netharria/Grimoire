@@ -24,32 +24,32 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
 
         public async Task<GetLeaderboardQueryResponse> Handle(GetLeaderboardQuery request, CancellationToken cancellationToken)
         {
-            var guildRankedUsers = await this._cybermancyDbContext.GuildUsers
+            var RankedMembers = await this._cybermancyDbContext.Members
                 .Where(x => x.GuildId == request.GuildId)
                 .OrderByDescending(x => x.Xp)
                 .Select(x => new { x.UserId, x.Xp, Mention = x.User.Mention() })
                 .ToListAsync(cancellationToken: cancellationToken);
 
-            var totalUserCount = guildRankedUsers.Count;
+            var totalMemberCount = RankedMembers.Count;
 
-            var usersPosition = 0;
+            var memberPosition = 0;
 
             if (request.UserId is not null)
-                usersPosition = guildRankedUsers.FindIndex(x => x.UserId == request.UserId);
+                memberPosition = RankedMembers.FindIndex(x => x.UserId == request.UserId);
 
-            if (request.UserId is not null && usersPosition == -1)
+            if (request.UserId is not null && memberPosition == -1)
                 return new GetLeaderboardQueryResponse { Success = false, Message = "Could not find user on leaderbaord." };
 
-            if(usersPosition == -1)
-                usersPosition++;
+            if(memberPosition == -1)
+                memberPosition++;
 
-            var startIndex = usersPosition - 5 < 0 ? 0 : usersPosition - 5;
+            var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
             var leaderboardText = new StringBuilder();
 
-            for (var i = startIndex; i < 15 && i < totalUserCount; i++)
-                leaderboardText.Append($"**{i + 1}** {guildRankedUsers[i].Mention} **XP:** {guildRankedUsers[i].Xp}\n");                
+            for (var i = startIndex; i < 15 && i < totalMemberCount; i++)
+                leaderboardText.Append($"**{i + 1}** {RankedMembers[i].Mention} **XP:** {RankedMembers[i].Xp}\n");                
 
-            return new GetLeaderboardQueryResponse { Success = true, LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalUserCount };
+            return new GetLeaderboardQueryResponse { Success = true, LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
         }
     }
 }

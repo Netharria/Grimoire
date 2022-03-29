@@ -55,7 +55,7 @@ namespace Cybermancy.Core.Configuration
                 .WithOne()
                 .HasForeignKey<GuildLogSettings>(e => e.AvatarChannelLogId)
                 .IsRequired(false);
-            builder.Property(x => x.IsLoggingEnabled)
+            builder.Property(x => x.ModuleEnabled)
                 .HasDefaultValue(value: false);
         }
     }

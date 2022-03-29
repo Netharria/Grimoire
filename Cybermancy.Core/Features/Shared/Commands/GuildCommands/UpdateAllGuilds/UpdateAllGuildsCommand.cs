@@ -14,7 +14,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds
     {
         public IEnumerable<GuildDto> Guilds { get; init; } = Enumerable.Empty<GuildDto>();
         public IEnumerable<UserDto> Users { get; init; } = Enumerable.Empty<UserDto>();
-        public IEnumerable<GuildUserDto> GuildUsers { get; init; } = Enumerable.Empty<GuildUserDto>();
+        public IEnumerable<MemberDto> Members { get; init; } = Enumerable.Empty<MemberDto>();
         public IEnumerable<RoleDto> Roles { get; init; } = Enumerable.Empty<RoleDto>();
         public IEnumerable<ChannelDto> Channels { get; init; } = Enumerable.Empty<ChannelDto>();
     }

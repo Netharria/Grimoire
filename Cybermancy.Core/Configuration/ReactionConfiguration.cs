@@ -20,9 +20,9 @@ namespace Cybermancy.Core.Configuration
                 .WithMany(x => x.Reactions)
                 .HasForeignKey(x => x.MessageId)
                 .OnDelete(DeleteBehavior.Cascade);
-            builder.HasOne(x => x.GuildUser)
+            builder.HasOne(x => x.Member)
                 .WithMany(x => x.Reactions)
-                .HasForeignKey(x => new { x.GuildUserId, x.GuildId })
+                .HasForeignKey(x => new { x.UserId, x.GuildId })
                 .OnDelete(DeleteBehavior.Restrict);
             builder.Property(x => x.Name)
                 .HasMaxLength(32)

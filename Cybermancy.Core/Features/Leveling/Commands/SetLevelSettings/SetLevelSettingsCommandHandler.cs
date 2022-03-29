@@ -30,7 +30,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings
             {
                 case LevelSettings.TextTime:
                     if (uint.TryParse(request.Value, out var textTime))
-                        guild.TextTime = textTime;
+                        guild.TextTime = TimeSpan.FromMinutes(textTime);
                     else
                         return new BaseResponse { Success = false, Message = "Please give a valid number for TextTime." };
                     break;

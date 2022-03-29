@@ -76,7 +76,7 @@ namespace Cybermancy
             var mediator = (IMediator?)scope.ServiceProvider.GetService(typeof(IMediator));
             if (mediator is null) throw new ArgumentNullException("Was Not able to get mediator service");
             var result = await mediator.Send(new GetLevelSettingsQuery { GuildId = 639594402410659887 });
-            Console.WriteLine($"LevelingModuleEnables: {result.IsLevelingEnabled}, Amount: {result.Amount}");
+            Console.WriteLine($"LevelingModuleEnables: {result.ModuleEnabled}, Amount: {result.Amount}");
         }
     }
 }

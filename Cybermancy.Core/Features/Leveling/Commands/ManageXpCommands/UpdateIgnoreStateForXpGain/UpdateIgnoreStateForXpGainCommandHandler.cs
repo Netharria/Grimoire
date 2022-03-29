@@ -8,6 +8,7 @@
 using System.Text;
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
 using MediatR;
 
@@ -25,32 +26,31 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
         public async Task<UpdateIgnoreStateForXpGainResponse> Handle(UpdateIgnoreStateForXpGainCommand request, CancellationToken cancellationToken)
         {
             var userIds = request.Users.Select(x => x.Id).ToArray();
-            GuildUser[]? allUsersToIgnore = null;
+            Member[]? allUsersToIgnore = null;
             Role[]? allRolesToIgnore = null;
             Channel[]? allChannelsToIgnore = null;
             var newIgnoredItems = new StringBuilder();
 
             if (request.Users.Any())
-                allUsersToIgnore = this._cybermancyDbContext.GuildUsers
-                    .Where(x => x.GuildId == request.GuildId)
-                    .Where(x => userIds.Contains(x.UserId))
+                allUsersToIgnore = this._cybermancyDbContext.Members
+                    .WhereMembersHaveIds(userIds, request.GuildId)
                     .UpdateIgnoredStatus(request.ShouldIgnore, newIgnoredItems)
                     .ToArray();
             if (request.RoleIds.Any())
                 allRolesToIgnore = this._cybermancyDbContext.Roles
-                    .Where(x => request.RoleIds.Contains(x.Id))
+                    .WhereIdsAre(request.RoleIds)
                     .UpdateIgnoredStatus(request.ShouldIgnore, newIgnoredItems)
                     .ToArray();
 
             if (request.ChannelIds.Any())
                 allChannelsToIgnore = this._cybermancyDbContext.Channels
-                    .Where(x => request.ChannelIds.Contains(x.Id))
+                    .WhereIdsAre(request.ChannelIds)
                     .UpdateIgnoredStatus(request.ShouldIgnore, newIgnoredItems)
                     .ToArray();
 
 
             if (allUsersToIgnore is not null)
-                this._cybermancyDbContext.GuildUsers.UpdateRange(allUsersToIgnore);
+                this._cybermancyDbContext.Members.UpdateRange(allUsersToIgnore);
 
             if (allRolesToIgnore is not null)
                 this._cybermancyDbContext.Roles.UpdateRange(allRolesToIgnore);
@@ -62,12 +62,12 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
             {
                 var usersNotUpdated = allUsersToIgnore.Select(x => x.UserId).Except(userIds).ToArray();
                 var existingUsersToBeAddedToGuild = this._cybermancyDbContext.Users
-                    .Where(x => usersNotUpdated.Contains(x.Id))
+                    .WhereIdsAre(usersNotUpdated)
                     .ToArray()
                     .Select(x =>
                     {
                         newIgnoredItems.Append(x.Mention()).Append(' ');
-                        x.GuildMemberProfiles.Add(new GuildUser
+                        x.MemberProfiles.Add(new Member
                         {
                             GuildId = request.GuildId,
                             IsXpIgnored = request.ShouldIgnore
@@ -87,26 +87,26 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
                             Id = x.Id,
                             UsernameHistories = new List<UsernameHistory> {
                                 new UsernameHistory {
-                                    NewUsername = x.UserName,
+                                    Username = x.UserName,
                                     UserId = x.Id
                                 }
                             }
                         };
-                        var guildUser = new GuildUser
+                        var member = new Member
                         {
                             GuildId = request.GuildId,
                             IsXpIgnored = request.ShouldIgnore,
                             UserId = x.Id
                         };
                         if(!string.IsNullOrWhiteSpace(x.Nickname))
-                            guildUser.NicknamesHistory.Add(
+                            member.NicknamesHistory.Add(
                                 new NicknameHistory
                                 {
                                     Nickname = x.Nickname,
                                     GuildId = request.GuildId,
                                     UserId = x.Id
                                 });
-                        user.GuildMemberProfiles.Add(guildUser);
+                        user.MemberProfiles.Add(member);
                         newIgnoredItems.Append(user.Mention()).Append(' ');
                         return user;
                     }).ToArray();

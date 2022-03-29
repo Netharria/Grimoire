@@ -10,32 +10,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
 {
-    public class GetLevelSettingsHandler : IRequestHandler<GetLevelSettingsQuery, GetLevelSettingsResponse>
+    public class GetLevelSettingsQueryHandler : IRequestHandler<GetLevelSettingsQuery, GetLevelSettingsQueryResponse>
     {
         private readonly CybermancyDbContext _cybermancyDbContext;
 
-        public GetLevelSettingsHandler(CybermancyDbContext cybermancyDbContext)
+        public GetLevelSettingsQueryHandler(CybermancyDbContext cybermancyDbContext)
         {
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetLevelSettingsResponse> Handle(GetLevelSettingsQuery request, CancellationToken cancellationToken)
+        public async Task<GetLevelSettingsQueryResponse> Handle(GetLevelSettingsQuery request, CancellationToken cancellationToken)
         {
             var guildLevelSettings = await this._cybermancyDbContext.GuildLevelSettings
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => new
                 {
-                    x.IsLevelingEnabled,
+                    x.ModuleEnabled,
                     x.TextTime,
                     x.Base,
                     x.Modifier,
                     x.Amount,
                     x.LevelChannelLogId
                 }).FirstAsync(cancellationToken: cancellationToken);
-            return new GetLevelSettingsResponse
+            return new GetLevelSettingsQueryResponse
             {
                 Success = true,
-                IsLevelingEnabled = guildLevelSettings.IsLevelingEnabled,
+                ModuleEnabled = guildLevelSettings.ModuleEnabled,
                 TextTime = guildLevelSettings.TextTime,
                 Base = guildLevelSettings.Base,
                 Modifier = guildLevelSettings.Modifier,

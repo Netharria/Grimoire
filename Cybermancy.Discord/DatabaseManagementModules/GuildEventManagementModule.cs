@@ -8,6 +8,7 @@
 using Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild;
 using Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds;
 using Cybermancy.Core.Features.Shared.SharedDtos;
+using Cybermancy.Extensions;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using MediatR;
@@ -37,16 +38,16 @@ namespace Cybermancy.DatabaseManagementModules
             {
                 Guilds = args.Guilds.Keys.Select(x => new GuildDto { Id = x }),
                 Users = args.Guilds.Values.SelectMany(x => x.Members)
-                    .DistinctBy(x => x.Value.Id).Select(x => x.Value)
+                    .DistinctBy(x => x.Value.Id)
                     .Select(x =>
                     new UserDto {
-                        Id = x.Id,
-                        UserName = $"{x.Username}#{x.Discriminator}",
-                        Nickname = x.Nickname,
+                        Id = x.Key,
+                        UserName = x.Value.GetUsernameWithDiscriminator(),
+                        Nickname = x.Value.Nickname,
                     }),
-                GuildUsers = args.Guilds.Values.SelectMany(x => x.Members)
+                Members = args.Guilds.Values.SelectMany(x => x.Members)
                     .Select(x => x.Value).Select(x =>
-                    new GuildUserDto {
+                    new MemberDto {
                         GuildId = x.Guild.Id,
                         UserId = x.Id,
                         Nickname = x.Nickname
@@ -73,22 +74,20 @@ namespace Cybermancy.DatabaseManagementModules
             {
                 GuildId = args.Guild.Id,
                 Users = args.Guild.Members
-                    .Select(x => x.Value)
                     .Select(x =>
                     new UserDto
                     {
-                        Id = x.Id,
-                        UserName = $"{x.Username}#{x.Discriminator}"
+                        Id = x.Key,
+                        UserName = x.Value.GetUsernameWithDiscriminator()
                     }),
-                GuildUsers = args.Guild.Members
-                    .Select(x => x.Value)
-                .Select(x =>
-                    new GuildUserDto
-                    {
-                        GuildId = x.Guild.Id,
-                        UserId = x.Id,
-                        Nickname = x.Nickname
-                    }),
+                Members = args.Guild.Members
+                    .Select(x =>
+                        new MemberDto
+                        {
+                            GuildId = x.Value.Guild.Id,
+                            UserId = x.Key,
+                            Nickname = x.Value.Nickname
+                        }),
                 Roles = args.Guild.Roles
                     .Select(x => 
                     new RoleDto

@@ -19,35 +19,23 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetLogSettings
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetLoggingSettingsQueryResponse> Handle(GetLoggingSettingsQuery request, CancellationToken cancellationToken)
+        public Task<GetLoggingSettingsQueryResponse> Handle(GetLoggingSettingsQuery request, CancellationToken cancellationToken)
         {
-            var guildLevelSettings = await this._cybermancyDbContext.GuildLogSettings
+            return this._cybermancyDbContext.GuildLogSettings
                 .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new
+                .Select(x => new GetLoggingSettingsQueryResponse
                 {
-                    x.IsLoggingEnabled,
-                    x.JoinChannelLogId,
-                    x.LeaveChannelLogId,
-                    x.DeleteChannelLogId,
-                    x.BulkDeleteChannelLogId,
-                    x.EditChannelLogId,
-                    x.UsernameChannelLogId,
-                    x.NicknameChannelLogId,
-                    x.AvatarChannelLogId
+                    JoinChannelLog = x.JoinChannelLogId,
+                    LeaveChannelLog = x.LeaveChannelLogId,
+                    DeleteChannelLog = x.DeleteChannelLogId,
+                    BulkDeleteChannelLog = x.BulkDeleteChannelLogId,
+                    EditChannelLog = x.EditChannelLogId,
+                    UsernameChannelLog = x.UsernameChannelLogId,
+                    NicknameChannelLog = x.NicknameChannelLogId,
+                    AvatarChannelLog = x.AvatarChannelLogId,
+                    IsLoggingEnabled = x.ModuleEnabled,
+                    Success = true
                 }).FirstAsync(cancellationToken: cancellationToken);
-            return new GetLoggingSettingsQueryResponse
-            {
-                JoinChannelLog = guildLevelSettings.JoinChannelLogId,
-                LeaveChannelLog = guildLevelSettings.LeaveChannelLogId,
-                DeleteChannelLog = guildLevelSettings.DeleteChannelLogId,
-                BulkDeleteChannelLog = guildLevelSettings.BulkDeleteChannelLogId,
-                EditChannelLog = guildLevelSettings.EditChannelLogId,
-                UsernameChannelLog = guildLevelSettings.UsernameChannelLogId,
-                NicknameChannelLog = guildLevelSettings.NicknameChannelLogId,
-                AvatarChannelLog = guildLevelSettings.AvatarChannelLogId,
-                IsLoggingEnabled = guildLevelSettings.IsLoggingEnabled,
-                Success = true
-            };
         }
     }
 }

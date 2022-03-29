@@ -5,10 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Cybermancy.Core.Extensions
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Cybermancy.Domain.Shared
 {
-    public static class RoleExtensions
+    public interface IMentionable
     {
-        public static string Mention(ulong roleId) => $"<@&{roleId}>";
     }
 }

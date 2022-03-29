@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Domain
 {
     public enum Duration
@@ -14,7 +16,7 @@ namespace Cybermancy.Domain
         Years = 3,
     }
 
-    public class GuildModerationSettings
+    public class GuildModerationSettings : IModule
     {
         public ulong GuildId { get; set; }
 
@@ -27,6 +29,6 @@ namespace Cybermancy.Domain
         public int Duration { get; set; }
 
         public ulong? MuteRole { get; set; }
-        public bool IsModerationEnabled { get; set; }
+        public bool ModuleEnabled { get; set; }
     }
 }

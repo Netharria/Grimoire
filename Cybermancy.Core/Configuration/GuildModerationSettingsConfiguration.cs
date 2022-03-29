@@ -31,7 +31,7 @@ namespace Cybermancy.Core.Configuration
                 .HasDefaultValue(30);
             builder.Property(e => e.MuteRole)
                 .IsRequired(false);
-            builder.Property(x => x.IsModerationEnabled)
+            builder.Property(x => x.ModuleEnabled)
                 .HasDefaultValue(value: false);
         }
     }

@@ -9,8 +9,10 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class OldLogMessage : Identifiable
+    public class OldLogMessage : IIdentifiable
     {
+        public ulong Id { get; set; }
+
         public ulong ChannelId { get; set; }
 
         public virtual Channel Channel { get; set; } = null!;
@@ -19,6 +21,6 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; } = DateTime.UtcNow;
     }
 }

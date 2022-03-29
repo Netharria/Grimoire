@@ -12,7 +12,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
     public class DeleteMessageCommandResponse : BaseResponse
     {
         public ulong? LoggingChannel { get; init; }
-        public ulong AuthorId { get; init; }
+        public ulong UserId { get; init; }
         public string? MessageContent { get; init; }
         public string[] AttachmentUrls { get; init; } = Array.Empty<string>();
     }

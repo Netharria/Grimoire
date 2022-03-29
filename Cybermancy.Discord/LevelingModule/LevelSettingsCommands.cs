@@ -49,7 +49,7 @@ namespace Cybermancy.LevelingModule
                     ctx.Guild.GetChannel(response.LevelChannelLog.Value).Mention;
             await ctx.ReplyAsync(
                 title: "Current Level System Settings",
-                message: $"**Module Enabled:** {response.IsLevelingEnabled}\n" +
+                message: $"**Module Enabled:** {response.ModuleEnabled}\n" +
                 $"**Texttime:** {response.TextTime}\n" +
                 $"**Base:** {response.Base}\n" +
                 $"**Modifier:** {response.Modifier}\n" +

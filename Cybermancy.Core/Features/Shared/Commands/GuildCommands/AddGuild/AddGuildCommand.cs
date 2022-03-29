@@ -14,7 +14,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild
     {
         public ulong GuildId { get; init; }
         public IEnumerable<UserDto> Users { get; init; } = Enumerable.Empty<UserDto>();
-        public IEnumerable<GuildUserDto> GuildUsers { get; init; } = Enumerable.Empty<GuildUserDto>();
+        public IEnumerable<MemberDto> Members { get; init; } = Enumerable.Empty<MemberDto>();
         public IEnumerable<RoleDto> Roles { get; init; } = Enumerable.Empty<RoleDto>();
         public IEnumerable<ChannelDto> Channels { get; init; } = Enumerable.Empty<ChannelDto>();
     }

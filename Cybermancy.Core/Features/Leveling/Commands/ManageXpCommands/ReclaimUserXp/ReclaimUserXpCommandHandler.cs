@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
@@ -25,11 +26,11 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
 
         public async Task<BaseResponse> Handle(ReclaimUserXpCommand request, CancellationToken cancellationToken)
         {
-            var guildUser = await this._cybermancyDbContext.GuildUsers
-                .Where(x => x.UserId == request.UserId && x.GuildId == request.GuildId)
+            var member = await this._cybermancyDbContext.Members
+                .WhereMemberHasId(request.UserId, request.GuildId)
                 .Select(x => new { x.Xp })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-            if (guildUser is null)
+            if (member is null)
                 return new BaseResponse
                 {
                     Success = false,
@@ -38,7 +39,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
 
             ulong xpToTake;
             if (request.XpToTake.Equals("All", StringComparison.CurrentCultureIgnoreCase))
-                xpToTake = guildUser.Xp;
+                xpToTake = member.Xp;
             else if (request.XpToTake.Trim().StartsWith('-'))
                 return new BaseResponse
                 {
@@ -53,11 +54,11 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
                 };
 
             await this._cybermancyDbContext.UpdateItemPropertiesAsync(
-                new GuildUser
+                new Member
                 {
                     UserId = request.UserId,
                     GuildId = request.GuildId,
-                    Xp = guildUser.Xp - xpToTake
+                    Xp = member.Xp - xpToTake
 
                 },
                 x => x.Xp);

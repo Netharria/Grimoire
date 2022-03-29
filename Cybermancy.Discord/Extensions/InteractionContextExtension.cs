@@ -27,7 +27,7 @@ namespace Cybermancy.Extensions
         {
             timeStamp ??= DateTime.UtcNow;
             embed ??= new DiscordEmbedBuilder()
-                .WithColor(ColorUtility.GetColor(color))
+                .WithCybermancyColor(color)
                 .WithTitle(title)
                 .WithDescription(message)
                 .WithFooter(footer)

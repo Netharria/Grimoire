@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -24,9 +25,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember
         public async Task<Unit> Handle(UpdateMemberCommand request, CancellationToken cancellationToken)
         {
             var currentNickname = await this._cybermancyDbContext.NicknameHistory
-                .Where(x =>
-                x.UserId == request.UserId
-                && x.GuildId == request.GuildId)
+                .WhereMemberHasId(request.UserId, request.GuildId)
                 .OrderByDescending(x => x.Timestamp)
                 .Select(x => x.Nickname)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
@@ -34,12 +33,13 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember
                 || string.IsNullOrWhiteSpace(currentNickname)
                 || currentNickname.Equals(request.Nickname, StringComparison.Ordinal))
                 return Unit.Value;
-            await this._cybermancyDbContext.NicknameHistory.AddAsync(new NicknameHistory
-                    {
-                        GuildId = request.GuildId,
-                        UserId = request.UserId,
-                        Nickname = request.Nickname
-                    }, cancellationToken);
+            await this._cybermancyDbContext.NicknameHistory.AddAsync(
+                new NicknameHistory
+                {
+                    GuildId = request.GuildId,
+                    UserId = request.UserId,
+                    Nickname = request.Nickname
+                }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }

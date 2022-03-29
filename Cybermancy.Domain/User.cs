@@ -9,9 +9,10 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class User : Identifiable
+    public class User : IIdentifiable, IMentionable
     {
-        public virtual ICollection<GuildUser> GuildMemberProfiles { get; set; } = new List<GuildUser>();
+        public ulong Id { get; set; }
+        public virtual ICollection<Member> MemberProfiles { get; set; } = new List<Member>();
         public virtual ICollection<UsernameHistory> UsernameHistories { get; set; } = new List<UsernameHistory>();
     }
 }

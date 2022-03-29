@@ -9,7 +9,7 @@ using MediatR;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
 {
-    public class GetLevelSettingsQuery : IRequest<GetLevelSettingsResponse>
+    public class GetLevelSettingsQuery : IRequest<GetLevelSettingsQueryResponse>
     {
         public ulong GuildId { get; init; }
     }

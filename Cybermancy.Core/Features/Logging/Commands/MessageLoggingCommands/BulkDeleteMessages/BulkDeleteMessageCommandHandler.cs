@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Domain;
 using MediatR;
@@ -25,14 +26,14 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkD
         public async Task<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand request, CancellationToken cancellationToken)
         {
             var messages = await this._cybermancyDbContext.Messages
-                .Where(x => request.Ids.Contains(x.Id))
-                .Where(x => x.Guild.LogSettings.IsLoggingEnabled)
+                .WhereIdsAre(request.Ids)
+                .WhereLoggingIsEnabled()
                 .Select(x => new
                 {
                     Message = new MessageDto
                     {
                         MessageId = x.Id,
-                        AuthorId = x.AuthorId,
+                        UserId = x.UserId,
                         MessageContent = x.MessageHistory
                         .OrderByDescending(x => x.TimeStamp)
                         .First(x => x.Action != MessageAction.Deleted)

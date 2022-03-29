@@ -5,10 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Cybermancy.Core.Extensions
+namespace Cybermancy.Core.Features.Shared.SharedDtos
 {
-    public static class RoleExtensions
+    public class MemberDto
     {
-        public static string Mention(ulong roleId) => $"<@&{roleId}>";
+        public ulong UserId { get; init; }
+        public ulong GuildId { get; init; }
+        public string Nickname { get; init; } = string.Empty;
     }
 }

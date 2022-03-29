@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Enums;
+using Cybermancy.Utilities;
 using DSharpPlus.Entities;
 
 namespace Cybermancy.Extensions
@@ -26,5 +28,8 @@ namespace Cybermancy.Extensions
             }
             return embedBuilder;
         }
+
+        public static DiscordEmbedBuilder WithCybermancyColor(this DiscordEmbedBuilder embedBuilder, CybermancyColor cybermancyColor)
+            => embedBuilder.WithColor(ColorUtility.GetColor(cybermancyColor));
     }
 }

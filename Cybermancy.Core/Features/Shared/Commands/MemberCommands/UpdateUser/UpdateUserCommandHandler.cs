@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -23,17 +24,17 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser
 
         public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
         {
-            var user = await this._cybermancyDbContext.UsernameHistory
-                .Where(x => x.Id == request.UserId)
+            var userName = await this._cybermancyDbContext.UsernameHistory
+                .WhereIdIs(request.UserId)
                 .OrderByDescending(x => x.Timestamp)
-                .Select(x => x.NewUsername)
+                .Select(x => x.Username)
                 .FirstAsync(cancellationToken: cancellationToken);
-            if (user.Equals(request.UserName, StringComparison.Ordinal))
+            if (userName.Equals(request.UserName, StringComparison.Ordinal))
                 return Unit.Value;
             await this._cybermancyDbContext.UsernameHistory.AddAsync(new UsernameHistory
                 {
                     UserId = request.UserId,
-                    NewUsername = request.UserName
+                    Username = request.UserName
                 }, cancellationToken);
 
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

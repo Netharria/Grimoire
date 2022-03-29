@@ -18,12 +18,10 @@ namespace Cybermancy.Core.Extensions
             {
                 0 => reward.Guild.LevelSettings.Base,
                 < 0 => (uint)0,
-                _ => reward.Guild.LevelSettings.Base + ((uint)Math.Round(reward.Guild.LevelSettings.Base *
-                                                                         (reward.Guild.LevelSettings.Modifier / 100.0) *
-                                                                         (uint)level) * (uint)level)
+                _ => reward.Guild.LevelSettings.Base
+                    + ((uint)Math.Round(reward.Guild.LevelSettings.Base * (reward.Guild.LevelSettings.Modifier / 100.0)
+                    * (uint)level) * (uint)level)
             };
         }
-
-        public static string Mention(this Reward reward) => $"<@&{reward.RoleId}>";
     }
 }

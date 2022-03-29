@@ -42,9 +42,9 @@ namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild
 
             var channelsAdded = await this._cybermancyDbContext.Channels.AddMissingChannelsAsync(request.Channels, cancellationToken);
 
-            var guildUsersAdded = await this._cybermancyDbContext.GuildUsers.AddMissingGuildUsersAsync(request.GuildUsers, cancellationToken);
+            var membersAdded = await this._cybermancyDbContext.Members.AddMissingMembersAsync(request.Members, cancellationToken);
 
-            if (usersAdded || !guildExists || rolesAdded || channelsAdded || guildUsersAdded)
+            if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded)
                 await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
             return Unit.Value;

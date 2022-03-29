@@ -23,7 +23,7 @@ namespace Cybermancy.Core.Configuration
                 .WithMany(x => x.UsernameHistories)
                 .HasForeignKey(x => x.UserId)
                 .IsRequired();
-            builder.Property(x => x.NewUsername)
+            builder.Property(x => x.Username)
                 .HasMaxLength(32)
                 .IsRequired();
             builder.Property(x => x.Timestamp)

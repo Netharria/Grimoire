@@ -9,7 +9,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class GuildUser : IXpIgnore
+    public class Member : IXpIgnore, IMember, IMentionable
     {
         public ulong GuildId { get; set; }
 

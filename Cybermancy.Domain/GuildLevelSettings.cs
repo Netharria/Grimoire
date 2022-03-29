@@ -5,17 +5,17 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Domain.Shared;
+
 namespace Cybermancy.Domain
 {
-    public class GuildLevelSettings
+    public class GuildLevelSettings : IModule
     {
         public ulong GuildId { get; set; }
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public bool IsLevelingEnabled { get; set; }
-
-        public uint TextTime { get; set; }
+        public TimeSpan TextTime { get; set; }
 
         public uint Base { get; set; }
 
@@ -26,5 +26,7 @@ namespace Cybermancy.Domain
         public ulong? LevelChannelLogId { get; set; }
 
         public virtual Channel? LevelChannelLogs { get; set; }
+
+        public bool ModuleEnabled { get; set; }
     }
 }

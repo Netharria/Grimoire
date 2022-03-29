@@ -19,7 +19,7 @@ namespace Cybermancy.Core.Contracts.Persistance
 
         public DbSet<GuildModerationSettings> GuildModerationSettings { get; }
 
-        public DbSet<GuildUser> GuildUsers { get; }
+        public DbSet<Member> Members { get; }
 
         public DbSet<Lock> Locks { get; }
 

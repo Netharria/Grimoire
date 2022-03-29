@@ -16,15 +16,17 @@ namespace Cybermancy.Domain
         Ban,
     }
 
-    public class Sin : Identifiable
+    public class Sin : IIdentifiable, IMember
     {
+        public ulong Id { get; set; }
+
         public ulong UserId { get; set; }
 
-        public virtual GuildUser GuildUser { get; set; } = null!;
+        public virtual Member Member { get; set; } = null!;
 
         public ulong ModeratorId { get; set; }
 
-        public virtual GuildUser Moderator { get; set; } = null!;
+        public virtual Member Moderator { get; set; } = null!;
 
         public ulong GuildId { get; set; }
 
@@ -32,7 +34,7 @@ namespace Cybermancy.Domain
 
         public string Reason { get; set; } = string.Empty;
 
-        public DateTime InfractionOn { get; set; } = DateTime.UtcNow;
+        public DateTime InfractionOn { get; } = DateTime.UtcNow;
 
         public SinType SinType { get; set; }
 

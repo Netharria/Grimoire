@@ -9,11 +9,12 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class UsernameHistory : Identifiable
+    public class UsernameHistory : IIdentifiable
     {
+        public ulong Id { get; set; }
         public ulong UserId { get; set; }
         public virtual User User { get; set; } = null!;
-        public string NewUsername { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public string Username { get; set; } = string.Empty;
+        public DateTime Timestamp { get; } = DateTime.UtcNow;
     }
 }

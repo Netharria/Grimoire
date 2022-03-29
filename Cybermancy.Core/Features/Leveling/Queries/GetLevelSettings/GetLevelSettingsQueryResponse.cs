@@ -9,10 +9,10 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
 {
-    public class GetLevelSettingsResponse : BaseResponse
+    public class GetLevelSettingsQueryResponse : BaseResponse
     {
-        public bool IsLevelingEnabled { get; init; }
-        public uint TextTime { get; init; }
+        public bool ModuleEnabled { get; init; }
+        public TimeSpan TextTime { get; init; }
         public uint Base { get; init; }
         public uint Modifier { get; init; }
         public uint Amount { get; init; }

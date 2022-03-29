@@ -9,8 +9,10 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Channel : Identifiable, IXpIgnore
+    public class Channel : IIdentifiable, IXpIgnore, IMentionable
     {
+        public ulong Id { get; set; }
+
         public bool IsXpIgnored { get; set; }
 
         public ulong GuildId { get; set; }

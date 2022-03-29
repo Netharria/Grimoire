@@ -24,7 +24,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
         public async Task<Unit> Handle(AddMemberCommand request, CancellationToken cancellationToken)
         {
             var userExists = await this._cybermancyDbContext.Users.AnyAsync(x => x.Id == request.UserId, cancellationToken);
-            var guildUserExists = await this._cybermancyDbContext.GuildUsers.AnyAsync(x => x.UserId == request.UserId && x.GuildId == request.GuildId, cancellationToken);
+            var memberExists = await this._cybermancyDbContext.Members.AnyAsync(x => x.UserId == request.UserId && x.GuildId == request.GuildId, cancellationToken);
 
             if (!userExists)
                 await this._cybermancyDbContext.Users.AddAsync(new User
@@ -32,22 +32,22 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
                         Id = request.UserId,
                         UsernameHistories = new List<UsernameHistory> {
                             new UsernameHistory {
-                                NewUsername = request.UserName,
+                                Username = request.UserName,
                                 UserId = request.UserId
                             }
                         }
                     }, cancellationToken);
 
-            if (!guildUserExists)
+            if (!memberExists)
             {
-                var guildUser = new GuildUser
+                var member = new Member
                 {
                     UserId = request.UserId,
                     GuildId = request.GuildId
                 };
                 if (!string.IsNullOrWhiteSpace(request.Nickname))
                 {
-                    guildUser.NicknamesHistory.Add(
+                    member.NicknamesHistory.Add(
                     new NicknameHistory
                     {
                         UserId = request.UserId,
@@ -56,10 +56,10 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
                     });
                 }
                     
-                await this._cybermancyDbContext.GuildUsers.AddAsync(guildUser, cancellationToken);
+                await this._cybermancyDbContext.Members.AddAsync(member, cancellationToken);
 
             }
-            if(!userExists || !guildUserExists)
+            if(!userExists || !memberExists)
                 await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }

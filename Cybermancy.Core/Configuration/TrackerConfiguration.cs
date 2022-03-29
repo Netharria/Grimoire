@@ -17,10 +17,10 @@ namespace Cybermancy.Core.Configuration
     {
         public void Configure(EntityTypeBuilder<Tracker> builder)
         {
-            builder.HasKey(e => new { e.GuildUserId, e.GuildId });
-            builder.HasOne(e => e.GuildUser)
+            builder.HasKey(e => new { e.UserId, e.GuildId });
+            builder.HasOne(e => e.Member)
                 .WithMany(e => e.Trackers)
-                .HasForeignKey(e => new { e.GuildUserId, e.GuildId })
+                .HasForeignKey(e => new { e.UserId, e.GuildId })
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.HasOne(e => e.LogChannel)

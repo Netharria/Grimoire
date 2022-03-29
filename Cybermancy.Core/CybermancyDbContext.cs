@@ -9,7 +9,6 @@ using System.Linq.Expressions;
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Cybermancy.Core
 {
@@ -42,8 +41,8 @@ namespace Cybermancy.Core
         public DbSet<GuildModerationSettings> GuildModerationSettings
             => this.Set<GuildModerationSettings>();
 
-        public DbSet<GuildUser> GuildUsers
-            => this.Set<GuildUser>();
+        public DbSet<Member> Members
+            => this.Set<Member>();
 
         public DbSet<Lock> Locks
             => this.Set<Lock>();

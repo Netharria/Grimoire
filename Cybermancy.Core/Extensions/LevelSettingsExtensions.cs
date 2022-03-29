@@ -11,6 +11,7 @@ namespace Cybermancy.Core.Extensions
 {
     public static class LevelSettingsExtensions
     {
-        public static DateTime GetTextTimeout(this GuildLevelSettings levelSettings) => DateTime.UtcNow + TimeSpan.FromMinutes(levelSettings.TextTime);
+        public static DateTime GetTextTimeout(this GuildLevelSettings levelSettings)
+            => DateTime.UtcNow + levelSettings.TextTime;
     }
 }

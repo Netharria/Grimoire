@@ -45,9 +45,8 @@ namespace Cybermancy.LoggingModule
             => this._mediator.Send(new AddMessageCommand
             {
                 Attachments = args.Message.Attachments.Select(x => x.Url).ToArray(),
-                AuthorId = args.Author.Id,
+                UserId = args.Author.Id,
                 ChannelId = args.Channel.Id,
-                CreatedTimestamp = args.Message.CreationTimestamp.UtcDateTime,
                 MessageContent = args.Message.Content,
                 MessageId = args.Message.Id,
                 ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
@@ -72,7 +71,7 @@ namespace Cybermancy.LoggingModule
             
             string userName;
             string avatarUrl;
-            if (args.Guild.Members.TryGetValue(response.AuthorId, out var member))
+            if (args.Guild.Members.TryGetValue(response.UserId, out var member))
             {
                 if (member.IsBot && !member.Roles.Any(x => x.Id == 732962687360827472)) return;
                 userName = member.GetUsernameWithDiscriminator();
@@ -80,7 +79,7 @@ namespace Cybermancy.LoggingModule
             }
             else
             {
-                var user = await sender.GetUserAsync(response.AuthorId);
+                var user = await sender.GetUserAsync(response.UserId);
                 if (user is null || user.IsBot) return;
                 userName = user.GetUsernameWithDiscriminator();
                 avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
@@ -89,9 +88,9 @@ namespace Cybermancy.LoggingModule
             var embeds = new List<DiscordEmbed>();
 
             var embed = new DiscordEmbedBuilder()
-                .WithAuthor($"{userName} ({response.AuthorId})")
+                .WithAuthor($"{userName} ({response.UserId})")
                 .WithTitle($"Message deleted in #{args.Channel.Name}")
-                .WithDescription($"**Author:** {UserExtensions.Mention(response.AuthorId)}\n" +
+                .WithDescription($"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
                                 $"**Channel:** {ChannelExtensions.Mention(args.Channel.Id)}\n" +
                                 $"**Message Id:** {args.Message.Id}" +
                                 (auditLogEntry is null
@@ -112,7 +111,7 @@ namespace Cybermancy.LoggingModule
                     for (var i = 1; i < response.AttachmentUrls.Length; i++)
                         embeds.Add(new DiscordEmbedBuilder()
                             .WithDescription($"**Message Id:** {args.Message.Id}")
-                            .WithAuthor($"{UserExtensions.Mention(response.AuthorId)} ({response.AuthorId})")
+                            .WithAuthor($"{UserExtensions.Mention(response.UserId)} ({response.UserId})")
                             .Build());
             }
             try
@@ -137,11 +136,10 @@ namespace Cybermancy.LoggingModule
                     Ids = args.Messages.Select(x => x.Id).ToArray(),
                     GuildId = args.Guild.Id
                 });
-            if (!response.Success || response.BulkDeleteLogChannelId is not ulong loggingChannelId)
+            if (!response.Success || !response.Messages.Any() || response.BulkDeleteLogChannelId is not ulong loggingChannelId)
                 return;
             var channel = await sender.GetChannelOrDefaultAsync(loggingChannelId);
             if (channel is not DiscordChannel loggingChannel) return;
-            if (!response.Messages.Any() || !response.Success) return;
 
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("Bulk Message Delete")
@@ -151,14 +149,14 @@ namespace Cybermancy.LoggingModule
             var stringBuilder = new StringBuilder();
             foreach (var message in response.Messages)
             {
-                var author = args.Guild.Members[message.AuthorId];
+                var author = args.Guild.Members[message.UserId];
                 stringBuilder.AppendFormat(
                     "Author: {0} ({1})\n" +
                     "Id: {2}\n" +
                     "Content: {3}\n" +
                     (message.AttachmentUrls.Any() ? "Attachments: {4}\n": string.Empty),
                     author.GetUsernameWithDiscriminator(),
-                    message.AuthorId,
+                    message.UserId,
                     message.MessageId,
                     message.MessageContent,
                     message.AttachmentUrls)
@@ -173,8 +171,8 @@ namespace Cybermancy.LoggingModule
             try
             {
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
-                .AddEmbed(embed)
-                .WithFile($"{DateTime.UtcNow:r}.txt", memoryStream));
+                    .AddEmbed(embed)
+                    .WithFile($"{DateTime.UtcNow:r}.txt", memoryStream));
                 if (message is null) return;
                 await _mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
@@ -204,7 +202,7 @@ namespace Cybermancy.LoggingModule
             
             string userName;
             string avatarUrl;
-            if (args.Guild.Members.TryGetValue(response.AuthorId, out var member))
+            if (args.Guild.Members.TryGetValue(response.UserId, out var member))
             {
                 if (member.IsBot && !member.Roles.Any(x => x.Id == 732962687360827472)) return;
                 userName = member.GetUsernameWithDiscriminator();
@@ -212,7 +210,7 @@ namespace Cybermancy.LoggingModule
             }
             else
             {
-                var user = await sender.GetUserAsync(response.AuthorId);
+                var user = await sender.GetUserAsync(response.UserId);
                 if (user is null || user.IsBot) return;
                 userName = user.GetUsernameWithDiscriminator();
                 avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
@@ -220,11 +218,11 @@ namespace Cybermancy.LoggingModule
 
             var embed = new DiscordEmbedBuilder()
                 .WithTitle($"Message edited in #{args.Channel.Name}")
-                .WithDescription($"**Author:** {UserExtensions.Mention(response.AuthorId)}\n" +
+                .WithDescription($"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
                                 $"**Channel:** {args.Channel.Mention}\n" +
                                 $"**Message Id:** {response.MessageId}\n" +
                                 $"**[Jump Url]({args.Message.JumpLink})**")
-                .WithAuthor($"{userName} ({response.AuthorId})")
+                .WithAuthor($"{userName} ({response.UserId})")
                 .WithTimestamp(DateTime.UtcNow)
                 .WithThumbnail(avatarUrl)
                 .AddMessageTextToFields("Before", response.MessageContent)

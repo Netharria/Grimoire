@@ -9,11 +9,12 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Message : Identifiable
+    public class Message : IIdentifiable, IMember
     {
-        public ulong AuthorId { get; set; }
+        public ulong Id { get; set; }
 
-        public virtual GuildUser Author { get; set; } = null!;
+        public ulong UserId { get; set; }
+        public virtual Member Member { get; set; } = null!;
 
         public ulong ChannelId { get; set; }
 
@@ -23,7 +24,7 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTime CreatedTimestamp { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedTimestamp { get; } = DateTime.UtcNow;
 
         public ulong? ReferencedMessageId { get; set; }
 
@@ -31,5 +32,6 @@ namespace Cybermancy.Domain
 
         public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
         public virtual ICollection<MessageHistory> MessageHistory { get; set; } = new List<MessageHistory>();
+        
     }
 }

@@ -22,10 +22,10 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey<GuildLevelSettings>(x => x.GuildId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.Property(x => x.IsLevelingEnabled)
+            builder.Property(x => x.ModuleEnabled)
                 .HasDefaultValue(value: false);
             builder.Property(e => e.TextTime)
-                .HasDefaultValue(3);
+                .HasDefaultValue(TimeSpan.FromMinutes(3));
             builder.Property(e => e.Base)
                 .HasDefaultValue(15);
             builder.Property(e => e.Modifier)

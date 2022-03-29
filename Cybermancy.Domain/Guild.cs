@@ -9,8 +9,10 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Guild : Identifiable
+    public class Guild : IIdentifiable
     {
+        public ulong Id { get; set; }
+
         public ulong? ModChannelLog { get; set; }
 
         public virtual ICollection<Channel> Channels { get; set; } = new List<Channel>();
@@ -27,7 +29,7 @@ namespace Cybermancy.Domain
 
         public virtual ICollection<Reward> Rewards { get; set; } = new List<Reward>();
 
-        public virtual ICollection<GuildUser> GuildUsers { get; set; } = new List<GuildUser>();
+        public virtual ICollection<Member> Members { get; set; } = new List<Member>();
 
         public virtual ICollection<Sin> Sins { get; set; } = new List<Sin>();
 

@@ -62,7 +62,7 @@ namespace Cybermancy.LevelingModule
 
             if (response.PreviousLevel < response.CurrentLevel)
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithColor(ColorUtility.GetColor(CybermancyColor.Purple))
+                    .WithCybermancyColor(CybermancyColor.Purple)
                     .WithTitle(member.GetUsernameWithDiscriminator())
                     .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
                     .WithFooter($"{member.Id}")
@@ -71,7 +71,7 @@ namespace Cybermancy.LevelingModule
             
             if (newRewards.Any())
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithColor(ColorUtility.GetColor(CybermancyColor.Gold))
+                    .WithCybermancyColor(CybermancyColor.Gold)
                     .WithTitle($"{member.Username}#{member.Discriminator}")
                     .WithDescription($"{member.Mention} has earned " +
                     $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x)))}")

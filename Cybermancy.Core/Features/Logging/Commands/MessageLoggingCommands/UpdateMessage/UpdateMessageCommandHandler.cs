@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -24,13 +25,13 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Updat
         public async Task<UpdateMessageCommandResponse> Handle(UpdateMessageCommand request, CancellationToken cancellationToken)
         {
             var message = await this._cybermancyDbContext.Messages
-                .Where(x => x.Guild.LogSettings.IsLoggingEnabled)
-                .Where(x => x.Id == request.MessageId)
+                .WhereLoggingIsEnabled()
+                .WhereIdIs(request.MessageId)
                 .Select(x => new UpdateMessageCommandResponse
                 {
                     UpdateMessageLogChannelId = x.Guild.LogSettings.EditChannelLogId,
                     MessageId = x.Id,
-                    AuthorId = x.AuthorId,
+                    UserId = x.UserId,
                     MessageContent = x.MessageHistory
                         .OrderBy(x => x.TimeStamp)
                         .Where(x => x.Action != MessageAction.Deleted)
