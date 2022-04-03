@@ -13,6 +13,6 @@ namespace Cybermancy.Core.Features.Shared.SharedDtos
         public ulong ChannelId { get; init; }
         public ulong MessageId { get; init; }
         public string MessageContent { get; init; } = string.Empty;
-        public ICollection<string> AttachmentUrls { get; init; } = new List<string>();
+        public AttachmentDto[] Attachments { get; init; } = Array.Empty<AttachmentDto>();
     }
 }

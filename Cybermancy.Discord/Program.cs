@@ -1,12 +1,14 @@
 // See https://aka.ms/new-console-template for more information
-using Cybermancy;
-using Cybermancy.Attributes;
+using System.Reflection;
 using Cybermancy.Core;
-using Cybermancy.LevelingModule;
-using Cybermancy.LoggingModule;
+using Cybermancy.Discord;
+using Cybermancy.Discord.LevelingModule;
+using Cybermancy.Discord.LoggingModule;
+using Cybermancy.Discord.Utilities;
 using DSharpPlus;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.SlashCommands;
+using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -33,7 +35,7 @@ Host.CreateDefaultBuilder(args)
         services
         .AddCoreServices(context.Configuration)
         .AddSingleton<ITracer>(provider => new MockTracer())
-        .AddScoped<LeaderboardCommands>()
+        .AddHttpClient()
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"];
@@ -72,8 +74,9 @@ Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<LogSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
+        .AddMediatR(Assembly.GetExecutingAssembly())
+        .AddHostedService<TickerBackgroundService>()
         .BuildServiceProvider()
-        .RegisterRepeatingTasks()
     )
     .UseConsoleLifetime()
     .Build()

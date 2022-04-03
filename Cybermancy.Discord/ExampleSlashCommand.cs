@@ -7,7 +7,6 @@
 
 using System.Text;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings;
-using Cybermancy.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Enums;
@@ -15,7 +14,7 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using MediatR;
 
-namespace Cybermancy
+namespace Cybermancy.Discord
 {
     /// <summary>
     /// Example commands used as simple versions of using the DSharpPlus slash commands in different ways.
@@ -67,16 +66,6 @@ namespace Cybermancy
 
             var embedPages = interactivity.GeneratePagesInEmbed(pageBuild.ToString(), SplitType.Line);
             return interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: true, ctx.Member, embedPages);
-        }
-
-        //[RepeatTask(seconds: 5)]
-        public async static Task SomethingAsync()
-        {
-            using var scope = ServiceActivator.GetScope();
-            var mediator = (IMediator?)scope.ServiceProvider.GetService(typeof(IMediator));
-            if (mediator is null) throw new ArgumentNullException("Was Not able to get mediator service");
-            var result = await mediator.Send(new GetLevelSettingsQuery { GuildId = 639594402410659887 });
-            Console.WriteLine($"LevelingModuleEnables: {result.ModuleEnabled}, Amount: {result.Amount}");
         }
     }
 }

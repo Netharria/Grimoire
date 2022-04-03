@@ -5,17 +5,17 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Enums;
-using Cybermancy.Utilities;
+using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Utilities;
 using DSharpPlus.Entities;
 
-namespace Cybermancy.Extensions
+namespace Cybermancy.Discord.Extensions
 {
     public static class DiscordEmbedBuilderExtensions
     {
         public static DiscordEmbedBuilder AddMessageTextToFields(this DiscordEmbedBuilder embedBuilder, string contentType, string? content, bool addBlankField = true, int splitSize = 1024)
         {
-            if(string.IsNullOrWhiteSpace(content) && addBlankField)
+            if (string.IsNullOrWhiteSpace(content) && addBlankField)
                 return embedBuilder.AddField(contentType, "`blank`");
             if (!string.IsNullOrWhiteSpace(content))
             {

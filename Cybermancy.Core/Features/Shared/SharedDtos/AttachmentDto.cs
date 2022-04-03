@@ -5,13 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Cybermancy.Discord.Enums
+namespace Cybermancy.Core.Features.Shared.SharedDtos
 {
-    public enum CybermancyColor
+    public class AttachmentDto
     {
-        Purple,
-        Orange,
-        Green,
-        Gold,
+        public ulong Id { get; init; }
+        public string FileName { get; init; } = string.Empty;
     }
 }

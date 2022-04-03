@@ -34,7 +34,13 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
                 Id = request.MessageId,
                 UserId = request.UserId,
                 Attachments = request.Attachments
-                    .Select(x => new Attachment{ MessageId = request.MessageId, AttachmentUrl = x})
+                    .Select(x =>
+                        new Attachment
+                        {
+                            Id = x.Id,
+                            MessageId = request.MessageId,
+                            FileName = x.FileName,
+                        })
                     .ToArray(),
                 ChannelId = request.ChannelId,
                 ReferencedMessageId = request.ReferencedMessageId,

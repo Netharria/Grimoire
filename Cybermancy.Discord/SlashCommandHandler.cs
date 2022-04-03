@@ -6,8 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Cybermancy.Enums;
-using Cybermancy.Extensions;
+using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
 
-namespace Cybermancy
+namespace Cybermancy.Discord
 {
     [DiscordSlashCommandsEventsSubscriber]
     public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber

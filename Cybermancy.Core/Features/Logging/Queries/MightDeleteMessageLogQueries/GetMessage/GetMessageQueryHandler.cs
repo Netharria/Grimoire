@@ -7,6 +7,7 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
+using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,12 @@ namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.
             .WhereIdIs(request.MessageId)
             .Select(x => new GetMessageQueryResponse
             {
-                AttachmentUrls = x.Attachments.Select(x => x.AttachmentUrl).ToArray(),
+                Attachments = x.Attachments
+                .Select(x => new AttachmentDto
+                {
+                    Id = x.Id,
+                    FileName = x.FileName,
+                }).ToArray(),
                 AuthorId = x.Member.UserId,
                 ChannelId = x.ChannelId,
                 MessageId = x.Id,

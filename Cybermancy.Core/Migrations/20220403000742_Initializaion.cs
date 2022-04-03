@@ -1,3 +1,4 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -5,9 +6,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Cybermancy.Core.Migrations
 {
-    public partial class Init : Migration
+    public partial class Initializaion : Migration
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0053:Use expression body for lambda expressions", Justification = "Auto Generated Code")]
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
@@ -485,13 +485,15 @@ namespace Cybermancy.Core.Migrations
                 name: "Attachments",
                 columns: table => new
                 {
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     MessageId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
-                    AttachmentUrl = table.Column<string>(type: "varchar(400)", maxLength: 400, nullable: false)
+                    FileName = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Attachments", x => new { x.MessageId, x.AttachmentUrl });
+                    table.PrimaryKey("PK_Attachments", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Attachments_Messages_MessageId",
                         column: x => x.MessageId,
@@ -512,7 +514,8 @@ namespace Cybermancy.Core.Migrations
                     Action = table.Column<int>(type: "int", nullable: false),
                     MessageContent = table.Column<string>(type: "varchar(4000)", maxLength: 4000, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    DeletedByModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: true)
+                    DeletedByModeratorId = table.Column<ulong>(type: "bigint unsigned", nullable: true),
+                    TimeStamp = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -662,6 +665,11 @@ namespace Cybermancy.Core.Migrations
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attachments_MessageId",
+                table: "Attachments",
+                column: "MessageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Channels_GuildId",

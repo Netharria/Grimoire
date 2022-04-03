@@ -20,10 +20,12 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages
         }
 
         public async Task<GetOldLogMessagesQueryResponse> Handle(GetOldLogMessagesQuery request, CancellationToken cancellationToken)
-            => new GetOldLogMessagesQueryResponse
+        {
+            var oldDate = DateTime.UtcNow - TimeSpan.FromDays(31);
+            return new GetOldLogMessagesQueryResponse
             {
                 Channels = await this._cybermancyDbContext.OldLogMessages
-                .Where(x => x.CreatedAt + TimeSpan.FromDays(31) == DateTime.UtcNow)
+                .Where(x => x.CreatedAt == oldDate)
                 .GroupBy(x => x.ChannelId)
                 .Select(x => new OldLogMessageChannel
                 {
@@ -31,5 +33,6 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages
                     MessageIds = x.Select(x => x.Id).ToArray()
                 }).ToArrayAsync(cancellationToken: cancellationToken)
             };
+        }
     }
 }

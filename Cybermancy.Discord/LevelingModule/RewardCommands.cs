@@ -5,20 +5,20 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Attributes;
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.AddReward;
 using Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.RemoveReward;
 using Cybermancy.Core.Features.Leveling.Queries.GetRewards;
-using Cybermancy.Enums;
-using Cybermancy.Extensions;
+using Cybermancy.Discord.Attributes;
+using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using MediatR;
 
-namespace Cybermancy.LevelingModule
+namespace Cybermancy.Discord.LevelingModule
 {
     [SlashCommandGroup("Rewards", "Commands for updating and viewing the server rewards")]
     [SlashRequireGuild]
@@ -46,7 +46,7 @@ namespace Cybermancy.LevelingModule
                     RewardLevel = (uint)level,
                 });
 
-            if(!response.Success)
+            if (!response.Success)
             {
                 await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
                 return;

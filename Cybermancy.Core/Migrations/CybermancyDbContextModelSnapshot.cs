@@ -21,14 +21,21 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Attachment", b =>
                 {
+                    b.Property<ulong>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
                     b.Property<ulong>("MessageId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<string>("AttachmentUrl")
-                        .HasMaxLength(400)
-                        .HasColumnType("varchar(400)");
+                    b.HasKey("Id");
 
-                    b.HasKey("MessageId", "AttachmentUrl");
+                    b.HasIndex("MessageId");
 
                     b.ToTable("Attachments");
                 });
@@ -313,6 +320,9 @@ namespace Cybermancy.Core.Migrations
 
                     b.Property<ulong>("MessageId")
                         .HasColumnType("bigint unsigned");
+
+                    b.Property<DateTime>("TimeStamp")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -754,7 +764,7 @@ namespace Cybermancy.Core.Migrations
                         .IsRequired();
 
                     b.HasOne("Cybermancy.Domain.User", "User")
-                        .WithMany("GuildMemberProfiles")
+                        .WithMany("MemberProfiles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1144,7 +1154,7 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.User", b =>
                 {
-                    b.Navigation("GuildMemberProfiles");
+                    b.Navigation("MemberProfiles");
 
                     b.Navigation("UsernameHistories");
                 });

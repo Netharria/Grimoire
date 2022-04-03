@@ -7,16 +7,15 @@
 
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
-using Cybermancy.Enums;
-using Cybermancy.Extensions;
-using Cybermancy.Utilities;
+using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using MediatR;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
-namespace Cybermancy.LevelingModule
+namespace Cybermancy.Discord.LevelingModule
 {
     [DiscordMessageCreatedEventSubscriber]
     public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
@@ -68,7 +67,7 @@ namespace Cybermancy.LevelingModule
                     .WithFooter($"{member.Id}")
                     .WithTimestamp(DateTime.UtcNow)
                     .Build());
-            
+
             if (newRewards.Any())
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithCybermancyColor(CybermancyColor.Gold)

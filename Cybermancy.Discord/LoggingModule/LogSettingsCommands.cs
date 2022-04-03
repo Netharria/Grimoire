@@ -6,18 +6,18 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text.RegularExpressions;
-using Cybermancy.Attributes;
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Logging.Commands.SetLogSettings;
 using Cybermancy.Core.Features.Logging.Queries.GetLogSettings;
-using Cybermancy.Enums;
-using Cybermancy.Extensions;
+using Cybermancy.Discord.Attributes;
+using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using MediatR;
 
-namespace Cybermancy.LoggingModule
+namespace Cybermancy.Discord.LoggingModule
 {
     [SlashCommandGroup("LogSettings", "Changes the settings of the Logging Module")]
     [SlashRequireGuild]

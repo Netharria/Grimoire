@@ -23,17 +23,17 @@ namespace Cybermancy.Core.Features.Logging
         public void UpdateInvite(Invite invite)
         {
             if (invite is null) throw new ArgumentNullException(nameof(invite));
-            _invites[invite.Code] = invite;
+            this._invites[invite.Code] = invite;
         }
 
         public Invite? CalculateInviteUsed(IEnumerable<Invite> guildInvites)
         {
             foreach (var invite in guildInvites)
             {
-                _invites.TryGetValue(invite.Code, out var inviteUsed);
+                this._invites.TryGetValue(invite.Code, out var inviteUsed);
                 if (inviteUsed is null) continue;
                 if (invite.Uses == inviteUsed.Uses) continue;
-                _invites[invite.Code] = invite;
+                this._invites[invite.Code] = invite;
                 return invite;
             }
             return null;

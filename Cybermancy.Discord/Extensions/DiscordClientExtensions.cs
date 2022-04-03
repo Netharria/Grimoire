@@ -8,7 +8,7 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
 
-namespace Cybermancy.Extensions
+namespace Cybermancy.Discord.Extensions
 {
     public static class DiscordClientExtensions
     {

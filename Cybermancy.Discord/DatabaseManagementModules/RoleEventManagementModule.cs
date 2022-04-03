@@ -12,7 +12,7 @@ using DSharpPlus.EventArgs;
 using MediatR;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
-namespace Cybermancy.DatabaseManagementModules
+namespace Cybermancy.Discord.DatabaseManagementModules
 {
     [DiscordGuildRoleCreatedEventSubscriber]
     [DiscordGuildRoleDeletedEventSubscriber]

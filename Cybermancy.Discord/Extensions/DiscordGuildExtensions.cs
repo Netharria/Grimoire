@@ -7,17 +7,17 @@
 
 using DSharpPlus.Entities;
 
-namespace Cybermancy.Extensions
+namespace Cybermancy.Discord.Extensions
 {
     public static class DiscordGuildExtensions
     {
         public static async Task<DiscordAuditLogEntry?> GetRecentAuditLogAsync(this DiscordGuild guild, AuditLogActionType? actionType = null)
         {
             var auditLogEntries = await guild.GetAuditLogsAsync(1, action_type: actionType);
-            if(!auditLogEntries.Any())
+            if (!auditLogEntries.Any())
                 return null;
             var auditLogEntry = auditLogEntries[0];
-            if(auditLogEntry.CreationTimestamp + TimeSpan.FromMilliseconds(500) > DateTime.UtcNow)
+            if (auditLogEntry.CreationTimestamp + TimeSpan.FromMilliseconds(500) > DateTime.UtcNow)
                 return auditLogEntry;
             return null;
         }

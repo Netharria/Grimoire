@@ -5,18 +5,18 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Attributes;
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevel;
-using Cybermancy.Enums;
-using Cybermancy.Extensions;
+using Cybermancy.Discord.Attributes;
+using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using MediatR;
 
-namespace Cybermancy.LevelingModule
+namespace Cybermancy.Discord.LevelingModule
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Leveling)]
@@ -54,7 +54,7 @@ namespace Cybermancy.LevelingModule
             DiscordRole? roleReward = null;
             if (response.NextRoleRewardId is not null)
                 roleReward = ctx.Guild.GetRole(response.NextRoleRewardId.Value);
-            
+
             var embed = new DiscordEmbedBuilder()
                 .WithColor(member.Color)
                 .WithTitle($"Level and EXP for {member.DisplayName}")

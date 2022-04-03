@@ -7,6 +7,7 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
+using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -35,8 +36,12 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
                         .OrderByDescending(x => x.TimeStamp)
                         .First(y => y.Action != MessageAction.Deleted)
                         .MessageContent,
-                    AttachmentUrls = x.Attachments
-                        .Select(x => x.AttachmentUrl)
+                    Attachments = x.Attachments
+                        .Select(x => new AttachmentDto
+                        {
+                            Id = x.Id,
+                            FileName = x.FileName,
+                        })
                         .ToArray(),
                     Success = true
 

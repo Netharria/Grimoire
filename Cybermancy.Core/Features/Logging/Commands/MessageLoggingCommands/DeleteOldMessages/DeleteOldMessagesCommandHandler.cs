@@ -21,8 +21,9 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
 
         public async Task<Unit> Handle(DeleteOldMessagesCommand request, CancellationToken cancellationToken)
         {
+            var oldDate = DateTime.UtcNow - TimeSpan.FromDays(31);
             var oldMessages = this._cybermancyDbContext.Messages
-                .Where(x => x.CreatedTimestamp + TimeSpan.FromDays(31) == DateTime.UtcNow);
+                .Where(x => x.CreatedTimestamp  == oldDate);
             this._cybermancyDbContext.Messages.RemoveRange(oldMessages);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;

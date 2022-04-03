@@ -5,16 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Attributes;
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
 using Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems;
 using Cybermancy.Core.Features.Shared.SharedDtos;
-using Cybermancy.Enums;
-using Cybermancy.Extensions;
-using Cybermancy.Utilities;
+using Cybermancy.Discord.Attributes;
+using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Extensions;
+using Cybermancy.Discord.Utilities;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Enums;
@@ -23,7 +23,7 @@ using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using MediatR;
 
-namespace Cybermancy.LevelingModule
+namespace Cybermancy.Discord.LevelingModule
 {
     [SlashRequireGuild]
     [SlashRequireUserPermissions(Permissions.ManageMessages)]

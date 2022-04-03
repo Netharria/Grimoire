@@ -17,15 +17,15 @@ namespace Cybermancy.Core.Configuration
     {
         public void Configure(EntityTypeBuilder<Attachment> builder)
         {
-            builder.HasKey(e => new { e.MessageId, e.AttachmentUrl });
+            builder.HasKey(e => e.Id);
             builder.HasOne(e => e.Message)
                 .WithMany(x => x.Attachments)
                 .HasForeignKey(e => e.MessageId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
 
-            builder.Property(e => e.AttachmentUrl)
-                .HasMaxLength(400)
+            builder.Property(e => e.FileName)
+                .HasMaxLength(200)
                 .IsRequired();
         }
     }

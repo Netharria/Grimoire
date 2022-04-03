@@ -12,7 +12,8 @@ using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessag
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessage;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage;
-using Cybermancy.Extensions;
+using Cybermancy.Core.Features.Shared.SharedDtos;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -20,7 +21,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
-namespace Cybermancy.LoggingModule
+namespace Cybermancy.Discord.LoggingModule
 {
     [DiscordMessageCreatedEventSubscriber]
     [DiscordMessageDeletedEventSubscriber]
@@ -33,10 +34,12 @@ namespace Cybermancy.LoggingModule
         IDiscordMessageUpdatedEventSubscriber
     {
         private readonly IMediator _mediator;
+        private readonly HttpClient _httpClient;
 
-        public MessageLoggingEvents(IMediator mediator)
+        public MessageLoggingEvents(IMediator mediator, IHttpClientFactory httpFactory)
         {
             this._mediator = mediator;
+            this._httpClient = httpFactory.CreateClient();
         }
 
 
@@ -44,7 +47,13 @@ namespace Cybermancy.LoggingModule
         public Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
             => this._mediator.Send(new AddMessageCommand
             {
-                Attachments = args.Message.Attachments.Select(x => x.Url).ToArray(),
+                Attachments = args.Message.Attachments
+                    .Select(x =>
+                        new AttachmentDto
+                        {
+                            Id = x.Id,
+                            FileName = x.FileName,
+                        }).ToArray(),
                 UserId = args.Author.Id,
                 ChannelId = args.Channel.Id,
                 MessageContent = args.Message.Content,
@@ -68,7 +77,7 @@ namespace Cybermancy.LoggingModule
             var channel = await sender.GetChannelOrDefaultAsync(loggingChannelId);
             if (channel is not DiscordChannel loggingChannel)
                 return;
-            
+
             string userName;
             string avatarUrl;
             if (args.Guild.Members.TryGetValue(response.UserId, out var member))
@@ -101,25 +110,49 @@ namespace Cybermancy.LoggingModule
                 .WithThumbnail(avatarUrl)
                 .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
-            if (response.AttachmentUrls.Any())
-            {
-                embed.AddField("Attachments",
-                    string.Join(' ', response.AttachmentUrls))
-                    .WithImageUrl(response.AttachmentUrls.FirstOrDefault());
+            var files = new Dictionary<string, Stream>();
 
-                if (response.AttachmentUrls.Length > 1)
-                    for (var i = 1; i < response.AttachmentUrls.Length; i++)
-                        embeds.Add(new DiscordEmbedBuilder()
-                            .WithDescription($"**Message Id:** {args.Message.Id}")
-                            .WithAuthor($"{UserExtensions.Mention(response.UserId)} ({response.UserId})")
-                            .Build());
+            if (response.Attachments.Any())
+            {
+                foreach((var attachment, var index) in response.Attachments.Select((x, i) => (x, i)))
+                {
+                    if (string.IsNullOrWhiteSpace(attachment.FileName))
+                        continue;
+
+                    var url = new Uri(Path.Combine("https://cdn.discordapp.com/attachments/", args.Channel.Id.ToString(), attachment.Id.ToString(), attachment.FileName));
+
+                    var stream = await this._httpClient.GetStreamAsync(url);
+
+                    var fileName = $"attachment{index}.{attachment.FileName.Split('.')[^1]}";
+
+                    var stride = 4 * (index / 4);
+
+                    var attachments = response.Attachments
+                        .Skip(stride)
+                        .Take(4)
+                        .Select(x => $"**{x.FileName}**")
+                        .ToArray();
+
+                    var embedTest = new DiscordEmbedBuilder()
+                        .WithColor(DiscordColor.Red)
+                        .WithTitle(default)
+                        .WithAuthor("Attachment(s) Deleted")
+                        .WithUrl($"https://discord.com/users/{response.UserId}/{stride}")
+                        .WithImageUrl($"attachment://{fileName}")
+                        .WithDescription(string.Join(" | ", attachments));
+
+                    embeds.Add(embedTest);
+
+                    files.Add(fileName, stream);
+                }
             }
             try
             {
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
-                .AddEmbeds(embeds.Prepend(embed)));
+                .AddEmbeds(embeds.Prepend(embed))
+                .WithFiles(files));
                 if (message is null) return;
-                await _mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
             catch (Exception ex)
             {
@@ -154,12 +187,12 @@ namespace Cybermancy.LoggingModule
                     "Author: {0} ({1})\n" +
                     "Id: {2}\n" +
                     "Content: {3}\n" +
-                    (message.AttachmentUrls.Any() ? "Attachments: {4}\n": string.Empty),
+                    (message.Attachments.Any() ? "Attachments: {4}\n" : string.Empty),
                     author.GetUsernameWithDiscriminator(),
                     message.UserId,
                     message.MessageId,
                     message.MessageContent,
-                    message.AttachmentUrls)
+                    message.Attachments)
                     .AppendLine();
             }
             using var memoryStream = new MemoryStream();
@@ -174,7 +207,7 @@ namespace Cybermancy.LoggingModule
                     .AddEmbed(embed)
                     .WithFile($"{DateTime.UtcNow:r}.txt", memoryStream));
                 if (message is null) return;
-                await _mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
             catch (Exception ex)
             {
@@ -199,7 +232,7 @@ namespace Cybermancy.LoggingModule
             var channel = await sender.GetChannelOrDefaultAsync(loggingChannelId);
             if (channel is not DiscordChannel loggingChannel)
                 return;
-            
+
             string userName;
             string avatarUrl;
             if (args.Guild.Members.TryGetValue(response.UserId, out var member))
@@ -233,7 +266,7 @@ namespace Cybermancy.LoggingModule
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
                 .AddEmbed(embed));
                 if (message is null) return;
-                await _mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
             catch (Exception ex)
             {

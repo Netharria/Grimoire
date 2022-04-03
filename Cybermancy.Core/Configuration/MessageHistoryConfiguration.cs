@@ -31,6 +31,8 @@ namespace Cybermancy.Core.Configuration
                 .HasPrincipalKey(e => new { e.GuildId, e.UserId})
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false);
+            builder.Property(e => e.TimeStamp)
+                .IsRequired();
         }
     }
 }

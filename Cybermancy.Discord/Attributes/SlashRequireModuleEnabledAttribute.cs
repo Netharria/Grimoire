@@ -10,7 +10,7 @@ using Cybermancy.Core.Features.Shared.Queries.GetModuleStateForGuild;
 using DSharpPlus.SlashCommands;
 using MediatR;
 
-namespace Cybermancy.Attributes
+namespace Cybermancy.Discord.Attributes
 {
     public class SlashRequireModuleEnabledAttribute : SlashCheckBaseAttribute
     {

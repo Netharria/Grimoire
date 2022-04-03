@@ -38,8 +38,12 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkD
                         .OrderByDescending(x => x.TimeStamp)
                         .First(x => x.Action != MessageAction.Deleted)
                         .MessageContent,
-                        AttachmentUrls = x.Attachments
-                        .Select(x => x.AttachmentUrl)
+                        Attachments = x.Attachments
+                        .Select(x => new AttachmentDto
+                        {
+                            Id = x.Id,
+                            FileName = x.FileName
+                        })
                         .ToArray(),
                         ChannelId = x.ChannelId
                     },

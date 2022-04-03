@@ -28,7 +28,12 @@ namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.
                 .WhereIdsAre(request.MesssageIds)
                 .Select(x => new MessageDto
                 {
-                    AttachmentUrls = x.Attachments.Select(x => x.AttachmentUrl).ToArray(),
+                    Attachments = x.Attachments
+                    .Select(x => new AttachmentDto
+                    {
+                        Id = x.Id,
+                        FileName = x.FileName,
+                    }).ToArray(),
                     UserId = x.Member.UserId,
                     ChannelId = x.ChannelId,
                     MessageContent = x.MessageHistory

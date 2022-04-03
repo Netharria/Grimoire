@@ -8,13 +8,13 @@
 using Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild;
 using Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds;
 using Cybermancy.Core.Features.Shared.SharedDtos;
-using Cybermancy.Extensions;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using MediatR;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
-namespace Cybermancy.DatabaseManagementModules
+namespace Cybermancy.Discord.DatabaseManagementModules
 {
     [DiscordGuildDownloadCompletedEventSubscriber]
     [DiscordGuildCreatedEventSubscriber]
@@ -40,28 +40,32 @@ namespace Cybermancy.DatabaseManagementModules
                 Users = args.Guilds.Values.SelectMany(x => x.Members)
                     .DistinctBy(x => x.Value.Id)
                     .Select(x =>
-                    new UserDto {
+                    new UserDto
+                    {
                         Id = x.Key,
                         UserName = x.Value.GetUsernameWithDiscriminator(),
                         Nickname = x.Value.Nickname,
                     }),
                 Members = args.Guilds.Values.SelectMany(x => x.Members)
                     .Select(x => x.Value).Select(x =>
-                    new MemberDto {
+                    new MemberDto
+                    {
                         GuildId = x.Guild.Id,
                         UserId = x.Id,
                         Nickname = x.Nickname
                     }),
                 Roles = args.Guilds.Values.Select(x => new { x.Id, x.Roles })
                     .Select(x => x.Roles.Select(y =>
-                    new RoleDto {
+                    new RoleDto
+                    {
                         GuildId = x.Id,
                         Id = y.Value.Id
                     }))
                     .SelectMany(x => x),
                 Channels = args.Guilds.Values.SelectMany(x => x.Channels)
                     .Select(x =>
-                    new ChannelDto {
+                    new ChannelDto
+                    {
                         Id = x.Value.Id,
                         GuildId = x.Value.GuildId.GetValueOrDefault(),
                         Name = x.Value.Name
@@ -89,7 +93,7 @@ namespace Cybermancy.DatabaseManagementModules
                             Nickname = x.Value.Nickname
                         }),
                 Roles = args.Guild.Roles
-                    .Select(x => 
+                    .Select(x =>
                     new RoleDto
                     {
                         GuildId = args.Guild.Id,

@@ -6,18 +6,18 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text.RegularExpressions;
-using Cybermancy.Attributes;
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings;
-using Cybermancy.Enums;
-using Cybermancy.Extensions;
+using Cybermancy.Discord.Attributes;
+using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using MediatR;
 
-namespace Cybermancy.LevelingModule
+namespace Cybermancy.Discord.LevelingModule
 {
 
 
@@ -70,24 +70,22 @@ namespace Cybermancy.LevelingModule
             [Option("Setting", "The Setting to change.")] LevelSettings levelSettings,
             [Option("Value", "The value to change the setting to. For log channel, 0 is off.")] string value)
         {
-            if(levelSettings is LevelSettings.LogChannel)
+            if (levelSettings is LevelSettings.LogChannel)
             {
                 var parsedValue = Regex.Match(value, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
                 if (ulong.TryParse(parsedValue, out var channelId))
-                {
                     if (!ctx.Guild.Channels.Any(x => x.Key == channelId) && channelId != 0)
                     {
                         await ctx.ReplyAsync(CybermancyColor.Orange, message: "Did not find that channel on this server.");
                         return;
                     }
-                }
                 else
                 {
-                    await ctx.ReplyAsync(CybermancyColor.Orange, message: "Please give a valid channel." );
+                    await ctx.ReplyAsync(CybermancyColor.Orange, message: "Please give a valid channel.");
                     return;
                 }
             }
-                
+
             var response = await this._mediator.Send(new SetLevelSettingsCommand
             {
                 GuildId = ctx.Guild.Id,
