@@ -34,7 +34,7 @@ namespace Cybermancy.Domain
 
         public string Reason { get; set; } = string.Empty;
 
-        public DateTime InfractionOn { get; } = DateTime.UtcNow;
+        public DateTime InfractionOn { get; }
 
         public SinType SinType { get; set; }
 

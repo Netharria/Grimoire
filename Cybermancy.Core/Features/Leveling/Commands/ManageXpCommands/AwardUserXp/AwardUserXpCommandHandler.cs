@@ -31,7 +31,6 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
 
             var member = await this._cybermancyDbContext.Members
                 .WhereMemberHasId(request.UserId, request.GuildId)
-                .Select(x => new { x.Xp })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
             if (member is null)
@@ -41,14 +40,8 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
                     Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?"
                 };
 
-            await this._cybermancyDbContext.UpdateItemPropertiesAsync(
-                new Member
-                {
-                    UserId = request.UserId,
-                    GuildId = request.GuildId,
-                    Xp = member.Xp + (ulong)request.XpToAward
-                },
-                x => x.Xp);
+            member.Xp += (ulong)request.XpToAward;
+            await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse { Success = true };
         }
     }

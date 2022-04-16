@@ -23,7 +23,8 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
                     var member = new Member
                     {
                         UserId = x.UserId,
-                        GuildId = x.GuildId
+                        GuildId = x.GuildId,
+                        TimeOut = DateTime.UtcNow
                     };
                     if(x.Nickname != null)
                         member.NicknamesHistory.Add(
@@ -49,7 +50,7 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
 
         public static IQueryable<Member> WhereMemberNotIgnored(this IQueryable<Member> members, ulong channelId, ulong[] roleIds)
             => members
-                .WhereIgnored()
+                .WhereIgnored(false)
                 .Where(x => !x.Guild.Roles.Where(x => roleIds.Contains(x.Id)).Any(y => y.IsXpIgnored)
                 || !x.Guild.Channels.Where(x => x.Id == channelId).Any(y => y.IsXpIgnored));
     }

@@ -12,7 +12,7 @@ namespace Cybermancy.Core.Extensions
 {
     public static class IMentionableExtensions
     {
-        public static string Mention(this IMentionable ignorable)
+        public static string Mention<TSource>(this TSource ignorable) where TSource : IMentionable
             => 
             ignorable switch
             {
@@ -20,15 +20,6 @@ namespace Cybermancy.Core.Extensions
                 User user => $"<@!{user.Id}>",
                 Role role => $"<@&{role.Id}>",
                 Reward reward => $"<@&{reward.RoleId}>",
-                Channel channel => $"<#{channel.Id}>",
-                _ => throw new NotImplementedException(),
-            };
-        public static string Mention(this IXpIgnore ignorable)
-            =>
-            ignorable switch
-            {
-                Member member => $"<@!{member.UserId}>",
-                Role role => $"<@&{role.Id}>",
                 Channel channel => $"<#{channel.Id}>",
                 _ => throw new NotImplementedException(),
             };

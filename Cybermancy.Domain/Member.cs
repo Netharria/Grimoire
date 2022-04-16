@@ -21,7 +21,7 @@ namespace Cybermancy.Domain
 
         public ulong Xp { get; set; }
 
-        public DateTime TimeOut { get; set; } = DateTime.UtcNow;
+        public DateTime TimeOut { get; set; }
 
         public bool IsXpIgnored { get; set; }
 

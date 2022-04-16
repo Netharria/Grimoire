@@ -16,6 +16,9 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<MessageHistory> builder)
         {
             builder.HasKey(x => x.Id);
+            builder.Property(e => e.Id)
+                .HasColumnType("bigint")
+                .UseIdentityAlwaysColumn();
             builder.HasOne(x => x.Message)
                 .WithMany(x => x.MessageHistory)
                 .HasForeignKey(x => x.MessageId)
@@ -32,7 +35,7 @@ namespace Cybermancy.Core.Configuration
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false);
             builder.Property(e => e.TimeStamp)
-                .IsRequired();
+                .HasDefaultValueSql("now()");
         }
     }
 }

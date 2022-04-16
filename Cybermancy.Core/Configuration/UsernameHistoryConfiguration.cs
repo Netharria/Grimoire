@@ -18,6 +18,9 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<UsernameHistory> builder)
         {
             builder.HasKey(x => x.Id);
+            builder.Property(e => e.Id)
+                .HasColumnType("bigint")
+                .UseIdentityAlwaysColumn();
             builder.HasIndex(x => x.UserId);
             builder.HasOne(x => x.User)
                 .WithMany(x => x.UsernameHistories)
@@ -27,7 +30,7 @@ namespace Cybermancy.Core.Configuration
                 .HasMaxLength(32)
                 .IsRequired();
             builder.Property(x => x.Timestamp)
-                .IsRequired();
+                .HasDefaultValueSql("now()");
         }
     }
 }

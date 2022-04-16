@@ -29,7 +29,7 @@ namespace Cybermancy.Core.Configuration
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
             builder.Property(e => e.PardonDate)
-                .IsRequired();
+                .HasDefaultValueSql("now()");
             builder.Property(e => e.Reason)
                 .HasMaxLength(1000)
                 .IsRequired();

@@ -43,7 +43,8 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
                 var member = new Member
                 {
                     UserId = request.UserId,
-                    GuildId = request.GuildId
+                    GuildId = request.GuildId,
+                    TimeOut = DateTime.UtcNow
                 };
                 if (!string.IsNullOrWhiteSpace(request.Nickname))
                 {

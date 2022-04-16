@@ -4,6 +4,7 @@ using Cybermancy.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -16,22 +17,26 @@ namespace Cybermancy.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.1")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("ProductVersion", "6.0.3")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Cybermancy.Domain.Attachment", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("character varying(200)");
 
-                    b.Property<ulong>("MessageId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("MessageId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
@@ -42,15 +47,15 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Channel", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<bool>("IsXpIgnored")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
                     b.HasKey("Id");
@@ -62,11 +67,11 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Guild", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("ModChannelLog")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("ModChannelLog")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
@@ -75,38 +80,38 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.GuildLevelSettings", b =>
                 {
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<uint>("Amount")
+                    b.Property<long>("Amount")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int unsigned")
-                        .HasDefaultValue(5u);
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(5L);
 
-                    b.Property<uint>("Base")
+                    b.Property<long>("Base")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int unsigned")
-                        .HasDefaultValue(15u);
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(15L);
 
-                    b.Property<ulong?>("LevelChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("LevelChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("LevelChannelLogsId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("LevelChannelLogsId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<uint>("Modifier")
+                    b.Property<long>("Modifier")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int unsigned")
-                        .HasDefaultValue(50u);
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(50L);
 
                     b.Property<bool>("ModuleEnabled")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
                     b.Property<TimeSpan>("TextTime")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("time(6)")
+                        .HasColumnType("interval")
                         .HasDefaultValue(new TimeSpan(0, 0, 3, 0, 0));
 
                     b.HasKey("GuildId");
@@ -118,37 +123,37 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.GuildLogSettings", b =>
                 {
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("AvatarChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("AvatarChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("BulkDeleteChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("BulkDeleteChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("DeleteChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("DeleteChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("EditChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("EditChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("JoinChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("JoinChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("LeaveChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("LeaveChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<bool>("ModuleEnabled")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<ulong?>("NicknameChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("NicknameChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("UsernameChannelLogId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("UsernameChannelLogId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("GuildId");
 
@@ -181,29 +186,29 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.GuildModerationSettings", b =>
                 {
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<int>("Duration")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasDefaultValue(30);
 
                     b.Property<int>("DurationType")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasDefaultValue(3);
 
                     b.Property<bool>("ModuleEnabled")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<ulong?>("MuteRole")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("MuteRole")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("PublicBanLog")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("PublicBanLog")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("GuildId");
 
@@ -212,25 +217,25 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Lock", b =>
                 {
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("ModeratorId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ModeratorId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<bool?>("PreviousSetting")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
+                        .HasColumnType("character varying(1000)");
 
                     b.HasKey("ChannelId");
 
@@ -243,24 +248,24 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Member", b =>
                 {
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<bool>("IsXpIgnored")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime>("TimeOut")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<ulong>("Xp")
+                    b.Property<decimal>("Xp")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned")
-                        .HasDefaultValue(0ul);
+                        .HasColumnType("numeric(20,0)")
+                        .HasDefaultValue(0m);
 
                     b.HasKey("UserId", "GuildId");
 
@@ -269,23 +274,25 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Message", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTime>("CreatedTimestamp")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("ReferencedMessageId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("ReferencedMessageId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
@@ -300,29 +307,33 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.MessageHistory", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<int>("Action")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    b.Property<ulong?>("DeletedByModeratorId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("DeletedByModeratorId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("MessageContent")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("varchar(4000)");
+                        .HasColumnType("character varying(4000)");
 
-                    b.Property<ulong>("MessageId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("MessageId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTime>("TimeStamp")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.HasKey("Id");
 
@@ -335,17 +346,17 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Mute", b =>
                 {
-                    b.Property<ulong>("SinId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<long>("SinId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("SinId");
 
@@ -358,23 +369,27 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.NicknameHistory", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("bigint");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Nickname")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("varchar(32)");
+                        .HasColumnType("character varying(32)");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
@@ -387,17 +402,19 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.OldLogMessage", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
@@ -410,22 +427,24 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Pardon", b =>
                 {
-                    b.Property<ulong>("SinId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<long>("SinId")
+                        .HasColumnType("bigint");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("ModeratorId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ModeratorId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTime>("PardonDate")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
+                        .HasColumnType("character varying(1000)");
 
                     b.HasKey("SinId");
 
@@ -438,14 +457,14 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.PublishedMessage", b =>
                 {
-                    b.Property<ulong>("SinId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<long>("SinId")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("PublishType")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    b.Property<ulong>("MessageId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("MessageId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("SinId", "PublishType");
 
@@ -454,27 +473,27 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Reaction", b =>
                 {
-                    b.Property<ulong>("MessageId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("MessageId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("EmojiId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("EmojiId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
+                        .HasColumnType("character varying(300)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("varchar(32)");
+                        .HasColumnType("character varying(32)");
 
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("MessageId", "EmojiId");
 
@@ -487,14 +506,14 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Reward", b =>
                 {
-                    b.Property<ulong>("RoleId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("RoleId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<uint>("RewardLevel")
-                        .HasColumnType("int unsigned");
+                    b.Property<long>("RewardLevel")
+                        .HasColumnType("bigint");
 
                     b.HasKey("RoleId");
 
@@ -505,15 +524,15 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Role", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<bool>("IsXpIgnored")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
                     b.HasKey("Id");
@@ -525,26 +544,33 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Sin", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("bigint");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
-                    b.Property<ulong>("ModeratorId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTime>("InfractionOn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<decimal>("ModeratorId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<int>("SinType")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
@@ -559,20 +585,20 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Tracker", b =>
                 {
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<ulong>("LogChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("LogChannelId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("ModeratorId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ModeratorId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("UserId", "GuildId");
 
@@ -587,8 +613,8 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.User", b =>
                 {
-                    b.Property<ulong>("Id")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
@@ -597,20 +623,24 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.UsernameHistory", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
-                    b.Property<ulong>("UserId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("varchar(32)");
+                        .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
 

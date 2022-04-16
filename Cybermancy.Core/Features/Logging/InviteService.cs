@@ -12,7 +12,7 @@ namespace Cybermancy.Core.Features.Logging
 {
     public interface IInviteService
     {
-        Invite? CalculateInviteUsed(IEnumerable<Invite> guildInvites);
+        Invite CalculateInviteUsed(IEnumerable<Invite> guildInvites);
         void UpdateInvite(Invite invite);
     }
 
@@ -26,7 +26,7 @@ namespace Cybermancy.Core.Features.Logging
             this._invites[invite.Code] = invite;
         }
 
-        public Invite? CalculateInviteUsed(IEnumerable<Invite> guildInvites)
+        public Invite CalculateInviteUsed(IEnumerable<Invite> guildInvites)
         {
             foreach (var invite in guildInvites)
             {
@@ -36,7 +36,10 @@ namespace Cybermancy.Core.Features.Logging
                 this._invites[invite.Code] = invite;
                 return invite;
             }
-            return null;
+            return new Invite
+            {
+                Url = "Unknown Invite"
+            };
         }
     }
 }

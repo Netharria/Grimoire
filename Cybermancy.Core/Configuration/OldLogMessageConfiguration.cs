@@ -32,7 +32,7 @@ namespace Cybermancy.Core.Configuration
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
             builder.Property(e => e.CreatedAt)
-                .IsRequired();
+                .HasDefaultValueSql("now()");
         }
     }
 }

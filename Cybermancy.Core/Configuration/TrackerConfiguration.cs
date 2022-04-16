@@ -33,6 +33,8 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
+            builder.Property(e => e.EndTime)
+                .IsRequired();
         }
     }
 }

@@ -18,6 +18,9 @@ namespace Cybermancy.Core.Configuration
         public void Configure(EntityTypeBuilder<Attachment> builder)
         {
             builder.HasKey(e => e.Id);
+            builder.Property(e => e.Id)
+                .HasColumnType("bigint")
+                .UseIdentityAlwaysColumn();
             builder.HasOne(e => e.Message)
                 .WithMany(x => x.Attachments)
                 .HasForeignKey(e => e.MessageId)

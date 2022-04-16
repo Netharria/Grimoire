@@ -70,7 +70,8 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
                         x.MemberProfiles.Add(new Member
                         {
                             GuildId = request.GuildId,
-                            IsXpIgnored = request.ShouldIgnore
+                            IsXpIgnored = request.ShouldIgnore,
+                            TimeOut = DateTime.UtcNow,
                         });
                         return x;
                     });
@@ -96,7 +97,8 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
                         {
                             GuildId = request.GuildId,
                             IsXpIgnored = request.ShouldIgnore,
-                            UserId = x.Id
+                            UserId = x.Id,
+                            TimeOut = DateTime.UtcNow
                         };
                         if(!string.IsNullOrWhiteSpace(x.Nickname))
                             member.NicknamesHistory.Add(

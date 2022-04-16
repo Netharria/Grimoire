@@ -5,10 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Cybermancy.Domain.Shared
+using MediatR;
+
+namespace Cybermancy.Core.Features.Shared.Queries.GetAllModuleStatesForGuild
 {
-    public interface IXpIgnore : IMentionable
+    public class GetAllModuleStatesForGuildQuery : IRequest<GetAllModuleStatesForGuildQueryResponse>
     {
-        bool IsXpIgnored { get; set; }
+        public ulong GuildId { get; init; }
     }
 }

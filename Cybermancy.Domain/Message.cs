@@ -24,7 +24,7 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTime CreatedTimestamp { get; } = DateTime.UtcNow;
+        public DateTime CreatedTimestamp { get; }
 
         public ulong? ReferencedMessageId { get; set; }
 

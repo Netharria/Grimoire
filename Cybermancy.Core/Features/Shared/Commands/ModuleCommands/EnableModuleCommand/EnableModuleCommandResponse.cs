@@ -5,10 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Cybermancy.Domain.Shared
+using Cybermancy.Core.Responses;
+
+namespace Cybermancy.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand
 {
-    public interface IXpIgnore : IMentionable
+    public class EnableModuleCommandResponse : BaseResponse
     {
-        bool IsXpIgnored { get; set; }
+        public ulong? ModerationLog { get; init; }
     }
 }

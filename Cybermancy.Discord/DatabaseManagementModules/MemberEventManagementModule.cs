@@ -8,6 +8,7 @@
 using Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember;
 using Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember;
 using Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser;
+using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using MediatR;
@@ -37,7 +38,7 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                     Nickname = string.IsNullOrWhiteSpace(args.Member.DisplayName) ? null : args.Member.DisplayName,
                     GuildId = args.Guild.Id,
                     UserId = args.Member.Id,
-                    UserName = args.Member.Username
+                    UserName = args.Member.GetUsernameWithDiscriminator()
                 });
 
         public Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
@@ -54,7 +55,7 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                 new UpdateUserCommand
                 {
                     UserId = args.UserAfter.Id,
-                    UserName = args.UserAfter.Username
+                    UserName = args.UserAfter.GetUsernameWithDiscriminator()
                 });
     }
 }

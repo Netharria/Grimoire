@@ -54,7 +54,5 @@ namespace Cybermancy.Core.Contracts.Persistance
         public Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default);
 
         public EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
-
-        public Task UpdateItemPropertiesAsync<TEntity>(TEntity entry, params Expression<Func<TEntity, object>>[] properties) where TEntity : class;
     }
 }

@@ -20,7 +20,7 @@ namespace Cybermancy.Domain
         public string MessageContent { get; set; } = string.Empty;
         public ulong? DeletedByModeratorId { get; set; }
         public virtual Member? DeletedByModerator { get; set; } = null!;
-        public DateTime TimeStamp { get; } = DateTime.UtcNow;
+        public DateTime TimeStamp { get; }
     }
 
     public enum MessageAction

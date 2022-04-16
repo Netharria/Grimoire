@@ -11,11 +11,14 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
 {
     public static class IXpIgnoreDatabaseQueryHelpers
     {
-        public static IQueryable<TSource> WhereIgnored<TSource>(this IQueryable<TSource> ignorable, bool ignored = true) where TSource : IXpIgnore
+        public static IQueryable<TSource> WhereIgnored<TSource>(this IQueryable<TSource> ignorable) where TSource : IXpIgnore
+            => ignorable.WhereIgnored(true);
+
+        public static IQueryable<TSource> WhereIgnored<TSource>(this IQueryable<TSource> ignorable, bool ignored) where TSource : IXpIgnore
             => ignorable.Where(x => x.IsXpIgnored == ignored);
 
         public static IEnumerable<TSource> WhereIgnored<TSource>(this IEnumerable<TSource> ignorable) where TSource : IXpIgnore
-            => ignorable.Where(x => x.IsXpIgnored);
+            => ignorable.WhereIgnored(true);
 
         public static IEnumerable<TSource> WhereIgnored<TSource>(this IEnumerable<TSource> ignorable, bool isIgnored) where TSource : IXpIgnore
             => ignorable.Where(x => x.IsXpIgnored == isIgnored);

@@ -16,30 +16,30 @@ using DSharpPlus.SlashCommands.EventArgs;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
+using Nefarius.DSharpPlus.Extensions.Hosting.Events;
+using DSharpPlus.EventArgs;
+using Microsoft.Extensions.Configuration;
 
 namespace Cybermancy.Discord
 {
     [DiscordSlashCommandsEventsSubscriber]
-    public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber
+    [DiscordClientErroredEventSubscriber]
+    public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber
     {
         private readonly ILogger<SlashCommandHandler> _logger;
+        private readonly IConfiguration _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SlashCommandHandler"/> class.
         /// </summary>
         /// <param name="logger"></param>
-        public SlashCommandHandler(ILogger<SlashCommandHandler> logger)
+        public SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration)
         {
             this._logger = logger;
+            this._configuration = configuration;
         }
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="commandOptions"></param>
-        /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
-        public static async Task<StringBuilder> BuildSlashCommandLogAsync(StringBuilder builder, IEnumerable<DiscordInteractionDataOption> commandOptions)
+        private static async Task<StringBuilder> BuildSlashCommandLogAsync(StringBuilder builder, IEnumerable<DiscordInteractionDataOption> commandOptions)
         {
             foreach (var option in commandOptions)
             {
@@ -51,6 +51,32 @@ namespace Cybermancy.Discord
             }
 
             return builder;
+        }
+
+        private async Task SendErrorLogToLogChannel(DiscordClient client, string action, Exception exception, string? errorId = "")
+        {
+            if (!ulong.TryParse(this._configuration.GetSection("channelId").Value, out var channelId))
+                return;
+            var channel = await client.GetChannelOrDefaultAsync(channelId);
+            if (channel is not null)
+            {
+                var errorIdString = string.IsNullOrWhiteSpace(errorId) ? string.Empty : $"[Id `{errorId}`]";
+                var shortStackTrace = string.Empty;
+                if(exception.StackTrace is not null)
+                    shortStackTrace = string.Join('\n', exception.StackTrace.Split('\n')
+                        .Where(x => x.StartsWith("   at Cybermancy"))
+                        .Select(x => x[(x.IndexOf(" in ") + 4)..])
+                        .Select(x => '\"' + x.Replace(":line", "\" line")));
+                await channel.SendMessageAsync($"Encountered exception while executing {action} {errorIdString}\n" +
+                    $"```csharp\n{exception.Message}\n{shortStackTrace}\n```");
+            }
+                
+        }
+
+        public async Task DiscordOnClientErrored(DiscordClient sender, ClientErrorEventArgs args)
+        {
+            await this.SendErrorLogToLogChannel(sender, args.EventName, args.Exception);
+            args.Handled = true;
         }
 
         public Task SlashCommandsOnContextMenuErrored(SlashCommandsExtension sender, ContextMenuErrorEventArgs args) => Task.CompletedTask;
@@ -91,15 +117,25 @@ namespace Cybermancy.Discord
                 }
             else if (args.Exception is not null)
             {
+                var errorUlong = args.Context.User.Id + args.Context.InteractionId;
+                var errorBytes = BitConverter.GetBytes(errorUlong);
+                var errorByteString = Convert.ToHexString(errorBytes, 0, 5);
+
                 var commandOptions = args.Context.Interaction.Data.Options;
                 var log = new StringBuilder();
                 if (commandOptions is not null)
                     await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
-                this._logger.LogInformation("Error on SlashCommand: {InteractionName}{InteractionOptions}\n{Message}\n{StackTrace}",
+                this._logger.LogError("Error on SlashCommand: [ID {ErrorId}] {InteractionName}{InteractionOptions}\n{Message}\n{StackTrace}",
+                    errorByteString,
                     args.Context.Interaction.Data.Name,
                     log.ToString(),
                     args.Exception.Message,
                     args.Exception.StackTrace);
+
+                
+                await args.Context.ReplyAsync(color: CybermancyColor.Orange,
+                    message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorByteString}]");
+                await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorByteString);
             }
             args.Handled = true;
         }

@@ -9,7 +9,6 @@ using Cybermancy.Core.Features.Logging.Commands.DeleteOldLogMessages;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteOldMessages;
 using Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages;
 using Cybermancy.Discord.Utilities;
-using DSharpPlus;
 using DSharpPlus.Entities;
 using MediatR;
 using Nefarius.DSharpPlus.Extensions.Hosting;
@@ -29,7 +28,7 @@ namespace Cybermancy.Discord.LoggingModule
 
         public async Task Handle(TimedNotification notification, CancellationToken cancellationToken)
         {
-            if (notification.Time.Second % 5 != 0)
+            if (notification.Time.Second % 60 != 0)
                 return;
             Console.WriteLine("Deleting Old Messages");
 

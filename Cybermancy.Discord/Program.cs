@@ -4,6 +4,7 @@ using Cybermancy.Core;
 using Cybermancy.Discord;
 using Cybermancy.Discord.LevelingModule;
 using Cybermancy.Discord.LoggingModule;
+using Cybermancy.Discord.SharedModule;
 using Cybermancy.Discord.Utilities;
 using DSharpPlus;
 using DSharpPlus.Interactivity.Enums;
@@ -18,6 +19,7 @@ using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
 using OpenTracing;
 using OpenTracing.Mock;
+using Serilog;
 
 Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration(x =>
@@ -29,8 +31,8 @@ Host.CreateDefaultBuilder(args)
         x.AddConfiguration(configuration);
     })
     .ConfigureLogging((context, x) => x
-    .AddConsole()
-    .AddConfiguration(context.Configuration))
+        .AddSerilog(new LoggerConfiguration().WriteTo.Console().CreateLogger())
+        .AddConfiguration(context.Configuration))
     .ConfigureServices((context, services) =>
         services
         .AddCoreServices(context.Configuration)
@@ -72,6 +74,7 @@ Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<LevelingAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<RewardCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<LogSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<ModuleCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
         .AddMediatR(Assembly.GetExecutingAssembly())

@@ -19,7 +19,8 @@ namespace Cybermancy.Core.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id)
-                .ValueGeneratedOnAdd();
+                .HasColumnType("bigint")
+                .UseIdentityAlwaysColumn();
             builder.Property(e => e.Reason)
                 .HasMaxLength(1000);
             builder.HasOne(e => e.Member)
@@ -42,6 +43,8 @@ namespace Cybermancy.Core.Configuration
             builder.HasOne(e => e.Pardon)
                 .WithOne(e => e.Sin)
                 .IsRequired(false);
+            builder.Property(e => e.InfractionOn)
+                .HasDefaultValueSql("now()");
         }
     }
 }

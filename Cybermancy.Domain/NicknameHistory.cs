@@ -15,7 +15,7 @@ namespace Cybermancy.Domain
         public ulong UserId { get; set; }
         public virtual Member Member { get; set; } = null!;
         public string Nickname { get; set; } = string.Empty;
-        public DateTime Timestamp { get; } = DateTime.UtcNow;
+        public DateTime Timestamp { get; }
         public ulong GuildId { get; set; }
         public virtual Guild Guild { get; set; } = null!;
     }

@@ -87,16 +87,5 @@ namespace Cybermancy.Core
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
             => modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
-
-        public async Task UpdateItemPropertiesAsync<TEntity>(TEntity entry, params Expression<Func<TEntity, object>>[] properties) where TEntity : class
-        {
-            var entity = this.Set<TEntity>().Attach(entry);
-            foreach (var property in properties)
-            {
-                entity.Property(property).IsModified = true;
-            }
-            await this.SaveChangesAsync();
-            this.Entry(entry).State = EntityState.Detached;
-        }
     }
 }
