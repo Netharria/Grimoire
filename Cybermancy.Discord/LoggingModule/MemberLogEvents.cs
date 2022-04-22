@@ -21,7 +21,7 @@ namespace Cybermancy.Discord.LoggingModule
     [DiscordGuildMemberUpdatedEventSubscriber]
     [DiscordGuildMemberRemovedEventSubscriber]
     [DiscordUserUpdatedEventSubscriber]
-    internal class MemberLoggingEvents :
+    internal class MemberLogEvents :
         IDiscordGuildMemberAddedEventSubscriber,
         IDiscordGuildMemberUpdatedEventSubscriber,
         IDiscordGuildMemberRemovedEventSubscriber,
@@ -31,7 +31,7 @@ namespace Cybermancy.Discord.LoggingModule
         private readonly IInviteService _inviteService;
         private readonly HttpClient _httpClient;
 
-        public MemberLoggingEvents(IMediator mediator, IInviteService inviteService, IHttpClientFactory httpFactory)
+        public MemberLogEvents(IMediator mediator, IInviteService inviteService, IHttpClientFactory httpFactory)
         {
             this._mediator = mediator;
             this._inviteService = inviteService;

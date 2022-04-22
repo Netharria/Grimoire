@@ -30,7 +30,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
                 .WhereIdIs(request.GuildId)
                 .Select(x => new
                 {
-                    IgnoredRoles = x.Roles.WhereIgnored(true).Select(x => x.Id),
+                    IgnoredRoles = x.Roles.Where(x => x.IsXpIgnored).Select(x => x.Id),
                     IgnoredChannels = x.Channels.Where(x => x.IsXpIgnored).Select(x => x.Id),
                     IgnoredMembers = x.Members.Where(x => x.IsXpIgnored).Select(x => x.UserId)
                 }).FirstAsync(cancellationToken: cancellationToken);

@@ -11,6 +11,5 @@ namespace Cybermancy.Core.Features.Shared.SharedDtos
     {
         public ulong Id { get; init; }
         public ulong GuildId { get; init; }
-        public string Name { get; init; } = "";
     }
 }

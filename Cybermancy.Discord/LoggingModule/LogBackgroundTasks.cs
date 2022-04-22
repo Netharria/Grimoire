@@ -15,12 +15,12 @@ using Nefarius.DSharpPlus.Extensions.Hosting;
 
 namespace Cybermancy.Discord.LoggingModule
 {
-    public class LoggingBackgroundTasks : INotificationHandler<TimedNotification>
+    public class LogBackgroundTasks : INotificationHandler<TimedNotification>
     {
         private readonly IMediator _mediator;
         private readonly IDiscordClientService _discordClientService;
 
-        public LoggingBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
+        public LogBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
         {
             this._mediator = mediator;
             this._discordClientService = discordClientService;

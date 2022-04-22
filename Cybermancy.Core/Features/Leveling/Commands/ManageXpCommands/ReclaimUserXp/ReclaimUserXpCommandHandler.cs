@@ -9,7 +9,6 @@ using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
-using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

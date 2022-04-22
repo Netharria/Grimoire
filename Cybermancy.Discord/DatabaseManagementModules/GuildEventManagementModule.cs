@@ -67,8 +67,7 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                     new ChannelDto
                     {
                         Id = x.Value.Id,
-                        GuildId = x.Value.GuildId.GetValueOrDefault(),
-                        Name = x.Value.Name
+                        GuildId = x.Value.GuildId.GetValueOrDefault()
                     })
             });
 
@@ -104,8 +103,7 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                     new ChannelDto
                     {
                         Id = x.Value.Id,
-                        GuildId = args.Guild.Id,
-                        Name = x.Value.Name
+                        GuildId = args.Guild.Id
                     })
             });
     }

@@ -27,7 +27,7 @@ namespace Cybermancy.Discord.LoggingModule
     [DiscordMessageDeletedEventSubscriber]
     [DiscordMessagesBulkDeletedEventSubscriber]
     [DiscordMessageUpdatedEventSubscriber]
-    public class MessageLoggingEvents :
+    public class MessageLogEvents :
         IDiscordMessageCreatedEventSubscriber,
         IDiscordMessageDeletedEventSubscriber,
         IDiscordMessagesBulkDeletedEventSubscriber,
@@ -36,7 +36,7 @@ namespace Cybermancy.Discord.LoggingModule
         private readonly IMediator _mediator;
         private readonly HttpClient _httpClient;
 
-        public MessageLoggingEvents(IMediator mediator, IHttpClientFactory httpFactory)
+        public MessageLogEvents(IMediator mediator, IHttpClientFactory httpFactory)
         {
             this._mediator = mediator;
             this._httpClient = httpFactory.CreateClient();
@@ -120,20 +120,17 @@ namespace Cybermancy.Discord.LoggingModule
                         continue;
 
                     var url = new Uri(Path.Combine("https://cdn.discordapp.com/attachments/", args.Channel.Id.ToString(), attachment.Id.ToString(), attachment.FileName));
-
                     var stream = await this._httpClient.GetStreamAsync(url);
-
                     var fileName = $"attachment{index}.{attachment.FileName.Split('.')[^1]}";
 
                     var stride = 4 * (index / 4);
-
                     var attachments = response.Attachments
                         .Skip(stride)
                         .Take(4)
                         .Select(x => $"**{x.FileName}**")
                         .ToArray();
 
-                    var embedTest = new DiscordEmbedBuilder()
+                    var imageEmbeds = new DiscordEmbedBuilder()
                         .WithColor(DiscordColor.Red)
                         .WithTitle(default)
                         .WithAuthor("Attachment(s) Deleted")
@@ -141,8 +138,7 @@ namespace Cybermancy.Discord.LoggingModule
                         .WithImageUrl($"attachment://{fileName}")
                         .WithDescription(string.Join(" | ", attachments));
 
-                    embeds.Add(embedTest);
-
+                    embeds.Add(imageEmbeds);
                     files.Add(fileName, stream);
                 }
             }
