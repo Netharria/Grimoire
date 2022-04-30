@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,8 +20,8 @@
 
   <ItemGroup>
     <Folder Include="Exceptions\" />
-    <Folder Include="Features\Moderation\" />
     <Folder Include="Enums\" />
+    <Folder Include="Features\Moderation\" />
   </ItemGroup>
 
   <ItemGroup>

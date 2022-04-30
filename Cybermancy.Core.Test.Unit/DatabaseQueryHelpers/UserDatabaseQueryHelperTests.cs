@@ -15,24 +15,25 @@ using NUnit.Framework;
 namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
 {
     [TestFixture]
-    public class GuildDatabaseQueryHelperTests
+    public class UserDatabaseQueryHelperTests
     {
         [Test]
-        public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
+        public async Task WhenUsersAreNotInDatabase_AddThemAsync()
         {
             var context = await TestCybermancyDbContextFactory.CreateAsync();
-            var guildsToAdd = new List<GuildDto>
+
+            var usersToAdd = new List<UserDto>
             {
-                new GuildDto() { Id = 1 },
-                new GuildDto() { Id = 2 },
-                new GuildDto() { Id = 3 }
+                new UserDto() { Id = TestCybermancyDbContextFactory.User1.Id },
+                new UserDto() { Id = TestCybermancyDbContextFactory.User2.Id },
+                new UserDto() { Id = 45 }
             };
-            var result = await context.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
+            var result = await context.Users.AddMissingUsersAsync(usersToAdd, default);
 
             await context.SaveChangesAsync();
 
             result.Should().BeTrue();
-            context.Guilds.Should().HaveCount(3);
+            context.Users.Should().HaveCount(3);
         }
     }
 }

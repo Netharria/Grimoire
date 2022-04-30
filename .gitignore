@@ -367,3 +367,6 @@ appsettings.json
 #JetBrainsConfig File
 Cybermancy.sln.DotSettings
 .idea/
+
+#Test Coverage Results
+coverageresults/

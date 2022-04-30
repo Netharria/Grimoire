@@ -20,7 +20,7 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhereMembersHaveIds_WhenProvidedValidIds_ReturnsResultAsync()
         {
-            var context = TestCybermancyDbContextFactory.Create();
+            var context = await TestCybermancyDbContextFactory.CreateAsync();
 
             var result = await context.Members.WhereMembersHaveIds(new ulong[]{
                 TestCybermancyDbContextFactory.Member1.UserId },
@@ -33,7 +33,7 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WWhereMemberHasId_WhenProvidedValidId_ReturnsResultAsync()
         {
-            var context = TestCybermancyDbContextFactory.Create();
+            var context = await TestCybermancyDbContextFactory.CreateAsync();
 
             var result = await context.Members.WhereMemberHasId(
                 TestCybermancyDbContextFactory.Member2.UserId,

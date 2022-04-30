@@ -108,13 +108,25 @@ namespace Cybermancy.Discord.LevelingModule
                 .ToAsyncEnumerable()
                 .Select(x => BuildUserDto(ctx.Client, x, ctx.Guild.Id))
                 .OfType<UserDto>()
-                .ToListAsync();
+                .ToArrayAsync();
 
             var response = await this._mediator.Send(new UpdateIgnoreStateForXpGainCommand
             {
                 Users = userDtos,
-                RoleIds = matchedIds["Role"].Select(x => ulong.Parse(x)).ToArray(),
-                ChannelIds = matchedIds["Channel"].Select(x => ulong.Parse(x)).ToArray(),
+                Roles = matchedIds["Role"]
+                    .Select(x =>
+                        new RoleDto
+                        {
+                            Id = ulong.Parse(x),
+                            GuildId = ctx.Guild.Id
+                        }).ToArray(),
+                Channels = matchedIds["Channel"]
+                    .Select(x =>
+                        new ChannelDto
+                        {
+                            Id = ulong.Parse(x),
+                            GuildId = ctx.Guild.Id
+                        }).ToArray(),
                 InvalidIds = matchedIds["Invalid"],
                 GuildId = ctx.Guild.Id,
                 ShouldIgnore = shouldIgnore
@@ -126,7 +138,7 @@ namespace Cybermancy.Discord.LevelingModule
                 return;
             }
 
-            await ctx.ReplyAsync(CybermancyColor.Green, message: response.Result, ephemeral: false);
+            await ctx.ReplyAsync(CybermancyColor.Green, message: response.Message, ephemeral: false);
         }
 
         private async static Task<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
@@ -137,7 +149,7 @@ namespace Cybermancy.Discord.LevelingModule
                 {
                     Id = member.Id,
                     Nickname = member.Nickname,
-                    UserName = $"{member.Username}${member.Discriminator}"
+                    UserName = member.GetUsernameWithDiscriminator()
                 };
             try
             {
@@ -146,7 +158,7 @@ namespace Cybermancy.Discord.LevelingModule
                     return new UserDto
                     {
                         Id = user.Id,
-                        UserName = $"{user.Username}${user.Discriminator}"
+                        UserName = user.GetUsernameWithDiscriminator()
                     };
             }
             catch (Exception)

@@ -13,7 +13,7 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
 {
     public static class MemberDatabaseQueryHelpers
     {
-        public static async Task<bool> AddMissingMembersAsync(this DbSet<Member> databaseMembers, IEnumerable<MemberDto> members, CancellationToken cancellationToken)
+        public static async Task<bool> AddMissingMembersAsync(this DbSet<Member> databaseMembers, IEnumerable<MemberDto> members, CancellationToken cancellationToken = default)
         {
             var membersToAdd = members
                 .ExceptBy(databaseMembers.Select(x => new { x.UserId, x.GuildId }),
@@ -26,7 +26,7 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
                         GuildId = x.GuildId,
                         TimeOut = DateTime.UtcNow
                     };
-                    if(x.Nickname != null)
+                    if(x.Nickname is not null)
                         member.NicknamesHistory.Add(
                         new NicknameHistory
                         {

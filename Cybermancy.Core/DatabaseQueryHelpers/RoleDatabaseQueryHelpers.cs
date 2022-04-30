@@ -13,7 +13,7 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
 {
     public static class RoleDatabaseQueryHelpers
     {
-        public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles, IEnumerable<RoleDto> roles, CancellationToken cancellationToken)
+        public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles, IEnumerable<RoleDto> roles, CancellationToken cancellationToken = default)
         {
             var rolesToAdd = roles
                 .ExceptBy(databaseRoles.Select(x => x.Id),

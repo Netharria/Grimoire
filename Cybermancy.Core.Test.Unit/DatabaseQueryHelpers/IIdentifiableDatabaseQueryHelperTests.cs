@@ -20,7 +20,7 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhereIdsAre_WhenProvidedValidIds_ReturnsResultAsync()
         {
-            var context = TestCybermancyDbContextFactory.Create();
+            var context = await TestCybermancyDbContextFactory.CreateAsync();
 
             var result = await context.Guilds.WhereIdsAre(new ulong[]{ TestCybermancyDbContextFactory.Guild1.Id }).ToArrayAsync();
 
@@ -31,7 +31,7 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhereIdIs_WhenProvidedValidId_ReturnsResultAsync()
         {
-            var context = TestCybermancyDbContextFactory.Create();
+            var context = await TestCybermancyDbContextFactory.CreateAsync();
 
             var result = await context.Guilds.WhereIdIs(TestCybermancyDbContextFactory.Guild2.Id).ToArrayAsync();
 

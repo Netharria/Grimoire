@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhenGetModulesOfTypeCalled_ReturnCorrectTypeofModuleAsync()
         {
-            var context = TestCybermancyDbContextFactory.Create();
+            var context = await TestCybermancyDbContextFactory.CreateAsync();
 
             var levelingModule = await context.Guilds.GetModulesOfType(Module.Leveling)
                 .OfType<GuildLevelSettings>()

@@ -15,24 +15,26 @@ using NUnit.Framework;
 namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
 {
     [TestFixture]
-    public class GuildDatabaseQueryHelperTests
+    public class RoleDatabaseQueryHelperTests
     {
         [Test]
-        public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
+        public async Task WhenRolesAreNotInDatabase_AddThemAsync()
         {
             var context = await TestCybermancyDbContextFactory.CreateAsync();
-            var guildsToAdd = new List<GuildDto>
+
+            var rolesToAdd = new List<RoleDto>
             {
-                new GuildDto() { Id = 1 },
-                new GuildDto() { Id = 2 },
-                new GuildDto() { Id = 3 }
+                new RoleDto() { Id = TestCybermancyDbContextFactory.Role1.Id, GuildId = TestCybermancyDbContextFactory.Guild1.Id },
+                new RoleDto() { Id = TestCybermancyDbContextFactory.Role2.Id, GuildId = TestCybermancyDbContextFactory.Guild1.Id },
+                new RoleDto() { Id = 4, GuildId = TestCybermancyDbContextFactory.Guild1.Id },
+                new RoleDto() { Id = 5, GuildId = TestCybermancyDbContextFactory.Guild1.Id }
             };
-            var result = await context.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
+            var result = await context.Roles.AddMissingRolesAsync(rolesToAdd, default);
 
             await context.SaveChangesAsync();
 
             result.Should().BeTrue();
-            context.Guilds.Should().HaveCount(3);
+            context.Roles.Should().HaveCount(4);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
         {
-            var context = TestCybermancyDbContextFactory.Create();
+            var context = await TestCybermancyDbContextFactory.CreateAsync();
             var channelsToAdd = new List<ChannelDto>
             {
                 new ChannelDto() { Id = 2, GuildId = TestCybermancyDbContextFactory.Guild1.Id},

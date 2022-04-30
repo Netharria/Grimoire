@@ -13,7 +13,7 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
 {
     public static class ChannelDatabaseQueryHelpers
     {
-        public static async Task<bool> AddMissingChannelsAsync(this DbSet<Channel> databaseChannels, IEnumerable<ChannelDto> channels, CancellationToken cancellationToken)
+        public static async Task<bool> AddMissingChannelsAsync(this DbSet<Channel> databaseChannels, IEnumerable<ChannelDto> channels, CancellationToken cancellationToken = default)
         {
             var channelsToAdd = channels
                 .ExceptBy(databaseChannels.Select(x => x.Id),

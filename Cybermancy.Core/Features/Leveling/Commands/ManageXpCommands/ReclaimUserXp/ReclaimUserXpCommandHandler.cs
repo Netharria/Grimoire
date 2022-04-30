@@ -42,15 +42,16 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
                 return new BaseResponse
                 {
                     Success = false,
-                    Message = "XP needs to be a positive value."
+                    Message = "Xp needs to be a positive value."
                 };
             else if (!ulong.TryParse(request.XpToTake.Trim(), out xpToTake))
                 return new BaseResponse
                 {
                     Success = false,
-                    Message = "XP needs to be a valid number."
+                    Message = "Xp needs to be a valid number."
                 };
-
+            if(member.Xp < xpToTake)
+                xpToTake = member.Xp;
             member.Xp -= xpToTake;
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
