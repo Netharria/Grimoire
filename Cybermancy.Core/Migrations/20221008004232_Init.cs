@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace Cybermancy.Core.Migrations
 {
-    public partial class Initalization : Migration
+    public partial class Init : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -98,8 +99,6 @@ namespace Cybermancy.Core.Migrations
                 {
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    Xp = table.Column<decimal>(type: "numeric(20,0)", nullable: false, defaultValue: 0m),
-                    TimeOut = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsXpIgnored = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
@@ -128,7 +127,7 @@ namespace Cybermancy.Core.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Username = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -147,9 +146,9 @@ namespace Cybermancy.Core.Migrations
                 {
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     TextTime = table.Column<TimeSpan>(type: "interval", nullable: false, defaultValue: new TimeSpan(0, 0, 3, 0, 0)),
-                    Base = table.Column<long>(type: "bigint", nullable: false, defaultValue: 15L),
-                    Modifier = table.Column<long>(type: "bigint", nullable: false, defaultValue: 50L),
-                    Amount = table.Column<long>(type: "bigint", nullable: false, defaultValue: 5L),
+                    Base = table.Column<int>(type: "integer", nullable: false, defaultValue: 15),
+                    Modifier = table.Column<int>(type: "integer", nullable: false, defaultValue: 50),
+                    Amount = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
                     LevelChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     LevelChannelLogsId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     ModuleEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
@@ -243,7 +242,7 @@ namespace Cybermancy.Core.Migrations
                     Id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -268,7 +267,7 @@ namespace Cybermancy.Core.Migrations
                 {
                     RoleId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    RewardLevel = table.Column<long>(type: "bigint", nullable: false)
+                    RewardLevel = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -296,7 +295,7 @@ namespace Cybermancy.Core.Migrations
                     ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -329,7 +328,7 @@ namespace Cybermancy.Core.Migrations
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    CreatedTimestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    CreatedTimestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     ReferencedMessageId = table.Column<decimal>(type: "numeric(20,0)", nullable: true)
                 },
                 constraints: table =>
@@ -363,7 +362,7 @@ namespace Cybermancy.Core.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Nickname = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
                 },
                 constraints: table =>
@@ -393,7 +392,7 @@ namespace Cybermancy.Core.Migrations
                     ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    InfractionOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    InfractionOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     SinType = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -426,7 +425,7 @@ namespace Cybermancy.Core.Migrations
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     LogChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
                 },
                 constraints: table =>
@@ -459,11 +458,46 @@ namespace Cybermancy.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Attachments",
+                name: "XpHistory",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    Xp = table.Column<long>(type: "bigint", nullable: false),
+                    TimeOut = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    AwarderId = table.Column<decimal>(type: "numeric(20,0)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_XpHistory", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_XpHistory_Guilds_GuildId",
+                        column: x => x.GuildId,
+                        principalTable: "Guilds",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_XpHistory_Members_AwarderId_GuildId",
+                        columns: x => new { x.AwarderId, x.GuildId },
+                        principalTable: "Members",
+                        principalColumns: new[] { "UserId", "GuildId" },
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_XpHistory_Members_UserId_GuildId",
+                        columns: x => new { x.UserId, x.GuildId },
+                        principalTable: "Members",
+                        principalColumns: new[] { "UserId", "GuildId" },
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Attachments",
+                columns: table => new
+                {
+                    Id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     MessageId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     FileName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false)
                 },
@@ -489,7 +523,7 @@ namespace Cybermancy.Core.Migrations
                     Action = table.Column<int>(type: "integer", nullable: false),
                     MessageContent = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
                     DeletedByModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
-                    TimeStamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    TimeStamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
                 {
@@ -555,7 +589,7 @@ namespace Cybermancy.Core.Migrations
                     SinId = table.Column<long>(type: "bigint", nullable: false),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -587,7 +621,7 @@ namespace Cybermancy.Core.Migrations
                     SinId = table.Column<long>(type: "bigint", nullable: false),
                     ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    PardonDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    PardonDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false)
                 },
                 constraints: table =>
@@ -824,6 +858,21 @@ namespace Cybermancy.Core.Migrations
                 name: "IX_UsernameHistory_UserId",
                 table: "UsernameHistory",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_XpHistory_AwarderId_GuildId",
+                table: "XpHistory",
+                columns: new[] { "AwarderId", "GuildId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_XpHistory_GuildId",
+                table: "XpHistory",
+                column: "GuildId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_XpHistory_UserId_GuildId",
+                table: "XpHistory",
+                columns: new[] { "UserId", "GuildId" });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -872,6 +921,9 @@ namespace Cybermancy.Core.Migrations
 
             migrationBuilder.DropTable(
                 name: "UsernameHistory");
+
+            migrationBuilder.DropTable(
+                name: "XpHistory");
 
             migrationBuilder.DropTable(
                 name: "Sins");

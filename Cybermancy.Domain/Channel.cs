@@ -9,7 +9,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Channel : IIdentifiable, IXpIgnore, IMentionable
+    public class Channel : IIdentifiable<ulong>, IXpIgnore, IMentionable
     {
         public ulong Id { get; set; }
 

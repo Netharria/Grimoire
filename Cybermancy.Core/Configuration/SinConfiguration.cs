@@ -19,7 +19,6 @@ namespace Cybermancy.Core.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id)
-                .HasColumnType("bigint")
                 .UseIdentityAlwaysColumn();
             builder.Property(e => e.Reason)
                 .HasMaxLength(1000);

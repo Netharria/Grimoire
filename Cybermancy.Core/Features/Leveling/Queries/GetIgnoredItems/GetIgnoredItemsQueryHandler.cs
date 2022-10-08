@@ -11,10 +11,11 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
+using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
 {
-    public class GetIgnoredItemsQueryHandler : IRequestHandler<GetIgnoredItemsQuery, GetIgnoredItemsQueryResponse>
+    public class GetIgnoredItemsQueryHandler : IRequestHandler<GetIgnoredItemsQuery, BaseResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -23,7 +24,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetIgnoredItemsQueryResponse> Handle(GetIgnoredItemsQuery request, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(GetIgnoredItemsQuery request, CancellationToken cancellationToken)
         {
 
             var ignoredItems = await this._cybermancyDbContext.Guilds
@@ -36,7 +37,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
                 }).FirstAsync(cancellationToken: cancellationToken);
 
             if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredMembers.Any())
-                return new GetIgnoredItemsQueryResponse { Success = false, Message = "This server does not have any ignored channels, roles or users." };
+                return new BaseResponse { Success = false, Message = "This server does not have any ignored channels, roles or users." };
 
             var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
             foreach (var channel in ignoredItems.IgnoredChannels) ignoredMessageBuilder.Append(ChannelExtensions.Mention(channel)).Append('\n');
@@ -47,7 +48,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
             ignoredMessageBuilder.Append("\n**Users**\n");
             foreach (var member in ignoredItems.IgnoredMembers) ignoredMessageBuilder.Append(UserExtensions.Mention(member)).Append('\n');
 
-            return new GetIgnoredItemsQueryResponse { Success = true, ResultString = ignoredMessageBuilder.ToString() };
+            return new BaseResponse { Success = true, Message = ignoredMessageBuilder.ToString() };
         }
     }
 }

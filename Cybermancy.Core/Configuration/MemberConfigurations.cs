@@ -28,11 +28,6 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.Property(e => e.Xp)
-                .IsRequired()
-                .HasDefaultValue(value: 0);
-            builder.Property(e => e.TimeOut)
-                .IsRequired();
             builder.Property(e => e.IsXpIgnored)
                 .HasDefaultValue(value: false);
         }

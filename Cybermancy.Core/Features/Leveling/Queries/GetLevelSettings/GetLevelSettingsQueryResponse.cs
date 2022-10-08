@@ -13,9 +13,9 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
     {
         public bool ModuleEnabled { get; init; }
         public TimeSpan TextTime { get; init; }
-        public uint Base { get; init; }
-        public uint Modifier { get; init; }
-        public uint Amount { get; init; }
+        public int Base { get; init; }
+        public int Modifier { get; init; }
+        public int Amount { get; init; }
         public ulong? LevelChannelLog { get; init; }
     }
 }

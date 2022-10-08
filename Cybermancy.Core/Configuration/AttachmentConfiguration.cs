@@ -19,8 +19,8 @@ namespace Cybermancy.Core.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id)
-                .HasColumnType("bigint")
-                .UseIdentityAlwaysColumn();
+                .ValueGeneratedNever()
+                .IsRequired();
             builder.HasOne(e => e.Message)
                 .WithMany(x => x.Attachments)
                 .HasForeignKey(e => e.MessageId)

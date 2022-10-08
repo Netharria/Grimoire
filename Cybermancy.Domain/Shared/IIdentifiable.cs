@@ -7,8 +7,8 @@
 
 namespace Cybermancy.Domain.Shared
 {
-    public interface IIdentifiable
+    public interface IIdentifiable<T> where T : unmanaged, IComparable, IEquatable<T>
     {
-        public ulong Id { get; set; }
+        public T Id { get; set; }
     }
 }

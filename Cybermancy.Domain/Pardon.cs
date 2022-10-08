@@ -9,7 +9,7 @@ namespace Cybermancy.Domain
 {
     public class Pardon
     {
-        public ulong SinId { get; set; }
+        public long SinId { get; set; }
 
         public virtual Sin Sin { get; set; } = null!;
 
@@ -20,7 +20,7 @@ namespace Cybermancy.Domain
         public ulong GuildId { get; set; }
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTime PardonDate { get; }
+        public DateTimeOffset PardonDate { get; }
 
         public string Reason { get; set; } = string.Empty;
     }

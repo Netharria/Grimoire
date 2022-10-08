@@ -17,21 +17,26 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class UserDatabaseQueryHelperTests
     {
+        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
+
+        [OneTimeSetUp]
+        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
+
         [Test]
         public async Task WhenUsersAreNotInDatabase_AddThemAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
-
+            var context = this.DatabaseFixture.CreateContext();
+            context.Database.BeginTransaction();
             var usersToAdd = new List<UserDto>
             {
-                new UserDto() { Id = TestCybermancyDbContextFactory.User1.Id },
-                new UserDto() { Id = TestCybermancyDbContextFactory.User2.Id },
+                new UserDto() { Id = TestDatabaseFixture.User1.Id },
+                new UserDto() { Id = TestDatabaseFixture.User2.Id },
                 new UserDto() { Id = 45 }
             };
             var result = await context.Users.AddMissingUsersAsync(usersToAdd, default);
 
             await context.SaveChangesAsync();
-
+            context.ChangeTracker.Clear();
             result.Should().BeTrue();
             context.Users.Should().HaveCount(3);
         }

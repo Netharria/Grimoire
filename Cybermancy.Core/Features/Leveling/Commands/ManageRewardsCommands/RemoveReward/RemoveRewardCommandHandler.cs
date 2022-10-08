@@ -12,7 +12,7 @@ using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.RemoveReward
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward
 {
     public class RemoveRewardCommandHandler : IRequestHandler<RemoveRewardCommand, BaseResponse>
     {

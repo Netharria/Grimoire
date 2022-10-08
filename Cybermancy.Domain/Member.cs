@@ -19,10 +19,6 @@ namespace Cybermancy.Domain
 
         public virtual User User { get; set; } = null!;
 
-        public ulong Xp { get; set; }
-
-        public DateTime TimeOut { get; set; }
-
         public bool IsXpIgnored { get; set; }
 
         public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
@@ -45,5 +41,7 @@ namespace Cybermancy.Domain
 
         public virtual ICollection<NicknameHistory> NicknamesHistory { get; set;} = new List<NicknameHistory>();
         public virtual ICollection<MessageHistory> MessagesDeletedAsModerator { get; set; } = new List<MessageHistory>();
+        public virtual ICollection<XpHistory> XpHistory { get; set; } = new List<XpHistory>();
+        public virtual ICollection<XpHistory> AwardRecipients { get; set; } = new List<XpHistory>();
     }
 }

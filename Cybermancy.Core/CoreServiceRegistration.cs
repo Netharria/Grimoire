@@ -19,7 +19,7 @@ namespace Cybermancy.Core
             services.AddDbContext<CybermancyDbContext>(options =>
                 options.UseNpgsql(
                     configuration.GetConnectionString("CybermancyConnectionString"))
-                    .EnableDetailedErrors())
+                    .EnableDetailedErrors().EnableSensitiveDataLogging(false))
                 .AddSingleton<IInviteService, InviteService>()
                 .AddScoped<ICybermancyDbContext, CybermancyDbContext>()
                 .AddMediatR(Assembly.GetExecutingAssembly())

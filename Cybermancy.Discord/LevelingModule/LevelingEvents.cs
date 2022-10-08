@@ -7,8 +7,8 @@
 
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
-using Cybermancy.Discord.Enums;
 using Cybermancy.Discord.Extensions;
+using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -61,7 +61,7 @@ namespace Cybermancy.Discord.LevelingModule
 
             if (response.PreviousLevel < response.CurrentLevel)
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithCybermancyColor(CybermancyColor.Purple)
+                    .WithColor(CybermancyColor.Purple)
                     .WithTitle(member.GetUsernameWithDiscriminator())
                     .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
                     .WithFooter($"{member.Id}")
@@ -70,7 +70,7 @@ namespace Cybermancy.Discord.LevelingModule
 
             if (newRewards.Any())
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithCybermancyColor(CybermancyColor.Gold)
+                    .WithColor(CybermancyColor.Gold)
                     .WithTitle($"{member.Username}#{member.Discriminator}")
                     .WithDescription($"{member.Mention} has earned " +
                     $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x)))}")

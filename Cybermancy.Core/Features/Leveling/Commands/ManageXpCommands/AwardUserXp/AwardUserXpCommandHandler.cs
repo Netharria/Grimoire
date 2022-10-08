@@ -9,6 +9,7 @@ using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
+using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,7 +40,15 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
                     Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?"
                 };
 
-            member.Xp += (ulong)request.XpToAward;
+            await this._cybermancyDbContext.XpHistory.AddAsync(new XpHistory
+            {
+                GuildId = request.GuildId,
+                UserId = request.UserId,
+                Xp = request.XpToAward,
+                TimeOut = DateTimeOffset.UtcNow,
+                Type = XpHistoryType.Awarded,
+                AwarderId = request.AwarderId,
+            }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse { Success = true };
         }

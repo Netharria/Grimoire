@@ -48,6 +48,8 @@ namespace Cybermancy.Core.Contracts.Persistance
 
         public DbSet<UsernameHistory> UsernameHistory { get; }
 
+        public DbSet<XpHistory> XpHistory { get; }
+
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
         public Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default);

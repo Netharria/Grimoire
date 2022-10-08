@@ -9,7 +9,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Message : IIdentifiable, IMember
+    public class Message : IIdentifiable<ulong>, IMember
     {
         public ulong Id { get; set; }
 
@@ -24,7 +24,7 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTime CreatedTimestamp { get; }
+        public DateTimeOffset CreatedTimestamp { get; }
 
         public ulong? ReferencedMessageId { get; set; }
 

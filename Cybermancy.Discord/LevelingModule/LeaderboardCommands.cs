@@ -8,8 +8,8 @@
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard;
 using Cybermancy.Discord.Attributes;
-using Cybermancy.Discord.Enums;
 using Cybermancy.Discord.Extensions;
+using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;

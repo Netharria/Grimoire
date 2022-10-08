@@ -11,11 +11,11 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
 {
     public class GetLevelQueryResponse : BaseResponse
     {
-        public ulong UsersXp { get; init; }
-        public uint UsersLevel { get; init; }
-        public ulong LevelProgress { get; init; }
-        public ulong XpForNextLevel { get; init; }
+        public long UsersXp { get; init; }
+        public int UsersLevel { get; init; }
+        public long LevelProgress { get; init; }
+        public long XpForNextLevel { get; init; }
         public ulong? NextRoleRewardId { get; init; }
-        public uint? NextRewardLevel { get; init; }
+        public int? NextRewardLevel { get; init; }
     }
 }

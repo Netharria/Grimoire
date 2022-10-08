@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Discord.Enums;
+using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -16,7 +16,7 @@ namespace Cybermancy.Discord.Extensions
     {
         public static async Task ReplyAsync(
             this InteractionContext ctx,
-            CybermancyColor color = CybermancyColor.Purple,
+            DiscordColor? color = null,
             string message = "",
             string title = "",
             string footer = "",
@@ -26,7 +26,7 @@ namespace Cybermancy.Discord.Extensions
         {
             timeStamp ??= DateTime.UtcNow;
             embed ??= new DiscordEmbedBuilder()
-                .WithCybermancyColor(color)
+                .WithColor(color ?? CybermancyColor.Purple)
                 .WithTitle(title)
                 .WithDescription(message)
                 .WithFooter(footer)

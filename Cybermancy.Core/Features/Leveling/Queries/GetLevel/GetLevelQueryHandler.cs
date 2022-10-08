@@ -26,9 +26,10 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
         {
             var member = await this._cybermancyDbContext.Members
                 .WhereMemberHasId(request.UserId, request.GuildId)
-                .Select(x => new { x.Xp,
+                .Include(x => x.Guild.LevelSettings)
+                .Select(x => new { Xp = x.XpHistory.Sum(x => x.Xp),
                     Level = x.GetLevel(),
-                    LevelProgress = x.Xp - x.GetXpNeeded(),
+                    LevelProgress = x.XpHistory.Sum(x => x.Xp) - x.GetXpNeeded(),
                     TotalXpRequiredToLevel = x.GetXpNeeded(1) - x.GetXpNeeded()
                 }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 

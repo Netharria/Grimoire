@@ -44,7 +44,7 @@ namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.
                         .First()
                         .MessageContent,
                 Success = true
-            }).SingleOrDefaultAsync(cancellationToken);
+            }).FirstOrDefaultAsync(cancellationToken);
             if (result is null)
                 return new GetMessageQueryResponse { Success = false };
             return result;

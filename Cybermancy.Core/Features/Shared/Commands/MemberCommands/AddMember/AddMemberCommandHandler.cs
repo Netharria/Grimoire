@@ -44,7 +44,17 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
                 {
                     UserId = request.UserId,
                     GuildId = request.GuildId,
-                    TimeOut = DateTime.UtcNow
+                    XpHistory = new List<XpHistory>
+                    {
+                        new XpHistory {
+                            UserId = request.UserId,
+                            GuildId = request.GuildId,
+                            Type = XpHistoryType.Created,
+                            Xp = 0,
+                            TimeOut = DateTime.UtcNow
+                        }
+                    }
+                    
                 };
                 if (!string.IsNullOrWhiteSpace(request.Nickname))
                 {

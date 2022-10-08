@@ -5,10 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Cybermancy.Core.Features.Logging;
 using Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild;
 using Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds;
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Discord.Extensions;
+using Cybermancy.Domain;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using MediatR;
@@ -18,19 +20,25 @@ namespace Cybermancy.Discord.DatabaseManagementModules
 {
     [DiscordGuildDownloadCompletedEventSubscriber]
     [DiscordGuildCreatedEventSubscriber]
+    [DiscordInviteCreatedEventSubscriber]
+    [DiscordInviteDeletedEventSubscriber]
     public class GuildEventManagementModule :
         IDiscordGuildDownloadCompletedEventSubscriber,
-        IDiscordGuildCreatedEventSubscriber
+        IDiscordGuildCreatedEventSubscriber,
+        IDiscordInviteCreatedEventSubscriber,
+        IDiscordInviteDeletedEventSubscriber
     {
         private readonly IMediator _mediator;
+        private readonly IInviteService _inviteService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
         /// </summary>
         /// <param name="guildService"></param>
-        public GuildEventManagementModule(IMediator mediator)
+        public GuildEventManagementModule(IMediator mediator, IInviteService inviteService)
         {
             this._mediator = mediator;
+            this._inviteService = inviteService;
         }
 
         public Task DiscordOnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
@@ -68,12 +76,30 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                     {
                         Id = x.Value.Id,
                         GuildId = x.Value.GuildId.GetValueOrDefault()
-                    })
+                    }).Concat(args.Guilds.Values.SelectMany(x => x.Threads)
+                        .Select(x =>
+                        new ChannelDto
+                        {
+                            Id = x.Value.Id,
+                            GuildId = x.Value.GuildId.GetValueOrDefault()
+                        })
+                    ),
+                Invites = args.Guilds.Values
+                    .ToAsyncEnumerable()
+                    .SelectManyAwait(async x => (await x.GetInvitesAsync()).ToAsyncEnumerable())
+                    .Select(x => 
+                    new Invite
+                    {
+                        Code = x.Code,
+                        Inviter = x.Inviter.GetUsernameWithDiscriminator(),
+                        Url = x.ToString(),
+                        Uses = x.Uses,
+                    }).ToEnumerable()
             });
 
 
-        public Task DiscordOnGuildCreated(DiscordClient sender, GuildCreateEventArgs args)
-            => this._mediator.Send(new AddGuildCommand
+        public async Task DiscordOnGuildCreated(DiscordClient sender, GuildCreateEventArgs args)
+            => await this._mediator.Send(new AddGuildCommand
             {
                 GuildId = args.Guild.Id,
                 Users = args.Guild.Members
@@ -104,7 +130,38 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                     {
                         Id = x.Value.Id,
                         GuildId = args.Guild.Id
-                    })
+                    }),
+                Invites = await args.Guild
+                    .GetInvitesAsync()
+                    .ContinueWith(x => x.Result
+                        .Select(x =>
+                        new Invite
+                        {
+                            Code = x.Code,
+                            Inviter = x.Inviter.GetUsernameWithDiscriminator(),
+                            Url = x.ToString(),
+                            Uses = x.Uses,
+                        }))
             });
+
+
+
+        public Task DiscordOnInviteCreated(DiscordClient sender, InviteCreateEventArgs args)
+        {
+            _inviteService.UpdateInvite(
+                new Invite
+                {
+                    Code = args.Invite.Code,
+                    Inviter = args.Invite.Inviter.GetUsernameWithDiscriminator(),
+                    Url = args.Invite.ToString(),
+                    Uses = args.Invite.Uses,
+                }) ;
+            return Task.CompletedTask;
+        }
+        public async Task DiscordOnInviteDeleted(DiscordClient sender, InviteDeleteEventArgs args)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            _inviteService.DeleteInvite(args.Invite.Code);
+        }
     }
 }

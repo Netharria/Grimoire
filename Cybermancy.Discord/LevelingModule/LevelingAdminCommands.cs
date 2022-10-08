@@ -12,8 +12,8 @@ using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreSt
 using Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems;
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Discord.Attributes;
-using Cybermancy.Discord.Enums;
 using Cybermancy.Discord.Extensions;
+using Cybermancy.Discord.Structs;
 using Cybermancy.Discord.Utilities;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -40,7 +40,7 @@ namespace Cybermancy.Discord.LevelingModule
         [SlashCommand("Award", "Awards a user some xp.")]
         public async Task AwardAsync(InteractionContext ctx, [Option("User", "User to award xp.")] DiscordUser user, [Option("XP", "The amount of xp to grant.")] long xpToAward)
         {
-            var response = await this._mediator.Send(new AwardUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward});
+            var response = await this._mediator.Send(new AwardUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id });
 
             if (!response.Success)
             {
@@ -55,7 +55,14 @@ namespace Cybermancy.Discord.LevelingModule
         [SlashCommand("Reclaim", "Takes away xp from user.")]
         public async Task ReclaimAsync(InteractionContext ctx, [Option("User", "User to take xp away from.")] DiscordUser user, [Option("XP", "The amount of xp to Take.")] string amount)
         {
-            var response = await this._mediator.Send(new ReclaimUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToTake = amount});
+            var response = await this._mediator.Send(
+                new ReclaimUserXpCommand
+                {
+                    UserId = user.Id,
+                    GuildId = ctx.Guild.Id,
+                    XpToTake = amount,
+                    ReclaimerId = ctx.User.Id
+                });
 
             if (!response.Success)
             {
@@ -82,7 +89,7 @@ namespace Cybermancy.Discord.LevelingModule
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("Ignored Channels Roles and Users.")
                 .WithTimestamp(DateTime.UtcNow);
-            var embedPages = interactivity.GeneratePagesInEmbed(input: response.ResultString, splittype: SplitType.Line, embed);
+            var embedPages = interactivity.GeneratePagesInEmbed(input: response.Message, splittype: SplitType.Line, embed);
             await interactivity.SendPaginatedResponseAsync(interaction: ctx.Interaction, ephemeral: false, user: ctx.User, pages: embedPages);
 
         }

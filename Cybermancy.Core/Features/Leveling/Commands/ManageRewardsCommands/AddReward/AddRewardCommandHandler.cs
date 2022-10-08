@@ -12,7 +12,7 @@ using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.AddReward
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward
 {
     public class AddRewardCommandHandler : IRequestHandler<AddRewardCommand, BaseResponse>
     {

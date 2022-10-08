@@ -15,5 +15,6 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
         public string XpToTake { get; init; } = string.Empty;
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
+        public ulong? ReclaimerId { get; init; }
     }
 }

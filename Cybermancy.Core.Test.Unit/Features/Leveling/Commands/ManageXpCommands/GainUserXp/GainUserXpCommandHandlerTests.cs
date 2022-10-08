@@ -17,52 +17,57 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
     [TestFixture]
     public class GainUserXpCommandHandlerTests
     {
+        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
+
+        [OneTimeSetUp]
+        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
+
         [Test]
         public async Task WhenAwardUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
+            var context = this.DatabaseFixture.CreateContext();
 
             var cut = new GainUserXpCommandHandler(context);
-
+            context.Database.BeginTransaction();
             var result = await cut.Handle(
                 new GainUserXpCommand
                 {
-                    UserId = TestCybermancyDbContextFactory.Member1.UserId,
-                    GuildId = TestCybermancyDbContextFactory.Member1.GuildId,
-                    ChannelId = TestCybermancyDbContextFactory.Channel.Id,
-                    RoleIds = new [] { TestCybermancyDbContextFactory.Role1.Id }
+                    UserId = TestDatabaseFixture.Member1.UserId,
+                    GuildId = TestDatabaseFixture.Member1.GuildId,
+                    ChannelId = TestDatabaseFixture.Channel1.Id,
+                    RoleIds = new [] { TestDatabaseFixture.Role1.Id }
                 }, default);
-
+            context.ChangeTracker.Clear();
             result.Success.Should().BeTrue();
             result.EarnedRewards.Should().BeEmpty();
             result.PreviousLevel.Should().BeGreaterThan(0);
             result.CurrentLevel.Should().BeGreaterThan(0);
-            result.LoggingChannel.Should().Be(TestCybermancyDbContextFactory.Guild2.LevelSettings.LevelChannelLogId);
+            result.LoggingChannel.Should().Be(TestDatabaseFixture.Guild2.LevelSettings.LevelChannelLogId);
 
             var member = await context.Members.Where(x =>
-                x.UserId == TestCybermancyDbContextFactory.Member1.UserId
-                && x.GuildId == TestCybermancyDbContextFactory.Member1.GuildId
+                x.UserId == TestDatabaseFixture.Member1.UserId
+                && x.GuildId == TestDatabaseFixture.Member1.GuildId
                 ).FirstAsync();
 
-            member.Xp.Should().BeGreaterThan(0);
+            member.XpHistory.Sum(x => x.Xp).Should().BeGreaterThan(0);
         }
 
         [Test]
         public async Task WhenAwardUserXpCommandHandlerCalled_AndMemberInvalid_ReturnFalseResponseAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
-
+            var context = this.DatabaseFixture.CreateContext();
+            context.Database.BeginTransaction();
             var cut = new GainUserXpCommandHandler(context);
 
             var result = await cut.Handle(
                 new GainUserXpCommand
                 {
-                    UserId = TestCybermancyDbContextFactory.Member3.UserId,
-                    GuildId = TestCybermancyDbContextFactory.Member3.GuildId,
-                    ChannelId = TestCybermancyDbContextFactory.Channel.Id,
-                    RoleIds = new [] { TestCybermancyDbContextFactory.Role1.Id }
+                    UserId = TestDatabaseFixture.Member3.UserId,
+                    GuildId = TestDatabaseFixture.Member3.GuildId,
+                    ChannelId = TestDatabaseFixture.Channel1.Id,
+                    RoleIds = new [] { TestDatabaseFixture.Role1.Id }
                 }, default);
-
+            context.ChangeTracker.Clear();
             result.Success.Should().BeFalse();
         }
     }

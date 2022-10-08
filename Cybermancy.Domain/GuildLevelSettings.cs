@@ -17,11 +17,11 @@ namespace Cybermancy.Domain
 
         public TimeSpan TextTime { get; set; }
 
-        public uint Base { get; set; }
+        public int Base { get; set; }
 
-        public uint Modifier { get; set; }
+        public int Modifier { get; set; }
 
-        public uint Amount { get; set; }
+        public int Amount { get; set; }
 
         public ulong? LevelChannelLogId { get; set; }
 

@@ -17,7 +17,7 @@ namespace Cybermancy.Domain
     {
         public ulong MessageId { get; set; }
 
-        public ulong SinId { get; set; }
+        public long SinId { get; set; }
 
         public virtual Sin Sin { get; set; } = null!;
 

@@ -19,7 +19,6 @@ namespace Cybermancy.Core.Configuration
         {
             builder.HasKey(x => x.Id);
             builder.Property(e => e.Id)
-                .HasColumnType("bigint")
                 .UseIdentityAlwaysColumn();
             builder.HasIndex(x => x.UserId);
             builder.HasOne(x => x.User)

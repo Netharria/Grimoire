@@ -18,57 +18,62 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
     [TestFixture]
     public class UpdateIgnoreStateForXpGainCommandHandlerTests
     {
+        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
+
+        [OneTimeSetUp]
+        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
+
         [Test]
         public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_UpdateIgnoreStatusAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
-
+            var context = this.DatabaseFixture.CreateContext();
+            //context.Database.BeginTransaction();
             var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
 
             var result = await cut.Handle(
                 new UpdateIgnoreStateForXpGainCommand
                 {
-                    Users = new [] { new UserDto { Id = TestCybermancyDbContextFactory.Member1.UserId } },
-                    GuildId = TestCybermancyDbContextFactory.Member1.GuildId,
+                    Users = new [] { new UserDto { Id = TestDatabaseFixture.Member1.UserId } },
+                    GuildId = TestDatabaseFixture.Member1.GuildId,
                     ShouldIgnore = true,
                     Channels = new []
                     {
                         new ChannelDto
                         {
-                            Id = TestCybermancyDbContextFactory.Channel.Id,
-                            GuildId = TestCybermancyDbContextFactory.Channel.GuildId
+                            Id = TestDatabaseFixture.Channel1.Id,
+                            GuildId = TestDatabaseFixture.Channel1.GuildId
                         }
                     },
                     Roles = new []
                     {
                         new RoleDto
                         {
-                            Id = TestCybermancyDbContextFactory.Role1.Id,
-                            GuildId = TestCybermancyDbContextFactory.Role1.GuildId
+                            Id = TestDatabaseFixture.Role1.Id,
+                            GuildId = TestDatabaseFixture.Role1.GuildId
                         }
                     }
                 }, default);
-
+            context.ChangeTracker.Clear();
             result.Success.Should().BeTrue();
             result.Message.Should().Be("<@!4> <@&6> <#3>  are now ignored for xp gain.");
 
             var member = await context.Members.Where(x =>
-                x.UserId == TestCybermancyDbContextFactory.Member1.UserId
-                && x.GuildId == TestCybermancyDbContextFactory.Member1.GuildId
+                x.UserId == TestDatabaseFixture.Member1.UserId
+                && x.GuildId == TestDatabaseFixture.Member1.GuildId
                 ).FirstAsync();
 
             member.IsXpIgnored.Should().BeTrue();
 
             var role = await context.Roles.Where(x =>
-                x.Id == TestCybermancyDbContextFactory.Role1.Id
-                && x.GuildId == TestCybermancyDbContextFactory.Role1.GuildId
+                x.Id == TestDatabaseFixture.Role1.Id
+                && x.GuildId == TestDatabaseFixture.Role1.GuildId
                 ).FirstAsync();
 
             role.IsXpIgnored.Should().BeTrue();
 
             var channel = await context.Channels.Where(x =>
-                x.Id == TestCybermancyDbContextFactory.Channel.Id
-                && x.GuildId == TestCybermancyDbContextFactory.Channel.GuildId
+                x.Id == TestDatabaseFixture.Channel1.Id
+                && x.GuildId == TestDatabaseFixture.Channel1.GuildId
                 ).FirstAsync();
 
             channel.IsXpIgnored.Should().BeTrue();
@@ -77,18 +82,18 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
         [Test]
         public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
-
+            var context = this.DatabaseFixture.CreateContext();
+            context.Database.BeginTransaction();
             var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
 
             var result = await cut.Handle(
                 new UpdateIgnoreStateForXpGainCommand
                 {
-                    GuildId = TestCybermancyDbContextFactory.Member1.GuildId,
+                    GuildId = TestDatabaseFixture.Member1.GuildId,
                     ShouldIgnore = true,
                     InvalidIds = new [] { "asldfkja" }
                 }, default);
-
+            context.ChangeTracker.Clear();
             result.Success.Should().BeTrue();
             result.Message.Should().Be("Could not match asldfkja with a role, channel or user. ");
         }

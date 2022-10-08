@@ -9,7 +9,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class User : IIdentifiable, IMentionable
+    public class User : IIdentifiable<ulong>, IMentionable
     {
         public ulong Id { get; set; }
         public virtual ICollection<Member> MemberProfiles { get; set; } = new List<Member>();

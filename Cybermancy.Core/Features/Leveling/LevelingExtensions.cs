@@ -18,7 +18,7 @@ namespace Cybermancy.Core.Features.Leveling
             this IQueryable<Member> member,
             ulong guildId, int count = 15, int page = 0) =>
             member.Where(x => x.GuildId == guildId)
-                .OrderByDescending(x => x.Xp)
+                .OrderByDescending(x => x.XpHistory.Sum(x => x.Xp))
                 .Skip(page * 15)
                 .Take(count);
 

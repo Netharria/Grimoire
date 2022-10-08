@@ -83,7 +83,8 @@ namespace Cybermancy.Core
             => this.Set<User>();
         public DbSet<UsernameHistory> UsernameHistory
             => this.Set<UsernameHistory>();
-
+        public DbSet<XpHistory> XpHistory
+            => this.Set<XpHistory>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
             => modelBuilder.ApplyConfigurationsFromAssembly(typeof(CybermancyDbContext).Assembly);
     }

@@ -19,10 +19,15 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class IModuleDatabaseQueryHelperTests
     {
+        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
+
+        [OneTimeSetUp]
+        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
+
         [Test]
         public async Task WhenGetModulesOfTypeCalled_ReturnCorrectTypeofModuleAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
+            var context = this.DatabaseFixture.CreateContext();
 
             var levelingModule = await context.Guilds.GetModulesOfType(Module.Leveling)
                 .OfType<GuildLevelSettings>()

@@ -17,10 +17,16 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class GuildDatabaseQueryHelperTests
     {
+        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
+
+        [OneTimeSetUp]
+        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
+
         [Test]
         public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
+            var context = this.DatabaseFixture.CreateContext();
+            context.Database.BeginTransaction();
             var guildsToAdd = new List<GuildDto>
             {
                 new GuildDto() { Id = 1 },
@@ -30,7 +36,7 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
             var result = await context.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
 
             await context.SaveChangesAsync();
-
+            context.ChangeTracker.Clear();
             result.Should().BeTrue();
             context.Guilds.Should().HaveCount(3);
         }

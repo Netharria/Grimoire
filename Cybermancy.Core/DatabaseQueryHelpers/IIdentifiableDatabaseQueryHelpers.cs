@@ -11,10 +11,14 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
 {
     public static class IIdentifiableDatabaseQueryHelpers
     {
-        public static IQueryable<TSource> WhereIdsAre<TSource>(this IQueryable<TSource> identifiables, ulong[] ids) where TSource : IIdentifiable
+        public static IQueryable<TSource> WhereIdsAre<TSource, T>(this IQueryable<TSource> identifiables, T[] ids)
+            where TSource : IIdentifiable<T>
+            where T : unmanaged, IComparable, IEquatable<T>
             => identifiables.Where(x => ids.Contains(x.Id));
 
-        public static IQueryable<TSource> WhereIdIs<TSource>(this IQueryable<TSource> identifiables, ulong id) where TSource : IIdentifiable
-            => identifiables.Where(x => x.Id == id);
+        public static IQueryable<TSource> WhereIdIs<TSource, T>(this IQueryable<TSource> identifiables, T id)
+            where TSource : IIdentifiable<ulong>
+            where T : unmanaged, IComparable, IEquatable<T>
+            => identifiables.Where(x => x.Id.Equals(id));
     }
 }

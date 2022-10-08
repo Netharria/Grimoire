@@ -9,6 +9,7 @@ using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
+using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
         {
             var member = await this._cybermancyDbContext.Members
                 .WhereMemberHasId(request.UserId, request.GuildId)
+                .Select(x => new { Xp = x.XpHistory.Sum(x => x.Xp )})
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
             if (member is null)
                 return new BaseResponse
@@ -35,7 +37,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
                     Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?"
                 };
 
-            ulong xpToTake;
+            long xpToTake;
             if (request.XpToTake.Equals("All", StringComparison.CurrentCultureIgnoreCase))
                 xpToTake = member.Xp;
             else if (request.XpToTake.Trim().StartsWith('-'))
@@ -44,7 +46,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
                     Success = false,
                     Message = "Xp needs to be a positive value."
                 };
-            else if (!ulong.TryParse(request.XpToTake.Trim(), out xpToTake))
+            else if (!long.TryParse(request.XpToTake.Trim(), out xpToTake))
                 return new BaseResponse
                 {
                     Success = false,
@@ -52,7 +54,15 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
                 };
             if(member.Xp < xpToTake)
                 xpToTake = member.Xp;
-            member.Xp -= xpToTake;
+            await this._cybermancyDbContext.XpHistory.AddAsync(new XpHistory
+                {
+                    UserId = request.UserId,
+                    GuildId = request.GuildId,
+                    Xp = -xpToTake,
+                    Type = XpHistoryType.Reclaimed,
+                    AwarderId = request.ReclaimerId,
+                    TimeOut = DateTimeOffset.UtcNow
+                }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
             return new BaseResponse

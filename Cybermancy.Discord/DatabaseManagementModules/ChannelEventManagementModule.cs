@@ -16,9 +16,13 @@ namespace Cybermancy.Discord.DatabaseManagementModules
 {
     [DiscordChannelCreatedEventSubscriber]
     [DiscordChannelDeletedEventSubscriber]
+    [DiscordThreadCreatedEventSubscriber]
+    [DiscordThreadDeletedEventSubscriber]
     public class ChannelEventManagementModule :
         IDiscordChannelCreatedEventSubscriber,
-        IDiscordChannelDeletedEventSubscriber
+        IDiscordChannelDeletedEventSubscriber,
+        IDiscordThreadCreatedEventSubscriber,
+        IDiscordThreadDeletedEventSubscriber
     {
         private readonly IMediator _mediator;
 
@@ -44,6 +48,20 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                 new DeleteChannelCommand
                 {
                     ChannelId = args.Channel.Id
+                });
+
+        public Task DiscordOnThreadCreated(DiscordClient sender, ThreadCreateEventArgs args)
+            => this._mediator.Send(
+                new AddChannelCommand
+                {
+                    ChannelId = args.Thread.Id,
+                    GuildId = args.Guild.Id
+                });
+        public Task DiscordOnThreadDeleted(DiscordClient sender, ThreadDeleteEventArgs args)
+            => this._mediator.Send(
+                new DeleteChannelCommand
+                {
+                    ChannelId = args.Thread.Id
                 });
     }
 }

@@ -11,7 +11,7 @@ namespace Cybermancy.Domain
 {
     public class Mute : IMember
     {
-        public ulong SinId { get; set; }
+        public long SinId { get; set; }
 
         public virtual Sin Sin { get; set; } = null!;
 
@@ -23,6 +23,6 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTime EndTime { get; set; }
+        public DateTimeOffset EndTime { get; set; }
     }
 }

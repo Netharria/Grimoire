@@ -9,7 +9,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class OldLogMessage : IIdentifiable
+    public class OldLogMessage : IIdentifiable<ulong>
     {
         public ulong Id { get; set; }
 
@@ -21,6 +21,6 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTime CreatedAt { get; }
+        public DateTimeOffset CreatedAt { get; }
     }
 }

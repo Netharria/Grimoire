@@ -7,8 +7,8 @@
 
 using Cybermancy.Core.Features.Logging;
 using Cybermancy.Core.Features.Logging.Queries.GetLogSettings;
-using Cybermancy.Discord.Enums;
 using Cybermancy.Discord.Extensions;
+using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -53,16 +53,16 @@ namespace Cybermancy.Discord.LoggingModule
                     Code = x.Code,
                     Inviter = x.Inviter.GetUsernameWithDiscriminator(),
                     Url = x.ToString(),
-                    Uses = x.Uses }));
+                    Uses = x.Uses }).ToList());
 
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("User Joined")
                 .WithDescription($"**Name:** {args.Member.Mention}\n" +
                     $"**Created on:** {args.Member.CreationTimestamp:MMM dd, yyyy}\n" +
                     $"**Account age:** {accountAge.Days} days old\n" +
-                    $"**Invite used:** {inviteUsed.Url} {inviteUsed.Uses}\n" +
+                    $"**Invite used:** {inviteUsed.Url} ({inviteUsed.Uses} uses)\n" +
                     $"**Created By:** {inviteUsed.Inviter}")
-                .WithCybermancyColor(accountAge < TimeSpan.FromDays(7) ? CybermancyColor.Orange : CybermancyColor.Green)
+                .WithColor(accountAge < TimeSpan.FromDays(7) ? CybermancyColor.Orange : CybermancyColor.Green)
                 .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
                 .WithFooter($"Total Members: {args.Guild.MemberCount}")
@@ -87,14 +87,14 @@ namespace Cybermancy.Discord.LoggingModule
                 .WithDescription($"**Name:** {args.Member.Mention}\n" +
                     $"**Created on:** {args.Member.CreationTimestamp:MMM dd, yyyy}\n" +
                     $"**Account age:** {accountAge.Days} days old\n" +
-                    $"**Joined on:** {args.Member.JoinedAt:MMM dd, yyyy} ({timeOnServer} days ago)")
-                .WithCybermancyColor(CybermancyColor.Purple)
+                    $"**Joined on:** {args.Member.JoinedAt:MMM dd, yyyy} ({timeOnServer.Days} days ago)")
+                .WithColor(CybermancyColor.Purple)
                 .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
                 .WithFooter($"Total Members: {args.Guild.MemberCount}")
                 .WithTimestamp(DateTimeOffset.UtcNow)
-                .AddField($"Roles[{args.Member.Roles.Count() - 1}]",
-                args.Member.Roles.Count() - 1 > 0
+                .AddField($"Roles[{args.Member.Roles.Count()}]",
+                args.Member.Roles.Any()
                 ? string.Join(' ', args.Member.Roles.Where(x => x.Id != args.Guild.Id).Select(x => x.Mention))
                 : "None");
             await logChannel.SendMessageAsync(embed);

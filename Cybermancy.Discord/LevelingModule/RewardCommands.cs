@@ -6,12 +6,12 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Enums;
-using Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.AddReward;
-using Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.RemoveReward;
+using Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
+using Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
 using Cybermancy.Core.Features.Leveling.Queries.GetRewards;
 using Cybermancy.Discord.Attributes;
-using Cybermancy.Discord.Enums;
 using Cybermancy.Discord.Extensions;
+using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -38,12 +38,22 @@ namespace Cybermancy.Discord.LevelingModule
             [Option("Role", "The role to be added as a reward")] DiscordRole role,
             [Option("Level", "The level the reward is awarded at.")] long level)
         {
+            if(level < 0)
+            {
+                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Level can't be negative.");
+                return;
+            }
+            if(level > int.MaxValue)
+            {
+                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Level provided is set too high.");
+                return;
+            }
             var response = await this._mediator.Send(
                 new AddRewardCommand
                 {
                     RoleId = role.Id,
                     GuildId = ctx.Guild.Id,
-                    RewardLevel = (uint)level,
+                    RewardLevel = (int)level,
                 });
 
             if (!response.Success)

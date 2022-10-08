@@ -9,13 +9,13 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class NicknameHistory : IIdentifiable, IMember
+    public class NicknameHistory : IIdentifiable<long>, IMember
     {
-        public ulong Id { get; set; }
+        public long Id { get; set; }
         public ulong UserId { get; set; }
         public virtual Member Member { get; set; } = null!;
         public string Nickname { get; set; } = string.Empty;
-        public DateTime Timestamp { get; }
+        public DateTimeOffset Timestamp { get; }
         public ulong GuildId { get; set; }
         public virtual Guild Guild { get; set; } = null!;
     }

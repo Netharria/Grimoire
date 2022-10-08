@@ -24,7 +24,17 @@ namespace Cybermancy.Core.DatabaseQueryHelpers
                     {
                         UserId = x.UserId,
                         GuildId = x.GuildId,
-                        TimeOut = DateTime.UtcNow
+                        XpHistory = new List<XpHistory>
+                        {
+                            new XpHistory
+                            {
+                                UserId = x.UserId,
+                                GuildId = x.GuildId,
+                                Xp = 0,
+                                Type = XpHistoryType.Created,
+                                TimeOut = DateTime.UtcNow
+                            }
+                        }
                     };
                     if(x.Nickname is not null)
                         member.NicknamesHistory.Add(

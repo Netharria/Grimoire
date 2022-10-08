@@ -19,6 +19,6 @@ namespace Cybermancy.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public uint RewardLevel { get; set; }
+        public int RewardLevel { get; set; }
     }
 }

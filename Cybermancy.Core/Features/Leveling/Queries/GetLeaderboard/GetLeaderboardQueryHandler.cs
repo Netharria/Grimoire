@@ -26,8 +26,8 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
         {
             var RankedMembers = await this._cybermancyDbContext.Members
                 .Where(x => x.GuildId == request.GuildId)
+                .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp), Mention = x.User.Mention() })
                 .OrderByDescending(x => x.Xp)
-                .Select(x => new { x.UserId, x.Xp, Mention = x.User.Mention() })
                 .ToListAsync(cancellationToken: cancellationToken);
 
             var totalMemberCount = RankedMembers.Count;
@@ -38,7 +38,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
                 memberPosition = RankedMembers.FindIndex(x => x.UserId == request.UserId);
 
             if (request.UserId is not null && memberPosition == -1)
-                return new GetLeaderboardQueryResponse { Success = false, Message = "Could not find user on leaderbaord." };
+                return new GetLeaderboardQueryResponse { Success = false, Message = "Could not find user on leaderboard." };
 
             if(memberPosition == -1)
                 memberPosition++;

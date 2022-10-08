@@ -11,15 +11,15 @@ namespace Cybermancy.Core.Extensions
 {
     public static class MemberExtensions
     {
-        public static uint GetLevel(this Member member)
-            => GetLevel(member.Xp,
+        public static int GetLevel(this Member member)
+            => GetLevel(member.XpHistory.Sum(x => x.Xp),
                 member.Guild.LevelSettings.Base,
                 member.Guild.LevelSettings.Modifier);
 
-        public static uint GetLevel(this Member member, uint @base, uint modifier)
-            => GetLevel(member.Xp, @base, modifier);
+        public static int GetLevel(this Member member, int @base, int modifier)
+            => GetLevel(member.XpHistory.Sum(x => x.Xp), @base, modifier);
 
-        public static uint GetLevel(ulong xp, uint @base, uint modifier)
+        public static int GetLevel(long xp, int @base, int modifier)
         {
             var i = 0;
             if (xp > 1000)
@@ -27,58 +27,51 @@ namespace Cybermancy.Core.Extensions
                     (@base * modifier)));
             while (true)
             {
-                var xpNeeded = (ulong)(@base + (
-                    (int)Math.Round(@base *
-                                    (modifier / 100.0) * i) * i));
+                var xpNeeded = @base + (
+                    (long)Math.Round(@base *
+                                    (modifier / 100.0) * i) * i);
                 if (xp < xpNeeded)
-                    return (uint)i + 1;
+                    return i + 1;
 
                 i += 1;
             }
         }
-        public static ulong GetXpNeeded(this Member member)
+        public static long GetXpNeeded(this Member member)
             => GetXpNeeded(
-                member.Xp,
+                member.XpHistory.Sum(x => x.Xp),
                 member.Guild.LevelSettings.Base,
                 member.Guild.LevelSettings.Modifier,
                 0);
 
-        public static ulong GetXpNeeded(this Member member, uint levelModifier)
+        public static long GetXpNeeded(this Member member, int levelModifier)
             => GetXpNeeded(
-                member.Xp,
+                member.XpHistory.Sum(x => x.Xp),
                 member.Guild.LevelSettings.Base,
                 member.Guild.LevelSettings.Modifier,
                 levelModifier);
 
-        public static ulong GetXpNeeded(this Member member, uint @base, uint modifier)
-            => GetXpNeeded(member.Xp, @base, modifier, 0);
+        public static long GetXpNeeded(this Member member, int @base, int modifier)
+            => GetXpNeeded(member.XpHistory.Sum(x => x.Xp), @base, modifier, 0);
 
-        public static ulong GetXpNeeded(this Member member, uint @base, uint modifier, uint levelModifier)
-            => GetXpNeeded(member.Xp, @base, modifier, levelModifier);
+        public static long GetXpNeeded(this Member member, int @base, int modifier, int levelModifier)
+            => GetXpNeeded(member.XpHistory.Sum(x => x.Xp), @base, modifier, levelModifier);
 
-        public static ulong GetXpNeeded(ulong xp, uint @base, uint modifier)
+        public static long GetXpNeeded(long xp, int @base, int modifier)
             => GetXpNeeded(xp, @base, modifier, 0);
 
-        public static ulong GetXpNeeded(ulong xp, uint @base, uint modifier, uint levelModifier)
+        public static long GetXpNeeded(long xp, int @base, int modifier, int levelModifier)
         {
             var currentLevel = GetLevel(xp, @base, modifier);
 
-            if ((int)currentLevel - 2 + (int)levelModifier < 0)
+            if (currentLevel - 2 + levelModifier < 0)
                 return 0;
 
             var level = currentLevel - 2 + levelModifier;
             return level switch
             {
                 0 => @base,
-                _ => @base + ((uint)Math.Round(@base * (modifier / 100.0) * (ulong)level) * (ulong)level)
+                _ => @base + ((long)Math.Round(@base * (modifier / 100.0) * level) * level)
             };
-        }
-
-        public static void GrantXp(this Member member, uint amount, TimeSpan textTime, uint? xpAmount = null)
-        {
-            xpAmount ??= amount;
-            member.Xp += xpAmount.Value;
-            member.TimeOut = DateTime.UtcNow + textTime;
         }
     }
 }

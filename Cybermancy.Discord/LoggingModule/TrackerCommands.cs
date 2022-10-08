@@ -9,8 +9,8 @@ using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker;
 using Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveTracker;
 using Cybermancy.Discord.Attributes;
-using Cybermancy.Discord.Enums;
 using Cybermancy.Discord.Extensions;
+using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -67,7 +67,7 @@ namespace Cybermancy.Discord.LoggingModule
             if (logChannel is null) return;
             await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator} placed a tracker on {member.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}")
-                .WithCybermancyColor(CybermancyColor.Purple));
+                .WithColor(CybermancyColor.Purple));
         }
 
         [SlashCommand("Untrack", "Stops the logging of the user's activity")]
@@ -90,7 +90,7 @@ namespace Cybermancy.Discord.LoggingModule
             if (logChannel is null) return;
             await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator} removed a tracker on {member.Mention}")
-                .WithCybermancyColor(CybermancyColor.Purple));
+                .WithColor(CybermancyColor.Purple));
         }
     }
 }

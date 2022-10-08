@@ -9,7 +9,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Attachment : IIdentifiable
+    public class Attachment : IIdentifiable<ulong>
     {
         public ulong Id { get; set; }
         public ulong MessageId { get; set; }

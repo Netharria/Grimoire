@@ -25,6 +25,6 @@ namespace Cybermancy.Domain
 
         public string Reason { get; set; } = string.Empty;
 
-        public DateTime EndTime { get; set; }
+        public DateTimeOffset EndTime { get; set; }
     }
 }

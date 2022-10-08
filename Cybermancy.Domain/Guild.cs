@@ -9,7 +9,7 @@ using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Domain
 {
-    public class Guild : IIdentifiable
+    public class Guild : IIdentifiable<ulong>
     {
         public ulong Id { get; set; }
 
@@ -36,6 +36,8 @@ namespace Cybermancy.Domain
         public virtual ICollection<Mute> ActiveMutes { get; set; } = new List<Mute>();
 
         public virtual ICollection<Lock> LockedChannels { get; set; } = new List<Lock>();
+
+        public virtual ICollection<XpHistory> XpHistory { get; set; } = new List<XpHistory>();
 
         public virtual GuildLogSettings LogSettings { get; set; } = null!;
 

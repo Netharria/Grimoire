@@ -8,12 +8,12 @@
 using Cybermancy.Core.Responses;
 using MediatR;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.AddReward
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward
 {
     public class AddRewardCommand : IRequest<BaseResponse>
     {
         public ulong RoleId { get; init; }
         public ulong GuildId { get; init; }
-        public uint RewardLevel { get; init; }
+        public int RewardLevel { get; init; }
     }
 }

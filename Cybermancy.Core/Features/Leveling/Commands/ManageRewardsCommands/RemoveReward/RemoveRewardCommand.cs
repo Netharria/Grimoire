@@ -8,7 +8,7 @@
 using Cybermancy.Core.Responses;
 using MediatR;
 
-namespace Cybermancy.Core.Features.Leveling.Commands.MangeRewardsCommands.RemoveReward
+namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward
 {
     public class RemoveRewardCommand : IRequest<BaseResponse>
     {

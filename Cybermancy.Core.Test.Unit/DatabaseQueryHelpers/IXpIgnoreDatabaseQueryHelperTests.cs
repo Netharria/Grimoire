@@ -8,19 +8,25 @@
 using System.Threading.Tasks;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
 namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
 {
     [TestFixture]
-    public class IXpIgnoreDatabaseQueryHelpers
+    public class IXpIgnoreDatabaseQueryHelperTests
     {
+        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
+
+        [OneTimeSetUp]
+        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
+
         [Test]
         public async Task WhenWhereIgnoredCalled_ReturnAllIgnoredItemsAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
+            var context = this.DatabaseFixture.CreateContext();
 
-            var result = context.Members.WhereIgnored();
+            var result = await context.Members.WhereIgnored().ToListAsync();
 
             result.Should().NotBeEmpty().And.AllSatisfy(x => x.IsXpIgnored.Should().BeTrue());
         }
@@ -28,9 +34,9 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhenWhereIgnoredCalled_WithFalseParameter_ReturnAllNotIgnoredItemsAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
+            var context = this.DatabaseFixture.CreateContext();
 
-            var result = context.Members.WhereIgnored(false);
+            var result = await context.Members.WhereIgnored(false).ToListAsync();
 
             result.Should().NotBeEmpty().And.AllSatisfy(x => x.IsXpIgnored.Should().BeFalse());
         }

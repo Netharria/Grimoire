@@ -8,8 +8,8 @@
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand;
 using Cybermancy.Core.Features.Shared.Queries.GetAllModuleStatesForGuild;
-using Cybermancy.Discord.Enums;
 using Cybermancy.Discord.Extensions;
+using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -68,7 +68,7 @@ namespace Cybermancy.Discord.SharedModule
             if (logChannel is null) return;
             await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module.GetName()}")
-                .WithCybermancyColor(CybermancyColor.Purple));
+                .WithColor(CybermancyColor.Purple));
         }
     }
 }

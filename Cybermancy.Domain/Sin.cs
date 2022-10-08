@@ -16,9 +16,9 @@ namespace Cybermancy.Domain
         Ban,
     }
 
-    public class Sin : IIdentifiable, IMember
+    public class Sin : IIdentifiable<long>, IMember
     {
-        public ulong Id { get; set; }
+        public long Id { get; set; }
 
         public ulong UserId { get; set; }
 
@@ -34,7 +34,7 @@ namespace Cybermancy.Domain
 
         public string Reason { get; set; } = string.Empty;
 
-        public DateTime InfractionOn { get; }
+        public DateTimeOffset InfractionOn { get; }
 
         public SinType SinType { get; set; }
 

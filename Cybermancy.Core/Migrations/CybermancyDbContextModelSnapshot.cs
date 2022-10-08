@@ -17,18 +17,15 @@ namespace Cybermancy.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.3")
+                .HasAnnotation("ProductVersion", "6.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Cybermancy.Domain.Attachment", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -83,15 +80,15 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<long>("Amount")
+                    b.Property<int>("Amount")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasDefaultValue(5L);
+                        .HasColumnType("integer")
+                        .HasDefaultValue(5);
 
-                    b.Property<long>("Base")
+                    b.Property<int>("Base")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasDefaultValue(15L);
+                        .HasColumnType("integer")
+                        .HasDefaultValue(15);
 
                     b.Property<decimal?>("LevelChannelLogId")
                         .HasColumnType("numeric(20,0)");
@@ -99,10 +96,10 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal?>("LevelChannelLogsId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<long>("Modifier")
+                    b.Property<int>("Modifier")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasDefaultValue(50L);
+                        .HasColumnType("integer")
+                        .HasDefaultValue(50);
 
                     b.Property<bool>("ModuleEnabled")
                         .ValueGeneratedOnAdd()
@@ -220,7 +217,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("ChannelId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTime>("EndTime")
+                    b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("GuildId")
@@ -259,14 +256,6 @@ namespace Cybermancy.Core.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<DateTime>("TimeOut")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("Xp")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)")
-                        .HasDefaultValue(0m);
-
                     b.HasKey("UserId", "GuildId");
 
                     b.ToTable("Members");
@@ -280,7 +269,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("ChannelId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTime>("CreatedTimestamp")
+                    b.Property<DateTimeOffset>("CreatedTimestamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
@@ -330,7 +319,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("MessageId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTime>("TimeStamp")
+                    b.Property<DateTimeOffset>("TimeStamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
@@ -349,7 +338,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<long>("SinId")
                         .HasColumnType("bigint");
 
-                    b.Property<DateTime>("EndTime")
+                    b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("GuildId")
@@ -383,7 +372,7 @@ namespace Cybermancy.Core.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
-                    b.Property<DateTime>("Timestamp")
+                    b.Property<DateTimeOffset>("Timestamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
@@ -408,7 +397,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("ChannelId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
@@ -436,7 +425,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTime>("PardonDate")
+                    b.Property<DateTimeOffset>("PardonDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
@@ -512,8 +501,8 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<long>("RewardLevel")
-                        .HasColumnType("bigint");
+                    b.Property<int>("RewardLevel")
+                        .HasColumnType("integer");
 
                     b.HasKey("RoleId");
 
@@ -553,7 +542,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTime>("InfractionOn")
+                    b.Property<DateTimeOffset>("InfractionOn")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
@@ -591,7 +580,7 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTime>("EndTime")
+                    b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("LogChannelId")
@@ -629,7 +618,7 @@ namespace Cybermancy.Core.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime>("Timestamp")
+                    b.Property<DateTimeOffset>("Timestamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
@@ -647,6 +636,43 @@ namespace Cybermancy.Core.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UsernameHistory");
+                });
+
+            modelBuilder.Entity("Cybermancy.Domain.XpHistory", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal?>("AwarderId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTimeOffset>("TimeOut")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<long>("Xp")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GuildId");
+
+                    b.HasIndex("AwarderId", "GuildId");
+
+                    b.HasIndex("UserId", "GuildId");
+
+                    b.ToTable("XpHistory");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Attachment", b =>
@@ -1088,6 +1114,32 @@ namespace Cybermancy.Core.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Cybermancy.Domain.XpHistory", b =>
+                {
+                    b.HasOne("Cybermancy.Domain.Guild", "Guild")
+                        .WithMany("XpHistory")
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cybermancy.Domain.Member", "Awarder")
+                        .WithMany("AwardRecipients")
+                        .HasForeignKey("AwarderId", "GuildId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Cybermancy.Domain.Member", "Member")
+                        .WithMany("XpHistory")
+                        .HasForeignKey("UserId", "GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Awarder");
+
+                    b.Navigation("Guild");
+
+                    b.Navigation("Member");
+                });
+
             modelBuilder.Entity("Cybermancy.Domain.Channel", b =>
                 {
                     b.Navigation("Lock")
@@ -1132,11 +1184,15 @@ namespace Cybermancy.Core.Migrations
                     b.Navigation("Sins");
 
                     b.Navigation("Trackers");
+
+                    b.Navigation("XpHistory");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Member", b =>
                 {
                     b.Navigation("ActiveMutes");
+
+                    b.Navigation("AwardRecipients");
 
                     b.Navigation("ChannelsLocked");
 
@@ -1157,6 +1213,8 @@ namespace Cybermancy.Core.Migrations
                     b.Navigation("Trackers");
 
                     b.Navigation("UserSins");
+
+                    b.Navigation("XpHistory");
                 });
 
             modelBuilder.Entity("Cybermancy.Domain.Message", b =>

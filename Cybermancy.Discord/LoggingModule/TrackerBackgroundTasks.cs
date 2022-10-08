@@ -27,6 +27,8 @@ namespace Cybermancy.Discord.LoggingModule
 
         public async Task Handle(TimedNotification notification, CancellationToken cancellationToken)
         {
+            if (notification.Time.Minute != 0)
+                return;
             var response = await _mediator.Send(new RemoveExpiredTrackersCommand(), cancellationToken);
             foreach(var expiredTracker in response.ExpiredTrackers)
             {

@@ -17,26 +17,31 @@ namespace Cybermancy.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class IIdentifiableDatabaseQueryHelperTests
     {
+        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
+
+        [OneTimeSetUp]
+        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
+
         [Test]
         public async Task WhereIdsAre_WhenProvidedValidIds_ReturnsResultAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
+            var context = this.DatabaseFixture.CreateContext();
 
-            var result = await context.Guilds.WhereIdsAre(new ulong[]{ TestCybermancyDbContextFactory.Guild1.Id }).ToArrayAsync();
+            var result = await context.Guilds.WhereIdsAre(new ulong[]{ TestDatabaseFixture.Guild1.Id }).ToArrayAsync();
 
             result.Should().HaveCount(1);
-            result.Should().Contain(TestCybermancyDbContextFactory.Guild1);
+            result.Should().AllSatisfy(x => x.Id.Should().Be(TestDatabaseFixture.Guild1.Id));
         }
 
         [Test]
         public async Task WhereIdIs_WhenProvidedValidId_ReturnsResultAsync()
         {
-            var context = await TestCybermancyDbContextFactory.CreateAsync();
+            var context = this.DatabaseFixture.CreateContext();
 
-            var result = await context.Guilds.WhereIdIs(TestCybermancyDbContextFactory.Guild2.Id).ToArrayAsync();
+            var result = await context.Guilds.WhereIdIs(TestDatabaseFixture.Guild2.Id).ToArrayAsync();
 
             result.Should().HaveCount(1);
-            result.Should().Contain(TestCybermancyDbContextFactory.Guild2);
+            result.Should().AllSatisfy(x => x.Id.Should().Be(TestDatabaseFixture.Guild2.Id));
         }
     }
 }

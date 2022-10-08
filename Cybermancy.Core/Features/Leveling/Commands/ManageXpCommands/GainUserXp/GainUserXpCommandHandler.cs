@@ -8,6 +8,7 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
+using Cybermancy.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,7 +31,8 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
                 .WhereMemberNotIgnored(request.ChannelId, request.RoleIds)
                 .Select(x => new
                 {
-                    Member = x,
+                    Xp = x.XpHistory.Sum(x => x.Xp),
+                    x.XpHistory.OrderByDescending(x => x.TimeOut).First().TimeOut,
                     x.Guild.LevelSettings.Base,
                     x.Guild.LevelSettings.Modifier,
                     x.Guild.LevelSettings.Amount,
@@ -38,14 +40,21 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
                     x.Guild.LevelSettings.TextTime
                 }).FirstOrDefaultAsync(cancellationToken);
 
-            if (result is null || result.Member.TimeOut > DateTime.UtcNow)
+            if (result is null || result.TimeOut > DateTime.UtcNow)
+
                 return new GainUserXpCommandResponse { Success = false };
 
-            var previousLevel = MemberExtensions.GetLevel(result.Member.Xp, result.Base, result.Modifier);
-            var currentLevel = MemberExtensions.GetLevel(result.Member.Xp + result.Amount, result.Base, result.Modifier);
+            var previousLevel = MemberExtensions.GetLevel(result.Xp, result.Base, result.Modifier);
+            var currentLevel = MemberExtensions.GetLevel(result.Xp + result.Amount, result.Base, result.Modifier);
 
-            result.Member.Xp += result.Amount;
-            result.Member.TimeOut += result.TextTime;
+            await this._cybermancyDbContext.XpHistory.AddAsync(new XpHistory
+                {
+                    Xp = result.Amount,
+                    UserId = request.UserId,
+                    GuildId = request.GuildId,
+                    TimeOut = DateTimeOffset.UtcNow + result.TextTime,
+                    Type = XpHistoryType.Earned
+                }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
             var earnedRewards = await this._cybermancyDbContext.Rewards

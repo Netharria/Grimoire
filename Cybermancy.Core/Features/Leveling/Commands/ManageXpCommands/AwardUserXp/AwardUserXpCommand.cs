@@ -15,5 +15,6 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
         public long XpToAward { get; init; }
+        public ulong? AwarderId { get; init; }
     }
 }
