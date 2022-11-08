@@ -9,12 +9,12 @@ using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Features.Logging;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild
 {
-    public class AddGuildCommandHandler : IRequestHandler<AddGuildCommand>
+    public class AddGuildCommandHandler : ICommandHandler<AddGuildCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
         private readonly IInviteService _inviteService;
@@ -25,7 +25,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild
             this._inviteService = inviteService;
         }
 
-        public async Task<Unit> Handle(AddGuildCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddGuildCommand request, CancellationToken cancellationToken)
         {
             var usersAdded = await this._cybermancyDbContext.Users.AddMissingUsersAsync(request.Users, cancellationToken);
 
@@ -47,7 +47,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild
 
             var membersAdded = await this._cybermancyDbContext.Members.AddMissingMembersAsync(request.Members, cancellationToken);
 
-            _inviteService.UpdateAllInvites(request.Invites.ToList());
+            this._inviteService.UpdateAllInvites(request.Invites.ToList());
 
             if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded)
                 await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

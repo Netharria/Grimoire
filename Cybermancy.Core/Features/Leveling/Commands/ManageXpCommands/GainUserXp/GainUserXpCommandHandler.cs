@@ -9,12 +9,12 @@ using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
 {
-    public class GainUserXpCommandHandler : IRequestHandler<GainUserXpCommand, GainUserXpCommandResponse>
+    public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainUserXpCommandResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -23,7 +23,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GainUserXpCommandResponse> Handle(GainUserXpCommand request, CancellationToken cancellationToken)
+        public async ValueTask<GainUserXpCommandResponse> Handle(GainUserXpCommand request, CancellationToken cancellationToken)
         {
             var result = await this._cybermancyDbContext.Members
                 .WhereMemberHasId(request.UserId, request.GuildId)

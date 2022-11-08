@@ -10,12 +10,12 @@ using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp
 {
-    public class ReclaimUserXpCommandHandler : IRequestHandler<ReclaimUserXpCommand, BaseResponse>
+    public class ReclaimUserXpCommandHandler : ICommandHandler<ReclaimUserXpCommand, BaseResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -24,7 +24,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BaseResponse> Handle(ReclaimUserXpCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(ReclaimUserXpCommand request, CancellationToken cancellationToken)
         {
             var member = await this._cybermancyDbContext.Members
                 .WhereMemberHasId(request.UserId, request.GuildId)

@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Queries.GetAllTrackersForUser
 {
-    public class GetAllTrackersForUserQueryResponse : BaseResponse
+    public sealed record GetAllTrackersForUserQueryResponse : BaseResponse
     {
         public UserTracker[] Trackers { get; init; } = Array.Empty<UserTracker>();
     }

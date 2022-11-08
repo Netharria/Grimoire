@@ -10,12 +10,12 @@ using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp
 {
-    public class AwardUserXpCommandHandler : IRequestHandler<AwardUserXpCommand, BaseResponse>
+    public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, BaseResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -24,7 +24,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BaseResponse> Handle(AwardUserXpCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(AwardUserXpCommand request, CancellationToken cancellationToken)
         {
             if (request.XpToAward < 0)
                 return new BaseResponse { Success = false, Message = "Xp needs to be a positive value." };

@@ -13,7 +13,7 @@ using Cybermancy.Discord.Extensions;
 using Cybermancy.Domain;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
-using MediatR;
+using Mediator;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.DatabaseManagementModules
@@ -41,8 +41,8 @@ namespace Cybermancy.Discord.DatabaseManagementModules
             this._inviteService = inviteService;
         }
 
-        public Task DiscordOnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
-            => this._mediator.Send(new UpdateAllGuildsCommand
+        public async Task DiscordOnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
+            => await this._mediator.Send(new UpdateAllGuildsCommand
             {
                 Guilds = args.Guilds.Keys.Select(x => new GuildDto { Id = x }),
                 Users = args.Guilds.Values.SelectMany(x => x.Members)
@@ -148,7 +148,7 @@ namespace Cybermancy.Discord.DatabaseManagementModules
 
         public Task DiscordOnInviteCreated(DiscordClient sender, InviteCreateEventArgs args)
         {
-            _inviteService.UpdateInvite(
+            this._inviteService.UpdateInvite(
                 new Invite
                 {
                     Code = args.Invite.Code,
@@ -161,7 +161,7 @@ namespace Cybermancy.Discord.DatabaseManagementModules
         public async Task DiscordOnInviteDeleted(DiscordClient sender, InviteDeleteEventArgs args)
         {
             await Task.Delay(TimeSpan.FromSeconds(5));
-            _inviteService.DeleteInvite(args.Invite.Code);
+            this._inviteService.DeleteInvite(args.Invite.Code);
         }
     }
 }

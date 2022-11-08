@@ -12,7 +12,7 @@ using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using MediatR;
+using Mediator;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.LoggingModule
@@ -41,7 +41,7 @@ namespace Cybermancy.Discord.LoggingModule
         
         public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
-            var response = await _mediator.Send(new GetTrackerQuery{ UserId = args.Author.Id, GuildId = args.Guild.Id });
+            var response = await this._mediator.Send(new GetTrackerQuery{ UserId = args.Author.Id, GuildId = args.Guild.Id });
             if (response is null) return;
 
             var loggingChannel = args.Guild.Channels.GetValueOrDefault(response.TrackerChannelId);
@@ -120,7 +120,7 @@ namespace Cybermancy.Discord.LoggingModule
         }
         public async Task DiscordOnVoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args)
         {
-            var response = await _mediator.Send(new GetTrackerQuery{ UserId = args.User.Id, GuildId = args.Guild.Id });
+            var response = await this._mediator.Send(new GetTrackerQuery{ UserId = args.User.Id, GuildId = args.Guild.Id });
             if (response is null) return;
 
             var loggingChannel = args.Guild.Channels.GetValueOrDefault(response.TrackerChannelId);
@@ -160,7 +160,7 @@ namespace Cybermancy.Discord.LoggingModule
         }
         public async Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
         {
-            var response = await _mediator.Send(new GetTrackerQuery{ UserId = args.Member.Id, GuildId = args.Guild.Id });
+            var response = await this._mediator.Send(new GetTrackerQuery{ UserId = args.Member.Id, GuildId = args.Guild.Id });
             if (response is null) return;
             if (args.NicknameBefore != args.NicknameAfter)
             {
@@ -201,7 +201,7 @@ namespace Cybermancy.Discord.LoggingModule
 
         public async Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args)
         {
-            var response = await _mediator.Send(new GetAllTrackersForUserQuery{ UserId = args.UserAfter.Id });
+            var response = await this._mediator.Send(new GetAllTrackersForUserQuery{ UserId = args.UserAfter.Id });
             foreach(var tracker in response.Trackers)
             {
                 var guild = sender.Guilds.GetValueOrDefault(tracker.GuildId);

@@ -7,11 +7,11 @@
 
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Core.Responses;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain
 {
-    public class UpdateIgnoreStateForXpGainCommand : IRequest<BaseResponse>
+    public sealed class UpdateIgnoreStateForXpGainCommand : ICommand<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public UserDto[] Users { get; init; } = Array.Empty<UserDto>();

@@ -8,12 +8,12 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage
 {
-    public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand, UpdateMessageCommandResponse>
+    public class UpdateMessageCommandHandler : ICommandHandler<UpdateMessageCommand, UpdateMessageCommandResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Updat
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<UpdateMessageCommandResponse> Handle(UpdateMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand request, CancellationToken cancellationToken)
         {
             var message = await this._cybermancyDbContext.Messages
                 .WhereLoggingIsEnabled()

@@ -5,11 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel
 {
-    public class AddChannelCommand : IRequest
+    public sealed record AddChannelCommand : ICommand
     {
         public ulong GuildId { get; init; }
         public ulong ChannelId { get; init; }

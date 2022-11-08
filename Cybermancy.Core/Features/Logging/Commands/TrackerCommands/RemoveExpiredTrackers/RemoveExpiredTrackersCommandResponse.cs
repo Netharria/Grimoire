@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers
 {
-    public class RemoveExpiredTrackersCommandResponse : BaseResponse
+    public sealed record RemoveExpiredTrackersCommandResponse : BaseResponse
     {
         public ExpiredTracker[] ExpiredTrackers { get; init; } = Array.Empty<ExpiredTracker>();
     }

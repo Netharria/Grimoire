@@ -6,11 +6,12 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
-using MediatR;
+using Mediator;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteOldMessages
 {
-    public class DeleteOldMessagesCommandHandler : IRequestHandler<DeleteOldMessagesCommand>
+    public class DeleteOldMessagesCommandHandler : ICommandHandler<DeleteOldMessagesCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -19,11 +20,12 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(DeleteOldMessagesCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(DeleteOldMessagesCommand request, CancellationToken cancellationToken)
         {
             var oldDate = DateTime.UtcNow - TimeSpan.FromDays(31);
-            var oldMessages = this._cybermancyDbContext.Messages
-                .Where(x => x.CreatedTimestamp  == oldDate);
+            var oldMessages = await this._cybermancyDbContext.Messages
+                .Where(x => x.CreatedTimestamp  == oldDate)
+                .ToArrayAsync(cancellationToken: cancellationToken);
             this._cybermancyDbContext.Messages.RemoveRange(oldMessages);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;

@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
 {
-    public class GainUserXpCommandResponse : BaseResponse
+    public sealed record GainUserXpCommandResponse : BaseResponse
     {
         public ulong[] EarnedRewards { get; init; } = Array.Empty<ulong>();
         public int PreviousLevel { get; init; }

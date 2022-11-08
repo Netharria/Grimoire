@@ -6,11 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel
 {
-    public class AddChannelCommandHandler : IRequestHandler<AddChannelCommand>
+    public class AddChannelCommandHandler : ICommandHandler<AddChannelCommand>
     {
         private readonly CybermancyDbContext _cybermancyDbContext;
 
@@ -19,7 +19,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(AddChannelCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddChannelCommand request, CancellationToken cancellationToken)
         {
             await this._cybermancyDbContext.Channels.AddAsync(new Channel
                 {

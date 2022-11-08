@@ -5,28 +5,33 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
-using MediatR.Pipeline;
+using Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace Cybermancy.Core.Features.Shared.PipelineBehaviors
 {
-    public class ErrorLoggingBehavior<TRequest, TResponse, TException> : IRequestExceptionHandler<TRequest, TResponse, TException>
-        where TRequest : IRequest<TResponse>
-        where TException : Exception
+    public class ErrorLoggingBehavior<TMessage, TResponse> : IPipelineBehavior<TMessage, TResponse>
+        where TMessage : IMessage
     {
-        private readonly ILogger<ErrorLoggingBehavior<TRequest, TResponse, TException>> _logger;
+        private readonly ILogger<ErrorLoggingBehavior<TMessage, TResponse>> _logger;
 
-        public ErrorLoggingBehavior(ILogger<ErrorLoggingBehavior<TRequest, TResponse, TException>> logger)
+        public ErrorLoggingBehavior(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger)
         {
             this._logger = logger;
         }
 
-        public Task Handle(TRequest request, TException exception, RequestExceptionHandlerState<TResponse> state, CancellationToken cancellationToken)
+        public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
         {
-            this._logger.LogError("Exception Thrown on {RequestType} - {ErrorMessage} - {ErrorStackTrace}",
-                typeof(TRequest).Name, exception.Message, exception.StackTrace);
-            return Task.CompletedTask;
+            try
+            {
+                return await next(message, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                this._logger.LogError("Exception Thrown on {RequestType} - {ErrorMessage} - {ErrorStackTrace}",
+                typeof(TMessage).Name, e.Message, e.StackTrace);
+                throw;
+            }
         }
     }
 }

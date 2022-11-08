@@ -9,12 +9,12 @@ using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessage
 {
-    public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand, DeleteMessageCommandResponse>
+    public class DeleteMessageCommandHandler : ICommandHandler<DeleteMessageCommand, DeleteMessageCommandResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -23,7 +23,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<DeleteMessageCommandResponse> Handle(DeleteMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<DeleteMessageCommandResponse> Handle(DeleteMessageCommand request, CancellationToken cancellationToken)
         {
             var message = await this._cybermancyDbContext.Messages
                 .WhereIdIs(request.Id)

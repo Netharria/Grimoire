@@ -7,12 +7,12 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Responses;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.SetLogSettings
 {
-    public class SetLoggingSettingsCommandHandler : IRequestHandler<SetLoggingSettingsCommand, BaseResponse>
+    public class SetLoggingSettingsCommandHandler : ICommandHandler<SetLoggingSettingsCommand, BaseResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.SetLogSettings
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BaseResponse> Handle(SetLoggingSettingsCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(SetLoggingSettingsCommand request, CancellationToken cancellationToken)
         {
             var guild = await this._cybermancyDbContext.GuildLogSettings.FirstOrDefaultAsync(x => x.GuildId == request.GuildId, cancellationToken);
             if (guild == null) return new BaseResponse { Success = false, Message = "Could not find guild log settings.." };

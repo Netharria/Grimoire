@@ -7,11 +7,11 @@
 
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds
 {
-    public class UpdateAllGuildsCommand : IRequest
+    public sealed record UpdateAllGuildsCommand : ICommand
     {
         public IEnumerable<GuildDto> Guilds { get; init; } = Enumerable.Empty<GuildDto>();
         public IEnumerable<UserDto> Users { get; init; } = Enumerable.Empty<UserDto>();

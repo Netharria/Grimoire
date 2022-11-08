@@ -10,7 +10,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessage
 {
-    public class GetMessageQueryResponse : BaseResponse
+    public sealed record GetMessageQueryResponse : BaseResponse
     {
         public ulong AuthorId { get; init; }
         public ulong ChannelId { get; init; }

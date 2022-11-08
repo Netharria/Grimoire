@@ -5,11 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser
 {
-    public class UpdateUserCommand : IRequest
+    public sealed record UpdateUserCommand : ICommand
     {
         public ulong UserId { get; init; }
         public string UserName { get; init; } = string.Empty;

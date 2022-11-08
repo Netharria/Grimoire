@@ -7,11 +7,11 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.RoleCommands.AddRole
 {
-    public class AddRoleCommandHandler : IRequestHandler<AddRoleCommand>
+    public class AddRoleCommandHandler : ICommandHandler<AddRoleCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -20,7 +20,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.RoleCommands.AddRole
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(AddRoleCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddRoleCommand request, CancellationToken cancellationToken)
         {
             await this._cybermancyDbContext.Roles.AddAsync(new Role
                 {

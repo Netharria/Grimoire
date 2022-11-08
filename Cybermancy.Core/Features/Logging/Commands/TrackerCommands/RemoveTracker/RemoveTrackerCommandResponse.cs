@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveTracker
 {
-    public class RemoveTrackerCommandResponse : BaseResponse
+    public sealed record RemoveTrackerCommandResponse : BaseResponse
     {
         public ulong? ModerationLogId { get; init; }
         public ulong TrackerChannelId { get; init; }

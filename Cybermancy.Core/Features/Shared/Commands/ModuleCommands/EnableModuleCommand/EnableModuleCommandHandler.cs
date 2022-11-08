@@ -7,12 +7,12 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand
 {
-    public class EnableModuleCommandHandler : IRequestHandler<EnableModuleCommand, EnableModuleCommandResponse>
+    public class EnableModuleCommandHandler : ICommandHandler<EnableModuleCommand, EnableModuleCommandResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCo
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<EnableModuleCommandResponse> Handle(EnableModuleCommand request, CancellationToken cancellationToken)
+        public async ValueTask<EnableModuleCommandResponse> Handle(EnableModuleCommand request, CancellationToken cancellationToken)
         {
             var guildModule = await this._cybermancyDbContext.Guilds
                 .WhereIdIs(request.GuildId)

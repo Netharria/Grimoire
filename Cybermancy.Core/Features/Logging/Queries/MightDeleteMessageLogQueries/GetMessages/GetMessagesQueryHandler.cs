@@ -8,7 +8,7 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Features.Shared.SharedDtos;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessages
@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetMessagesQueryResponse> Handle(GetMessagesQuery request, CancellationToken cancellationToken)
+        public async ValueTask<GetMessagesQueryResponse> Handle(GetMessagesQuery request, CancellationToken cancellationToken)
         {
             var results = await this._cybermancyDbContext.Messages
                 .WhereIdsAre(request.MesssageIds)

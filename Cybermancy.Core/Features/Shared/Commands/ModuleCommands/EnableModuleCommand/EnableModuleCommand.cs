@@ -6,11 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Enums;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand
 {
-    public class EnableModuleCommand : IRequest<EnableModuleCommandResponse>
+    public sealed record EnableModuleCommand : ICommand<EnableModuleCommandResponse>
     {
         public ulong GuildId { get; init; }
         public Module Module { get; init; }

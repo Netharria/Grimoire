@@ -1,9 +1,7 @@
-using System.Reflection;
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Features.Logging;
 using Cybermancy.Core.Features.Shared.PipelineBehaviors;
-using MediatR;
-using MediatR.Pipeline;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,12 +17,13 @@ namespace Cybermancy.Core
             services.AddDbContext<CybermancyDbContext>(options =>
                 options.UseNpgsql(
                     configuration.GetConnectionString("CybermancyConnectionString"))
-                    .EnableDetailedErrors().EnableSensitiveDataLogging(false))
+                    /*.EnableDetailedErrors().EnableSensitiveDataLogging(false)*/,
+                    ServiceLifetime.Transient)
+
                 .AddSingleton<IInviteService, InviteService>()
-                .AddScoped<ICybermancyDbContext, CybermancyDbContext>()
-                .AddMediatR(Assembly.GetExecutingAssembly())
+                .AddTransient<ICybermancyDbContext, CybermancyDbContext>()
                 .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
-                .AddScoped(typeof(IRequestExceptionHandler<,,>), typeof(ErrorLoggingBehavior<,,>));
+                .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>));
             return services;
         }
     }

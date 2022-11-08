@@ -5,11 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers
 {
-    public class RemoveExpiredTrackersCommand : IRequest<RemoveExpiredTrackersCommandResponse>
+    public sealed record RemoveExpiredTrackersCommand : ICommand<RemoveExpiredTrackersCommandResponse>
     {
     }
 }

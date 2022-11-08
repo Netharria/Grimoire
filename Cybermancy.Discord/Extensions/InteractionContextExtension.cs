@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Text.RegularExpressions;
 using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -42,6 +43,41 @@ namespace Cybermancy.Discord.Extensions
             {
                 Console.WriteLine(e);
             }
+        }
+
+        public static async ValueTask<(bool, ulong)> TryMatchStringToChannelAsync(this InteractionContext ctx, string s)
+        {
+            var parsedvalue = Regex.Match(s, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
+            if (!ulong.TryParse(parsedvalue, out var parsedId))
+            {
+                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Please give a valid channel.");
+                return (false, 0);
+            }
+            if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
+            {
+                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Did not find that channel on this server.");
+                return(false, 0);
+            }
+
+            return(true, parsedId);
+        }
+
+        public static async ValueTask<(bool, ulong)> TryMatchStringToChannelOrDefaultAsync(this InteractionContext ctx, string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return (true, ctx.Channel.Id);
+            var parsedvalue = Regex.Match(s, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
+            if (!ulong.TryParse(parsedvalue, out var parsedId))
+            {
+                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Please give a valid channel.");
+                return (false, 0);
+            }
+            if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
+            {
+                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Did not find that channel on this server.");
+                return (false, 0);
+            }
+
+            return (true, parsedId);
         }
     }
 }

@@ -6,11 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Logging.Commands.DeleteOldLogMessages
 {
-    public class DeleteOldLogMessagesCommandHandler : IRequestHandler<DeleteOldLogMessagesCommand>
+    public class DeleteOldLogMessagesCommandHandler : ICommandHandler<DeleteOldLogMessagesCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -19,7 +19,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.DeleteOldLogMessages
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(DeleteOldLogMessagesCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(DeleteOldLogMessagesCommand request, CancellationToken cancellationToken)
         {
             var messages = this._cybermancyDbContext.OldLogMessages
                 .Where(oldLogMessage =>

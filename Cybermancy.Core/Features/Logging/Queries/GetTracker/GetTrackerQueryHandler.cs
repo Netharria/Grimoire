@@ -7,7 +7,7 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Queries.GetTracker
@@ -21,8 +21,8 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetTracker
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public Task<GetTrackerQueryResponse?> Handle(GetTrackerQuery request, CancellationToken cancellationToken)
-            => _cybermancyDbContext.Trackers
+        public async ValueTask<GetTrackerQueryResponse?> Handle(GetTrackerQuery request, CancellationToken cancellationToken)
+            =>  await this._cybermancyDbContext.Trackers
             .WhereMemberIs(request.UserId, request.GuildId)
             .Select(x => new GetTrackerQueryResponse
             {

@@ -9,12 +9,12 @@ using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward
 {
-    public class RemoveRewardCommandHandler : IRequestHandler<RemoveRewardCommand, BaseResponse>
+    public class RemoveRewardCommandHandler : ICommandHandler<RemoveRewardCommand, BaseResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -23,7 +23,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.Remov
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BaseResponse> Handle(RemoveRewardCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(RemoveRewardCommand request, CancellationToken cancellationToken)
         {
             var result = await this._cybermancyDbContext.Rewards
                 .FirstOrDefaultAsync(x => x.RoleId == request.RoleId, cancellationToken);

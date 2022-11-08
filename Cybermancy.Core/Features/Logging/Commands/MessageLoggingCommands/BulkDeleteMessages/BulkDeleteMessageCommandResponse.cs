@@ -10,7 +10,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages
 {
-    public class BulkDeleteMessageCommandResponse : BaseResponse
+    public sealed record BulkDeleteMessageCommandResponse : BaseResponse
     {
         public IEnumerable<MessageDto> Messages { get; init; } = Enumerable.Empty<MessageDto>();
         public ulong? BulkDeleteLogChannelId { get; init; }

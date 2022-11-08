@@ -6,11 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Responses;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
 {
-    public class GetIgnoredItemsQuery : IRequest<BaseResponse>
+    public sealed record GetIgnoredItemsQuery : IRequest<BaseResponse>
     {
         public ulong GuildId { get; init; }
     }

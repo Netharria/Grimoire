@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Queries.GetAllTrackersForUser
@@ -20,11 +20,11 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetAllTrackersForUser
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetAllTrackersForUserQueryResponse> Handle(GetAllTrackersForUserQuery request, CancellationToken cancellationToken)
+        public async ValueTask<GetAllTrackersForUserQueryResponse> Handle(GetAllTrackersForUserQuery request, CancellationToken cancellationToken)
             => new GetAllTrackersForUserQueryResponse
             {
                 Success = true,
-                Trackers = await _cybermancyDbContext.Trackers
+                Trackers = await this._cybermancyDbContext.Trackers
                     .Where(x => x.UserId == request.UserId)
                     .Select(x => new UserTracker
                     {

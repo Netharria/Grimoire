@@ -7,11 +7,11 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Logging.Commands.AddLogMessage
 {
-    public class AddLogMessageCommandHandler : IRequestHandler<AddLogMessageCommand>
+    public class AddLogMessageCommandHandler : ICommandHandler<AddLogMessageCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -20,7 +20,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.AddLogMessage
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(AddLogMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddLogMessageCommand request, CancellationToken cancellationToken)
         {
             var logMessage = new OldLogMessage
             {

@@ -7,12 +7,12 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
 {
-    public class AddMemberCommandHandler : IRequestHandler<AddMemberCommand>
+    public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(AddMemberCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddMemberCommand request, CancellationToken cancellationToken)
         {
             var userExists = await this._cybermancyDbContext.Users.AnyAsync(x => x.Id == request.UserId, cancellationToken);
             var memberExists = await this._cybermancyDbContext.Members.AnyAsync(x => x.UserId == request.UserId && x.GuildId == request.GuildId, cancellationToken);

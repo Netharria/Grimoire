@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Text.RegularExpressions;
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Logging.Commands.SetLogSettings;
 using Cybermancy.Core.Features.Logging.Queries.GetLogSettings;
@@ -15,7 +14,7 @@ using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Discord.LoggingModule
 {
@@ -85,28 +84,16 @@ namespace Cybermancy.Discord.LoggingModule
         public async Task SetAsync(
             InteractionContext ctx,
             [Option("Setting", "The Setting to change.")] LoggingSetting loggingSetting,
-            [Option("Value", "The value to change the setting to. 0 is off.")] string value)
+            [Option("Value", "The value to change the setting to. 0 is off. Empty is current channel")] string? value = null)
         {
-            var parsedValue = Regex.Match(value, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
-            if (ulong.TryParse(parsedValue, out var channelId))
-            {
-                if (!ctx.Guild.Channels.Any(x => x.Key == channelId) && channelId != 0)
-                {
-                    await ctx.ReplyAsync(CybermancyColor.Orange, message: "Did not find that channel on this server.");
-                    return;
-                }
-            }
-            else
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Please give a valid channel.");
-                return;
-            }
+            (var success, var result) = await ctx.TryMatchStringToChannelOrDefaultAsync(value);
+            if (!success) return;
 
             var response = await this._mediator.Send(new SetLoggingSettingsCommand
             {
                 GuildId = ctx.Guild.Id,
                 LogSetting = loggingSetting,
-                ChannelId = channelId == 0 ? null : channelId
+                ChannelId = result == 0 ? null : result
             });
 
             if (!response.Success)

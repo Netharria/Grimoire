@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand
 {
-    public class EnableModuleCommandResponse : BaseResponse
+    public sealed record EnableModuleCommandResponse : BaseResponse
     {
         public ulong? ModerationLog { get; init; }
     }

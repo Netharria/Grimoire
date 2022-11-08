@@ -7,12 +7,12 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
 {
-    public class AddTrackerCommandHandler : IRequestHandler<AddTrackerCommand, AddTrackerCommandResponse>
+    public class AddTrackerCommandHandler : ICommandHandler<AddTrackerCommand, AddTrackerCommandResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<AddTrackerCommandResponse> Handle(AddTrackerCommand request, CancellationToken cancellationToken)
+        public async ValueTask<AddTrackerCommandResponse> Handle(AddTrackerCommand request, CancellationToken cancellationToken)
         {
             var trackerEndTime = request.DurationType switch
             {
@@ -31,7 +31,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
                 _ => throw new NotImplementedException(),
             };
 
-            var result = await _cybermancyDbContext.Trackers
+            var result = await this._cybermancyDbContext.Trackers
                 .Where(x => x.UserId == request.UserId && x.GuildId == request.GuildId)
                 .Select(x => new { Tracker = x, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
@@ -52,7 +52,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
                 result.Tracker.EndTime = trackerEndTime;
                 result.Tracker.ModeratorId = request.ModeratorId;
             }
-            await _cybermancyDbContext.SaveChangesAsync(cancellationToken);
+            await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return new AddTrackerCommandResponse
             {
                 Success = true,

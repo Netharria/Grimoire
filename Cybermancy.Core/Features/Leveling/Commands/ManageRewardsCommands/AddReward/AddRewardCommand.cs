@@ -6,11 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Responses;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward
 {
-    public class AddRewardCommand : IRequest<BaseResponse>
+    public sealed record AddRewardCommand : ICommand<BaseResponse>
     {
         public ulong RoleId { get; init; }
         public ulong GuildId { get; init; }

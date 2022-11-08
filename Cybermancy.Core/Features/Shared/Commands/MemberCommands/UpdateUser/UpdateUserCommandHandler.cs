@@ -7,12 +7,12 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser
 {
-    public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand>
+    public class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -21,7 +21,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
         {
             var userName = await this._cybermancyDbContext.UsernameHistory
                 .Where(x => x.UserId == request.UserId)

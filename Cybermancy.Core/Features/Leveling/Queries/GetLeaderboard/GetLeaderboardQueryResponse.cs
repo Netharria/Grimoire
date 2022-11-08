@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
 {
-    public class GetLeaderboardQueryResponse : BaseResponse
+    public sealed record GetLeaderboardQueryResponse : BaseResponse
     {
         public string LeaderboardText { get; init; } = string.Empty;
         public int TotalUserCount { get; init; }

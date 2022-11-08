@@ -5,11 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.DeleteChannel
 {
-    public class DeleteChannelCommand : IRequest
+    public sealed record DeleteChannelCommand : ICommand
     {
         public ulong ChannelId { get; init; }
     }

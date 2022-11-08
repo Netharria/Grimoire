@@ -6,12 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
-using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.RoleCommands.DeleteRole
 {
-    public class DeleteRoleCommandHandler : IRequestHandler<DeleteRoleCommand>
+    public class DeleteRoleCommandHandler : ICommandHandler<DeleteRoleCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -20,9 +19,10 @@ namespace Cybermancy.Core.Features.Shared.Commands.RoleCommands.DeleteRole
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(DeleteRoleCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(DeleteRoleCommand request, CancellationToken cancellationToken)
         {
-            this._cybermancyDbContext.Roles.Remove(new Role { Id = request.RoleId });
+
+            this._cybermancyDbContext.Roles.Remove(this._cybermancyDbContext.Roles.First(x => x.Id == request.RoleId));
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }

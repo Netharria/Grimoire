@@ -8,7 +8,7 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetLevelQueryResponse> Handle(GetLevelQuery request, CancellationToken cancellationToken)
+        public async ValueTask<GetLevelQueryResponse> Handle(GetLevelQuery request, CancellationToken cancellationToken)
         {
             var member = await this._cybermancyDbContext.Members
                 .WhereMemberHasId(request.UserId, request.GuildId)

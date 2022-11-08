@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Queries.GetLogSettings
 {
-    public class GetLoggingSettingsQueryResponse : BaseResponse
+    public sealed record GetLoggingSettingsQueryResponse : BaseResponse
     {
         public ulong? JoinChannelLog { get; init; }
         public ulong? LeaveChannelLog { get; init; }

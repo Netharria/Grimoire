@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Queries.GetLogSettings
@@ -19,9 +19,9 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetLogSettings
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public Task<GetLoggingSettingsQueryResponse> Handle(GetLoggingSettingsQuery request, CancellationToken cancellationToken)
+        public async ValueTask<GetLoggingSettingsQueryResponse> Handle(GetLoggingSettingsQuery request, CancellationToken cancellationToken)
         {
-            return this._cybermancyDbContext.GuildLogSettings
+            return await this._cybermancyDbContext.GuildLogSettings
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => new GetLoggingSettingsQueryResponse
                 {

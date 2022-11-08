@@ -6,39 +6,36 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace Cybermancy.Core.Features.Shared.PipelineBehaviors
 {
-    public class RequestTimingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-        where TRequest : IRequest<TResponse>
+    public class RequestTimingBehavior<TMessage, TResponse> : IPipelineBehavior<TMessage, TResponse>
+        where TMessage : IMessage
     {
-        private readonly ILogger<RequestTimingBehavior<TRequest, TResponse>> _logger;
+        private readonly ILogger<RequestTimingBehavior<TMessage, TResponse>> _logger;
 
-        public RequestTimingBehavior(ILogger<RequestTimingBehavior<TRequest, TResponse>> logger)
+        public RequestTimingBehavior(ILogger<RequestTimingBehavior<TMessage, TResponse>> logger)
         {
             this._logger = logger;
         }
 
-        public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
         {
-            TResponse response;
             var stopwatch = Stopwatch.StartNew();
 
             try
             {
-                response = await next();
+                return await next(message, cancellationToken);
             }
             finally
             {
                 stopwatch.Stop();
-                if(stopwatch.ElapsedMilliseconds > 100)
+                if (stopwatch.ElapsedMilliseconds > 100)
                     this._logger.LogWarning(
-                    "{ReqestType}; Execution time={ElapsedTime}ms", request.GetType(), stopwatch.ElapsedMilliseconds);
+                    "{ReqestType}; Execution time={ElapsedTime}ms", message.GetType(), stopwatch.ElapsedMilliseconds);
             }
-
-            return response;
         }
     }
 }

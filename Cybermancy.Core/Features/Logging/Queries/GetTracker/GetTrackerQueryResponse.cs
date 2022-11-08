@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Queries.GetTracker
 {
-    public class GetTrackerQueryResponse : BaseResponse
+    public sealed record GetTrackerQueryResponse : BaseResponse
     {
         public ulong TrackerChannelId { get; init; }
     }

@@ -11,7 +11,7 @@ using Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser;
 using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
-using MediatR;
+using Mediator;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.DatabaseManagementModules
@@ -31,8 +31,8 @@ namespace Cybermancy.Discord.DatabaseManagementModules
             this._mediator = mediator;
         }
 
-        public Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
-            => this._mediator.Send(
+        public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
+            => await this._mediator.Send(
                 new AddMemberCommand
                 {
                     Nickname = string.IsNullOrWhiteSpace(args.Member.DisplayName) ? null : args.Member.DisplayName,
@@ -41,8 +41,8 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                     UserName = args.Member.GetUsernameWithDiscriminator()
                 });
 
-        public Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
-            => this._mediator.Send(
+        public async Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
+            => await this._mediator.Send(
                 new UpdateMemberCommand
                 {
                     Nickname = string.IsNullOrWhiteSpace(args.NicknameAfter) ? null : args.NicknameAfter,
@@ -50,8 +50,8 @@ namespace Cybermancy.Discord.DatabaseManagementModules
                     UserId = args.Member.Id,
                 });
 
-        public Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args)
-            => this._mediator.Send(
+        public async Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args)
+            => await this._mediator.Send(
                 new UpdateUserCommand
                 {
                     UserId = args.UserAfter.Id,

@@ -8,7 +8,7 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetRewards
@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetRewards
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BaseResponse> Handle(GetRewardsQuery request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(GetRewardsQuery request, CancellationToken cancellationToken)
         {
             var rewards = await this._cybermancyDbContext.Rewards
                 .Where(x => x.GuildId == request.GuildId)

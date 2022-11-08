@@ -7,7 +7,7 @@
 
 using System.Text;
 using Cybermancy.Core.Contracts.Persistance;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
@@ -24,7 +24,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BaseResponse> Handle(GetIgnoredItemsQuery request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(GetIgnoredItemsQuery request, CancellationToken cancellationToken)
         {
 
             var ignoredItems = await this._cybermancyDbContext.Guilds

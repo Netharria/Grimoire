@@ -6,11 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Responses;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Logging.Commands.SetLogSettings
 {
-    public class SetLoggingSettingsCommand : IRequest<BaseResponse>
+    public sealed record SetLoggingSettingsCommand : ICommand<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public LoggingSetting LogSetting { get; init; }

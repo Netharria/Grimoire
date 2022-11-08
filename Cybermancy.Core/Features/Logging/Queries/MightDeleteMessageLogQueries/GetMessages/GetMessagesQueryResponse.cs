@@ -10,7 +10,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessages
 {
-    public class GetMessagesQueryResponse : BaseResponse
+    public sealed record GetMessagesQueryResponse : BaseResponse
     {
         public IEnumerable<MessageDto> Messages { get; init; } = Enumerable.Empty<MessageDto>();
     }

@@ -9,13 +9,13 @@ using System.Text;
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Cybermancy.Core.Responses;
 using Cybermancy.Core.Features.Shared.SharedDtos;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain
 {
-    public class UpdateIgnoreStateForXpGainCommandHandler : IRequestHandler<UpdateIgnoreStateForXpGainCommand, BaseResponse>
+    public class UpdateIgnoreStateForXpGainCommandHandler : ICommandHandler<UpdateIgnoreStateForXpGainCommand, BaseResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -24,7 +24,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BaseResponse> Handle(UpdateIgnoreStateForXpGainCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(UpdateIgnoreStateForXpGainCommand request, CancellationToken cancellationToken)
         {
             await this._cybermancyDbContext.Users.AddMissingUsersAsync(request.Users, cancellationToken);
             await this._cybermancyDbContext.Members.AddMissingMembersAsync(

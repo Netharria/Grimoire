@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
 {
-    public class GetLevelQueryResponse : BaseResponse
+    public sealed record GetLevelQueryResponse : BaseResponse
     {
         public long UsersXp { get; init; }
         public int UsersLevel { get; init; }

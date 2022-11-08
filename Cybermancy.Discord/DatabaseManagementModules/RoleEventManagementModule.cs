@@ -9,7 +9,7 @@ using Cybermancy.Core.Features.Shared.Commands.RoleCommands.AddRole;
 using Cybermancy.Core.Features.Shared.Commands.RoleCommands.DeleteRole;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
-using MediatR;
+using Mediator;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.DatabaseManagementModules
@@ -27,10 +27,10 @@ namespace Cybermancy.Discord.DatabaseManagementModules
             this._mediator = mediator;
         }
 
-        public Task DiscordOnGuildRoleCreated(DiscordClient sender, GuildRoleCreateEventArgs args)
-            => this._mediator.Send(new AddRoleCommand { RoleId = args.Role.Id, GuildId = args.Guild.Id });
-        public Task DiscordOnGuildRoleDeleted(DiscordClient sender, GuildRoleDeleteEventArgs args)
-            => this._mediator.Send(new DeleteRoleCommand { RoleId = args.Role.Id });
+        public async Task DiscordOnGuildRoleCreated(DiscordClient sender, GuildRoleCreateEventArgs args)
+            => await this._mediator.Send(new AddRoleCommand { RoleId = args.Role.Id, GuildId = args.Guild.Id });
+        public async Task DiscordOnGuildRoleDeleted(DiscordClient sender, GuildRoleDeleteEventArgs args)
+            => await this._mediator.Send(new DeleteRoleCommand { RoleId = args.Role.Id });
 
     }
 }

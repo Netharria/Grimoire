@@ -15,7 +15,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Discord.LoggingModule
 {
@@ -35,19 +35,34 @@ namespace Cybermancy.Discord.LoggingModule
 
         [SlashCommand("Track", "Creates a log of a user's activity into the specificed channel.")]
         public async Task TrackAsync(InteractionContext ctx,
-            [Option("User", "User to log.")] DiscordMember member,
+            [Option("User", "User to log.")] DiscordUser user,
             [Option("DurationType", "Select whether the duration will be in minutes hours or days")] DurationType durationType,
             [Option("DurationAmount", "Select the amount of time the logging will last.")] long durationAmount,
             [Option("Channel", "Select the channel to log to. Current channel if left blank.")] DiscordChannel? discordChannel = null)
         {
-            if (member.Permissions.HasPermission(Permissions.ManageGuild)) await ctx.ReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
+            if (user.Id == ctx.Client.CurrentUser.Id)
+            {
+                await ctx.ReplyAsync(message: "Why would I track myself?");
+                return;
+            }
+
+            if (!ctx.Guild.Members.TryGetValue(user.Id, out var member))
+            {
+                await ctx.ReplyAsync(message: "<_<\n>_>\nThat channel is not on this server.\n Try a different one.");
+                return;
+            }
+            if (member.Permissions.HasPermission(Permissions.ManageGuild))
+            {
+                await ctx.ReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
+                return;
+            }
+
             if (discordChannel is null) discordChannel = ctx.Channel;
-            if (!ctx.Guild.Channels.ContainsKey(discordChannel.Id)) await ctx.ReplyAsync(message: "<_<\n>_>\nThat channel is not on this server.\n Try a different one.");
-            var response = await _mediator.Send(
+            var response = await this._mediator.Send(
                 new AddTrackerCommand
                 {
                     UserId = member.Id,
-                    GuildId = member.Guild.Id,
+                    GuildId = ctx.Guild.Id,
                     DurationType = durationType,
                     DurationAmount = durationAmount,
                     ChannelId = discordChannel.Id,
@@ -72,9 +87,9 @@ namespace Cybermancy.Discord.LoggingModule
 
         [SlashCommand("Untrack", "Stops the logging of the user's activity")]
         public async Task UnTrackAsync(InteractionContext ctx,
-            [Option("User", "User to stop logging.")] DiscordMember member)
+            [Option("User", "User to stop logging.")] DiscordUser member)
         {
-            var response = await this._mediator.Send(new RemoveTrackerCommand{ UserId = member.Id, GuildId = member.Guild.Id});
+            var response = await this._mediator.Send(new RemoveTrackerCommand{ UserId = member.Id, GuildId = ctx.Guild.Id});
 
             if (!response.Success)
             {

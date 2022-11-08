@@ -8,7 +8,7 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Enums;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Shared.Queries.GetModuleStateForGuild
@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Shared.Queries.GetModuleStateForGuild
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
+        public async ValueTask<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
         {
             var query = this._cybermancyDbContext.Guilds.AsNoTracking().WhereIdIs(request.GuildId);
             return request.Module switch

@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
 {
-    public class GetLevelSettingsQueryResponse : BaseResponse
+    public sealed record GetLevelSettingsQueryResponse : BaseResponse
     {
         public bool ModuleEnabled { get; init; }
         public TimeSpan TextTime { get; init; }

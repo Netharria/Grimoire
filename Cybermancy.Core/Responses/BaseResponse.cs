@@ -7,10 +7,11 @@
 
 namespace Cybermancy.Core.Responses
 {
-    public class BaseResponse
+    public record BaseResponse
     {
         public bool Success { get; init; }
         public string Message { get; init; } = string.Empty;
+        public ulong? LogChannelId { get; init; }
         public List<string> ValidationErrors { get; init; } = new List<string>();
     }
 }

@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage
 {
-    public class UpdateMessageCommandResponse : BaseResponse
+    public sealed record UpdateMessageCommandResponse : BaseResponse
     {
         public ulong MessageId { get; init; }
         public ulong? UpdateMessageLogChannelId { get; init; }

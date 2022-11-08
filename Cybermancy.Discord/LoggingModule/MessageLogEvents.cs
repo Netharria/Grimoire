@@ -17,7 +17,7 @@ using Cybermancy.Discord.Extensions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
@@ -44,8 +44,8 @@ namespace Cybermancy.Discord.LoggingModule
 
 
 
-        public Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
-            => this._mediator.Send(new AddMessageCommand
+        public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
+            => await this._mediator.Send(new AddMessageCommand
             {
                 Attachments = args.Message.Attachments
                     .Select(x =>
@@ -214,7 +214,7 @@ namespace Cybermancy.Discord.LoggingModule
 
         public async Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args)
         {
-            if (args.Message.Content.Length == 0) return;
+            if (string.IsNullOrWhiteSpace(args.Message.Content)) return;
             var response = await this._mediator.Send(
                 new UpdateMessageCommand
                 {

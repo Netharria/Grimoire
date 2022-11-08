@@ -9,12 +9,12 @@ using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages
 {
-    public class BulkDeleteMessageCommandHandler : IRequestHandler<BulkDeleteMessageCommand, BulkDeleteMessageCommandResponse>
+    public class BulkDeleteMessageCommandHandler : ICommandHandler<BulkDeleteMessageCommand, BulkDeleteMessageCommandResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -23,7 +23,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkD
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand request, CancellationToken cancellationToken)
         {
             var messages = await this._cybermancyDbContext.Messages
                 .WhereIdsAre(request.Ids)

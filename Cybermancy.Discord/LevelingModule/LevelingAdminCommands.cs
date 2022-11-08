@@ -21,7 +21,7 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Discord.LevelingModule
 {
@@ -53,7 +53,9 @@ namespace Cybermancy.Discord.LevelingModule
 
 
         [SlashCommand("Reclaim", "Takes away xp from user.")]
-        public async Task ReclaimAsync(InteractionContext ctx, [Option("User", "User to take xp away from.")] DiscordUser user, [Option("XP", "The amount of xp to Take.")] string amount)
+        public async Task ReclaimAsync(InteractionContext ctx,
+            [Option("User", "User to take xp away from.")] DiscordUser user,
+            [Option("XP", "The amount of xp to Take.")] string amount)
         {
             var response = await this._mediator.Send(
                 new ReclaimUserXpCommand

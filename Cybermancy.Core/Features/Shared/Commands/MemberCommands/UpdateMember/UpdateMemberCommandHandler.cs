@@ -8,12 +8,12 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember
 {
-    public class UpdateMemberCommandHandler : IRequestHandler<UpdateMemberCommand>
+    public class UpdateMemberCommandHandler : ICommandHandler<UpdateMemberCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(UpdateMemberCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(UpdateMemberCommand request, CancellationToken cancellationToken)
         {
             var currentNickname = await this._cybermancyDbContext.NicknameHistory
                 .WhereMemberHasId(request.UserId, request.GuildId)

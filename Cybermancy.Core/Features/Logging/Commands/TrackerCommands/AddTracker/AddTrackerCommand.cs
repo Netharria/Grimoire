@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
 {
@@ -15,7 +15,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
         Hours,
         Days
     }
-    public class AddTrackerCommand : IRequest<AddTrackerCommandResponse>
+    public sealed record AddTrackerCommand : ICommand<AddTrackerCommandResponse>
     {
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }

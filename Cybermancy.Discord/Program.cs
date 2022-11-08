@@ -1,15 +1,14 @@
 // See https://aka.ms/new-console-template for more information
-using System.Reflection;
 using Cybermancy.Core;
 using Cybermancy.Discord;
 using Cybermancy.Discord.LevelingModule;
 using Cybermancy.Discord.LoggingModule;
+using Cybermancy.Discord.ModerationModule;
 using Cybermancy.Discord.SharedModule;
 using Cybermancy.Discord.Utilities;
 using DSharpPlus;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.SlashCommands;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -75,9 +74,12 @@ Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<RewardCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<LogSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<ModuleCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<TrackerCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<ModerationSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<MuteAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
-        .AddMediatR(Assembly.GetExecutingAssembly())
+        .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient)
         .AddHostedService<TickerBackgroundService>()
         .BuildServiceProvider()
     )

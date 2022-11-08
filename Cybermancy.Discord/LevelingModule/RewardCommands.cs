@@ -16,7 +16,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Discord.LevelingModule
 {

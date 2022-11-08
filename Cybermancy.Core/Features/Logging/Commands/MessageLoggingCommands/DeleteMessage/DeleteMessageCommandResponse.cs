@@ -10,7 +10,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessage
 {
-    public class DeleteMessageCommandResponse : BaseResponse
+    public sealed record DeleteMessageCommandResponse : BaseResponse
     {
         public ulong? LoggingChannel { get; init; }
         public ulong UserId { get; init; }

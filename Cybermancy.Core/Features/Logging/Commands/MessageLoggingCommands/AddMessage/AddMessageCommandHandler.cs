@@ -8,21 +8,21 @@
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessage
 {
-    public class AddMessageHandler : IRequestHandler<AddMessageCommand>
+    public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
-        public AddMessageHandler(ICybermancyDbContext cybermancyDbContext)
+        public AddMessageCommandHandler(ICybermancyDbContext cybermancyDbContext)
         {
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<Unit> Handle(AddMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddMessageCommand request, CancellationToken cancellationToken)
         {
             if (!await this._cybermancyDbContext.Guilds
                 .WhereIdIs(request.GuildId)

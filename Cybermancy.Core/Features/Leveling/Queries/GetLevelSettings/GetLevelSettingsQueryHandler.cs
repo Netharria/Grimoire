@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
@@ -19,7 +19,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetLevelSettingsQueryResponse> Handle(GetLevelSettingsQuery request, CancellationToken cancellationToken)
+        public async ValueTask<GetLevelSettingsQueryResponse> Handle(GetLevelSettingsQuery request, CancellationToken cancellationToken)
         {
             var guildLevelSettings = await this._cybermancyDbContext.GuildLevelSettings
                 .Where(x => x.GuildId == request.GuildId)

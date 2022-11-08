@@ -8,7 +8,7 @@
 using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Shared.Queries.GetModuleStateForGuild;
 using DSharpPlus.SlashCommands;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Discord.Attributes
 {

@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
 {
-    public class AddTrackerCommandResponse : BaseResponse
+    public sealed record AddTrackerCommandResponse : BaseResponse
     {
         public ulong? ModerationLogId { get; init; }
     }

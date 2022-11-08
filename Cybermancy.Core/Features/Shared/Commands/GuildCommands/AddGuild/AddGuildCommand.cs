@@ -7,11 +7,11 @@
 
 using Cybermancy.Core.Features.Shared.SharedDtos;
 using Cybermancy.Domain;
-using MediatR;
+using Mediator;
 
 namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild
 {
-    public class AddGuildCommand : IRequest
+    public sealed record AddGuildCommand : ICommand
     {
         public ulong GuildId { get; init; }
         public IEnumerable<UserDto> Users { get; init; } = Enumerable.Empty<UserDto>();

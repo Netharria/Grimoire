@@ -8,7 +8,7 @@
 using System.Text;
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetLeaderboardQueryResponse> Handle(GetLeaderboardQuery request, CancellationToken cancellationToken)
+        public async ValueTask<GetLeaderboardQueryResponse> Handle(GetLeaderboardQuery request, CancellationToken cancellationToken)
         {
             var RankedMembers = await this._cybermancyDbContext.Members
                 .Where(x => x.GuildId == request.GuildId)

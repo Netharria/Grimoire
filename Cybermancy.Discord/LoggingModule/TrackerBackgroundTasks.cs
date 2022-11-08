@@ -9,7 +9,7 @@ using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers;
 using Cybermancy.Discord.Utilities;
 using DSharpPlus.Entities;
-using MediatR;
+using Mediator;
 using Nefarius.DSharpPlus.Extensions.Hosting;
 
 namespace Cybermancy.Discord.LoggingModule
@@ -25,14 +25,14 @@ namespace Cybermancy.Discord.LoggingModule
             this._discordClientService = discordClientService;
         }
 
-        public async Task Handle(TimedNotification notification, CancellationToken cancellationToken)
+        public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
         {
             if (notification.Time.Minute != 0)
                 return;
-            var response = await _mediator.Send(new RemoveExpiredTrackersCommand(), cancellationToken);
+            var response = await this._mediator.Send(new RemoveExpiredTrackersCommand(), cancellationToken);
             foreach(var expiredTracker in response.ExpiredTrackers)
             {
-                var guild = _discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
+                var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
                 if (guild is null) continue;
 
                 var embed = new DiscordEmbedBuilder()

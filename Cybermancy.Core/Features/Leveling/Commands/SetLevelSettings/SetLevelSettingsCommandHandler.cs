@@ -8,12 +8,12 @@
 using System.Text.RegularExpressions;
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Responses;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings
 {
-    public class SetLevelSettingsCommandHandler : IRequestHandler<SetLevelSettingsCommand, BaseResponse>
+    public class SetLevelSettingsCommandHandler : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -22,7 +22,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<BaseResponse> Handle(SetLevelSettingsCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(SetLevelSettingsCommand request, CancellationToken cancellationToken)
         {
             var guild = await this._cybermancyDbContext.GuildLevelSettings.FirstOrDefaultAsync(x => x.GuildId == request.GuildId, cancellationToken: cancellationToken);
             if (guild == null) return new BaseResponse { Success = false, Message = "Could not find guild level settings." };

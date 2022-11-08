@@ -10,7 +10,7 @@ using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteOld
 using Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages;
 using Cybermancy.Discord.Utilities;
 using DSharpPlus.Entities;
-using MediatR;
+using Mediator;
 using Nefarius.DSharpPlus.Extensions.Hosting;
 
 namespace Cybermancy.Discord.LoggingModule
@@ -26,7 +26,7 @@ namespace Cybermancy.Discord.LoggingModule
             this._discordClientService = discordClientService;
         }
 
-        public async Task Handle(TimedNotification notification, CancellationToken cancellationToken)
+        public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
         {
             if (notification.Time.Second % 60 != 0)
                 return;

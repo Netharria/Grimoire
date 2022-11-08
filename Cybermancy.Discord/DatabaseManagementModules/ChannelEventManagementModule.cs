@@ -9,7 +9,7 @@ using Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel;
 using Cybermancy.Core.Features.Shared.Commands.ChannelCommands.DeleteChannel;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
-using MediatR;
+using Mediator;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.DatabaseManagementModules
@@ -35,30 +35,30 @@ namespace Cybermancy.Discord.DatabaseManagementModules
             this._mediator = mediator;
         }
 
-        public Task DiscordOnChannelCreated(DiscordClient sender, ChannelCreateEventArgs args)
-            => this._mediator.Send(
+        public async Task DiscordOnChannelCreated(DiscordClient sender, ChannelCreateEventArgs args)
+            => await this._mediator.Send(
                 new AddChannelCommand
                 {
                     ChannelId = args.Channel.Id,
                     GuildId = args.Guild.Id
                 });
 
-        public Task DiscordOnChannelDeleted(DiscordClient sender, ChannelDeleteEventArgs args)
-            => this._mediator.Send(
+        public async Task DiscordOnChannelDeleted(DiscordClient sender, ChannelDeleteEventArgs args)
+            => await this._mediator.Send(
                 new DeleteChannelCommand
                 {
                     ChannelId = args.Channel.Id
                 });
 
-        public Task DiscordOnThreadCreated(DiscordClient sender, ThreadCreateEventArgs args)
-            => this._mediator.Send(
+        public async Task DiscordOnThreadCreated(DiscordClient sender, ThreadCreateEventArgs args)
+            => await this._mediator.Send(
                 new AddChannelCommand
                 {
                     ChannelId = args.Thread.Id,
                     GuildId = args.Guild.Id
                 });
-        public Task DiscordOnThreadDeleted(DiscordClient sender, ThreadDeleteEventArgs args)
-            => this._mediator.Send(
+        public async Task DiscordOnThreadDeleted(DiscordClient sender, ThreadDeleteEventArgs args)
+            => await this._mediator.Send(
                 new DeleteChannelCommand
                 {
                     ChannelId = args.Thread.Id

@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages
@@ -19,7 +19,7 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async Task<GetOldLogMessagesQueryResponse> Handle(GetOldLogMessagesQuery request, CancellationToken cancellationToken)
+        public async ValueTask<GetOldLogMessagesQueryResponse> Handle(GetOldLogMessagesQuery request, CancellationToken cancellationToken)
         {
             var oldDate = DateTime.UtcNow - TimeSpan.FromDays(31);
             return new GetOldLogMessagesQueryResponse

@@ -9,7 +9,7 @@ using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Core.Features.Shared.Queries.GetAllModuleStatesForGuild
 {
-    public class GetAllModuleStatesForGuildQueryResponse : BaseResponse
+    public sealed record GetAllModuleStatesForGuildQueryResponse : BaseResponse
     {
         public bool LevelingIsEnabled { get; init; }
         public bool LoggingIsEnabled { get; init; }
