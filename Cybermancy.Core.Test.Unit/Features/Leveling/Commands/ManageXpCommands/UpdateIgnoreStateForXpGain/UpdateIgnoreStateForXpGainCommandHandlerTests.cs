@@ -54,7 +54,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
                     }
                 }, default);
             context.ChangeTracker.Clear();
-            result.Success.Should().BeTrue();
             result.Message.Should().Be("<@!4> <@&6> <#3>  are now ignored for xp gain.");
 
             var member = await context.Members.Where(x =>
@@ -94,7 +93,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
                     InvalidIds = new [] { "asldfkja" }
                 }, default);
             context.ChangeTracker.Clear();
-            result.Success.Should().BeTrue();
             result.Message.Should().Be("Could not match asldfkja with a role, channel or user. ");
         }
     }

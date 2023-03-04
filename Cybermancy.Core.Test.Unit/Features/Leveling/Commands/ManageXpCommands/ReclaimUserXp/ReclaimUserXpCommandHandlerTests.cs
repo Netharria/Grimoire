@@ -7,6 +7,7 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +37,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
                     XpToTake = "400"
                 }, default);
             context.ChangeTracker.Clear();
-            result.Success.Should().BeTrue();
 
             var member = await context.Members.Where(x =>
                 x.UserId == TestDatabaseFixture.Member1.UserId
@@ -61,7 +61,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
                     XpToTake = "All"
                 }, default);
             context.ChangeTracker.Clear();
-            result.Success.Should().BeTrue();
 
             var member = await context.Members.Where(x =>
                 x.UserId == TestDatabaseFixture.Member1.UserId
@@ -72,60 +71,60 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
         }
 
         [Test]
-        public async Task WhenReclaimUserXpCommandHandlerCalled_WithNegativeReward_ReturnFailedResponseAsync()
+        public void WhenReclaimUserXpCommandHandlerCalled_WithNegativeReward_ReturnFailedResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new ReclaimUserXpCommandHandler(context);
 
-            var result = await cut.Handle(
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
                 new ReclaimUserXpCommand
                 {
                     UserId = TestDatabaseFixture.Member1.UserId,
                     GuildId = TestDatabaseFixture.Member1.GuildId,
                     XpToTake = "-20"
-                }, default);
+                }, default));
             context.ChangeTracker.Clear();
-            result.Success.Should().BeFalse();
-            result.Message.Should().Be("Xp needs to be a positive value.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("Xp needs to be a positive value.");
         }
 
         [Test]
-        public async Task WhenReclaimUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponseAsync()
+        public void WhenReclaimUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new ReclaimUserXpCommandHandler(context);
 
-            var result = await cut.Handle(
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
                 new ReclaimUserXpCommand
                 {
                     UserId = 20001,
                     GuildId = TestDatabaseFixture.Member1.GuildId,
                     XpToTake = "20"
-                }, default);
+                }, default));
             context.ChangeTracker.Clear();
-            result.Success.Should().BeFalse();
-            result.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
         }
 
         [Test]
-        public async Task WhenReclaimUserXpCommandHandlerCalled_WithNonNumber_ReturnFailedResponseAsync()
+        public void WhenReclaimUserXpCommandHandlerCalled_WithNonNumber_ReturnFailedResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new ReclaimUserXpCommandHandler(context);
 
-            var result = await cut.Handle(
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
                 new ReclaimUserXpCommand
                 {
                     UserId = TestDatabaseFixture.Member1.UserId,
                     GuildId = TestDatabaseFixture.Member1.GuildId,
                     XpToTake = "asdfasfd"
-                }, default);
+                }, default));
             context.ChangeTracker.Clear();
-            result.Success.Should().BeFalse();
-            result.Message.Should().Be("Xp needs to be a valid number.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("Xp needs to be a valid number.");
         }
     }
 }

@@ -20,13 +20,13 @@ namespace Cybermancy.Core.Features.Logging.Commands.AddLogMessage
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(AddLogMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddLogMessageCommand command, CancellationToken cancellationToken)
         {
             var logMessage = new OldLogMessage
             {
-                ChannelId = request.ChannelId,
-                GuildId = request.GuildId,
-                Id = request.MessageId
+                ChannelId = command.ChannelId,
+                GuildId = command.GuildId,
+                Id = command.MessageId
             };
             await this._cybermancyDbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

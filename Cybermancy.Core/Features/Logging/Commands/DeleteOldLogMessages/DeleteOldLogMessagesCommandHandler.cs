@@ -19,11 +19,11 @@ namespace Cybermancy.Core.Features.Logging.Commands.DeleteOldLogMessages
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(DeleteOldLogMessagesCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(DeleteOldLogMessagesCommand command, CancellationToken cancellationToken)
         {
             var messages = this._cybermancyDbContext.OldLogMessages
                 .Where(oldLogMessage =>
-                    request.DeletedOldLogMessageIds
+                    command.DeletedOldLogMessageIds
                     .Any(messageId => messageId == oldLogMessage.Id));
             this._cybermancyDbContext.OldLogMessages.RemoveRange(messages);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

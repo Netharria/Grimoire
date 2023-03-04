@@ -19,6 +19,8 @@ using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 using DSharpPlus.EventArgs;
 using Microsoft.Extensions.Configuration;
 using Cybermancy.Discord.Structs;
+using Cybermancy.Discord.Attributes;
+using Cybermancy.Core.Exceptions;
 
 namespace Cybermancy.Discord
 {
@@ -114,7 +116,15 @@ namespace Cybermancy.Discord
 
                     if (check is SlashRequireDirectMessageAttribute)
                         await args.Context.ReplyAsync(color: CybermancyColor.Green, message: $"You need to DM {args.Context.Guild.CurrentMember.DisplayName} to use this command.");
+
+                    if (check is SlashRequireModuleEnabledAttribute requireEnabledPermissions)
+                        await args.Context.ReplyAsync(color: CybermancyColor.Green, message: $"The {requireEnabledPermissions.Module} module is not enabled.");
                 }
+            else if (args.Exception is AnticipatedException)
+            {
+                await args.Context.ReplyAsync(color: CybermancyColor.Orange, message: args.Exception.Message);
+                args.Handled = true;
+            }
             else if (args.Exception is not null)
             {
                 var errorUlong = args.Context.User.Id + args.Context.InteractionId;

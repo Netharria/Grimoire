@@ -6,13 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
-using Cybermancy.Core.Responses;
+using Cybermancy.Core.Exceptions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Logging.Commands.SetLogSettings
 {
-    public class SetLoggingSettingsCommandHandler : ICommandHandler<SetLoggingSettingsCommand, BaseResponse>
+    public class SetLoggingSettingsCommandHandler : ICommandHandler<SetLoggingSettingsCommand, Unit>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -21,40 +21,40 @@ namespace Cybermancy.Core.Features.Logging.Commands.SetLogSettings
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<BaseResponse> Handle(SetLoggingSettingsCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(SetLoggingSettingsCommand command, CancellationToken cancellationToken)
         {
-            var guild = await this._cybermancyDbContext.GuildLogSettings.FirstOrDefaultAsync(x => x.GuildId == request.GuildId, cancellationToken);
-            if (guild == null) return new BaseResponse { Success = false, Message = "Could not find guild log settings.." };
-            switch (request.LogSetting)
+            var guild = await this._cybermancyDbContext.GuildLogSettings.FirstOrDefaultAsync(x => x.GuildId == command.GuildId, cancellationToken);
+            if (guild == null) throw new AnticipatedException("Could not find guild log settings..");
+            switch (command.LogSetting)
             {
                 case LoggingSetting.JoinLog:
-                    guild.JoinChannelLogId = request.ChannelId;
+                    guild.JoinChannelLogId = command.ChannelId;
                     break;
                 case LoggingSetting.LeaveLog:
-                    guild.LeaveChannelLogId = request.ChannelId;
+                    guild.LeaveChannelLogId = command.ChannelId;
                     break;
                 case LoggingSetting.DeleteLog:
-                    guild.DeleteChannelLogId = request.ChannelId;
+                    guild.DeleteChannelLogId = command.ChannelId;
                     break;
                 case LoggingSetting.BulkDeleteLog:
-                    guild.BulkDeleteChannelLogId = request.ChannelId;
+                    guild.BulkDeleteChannelLogId = command.ChannelId;
                     break;
                 case LoggingSetting.EditLog:
-                    guild.EditChannelLogId = request.ChannelId;
+                    guild.EditChannelLogId = command.ChannelId;
                     break;
                 case LoggingSetting.UsernameLog:
-                    guild.UsernameChannelLogId = request.ChannelId;
+                    guild.UsernameChannelLogId = command.ChannelId;
                     break;
                 case LoggingSetting.NicknameLog:
-                    guild.NicknameChannelLogId = request.ChannelId;
+                    guild.NicknameChannelLogId = command.ChannelId;
                     break;
                 case LoggingSetting.AvatarLog:
-                    guild.AvatarChannelLogId = request.ChannelId;
+                    guild.AvatarChannelLogId = command.ChannelId;
                     break;
             }
             this._cybermancyDbContext.GuildLogSettings.Update(guild);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { Success = true };
+            return new Unit();
         }
     }
 }

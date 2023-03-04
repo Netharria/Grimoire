@@ -13,11 +13,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Moderation.Queries.GetBan
 {
-    public class GetLastQueryHandler : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
+    public class GetLastBanQueryHandler : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
-        public GetLastQueryHandler(ICybermancyDbContext cybermancyDbContext)
+        public GetLastBanQueryHandler(ICybermancyDbContext cybermancyDbContext)
         {
             this._cybermancyDbContext = cybermancyDbContext;
         }
@@ -37,8 +37,7 @@ namespace Cybermancy.Core.Features.Moderation.Queries.GetBan
                     SinId = x.Id,
                     SinOn = x.InfractionOn,
                     LogChannelId = x.Guild.ModChannelLog,
-                    ModerationModuleEnabled = x.Guild.ModerationSettings.ModuleEnabled,
-                    Success = true
+                    ModerationModuleEnabled = x.Guild.ModerationSettings.ModuleEnabled
                 })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 

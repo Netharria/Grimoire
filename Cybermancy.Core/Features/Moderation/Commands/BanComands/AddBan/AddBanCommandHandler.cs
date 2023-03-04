@@ -7,12 +7,11 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
-using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBanIfDoesNotExist
+namespace Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBan
 {
     public class AddBanCommandHandler : ICommandHandler<AddBanCommand, AddBanCommandResponse>
     {
@@ -39,7 +38,7 @@ namespace Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBanIfDoesNo
                 .WhereIdIs(command.GuildId)
                 .Select(x => x.ModChannelLog)
                 .FirstOrDefaultAsync(cancellationToken);
-            return new AddBanCommandResponse { Success = true, SinId = sin.Entity.Id, LogChannelId = loggingChannel };
+            return new AddBanCommandResponse { SinId = sin.Entity.Id, LogChannelId = loggingChannel };
         }
     }
 }

@@ -21,23 +21,22 @@ namespace Cybermancy.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCo
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<EnableModuleCommandResponse> Handle(EnableModuleCommand request, CancellationToken cancellationToken)
+        public async ValueTask<EnableModuleCommandResponse> Handle(EnableModuleCommand command, CancellationToken cancellationToken)
         {
             var guildModule = await this._cybermancyDbContext.Guilds
-                .WhereIdIs(request.GuildId)
-                .GetModulesOfType(request.Module, cancellationToken)
+                .WhereIdIs(command.GuildId)
+                .GetModulesOfType(command.Module, cancellationToken)
                 .Select(x => new
                 {
                     Module = x,
                     x.Guild.ModChannelLog,
                 })
                 .FirstAsync(cancellationToken);
-            guildModule.Module.ModuleEnabled = request.Enable;
+            guildModule.Module.ModuleEnabled = command.Enable;
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return new EnableModuleCommandResponse
             {
-                ModerationLog = guildModule.ModChannelLog,
-                Success = true
+                ModerationLog = guildModule.ModChannelLog
             };
         }
     }

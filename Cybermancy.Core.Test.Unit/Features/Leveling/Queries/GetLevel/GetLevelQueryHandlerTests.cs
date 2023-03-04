@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.Tasks;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevel;
 using FluentAssertions;
 using NUnit.Framework;
@@ -21,7 +22,7 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Queries.GetLevel
         public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
-        public async Task WhenCallingGetLevelQueryHandler_IfUserDoesNotExist_ReturnFailedResponseAsync()
+        public void WhenCallingGetLevelQueryHandler_IfUserDoesNotExist_ReturnFailedResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
 
@@ -32,10 +33,10 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Queries.GetLevel
                 UserId = 234081234
             };
 
-            var response = await CUT.Handle(command, default);
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-            response.Success.Should().BeFalse();
-            response.Message.Should().Be("That user could not be found.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("That user could not be found.");
         }
 
         [Test]
@@ -52,7 +53,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Queries.GetLevel
 
             var response = await CUT.Handle(command, default);
 
-            response.Success.Should().BeTrue();
             response.UsersXp.Should().Be(0);
             response.UsersLevel.Should().Be(1);
             response.LevelProgress.Should().Be(0);

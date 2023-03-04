@@ -22,35 +22,35 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMe
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(AddMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddMessageCommand command, CancellationToken cancellationToken)
         {
             if (!await this._cybermancyDbContext.Guilds
-                .WhereIdIs(request.GuildId)
+                .WhereIdIs(command.GuildId)
                 .AnyAsync(x => x.LogSettings.ModuleEnabled,
                 cancellationToken))
                 return Unit.Value;
             var message = new Message
             {
-                Id = request.MessageId,
-                UserId = request.UserId,
-                Attachments = request.Attachments
+                Id = command.MessageId,
+                UserId = command.UserId,
+                Attachments = command.Attachments
                     .Select(x =>
                         new Attachment
                         {
                             Id = x.Id,
-                            MessageId = request.MessageId,
+                            MessageId = command.MessageId,
                             FileName = x.FileName,
                         })
                     .ToArray(),
-                ChannelId = request.ChannelId,
-                ReferencedMessageId = request.ReferencedMessageId,
-                GuildId = request.GuildId,
+                ChannelId = command.ChannelId,
+                ReferencedMessageId = command.ReferencedMessageId,
+                GuildId = command.GuildId,
                 MessageHistory = new List<MessageHistory>{
                     new MessageHistory
                     {
-                        MessageId = request.MessageId,
-                        MessageContent = request.MessageContent,
-                        GuildId = request.GuildId,
+                        MessageId = command.MessageId,
+                        MessageContent = command.MessageContent,
+                        GuildId = command.GuildId,
                         Action = MessageAction.Created
                     }
                 }

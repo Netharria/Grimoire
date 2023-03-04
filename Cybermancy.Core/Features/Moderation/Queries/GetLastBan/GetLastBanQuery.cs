@@ -11,7 +11,7 @@ namespace Cybermancy.Core.Features.Moderation.Queries.GetBan
 {
     public sealed record GetLastBanQuery : IRequest<GetLastBanQueryResponse>
     {
-        public ulong UserId { get; internal set; }
-        public ulong GuildId { get; internal set; }
+        public ulong UserId { get; init; }
+        public ulong GuildId { get; init; }
     }
 }

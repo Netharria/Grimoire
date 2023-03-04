@@ -24,52 +24,52 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<BaseResponse> Handle(UpdateIgnoreStateForXpGainCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(UpdateIgnoreStateForXpGainCommand command, CancellationToken cancellationToken)
         {
-            await this._cybermancyDbContext.Users.AddMissingUsersAsync(request.Users, cancellationToken);
+            await this._cybermancyDbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
             await this._cybermancyDbContext.Members.AddMissingMembersAsync(
-                request.Users.Select(x =>
+                command.Users.Select(x =>
                     new MemberDto
                     {
                         UserId = x.Id,
-                        GuildId = request.GuildId,
+                        GuildId = command.GuildId,
                         Nickname = x.Nickname,
                     }), cancellationToken);
-            await this._cybermancyDbContext.Channels.AddMissingChannelsAsync(request.Channels, cancellationToken);
-            await this._cybermancyDbContext.Roles.AddMissingRolesAsync(request.Roles, cancellationToken);
+            await this._cybermancyDbContext.Channels.AddMissingChannelsAsync(command.Channels, cancellationToken);
+            await this._cybermancyDbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);
 
-            var userIds = request.Users.Select(x => x.Id).ToArray();
-            var roleIds = request.Roles.Select(x => x.Id).ToArray();
-            var channelIds = request.Channels.Select(x => x.Id).ToArray();
+            var userIds = command.Users.Select(x => x.Id).ToArray();
+            var roleIds = command.Roles.Select(x => x.Id).ToArray();
+            var channelIds = command.Channels.Select(x => x.Id).ToArray();
 
             Member[]? allUsersToIgnore = null;
             Role[]? allRolesToIgnore = null;
             Channel[]? allChannelsToIgnore = null;
             var newIgnoredItems = new StringBuilder();
 
-            if (request.Users.Any())
+            if (command.Users.Any())
             {
                 allUsersToIgnore = this._cybermancyDbContext.Members
-                    .WhereMembersHaveIds(userIds, request.GuildId)
-                    .UpdateIgnoredStatus(request.ShouldIgnore, newIgnoredItems)
+                    .WhereMembersHaveIds(userIds, command.GuildId)
+                    .UpdateIgnoredStatus(command.ShouldIgnore, newIgnoredItems)
                     .ToArray();
                 this._cybermancyDbContext.Members.UpdateRange(allUsersToIgnore);
             }
                 
-            if (request.Roles.Any())
+            if (command.Roles.Any())
             {
                 allRolesToIgnore = this._cybermancyDbContext.Roles
                     .WhereIdsAre(roleIds)
-                    .UpdateIgnoredStatus(request.ShouldIgnore, newIgnoredItems)
+                    .UpdateIgnoredStatus(command.ShouldIgnore, newIgnoredItems)
                     .ToArray();
                 this._cybermancyDbContext.Roles.UpdateRange(allRolesToIgnore);
             }
 
-            if (request.Channels.Any())
+            if (command.Channels.Any())
             {
                 allChannelsToIgnore = this._cybermancyDbContext.Channels
                     .WhereIdsAre(channelIds)
-                    .UpdateIgnoredStatus(request.ShouldIgnore, newIgnoredItems)
+                    .UpdateIgnoredStatus(command.ShouldIgnore, newIgnoredItems)
                     .ToArray();
 
                 this._cybermancyDbContext.Channels.UpdateRange(allChannelsToIgnore);
@@ -78,15 +78,15 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgno
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
             var couldNotMatch = new StringBuilder();
-            if (request.InvalidIds.Any())
-                foreach (var id in request.InvalidIds)
+            if (command.InvalidIds.Any())
+                foreach (var id in command.InvalidIds)
                     couldNotMatch.Append(id).Append(' ');
 
             var finalString = new StringBuilder();
             if (couldNotMatch.Length > 0) finalString.Append("Could not match ").Append(couldNotMatch).Append("with a role, channel or user. ");
-            if (newIgnoredItems.Length > 0) finalString.Append(newIgnoredItems).Append(request.ShouldIgnore ? " are now ignored for xp gain." : " are now being watched for xp gain.");
+            if (newIgnoredItems.Length > 0) finalString.Append(newIgnoredItems).Append(command.ShouldIgnore ? " are now ignored for xp gain." : " are now being watched for xp gain.");
 
-            return new BaseResponse { Success = true, Message = finalString.ToString() };
+            return new BaseResponse { Message = finalString.ToString() };
         }
 
 

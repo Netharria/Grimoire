@@ -20,12 +20,12 @@ namespace Cybermancy.Core.Features.Shared.Commands.RoleCommands.AddRole
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(AddRoleCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddRoleCommand command, CancellationToken cancellationToken)
         {
             await this._cybermancyDbContext.Roles.AddAsync(new Role
                 {
-                    Id = request.RoleId,
-                    GuildId = request.GuildId
+                    Id = command.RoleId,
+                    GuildId = command.GuildId
                 }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;

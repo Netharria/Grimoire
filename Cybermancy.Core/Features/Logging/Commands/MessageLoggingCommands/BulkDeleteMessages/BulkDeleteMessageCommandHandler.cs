@@ -23,10 +23,10 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkD
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand command, CancellationToken cancellationToken)
         {
             var messages = await this._cybermancyDbContext.Messages
-                .WhereIdsAre(request.Ids)
+                .WhereIdsAre(command.Ids)
                 .WhereLoggingIsEnabled()
                 .Select(x => new
                 {
@@ -58,7 +58,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkD
             {
                 MessageId = x.Message.MessageId,
                 Action = MessageAction.Deleted,
-                GuildId = request.GuildId
+                GuildId = command.GuildId
             });
 
             await this._cybermancyDbContext.MessageHistory.AddRangeAsync(messageHistory, cancellationToken);
@@ -66,8 +66,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkD
             return new BulkDeleteMessageCommandResponse
             {
                 BulkDeleteLogChannelId = messages.First()?.BulkDeleteLogId,
-                Messages = messages.Select(x => x.Message).ToArray(),
-                Success = true
+                Messages = messages.Select(x => x.Message).ToArray()
             };
         }
     }

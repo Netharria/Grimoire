@@ -37,17 +37,11 @@ namespace Cybermancy.Discord.ModerationModule
             InteractionContext ctx,
             [Option("Role", "The role to use for muting")] DiscordRole role)
         {
-            var response = await this._mediator.Send(new SetMuteRoleCommand
+            await this._mediator.Send(new SetMuteRoleCommand
             {
                 Role = role.Id,
                 GuildId = ctx.Guild.Id
             });
-
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
 
             await ctx.ReplyAsync(message: $"Will now use role {role.Name} for muting users.", ephemeral: false);
         }
@@ -61,17 +55,12 @@ namespace Cybermancy.Discord.ModerationModule
             await ctx.EditResponseAsync(new DiscordWebhookBuilder()
                 .WithContent($"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration."));
 
-            var response = await this._mediator.Send(new SetMuteRoleCommand
+            await this._mediator.Send(new SetMuteRoleCommand
             {
                 Role = role.Id,
                 GuildId = ctx.Guild.Id
             });
 
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
             await ctx.EditResponseAsync(new DiscordWebhookBuilder()
                 .WithContent($"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions"));
             try
@@ -95,11 +84,6 @@ namespace Cybermancy.Discord.ModerationModule
             {
                 GuildId = ctx.Guild.Id
             });
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
 
             if (!ctx.Guild.Roles.TryGetValue(response.RoleId, out var role))
             {

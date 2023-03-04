@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.Tasks;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems;
 using Cybermancy.Domain;
 using FluentAssertions;
@@ -35,10 +36,10 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Queries.GetIgnoredItems
                 GuildId = 34958734
             };
 
-            var response = await CUT.Handle(command, default);
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-            response.Success.Should().BeFalse();
-            response.Message.Should().Be("This server does not have any ignored channels, roles or users.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("This server does not have any ignored channels, roles or users.");
         }
 
         [Test]
@@ -54,7 +55,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Queries.GetIgnoredItems
 
             var response = await CUT.Handle(command, default);
 
-            response.Success.Should().BeTrue();
             response.Message.Should().Be("**Channels**\n<#12>\n\n**Roles**\n<@&7>\n\n**Users**\n");
         }
     }

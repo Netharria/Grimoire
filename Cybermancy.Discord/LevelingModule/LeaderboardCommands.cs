@@ -45,18 +45,13 @@ namespace Cybermancy.Discord.LevelingModule
             };
 
             var response = await this._mediator.Send(getUserCenteredLeaderboardQuery);
-            if (response.Success)
-                await ctx.ReplyAsync(
-                    color: CybermancyColor.Gold,
-                    title: "LeaderBoard",
-                    message: response.LeaderboardText,
-                    footer: $"Total Users {response.TotalUserCount}",
-                    ephemeral: !((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
-            else
-                await ctx.ReplyAsync(
-                    color: CybermancyColor.Orange,
-                    message: response.Message,
-                    ephemeral: true);
+
+            await ctx.ReplyAsync(
+                color: CybermancyColor.Gold,
+                title: "LeaderBoard",
+                message: response.LeaderboardText,
+                footer: $"Total Users {response.TotalUserCount}",
+                ephemeral: !((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
         }
     }
 }

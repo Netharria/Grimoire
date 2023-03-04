@@ -53,12 +53,6 @@ namespace Cybermancy.Discord.SharedModule
                 Enable = enable
             });
 
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
-
             await ctx.ReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module.GetName()}",
                 ephemeral: false);
 

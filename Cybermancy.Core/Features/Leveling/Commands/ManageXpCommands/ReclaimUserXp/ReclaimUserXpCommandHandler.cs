@@ -7,15 +7,15 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Extensions;
-using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp
 {
-    public class ReclaimUserXpCommandHandler : ICommandHandler<ReclaimUserXpCommand, BaseResponse>
+    public class ReclaimUserXpCommandHandler : ICommandHandler<ReclaimUserXpCommand, Unit>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -24,51 +24,36 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUse
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<BaseResponse> Handle(ReclaimUserXpCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(ReclaimUserXpCommand command, CancellationToken cancellationToken)
         {
             var member = await this._cybermancyDbContext.Members
-                .WhereMemberHasId(request.UserId, request.GuildId)
+                .WhereMemberHasId(command.UserId, command.GuildId)
                 .Select(x => new { Xp = x.XpHistory.Sum(x => x.Xp )})
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
             if (member is null)
-                return new BaseResponse
-                {
-                    Success = false,
-                    Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?"
-                };
+                throw new AnticipatedException($"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
 
             long xpToTake;
-            if (request.XpToTake.Equals("All", StringComparison.CurrentCultureIgnoreCase))
+            if (command.XpToTake.Equals("All", StringComparison.CurrentCultureIgnoreCase))
                 xpToTake = member.Xp;
-            else if (request.XpToTake.Trim().StartsWith('-'))
-                return new BaseResponse
-                {
-                    Success = false,
-                    Message = "Xp needs to be a positive value."
-                };
-            else if (!long.TryParse(request.XpToTake.Trim(), out xpToTake))
-                return new BaseResponse
-                {
-                    Success = false,
-                    Message = "Xp needs to be a valid number."
-                };
+            else if (command.XpToTake.Trim().StartsWith('-'))
+                throw new AnticipatedException("Xp needs to be a positive value.");
+            else if (!long.TryParse(command.XpToTake.Trim(), out xpToTake))
+                throw new AnticipatedException("Xp needs to be a valid number.");
             if(member.Xp < xpToTake)
                 xpToTake = member.Xp;
             await this._cybermancyDbContext.XpHistory.AddAsync(new XpHistory
                 {
-                    UserId = request.UserId,
-                    GuildId = request.GuildId,
+                    UserId = command.UserId,
+                    GuildId = command.GuildId,
                     Xp = -xpToTake,
                     Type = XpHistoryType.Reclaimed,
-                    AwarderId = request.ReclaimerId,
+                    AwarderId = command.ReclaimerId,
                     TimeOut = DateTimeOffset.UtcNow
                 }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
-            return new BaseResponse
-            {
-                Success = true
-            };
+            return new Unit();
         }
     }
 }

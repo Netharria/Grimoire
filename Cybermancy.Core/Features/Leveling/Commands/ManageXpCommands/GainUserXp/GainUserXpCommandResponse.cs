@@ -15,5 +15,6 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
         public int PreviousLevel { get; init; }
         public int CurrentLevel { get; init; }
         public ulong? LoggingChannel { get; init; }
+        public bool Success { get; init; } = false;
     }
 }

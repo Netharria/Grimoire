@@ -23,26 +23,26 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.AddRe
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<BaseResponse> Handle(AddRewardCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(AddRewardCommand command, CancellationToken cancellationToken)
         {
-            var reward = await this._cybermancyDbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == request.RoleId, cancellationToken: cancellationToken);
+            var reward = await this._cybermancyDbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken: cancellationToken);
             if (reward is null)
             {
                 reward = new Reward
                 {
-                    GuildId = request.GuildId,
-                    RoleId = request.RoleId,
-                    RewardLevel = request.RewardLevel
+                    GuildId = command.GuildId,
+                    RoleId = command.RoleId,
+                    RewardLevel = command.RewardLevel
                 };
                 await this._cybermancyDbContext.Rewards.AddAsync(reward, cancellationToken);
                 await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
-                return new BaseResponse { Success = true, Message = $"Added {reward.Mention()} reward at level {request.RewardLevel}" };
+                return new BaseResponse { Message = $"Added {reward.Mention()} reward at level {command.RewardLevel}" };
             }
 
-            reward.RewardLevel = request.RewardLevel;
+            reward.RewardLevel = command.RewardLevel;
             this._cybermancyDbContext.Rewards.Update(reward);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { Success = true, Message = $"Updated {reward.Mention()} reward to level {request.RewardLevel}" };
+            return new BaseResponse { Message = $"Updated {reward.Mention()} reward to level {command.RewardLevel}" };
         }
     }
 }

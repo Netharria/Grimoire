@@ -47,7 +47,7 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
             var member = await context.Members.Where(x =>
                 x.UserId == TestDatabaseFixture.Member1.UserId
                 && x.GuildId == TestDatabaseFixture.Member1.GuildId
-                ).FirstAsync();
+                ).Include(x => x.XpHistory).FirstAsync();
 
             member.XpHistory.Sum(x => x.Xp).Should().BeGreaterThan(0);
         }

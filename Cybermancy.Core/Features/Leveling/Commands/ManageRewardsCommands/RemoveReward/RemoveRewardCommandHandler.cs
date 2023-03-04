@@ -7,6 +7,7 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Extensions;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
 using Mediator;
@@ -23,15 +24,15 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageRewardsCommands.Remov
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<BaseResponse> Handle(RemoveRewardCommand request, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(RemoveRewardCommand command, CancellationToken cancellationToken)
         {
             var result = await this._cybermancyDbContext.Rewards
-                .FirstOrDefaultAsync(x => x.RoleId == request.RoleId, cancellationToken);
+                .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
             if (result is not Reward reward)
-                return new BaseResponse { Success = false, Message = $"Did not find a saved reward for role <@&{request.RoleId}>" };
+                throw new AnticipatedException($"Did not find a saved reward for role <@&{command.RoleId}>");
             this._cybermancyDbContext.Rewards.Remove(reward);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { Success = true, Message = $"Removed {reward.Mention()} reward" };
+            return new BaseResponse { Message = $"Removed {reward.Mention()} reward" };
         }
     }
 }

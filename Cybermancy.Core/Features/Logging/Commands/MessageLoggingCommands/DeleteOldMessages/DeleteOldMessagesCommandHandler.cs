@@ -20,7 +20,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(DeleteOldMessagesCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(DeleteOldMessagesCommand command, CancellationToken cancellationToken)
         {
             var oldDate = DateTime.UtcNow - TimeSpan.FromDays(31);
             var oldMessages = await this._cybermancyDbContext.Messages

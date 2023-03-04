@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Responses;
+using Cybermancy.Core.Exceptions;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
 {
@@ -37,7 +38,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
                 }).FirstAsync(cancellationToken: cancellationToken);
 
             if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredMembers.Any())
-                return new BaseResponse { Success = false, Message = "This server does not have any ignored channels, roles or users." };
+                throw new AnticipatedException ("This server does not have any ignored channels, roles or users." );
 
             var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
             foreach (var channel in ignoredItems.IgnoredChannels) ignoredMessageBuilder.Append(ChannelExtensions.Mention(channel)).Append('\n');
@@ -48,7 +49,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
             ignoredMessageBuilder.Append("\n**Users**\n");
             foreach (var member in ignoredItems.IgnoredMembers) ignoredMessageBuilder.Append(UserExtensions.Mention(member)).Append('\n');
 
-            return new BaseResponse { Success = true, Message = ignoredMessageBuilder.ToString() };
+            return new BaseResponse { Message = ignoredMessageBuilder.ToString() };
         }
     }
 }

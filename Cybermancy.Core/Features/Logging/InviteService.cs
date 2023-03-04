@@ -39,7 +39,7 @@ namespace Cybermancy.Core.Features.Logging
                 });
         }
 
-        public void UpdateAllInvites(List<Invite> invites) => invites.ForEach(x => this.UpdateInvite(x));
+        public void UpdateAllInvites(List<Invite> guildInvites) => guildInvites.ForEach(x => this.UpdateInvite(x));
 
         public Invite CalculateInviteUsed(List<Invite> guildInvites)
         {

@@ -8,6 +8,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
-        public async Task WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponseAsync()
+        public void WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
@@ -34,14 +35,14 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
                 GuildId = 12341234
             };
 
-            var response = await CUT.Handle(command, default);
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
             context.ChangeTracker.Clear();
-            response.Success.Should().BeFalse();
-            response.Message.Should().Be("Could not find guild level settings.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("Could not find guild level settings.");
         }
 
         [Test]
-        public async Task WhenUpdatingTextTime_IfNumberIsInvalid_FailResponseAsync()
+        public void WhenUpdatingTextTime_IfNumberIsInvalid_FailResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
@@ -53,14 +54,14 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
                 Value = "adsfas"
             };
 
-            var response = await CUT.Handle(command, default);
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
             context.ChangeTracker.Clear();
-            response.Success.Should().BeFalse();
-            response.Message.Should().Be("Please give a valid number for TextTime.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("Please give a valid number for TextTime.");
         }
 
         [Test]
-        public async Task WhenUpdatingBase_IfNumberIsInvalid_FailResponseAsync()
+        public void WhenUpdatingBase_IfNumberIsInvalid_FailResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
@@ -72,14 +73,14 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
                 Value = "adsfas"
             };
 
-            var response = await CUT.Handle(command, default);
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
             context.ChangeTracker.Clear();
-            response.Success.Should().BeFalse();
-            response.Message.Should().Be("Please give a valid number for base XP.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("Please give a valid number for base XP.");
         }
 
         [Test]
-        public async Task WhenUpdatingModifier_IfNumberIsInvalid_FailResponseAsync()
+        public void WhenUpdatingModifier_IfNumberIsInvalid_FailResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
@@ -91,14 +92,14 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
                 Value = "adsfas"
             };
 
-            var response = await CUT.Handle(command, default);
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
             context.ChangeTracker.Clear();
-            response.Success.Should().BeFalse();
-            response.Message.Should().Be("Please give a valid number for Modifier.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("Please give a valid number for Modifier.");
         }
 
         [Test]
-        public async Task WhenUpdatingAmount_IfNumberIsInvalid_FailResponseAsync()
+        public void WhenUpdatingAmount_IfNumberIsInvalid_FailResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
@@ -110,14 +111,14 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
                 Value = "adsfas"
             };
 
-            var response = await CUT.Handle(command, default);
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
             context.ChangeTracker.Clear();
-            response.Success.Should().BeFalse();
-            response.Message.Should().Be("Please give a valid number for Amount.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("Please give a valid number for Amount.");
         }
 
         [Test]
-        public async Task WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponseAsync()
+        public void WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
@@ -129,10 +130,10 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
                 Value = "345"
             };
             context.ChangeTracker.Clear();
-            var response = await CUT.Handle(command, default);
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-            response.Success.Should().BeFalse();
-            response.Message.Should().Be("Please give a valid channel for Log Channel.");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("Please give a valid channel for Log Channel.");
         }
 
         [Test]
@@ -150,7 +151,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
 
             var response = await CUT.Handle(command, default);
             context.ChangeTracker.Clear();
-            response.Success.Should().BeTrue();
             var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
             guildSettings.TextTime.Should().Be(TimeSpan.FromMinutes(23));
@@ -171,7 +171,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
 
             var response = await CUT.Handle(command, default);
             context.ChangeTracker.Clear();
-            response.Success.Should().BeTrue();
             var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
             guildSettings.Base.Should().Be(23);
@@ -192,7 +191,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
 
             var response = await CUT.Handle(command, default);
             context.ChangeTracker.Clear();
-            response.Success.Should().BeTrue();
             var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
             guildSettings.Modifier.Should().Be(23);
@@ -213,7 +211,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
 
             var response = await CUT.Handle(command, default);
             context.ChangeTracker.Clear();
-            response.Success.Should().BeTrue();
             var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
             guildSettings.Amount.Should().Be(23);
@@ -234,7 +231,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
 
             var response = await CUT.Handle(command, default);
             context.ChangeTracker.Clear();
-            response.Success.Should().BeTrue();
             var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
             guildSettings.LevelChannelLogId.Should().Be(12345678901234567);
@@ -255,7 +251,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
 
             var response = await CUT.Handle(command, default);
             context.ChangeTracker.Clear();
-            response.Success.Should().BeTrue();
             var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
             guildSettings.LevelChannelLogId.Should().BeNull();

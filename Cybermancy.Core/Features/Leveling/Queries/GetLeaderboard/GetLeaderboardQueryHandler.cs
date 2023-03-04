@@ -7,6 +7,7 @@
 
 using System.Text;
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Extensions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
                 memberPosition = RankedMembers.FindIndex(x => x.UserId == request.UserId);
 
             if (request.UserId is not null && memberPosition == -1)
-                return new GetLeaderboardQueryResponse { Success = false, Message = "Could not find user on leaderboard." };
+                throw new AnticipatedException("Could not find user on leaderboard.");
 
             if(memberPosition == -1)
                 memberPosition++;
@@ -49,7 +50,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLeaderboard
             for (var i = startIndex; i < 15 && i < totalMemberCount; i++)
                 leaderboardText.Append($"**{i + 1}** {RankedMembers[i].Mention} **XP:** {RankedMembers[i].Xp}\n");                
 
-            return new GetLeaderboardQueryResponse { Success = true, LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
+            return new GetLeaderboardQueryResponse { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
         }
     }
 }

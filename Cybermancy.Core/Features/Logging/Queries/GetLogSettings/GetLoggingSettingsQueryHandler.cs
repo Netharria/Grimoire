@@ -33,8 +33,7 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetLogSettings
                     UsernameChannelLog = x.UsernameChannelLogId,
                     NicknameChannelLog = x.NicknameChannelLogId,
                     AvatarChannelLog = x.AvatarChannelLogId,
-                    IsLoggingEnabled = x.ModuleEnabled,
-                    Success = true
+                    IsLoggingEnabled = x.ModuleEnabled
                 }).FirstAsync(cancellationToken: cancellationToken);
         }
     }

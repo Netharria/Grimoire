@@ -9,7 +9,6 @@ using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevel;
 using Cybermancy.Discord.Attributes;
 using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -45,17 +44,12 @@ namespace Cybermancy.Discord.LevelingModule
 
             var response = await this._mediator.Send(new GetLevelQuery{ UserId = user.Id, GuildId = member.Guild.Id});
 
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
-
             DiscordRole? roleReward = null;
             if (response.NextRoleRewardId is not null)
                 roleReward = ctx.Guild.GetRole(response.NextRoleRewardId.Value);
 
             var embed = new DiscordEmbedBuilder()
+
                 .WithColor(member.Color)
                 .WithTitle($"Level and EXP for {member.DisplayName}")
                 .AddField("XP", $"{response.UsersXp}", inline: true)
@@ -67,7 +61,7 @@ namespace Cybermancy.Discord.LevelingModule
                 .Build();
             await ctx.ReplyAsync(
                 embed: embed,
-                ephemeral: !member.Permissions.HasPermission(Permissions.ManageMessages));
+                ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
         }
     }
 }

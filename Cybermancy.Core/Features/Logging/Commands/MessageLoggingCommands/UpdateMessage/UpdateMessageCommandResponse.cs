@@ -15,5 +15,6 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Updat
         public ulong? UpdateMessageLogChannelId { get; init; }
         public string? MessageContent { get; init; }
         public ulong UserId { get; init; }
+        public bool Success { get; init; } = false;
     }
 }

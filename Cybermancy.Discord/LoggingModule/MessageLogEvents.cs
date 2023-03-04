@@ -45,7 +45,9 @@ namespace Cybermancy.Discord.LoggingModule
 
 
         public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
-            => await this._mediator.Send(new AddMessageCommand
+        {
+            if (args.Guild is null) return;
+            await this._mediator.Send(new AddMessageCommand
             {
                 Attachments = args.Message.Attachments
                     .Select(x =>
@@ -61,6 +63,7 @@ namespace Cybermancy.Discord.LoggingModule
                 ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
                 GuildId = args.Guild.Id
             });
+        }
 
         public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
         {

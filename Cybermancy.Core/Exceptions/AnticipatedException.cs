@@ -5,12 +5,13 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Mediator;
-
-namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessage
+namespace Cybermancy.Core.Exceptions
 {
-    public sealed record GetMessageQuery : IRequest<GetMessageQueryResponse>
+    public class AnticipatedException : Exception
     {
-        public ulong MessageId { get; init; }
+        public AnticipatedException(string message): base(message)
+        {
+
+        }
     }
 }

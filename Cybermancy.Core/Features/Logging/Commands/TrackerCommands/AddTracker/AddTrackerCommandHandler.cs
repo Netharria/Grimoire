@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Domain;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -21,41 +22,40 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<AddTrackerCommandResponse> Handle(AddTrackerCommand request, CancellationToken cancellationToken)
+        public async ValueTask<AddTrackerCommandResponse> Handle(AddTrackerCommand command, CancellationToken cancellationToken)
         {
-            var trackerEndTime = request.DurationType switch
+            var trackerEndTime = command.DurationType switch
             {
-                DurationType.Minutes => DateTime.UtcNow.AddMinutes(request.DurationAmount),
-                DurationType.Hours => DateTime.UtcNow.AddHours(request.DurationAmount),
-                DurationType.Days => DateTime.UtcNow.AddDays(request.DurationAmount),
+                DurationType.Minutes => DateTime.UtcNow.AddMinutes(command.DurationAmount),
+                DurationType.Hours => DateTime.UtcNow.AddHours(command.DurationAmount),
+                DurationType.Days => DateTime.UtcNow.AddDays(command.DurationAmount),
                 _ => throw new NotImplementedException(),
             };
 
             var result = await this._cybermancyDbContext.Trackers
-                .Where(x => x.UserId == request.UserId && x.GuildId == request.GuildId)
+                .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
                 .Select(x => new { Tracker = x, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
             if (result is null)
-                return new AddTrackerCommandResponse { Success = false, Message = "Could not find that user." };
+                throw new AnticipatedException("Could not find that user.");
             if (result?.Tracker is null)
                 await this._cybermancyDbContext.Trackers.AddAsync(new Tracker
                     {
-                        UserId = request.UserId,
-                        GuildId = request.GuildId,
+                        UserId = command.UserId,
+                        GuildId = command.GuildId,
                         EndTime = trackerEndTime,
-                        LogChannelId = request.ChannelId,
-                        ModeratorId = request.ModeratorId
+                        LogChannelId = command.ChannelId,
+                        ModeratorId = command.ModeratorId
                     }, cancellationToken);
             else
             {
-                result.Tracker.LogChannelId = request.ChannelId;
+                result.Tracker.LogChannelId = command.ChannelId;
                 result.Tracker.EndTime = trackerEndTime;
-                result.Tracker.ModeratorId = request.ModeratorId;
+                result.Tracker.ModeratorId = command.ModeratorId;
             }
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return new AddTrackerCommandResponse
             {
-                Success = true,
                 ModerationLogId = result?.ModChannelLog
             };
         }

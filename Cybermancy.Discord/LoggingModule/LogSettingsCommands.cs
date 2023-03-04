@@ -10,7 +10,6 @@ using Cybermancy.Core.Features.Logging.Commands.SetLogSettings;
 using Cybermancy.Core.Features.Logging.Queries.GetLogSettings;
 using Cybermancy.Discord.Attributes;
 using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
@@ -95,12 +94,6 @@ namespace Cybermancy.Discord.LoggingModule
                 LogSetting = loggingSetting,
                 ChannelId = result == 0 ? null : result
             });
-
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
 
             await ctx.ReplyAsync(message: $"Updated {loggingSetting.GetName()} to {value}", ephemeral: false);
         }

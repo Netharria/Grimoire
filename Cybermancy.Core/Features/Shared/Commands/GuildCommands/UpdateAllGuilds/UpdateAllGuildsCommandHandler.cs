@@ -24,19 +24,19 @@ namespace Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds
             this._inviteService = inviteService;
         }
 
-        public async ValueTask<Unit> Handle(UpdateAllGuildsCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(UpdateAllGuildsCommand command, CancellationToken cancellationToken)
         {
-            var usersAdded = await this._cybermancyDbContext.Users.AddMissingUsersAsync(request.Users, cancellationToken);
+            var usersAdded = await this._cybermancyDbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
 
-            var guildsAdded = await this._cybermancyDbContext.Guilds.AddMissingGuildsAsync(request.Guilds, cancellationToken);
+            var guildsAdded = await this._cybermancyDbContext.Guilds.AddMissingGuildsAsync(command.Guilds, cancellationToken);
 
-            var rolesAdded = await this._cybermancyDbContext.Roles.AddMissingRolesAsync(request.Roles, cancellationToken);
+            var rolesAdded = await this._cybermancyDbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);
 
-            var channelsAdded = await this._cybermancyDbContext.Channels.AddMissingChannelsAsync(request.Channels, cancellationToken);
+            var channelsAdded = await this._cybermancyDbContext.Channels.AddMissingChannelsAsync(command.Channels, cancellationToken);
 
-            var membersAdded = await this._cybermancyDbContext.Members.AddMissingMembersAsync(request.Members, cancellationToken);
+            var membersAdded = await this._cybermancyDbContext.Members.AddMissingMembersAsync(command.Members, cancellationToken);
 
-            this._inviteService.UpdateAllInvites(request.Invites.ToList());
+            this._inviteService.UpdateAllInvites(command.Invites.ToList());
 
             if (usersAdded || guildsAdded || rolesAdded || channelsAdded || membersAdded)
                 await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

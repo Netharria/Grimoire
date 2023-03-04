@@ -36,18 +36,10 @@ namespace Cybermancy.Discord.LevelingModule
         [SlashCommand("Add", "Adds or updates rewards for the server.")]
         public async Task AddAsync(InteractionContext ctx,
             [Option("Role", "The role to be added as a reward")] DiscordRole role,
+            [Minimum(0)]
+            [Maximum(int.MaxValue)]
             [Option("Level", "The level the reward is awarded at.")] long level)
         {
-            if(level < 0)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Level can't be negative.");
-                return;
-            }
-            if(level > int.MaxValue)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: "Level provided is set too high.");
-                return;
-            }
             var response = await this._mediator.Send(
                 new AddRewardCommand
                 {
@@ -55,12 +47,6 @@ namespace Cybermancy.Discord.LevelingModule
                     GuildId = ctx.Guild.Id,
                     RewardLevel = (int)level,
                 });
-
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
             await ctx.ReplyAsync(CybermancyColor.Gold, message: response.Message, ephemeral: false);
         }
 
@@ -74,11 +60,6 @@ namespace Cybermancy.Discord.LevelingModule
                     RoleId = role.Id
                 });
 
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
             await ctx.ReplyAsync(CybermancyColor.Gold, message: response.Message, ephemeral: false);
         }
 
@@ -86,11 +67,6 @@ namespace Cybermancy.Discord.LevelingModule
         public async Task ViewAsync(InteractionContext ctx)
         {
             var response = await this._mediator.Send(new GetRewardsQuery{ GuildId = ctx.Guild.Id});
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
             await ctx.ReplyAsync(CybermancyColor.Gold,
                 title: "Rewards",
                 message: response.Message,

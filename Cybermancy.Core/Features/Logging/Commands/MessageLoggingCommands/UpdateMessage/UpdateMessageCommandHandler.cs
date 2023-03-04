@@ -22,11 +22,11 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Updat
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand command, CancellationToken cancellationToken)
         {
             var message = await this._cybermancyDbContext.Messages
                 .WhereLoggingIsEnabled()
-                .WhereIdIs(request.MessageId)
+                .WhereIdIs(command.MessageId)
                 .Select(x => new UpdateMessageCommandResponse
                 {
                     UpdateMessageLogChannelId = x.Guild.LogSettings.EditChannelLogId,
@@ -40,7 +40,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Updat
                 }
                 ).FirstOrDefaultAsync(cancellationToken: cancellationToken);
             if (message is null
-                || message.MessageContent == request.MessageContent)
+                || message.MessageContent == command.MessageContent)
                 return new UpdateMessageCommandResponse { Success = false };
 
             await this._cybermancyDbContext.MessageHistory.AddAsync(
@@ -48,8 +48,8 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Updat
                 {
                     MessageId = message.MessageId,
                     Action = MessageAction.Updated,
-                    GuildId = request.GuildId,
-                    MessageContent = request.MessageContent
+                    GuildId = command.GuildId,
+                    MessageContent = command.MessageContent
                 }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return message;

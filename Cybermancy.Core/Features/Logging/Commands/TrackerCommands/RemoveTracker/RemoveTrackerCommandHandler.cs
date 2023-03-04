@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.Exceptions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,10 +21,10 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveTracke
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<RemoveTrackerCommandResponse> Handle(RemoveTrackerCommand request, CancellationToken cancellationToken)
+        public async ValueTask<RemoveTrackerCommandResponse> Handle(RemoveTrackerCommand command, CancellationToken cancellationToken)
         {
             var result = await this._cybermancyDbContext.Trackers
-                .Where(x => x.UserId == request.UserId && x.GuildId == request.GuildId)
+                .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
                 .Select(x => new
                 {
                     Tracker = x,
@@ -31,7 +32,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveTracke
                     TrackerChannelId = x.LogChannelId
                 }).FirstOrDefaultAsync(cancellationToken);
             if (result is null)
-                return new RemoveTrackerCommandResponse { Success = false, Message = "Could not find a tracker for that user." };
+                throw new AnticipatedException("Could not find a tracker for that user.");
             if (result.Tracker is not null)
             {
                 this._cybermancyDbContext.Trackers.Remove(result.Tracker);
@@ -39,7 +40,6 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveTracke
             }
             return new RemoveTrackerCommandResponse
             {
-                Success = true,
                 ModerationLogId = result.ModerationLogId,
                 TrackerChannelId = result.TrackerChannelId
             };

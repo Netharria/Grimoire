@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBanIfDoesNotExist;
+using Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBan;
 using Cybermancy.Core.Features.Moderation.Queries.GetBan;
 using Cybermancy.Discord.Extensions;
 using Cybermancy.Discord.Structs;
@@ -15,7 +15,6 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
 using Mediator;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
 using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.ModerationModule
@@ -39,7 +38,7 @@ namespace Cybermancy.Discord.ModerationModule
             if(!response.ModerationModuleEnabled)
                 return;
 
-            if (!response.Success || response.SinOn > DateTimeOffset.UtcNow.AddSeconds(-5))
+            if (response.SinOn > DateTimeOffset.UtcNow.AddSeconds(-5))
             {
                 var addBanCommand = new AddBanCommand
                 {

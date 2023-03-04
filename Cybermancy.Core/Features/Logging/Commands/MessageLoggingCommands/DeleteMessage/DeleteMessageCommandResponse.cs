@@ -16,5 +16,6 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
         public ulong UserId { get; init; }
         public string? MessageContent { get; init; }
         public AttachmentDto[] Attachments { get; init; } = Array.Empty<AttachmentDto>();
+        public bool Success { get; init; } = false;
     }
 }

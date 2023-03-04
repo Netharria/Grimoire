@@ -21,19 +21,19 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(AddMemberCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddMemberCommand command, CancellationToken cancellationToken)
         {
-            var userExists = await this._cybermancyDbContext.Users.AnyAsync(x => x.Id == request.UserId, cancellationToken);
-            var memberExists = await this._cybermancyDbContext.Members.AnyAsync(x => x.UserId == request.UserId && x.GuildId == request.GuildId, cancellationToken);
+            var userExists = await this._cybermancyDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken);
+            var memberExists = await this._cybermancyDbContext.Members.AnyAsync(x => x.UserId == command.UserId && x.GuildId == command.GuildId, cancellationToken);
 
             if (!userExists)
                 await this._cybermancyDbContext.Users.AddAsync(new User
                     {
-                        Id = request.UserId,
+                        Id = command.UserId,
                         UsernameHistories = new List<UsernameHistory> {
                             new UsernameHistory {
-                                Username = request.UserName,
-                                UserId = request.UserId
+                                Username = command.UserName,
+                                UserId = command.UserId
                             }
                         }
                     }, cancellationToken);
@@ -42,13 +42,13 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
             {
                 var member = new Member
                 {
-                    UserId = request.UserId,
-                    GuildId = request.GuildId,
+                    UserId = command.UserId,
+                    GuildId = command.GuildId,
                     XpHistory = new List<XpHistory>
                     {
                         new XpHistory {
-                            UserId = request.UserId,
-                            GuildId = request.GuildId,
+                            UserId = command.UserId,
+                            GuildId = command.GuildId,
                             Type = XpHistoryType.Created,
                             Xp = 0,
                             TimeOut = DateTime.UtcNow
@@ -56,14 +56,14 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember
                     }
                     
                 };
-                if (!string.IsNullOrWhiteSpace(request.Nickname))
+                if (!string.IsNullOrWhiteSpace(command.Nickname))
                 {
                     member.NicknamesHistory.Add(
                     new NicknameHistory
                     {
-                        UserId = request.UserId,
-                        GuildId = request.GuildId,
-                        Nickname = request.Nickname
+                        UserId = command.UserId,
+                        GuildId = command.GuildId,
+                        Nickname = command.Nickname
                     });
                 }
                     

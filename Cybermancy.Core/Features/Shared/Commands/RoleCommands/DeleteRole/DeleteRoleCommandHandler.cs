@@ -19,10 +19,10 @@ namespace Cybermancy.Core.Features.Shared.Commands.RoleCommands.DeleteRole
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(DeleteRoleCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(DeleteRoleCommand command, CancellationToken cancellationToken)
         {
 
-            this._cybermancyDbContext.Roles.Remove(this._cybermancyDbContext.Roles.First(x => x.Id == request.RoleId));
+            this._cybermancyDbContext.Roles.Remove(this._cybermancyDbContext.Roles.First(x => x.Id == command.RoleId));
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }

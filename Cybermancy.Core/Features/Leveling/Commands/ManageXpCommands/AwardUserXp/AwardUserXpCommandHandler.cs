@@ -7,15 +7,15 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Extensions;
-using Cybermancy.Core.Responses;
 using Cybermancy.Domain;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp
 {
-    public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, BaseResponse>
+    public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, Unit>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -24,33 +24,27 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserX
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<BaseResponse> Handle(AwardUserXpCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AwardUserXpCommand command, CancellationToken cancellationToken)
         {
-            if (request.XpToAward < 0)
-                return new BaseResponse { Success = false, Message = "Xp needs to be a positive value." };
-
+            
             var member = await this._cybermancyDbContext.Members
-                .WhereMemberHasId(request.UserId, request.GuildId)
+                .WhereMemberHasId(command.UserId, command.GuildId)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
             if (member is null)
-                return new BaseResponse
-                {
-                    Success = false,
-                    Message = $"{UserExtensions.Mention(request.UserId)} was not found. Have they been on the server before?"
-                };
+                throw new AnticipatedException($"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
 
             await this._cybermancyDbContext.XpHistory.AddAsync(new XpHistory
             {
-                GuildId = request.GuildId,
-                UserId = request.UserId,
-                Xp = request.XpToAward,
+                GuildId = command.GuildId,
+                UserId = command.UserId,
+                Xp = command.XpToAward,
                 TimeOut = DateTimeOffset.UtcNow,
                 Type = XpHistoryType.Awarded,
-                AwarderId = request.AwarderId,
+                AwarderId = command.AwarderId,
             }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { Success = true };
+            return new Unit();
         }
     }
 }

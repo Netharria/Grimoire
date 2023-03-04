@@ -22,23 +22,23 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(UpdateMemberCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(UpdateMemberCommand command, CancellationToken cancellationToken)
         {
             var currentNickname = await this._cybermancyDbContext.NicknameHistory
-                .WhereMemberHasId(request.UserId, request.GuildId)
+                .WhereMemberHasId(command.UserId, command.GuildId)
                 .OrderByDescending(x => x.Timestamp)
                 .Select(x => x.Nickname)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-            if (string.IsNullOrWhiteSpace(request.Nickname)
+            if (string.IsNullOrWhiteSpace(command.Nickname)
                 || string.IsNullOrWhiteSpace(currentNickname)
-                || currentNickname.Equals(request.Nickname, StringComparison.Ordinal))
+                || currentNickname.Equals(command.Nickname, StringComparison.Ordinal))
                 return Unit.Value;
             await this._cybermancyDbContext.NicknameHistory.AddAsync(
                 new NicknameHistory
                 {
-                    GuildId = request.GuildId,
-                    UserId = request.UserId,
-                    Nickname = request.Nickname
+                    GuildId = command.GuildId,
+                    UserId = command.UserId,
+                    Nickname = command.Nickname
                 }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;

@@ -27,7 +27,6 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetTrackerWithOldMessage
             .WhereMemberIs(request.UserId, request.GuildId)
             .Select(x => new GetTrackerWithOldMessageQueryResponse
             {
-                Success = true,
                 TrackerChannelId = x.LogChannelId,
                 OldMessageContent = x.Member.Messages
                     .Where(x => x.Id == request.MessageId)

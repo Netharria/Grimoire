@@ -23,10 +23,10 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<DeleteMessageCommandResponse> Handle(DeleteMessageCommand request, CancellationToken cancellationToken)
+        public async ValueTask<DeleteMessageCommandResponse> Handle(DeleteMessageCommand command, CancellationToken cancellationToken)
         {
             var message = await this._cybermancyDbContext.Messages
-                .WhereIdIs(request.Id)
+                .WhereIdIs(command.Id)
                 .WhereLoggingIsEnabled()
                 .Select(x => new DeleteMessageCommandResponse
                 {
@@ -50,10 +50,10 @@ namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.Delet
                 return new DeleteMessageCommandResponse { Success = false };
             await this._cybermancyDbContext.MessageHistory.AddAsync(new MessageHistory
             {
-                MessageId = request.Id,
+                MessageId = command.Id,
                 Action = MessageAction.Deleted,
-                GuildId = request.GuildId,
-                DeletedByModeratorId = request.DeletedByModerator
+                GuildId = command.GuildId,
+                DeletedByModeratorId = command.DeletedByModerator
             }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return message;

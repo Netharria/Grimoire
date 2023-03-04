@@ -19,12 +19,12 @@ namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(AddChannelCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(AddChannelCommand command, CancellationToken cancellationToken)
         {
             await this._cybermancyDbContext.Channels.AddAsync(new Channel
                 {
-                    Id = request.ChannelId,
-                    GuildId = request.GuildId
+                    Id = command.ChannelId,
+                    GuildId = command.GuildId
                 }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;

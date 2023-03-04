@@ -37,6 +37,7 @@ namespace Cybermancy.Discord.LoggingModule
         public async Task TrackAsync(InteractionContext ctx,
             [Option("User", "User to log.")] DiscordUser user,
             [Option("DurationType", "Select whether the duration will be in minutes hours or days")] DurationType durationType,
+            [Minimum(0)]
             [Option("DurationAmount", "Select the amount of time the logging will last.")] long durationAmount,
             [Option("Channel", "Select the channel to log to. Current channel if left blank.")] DiscordChannel? discordChannel = null)
         {
@@ -57,7 +58,7 @@ namespace Cybermancy.Discord.LoggingModule
                 return;
             }
 
-            if (discordChannel is null) discordChannel = ctx.Channel;
+            discordChannel ??= ctx.Channel;
             var response = await this._mediator.Send(
                 new AddTrackerCommand
                 {
@@ -68,11 +69,6 @@ namespace Cybermancy.Discord.LoggingModule
                     ChannelId = discordChannel.Id,
                     ModeratorId = ctx.Member.Id,
                 });
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
 
             await ctx.ReplyAsync(message: $"Tracker placed on {member.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}", ephemeral: false);
 
@@ -91,11 +87,6 @@ namespace Cybermancy.Discord.LoggingModule
         {
             var response = await this._mediator.Send(new RemoveTrackerCommand{ UserId = member.Id, GuildId = ctx.Guild.Id});
 
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
 
             await ctx.ReplyAsync(message: $"Tracker removed from {member.Mention}", ephemeral: false);
 

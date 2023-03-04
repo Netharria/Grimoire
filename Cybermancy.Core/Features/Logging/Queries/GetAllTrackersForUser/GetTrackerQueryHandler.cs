@@ -23,7 +23,6 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetAllTrackersForUser
         public async ValueTask<GetAllTrackersForUserQueryResponse> Handle(GetAllTrackersForUserQuery request, CancellationToken cancellationToken)
             => new GetAllTrackersForUserQueryResponse
             {
-                Success = true,
                 Trackers = await this._cybermancyDbContext.Trackers
                     .Where(x => x.UserId == request.UserId)
                     .Select(x => new UserTracker

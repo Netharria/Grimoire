@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
+using Cybermancy.Core.Exceptions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,8 +27,8 @@ namespace Cybermancy.Core.Features.Moderation.Queries.GetMuteRole
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => x.MuteRole)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-            if (muteRoleId is null) return new GetMuteRoleQueryResponse { Message = "No mute role is configured." };
-            return new GetMuteRoleQueryResponse { Success = true, RoleId = muteRoleId.Value };
+            if (muteRoleId is null) throw new AnticipatedException("No mute role is configured.");
+            return new GetMuteRoleQueryResponse { RoleId = muteRoleId.Value };
         }
     }
 }

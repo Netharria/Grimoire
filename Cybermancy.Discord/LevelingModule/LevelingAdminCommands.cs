@@ -38,15 +38,12 @@ namespace Cybermancy.Discord.LevelingModule
         }
 
         [SlashCommand("Award", "Awards a user some xp.")]
-        public async Task AwardAsync(InteractionContext ctx, [Option("User", "User to award xp.")] DiscordUser user, [Option("XP", "The amount of xp to grant.")] long xpToAward)
+        public async Task AwardAsync(InteractionContext ctx,
+            [Option("User", "User to award xp.")] DiscordUser user,
+            [Minimum(0)]
+            [Option("XP", "The amount of xp to grant.")] long xpToAward)
         {
-            var response = await this._mediator.Send(new AwardUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id });
-
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
+            await this._mediator.Send(new AwardUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id });
 
             await ctx.ReplyAsync(CybermancyColor.Gold, message: $"{user.Mention} has been awarded {xpToAward} xp.", ephemeral: false);
         }
@@ -55,9 +52,9 @@ namespace Cybermancy.Discord.LevelingModule
         [SlashCommand("Reclaim", "Takes away xp from user.")]
         public async Task ReclaimAsync(InteractionContext ctx,
             [Option("User", "User to take xp away from.")] DiscordUser user,
-            [Option("XP", "The amount of xp to Take.")] string amount)
+            [Option("XP", "The amount of xp to Take. Enter 'all' to take all xp.")] string amount)
         {
-            var response = await this._mediator.Send(
+            await this._mediator.Send(
                 new ReclaimUserXpCommand
                 {
                     UserId = user.Id,
@@ -65,12 +62,6 @@ namespace Cybermancy.Discord.LevelingModule
                     XpToTake = amount,
                     ReclaimerId = ctx.User.Id
                 });
-
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
 
             await ctx.ReplyAsync(CybermancyColor.Gold, message: $"{amount} xp has been taken from {user.Mention}.", ephemeral: false);
         }
@@ -80,12 +71,6 @@ namespace Cybermancy.Discord.LevelingModule
         {
 
             var response = await this._mediator.Send(new GetIgnoredItemsQuery { GuildId = ctx.Guild.Id });
-
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
 
             var interactivity = ctx.Client.GetInteractivity();
             var embed = new DiscordEmbedBuilder()
@@ -113,44 +98,38 @@ namespace Cybermancy.Discord.LevelingModule
                 return;
             }
 
-            var userDtos = await matchedIds["Users"]
+            var userDtos = matchedIds.ContainsKey("User") ? await matchedIds["User"]
                 .ToAsyncEnumerable()
-                .Select(x => BuildUserDto(ctx.Client, x, ctx.Guild.Id))
+                .SelectAwait(async x => await BuildUserDto(ctx.Client, x, ctx.Guild.Id))
                 .OfType<UserDto>()
-                .ToArrayAsync();
+                .ToArrayAsync() : Array.Empty<UserDto>();
 
             var response = await this._mediator.Send(new UpdateIgnoreStateForXpGainCommand
             {
                 Users = userDtos,
-                Roles = matchedIds["Role"]
+                Roles = matchedIds.ContainsKey("Role") ? matchedIds["Role"]
                     .Select(x =>
                         new RoleDto
                         {
                             Id = ulong.Parse(x),
                             GuildId = ctx.Guild.Id
-                        }).ToArray(),
-                Channels = matchedIds["Channel"]
+                        }).ToArray() : Array.Empty<RoleDto>(),
+                Channels = matchedIds.ContainsKey("Channel") ? matchedIds["Channel"]
                     .Select(x =>
                         new ChannelDto
                         {
                             Id = ulong.Parse(x),
                             GuildId = ctx.Guild.Id
-                        }).ToArray(),
-                InvalidIds = matchedIds["Invalid"],
+                        }).ToArray() : Array.Empty<ChannelDto>(),
+                InvalidIds = matchedIds.ContainsKey("Invalid") ? matchedIds["Invalid"] : Array.Empty<string>(),
                 GuildId = ctx.Guild.Id,
                 ShouldIgnore = shouldIgnore
             });
 
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
-
             await ctx.ReplyAsync(CybermancyColor.Green, message: response.Message, ephemeral: false);
         }
 
-        private async static Task<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
+        private async static ValueTask<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
         {
             var id = ulong.Parse(idString);
             if (client.Guilds[guildId].Members.TryGetValue(id, out var member))

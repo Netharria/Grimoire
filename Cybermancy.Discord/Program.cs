@@ -77,6 +77,8 @@ Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<TrackerCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<ModerationSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<MuteAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<BanCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<SinAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient)

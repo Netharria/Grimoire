@@ -7,10 +7,11 @@
 
 using Mediator;
 
-namespace Cybermancy.Core.Features.Logging.Queries.MightDeleteMessageLogQueries.GetMessages
+namespace Cybermancy.Core.Features.Moderation.Queries.GetBan
 {
-    public sealed record GetMessagesQuery : IRequest<GetMessagesQueryResponse>
+    public sealed record GetBanQuery : IRequest<GetBanQueryResponse>
     {
-        public ulong[] MesssageIds { get; init; } = Array.Empty<ulong>();
+        public long SinId { get; init; }
+        public ulong GuildId { get; init; }
     }
 }

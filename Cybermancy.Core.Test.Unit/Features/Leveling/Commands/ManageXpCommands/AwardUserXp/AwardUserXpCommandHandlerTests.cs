@@ -7,6 +7,7 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -37,51 +38,31 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.
                     XpToAward = 20
                 }, default);
             context.ChangeTracker.Clear();
-            result.Success.Should().BeTrue();
 
             var member = await context.Members.Where(x =>
                 x.UserId == TestDatabaseFixture.Member1.UserId
                 && x.GuildId == TestDatabaseFixture.Member1.GuildId
-                ).FirstAsync();
+                ).Include(x => x.XpHistory).FirstAsync();
             member.XpHistory.Sum(x => x.Xp).Should().Be(20);
         }
 
         [Test]
-        public async Task WhenAwardUserXpCommandHandlerCalled_WithNegativeReward_ReturnFailedResponseAsync()
+        public void WhenAwardUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
         {
             var context = this.DatabaseFixture.CreateContext();
 
             var cut = new AwardUserXpCommandHandler(context);
             context.Database.BeginTransaction();
-            var result = await cut.Handle(
-                new AwardUserXpCommand
-                {
-                    UserId = TestDatabaseFixture.Member1.UserId,
-                    GuildId = TestDatabaseFixture.Member1.GuildId,
-                    XpToAward = -20
-                }, default);
-            context.ChangeTracker.Clear();
-            result.Success.Should().BeFalse();
-            result.Message.Should().Be("Xp needs to be a positive value.");
-        }
-
-        [Test]
-        public async Task WhenAwardUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponseAsync()
-        {
-            var context = this.DatabaseFixture.CreateContext();
-
-            var cut = new AwardUserXpCommandHandler(context);
-            context.Database.BeginTransaction();
-            var result = await cut.Handle(
+            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
                 new AwardUserXpCommand
                 {
                     UserId = 20001,
                     GuildId = TestDatabaseFixture.Member1.GuildId,
                     XpToAward = 20
-                }, default);
+                }, default));
             context.ChangeTracker.Clear();
-            result.Success.Should().BeFalse();
-            result.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
+            response.Should().NotBeNull();
+            response?.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
         }
     }
 }

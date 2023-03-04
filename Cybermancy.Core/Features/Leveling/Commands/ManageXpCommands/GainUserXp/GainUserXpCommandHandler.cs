@@ -23,16 +23,16 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<GainUserXpCommandResponse> Handle(GainUserXpCommand request, CancellationToken cancellationToken)
+        public async ValueTask<GainUserXpCommandResponse> Handle(GainUserXpCommand command, CancellationToken cancellationToken)
         {
             var result = await this._cybermancyDbContext.Members
-                .WhereMemberHasId(request.UserId, request.GuildId)
+                .WhereMemberHasId(command.UserId, command.GuildId)
                 .WhereLevelingEnabled()
-                .WhereMemberNotIgnored(request.ChannelId, request.RoleIds)
+                .WhereMemberNotIgnored(command.ChannelId, command.RoleIds)
                 .Select(x => new
                 {
                     Xp = x.XpHistory.Sum(x => x.Xp),
-                    x.XpHistory.OrderByDescending(x => x.TimeOut).First().TimeOut,
+                    XpHistory = x.XpHistory.OrderByDescending(x => x.TimeOut).First(),
                     x.Guild.LevelSettings.Base,
                     x.Guild.LevelSettings.Modifier,
                     x.Guild.LevelSettings.Amount,
@@ -40,7 +40,7 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
                     x.Guild.LevelSettings.TextTime
                 }).FirstOrDefaultAsync(cancellationToken);
 
-            if (result is null || result.TimeOut > DateTime.UtcNow)
+            if (result is null || (result.XpHistory is not null && result.XpHistory.TimeOut > DateTime.UtcNow))
 
                 return new GainUserXpCommandResponse { Success = false };
 
@@ -50,15 +50,15 @@ namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
             await this._cybermancyDbContext.XpHistory.AddAsync(new XpHistory
                 {
                     Xp = result.Amount,
-                    UserId = request.UserId,
-                    GuildId = request.GuildId,
+                    UserId = command.UserId,
+                    GuildId = command.GuildId,
                     TimeOut = DateTimeOffset.UtcNow + result.TextTime,
                     Type = XpHistoryType.Earned
                 }, cancellationToken);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
             var earnedRewards = await this._cybermancyDbContext.Rewards
-                .Where(x => x.GuildId == request.GuildId)
+                .Where(x => x.GuildId == command.GuildId)
                 .Where(x => x.RewardLevel <= currentLevel)
                 .Select(x => x.RoleId )
                 .ToArrayAsync(cancellationToken: cancellationToken);

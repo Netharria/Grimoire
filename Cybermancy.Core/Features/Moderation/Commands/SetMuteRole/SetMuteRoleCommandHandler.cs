@@ -6,13 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Cybermancy.Core.Contracts.Persistance;
-using Cybermancy.Core.Responses;
+using Cybermancy.Core.Exceptions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cybermancy.Core.Features.Moderation.Commands.MuteCommands.SetMuteRole
 {
-    public class SetMuteRoleCommandHandler : ICommandHandler<SetMuteRoleCommand, BaseResponse>
+    public class SetMuteRoleCommandHandler : ICommandHandler<SetMuteRoleCommand>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -21,17 +21,17 @@ namespace Cybermancy.Core.Features.Moderation.Commands.MuteCommands.SetMuteRole
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<BaseResponse> Handle(SetMuteRoleCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(SetMuteRoleCommand command, CancellationToken cancellationToken)
         {
             var guildModerationSettings = await this._cybermancyDbContext.GuildModerationSettings
-                .FirstOrDefaultAsync(x => x.GuildId == request.GuildId, cancellationToken);
-            if (guildModerationSettings is null) return new BaseResponse { Success = false, Message = "Could not find the Servers settings." };
+                .FirstOrDefaultAsync(x => x.GuildId == command.GuildId, cancellationToken);
+            if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
 
-            guildModerationSettings.MuteRole = request.Role;
+            guildModerationSettings.MuteRole = command.Role;
             this._cybermancyDbContext.GuildModerationSettings.Update(guildModerationSettings);
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
 
-            return new BaseResponse { Success = true };
+            return new Unit();
         }
     }
 }

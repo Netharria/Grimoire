@@ -41,6 +41,7 @@ namespace Cybermancy.Discord.LoggingModule
         
         public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
+            if (args.Guild is null) return;
             var response = await this._mediator.Send(new GetTrackerQuery{ UserId = args.Author.Id, GuildId = args.Guild.Id });
             if (response is null) return;
 

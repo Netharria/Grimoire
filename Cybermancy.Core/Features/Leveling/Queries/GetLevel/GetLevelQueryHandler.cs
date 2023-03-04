@@ -7,6 +7,7 @@
 
 using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
+using Cybermancy.Core.Exceptions;
 using Cybermancy.Core.Extensions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -34,11 +35,7 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
                 }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
             if (member is null)
-                return new GetLevelQueryResponse()
-                {
-                    Success = false,
-                    Message = "That user could not be found."
-                };
+                throw new AnticipatedException("That user could not be found.");
 
             var nextReward = await this._cybermancyDbContext.Rewards
                 .Where(x => x.GuildId == request.GuildId && x.RewardLevel > member.Level)
@@ -48,7 +45,6 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevel
 
             return new GetLevelQueryResponse
             {
-                Success = true,
                 UsersXp = member.Xp,
                 UsersLevel = member.Level,
                 LevelProgress = member.LevelProgress,

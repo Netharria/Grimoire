@@ -26,7 +26,6 @@ namespace Cybermancy.Core.Features.Logging.Queries.GetTracker
             .WhereMemberIs(request.UserId, request.GuildId)
             .Select(x => new GetTrackerQueryResponse
             {
-                Success = true,
                 TrackerChannelId = x.LogChannelId
             }).FirstOrDefaultAsync(cancellationToken);
 

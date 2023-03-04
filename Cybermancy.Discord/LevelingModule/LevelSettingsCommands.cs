@@ -10,7 +10,6 @@ using Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings;
 using Cybermancy.Discord.Attributes;
 using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
 using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
@@ -82,12 +81,6 @@ namespace Cybermancy.Discord.LevelingModule
                 LevelSettings = levelSettings,
                 Value = value
             });
-
-            if (!response.Success)
-            {
-                await ctx.ReplyAsync(CybermancyColor.Orange, message: response.Message);
-                return;
-            }
 
             await ctx.ReplyAsync(message: $"Updated {levelSettings.GetName()} to {value}", ephemeral: false);
         }

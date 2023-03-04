@@ -20,7 +20,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveExpire
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<RemoveExpiredTrackersCommandResponse> Handle(RemoveExpiredTrackersCommand request, CancellationToken cancellationToken)
+        public async ValueTask<RemoveExpiredTrackersCommandResponse> Handle(RemoveExpiredTrackersCommand command, CancellationToken cancellationToken)
         {
             var results = await this._cybermancyDbContext.Trackers.Where(x => x.EndTime < DateTime.UtcNow)
                 .Select(x => new
@@ -37,7 +37,6 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveExpire
                 
             return new RemoveExpiredTrackersCommandResponse
             {
-                Success = true,
                 ExpiredTrackers = results.Select(x => new ExpiredTracker
                 {
                     UserId = x.Tracker.UserId,

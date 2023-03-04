@@ -38,7 +38,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsComm
 
             context.ChangeTracker.Clear();
 
-            response.Success.Should().BeTrue();
             response.Message.Should().Be("Added <@&6> reward at level 10");
         }
 
@@ -60,8 +59,6 @@ namespace Cybermancy.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsComm
             var response = await CUT.Handle(command, default);
 
             context.ChangeTracker.Clear();
-
-            response.Success.Should().BeTrue();
             response.Message.Should().Be("Updated <@&7> reward to level 15");
         }
     }

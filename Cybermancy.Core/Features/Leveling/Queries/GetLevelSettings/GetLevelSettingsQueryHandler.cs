@@ -34,7 +34,6 @@ namespace Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings
                 }).FirstAsync(cancellationToken: cancellationToken);
             return new GetLevelSettingsQueryResponse
             {
-                Success = true,
                 ModuleEnabled = guildLevelSettings.ModuleEnabled,
                 TextTime = guildLevelSettings.TextTime,
                 Base = guildLevelSettings.Base,

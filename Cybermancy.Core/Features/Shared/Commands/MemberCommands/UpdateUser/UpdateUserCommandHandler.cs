@@ -21,19 +21,19 @@ namespace Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
         {
             var userName = await this._cybermancyDbContext.UsernameHistory
-                .Where(x => x.UserId == request.UserId)
+                .Where(x => x.UserId == command.UserId)
                 .OrderByDescending(x => x.Timestamp)
                 .Select(x => x.Username)
                 .FirstAsync(cancellationToken: cancellationToken);
-            if (userName.Equals(request.UserName, StringComparison.Ordinal))
+            if (userName.Equals(command.UserName, StringComparison.Ordinal))
                 return Unit.Value;
             await this._cybermancyDbContext.UsernameHistory.AddAsync(new UsernameHistory
                 {
-                    UserId = request.UserId,
-                    Username = request.UserName
+                    UserId = command.UserId,
+                    Username = command.UserName
                 }, cancellationToken);
 
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);

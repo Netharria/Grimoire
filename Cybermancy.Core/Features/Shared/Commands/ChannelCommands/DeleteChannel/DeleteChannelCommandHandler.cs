@@ -19,9 +19,9 @@ namespace Cybermancy.Core.Features.Shared.Commands.ChannelCommands.DeleteChannel
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<Unit> Handle(DeleteChannelCommand request, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(DeleteChannelCommand command, CancellationToken cancellationToken)
         {
-            this._cybermancyDbContext.Channels.Remove(new Channel { Id = request.ChannelId });
+            this._cybermancyDbContext.Channels.Remove(new Channel { Id = command.ChannelId });
             await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }
