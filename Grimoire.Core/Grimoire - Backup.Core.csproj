@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mediator.Abstractions" Version="2.0.27-rc" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.7">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.7" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="System.Linq.Expressions" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Enums\" />
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <Using Include="Grimoire.Core.Contracts.Persistance" />
+    <Using Include="Grimoire.Core.Exceptions" />
+    <Using Include="Mediator" />
+    <Using Include="Microsoft.EntityFrameworkCore" />
+    <Using Include="Grimoire.Core.Responses" />
+    <Using Include="Grimoire.Core.Features.Shared.SharedDtos" />
+    <Using Include="Grimoire.Domain" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Grimoire.Domain\Grimoire.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
