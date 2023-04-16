@@ -130,7 +130,7 @@ namespace Grimoire.Discord.LoggingModule
 
                     await logChannel.SendMessageAsync(new DiscordMessageBuilder()
                         .AddEmbed(embed)
-                        .WithFile(fileName, stream));
+                        .AddFile(fileName, stream));
                 }
             }
         }
@@ -176,7 +176,7 @@ namespace Grimoire.Discord.LoggingModule
 
                         await logChannel.SendMessageAsync(new DiscordMessageBuilder()
                             .AddEmbed(embed)
-                            .WithFile(fileName, stream));
+                            .AddFile(fileName, stream));
                     }
                 }
             }

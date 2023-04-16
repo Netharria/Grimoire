@@ -9,25 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.3.0-nightly-01185" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="4.3.0-nightly-01185" />
-    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.3.0-nightly-01185" />
-    <PackageReference Include="Mediator.SourceGenerator" Version="2.0.27-rc">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.7">
+    <PackageReference Include="Mediator.SourceGenerator" Version="2.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
-    <PackageReference Include="Nefarius.DSharpPlus.Extensions.Hosting" Version="2.1.412" />
-    <PackageReference Include="Nefarius.DSharpPlus.Interactivity.Extensions.Hosting" Version="2.1.412" />
-    <PackageReference Include="Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting" Version="2.1.412" />
+    <PackageReference Include="Nefarius.DSharpPlus.Interactivity.Extensions.Hosting" Version="2.1.519" />
+    <PackageReference Include="Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting" Version="2.1.519" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
-    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,9 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="appsettings.example.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -47,22 +35,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Grimoire.Core.Enums"/>
-    <Using Include="Grimoire.Core.Extensions"/>
-    <Using Include="Grimoire.Core.Features.Logging"/>
-    <Using Include="Grimoire.Core.Features.Shared.SharedDtos"/>
-    <Using Include="Grimoire.Discord.Attributes"/>
-    <Using Include="Grimoire.Discord.Extensions"/>
-    <Using Include="Grimoire.Discord.Structs"/>
-    <Using Include="Grimoire.Discord.Utilities"/>
-    <Using Include="DSharpPlus"/>
-    <Using Include="DSharpPlus.Entities"/>
-    <Using Include="DSharpPlus.EventArgs"/>
-    <Using Include="DSharpPlus.SlashCommands"/>
-    <Using Include="DSharpPlus.SlashCommands.Attributes"/>
-    <Using Include="Mediator"/>
-    <Using Include="Nefarius.DSharpPlus.Extensions.Hosting"/>
-    <Using Include="Nefarius.DSharpPlus.Extensions.Hosting.Events"/>
+    <Using Include="Grimoire.Core.Enums" />
+    <Using Include="Grimoire.Core.Extensions" />
+    <Using Include="Grimoire.Core.Features.Logging" />
+    <Using Include="Grimoire.Core.Features.Shared.SharedDtos" />
+    <Using Include="Grimoire.Discord.Attributes" />
+    <Using Include="Grimoire.Discord.Extensions" />
+    <Using Include="Grimoire.Discord.Structs" />
+    <Using Include="Grimoire.Discord.Utilities" />
+    <Using Include="DSharpPlus" />
+    <Using Include="DSharpPlus.Entities" />
+    <Using Include="DSharpPlus.EventArgs" />
+    <Using Include="DSharpPlus.SlashCommands" />
+    <Using Include="DSharpPlus.SlashCommands.Attributes" />
+    <Using Include="Mediator" />
+    <Using Include="Nefarius.DSharpPlus.Extensions.Hosting" />
+    <Using Include="Nefarius.DSharpPlus.Extensions.Hosting.Events" />
   </ItemGroup>
 
 </Project>

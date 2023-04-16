@@ -67,10 +67,7 @@ namespace Grimoire.Discord
         }
 
         public async Task DiscordOnClientErrored(DiscordClient sender, ClientErrorEventArgs args)
-        {
-            await this.SendErrorLogToLogChannel(sender, args.EventName, args.Exception);
-            args.Handled = true;
-        }
+            => await this.SendErrorLogToLogChannel(sender, args.EventName, args.Exception);
 
         public Task SlashCommandsOnContextMenuErrored(SlashCommandsExtension sender, ContextMenuErrorEventArgs args) => Task.CompletedTask;
 
@@ -114,7 +111,6 @@ namespace Grimoire.Discord
             else if (args.Exception is AnticipatedException)
             {
                 await args.Context.ReplyAsync(color: GrimoireColor.Orange, message: args.Exception.Message);
-                args.Handled = true;
             }
             else if (args.Exception is not null)
             {
@@ -138,7 +134,6 @@ namespace Grimoire.Discord
                     message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorByteString}]");
                 await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorByteString);
             }
-            args.Handled = true;
         }
 
         public async Task SlashCommandsOnSlashCommandExecuted(SlashCommandsExtension sender, SlashCommandExecutedEventArgs args)

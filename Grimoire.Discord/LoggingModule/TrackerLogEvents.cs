@@ -86,7 +86,7 @@ namespace Grimoire.Discord.LoggingModule
             }
             await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
             .AddEmbeds(embeds.Prepend(embed))
-            .WithFiles(files));
+            .AddFiles(files));
         }
         public async Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args)
         {
@@ -189,7 +189,7 @@ namespace Grimoire.Discord.LoggingModule
 
                     await logChannel.SendMessageAsync(new DiscordMessageBuilder()
                         .AddEmbed(embed)
-                        .WithFile(fileName, stream));
+                        .AddFile(fileName, stream));
                 }
             }
         }
@@ -233,7 +233,7 @@ namespace Grimoire.Discord.LoggingModule
 
                         await logChannel.SendMessageAsync(new DiscordMessageBuilder()
                             .AddEmbed(embed)
-                            .WithFile(fileName, stream));
+                            .AddFile(fileName, stream));
                     }
                 }
             }

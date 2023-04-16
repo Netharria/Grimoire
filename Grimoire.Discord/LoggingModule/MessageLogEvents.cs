@@ -141,7 +141,7 @@ namespace Grimoire.Discord.LoggingModule
             {
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
                 .AddEmbeds(embeds.Prepend(embed))
-                .WithFiles(files));
+                .AddFiles(files));
                 if (message is null) return;
                 await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
@@ -196,7 +196,7 @@ namespace Grimoire.Discord.LoggingModule
             {
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
                     .AddEmbed(embed)
-                    .WithFile($"{DateTime.UtcNow:r}.txt", memoryStream));
+                    .AddFile($"{DateTime.UtcNow:r}.txt", memoryStream));
                 if (message is null) return;
                 await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }

@@ -49,7 +49,6 @@ Host.CreateDefaultBuilder(args)
             options.ResponseMessage = "That's not a valid button";
             options.Timeout = TimeSpan.FromMinutes(2);
             options.PaginationDeletion = PaginationDeletion.DeleteMessage;
-            options.AckPaginationButtons = true;
         })
         .AddDiscordSlashCommands(
             x =>
@@ -61,23 +60,27 @@ Host.CreateDefaultBuilder(args)
             x =>
             {
                 if (x is not SlashCommandsExtension extension) return;
-                extension.RegisterCommands<ExampleSlashCommand>(ulong.Parse(context.Configuration["guildId"]));
+                if(ulong.TryParse(context.Configuration["guildId"], out var guildId))
+                {
+                    extension.RegisterCommands<ExampleSlashCommand>(guildId);
+                    extension.RegisterCommands<LevelCommands>(guildId);
+                    extension.RegisterCommands<LeaderboardCommands>(guildId);
+                    extension.RegisterCommands<LevelSettingsCommands>(guildId);
+                    extension.RegisterCommands<LevelingAdminCommands>(guildId);
+                    extension.RegisterCommands<RewardCommands>(guildId);
+                    extension.RegisterCommands<LogSettingsCommands>(guildId);
+                    extension.RegisterCommands<ModuleCommands>(guildId);
+                    extension.RegisterCommands<TrackerCommands>(guildId);
+                    extension.RegisterCommands<ModerationSettingsCommands>(guildId);
+                    extension.RegisterCommands<MuteAdminCommands>(guildId);
+                    extension.RegisterCommands<BanCommands>(guildId);
+                    extension.RegisterCommands<SinAdminCommands>(guildId);
+                    extension.RegisterCommands<LockCommands>(guildId);
+                    extension.RegisterCommands<PublishCommands>(guildId);
+                    extension.RegisterCommands<SinLogCommands>(guildId);
+
+                }
                 extension.RegisterCommands<EmptySlashCommands>();
-                extension.RegisterCommands<LevelCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<LeaderboardCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<LevelSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<LevelingAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<RewardCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<LogSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<ModuleCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<TrackerCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<ModerationSettingsCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<MuteAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<BanCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<SinAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<LockCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<PublishCommands>(ulong.Parse(context.Configuration["guildId"]));
-                extension.RegisterCommands<SinLogCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient)
