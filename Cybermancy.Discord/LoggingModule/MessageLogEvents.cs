@@ -6,20 +6,12 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Features.Logging.Commands.AddLogMessage;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessage;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessage;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage;
-using Cybermancy.Core.Features.Shared.SharedDtos;
-using Cybermancy.Discord.Extensions;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
-using Mediator;
 using Microsoft.Extensions.Logging;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.LoggingModule
 {

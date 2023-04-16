@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Responses;
-
 namespace Cybermancy.Core.Features.Moderation.Queries.GetBan
 {
     public sealed record GetLastBanQueryResponse : BaseResponse

@@ -5,16 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Features.Logging;
 using Cybermancy.Core.Features.Shared.Commands.GuildCommands.AddGuild;
 using Cybermancy.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds;
-using Cybermancy.Core.Features.Shared.SharedDtos;
-using Cybermancy.Discord.Extensions;
 using Cybermancy.Domain;
-using DSharpPlus;
-using DSharpPlus.EventArgs;
-using Mediator;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.DatabaseManagementModules
 {

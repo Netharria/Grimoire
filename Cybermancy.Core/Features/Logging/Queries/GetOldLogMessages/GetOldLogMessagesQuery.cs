@@ -5,11 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Mediator;
-
 namespace Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages
 {
-    public sealed record GetOldLogMessagesQuery : IRequest<GetOldLogMessagesQueryResponse>
+    public sealed record GetOldLogMessagesQuery : IRequest<IEnumerable<GetOldLogMessagesQueryResponse>>
     {
     }
 }

@@ -7,10 +7,6 @@
 
 using Cybermancy.Core.Features.Shared.Commands.RoleCommands.AddRole;
 using Cybermancy.Core.Features.Shared.Commands.RoleCommands.DeleteRole;
-using DSharpPlus;
-using DSharpPlus.EventArgs;
-using Mediator;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.DatabaseManagementModules
 {

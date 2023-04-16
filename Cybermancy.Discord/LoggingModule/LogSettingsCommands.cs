@@ -5,15 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Logging.Commands.SetLogSettings;
 using Cybermancy.Core.Features.Logging.Queries.GetLogSettings;
-using Cybermancy.Discord.Attributes;
-using Cybermancy.Discord.Extensions;
-using DSharpPlus;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
-using Mediator;
 
 namespace Cybermancy.Discord.LoggingModule
 {

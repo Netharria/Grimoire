@@ -5,17 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Moderation.Commands.MuteCommands.SetMuteRole;
 using Cybermancy.Core.Features.Moderation.Queries.GetMuteRole;
-using Cybermancy.Discord.Attributes;
-using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
-using Mediator;
 
 namespace Cybermancy.Discord.ModerationModule
 {
@@ -113,16 +104,37 @@ namespace Cybermancy.Discord.ModerationModule
                     || channel.Type == ChannelType.PrivateThread
                     || channel.Type == ChannelType.PublicThread)
                 {
-                    await channel.AddOverwriteAsync(role,
-                        deny: Permissions.SendMessages
-                        | Permissions.SendMessagesInThreads
-                        | Permissions.SendTtsMessages
-                        | Permissions.AddReactions);
+                    await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
+                    .SelectAwait(async x => {
+                        if (x.Type == OverwriteType.Role)
+                            return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
+                        return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
+                    })
+                    .Select(x =>
+                    {
+                        if (x.Target.Id == role.Id)
+                        {
+                            x.Denied.SetLockPermissions();
+                        }
+                        return x;
+                    }).ToEnumerable());
                 }
                 else if (channel.Type == ChannelType.Voice)
                 {
-                    await channel.AddOverwriteAsync(role,
-                        deny: Permissions.Speak);
+                    await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
+                    .SelectAwait(async x => {
+                        if (x.Type == OverwriteType.Role)
+                            return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
+                        return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
+                    })
+                    .Select(x =>
+                    {
+                        if (x.Target.Id == role.Id)
+                        {
+                            x.Deny(Permissions.Speak);
+                        }
+                        return x;
+                    }).ToEnumerable());
                 }
             }
         }

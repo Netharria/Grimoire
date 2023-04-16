@@ -5,15 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Enums;
 using Cybermancy.Core.Features.Leveling.Commands.SetLevelSettings;
 using Cybermancy.Core.Features.Leveling.Queries.GetLevelSettings;
-using Cybermancy.Discord.Attributes;
-using Cybermancy.Discord.Extensions;
-using DSharpPlus;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
-using Mediator;
 
 namespace Cybermancy.Discord.LevelingModule
 {
@@ -75,7 +68,7 @@ namespace Cybermancy.Discord.LevelingModule
                 value = result.ToString();
             }
 
-            var response = await this._mediator.Send(new SetLevelSettingsCommand
+            _ = await this._mediator.Send(new SetLevelSettingsCommand
             {
                 GuildId = ctx.Guild.Id,
                 LevelSettings = levelSettings,

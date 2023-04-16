@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Mediator;
-
 namespace Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBan
 {
     public sealed record AddBanCommand : ICommand<AddBanCommandResponse>
@@ -14,6 +12,6 @@ namespace Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBan
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
         public string Reason { get; set; } = string.Empty;
-        public ulong? ModeratorId { get; set; }
+        public ulong ModeratorId { get; set; }
     }
 }

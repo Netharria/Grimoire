@@ -7,7 +7,6 @@
 
 using System.Text;
 using Cybermancy.Core.Extensions;
-using Cybermancy.Domain;
 using Cybermancy.Domain.Shared;
 
 namespace Cybermancy.Core.Features.Leveling

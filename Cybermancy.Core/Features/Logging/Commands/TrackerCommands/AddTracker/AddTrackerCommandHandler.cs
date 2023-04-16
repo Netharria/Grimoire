@@ -5,12 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Contracts.Persistance;
-using Cybermancy.Core.Exceptions;
-using Cybermancy.Domain;
-using Mediator;
-using Microsoft.EntityFrameworkCore;
-
 namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
 {
     public class AddTrackerCommandHandler : ICommandHandler<AddTrackerCommand, AddTrackerCommandResponse>
@@ -24,13 +18,7 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.AddTracker
 
         public async ValueTask<AddTrackerCommandResponse> Handle(AddTrackerCommand command, CancellationToken cancellationToken)
         {
-            var trackerEndTime = command.DurationType switch
-            {
-                DurationType.Minutes => DateTime.UtcNow.AddMinutes(command.DurationAmount),
-                DurationType.Hours => DateTime.UtcNow.AddHours(command.DurationAmount),
-                DurationType.Days => DateTime.UtcNow.AddDays(command.DurationAmount),
-                _ => throw new NotImplementedException(),
-            };
+            var trackerEndTime = command.DurationType.GetDateTimeOffset(command.DurationAmount);
 
             var result = await this._cybermancyDbContext.Trackers
                 .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)

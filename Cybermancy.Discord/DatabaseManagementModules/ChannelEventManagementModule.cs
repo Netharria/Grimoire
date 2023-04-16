@@ -7,10 +7,6 @@
 
 using Cybermancy.Core.Features.Shared.Commands.ChannelCommands.AddChannel;
 using Cybermancy.Core.Features.Shared.Commands.ChannelCommands.DeleteChannel;
-using DSharpPlus;
-using DSharpPlus.EventArgs;
-using Mediator;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.DatabaseManagementModules
 {

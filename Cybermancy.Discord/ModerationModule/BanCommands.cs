@@ -5,15 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Discord.Attributes;
-using DSharpPlus.SlashCommands.Attributes;
-using DSharpPlus.SlashCommands;
-using DSharpPlus;
-using Cybermancy.Core.Enums;
-using Mediator;
-using DSharpPlus.Entities;
-using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
 using Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBan;
 using Microsoft.Extensions.Logging;
 using DSharpPlus.Exceptions;
@@ -62,7 +53,7 @@ namespace Cybermancy.Discord.ModerationModule
                 ModeratorId = ctx.User.Id,
                 Reason = reason
             });
-
+            
             try
             {
                 if (user is DiscordMember member)

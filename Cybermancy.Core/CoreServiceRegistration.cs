@@ -1,8 +1,5 @@
-using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.Features.Logging;
 using Cybermancy.Core.Features.Shared.PipelineBehaviors;
-using Mediator;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

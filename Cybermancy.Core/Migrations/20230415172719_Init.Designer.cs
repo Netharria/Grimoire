@@ -12,14 +12,14 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cybermancy.Core.Migrations
 {
     [DbContext(typeof(CybermancyDbContext))]
-    [Migration("20221008004232_Init")]
+    [Migration("20230415172719_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.5")
+                .HasAnnotation("ProductVersion", "6.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -228,8 +228,11 @@ namespace Cybermancy.Core.Migrations
                     b.Property<decimal>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<bool?>("PreviousSetting")
-                        .HasColumnType("boolean");
+                    b.Property<long>("PreviouslyAllowed")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PreviouslyDenied")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Reason")
                         .IsRequired()
@@ -549,7 +552,7 @@ namespace Cybermancy.Core.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<decimal>("ModeratorId")
+                    b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Reason")
@@ -1054,8 +1057,7 @@ namespace Cybermancy.Core.Migrations
                     b.HasOne("Cybermancy.Domain.Member", "Moderator")
                         .WithMany("ModeratedSins")
                         .HasForeignKey("ModeratorId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Cybermancy.Domain.Member", "Member")
                         .WithMany("UserSins")
@@ -1144,8 +1146,7 @@ namespace Cybermancy.Core.Migrations
 
             modelBuilder.Entity("Cybermancy.Domain.Channel", b =>
                 {
-                    b.Navigation("Lock")
-                        .IsRequired();
+                    b.Navigation("Lock");
 
                     b.Navigation("Messages");
 

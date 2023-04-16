@@ -6,12 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Cybermancy.Core.Contracts.Persistance;
 using Cybermancy.Core.DatabaseQueryHelpers;
-using Cybermancy.Domain;
-using Mediator;
-using Cybermancy.Core.Responses;
-using Cybermancy.Core.Features.Shared.SharedDtos;
 
 namespace Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain
 {

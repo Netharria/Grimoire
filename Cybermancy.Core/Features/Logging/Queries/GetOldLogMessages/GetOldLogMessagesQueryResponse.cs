@@ -5,18 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Responses;
-
 namespace Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages
 {
     public sealed record GetOldLogMessagesQueryResponse : BaseResponse
     {
-        public IEnumerable<OldLogMessageChannel> Channels { get; init; } = Enumerable.Empty<OldLogMessageChannel>();
-    }
-
-    public class OldLogMessageChannel
-    {
         public ulong ChannelId { get; init; }
+        public ulong GuildId { get; init; }
         public ulong[] MessageIds { get; init; } = Array.Empty<ulong>();
     }
 }

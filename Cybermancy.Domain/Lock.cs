@@ -13,7 +13,9 @@ namespace Cybermancy.Domain
 
         public virtual Channel Channel { get; set; } = null!;
 
-        public bool? PreviousSetting { get; set; }
+        public long PreviouslyAllowed { get; set; }
+
+        public long PreviouslyDenied { get; set; }
 
         public ulong ModeratorId { get; set; }
 

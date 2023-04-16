@@ -5,15 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Extensions;
 using Cybermancy.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
-using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
-using Mediator;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.LevelingModule
 {

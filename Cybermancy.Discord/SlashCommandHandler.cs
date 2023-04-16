@@ -6,20 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Cybermancy.Discord.Extensions;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
 using DSharpPlus.SlashCommands.EventArgs;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
-using DSharpPlus.EventArgs;
 using Microsoft.Extensions.Configuration;
-using Cybermancy.Discord.Structs;
-using Cybermancy.Discord.Attributes;
 using Cybermancy.Core.Exceptions;
 
 namespace Cybermancy.Discord

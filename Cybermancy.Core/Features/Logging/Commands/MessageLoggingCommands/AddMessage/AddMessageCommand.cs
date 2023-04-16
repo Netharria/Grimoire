@@ -5,9 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Features.Shared.SharedDtos;
-using Mediator;
-
 namespace Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessage
 {
     public sealed record AddMessageCommand : ICommand

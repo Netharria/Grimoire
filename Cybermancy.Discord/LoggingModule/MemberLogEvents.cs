@@ -5,15 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Features.Logging;
 using Cybermancy.Core.Features.Logging.Queries.GetLogSettings;
-using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
-using Mediator;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.LoggingModule
 {

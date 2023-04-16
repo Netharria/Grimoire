@@ -5,16 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Discord.Attributes;
-using DSharpPlus.SlashCommands.Attributes;
-using DSharpPlus.SlashCommands;
-using DSharpPlus;
-using Cybermancy.Core.Enums;
-using Mediator;
-using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
 using Cybermancy.Domain;
-using DSharpPlus.Entities;
 using Cybermancy.Core.Features.Moderation.Queries.GetBan;
 using Cybermancy.Core.Features.Moderation.Commands.BanComands.PublishBan;
 using DSharpPlus.Exceptions;
@@ -27,11 +18,11 @@ namespace Cybermancy.Discord.ModerationModule
     [SlashRequireModuleEnabled(Module.Moderation)]
     [SlashRequirePermissions(Permissions.ManageMessages)]
     [SlashCommandGroup("Publish", "Publishes a ban or unban to the public ban log channel.")]
-    public class Publish_Commands : ApplicationCommandModule
+    public class PublishCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
 
-        public Publish_Commands(IMediator mediator)
+        public PublishCommands(IMediator mediator)
         {
             this._mediator = mediator;
         }
@@ -40,7 +31,7 @@ namespace Cybermancy.Discord.ModerationModule
         public async Task PublishBanAsync(
             InteractionContext ctx,
             [Minimum(0)]
-            [Option("Sin Id", "The id of the sin to be published")] long sinId)
+            [Option("SinId", "The id of the sin to be published")] long sinId)
         {
             var response = await this._mediator.Send(new GetBanQuery
             {
@@ -58,21 +49,14 @@ namespace Cybermancy.Discord.ModerationModule
             });
 
             await ctx.ReplyAsync(CybermancyColor.Green, message: $"Successfully published ban : {sinId}");
-
-            if (response.LogChannelId is null) return;
-            var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
-
-            if (logChannel is null) return;
-            await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator} published ban reason of sin {sinId}")
-                .WithColor(CybermancyColor.Purple));
+            await ctx.SendLogAsync(response, CybermancyColor.Purple, $"{ctx.Member.GetUsernameWithDiscriminator} published ban reason of sin {sinId}");
         }
 
         [SlashCommand("Unban", "Publishes an unban to the public ban log channel.")]
         public async Task PublishUnbanAsync(
             InteractionContext ctx,
             [Minimum(0)]
-            [Option("Sin Id", "The id of the sin to be published")] long sinId)
+            [Option("SinId", "The id of the sin to be published")] long sinId)
         {
             var response = await this._mediator.Send(new GetUnbanQuery
             {
@@ -90,14 +74,7 @@ namespace Cybermancy.Discord.ModerationModule
             });
 
             await ctx.ReplyAsync(CybermancyColor.Green, message: $"Successfully published unban : {sinId}");
-
-            if (response.LogChannelId is null) return;
-            var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
-
-            if (logChannel is null) return;
-            await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator} published unban reason of sin {sinId}")
-                .WithColor(CybermancyColor.Purple));
+            await ctx.SendLogAsync(response, CybermancyColor.Purple, $"{ctx.Member.GetUsernameWithDiscriminator} published unban reason of sin {sinId}");
         }
 
         private static async Task<DiscordMessage> SendPublicLogMessage(InteractionContext ctx, GetBanQueryResponse response, PublishType publish)

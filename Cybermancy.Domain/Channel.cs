@@ -25,6 +25,6 @@ namespace Cybermancy.Domain
 
         public virtual ICollection<Tracker> Trackers { get; set; } = new List<Tracker>();
 
-        public virtual Lock Lock { get; set; } = null!;
+        public virtual Lock? Lock { get; set; }
     }
 }

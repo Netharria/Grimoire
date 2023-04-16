@@ -6,10 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text.RegularExpressions;
-using Cybermancy.Discord.Structs;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
+using Cybermancy.Core.Responses;
 
 namespace Cybermancy.Discord.Extensions
 {
@@ -33,16 +30,11 @@ namespace Cybermancy.Discord.Extensions
                 .WithFooter(footer)
                 .WithTimestamp(timeStamp)
                 .Build();
-            try
-            {
-                await ctx.CreateResponseAsync(
-                    InteractionResponseType.ChannelMessageWithSource,
-                    new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+
+            await ctx.CreateResponseAsync(
+                InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
+            
         }
 
         public static async ValueTask<(bool, ulong)> TryMatchStringToChannelAsync(this InteractionContext ctx, string s)
@@ -78,6 +70,28 @@ namespace Cybermancy.Discord.Extensions
             }
 
             return (true, parsedId);
+        }
+
+        public static async Task SendLogAsync(this InteractionContext ctx,
+            BaseResponse response,
+            DiscordColor? color,
+            string? message = null)
+        {
+            message ??= response.Message;
+            if (response.LogChannelId is null) return;
+            var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
+
+            if (logChannel is null) return;
+            var embed = new DiscordEmbedBuilder()
+                .WithColor(color ?? CybermancyColor.Purple)
+                .WithDescription(message)
+                .WithTimestamp(DateTime.UtcNow)
+                .Build();
+
+            await ctx.CreateResponseAsync(
+                InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder().AddEmbed(embed));
+
         }
     }
 }

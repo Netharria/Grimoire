@@ -6,8 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using Cybermancy.Domain;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cybermancy.Core.Configuration
@@ -23,8 +21,10 @@ namespace Cybermancy.Core.Configuration
                 .HasForeignKey<Lock>(x => x.ChannelId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-            builder.Property(e => e.PreviousSetting)
-                .IsRequired(false);
+            builder.Property(e => e.PreviouslyAllowed)
+                .IsRequired();
+            builder.Property(e => e.PreviouslyDenied)
+                .IsRequired();
             builder.HasOne(e => e.Moderator)
                 .WithMany(e => e.ChannelsLocked)
                 .HasForeignKey(e => new { e.ModeratorId, e.GuildId })

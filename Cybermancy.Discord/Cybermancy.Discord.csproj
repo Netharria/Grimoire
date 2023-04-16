@@ -46,4 +46,23 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Using Include="Cybermancy.Core.Enums"/>
+    <Using Include="Cybermancy.Core.Extensions"/>
+    <Using Include="Cybermancy.Core.Features.Logging"/>
+    <Using Include="Cybermancy.Core.Features.Shared.SharedDtos"/>
+    <Using Include="Cybermancy.Discord.Attributes"/>
+    <Using Include="Cybermancy.Discord.Extensions"/>
+    <Using Include="Cybermancy.Discord.Structs"/>
+    <Using Include="Cybermancy.Discord.Utilities"/>
+    <Using Include="DSharpPlus"/>
+    <Using Include="DSharpPlus.Entities"/>
+    <Using Include="DSharpPlus.EventArgs"/>
+    <Using Include="DSharpPlus.SlashCommands"/>
+    <Using Include="DSharpPlus.SlashCommands.Attributes"/>
+    <Using Include="Mediator"/>
+    <Using Include="Nefarius.DSharpPlus.Extensions.Hosting"/>
+    <Using Include="Nefarius.DSharpPlus.Extensions.Hosting.Events"/>
+  </ItemGroup>
+
 </Project>

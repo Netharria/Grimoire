@@ -22,7 +22,16 @@
     <Folder Include="Enums\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
-
+    
+  <ItemGroup>
+    <Using Include="Cybermancy.Core.Contracts.Persistance" />
+    <Using Include="Cybermancy.Core.Exceptions" />
+    <Using Include="Mediator" />
+    <Using Include="Microsoft.EntityFrameworkCore" />
+    <Using Include="Cybermancy.Core.Responses" />
+    <Using Include="Cybermancy.Core.Features.Shared.SharedDtos" />
+    <Using Include="Cybermancy.Domain" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Cybermancy.Domain\Cybermancy.Domain.csproj" />
   </ItemGroup>

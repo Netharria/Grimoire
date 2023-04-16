@@ -5,13 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Cybermancy.Core.Contracts.Persistance;
-using Mediator;
-using Microsoft.EntityFrameworkCore;
-
 namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers
 {
-    public class RemoveExpiredTrackersCommandHandler : ICommandHandler<RemoveExpiredTrackersCommand, RemoveExpiredTrackersCommandResponse>
+    public class RemoveExpiredTrackersCommandHandler : ICommandHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
     {
         private readonly ICybermancyDbContext _cybermancyDbContext;
 
@@ -20,9 +16,9 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveExpire
             this._cybermancyDbContext = cybermancyDbContext;
         }
 
-        public async ValueTask<RemoveExpiredTrackersCommandResponse> Handle(RemoveExpiredTrackersCommand command, CancellationToken cancellationToken)
+        public async ValueTask<IEnumerable<RemoveExpiredTrackersCommandResponse>> Handle(RemoveExpiredTrackersCommand command, CancellationToken cancellationToken)
         {
-            var results = await this._cybermancyDbContext.Trackers.Where(x => x.EndTime < DateTime.UtcNow)
+            var results = await this._cybermancyDbContext.Trackers.Where(x => x.EndTime < DateTimeOffset.UtcNow)
                 .Select(x => new
                 {
                     Tracker = x,
@@ -35,16 +31,13 @@ namespace Cybermancy.Core.Features.Logging.Commands.TrackerCommands.RemoveExpire
                 await this._cybermancyDbContext.SaveChangesAsync(cancellationToken);
             }
                 
-            return new RemoveExpiredTrackersCommandResponse
-            {
-                ExpiredTrackers = results.Select(x => new ExpiredTracker
+            return results.Select(x => new RemoveExpiredTrackersCommandResponse
                 {
                     UserId = x.Tracker.UserId,
                     GuildId = x.Tracker.GuildId,
-                    ModerationLogId = x.ModerationLogId,
+                    LogChannelId = x.ModerationLogId,
                     TrackerChannelId = x.TrackerChannelId
-                }).ToArray()
-            };
+                });
         }
     }
 }

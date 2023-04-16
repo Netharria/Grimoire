@@ -6,13 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Cybermancy.Core.Contracts.Persistance;
-using Mediator;
-using Microsoft.EntityFrameworkCore;
 using Cybermancy.Core.DatabaseQueryHelpers;
 using Cybermancy.Core.Extensions;
-using Cybermancy.Core.Responses;
-using Cybermancy.Core.Exceptions;
 
 namespace Cybermancy.Core.Features.Leveling.Queries.GetIgnoredItems
 {

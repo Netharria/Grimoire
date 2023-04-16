@@ -8,10 +8,6 @@
 using Cybermancy.Core.Features.Logging.Commands.DeleteOldLogMessages;
 using Cybermancy.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteOldMessages;
 using Cybermancy.Core.Features.Logging.Queries.GetOldLogMessages;
-using Cybermancy.Discord.Utilities;
-using DSharpPlus.Entities;
-using Mediator;
-using Nefarius.DSharpPlus.Extensions.Hosting;
 
 namespace Cybermancy.Discord.LoggingModule
 {
@@ -35,12 +31,12 @@ namespace Cybermancy.Discord.LoggingModule
             var oldLogMessages = await this._mediator.Send(new GetOldLogMessagesQuery(), cancellationToken);
 
 
-            var result = await oldLogMessages.Channels
+            var result = await oldLogMessages
                 .ToAsyncEnumerable()
-                .SelectAwait(async channel =>
+                .Select(channel =>
                     new
                     {
-                        DiscordChannel = await this.GetChannelAsync(channel.ChannelId),
+                        DiscordChannel = this.GetChannelAsync(channel.GuildId, channel.ChannelId),
                         DatabaseChannel = channel
                     })
                 .SelectMany(channelInfo =>
@@ -85,11 +81,11 @@ namespace Cybermancy.Discord.LoggingModule
             }
         }
 
-        private async Task<DiscordChannel?> GetChannelAsync(ulong channelId)
+        private  DiscordChannel? GetChannelAsync(ulong guildId, ulong channelId)
         {
             try
             {
-                return await this._discordClientService.Client.GetChannelAsync(channelId);
+                return this._discordClientService.Client.Guilds.GetValueOrDefault(guildId)?.Channels.GetValueOrDefault(channelId);
             }
             catch (Exception)
             {

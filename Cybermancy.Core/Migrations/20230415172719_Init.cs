@@ -1,3 +1,4 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -290,7 +291,8 @@ namespace Cybermancy.Core.Migrations
                 columns: table => new
                 {
                     ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    PreviousSetting = table.Column<bool>(type: "boolean", nullable: true),
+                    PreviouslyAllowed = table.Column<long>(type: "bigint", nullable: false),
+                    PreviouslyDenied = table.Column<long>(type: "bigint", nullable: false),
                     ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
@@ -388,7 +390,7 @@ namespace Cybermancy.Core.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     InfractionOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),

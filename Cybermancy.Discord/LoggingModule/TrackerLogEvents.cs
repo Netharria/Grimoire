@@ -8,12 +8,6 @@
 using Cybermancy.Core.Features.Logging.Queries.GetAllTrackersForUser;
 using Cybermancy.Core.Features.Logging.Queries.GetTracker;
 using Cybermancy.Core.Features.Logging.Queries.GetTrackerWithOldMessage;
-using Cybermancy.Discord.Extensions;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
-using Mediator;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.LoggingModule
 {

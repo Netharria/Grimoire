@@ -5,15 +5,11 @@ using Cybermancy.Discord.LevelingModule;
 using Cybermancy.Discord.LoggingModule;
 using Cybermancy.Discord.ModerationModule;
 using Cybermancy.Discord.SharedModule;
-using Cybermancy.Discord.Utilities;
-using DSharpPlus;
 using DSharpPlus.Interactivity.Enums;
-using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nefarius.DSharpPlus.Extensions.Hosting;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
 using OpenTracing;
@@ -79,6 +75,9 @@ Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<MuteAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<BanCommands>(ulong.Parse(context.Configuration["guildId"]));
                 extension.RegisterCommands<SinAdminCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<LockCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<PublishCommands>(ulong.Parse(context.Configuration["guildId"]));
+                extension.RegisterCommands<SinLogCommands>(ulong.Parse(context.Configuration["guildId"]));
             })
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient)

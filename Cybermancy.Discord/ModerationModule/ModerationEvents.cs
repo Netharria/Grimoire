@@ -7,21 +7,22 @@
 
 using Cybermancy.Core.Features.Moderation.Commands.BanComands.AddBan;
 using Cybermancy.Core.Features.Moderation.Queries.GetBan;
-using Cybermancy.Discord.Extensions;
-using Cybermancy.Discord.Structs;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
+using Cybermancy.Core.Features.Moderation.Queries.GetLock;
+using Cybermancy.Domain;
 using DSharpPlus.Exceptions;
-using Mediator;
 using Microsoft.Extensions.Logging;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.ModerationModule
 {
     [DiscordGuildBanAddedEventSubscriber]
     [DiscordGuildBanRemovedEventSubscriber]
-    public class ModerationEvents : IDiscordGuildBanAddedEventSubscriber, IDiscordGuildBanRemovedEventSubscriber
+    [DiscordMessageCreatedEventSubscriber]
+    [DiscordMessageReactionAddedEventSubscriber]
+    public class ModerationEvents :
+        IDiscordGuildBanAddedEventSubscriber,
+        IDiscordGuildBanRemovedEventSubscriber,
+        IDiscordMessageCreatedEventSubscriber,
+        IDiscordMessageReactionAddedEventSubscriber
     {
         private readonly IMediator _mediator;
 
@@ -35,7 +36,7 @@ namespace Cybermancy.Discord.ModerationModule
             await Task.Delay(TimeSpan.FromMilliseconds(500));
             var response = await this._mediator.Send(new GetLastBanQuery());
 
-            if(!response.ModerationModuleEnabled)
+            if (!response.ModerationModuleEnabled)
                 return;
 
             if (response.SinOn > DateTimeOffset.UtcNow.AddSeconds(-5))
@@ -50,7 +51,7 @@ namespace Cybermancy.Discord.ModerationModule
                     var banAuditLog = await args.Guild.GetRecentAuditLogAsync(AuditLogActionType.Ban, 1500);
                     if (banAuditLog is not null)
                     {
-                        addBanCommand.ModeratorId = banAuditLog.UserResponsible.IsBot ? null : banAuditLog.UserResponsible.Id;
+                        addBanCommand.ModeratorId = banAuditLog.UserResponsible.Id;
                         addBanCommand.Reason = banAuditLog.Reason;
                     }
                 }
@@ -108,6 +109,29 @@ namespace Cybermancy.Discord.ModerationModule
                 $"`/pardon {response.SinId} <reason>` to add an unban reason." +
                 $"Then `/publish unban {response.SinId}` to publish to public log channel.")
                 .WithColor(CybermancyColor.Green));
+        }
+
+        public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
+        {
+            if (!args.Channel.IsThread)
+                return;
+            if (args.Author is not DiscordMember member)
+                return;
+            if (args.Channel.PermissionsFor(member).HasPermission(Permissions.ManageMessages))
+                return;
+            if (await this._mediator.Send(new GetLockQuery { ChannelId = args.Channel.Id, GuildId = args.Guild.Id }))
+                await args.Message.DeleteAsync();
+        }
+        public async Task DiscordOnMessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs args)
+        {
+            if (!args.Channel.IsThread)
+                return;
+            if (args.User is not DiscordMember member)
+                return;
+            if (args.Channel.PermissionsFor(member).HasPermission(Permissions.ManageMessages))
+                return;
+            if (await this._mediator.Send(new GetLockQuery { ChannelId = args.Channel.Id, GuildId = args.Guild.Id }))
+                await args.Message.DeleteAsync();
         }
     }
 }

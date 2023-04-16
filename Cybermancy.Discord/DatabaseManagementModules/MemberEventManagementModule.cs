@@ -8,11 +8,6 @@
 using Cybermancy.Core.Features.Shared.Commands.MemberCommands.AddMember;
 using Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateMember;
 using Cybermancy.Core.Features.Shared.Commands.MemberCommands.UpdateUser;
-using Cybermancy.Discord.Extensions;
-using DSharpPlus;
-using DSharpPlus.EventArgs;
-using Mediator;
-using Nefarius.DSharpPlus.Extensions.Hosting.Events;
 
 namespace Cybermancy.Discord.DatabaseManagementModules
 {
