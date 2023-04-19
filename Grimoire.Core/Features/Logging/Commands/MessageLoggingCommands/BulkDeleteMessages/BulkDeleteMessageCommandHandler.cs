@@ -42,7 +42,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDel
                         .ToArray(),
                         ChannelId = x.ChannelId
                     },
-                    BulkDeleteLogId = x.Guild.LogSettings.BulkDeleteChannelLogId
+                    BulkDeleteLogId = x.Guild.MessageLogSettings.BulkDeleteChannelLogId
                 }
 
                 ).ToArrayAsync(cancellationToken: cancellationToken);

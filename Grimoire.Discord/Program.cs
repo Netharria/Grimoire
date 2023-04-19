@@ -68,7 +68,7 @@ Host.CreateDefaultBuilder(args)
                     extension.RegisterCommands<LevelSettingsCommands>(guildId);
                     extension.RegisterCommands<LevelingAdminCommands>(guildId);
                     extension.RegisterCommands<RewardCommands>(guildId);
-                    extension.RegisterCommands<LogSettingsCommands>(guildId);
+                    extension.RegisterCommands<MessageLogSettingsCommands>(guildId);
                     extension.RegisterCommands<ModuleCommands>(guildId);
                     extension.RegisterCommands<TrackerCommands>(guildId);
                     extension.RegisterCommands<ModerationSettingsCommands>(guildId);

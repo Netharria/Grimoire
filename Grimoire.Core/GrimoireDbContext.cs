@@ -30,8 +30,11 @@ namespace Grimoire.Core
         public DbSet<GuildLevelSettings> GuildLevelSettings
             => this.Set<GuildLevelSettings>();
 
-        public DbSet<GuildLogSettings> GuildLogSettings
-            => this.Set<GuildLogSettings>();
+        public DbSet<GuildUserLogSettings> GuildUserLogSettings
+            => this.Set<GuildUserLogSettings>();
+
+        public DbSet<GuildMessageLogSettings> GuildMessageLogSettings
+            => this.Set<GuildMessageLogSettings>();
 
         public DbSet<GuildModerationSettings> GuildModerationSettings
             => this.Set<GuildModerationSettings>();

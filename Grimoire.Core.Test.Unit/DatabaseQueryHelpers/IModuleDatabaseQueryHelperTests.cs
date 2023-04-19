@@ -34,8 +34,8 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
                 .ToListAsync();
             levelingModule.Should().NotBeEmpty();
 
-            var loggingModule = await context.Guilds.GetModulesOfType(Module.Logging)
-                .OfType<GuildLogSettings>()
+            var loggingModule = await context.Guilds.GetModulesOfType(Module.UserLog)
+                .OfType<GuildUserLogSettings>()
                 .ToListAsync();
             loggingModule.Should().NotBeEmpty();
 

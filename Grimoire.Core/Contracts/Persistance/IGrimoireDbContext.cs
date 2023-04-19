@@ -12,7 +12,9 @@ namespace Grimoire.Core.Contracts.Persistance
 
         public DbSet<GuildLevelSettings> GuildLevelSettings { get; }
 
-        public DbSet<GuildLogSettings> GuildLogSettings { get; }
+        public DbSet<GuildUserLogSettings> GuildUserLogSettings { get; }
+
+        public DbSet<GuildMessageLogSettings> GuildMessageLogSettings { get; }
 
         public DbSet<GuildModerationSettings> GuildModerationSettings { get; }
 

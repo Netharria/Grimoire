@@ -10,6 +10,6 @@ namespace Grimoire.Core.DatabaseQueryHelpers
     public static class MessageDatabaseQueryHelpers
     {
         public static IQueryable<Message> WhereLoggingIsEnabled(this IQueryable<Message> messages)
-            => messages.Where(x => x.Guild.LogSettings.ModuleEnabled);
+            => messages.Where(x => x.Guild.UserLogSettings.ModuleEnabled);
     }
 }

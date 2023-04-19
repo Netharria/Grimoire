@@ -25,7 +25,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteM
                 .WhereLoggingIsEnabled()
                 .Select(x => new DeleteMessageCommandResponse
                 {
-                    LoggingChannel = x.Guild.LogSettings.DeleteChannelLogId,
+                    LoggingChannel = x.Guild.MessageLogSettings.DeleteChannelLogId,
                     UserId = x.UserId,
                     MessageContent = x.MessageHistory
                         .OrderByDescending(x => x.TimeStamp)

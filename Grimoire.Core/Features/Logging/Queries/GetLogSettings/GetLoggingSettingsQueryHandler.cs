@@ -18,19 +18,19 @@ namespace Grimoire.Core.Features.Logging.Queries.GetLogSettings
 
         public async ValueTask<GetLoggingSettingsQueryResponse> Handle(GetLoggingSettingsQuery request, CancellationToken cancellationToken)
         {
-            return await this._grimoireDbContext.GuildLogSettings
-                .Where(x => x.GuildId == request.GuildId)
+            return await this._grimoireDbContext.Guilds
+                .Where(x => x.Id == request.GuildId)
                 .Select(x => new GetLoggingSettingsQueryResponse
                 {
-                    JoinChannelLog = x.JoinChannelLogId,
-                    LeaveChannelLog = x.LeaveChannelLogId,
-                    DeleteChannelLog = x.DeleteChannelLogId,
-                    BulkDeleteChannelLog = x.BulkDeleteChannelLogId,
-                    EditChannelLog = x.EditChannelLogId,
-                    UsernameChannelLog = x.UsernameChannelLogId,
-                    NicknameChannelLog = x.NicknameChannelLogId,
-                    AvatarChannelLog = x.AvatarChannelLogId,
-                    IsLoggingEnabled = x.ModuleEnabled
+                    JoinChannelLog = x.UserLogSettings.JoinChannelLogId,
+                    LeaveChannelLog = x.UserLogSettings.LeaveChannelLogId,
+                    DeleteChannelLog = x.MessageLogSettings.DeleteChannelLogId,
+                    BulkDeleteChannelLog = x.MessageLogSettings.BulkDeleteChannelLogId,
+                    EditChannelLog = x.MessageLogSettings.EditChannelLogId,
+                    UsernameChannelLog = x.UserLogSettings.UsernameChannelLogId,
+                    NicknameChannelLog = x.UserLogSettings.NicknameChannelLogId,
+                    AvatarChannelLog = x.UserLogSettings.AvatarChannelLogId,
+                    IsLoggingEnabled = x.UserLogSettings.ModuleEnabled
                 }).FirstAsync(cancellationToken: cancellationToken);
         }
     }

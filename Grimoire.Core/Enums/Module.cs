@@ -10,7 +10,8 @@ namespace Grimoire.Core.Enums
     public enum Module
     {
         Leveling,
-        Logging,
-        Moderation
+        UserLog,
+        Moderation,
+        MessageLog
     }
 }

@@ -20,7 +20,7 @@ namespace Grimoire.Core.DatabaseQueryHelpers
                     Id = x.Id,
                     LevelSettings = new GuildLevelSettings(),
                     ModerationSettings = new GuildModerationSettings(),
-                    LogSettings = new GuildLogSettings(),
+                    UserLogSettings = new GuildUserLogSettings(),
                 });
 
             if (guildsToAdd.Any())

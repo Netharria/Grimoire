@@ -24,7 +24,7 @@ namespace Grimoire.Core.Test.Unit
                 Id = 1,
                 LevelSettings = new GuildLevelSettings() { ModuleEnabled = true, Amount = 5, Base = 10, Modifier = 50, TextTime = TimeSpan.FromMinutes(3) },
                 ModerationSettings = new GuildModerationSettings() { ModuleEnabled = true },
-                LogSettings = new GuildLogSettings() { ModuleEnabled = true },
+                UserLogSettings = new GuildUserLogSettings() { ModuleEnabled = true },
             };
         public static Guild Guild2 { get; } =
             new Guild
@@ -32,7 +32,7 @@ namespace Grimoire.Core.Test.Unit
                 Id = 2,
                 LevelSettings = new GuildLevelSettings() { Amount = 5, Base = 10, Modifier = 50, TextTime = TimeSpan.FromMinutes(3) },
                 ModerationSettings = new GuildModerationSettings(),
-                LogSettings = new GuildLogSettings(),
+                UserLogSettings = new GuildUserLogSettings(),
             };
         public static Channel Channel1 { get; } = new Channel { Id = 3, GuildId = 1 };
         public static Channel Channel2 { get; } = new Channel { Id = 12, GuildId = 1, IsXpIgnored = true };

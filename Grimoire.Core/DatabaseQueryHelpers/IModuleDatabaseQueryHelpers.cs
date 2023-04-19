@@ -17,8 +17,9 @@ namespace Grimoire.Core.DatabaseQueryHelpers
             return module switch
             {
                 Module.Leveling => databaseGuilds.Select(x => x.LevelSettings),
-                Module.Logging => databaseGuilds.Select(x => x.LogSettings),
+                Module.UserLog => databaseGuilds.Select(x => x.UserLogSettings),
                 Module.Moderation => databaseGuilds.Select(x => x.ModerationSettings),
+                Module.MessageLog => databaseGuilds.Select(x => x.MessageLogSettings),
                 _ => throw new ArgumentOutOfRangeException(nameof(module), module, message: null)
             };
         }

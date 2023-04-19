@@ -39,10 +39,12 @@ namespace Grimoire.Domain
 
         public virtual ICollection<XpHistory> XpHistory { get; set; } = new List<XpHistory>();
 
-        public virtual GuildLogSettings LogSettings { get; set; } = null!;
+        public virtual GuildUserLogSettings UserLogSettings { get; set; } = null!;
 
         public virtual GuildLevelSettings LevelSettings { get; set; } = null!;
 
         public virtual GuildModerationSettings ModerationSettings { get; set; } = null!;
+
+        public virtual GuildMessageLogSettings MessageLogSettings { get; set; } = null!;
     }
 }

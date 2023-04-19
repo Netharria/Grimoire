@@ -9,7 +9,7 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain
 {
-    public class GuildLogSettings : IModule
+    public class GuildUserLogSettings : IModule
     {
         public ulong GuildId { get; set; }
 
@@ -22,18 +22,6 @@ namespace Grimoire.Domain
         public ulong? LeaveChannelLogId { get; set; }
 
         public virtual Channel? LeaveChannelLog { get; set; }
-
-        public ulong? DeleteChannelLogId { get; set; }
-
-        public virtual Channel? DeleteChannelLog { get; set; }
-
-        public ulong? BulkDeleteChannelLogId { get; set; }
-
-        public virtual Channel? BulkDeleteChannelLog { get; set; }
-
-        public ulong? EditChannelLogId { get; set; }
-
-        public virtual Channel? EditChannelLog { get; set; }
 
         public ulong? UsernameChannelLogId { get; set; }
 

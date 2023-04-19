@@ -13,7 +13,7 @@ using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessa
 using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Discord.LoggingModule
+namespace Grimoire.Discord.MessageLogModule
 {
     [DiscordMessageCreatedEventSubscriber]
     [DiscordMessageDeletedEventSubscriber]
@@ -108,8 +108,7 @@ namespace Grimoire.Discord.LoggingModule
             var files = new Dictionary<string, Stream>();
 
             if (response.Attachments.Any())
-            {
-                foreach((var attachment, var index) in response.Attachments.Select((x, i) => (x, i)))
+                foreach ((var attachment, var index) in response.Attachments.Select((x, i) => (x, i)))
                 {
                     if (string.IsNullOrWhiteSpace(attachment.FileName))
                         continue;
@@ -136,7 +135,6 @@ namespace Grimoire.Discord.LoggingModule
                     embeds.Add(imageEmbeds);
                     files.Add(fileName, stream);
                 }
-            }
             try
             {
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()

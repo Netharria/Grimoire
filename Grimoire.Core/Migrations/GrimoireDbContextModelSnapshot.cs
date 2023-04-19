@@ -17,7 +17,7 @@ namespace Grimoire.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.7")
+                .HasAnnotation("ProductVersion", "6.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -93,9 +93,6 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal?>("LevelChannelLogId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal?>("LevelChannelLogsId")
-                        .HasColumnType("numeric(20,0)");
-
                     b.Property<int>("Modifier")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -113,17 +110,14 @@ namespace Grimoire.Core.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.HasIndex("LevelChannelLogsId");
+                    b.HasIndex("LevelChannelLogId");
 
                     b.ToTable("GuildLevelSettings");
                 });
 
-            modelBuilder.Entity("Grimoire.Domain.GuildLogSettings", b =>
+            modelBuilder.Entity("Grimoire.Domain.GuildMessageLogSettings", b =>
                 {
                     b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("AvatarChannelLogId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<decimal?>("BulkDeleteChannelLogId")
@@ -135,27 +129,12 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal?>("EditChannelLogId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal?>("JoinChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("LeaveChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
                     b.Property<bool>("ModuleEnabled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<decimal?>("NicknameChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("UsernameChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
                     b.HasKey("GuildId");
-
-                    b.HasIndex("AvatarChannelLogId")
-                        .IsUnique();
 
                     b.HasIndex("BulkDeleteChannelLogId")
                         .IsUnique();
@@ -166,19 +145,7 @@ namespace Grimoire.Core.Migrations
                     b.HasIndex("EditChannelLogId")
                         .IsUnique();
 
-                    b.HasIndex("JoinChannelLogId")
-                        .IsUnique();
-
-                    b.HasIndex("LeaveChannelLogId")
-                        .IsUnique();
-
-                    b.HasIndex("NicknameChannelLogId")
-                        .IsUnique();
-
-                    b.HasIndex("UsernameChannelLogId")
-                        .IsUnique();
-
-                    b.ToTable("GuildLogSettings");
+                    b.ToTable("GuildMessageLogSettings");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.GuildModerationSettings", b =>
@@ -210,6 +177,51 @@ namespace Grimoire.Core.Migrations
                     b.HasKey("GuildId");
 
                     b.ToTable("GuildModerationSettings");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.GuildUserLogSettings", b =>
+                {
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal?>("AvatarChannelLogId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal?>("JoinChannelLogId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal?>("LeaveChannelLogId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<bool>("ModuleEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal?>("NicknameChannelLogId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal?>("UsernameChannelLogId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("GuildId");
+
+                    b.HasIndex("AvatarChannelLogId")
+                        .IsUnique();
+
+                    b.HasIndex("JoinChannelLogId")
+                        .IsUnique();
+
+                    b.HasIndex("LeaveChannelLogId")
+                        .IsUnique();
+
+                    b.HasIndex("NicknameChannelLogId")
+                        .IsUnique();
+
+                    b.HasIndex("UsernameChannelLogId")
+                        .IsUnique();
+
+                    b.ToTable("GuildUserLogSettings");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Lock", b =>
@@ -708,56 +720,35 @@ namespace Grimoire.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Grimoire.Domain.Channel", "LevelChannelLogs")
+                    b.HasOne("Grimoire.Domain.Channel", "LevelChannelLog")
                         .WithMany()
-                        .HasForeignKey("LevelChannelLogsId");
+                        .HasForeignKey("LevelChannelLogId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Guild");
 
-                    b.Navigation("LevelChannelLogs");
+                    b.Navigation("LevelChannelLog");
                 });
 
-            modelBuilder.Entity("Grimoire.Domain.GuildLogSettings", b =>
+            modelBuilder.Entity("Grimoire.Domain.GuildMessageLogSettings", b =>
                 {
-                    b.HasOne("Grimoire.Domain.Channel", "AvatarChannelLog")
-                        .WithOne()
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "AvatarChannelLogId");
-
                     b.HasOne("Grimoire.Domain.Channel", "BulkDeleteChannelLog")
                         .WithOne()
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "BulkDeleteChannelLogId");
+                        .HasForeignKey("Grimoire.Domain.GuildMessageLogSettings", "BulkDeleteChannelLogId");
 
                     b.HasOne("Grimoire.Domain.Channel", "DeleteChannelLog")
                         .WithOne()
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "DeleteChannelLogId");
+                        .HasForeignKey("Grimoire.Domain.GuildMessageLogSettings", "DeleteChannelLogId");
 
                     b.HasOne("Grimoire.Domain.Channel", "EditChannelLog")
                         .WithOne()
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "EditChannelLogId");
+                        .HasForeignKey("Grimoire.Domain.GuildMessageLogSettings", "EditChannelLogId");
 
                     b.HasOne("Grimoire.Domain.Guild", "Guild")
-                        .WithOne("LogSettings")
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "GuildId")
+                        .WithOne("MessageLogSettings")
+                        .HasForeignKey("Grimoire.Domain.GuildMessageLogSettings", "GuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Grimoire.Domain.Channel", "JoinChannelLog")
-                        .WithOne()
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "JoinChannelLogId");
-
-                    b.HasOne("Grimoire.Domain.Channel", "LeaveChannelLog")
-                        .WithOne()
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "LeaveChannelLogId");
-
-                    b.HasOne("Grimoire.Domain.Channel", "NicknameChannelLog")
-                        .WithOne()
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "NicknameChannelLogId");
-
-                    b.HasOne("Grimoire.Domain.Channel", "UsernameChannelLog")
-                        .WithOne()
-                        .HasForeignKey("Grimoire.Domain.GuildLogSettings", "UsernameChannelLogId");
-
-                    b.Navigation("AvatarChannelLog");
 
                     b.Navigation("BulkDeleteChannelLog");
 
@@ -766,14 +757,6 @@ namespace Grimoire.Core.Migrations
                     b.Navigation("EditChannelLog");
 
                     b.Navigation("Guild");
-
-                    b.Navigation("JoinChannelLog");
-
-                    b.Navigation("LeaveChannelLog");
-
-                    b.Navigation("NicknameChannelLog");
-
-                    b.Navigation("UsernameChannelLog");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.GuildModerationSettings", b =>
@@ -785,6 +768,47 @@ namespace Grimoire.Core.Migrations
                         .IsRequired();
 
                     b.Navigation("Guild");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.GuildUserLogSettings", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Channel", "AvatarChannelLog")
+                        .WithOne()
+                        .HasForeignKey("Grimoire.Domain.GuildUserLogSettings", "AvatarChannelLogId");
+
+                    b.HasOne("Grimoire.Domain.Guild", "Guild")
+                        .WithOne("UserLogSettings")
+                        .HasForeignKey("Grimoire.Domain.GuildUserLogSettings", "GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Grimoire.Domain.Channel", "JoinChannelLog")
+                        .WithOne()
+                        .HasForeignKey("Grimoire.Domain.GuildUserLogSettings", "JoinChannelLogId");
+
+                    b.HasOne("Grimoire.Domain.Channel", "LeaveChannelLog")
+                        .WithOne()
+                        .HasForeignKey("Grimoire.Domain.GuildUserLogSettings", "LeaveChannelLogId");
+
+                    b.HasOne("Grimoire.Domain.Channel", "NicknameChannelLog")
+                        .WithOne()
+                        .HasForeignKey("Grimoire.Domain.GuildUserLogSettings", "NicknameChannelLogId");
+
+                    b.HasOne("Grimoire.Domain.Channel", "UsernameChannelLog")
+                        .WithOne()
+                        .HasForeignKey("Grimoire.Domain.GuildUserLogSettings", "UsernameChannelLogId");
+
+                    b.Navigation("AvatarChannelLog");
+
+                    b.Navigation("Guild");
+
+                    b.Navigation("JoinChannelLog");
+
+                    b.Navigation("LeaveChannelLog");
+
+                    b.Navigation("NicknameChannelLog");
+
+                    b.Navigation("UsernameChannelLog");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Lock", b =>
@@ -1165,12 +1189,12 @@ namespace Grimoire.Core.Migrations
 
                     b.Navigation("LockedChannels");
 
-                    b.Navigation("LogSettings")
-                        .IsRequired();
-
                     b.Navigation("Members");
 
                     b.Navigation("MessageHistory");
+
+                    b.Navigation("MessageLogSettings")
+                        .IsRequired();
 
                     b.Navigation("Messages");
 
@@ -1186,6 +1210,9 @@ namespace Grimoire.Core.Migrations
                     b.Navigation("Sins");
 
                     b.Navigation("Trackers");
+
+                    b.Navigation("UserLogSettings")
+                        .IsRequired();
 
                     b.Navigation("XpHistory");
                 });

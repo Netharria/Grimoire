@@ -11,7 +11,7 @@ using Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveTracker;
 namespace Grimoire.Discord.LoggingModule
 {
     [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Logging)]
+    [SlashRequireModuleEnabled(Module.MessageLog)]
     [SlashRequirePermissions(Permissions.ManageGuild)]
     public class TrackerCommands : ApplicationCommandModule
     {

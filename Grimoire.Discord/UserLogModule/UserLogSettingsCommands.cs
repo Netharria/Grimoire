@@ -12,13 +12,13 @@ namespace Grimoire.Discord.LoggingModule
 {
     [SlashCommandGroup("LogSettings", "Changes the settings of the Logging Module")]
     [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Logging)]
+    [SlashRequireModuleEnabled(Module.UserLog)]
     [SlashRequirePermissions(Permissions.ManageGuild)]
-    public class LogSettingsCommands : ApplicationCommandModule
+    public class UserLogSettingsCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
 
-        public LogSettingsCommands(IMediator mediator)
+        public UserLogSettingsCommands(IMediator mediator)
         {
             this._mediator = mediator;
         }
@@ -35,18 +35,6 @@ namespace Grimoire.Discord.LoggingModule
                     response.LeaveChannelLog  is null ?
                     "None" :
                     ctx.Guild.GetChannel(response.LeaveChannelLog.Value).Mention;
-            var DeleteChannelLog =
-                    response.DeleteChannelLog is null ?
-                    "None" :
-                    ctx.Guild.GetChannel(response.DeleteChannelLog.Value).Mention;
-            var BulkDeleteChannelLog =
-                    response.BulkDeleteChannelLog is null ?
-                    "None" :
-                    ctx.Guild.GetChannel(response.BulkDeleteChannelLog.Value).Mention;
-            var EditChannelLog =
-                    response.EditChannelLog is null ?
-                    "None" :
-                    ctx.Guild.GetChannel(response.EditChannelLog.Value).Mention;
             var UsernameChannelLog =
                     response.UsernameChannelLog is null ?
                     "None" :
@@ -64,9 +52,6 @@ namespace Grimoire.Discord.LoggingModule
                 message: $"**Module Enabled:** {response.IsLoggingEnabled}\n" +
                 $"**Join Log:** {JoinChannelLog}\n" +
                 $"**Leave Log:** {LeaveChannelLog}\n" +
-                $"**Delete Log:** {DeleteChannelLog}\n" +
-                $"**Bulk Delete Log:** {BulkDeleteChannelLog}\n" +
-                $"**Edit Log:** {EditChannelLog}\n" +
                 $"**Username Log:** {UsernameChannelLog}\n" +
                 $"**Nickname Log:** {NicknameChannelLog}\n" +
                 $"**Avatar Log:** {AvatarChannelLog}\n");
@@ -81,7 +66,7 @@ namespace Grimoire.Discord.LoggingModule
             (var success, var result) = await ctx.TryMatchStringToChannelOrDefaultAsync(value);
             if (!success) return;
 
-            var response = await this._mediator.Send(new SetLoggingSettingsCommand
+            await this._mediator.Send(new SetLoggingSettingsCommand
             {
                 GuildId = ctx.Guild.Id,
                 LogSetting = loggingSetting,

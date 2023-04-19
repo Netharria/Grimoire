@@ -34,7 +34,7 @@ namespace Grimoire.Core.Features.Shared.Commands.GuildCommands.AddGuild
                         Id = command.GuildId,
                         LevelSettings = new GuildLevelSettings(),
                         ModerationSettings = new GuildModerationSettings(),
-                        LogSettings = new GuildLogSettings(),
+                        UserLogSettings = new GuildUserLogSettings(),
                     }, cancellationToken);
 
             var rolesAdded = await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);

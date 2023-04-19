@@ -49,7 +49,7 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
 
             var result = await context.Members.WhereLoggingEnabled().ToArrayAsync();
 
-            result.Should().AllSatisfy(x => x.Guild?.LogSettings?.ModuleEnabled.Should().BeTrue());
+            result.Should().AllSatisfy(x => x.Guild?.UserLogSettings?.ModuleEnabled.Should().BeTrue());
         }
 
         [Test]

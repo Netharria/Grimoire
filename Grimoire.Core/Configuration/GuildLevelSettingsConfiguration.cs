@@ -30,7 +30,9 @@ namespace Grimoire.Core.Configuration
                 .HasDefaultValue(50);
             builder.Property(e => e.Amount)
                 .HasDefaultValue(5);
-            builder.Property(e => e.LevelChannelLogId)
+            builder.HasOne(x => x.LevelChannelLog)
+                .WithMany().HasForeignKey(x => x.LevelChannelLogId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
         }
     }

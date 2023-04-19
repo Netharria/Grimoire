@@ -24,7 +24,7 @@ namespace Grimoire.Core.Features.Shared.Queries.GetAllModuleStatesForGuild
                 .Select(x => new GetAllModuleStatesForGuildQueryResponse
                 {
                     LevelingIsEnabled = x.LevelSettings.ModuleEnabled,
-                    LoggingIsEnabled = x.LogSettings.ModuleEnabled,
+                    LoggingIsEnabled = x.UserLogSettings.ModuleEnabled,
                     ModerationIsEnabled = x.ModerationSettings.ModuleEnabled,
                 }).FirstAsync(cancellationToken: cancellationToken);
     }

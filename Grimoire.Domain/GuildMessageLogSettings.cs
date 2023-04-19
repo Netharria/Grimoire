@@ -9,23 +9,23 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain
 {
-    public class GuildLevelSettings : IModule
+    public class GuildMessageLogSettings : IModule
     {
         public ulong GuildId { get; set; }
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public TimeSpan TextTime { get; set; }
+        public ulong? DeleteChannelLogId { get; set; }
 
-        public int Base { get; set; }
+        public virtual Channel? DeleteChannelLog { get; set; }
 
-        public int Modifier { get; set; }
+        public ulong? BulkDeleteChannelLogId { get; set; }
 
-        public int Amount { get; set; }
+        public virtual Channel? BulkDeleteChannelLog { get; set; }
 
-        public ulong? LevelChannelLogId { get; set; }
+        public ulong? EditChannelLogId { get; set; }
 
-        public virtual Channel? LevelChannelLog { get; set; }
+        public virtual Channel? EditChannelLog { get; set; }
 
         public bool ModuleEnabled { get; set; }
     }

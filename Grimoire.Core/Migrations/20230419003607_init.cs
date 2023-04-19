@@ -150,17 +150,17 @@ namespace Grimoire.Core.Migrations
                     Modifier = table.Column<int>(type: "integer", nullable: false, defaultValue: 50),
                     Amount = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
                     LevelChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
-                    LevelChannelLogsId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     ModuleEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GuildLevelSettings", x => x.GuildId);
                     table.ForeignKey(
-                        name: "FK_GuildLevelSettings_Channels_LevelChannelLogsId",
-                        column: x => x.LevelChannelLogsId,
+                        name: "FK_GuildLevelSettings_Channels_LevelChannelLogId",
+                        column: x => x.LevelChannelLogId,
                         principalTable: "Channels",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_GuildLevelSettings_Guilds_GuildId",
                         column: x => x.GuildId,
@@ -170,15 +170,48 @@ namespace Grimoire.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "GuildLogSettings",
+                name: "GuildMessageLogSettings",
+                columns: table => new
+                {
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    DeleteChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
+                    BulkDeleteChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
+                    EditChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
+                    ModuleEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GuildMessageLogSettings", x => x.GuildId);
+                    table.ForeignKey(
+                        name: "FK_GuildMessageLogSettings_Channels_BulkDeleteChannelLogId",
+                        column: x => x.BulkDeleteChannelLogId,
+                        principalTable: "Channels",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_GuildMessageLogSettings_Channels_DeleteChannelLogId",
+                        column: x => x.DeleteChannelLogId,
+                        principalTable: "Channels",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_GuildMessageLogSettings_Channels_EditChannelLogId",
+                        column: x => x.EditChannelLogId,
+                        principalTable: "Channels",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_GuildMessageLogSettings_Guilds_GuildId",
+                        column: x => x.GuildId,
+                        principalTable: "Guilds",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GuildUserLogSettings",
                 columns: table => new
                 {
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     JoinChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     LeaveChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
-                    DeleteChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
-                    BulkDeleteChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
-                    EditChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     UsernameChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     NicknameChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     AvatarChannelLogId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
@@ -186,49 +219,34 @@ namespace Grimoire.Core.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_GuildLogSettings", x => x.GuildId);
+                    table.PrimaryKey("PK_GuildUserLogSettings", x => x.GuildId);
                     table.ForeignKey(
-                        name: "FK_GuildLogSettings_Channels_AvatarChannelLogId",
+                        name: "FK_GuildUserLogSettings_Channels_AvatarChannelLogId",
                         column: x => x.AvatarChannelLogId,
                         principalTable: "Channels",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_GuildLogSettings_Channels_BulkDeleteChannelLogId",
-                        column: x => x.BulkDeleteChannelLogId,
-                        principalTable: "Channels",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_GuildLogSettings_Channels_DeleteChannelLogId",
-                        column: x => x.DeleteChannelLogId,
-                        principalTable: "Channels",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_GuildLogSettings_Channels_EditChannelLogId",
-                        column: x => x.EditChannelLogId,
-                        principalTable: "Channels",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_GuildLogSettings_Channels_JoinChannelLogId",
+                        name: "FK_GuildUserLogSettings_Channels_JoinChannelLogId",
                         column: x => x.JoinChannelLogId,
                         principalTable: "Channels",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_GuildLogSettings_Channels_LeaveChannelLogId",
+                        name: "FK_GuildUserLogSettings_Channels_LeaveChannelLogId",
                         column: x => x.LeaveChannelLogId,
                         principalTable: "Channels",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_GuildLogSettings_Channels_NicknameChannelLogId",
+                        name: "FK_GuildUserLogSettings_Channels_NicknameChannelLogId",
                         column: x => x.NicknameChannelLogId,
                         principalTable: "Channels",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_GuildLogSettings_Channels_UsernameChannelLogId",
+                        name: "FK_GuildUserLogSettings_Channels_UsernameChannelLogId",
                         column: x => x.UsernameChannelLogId,
                         principalTable: "Channels",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_GuildLogSettings_Guilds_GuildId",
+                        name: "FK_GuildUserLogSettings_Guilds_GuildId",
                         column: x => x.GuildId,
                         principalTable: "Guilds",
                         principalColumn: "Id",
@@ -678,55 +696,55 @@ namespace Grimoire.Core.Migrations
                 column: "GuildId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildLevelSettings_LevelChannelLogsId",
+                name: "IX_GuildLevelSettings_LevelChannelLogId",
                 table: "GuildLevelSettings",
-                column: "LevelChannelLogsId");
+                column: "LevelChannelLogId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildLogSettings_AvatarChannelLogId",
-                table: "GuildLogSettings",
-                column: "AvatarChannelLogId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_GuildLogSettings_BulkDeleteChannelLogId",
-                table: "GuildLogSettings",
+                name: "IX_GuildMessageLogSettings_BulkDeleteChannelLogId",
+                table: "GuildMessageLogSettings",
                 column: "BulkDeleteChannelLogId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildLogSettings_DeleteChannelLogId",
-                table: "GuildLogSettings",
+                name: "IX_GuildMessageLogSettings_DeleteChannelLogId",
+                table: "GuildMessageLogSettings",
                 column: "DeleteChannelLogId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildLogSettings_EditChannelLogId",
-                table: "GuildLogSettings",
+                name: "IX_GuildMessageLogSettings_EditChannelLogId",
+                table: "GuildMessageLogSettings",
                 column: "EditChannelLogId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildLogSettings_JoinChannelLogId",
-                table: "GuildLogSettings",
+                name: "IX_GuildUserLogSettings_AvatarChannelLogId",
+                table: "GuildUserLogSettings",
+                column: "AvatarChannelLogId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GuildUserLogSettings_JoinChannelLogId",
+                table: "GuildUserLogSettings",
                 column: "JoinChannelLogId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildLogSettings_LeaveChannelLogId",
-                table: "GuildLogSettings",
+                name: "IX_GuildUserLogSettings_LeaveChannelLogId",
+                table: "GuildUserLogSettings",
                 column: "LeaveChannelLogId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildLogSettings_NicknameChannelLogId",
-                table: "GuildLogSettings",
+                name: "IX_GuildUserLogSettings_NicknameChannelLogId",
+                table: "GuildUserLogSettings",
                 column: "NicknameChannelLogId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildLogSettings_UsernameChannelLogId",
-                table: "GuildLogSettings",
+                name: "IX_GuildUserLogSettings_UsernameChannelLogId",
+                table: "GuildUserLogSettings",
                 column: "UsernameChannelLogId",
                 unique: true);
 
@@ -885,10 +903,13 @@ namespace Grimoire.Core.Migrations
                 name: "GuildLevelSettings");
 
             migrationBuilder.DropTable(
-                name: "GuildLogSettings");
+                name: "GuildMessageLogSettings");
 
             migrationBuilder.DropTable(
                 name: "GuildModerationSettings");
+
+            migrationBuilder.DropTable(
+                name: "GuildUserLogSettings");
 
             migrationBuilder.DropTable(
                 name: "Locks");

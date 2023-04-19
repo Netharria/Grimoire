@@ -11,47 +11,35 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration
 {
     [ExcludeFromCodeCoverage]
-    public class GuildLogSettingsConfiguration : IEntityTypeConfiguration<GuildLogSettings>
+    public class GuildUserLogSettingsConfiguration : IEntityTypeConfiguration<GuildUserLogSettings>
     {
-        public void Configure(EntityTypeBuilder<GuildLogSettings> builder)
+        public void Configure(EntityTypeBuilder<GuildUserLogSettings> builder)
         {
             builder.HasKey(e => e.GuildId);
             builder.HasOne(e => e.Guild)
-                .WithOne(e => e.LogSettings)
-                .HasForeignKey<GuildLogSettings>(e => e.GuildId)
+                .WithOne(e => e.UserLogSettings)
+                .HasForeignKey<GuildUserLogSettings>(e => e.GuildId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.HasOne(e => e.JoinChannelLog)
                 .WithOne()
-                .HasForeignKey<GuildLogSettings>(e => e.JoinChannelLogId)
+                .HasForeignKey<GuildUserLogSettings>(e => e.JoinChannelLogId)
                 .IsRequired(false);
             builder.HasOne(e => e.LeaveChannelLog)
                 .WithOne()
-                .HasForeignKey<GuildLogSettings>(e => e.LeaveChannelLogId)
-                .IsRequired(false);
-            builder.HasOne(e => e.DeleteChannelLog)
-                .WithOne()
-                .HasForeignKey<GuildLogSettings>(e => e.DeleteChannelLogId)
-                .IsRequired(false);
-            builder.HasOne(e => e.BulkDeleteChannelLog)
-                .WithOne()
-                .HasForeignKey<GuildLogSettings>(e => e.BulkDeleteChannelLogId)
-                .IsRequired(false);
-            builder.HasOne(e => e.EditChannelLog)
-                .WithOne()
-                .HasForeignKey<GuildLogSettings>(e => e.EditChannelLogId)
+                .HasForeignKey<GuildUserLogSettings>(e => e.LeaveChannelLogId)
                 .IsRequired(false);
             builder.HasOne(e => e.UsernameChannelLog)
                 .WithOne()
-                .HasForeignKey<GuildLogSettings>(e => e.UsernameChannelLogId)
+                .HasForeignKey<GuildUserLogSettings>(e => e.UsernameChannelLogId)
                 .IsRequired(false);
             builder.HasOne(e => e.NicknameChannelLog)
                 .WithOne()
-                .HasForeignKey<GuildLogSettings>(e => e.NicknameChannelLogId)
+                .HasForeignKey<GuildUserLogSettings>(e => e.NicknameChannelLogId)
                 .IsRequired(false);
             builder.HasOne(e => e.AvatarChannelLog)
                 .WithOne()
-                .HasForeignKey<GuildLogSettings>(e => e.AvatarChannelLogId)
+                .HasForeignKey<GuildUserLogSettings>(e => e.AvatarChannelLogId)
                 .IsRequired(false);
             builder.Property(x => x.ModuleEnabled)
                 .HasDefaultValue(value: false);

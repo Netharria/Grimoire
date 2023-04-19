@@ -21,9 +21,9 @@ namespace Grimoire.Core.Configuration
                 .IsRequired();
             builder.Property(e => e.ModChannelLog).
                 IsRequired(false);
-            builder.HasOne(e => e.LogSettings)
+            builder.HasOne(e => e.UserLogSettings)
                 .WithOne(e => e.Guild)
-                .HasForeignKey<GuildLogSettings>(e => e.GuildId)
+                .HasForeignKey<GuildUserLogSettings>(e => e.GuildId)
                 .IsRequired(false);
             builder.HasOne(e => e.LevelSettings)
                 .WithOne(e => e.Guild)

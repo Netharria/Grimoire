@@ -49,7 +49,7 @@ namespace Grimoire.Core.DatabaseQueryHelpers
         }
 
         public static IQueryable<Member> WhereLoggingEnabled(this IQueryable<Member> members)
-            => members.Where(x => x.Guild.LogSettings.ModuleEnabled);
+            => members.Where(x => x.Guild.UserLogSettings.ModuleEnabled);
 
         public static IQueryable<Member> WhereLevelingEnabled(this IQueryable<Member> members)
             => members.Where(x => x.Guild.LevelSettings.ModuleEnabled);

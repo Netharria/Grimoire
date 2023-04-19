@@ -25,7 +25,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateM
                 .WhereIdIs(command.MessageId)
                 .Select(x => new UpdateMessageCommandResponse
                 {
-                    UpdateMessageLogChannelId = x.Guild.LogSettings.EditChannelLogId,
+                    UpdateMessageLogChannelId = x.Guild.MessageLogSettings.EditChannelLogId,
                     MessageId = x.Id,
                     UserId = x.UserId,
                     MessageContent = x.MessageHistory
