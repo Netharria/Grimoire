@@ -77,7 +77,7 @@ dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:s
 dotnet_style_require_accessibility_modifiers = for_non_interface_members
 
 # Expression-level preferences
-dotnet_style_coalesce_expression = true:warning
+dotnet_style_coalesce_expression = true:none
 dotnet_style_collection_initializer = true
 dotnet_style_explicit_tuple_names = true:warning
 dotnet_style_null_propagation = true:warning
@@ -279,3 +279,6 @@ csharp_style_prefer_null_check_over_type_check = true:suggestion
 csharp_style_prefer_method_group_conversion = true:silent
 csharp_style_prefer_top_level_statements = true:silent
 csharp_style_prefer_local_over_anonymous_function = true:suggestion
+
+# IDE0270: Use coalesce expression
+dotnet_diagnostic.IDE0270.severity = none

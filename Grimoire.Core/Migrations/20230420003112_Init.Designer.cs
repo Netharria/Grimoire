@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Core.Migrations
 {
     [DbContext(typeof(GrimoireDbContext))]
-    [Migration("20230419003607_init")]
-    partial class init
+    [Migration("20230420003112_Init")]
+    partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

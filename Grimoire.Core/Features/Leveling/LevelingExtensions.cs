@@ -26,8 +26,7 @@ namespace Grimoire.Core.Features.Leveling
             foreach (var ignorable in ignorableItems)
             {
                 ignorable.IsXpIgnored = shouldBeIgnored;
-                if (outputString is not null)
-                    outputString.Append(ignorable.Mention()).Append(' ');
+                outputString?.Append(ignorable.Mention()).Append(' ');
                 yield return ignorable;
             }
         }

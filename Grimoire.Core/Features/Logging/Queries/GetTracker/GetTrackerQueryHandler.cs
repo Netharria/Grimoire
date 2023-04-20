@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Logging.Queries.GetTracker
@@ -20,7 +21,7 @@ namespace Grimoire.Core.Features.Logging.Queries.GetTracker
 
         public async ValueTask<GetTrackerQueryResponse?> Handle(GetTrackerQuery request, CancellationToken cancellationToken)
             =>  await this._grimoireDbContext.Trackers
-            .WhereMemberIs(request.UserId, request.GuildId)
+            .WhereMemberHasId(request.UserId, request.GuildId)
             .Select(x => new GetTrackerQueryResponse
             {
                 TrackerChannelId = x.LogChannelId

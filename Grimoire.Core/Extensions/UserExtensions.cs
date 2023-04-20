@@ -9,9 +9,6 @@ namespace Grimoire.Core.Extensions
 {
     public static class UserExtensions
     {
-        public static Member? GetGuildProfile(this User user, ulong guildId) =>
-            user.MemberProfiles.FirstOrDefault(x => x.GuildId == guildId);
-
         public static string Mention(ulong id) => $"<@!{id}>";
     }
 }

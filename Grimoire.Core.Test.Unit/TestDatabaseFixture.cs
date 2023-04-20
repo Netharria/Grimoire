@@ -49,18 +49,16 @@ namespace Grimoire.Core.Test.Unit
         {
             lock (_lock)
             {
-                using (var context = this.CreateContext())
-                {
-                    context.Database.EnsureDeleted();
-                    context.Database.EnsureCreated();
-                    context.Guilds.AddRange(Guild1, Guild2);
-                    context.Channels.AddRange(Channel1, Channel2);
-                    context.Users.AddRange(User1, User2);
-                    context.Members.AddRange(Member1, Member2, Member3);
-                    context.Roles.AddRange(Role1, Role2);
-                    context.Rewards.AddRange(Reward1);
-                    context.SaveChanges();
-                }
+                using var context = this.CreateContext();
+                context.Database.EnsureDeleted();
+                context.Database.EnsureCreated();
+                context.Guilds.AddRange(Guild1, Guild2);
+                context.Channels.AddRange(Channel1, Channel2);
+                context.Users.AddRange(User1, User2);
+                context.Members.AddRange(Member1, Member2, Member3);
+                context.Roles.AddRange(Role1, Role2);
+                context.Rewards.AddRange(Reward1);
+                context.SaveChanges();
             }
         }
 
