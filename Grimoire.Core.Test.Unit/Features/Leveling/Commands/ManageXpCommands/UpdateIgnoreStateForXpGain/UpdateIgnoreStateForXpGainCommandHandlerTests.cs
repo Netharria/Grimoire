@@ -7,9 +7,9 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
 using Grimoire.Core.Features.Shared.SharedDtos;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

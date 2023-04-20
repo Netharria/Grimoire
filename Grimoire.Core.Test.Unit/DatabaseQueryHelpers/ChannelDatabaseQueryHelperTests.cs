@@ -1,8 +1,15 @@
+// This file is part of the Grimoire Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Features.Shared.SharedDtos;
-using FluentAssertions;
 using NUnit.Framework;
 
 namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
@@ -12,7 +19,7 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
     {
         public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
 
-        
+
         [OneTimeSetUp]
         public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 

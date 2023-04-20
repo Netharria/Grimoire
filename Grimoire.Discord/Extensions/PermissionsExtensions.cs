@@ -19,7 +19,7 @@ namespace Grimoire.Discord.Extensions
             => permissions &= previosPermissions ^ ~PermissionValues.LockPermissions;
 
         public static Permissions RevertLockPermissions(this Permissions permissions, long previosPermissions)
-            => permissions.RevertLockPermissions((Permissions) previosPermissions);
+            => permissions.RevertLockPermissions((Permissions)previosPermissions);
 
         public static long ToLong(this Permissions permissions)
             => (long)permissions;

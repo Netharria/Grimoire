@@ -8,9 +8,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Features.Shared.SharedDtos;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

@@ -6,8 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.Tasks;
-using Grimoire.Core.DatabaseQueryHelpers;
 using FluentAssertions;
+using Grimoire.Core.DatabaseQueryHelpers;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

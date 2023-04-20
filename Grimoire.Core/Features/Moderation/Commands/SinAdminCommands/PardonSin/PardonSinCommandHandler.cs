@@ -38,7 +38,7 @@ namespace Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.PardonSin
             if (result is null)
                 throw new AnticipatedException("Could not find a sin with that ID.");
 
-            if(result.Sin.Pardon is not null)
+            if (result.Sin.Pardon is not null)
             {
                 result.Sin.Pardon.Reason = command.Reason;
             }

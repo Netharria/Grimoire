@@ -9,7 +9,7 @@ namespace Grimoire.Core.Exceptions
 {
     public class AnticipatedException : Exception
     {
-        public AnticipatedException(string message): base(message)
+        public AnticipatedException(string message) : base(message)
         {
 
         }

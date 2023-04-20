@@ -50,7 +50,7 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnore
                     .ToArray();
                 this._grimoireDbContext.Members.UpdateRange(allUsersToIgnore);
             }
-                
+
             if (command.Roles.Any())
             {
                 allRolesToIgnore = this._grimoireDbContext.Roles
@@ -69,7 +69,7 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnore
 
                 this._grimoireDbContext.Channels.UpdateRange(allChannelsToIgnore);
             }
-            
+
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
             var couldNotMatch = new StringBuilder();

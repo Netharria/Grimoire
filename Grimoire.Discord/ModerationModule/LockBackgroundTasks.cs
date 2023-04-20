@@ -26,7 +26,7 @@ namespace Grimoire.Discord.ModerationModule
             if (notification.Time.Second % 5 != 0)
                 return;
             var response = await this._mediator.Send(new GetExpiredLocksQuery(), cancellationToken);
-            foreach(var expiredLock in response)
+            foreach (var expiredLock in response)
             {
                 var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
                 if (guild is null) continue;
@@ -34,9 +34,10 @@ namespace Grimoire.Discord.ModerationModule
                 var channel = guild.Channels.GetValueOrDefault(expiredLock.ChannelId);
 
                 if (channel is null) continue;
-                if(!channel.IsThread)
+                if (!channel.IsThread)
                     await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                    .SelectAwait(async x => {
+                    .SelectAwait(async x =>
+                    {
                         if (x.Type == OverwriteType.Role)
                             return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
                         return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);

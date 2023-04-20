@@ -7,10 +7,10 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Enums;
 using Grimoire.Domain;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

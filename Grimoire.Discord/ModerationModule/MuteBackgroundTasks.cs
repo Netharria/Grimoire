@@ -36,7 +36,7 @@ namespace Grimoire.Discord.ModerationModule
 
                 if (user is null) continue;
                 var role = guild.Roles.GetValueOrDefault(expiredLock.MuteRole);
-                if(role is null) continue;
+                if (role is null) continue;
                 await user.RevokeRoleAsync(role);
                 _ = await this._mediator.Send(new UnmuteUserCommand { UserId = user.Id, GuildId = guild.Id }, cancellationToken);
 

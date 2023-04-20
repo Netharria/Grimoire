@@ -5,12 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
 using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
-using DSharpPlus.Interactivity.Enums;
-using DSharpPlus.Interactivity.Extensions;
 
 namespace Grimoire.Discord.LevelingModule
 {
@@ -32,7 +32,7 @@ namespace Grimoire.Discord.LevelingModule
             [Minimum(0)]
             [Option("XP", "The amount of xp to grant.")] long xpToAward)
         {
-            await this._mediator.Send(new AwardUserXpCommand{ UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id });
+            await this._mediator.Send(new AwardUserXpCommand { UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id });
 
             await ctx.ReplyAsync(GrimoireColor.Gold, message: $"{user.Mention} has been awarded {xpToAward} xp.", ephemeral: false);
         }

@@ -18,10 +18,10 @@ namespace Grimoire.Core.Features.Logging.Commands.SetMessageLogSettings
 
         public async ValueTask<Unit> Handle(SetMessageLogSettingsCommand command, CancellationToken cancellationToken)
         {
-            
+
             var guild = await this._grimoireDbContext.GuildMessageLogSettings.FirstOrDefaultAsync(x => x.GuildId == command.GuildId, cancellationToken);
             if (guild == null) throw new AnticipatedException("Could not find guild log settings..");
-            switch(command.MessageLogSetting)
+            switch (command.MessageLogSetting)
             {
                 case MessageLogSetting.DeleteLog:
                     guild.DeleteChannelLogId = command.ChannelId;

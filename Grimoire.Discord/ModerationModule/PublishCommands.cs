@@ -5,12 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Domain;
-using Grimoire.Core.Features.Moderation.Queries.GetBan;
-using Grimoire.Core.Features.Moderation.Commands.BanComands.PublishBan;
 using DSharpPlus.Exceptions;
-using Microsoft.Extensions.Logging;
 using Grimoire.Core.Exceptions;
+using Grimoire.Core.Features.Moderation.Commands.BanComands.PublishBan;
+using Grimoire.Core.Features.Moderation.Queries.GetBan;
+using Grimoire.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule
 {
@@ -84,7 +84,7 @@ namespace Grimoire.Discord.ModerationModule
             if (banLogChannel is null)
                 throw new AnticipatedException("Could not find the ban log channel.");
 
-            if(response.PublishedMessage is not null)
+            if (response.PublishedMessage is not null)
             {
                 try
                 {
@@ -95,12 +95,13 @@ namespace Grimoire.Discord.ModerationModule
                                         $"**User:** {response.Username} ({response.UserId})\n" +
                                         $"**Reason:** {response.Reason}")
                         .WithColor(GrimoireColor.Purple).Build());
-                } catch(NotFoundException ex)
+                }
+                catch (NotFoundException ex)
                 {
                     ctx.Client.Logger.LogWarning(ex, "Could not find published message {id}", response.PublishedMessage);
                 }
             }
-            
+
             return await banLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithTitle(publish.ToString())
                 .WithDescription($"**Date:** {response.Date}\n" +

@@ -39,6 +39,6 @@ namespace Grimoire.Core.Features.Leveling.Queries.GetLevelSettings
                 LevelChannelLog = guildLevelSettings.LevelChannelLogId
             };
         }
-            
+
     }
 }

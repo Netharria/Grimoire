@@ -19,10 +19,10 @@ namespace Grimoire.Core.Features.Shared.Commands.ChannelCommands.AddChannel
         public async ValueTask<Unit> Handle(AddChannelCommand command, CancellationToken cancellationToken)
         {
             await this._grimoireDbContext.Channels.AddAsync(new Channel
-                {
-                    Id = command.ChannelId,
-                    GuildId = command.GuildId
-                }, cancellationToken);
+            {
+                Id = command.ChannelId,
+                GuildId = command.GuildId
+            }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }

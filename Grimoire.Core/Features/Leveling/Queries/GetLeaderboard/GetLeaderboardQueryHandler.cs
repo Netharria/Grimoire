@@ -37,14 +37,14 @@ namespace Grimoire.Core.Features.Leveling.Queries.GetLeaderboard
             if (request.UserId is not null && memberPosition == -1)
                 throw new AnticipatedException("Could not find user on leaderboard.");
 
-            if(memberPosition == -1)
+            if (memberPosition == -1)
                 memberPosition++;
 
             var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
             var leaderboardText = new StringBuilder();
 
             for (var i = startIndex; i < 15 && i < totalMemberCount; i++)
-                leaderboardText.Append($"**{i + 1}** {RankedMembers[i].Mention} **XP:** {RankedMembers[i].Xp}\n");                
+                leaderboardText.Append($"**{i + 1}** {RankedMembers[i].Mention} **XP:** {RankedMembers[i].Xp}\n");
 
             return new GetLeaderboardQueryResponse { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
         }

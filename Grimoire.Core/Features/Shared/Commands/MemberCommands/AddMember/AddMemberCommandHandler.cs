@@ -23,15 +23,15 @@ namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember
 
             if (!userExists)
                 await this._grimoireDbContext.Users.AddAsync(new User
-                    {
-                        Id = command.UserId,
-                        UsernameHistories = new List<UsernameHistory> {
+                {
+                    Id = command.UserId,
+                    UsernameHistories = new List<UsernameHistory> {
                             new UsernameHistory {
                                 Username = command.UserName,
                                 UserId = command.UserId
                             }
                         }
-                    }, cancellationToken);
+                }, cancellationToken);
 
             if (!memberExists)
             {
@@ -49,7 +49,7 @@ namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember
                             TimeOut = DateTime.UtcNow
                         }
                     }
-                    
+
                 };
                 if (!string.IsNullOrWhiteSpace(command.Nickname))
                 {
@@ -61,11 +61,11 @@ namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember
                         Nickname = command.Nickname
                     });
                 }
-                    
+
                 await this._grimoireDbContext.Members.AddAsync(member, cancellationToken);
 
             }
-            if(!userExists || !memberExists)
+            if (!userExists || !memberExists)
                 await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }

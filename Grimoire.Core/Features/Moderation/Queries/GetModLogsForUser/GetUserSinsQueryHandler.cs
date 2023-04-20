@@ -28,7 +28,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
             }
             else
             {
-                 queryable = this._grimoireDbContext.Sins.Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
+                queryable = this._grimoireDbContext.Sins.Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
             }
 
             queryable = query.SinQueryType switch
@@ -57,18 +57,18 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
                 var builder = $"**{x.Id} : {x.SinType}** : {x.InfractionOn}\n" +
                               $"Reason: {x.Reason}\n" +
                               $"Moderator: {x.Moderator}\n";
-                if(x.Pardon)
+                if (x.Pardon)
                 {
                     builder = $"~~{builder}~~" +
                     $"**Pardoned by: {x.PardonModerator} on {x.PardonDate}**\n";
                 }
-                if(stringBuilder.Length + builder.Length > stringBuilder.MaxCapacity)
+                if (stringBuilder.Length + builder.Length > stringBuilder.MaxCapacity)
                 {
                     resultStrings.Add(stringBuilder.ToString());
                     stringBuilder.Clear();
                 }
             });
-            if(stringBuilder.Length > 0)
+            if (stringBuilder.Length > 0)
                 resultStrings.Add(stringBuilder.ToString());
 
             return new GetUserSinsQueryResponse

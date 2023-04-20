@@ -44,13 +44,13 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
             var currentLevel = MemberExtensions.GetLevel(result.Xp + result.Amount, result.Base, result.Modifier);
 
             await this._grimoireDbContext.XpHistory.AddAsync(new XpHistory
-                {
-                    Xp = result.Amount,
-                    UserId = command.UserId,
-                    GuildId = command.GuildId,
-                    TimeOut = DateTimeOffset.UtcNow + result.TextTime,
-                    Type = XpHistoryType.Earned
-                }, cancellationToken);
+            {
+                Xp = result.Amount,
+                UserId = command.UserId,
+                GuildId = command.GuildId,
+                TimeOut = DateTimeOffset.UtcNow + result.TextTime,
+                Type = XpHistoryType.Earned
+            }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
             var earnedRewards = await this._grimoireDbContext.Rewards

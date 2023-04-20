@@ -24,7 +24,9 @@ namespace Grimoire.Core.Features.Leveling.Queries.GetLevel
             var member = await this._grimoireDbContext.Members
                 .WhereMemberHasId(request.UserId, request.GuildId)
                 .Include(x => x.Guild.LevelSettings)
-                .Select(x => new { Xp = x.XpHistory.Sum(x => x.Xp),
+                .Select(x => new
+                {
+                    Xp = x.XpHistory.Sum(x => x.Xp),
                     Level = x.GetLevel(),
                     LevelProgress = x.XpHistory.Sum(x => x.Xp) - x.GetXpNeeded(),
                     TotalXpRequiredToLevel = x.GetXpNeeded(1) - x.GetXpNeeded()

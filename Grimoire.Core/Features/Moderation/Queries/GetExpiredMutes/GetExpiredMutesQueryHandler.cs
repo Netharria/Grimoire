@@ -20,7 +20,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetExpiredMutes
         {
             var response = await this._grimoireDbContext.Mutes.Where(x => x.EndTime < DateTimeOffset.UtcNow)
                 .Where(x => x.Guild.ModerationSettings.MuteRole != null)
-                .Select(x => new 
+                .Select(x => new
                 {
                     x.UserId,
                     x.GuildId,
@@ -38,6 +38,6 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetExpiredMutes
                     LogChannelId = x.ModChannelLog
                 }).ToArray();
         }
-        
+
     }
 }

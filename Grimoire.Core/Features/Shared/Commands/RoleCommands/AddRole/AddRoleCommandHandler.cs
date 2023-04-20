@@ -19,10 +19,10 @@ namespace Grimoire.Core.Features.Shared.Commands.RoleCommands.AddRole
         public async ValueTask<Unit> Handle(AddRoleCommand command, CancellationToken cancellationToken)
         {
             await this._grimoireDbContext.Roles.AddAsync(new Role
-                {
-                    Id = command.RoleId,
-                    GuildId = command.GuildId
-                }, cancellationToken);
+            {
+                Id = command.RoleId,
+                GuildId = command.GuildId
+            }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }

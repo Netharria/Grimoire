@@ -28,13 +28,13 @@ namespace Grimoire.Core.Features.Logging.Commands.TrackerCommands.AddTracker
                 throw new AnticipatedException("Could not find that user.");
             if (result?.Tracker is null)
                 await this._grimoireDbContext.Trackers.AddAsync(new Tracker
-                    {
-                        UserId = command.UserId,
-                        GuildId = command.GuildId,
-                        EndTime = trackerEndTime,
-                        LogChannelId = command.ChannelId,
-                        ModeratorId = command.ModeratorId
-                    }, cancellationToken);
+                {
+                    UserId = command.UserId,
+                    GuildId = command.GuildId,
+                    EndTime = trackerEndTime,
+                    LogChannelId = command.ChannelId,
+                    ModeratorId = command.ModeratorId
+                }, cancellationToken);
             else
             {
                 result.Tracker.LogChannelId = command.ChannelId;

@@ -42,11 +42,13 @@ namespace Grimoire.Discord.LoggingModule
             var invites = await args.Guild.GetInvitesAsync();
             var inviteUsed = this._inviteService.CalculateInviteUsed(
                 invites.Select(x =>
-                new Domain.Invite{
+                new Domain.Invite
+                {
                     Code = x.Code,
                     Inviter = x.Inviter.GetUsernameWithDiscriminator(),
                     Url = x.ToString(),
-                    Uses = x.Uses }).ToList());
+                    Uses = x.Uses
+                }).ToList());
 
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("User Joined")
@@ -139,7 +141,7 @@ namespace Grimoire.Discord.LoggingModule
         }
         public async Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args)
         {
-            foreach(var guild in sender.Guilds.Values)
+            foreach (var guild in sender.Guilds.Values)
             {
                 if (!guild.Members.ContainsKey(args.UserAfter.Id)) continue;
                 var settings = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = guild.Id });

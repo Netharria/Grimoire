@@ -21,7 +21,7 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp
 
         public async ValueTask<Unit> Handle(AwardUserXpCommand command, CancellationToken cancellationToken)
         {
-            
+
             var member = await this._grimoireDbContext.Members
                 .WhereMemberHasId(command.UserId, command.GuildId)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);

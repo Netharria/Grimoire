@@ -7,8 +7,8 @@
 
 using System.Linq;
 using System.Threading.Tasks;
-using Grimoire.Core.DatabaseQueryHelpers;
 using FluentAssertions;
+using Grimoire.Core.DatabaseQueryHelpers;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

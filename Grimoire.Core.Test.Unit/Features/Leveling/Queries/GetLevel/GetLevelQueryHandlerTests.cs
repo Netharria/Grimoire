@@ -6,9 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.Tasks;
+using FluentAssertions;
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Queries.GetLevel;
-using FluentAssertions;
 using NUnit.Framework;
 
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLevel

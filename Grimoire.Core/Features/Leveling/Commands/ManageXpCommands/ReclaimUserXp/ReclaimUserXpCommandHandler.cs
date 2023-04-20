@@ -35,17 +35,17 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserX
                 throw new AnticipatedException("Xp needs to be a positive value.");
             else if (!long.TryParse(command.XpToTake.Trim(), out xpToTake))
                 throw new AnticipatedException("Xp needs to be a valid number.");
-            if(member.Xp < xpToTake)
+            if (member.Xp < xpToTake)
                 xpToTake = member.Xp;
             await this._grimoireDbContext.XpHistory.AddAsync(new XpHistory
-                {
-                    UserId = command.UserId,
-                    GuildId = command.GuildId,
-                    Xp = -xpToTake,
-                    Type = XpHistoryType.Reclaimed,
-                    AwarderId = command.ReclaimerId,
-                    TimeOut = DateTimeOffset.UtcNow
-                }, cancellationToken);
+            {
+                UserId = command.UserId,
+                GuildId = command.GuildId,
+                Xp = -xpToTake,
+                Type = XpHistoryType.Reclaimed,
+                AwarderId = command.ReclaimerId,
+                TimeOut = DateTimeOffset.UtcNow
+            }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
             return new Unit();

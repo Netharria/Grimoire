@@ -32,7 +32,7 @@ namespace Grimoire.Discord.LoggingModule
             this._httpClient = httpFactory.CreateClient();
         }
 
-        
+
         public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
         {
             if (args.Guild is null) return;
@@ -160,7 +160,7 @@ namespace Grimoire.Discord.LoggingModule
             if (args.NicknameBefore != args.NicknameAfter)
             {
                 var logChannel = args.Guild.Channels.GetValueOrDefault(response.TrackerChannelId);
-                if(logChannel is not null)
+                if (logChannel is not null)
                 {
                     var embed = new DiscordEmbedBuilder()
                     .WithDescription($"**Before:** {args.NicknameBefore}\n" +
@@ -197,7 +197,7 @@ namespace Grimoire.Discord.LoggingModule
         public async Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args)
         {
             var response = await this._mediator.Send(new GetAllTrackersForUserQuery{ UserId = args.UserAfter.Id });
-            foreach(var tracker in response.Trackers)
+            foreach (var tracker in response.Trackers)
             {
                 var guild = sender.Guilds.GetValueOrDefault(tracker.GuildId);
                 if (guild is null) continue;
@@ -237,7 +237,7 @@ namespace Grimoire.Discord.LoggingModule
                     }
                 }
             }
-            
+
         }
     }
 }

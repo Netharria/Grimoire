@@ -13,7 +13,7 @@ namespace Grimoire.Core.Configuration
     {
         public void Configure(EntityTypeBuilder<Reaction> builder)
         {
-            builder.HasKey(x => new { x.MessageId, x.EmojiId});
+            builder.HasKey(x => new { x.MessageId, x.EmojiId });
             builder.HasOne(x => x.Message)
                 .WithMany(x => x.Reactions)
                 .HasForeignKey(x => x.MessageId)

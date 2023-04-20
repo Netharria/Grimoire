@@ -12,7 +12,7 @@ namespace Grimoire.Core.Extensions
     public static class IMentionableExtensions
     {
         public static string Mention<TSource>(this TSource ignorable) where TSource : IMentionable
-            => 
+            =>
             ignorable switch
             {
                 Member member => $"<@!{member.UserId}>",

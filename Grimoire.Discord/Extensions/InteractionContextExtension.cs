@@ -34,7 +34,7 @@ namespace Grimoire.Discord.Extensions
             await ctx.CreateResponseAsync(
                 InteractionResponseType.ChannelMessageWithSource,
                 new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
-            
+
         }
 
         public static async ValueTask<(bool, ulong)> TryMatchStringToChannelAsync(this InteractionContext ctx, string s)
@@ -48,10 +48,10 @@ namespace Grimoire.Discord.Extensions
             if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
             {
                 await ctx.ReplyAsync(GrimoireColor.Orange, message: "Did not find that channel on this server.");
-                return(false, 0);
+                return (false, 0);
             }
 
-            return(true, parsedId);
+            return (true, parsedId);
         }
 
         public static async ValueTask<(bool, ulong)> TryMatchStringToChannelOrDefaultAsync(this InteractionContext ctx, string? s)

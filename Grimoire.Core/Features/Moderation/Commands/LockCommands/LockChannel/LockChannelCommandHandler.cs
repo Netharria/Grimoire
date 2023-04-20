@@ -28,7 +28,7 @@ namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel
             if (result is null)
                 throw new AnticipatedException("Could not find that channel");
 
-            if(result.Lock is not null)
+            if (result.Lock is not null)
             {
                 result.Lock.ModeratorId = command.ModeratorId;
                 result.Lock.EndTime = lockEndTime;

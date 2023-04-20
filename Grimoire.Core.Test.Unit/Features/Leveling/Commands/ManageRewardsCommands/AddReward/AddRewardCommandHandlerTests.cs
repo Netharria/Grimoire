@@ -6,8 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.Tasks;
-using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
 using FluentAssertions;
+using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
 using NUnit.Framework;
 
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsCommands.AddReward

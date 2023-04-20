@@ -22,7 +22,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetBan
                 .Where(x => x.SinType == SinType.Ban)
                 .Where(x => x.Id == request.SinId)
                 .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new 
+                .Select(x => new
                 {
                     x.UserId,
                     UsernameHistory = x.Member.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(),
@@ -35,9 +35,9 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetBan
 
             if (result is null)
                 throw new AnticipatedException("Could not find a ban with that Sin Id");
-            if(result.PublicBanLog is null)
+            if (result.PublicBanLog is null)
                 throw new AnticipatedException("No Public Ban Log is configured.");
-            if(result.Pardon is null)
+            if (result.Pardon is null)
                 throw new AnticipatedException("The ban must be pardoned first before the unban can be published.");
 
             return new GetBanQueryResponse

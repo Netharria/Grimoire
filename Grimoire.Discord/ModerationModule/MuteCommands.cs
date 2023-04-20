@@ -42,7 +42,7 @@ namespace Grimoire.Discord.ModerationModule
                 DurationAmount = durationAmount,
                 DurationType = durationType,
                 ModeratorId = ctx.User.Id,
-                Reason = string.IsNullOrWhiteSpace(reason) ? string.Empty : reason 
+                Reason = string.IsNullOrWhiteSpace(reason) ? string.Empty : reason
             });
             var muteRole = ctx.Guild.Roles.GetValueOrDefault(response.MuteRole);
             if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");

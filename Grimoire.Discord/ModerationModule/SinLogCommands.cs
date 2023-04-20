@@ -25,7 +25,7 @@ namespace Grimoire.Discord.ModerationModule
         public async Task SinLogAsync(
             InteractionContext ctx,
             [Option("Type", "The Type of logs to lookup.")] SinQueryType sinQueryType,
-            [Option("User", "The user to look up the logs for. Leave blank for self.")]DiscordUser? user)
+            [Option("User", "The user to look up the logs for. Leave blank for self.")] DiscordUser? user)
         {
             user ??= ctx.User;
 
@@ -33,12 +33,12 @@ namespace Grimoire.Discord.ModerationModule
             if ((!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages)) && ctx.User != user)
                 throw new AnticipatedException("Only moderators can look up logs for someone else.");
             var response = await this._mediator.Send(new GetUserSinsQuery
-                {
-                    UserId = user.Id,
-                    GuildId = ctx.Guild.Id,
-                    SinQueryType = sinQueryType
-                });
-            if(!response.SinList.Any())
+            {
+                UserId = user.Id,
+                GuildId = ctx.Guild.Id,
+                SinQueryType = sinQueryType
+            });
+            if (!response.SinList.Any())
                 await ctx.ReplyAsync(GrimoireColor.Green, message: "That user does not have any logs",
                     ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
             foreach (var message in response.SinList)

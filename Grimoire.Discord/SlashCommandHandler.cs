@@ -7,11 +7,11 @@
 
 using System.Text;
 using DSharpPlus.SlashCommands.EventArgs;
+using Grimoire.Core.Exceptions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
-using Microsoft.Extensions.Configuration;
-using Grimoire.Core.Exceptions;
 
 namespace Grimoire.Discord
 {
@@ -55,7 +55,7 @@ namespace Grimoire.Discord
             {
                 var errorIdString = string.IsNullOrWhiteSpace(errorId) ? string.Empty : $"[Id `{errorId}`]";
                 var shortStackTrace = string.Empty;
-                if(exception.StackTrace is not null)
+                if (exception.StackTrace is not null)
                     shortStackTrace = string.Join('\n', exception.StackTrace.Split('\n')
                         .Where(x => x.StartsWith("   at Grimoire"))
                         .Select(x => x[(x.IndexOf(" in ") + 4)..])
@@ -63,7 +63,7 @@ namespace Grimoire.Discord
                 await channel.SendMessageAsync($"Encountered exception while executing {action} {errorIdString}\n" +
                     $"```csharp\n{exception.Message}\n{shortStackTrace}\n```");
             }
-                
+
         }
 
         public async Task DiscordOnClientErrored(DiscordClient sender, ClientErrorEventArgs args)
@@ -129,7 +129,7 @@ namespace Grimoire.Discord
                     args.Exception.Message,
                     args.Exception.StackTrace);
 
-                
+
                 await args.Context.ReplyAsync(color: GrimoireColor.Orange,
                     message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorByteString}]");
                 await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorByteString);

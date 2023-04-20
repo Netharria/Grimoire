@@ -7,8 +7,8 @@
 
 using System.Linq;
 using System.Threading.Tasks;
-using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
 using FluentAssertions;
+using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

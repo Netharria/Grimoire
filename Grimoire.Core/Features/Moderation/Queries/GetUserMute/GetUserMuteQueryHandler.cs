@@ -22,7 +22,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetUserMute
             => await this._grimoireDbContext.Mutes
                 .WhereMemberHasId(query.UserId, query.GuildId)
                 .Where(x => x.Guild.ModerationSettings.ModuleEnabled)
-                .Select(x => 
+                .Select(x =>
                     x.Guild.ModerationSettings.MuteRole)
                 .FirstOrDefaultAsync(cancellationToken);
     }

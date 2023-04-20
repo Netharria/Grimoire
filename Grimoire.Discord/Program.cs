@@ -1,11 +1,17 @@
-// See https://aka.ms/new-console-template for more information
+// This file is part of the Grimoire Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+
+using DSharpPlus.Interactivity.Enums;
 using Grimoire.Core;
 using Grimoire.Discord;
 using Grimoire.Discord.LevelingModule;
 using Grimoire.Discord.LoggingModule;
 using Grimoire.Discord.ModerationModule;
 using Grimoire.Discord.SharedModule;
-using DSharpPlus.Interactivity.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -60,7 +66,7 @@ Host.CreateDefaultBuilder(args)
             x =>
             {
                 if (x is not SlashCommandsExtension extension) return;
-                if(ulong.TryParse(context.Configuration["guildId"], out var guildId))
+                if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
                     extension.RegisterCommands<ExampleSlashCommand>(guildId);
                     extension.RegisterCommands<LevelCommands>(guildId);

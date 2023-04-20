@@ -25,7 +25,7 @@ namespace Grimoire.Discord.LoggingModule
             if (notification.Time.Second % 5 != 0)
                 return;
             var response = await this._mediator.Send(new RemoveExpiredTrackersCommand(), cancellationToken);
-            foreach(var expiredTracker in response)
+            foreach (var expiredTracker in response)
             {
                 var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
                 if (guild is null) continue;
@@ -36,8 +36,8 @@ namespace Grimoire.Discord.LoggingModule
                 var channel = guild.Channels.GetValueOrDefault(expiredTracker.TrackerChannelId);
                 if (channel is not null)
                     await channel.SendMessageAsync(embed);
-                
-                if(expiredTracker.LogChannelId is not null)
+
+                if (expiredTracker.LogChannelId is not null)
                 {
                     var ModerationLogChannel = guild.Channels.GetValueOrDefault(expiredTracker.LogChannelId.Value);
                     if (ModerationLogChannel is not null)

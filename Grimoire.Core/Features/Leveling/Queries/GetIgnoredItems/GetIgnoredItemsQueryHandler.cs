@@ -33,7 +33,7 @@ namespace Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems
                 }).FirstAsync(cancellationToken: cancellationToken);
 
             if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredMembers.Any())
-                throw new AnticipatedException ("This server does not have any ignored channels, roles or users." );
+                throw new AnticipatedException("This server does not have any ignored channels, roles or users.");
 
             var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
             foreach (var channel in ignoredItems.IgnoredChannels) ignoredMessageBuilder.Append(ChannelExtensions.Mention(channel)).Append('\n');

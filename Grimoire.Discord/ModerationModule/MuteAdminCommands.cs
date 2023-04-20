@@ -105,7 +105,8 @@ namespace Grimoire.Discord.ModerationModule
                     || channel.Type == ChannelType.PublicThread)
                 {
                     await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                    .SelectAwait(async x => {
+                    .SelectAwait(async x =>
+                    {
                         if (x.Type == OverwriteType.Role)
                             return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
                         return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
@@ -122,7 +123,8 @@ namespace Grimoire.Discord.ModerationModule
                 else if (channel.Type == ChannelType.Voice)
                 {
                     await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                    .SelectAwait(async x => {
+                    .SelectAwait(async x =>
+                    {
                         if (x.Type == OverwriteType.Role)
                             return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
                         return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);

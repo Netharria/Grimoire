@@ -32,6 +32,6 @@ namespace Grimoire.Domain
 
         public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
         public virtual ICollection<MessageHistory> MessageHistory { get; set; } = new List<MessageHistory>();
-        
+
     }
 }

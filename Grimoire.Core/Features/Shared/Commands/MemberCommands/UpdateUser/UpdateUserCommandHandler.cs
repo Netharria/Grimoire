@@ -26,10 +26,10 @@ namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.UpdateUser
             if (userName.Equals(command.UserName, StringComparison.Ordinal))
                 return Unit.Value;
             await this._grimoireDbContext.UsernameHistory.AddAsync(new UsernameHistory
-                {
-                    UserId = command.UserId,
-                    Username = command.UserName
-                }, cancellationToken);
+            {
+                UserId = command.UserId,
+                Username = command.UserName
+            }, cancellationToken);
 
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return Unit.Value;

@@ -30,14 +30,14 @@ namespace Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredT
                 this._grimoireDbContext.Trackers.RemoveRange(results.Select(x => x.Tracker));
                 await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             }
-                
+
             return results.Select(x => new RemoveExpiredTrackersCommandResponse
-                {
-                    UserId = x.Tracker.UserId,
-                    GuildId = x.Tracker.GuildId,
-                    LogChannelId = x.ModerationLogId,
-                    TrackerChannelId = x.TrackerChannelId
-                });
+            {
+                UserId = x.Tracker.UserId,
+                GuildId = x.Tracker.GuildId,
+                LogChannelId = x.ModerationLogId,
+                TrackerChannelId = x.TrackerChannelId
+            });
         }
     }
 }

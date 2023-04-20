@@ -5,9 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.BanComands.AddBan;
 using Microsoft.Extensions.Logging;
-using DSharpPlus.Exceptions;
 
 namespace Grimoire.Discord.ModerationModule
 {
@@ -35,12 +35,12 @@ namespace Grimoire.Discord.ModerationModule
             [Minimum(0)]
             [Option("DeleteDays", "Number of days of messages to delete. Default is 7")] long deleteDays = 7)
         {
-            if(!CheckIfCanBan(ctx, user))
+            if (!CheckIfCanBan(ctx, user))
             {
                 await ctx.ReplyAsync(GrimoireColor.Orange, "I do not have permissions to ban that user.");
                 return;
             }
-            if(ctx.User.Id == user.Id)
+            if (ctx.User.Id == user.Id)
             {
                 await ctx.ReplyAsync(GrimoireColor.Orange, "You can't ban yourself.");
                 return;
@@ -53,7 +53,7 @@ namespace Grimoire.Discord.ModerationModule
                 ModeratorId = ctx.User.Id,
                 Reason = reason
             });
-            
+
             try
             {
                 if (user is DiscordMember member)
@@ -64,9 +64,10 @@ namespace Grimoire.Discord.ModerationModule
                         + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
                         .WithColor(GrimoireColor.Orange));
                 }
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
-                if(ex is not UnauthorizedException)
+                if (ex is not UnauthorizedException)
                     ctx.Client.Logger.LogWarning(ex, "Was not able to send a direct message to user.");
             }
 
@@ -94,7 +95,8 @@ namespace Grimoire.Discord.ModerationModule
                 GrimoireColor.Orange,
                 title: "Unbanned",
                 message: $"{user.GetUsernameWithDiscriminator()} was unbanned.");
-            } catch(Exception ex) when (ex is NotFoundException || ex is ServerErrorException)
+            }
+            catch (Exception ex) when (ex is NotFoundException || ex is ServerErrorException)
             {
                 var errorMessage = ex is NotFoundException
                                     ? "user could not be found."
@@ -108,7 +110,7 @@ namespace Grimoire.Discord.ModerationModule
 
         private static bool CheckIfCanBan(InteractionContext ctx, DiscordUser user)
         {
-            if(user is not DiscordMember member)
+            if (user is not DiscordMember member)
                 return true;
             return ctx.Guild.CurrentMember.Hierarchy > member.Hierarchy;
         }

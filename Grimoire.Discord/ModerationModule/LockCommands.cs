@@ -5,9 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Responses;
 using Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel;
 using Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand;
+using Grimoire.Core.Responses;
 
 namespace Grimoire.Discord.ModerationModule
 {
@@ -56,7 +56,8 @@ namespace Grimoire.Discord.ModerationModule
             var previousSetting = channel.PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
 
             await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                .SelectAwait(async x => {
+                .SelectAwait(async x =>
+                {
                     if (x.Type == OverwriteType.Role)
                         return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
                     return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
@@ -70,7 +71,8 @@ namespace Grimoire.Discord.ModerationModule
                     return x;
                 }).ToEnumerable());
 
-            return await _mediator.Send(new LockChannelCommand{
+            return await _mediator.Send(new LockChannelCommand
+            {
                 ChannelId = channel.Id,
                 PreviouslyAllowed = previousSetting.Allowed.GetLockPermissions().ToLong(),
                 PreviouslyDenied = previousSetting.Denied.GetLockPermissions().ToLong(),
@@ -103,16 +105,17 @@ namespace Grimoire.Discord.ModerationModule
             channel ??= ctx.Channel;
             var response = await _mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = ctx.Guild.Id });
 
-            if(!channel.IsThread)
+            if (!channel.IsThread)
                 await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                .SelectAwait(async x => {
+                .SelectAwait(async x =>
+                {
                     if (x.Type == OverwriteType.Role)
                         return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
                     return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
-                    })
+                })
                 .Select(x =>
                 {
-                    if(x.Target.Id == ctx.Guild.EveryoneRole.Id)
+                    if (x.Target.Id == ctx.Guild.EveryoneRole.Id)
                     {
                         x.Allowed.RevertLockPermissions(response.PreviouslyAllowed);
                         x.Denied.RevertLockPermissions(response.PreviouslyDenied);

@@ -27,8 +27,8 @@ namespace Grimoire.Core.Configuration
                 .HasMaxLength(4000);
             builder.HasOne(e => e.DeletedByModerator)
                 .WithMany(e => e.MessagesDeletedAsModerator)
-                .HasForeignKey(e => new { e.GuildId, e.DeletedByModeratorId})
-                .HasPrincipalKey(e => new { e.GuildId, e.UserId})
+                .HasForeignKey(e => new { e.GuildId, e.DeletedByModeratorId })
+                .HasPrincipalKey(e => new { e.GuildId, e.UserId })
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false);
             builder.Property(e => e.TimeStamp)

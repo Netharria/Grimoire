@@ -81,7 +81,7 @@ namespace Grimoire.Discord.LoggingModule
             }
         }
 
-        private  DiscordChannel? GetChannelAsync(ulong guildId, ulong channelId)
+        private DiscordChannel? GetChannelAsync(ulong guildId, ulong channelId)
         {
             try
             {

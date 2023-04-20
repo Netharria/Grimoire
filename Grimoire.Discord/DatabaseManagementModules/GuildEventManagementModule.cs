@@ -80,7 +80,7 @@ namespace Grimoire.Discord.DatabaseManagementModules
                 Invites = args.Guilds.Values
                     .ToAsyncEnumerable()
                     .SelectManyAwait(async x => (await x.GetInvitesAsync()).ToAsyncEnumerable())
-                    .Select(x => 
+                    .Select(x =>
                     new Invite
                     {
                         Code = x.Code,
@@ -148,7 +148,7 @@ namespace Grimoire.Discord.DatabaseManagementModules
                     Inviter = args.Invite.Inviter.GetUsernameWithDiscriminator(),
                     Url = args.Invite.ToString(),
                     Uses = args.Invite.Uses,
-                }) ;
+                });
             return Task.CompletedTask;
         }
         public async Task DiscordOnInviteDeleted(DiscordClient sender, InviteDeleteEventArgs args)
