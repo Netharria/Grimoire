@@ -5,12 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers;
 using Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand;
 using Grimoire.Core.Features.Moderation.Queries.GetExpiredLocks;
 
@@ -39,8 +33,7 @@ namespace Grimoire.Discord.ModerationModule
 
                 var channel = guild.Channels.GetValueOrDefault(expiredLock.ChannelId);
 
-                if (channel is null)
-                    return;
+                if (channel is null) continue;
                 if(!channel.IsThread)
                     await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
                     .SelectAwait(async x => {

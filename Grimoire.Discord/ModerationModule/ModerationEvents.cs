@@ -8,9 +8,9 @@
 using Grimoire.Core.Features.Moderation.Commands.BanComands.AddBan;
 using Grimoire.Core.Features.Moderation.Queries.GetBan;
 using Grimoire.Core.Features.Moderation.Queries.GetLock;
-using Grimoire.Domain;
 using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Logging;
+using Grimoire.Core.Features.Moderation.Queries.GetUserMute;
 
 namespace Grimoire.Discord.ModerationModule
 {
@@ -18,11 +18,13 @@ namespace Grimoire.Discord.ModerationModule
     [DiscordGuildBanRemovedEventSubscriber]
     [DiscordMessageCreatedEventSubscriber]
     [DiscordMessageReactionAddedEventSubscriber]
+    [DiscordGuildMemberAddedEventSubscriber]
     public class ModerationEvents :
         IDiscordGuildBanAddedEventSubscriber,
         IDiscordGuildBanRemovedEventSubscriber,
         IDiscordMessageCreatedEventSubscriber,
-        IDiscordMessageReactionAddedEventSubscriber
+        IDiscordMessageReactionAddedEventSubscriber,
+        IDiscordGuildMemberAddedEventSubscriber
     {
         private readonly IMediator _mediator;
 
@@ -122,6 +124,7 @@ namespace Grimoire.Discord.ModerationModule
             if (await this._mediator.Send(new GetLockQuery { ChannelId = args.Channel.Id, GuildId = args.Guild.Id }))
                 await args.Message.DeleteAsync();
         }
+
         public async Task DiscordOnMessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs args)
         {
             if (!args.Channel.IsThread)
@@ -132,6 +135,19 @@ namespace Grimoire.Discord.ModerationModule
                 return;
             if (await this._mediator.Send(new GetLockQuery { ChannelId = args.Channel.Id, GuildId = args.Guild.Id }))
                 await args.Message.DeleteAsync();
+        }
+
+        public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
+        {
+            var response = await _mediator.Send(new GetUserMuteQuery
+            {
+                UserId = args.Member.Id,
+                GuildId = args.Guild.Id
+            });
+            if (response is null) return;
+            var role = args.Guild.Roles.GetValueOrDefault(response.Value);
+            if (role is null) return;
+            await args.Member.GrantRoleAsync(role, "Rejoined while muted");
         }
     }
 }

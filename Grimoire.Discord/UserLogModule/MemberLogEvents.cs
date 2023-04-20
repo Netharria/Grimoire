@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Queries.GetLogSettings;
+using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
 
 namespace Grimoire.Discord.LoggingModule
 {
@@ -32,7 +32,8 @@ namespace Grimoire.Discord.LoggingModule
 
         public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
         {
-            var settings = await this._mediator.Send(new GetLoggingSettingsQuery{ GuildId = args.Guild.Id });
+            var settings = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = args.Guild.Id });
+            if (!settings.IsLoggingEnabled) return;
             if (settings.JoinChannelLog is null) return;
             var logChannel = args.Guild.Channels.GetValueOrDefault(settings.JoinChannelLog.Value);
             if (logChannel is null) return;
@@ -66,7 +67,8 @@ namespace Grimoire.Discord.LoggingModule
         }
         public async Task DiscordOnGuildMemberRemoved(DiscordClient sender, GuildMemberRemoveEventArgs args)
         {
-            var settings = await this._mediator.Send(new GetLoggingSettingsQuery{ GuildId = args.Guild.Id });
+            var settings = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = args.Guild.Id });
+            if (!settings.IsLoggingEnabled) return;
             if (settings.LeaveChannelLog is null) return;
             var logChannel = args.Guild.Channels.GetValueOrDefault(settings.LeaveChannelLog.Value);
             if (logChannel is null) return;
@@ -93,7 +95,8 @@ namespace Grimoire.Discord.LoggingModule
         }
         public async Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
         {
-            var settings = await this._mediator.Send(new GetLoggingSettingsQuery{ GuildId = args.Guild.Id });
+            var settings = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = args.Guild.Id });
+            if (!settings.IsLoggingEnabled) return;
             if (args.NicknameBefore != args.NicknameAfter && settings.NicknameChannelLog is not null)
             {
                 var logChannel = args.Guild.Channels.GetValueOrDefault(settings.NicknameChannelLog.Value);
@@ -139,7 +142,8 @@ namespace Grimoire.Discord.LoggingModule
             foreach(var guild in sender.Guilds.Values)
             {
                 if (!guild.Members.ContainsKey(args.UserAfter.Id)) continue;
-                var settings = await this._mediator.Send(new GetLoggingSettingsQuery{ GuildId = guild.Id });
+                var settings = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = guild.Id });
+                if (!settings.IsLoggingEnabled) return;
                 if (args.UserBefore.Username != args.UserAfter.Username && settings.UsernameChannelLog is not null)
                 {
                     var logChannel = guild.Channels.GetValueOrDefault(settings.UsernameChannelLog.Value);

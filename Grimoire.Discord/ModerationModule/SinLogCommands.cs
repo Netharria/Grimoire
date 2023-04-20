@@ -5,14 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser;
-using Grimoire.Domain;
 
 namespace Grimoire.Discord.ModerationModule
 {

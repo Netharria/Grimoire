@@ -37,7 +37,7 @@ namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel
             }
             else
             {
-                await this._grimoireDbContext.Locks.AddAsync(new Domain.Lock
+                await this._grimoireDbContext.Locks.AddAsync(new Lock
                 {
                     ChannelId = command.ChannelId,
                     GuildId = command.GuildId,

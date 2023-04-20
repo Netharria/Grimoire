@@ -28,7 +28,7 @@ namespace Grimoire.Discord.ModerationModule
             InteractionContext ctx,
             [Option("DurationType", "Select whether the duration will be in minutes hours or days")] DurationType durationType,
             [Minimum(0)]
-            [Option("DurationAmount", "Select the amount of time the logging will last.")] long durationAmount,
+            [Option("DurationAmount", "Select the amount of time the lock will last.")] long durationAmount,
             [ChannelTypes(ChannelType.Text, ChannelType.PublicThread, ChannelType.PrivateThread, ChannelType.Category, ChannelType.Forum)]
             [Option("Channel", "The Channel to lock. Current channel if not specified.")] DiscordChannel? channel = null,
             [Option("Reason", "The reason why the channel is getting locked")] string? reason = null)

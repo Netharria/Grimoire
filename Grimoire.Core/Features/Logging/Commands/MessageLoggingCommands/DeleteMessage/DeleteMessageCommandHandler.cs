@@ -22,7 +22,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteM
         {
             var message = await this._grimoireDbContext.Messages
                 .WhereIdIs(command.Id)
-                .WhereLoggingIsEnabled()
+                .WhereMessageLoggingIsEnabled()
                 .Select(x => new DeleteMessageCommandResponse
                 {
                     LoggingChannel = x.Guild.MessageLogSettings.DeleteChannelLogId,

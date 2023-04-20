@@ -5,21 +5,18 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Logging.Commands.SetLogSettings
+namespace Grimoire.Core.Features.Logging.Commands.SetUserLogSettings
 {
-    public sealed record SetLoggingSettingsCommand : ICommand
+    public sealed record SetUserLogSettingsCommand : ICommand
     {
         public ulong GuildId { get; init; }
-        public LoggingSetting LogSetting { get; init; }
+        public UserLogSetting UserLogSetting { get; init; }
         public ulong? ChannelId { get; init; }
     }
-    public enum LoggingSetting
+    public enum UserLogSetting
     {
         JoinLog,
         LeaveLog,
-        DeleteLog,
-        BulkDeleteLog,
-        EditLog,
         UsernameLog,
         NicknameLog,
         AvatarLog

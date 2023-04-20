@@ -22,7 +22,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDel
         {
             var messages = await this._grimoireDbContext.Messages
                 .WhereIdsAre(command.Ids)
-                .WhereLoggingIsEnabled()
+                .WhereMessageLoggingIsEnabled()
                 .Select(x => new
                 {
                     Message = new MessageDto

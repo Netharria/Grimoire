@@ -21,7 +21,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateM
         public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand command, CancellationToken cancellationToken)
         {
             var message = await this._grimoireDbContext.Messages
-                .WhereLoggingIsEnabled()
+                .WhereMessageLoggingIsEnabled()
                 .WhereIdIs(command.MessageId)
                 .Select(x => new UpdateMessageCommandResponse
                 {

@@ -5,12 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Commands.SetLogSettings;
-using Grimoire.Core.Features.Logging.Queries.GetLogSettings;
+using Grimoire.Core.Features.Logging.Commands.SetUserLogSettings;
+using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
 
-namespace Grimoire.Discord.LoggingModule
+namespace Grimoire.Discord.UserLogModule
 {
-    [SlashCommandGroup("LogSettings", "Changes the settings of the Logging Module")]
+    [SlashCommandGroup("UserLogSettings", "Changes the settings of the User Log Module")]
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.UserLog)]
     [SlashRequirePermissions(Permissions.ManageGuild)]
@@ -26,7 +26,7 @@ namespace Grimoire.Discord.LoggingModule
         [SlashCommand("View", "View the current settings for the logging module.")]
         public async Task ViewAsync(InteractionContext ctx)
         {
-            var response = await this._mediator.Send(new GetLoggingSettingsQuery{ GuildId = ctx.Guild.Id });
+            var response = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = ctx.Guild.Id });
             var JoinChannelLog =
                     response.JoinChannelLog is null ?
                     "None" :
@@ -60,16 +60,16 @@ namespace Grimoire.Discord.LoggingModule
         [SlashCommand("Set", "Set a logging setting.")]
         public async Task SetAsync(
             InteractionContext ctx,
-            [Option("Setting", "The Setting to change.")] LoggingSetting loggingSetting,
+            [Option("Setting", "The Setting to change.")] UserLogSetting loggingSetting,
             [Option("Value", "The value to change the setting to. 0 is off. Empty is current channel")] string? value = null)
         {
             (var success, var result) = await ctx.TryMatchStringToChannelOrDefaultAsync(value);
             if (!success) return;
 
-            await this._mediator.Send(new SetLoggingSettingsCommand
+            await this._mediator.Send(new SetUserLogSettingsCommand
             {
                 GuildId = ctx.Guild.Id,
-                LogSetting = loggingSetting,
+                UserLogSetting = loggingSetting,
                 ChannelId = result == 0 ? null : result
             });
 

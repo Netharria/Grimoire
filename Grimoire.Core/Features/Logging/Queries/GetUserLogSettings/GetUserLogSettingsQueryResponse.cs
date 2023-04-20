@@ -5,15 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Logging.Queries.GetLogSettings
+namespace Grimoire.Core.Features.Logging.Queries.GetUserLogSettings
 {
-    public sealed record GetLoggingSettingsQueryResponse : BaseResponse
+    public sealed record GetUserLogSettingsQueryResponse : BaseResponse
     {
         public ulong? JoinChannelLog { get; init; }
         public ulong? LeaveChannelLog { get; init; }
-        public ulong? DeleteChannelLog { get; init; }
-        public ulong? BulkDeleteChannelLog { get; init; }
-        public ulong? EditChannelLog { get; init; }
         public ulong? UsernameChannelLog { get; init; }
         public ulong? NicknameChannelLog { get; init; }
         public ulong? AvatarChannelLog { get; init; }
