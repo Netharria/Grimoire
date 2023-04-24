@@ -7,11 +7,12 @@
 
 using Grimoire.Core.Features.Moderation.Commands.SetAutoPardon;
 using Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel;
+using Grimoire.Discord.Enums;
 using Grimoire.Domain;
 
 namespace Grimoire.Discord.ModerationModule
 {
-    [SlashCommandGroup("ModerationSettings", "Changes the settings of the Moderation Module")]
+    [SlashCommandGroup("ModSettings", "Changes the settings of the Moderation Module")]
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
     [SlashRequirePermissions(Permissions.ManageGuild)]
@@ -27,41 +28,23 @@ namespace Grimoire.Discord.ModerationModule
         [SlashCommand("PublicBanLog", "Set public channel to publish ban and unbans to.")]
         public async Task BanLogAsync(
             InteractionContext ctx,
-            [Choice("Off", 0)]
-            [Choice("CurrentChannel", 1)]
-            [Choice("SelectChannel", 2)]
-            [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] long option,
-            [Option("Channel", "The channel to send. ")] DiscordChannel? value)
+            [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
+            [Option("Channel", "The channel to send to send the logs to.")] DiscordChannel? channel = null)
         {
-            ulong? channelId;
-            switch (option)
-            {
-                case 0:
-                    channelId = null;
-                    break;
-                case 1:
-                    channelId = ctx.Channel.Id;
-                    break;
-                case 2:
-                    if (value is not null)
-                    {
-                        channelId = value.Id;
-                        break;
-                    }
-                    await ctx.ReplyAsync(GrimoireColor.Orange, message: "Please specify a channel.");
-                    return;
-                default:
-                    await ctx.ReplyAsync(GrimoireColor.Orange, message: "Options selected are not valid.");
-                    return;
-            }
-            await this._mediator.Send(new SetBanLogChannelCommand
+            channel = ctx.GetChannelOptionAsync(option, channel);
+            var response = await this._mediator.Send(new SetBanLogChannelCommand
             {
                 GuildId = ctx.Guild.Id,
-                ChannelId = channelId
+                ChannelId = channel?.Id
             });
 
-
-            await ctx.ReplyAsync(message: $"Updated Public Ban Log to {value}", ephemeral: false);
+            if (option is ChannelOption.Off)
+            {
+                await ctx.ReplyAsync(message: $"Disabled the public ban log.", ephemeral: false);
+                await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the public ban log.");
+            }
+            await ctx.ReplyAsync(message: $"Updated the public ban log to {channel?.Mention}", ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated the public ban log to {channel?.Mention}.");
         }
 
         [SlashCommand("AutoPardon", "Updates how long till sins are pardoned.")]
@@ -72,7 +55,7 @@ namespace Grimoire.Discord.ModerationModule
             [Minimum(0)]
             [Option("DurationAmount", "Select the amount of time before sins are auto pardoned.")] long durationAmount)
         {
-            await this._mediator.Send(new SetAutoPardonCommand
+            var response = await this._mediator.Send(new SetAutoPardonCommand
             {
                 GuildId = ctx.Guild.Id,
                 DurationType = durationType,
@@ -80,6 +63,8 @@ namespace Grimoire.Discord.ModerationModule
             });
 
             await ctx.ReplyAsync(message: $"Will now auto pardon sins after {durationAmount} {durationType.GetName()}", ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"Auto pardon was updated by {ctx.User.Mention} " +
+                $"to pardon sins after {durationAmount} {durationType.GetName()}.");
         }
     }
 }

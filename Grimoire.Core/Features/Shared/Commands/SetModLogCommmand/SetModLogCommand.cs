@@ -5,18 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Logging.Commands.SetMessageLogSettings
+namespace Grimoire.Core.Features.Shared.Commands.SetModLogCommmand
 {
-    public sealed record SetMessageLogSettingsCommand : ICommand<BaseResponse>
+    public class SetModLogCommand : ICommand<BaseResponse>
     {
         public ulong GuildId { get; init; }
-        public MessageLogSetting MessageLogSetting { get; init; }
         public ulong? ChannelId { get; init; }
-    }
-    public enum MessageLogSetting
-    {
-        DeleteLog,
-        BulkDeleteLog,
-        EditLog
     }
 }

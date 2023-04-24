@@ -9,14 +9,6 @@ namespace Grimoire.Core.Extensions
 {
     public static class MemberExtensions
     {
-        public static int GetLevel(this Member member)
-            => GetLevel(member.XpHistory.Sum(x => x.Xp),
-                member.Guild.LevelSettings.Base,
-                member.Guild.LevelSettings.Modifier);
-
-        public static int GetLevel(this Member member, int @base, int modifier)
-            => GetLevel(member.XpHistory.Sum(x => x.Xp), @base, modifier);
-
         public static int GetLevel(long xp, int @base, int modifier)
         {
             var i = 0;
@@ -34,42 +26,16 @@ namespace Grimoire.Core.Extensions
                 i += 1;
             }
         }
-        public static long GetXpNeeded(this Member member)
-            => GetXpNeeded(
-                member.XpHistory.Sum(x => x.Xp),
-                member.Guild.LevelSettings.Base,
-                member.Guild.LevelSettings.Modifier,
-                0);
-
-        public static long GetXpNeeded(this Member member, int levelModifier)
-            => GetXpNeeded(
-                member.XpHistory.Sum(x => x.Xp),
-                member.Guild.LevelSettings.Base,
-                member.Guild.LevelSettings.Modifier,
-                levelModifier);
-
-        public static long GetXpNeeded(this Member member, int @base, int modifier)
-            => GetXpNeeded(member.XpHistory.Sum(x => x.Xp), @base, modifier, 0);
-
-        public static long GetXpNeeded(this Member member, int @base, int modifier, int levelModifier)
-            => GetXpNeeded(member.XpHistory.Sum(x => x.Xp), @base, modifier, levelModifier);
-
-        public static long GetXpNeeded(long xp, int @base, int modifier)
-            => GetXpNeeded(xp, @base, modifier, 0);
-
-        public static long GetXpNeeded(long xp, int @base, int modifier, int levelModifier)
+        public static long GetXpNeeded(int level, int @base, int modifier, int levelModifier = 0)
         {
-            var currentLevel = GetLevel(xp, @base, modifier);
-
-            if (currentLevel - 2 + levelModifier < 0)
-                return 0;
-
-            var level = currentLevel - 2 + levelModifier;
-            return level switch
-            {
-                0 => @base,
-                _ => @base + ((long)Math.Round(@base * (modifier / 100.0) * level) * level)
-            };
+            level = level - 2 + levelModifier;
+           return level switch
+               {
+                   < 0 => 0,
+                   0 => @base,
+                   _ => @base + ((long)Math.Round(@base * (modifier / 100.0) * level) * level)
+               };
         }
+            
     }
 }

@@ -13,5 +13,6 @@ namespace Grimoire.Discord.Structs
         public static readonly DiscordColor Orange = new(252, 119, 3);
         public static readonly DiscordColor Green = new(3, 252, 111);
         public static readonly DiscordColor Gold = new(252, 194, 3);
+        public static readonly DiscordColor Red = new(255, 0, 0);
     }
 }

@@ -7,7 +7,7 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Moderation.Commands.BanComands.AddBan
+namespace Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan
 {
     public class AddBanCommandHandler : ICommandHandler<AddBanCommand, AddBanCommandResponse>
     {

@@ -5,11 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Queries.GetLeaderboard;
 
 namespace Grimoire.Discord.LevelingModule
 {
-    [SlashCommandGroup("Leaderboard", "Posts the leaderboard for the server.")]
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Leveling)]
     public class LeaderboardCommands : ApplicationCommandModule
@@ -21,14 +21,28 @@ namespace Grimoire.Discord.LevelingModule
             this._mediator = mediator;
         }
 
-        [SlashCommand("Me", "Find out where you are on the Leaderboard.")]
-        public Task MeAsync(InteractionContext ctx) =>
-            this.UserAsync(ctx, ctx.User);
-
-        [SlashCommand("User", "Find out where someone are on the Leaderboard.")]
-        public async Task UserAsync(InteractionContext ctx,
-            [Option("User", "User to find on the leaderboard. Leave empty for top of the rankings")] DiscordUser? user = null)
+        [SlashCommand("Leaderboard", "Posts the leaderboard for the server.")]
+        public async Task LeaderboardAsync(InteractionContext ctx,
+            [Choice("Top", 0)]
+            [Choice("Me", 1)]
+            [Choice("User", 2)]
+            [Option("Option", "The leaderboard search type.")] long option,
+            [Option("User", "User to find on the leaderboard.")] DiscordUser? user = null)
         {
+            switch (option)
+            {
+                case 0:
+                    user = null;
+                    break;
+                case 1:
+                    user = ctx.User;
+                    break;
+                case 2:
+                    if (user is null)
+                        throw new AnticipatedException("Must provide a user for this option.");
+                    break;
+            }
+                
             var getUserCenteredLeaderboardQuery = new GetLeaderboardQuery
             {
                 UserId = user?.Id,

@@ -31,9 +31,9 @@ Host.CreateDefaultBuilder(args)
             .Build();
         x.AddConfiguration(configuration);
     })
-    .ConfigureLogging((context, x) => x
-        .AddSerilog(new LoggerConfiguration().WriteTo.Console().CreateLogger())
-        .AddConfiguration(context.Configuration))
+    .UseSerilog((context, services, logConfig)
+        => logConfig
+        .ReadFrom.Configuration(context.Configuration))
     .ConfigureServices((context, services) =>
         services
         .AddCoreServices(context.Configuration)
@@ -43,7 +43,7 @@ Host.CreateDefaultBuilder(args)
         {
             options.Token = context.Configuration["token"];
             options.TokenType = TokenType.Bot;
-
+            options.LoggerFactory = new LoggerFactory().AddSerilog();
             options.AutoReconnect = true;
             options.MinimumLogLevel = LogLevel.Debug;
             options.Intents = DiscordIntents.All;
@@ -68,15 +68,24 @@ Host.CreateDefaultBuilder(args)
                 if (x is not SlashCommandsExtension extension) return;
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
-                    extension.RegisterCommands<ExampleSlashCommand>(guildId);
+                    //extension.RegisterCommands<ExampleSlashCommand>(guildId);
+                    //Shared
+                    extension.RegisterCommands<ModuleCommands>(guildId);
+                    extension.RegisterCommands<ModLogSettings>(guildId);
+                    extension.RegisterCommands<PurgeCommands>(guildId);
+                    //Leveling
                     extension.RegisterCommands<LevelCommands>(guildId);
                     extension.RegisterCommands<LeaderboardCommands>(guildId);
                     extension.RegisterCommands<LevelSettingsCommands>(guildId);
                     extension.RegisterCommands<LevelingAdminCommands>(guildId);
                     extension.RegisterCommands<RewardCommands>(guildId);
-                    extension.RegisterCommands<MessageLogSettingsCommands>(guildId);
-                    extension.RegisterCommands<ModuleCommands>(guildId);
+                    extension.RegisterCommands<IgnoreCommands>(guildId);
+
+                    //Logging
+                    extension.RegisterCommands<LogSettingsCommands>(guildId);
                     extension.RegisterCommands<TrackerCommands>(guildId);
+
+                    //Moderation
                     extension.RegisterCommands<ModerationSettingsCommands>(guildId);
                     extension.RegisterCommands<MuteAdminCommands>(guildId);
                     extension.RegisterCommands<BanCommands>(guildId);
@@ -84,7 +93,8 @@ Host.CreateDefaultBuilder(args)
                     extension.RegisterCommands<LockCommands>(guildId);
                     extension.RegisterCommands<PublishCommands>(guildId);
                     extension.RegisterCommands<SinLogCommands>(guildId);
-
+                    extension.RegisterCommands<MuteCommands>(guildId);
+                    extension.RegisterCommands<WarnCommands>(guildId);
                 }
                 extension.RegisterCommands<EmptySlashCommands>();
             })

@@ -26,7 +26,6 @@ namespace Grimoire.Discord.LoggingModule
         {
             if (notification.Time.Second % 60 != 0)
                 return;
-            Console.WriteLine("Deleting Old Messages");
 
             var oldLogMessages = await this._mediator.Send(new GetOldLogMessagesQuery(), cancellationToken);
 

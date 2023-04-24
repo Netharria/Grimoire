@@ -7,6 +7,7 @@
 
 using Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
 using Grimoire.Core.Features.Leveling.Queries.GetLevelSettings;
+using Grimoire.Discord.Enums;
 
 namespace Grimoire.Discord.LevelingModule
 {
@@ -25,11 +26,6 @@ namespace Grimoire.Discord.LevelingModule
             this._mediator = mediator;
         }
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="ctx"></param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
         [SlashCommand("View", "View the current settings for the leveling module.")]
         public async Task ViewAsync(InteractionContext ctx)
         {
@@ -41,41 +37,58 @@ namespace Grimoire.Discord.LevelingModule
             await ctx.ReplyAsync(
                 title: "Current Level System Settings",
                 message: $"**Module Enabled:** {response.ModuleEnabled}\n" +
-                $"**Texttime:** {response.TextTime}\n" +
+                $"**Texttime:** {response.TextTime.TotalMinutes} minutes.\n" +
                 $"**Base:** {response.Base}\n" +
                 $"**Modifier:** {response.Modifier}\n" +
                 $"**Reward Amount:** {response.Amount}\n" +
                 $"**Log-Channel:** {levelLogMention}\n");
         }
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="ctx"></param>
-        /// <param name="levelSettings"></param>
-        /// <param name="value"></param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
         [SlashCommand("Set", "Set a leveling setting.")]
         public async Task SetAsync(
             InteractionContext ctx,
-            [Option("Setting", "The Setting to change.")] LevelSettings levelSettings,
-            [Option("Value", "The value to change the setting to. For log channel, 0 is off. Empty is current channel.")] string value)
+            [Choice("Timeout between xp gains in minutes", 0)]
+            [Choice("Base - linear xp per level modifier", 1)]
+            [Choice("Modifier - exponential xp per level modifier", 2)]
+            [Choice("Amount per xp gain.", 3)]
+            [Option("Setting", "The Setting to change.")] long levelSettings,
+            [Maximum(int.MaxValue)]
+            [Minimum(0)]
+            [Option("Value", "The value to change the setting to.")] long value)
         {
-            if (levelSettings is LevelSettings.LogChannel)
-            {
-                (var success, var result) = await ctx.TryMatchStringToChannelAsync(value);
-                if (!success) return;
-                value = result.ToString();
-            }
-
-            _ = await this._mediator.Send(new SetLevelSettingsCommand
+            var levelSetting = (LevelSettings)levelSettings;
+            var response = await this._mediator.Send(new SetLevelSettingsCommand
             {
                 GuildId = ctx.Guild.Id,
-                LevelSettings = levelSettings,
-                Value = value
+                LevelSettings = levelSetting,
+                Value = value.ToString()
             });
 
-            await ctx.ReplyAsync(message: $"Updated {levelSettings.GetName()} to {value}", ephemeral: false);
+            await ctx.ReplyAsync(message: $"Updated {levelSetting.GetName()} level setting to {value}", ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.Purple,
+                message: $"{ctx.Member.Mention} updated {levelSetting.GetName()} level setting to {value}");
+        }
+
+        [SlashCommand("LogSet", "Set the leveling log channel.")]
+        public async Task LogSetAsync(
+            InteractionContext ctx,
+            [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
+            [Option("Channel", "The channel to change the log to.")] DiscordChannel? channel = null)
+        {
+            channel = ctx.GetChannelOptionAsync(option, channel);
+            var response = await this._mediator.Send(new SetLevelSettingsCommand
+            {
+                GuildId = ctx.Guild.Id,
+                LevelSettings = LevelSettings.LogChannel,
+                Value = channel is null ? "0" : channel.Id.ToString()
+            });
+            if (option is ChannelOption.Off)
+            {
+                await ctx.ReplyAsync(message: $"Disabled the level log.", ephemeral: false);
+                await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the level log.");
+            }
+            await ctx.ReplyAsync(message: $"Updated the level log to {channel?.Mention}", ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} updated the level log to {channel?.Mention}.");
         }
     }
 }

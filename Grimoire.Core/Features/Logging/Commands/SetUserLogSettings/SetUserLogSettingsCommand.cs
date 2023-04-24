@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Logging.Commands.SetUserLogSettings
 {
-    public sealed record SetUserLogSettingsCommand : ICommand
+    public sealed record SetUserLogSettingsCommand : ICommand<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public UserLogSetting UserLogSetting { get; init; }

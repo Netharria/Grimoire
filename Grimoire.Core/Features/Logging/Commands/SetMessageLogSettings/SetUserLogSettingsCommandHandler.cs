@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Logging.Commands.SetMessageLogSettings
 {
-    public class SetMessageLogSettingsCommandHandler : ICommandHandler<SetMessageLogSettingsCommand, Unit>
+    public class SetMessageLogSettingsCommandHandler : ICommandHandler<SetMessageLogSettingsCommand, BaseResponse>
     {
         private readonly IGrimoireDbContext _grimoireDbContext;
 
@@ -16,26 +16,32 @@ namespace Grimoire.Core.Features.Logging.Commands.SetMessageLogSettings
             this._grimoireDbContext = grimoireDbContext;
         }
 
-        public async ValueTask<Unit> Handle(SetMessageLogSettingsCommand command, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(SetMessageLogSettingsCommand command, CancellationToken cancellationToken)
         {
 
-            var guild = await this._grimoireDbContext.GuildMessageLogSettings.FirstOrDefaultAsync(x => x.GuildId == command.GuildId, cancellationToken);
-            if (guild == null) throw new AnticipatedException("Could not find guild log settings..");
+            var messageSettings = await this._grimoireDbContext.GuildMessageLogSettings
+                .Where(x => x.GuildId == command.GuildId)
+                .Select(x => new
+                {
+                    LogSettings = x,
+                    x.Guild.ModChannelLog
+                }).FirstOrDefaultAsync(cancellationToken);
+            if (messageSettings == null) throw new AnticipatedException("Could not find message log settings.");
             switch (command.MessageLogSetting)
             {
                 case MessageLogSetting.DeleteLog:
-                    guild.DeleteChannelLogId = command.ChannelId;
+                    messageSettings.LogSettings.DeleteChannelLogId = command.ChannelId;
                     break;
                 case MessageLogSetting.BulkDeleteLog:
-                    guild.BulkDeleteChannelLogId = command.ChannelId;
+                    messageSettings.LogSettings.BulkDeleteChannelLogId = command.ChannelId;
                     break;
                 case MessageLogSetting.EditLog:
-                    guild.EditChannelLogId = command.ChannelId;
+                    messageSettings.LogSettings.EditChannelLogId = command.ChannelId;
                     break;
             }
-            this._grimoireDbContext.GuildMessageLogSettings.Update(guild);
+            this._grimoireDbContext.GuildMessageLogSettings.Update(messageSettings.LogSettings);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new Unit();
+            return new BaseResponse { LogChannelId = messageSettings.ModChannelLog};
         }
     }
 }

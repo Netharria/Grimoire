@@ -79,9 +79,16 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnore
 
             var finalString = new StringBuilder();
             if (couldNotMatch.Length > 0) finalString.Append("Could not match ").Append(couldNotMatch).Append("with a role, channel or user. ");
-            if (newIgnoredItems.Length > 0) finalString.Append(newIgnoredItems).Append(command.ShouldIgnore ? " are now ignored for xp gain." : " are now being watched for xp gain.");
-
-            return new BaseResponse { Message = finalString.ToString() };
+            if (newIgnoredItems.Length > 0) finalString.Append(newIgnoredItems).Append(command.ShouldIgnore ? " are now ignored for xp gain." : " are no longer ignored for xp gain.");
+            var modChannelLog = await this._grimoireDbContext.Guilds
+                    .WhereIdIs(command.GuildId)
+                    .Select(x => x.ModChannelLog)
+                    .FirstOrDefaultAsync(cancellationToken);
+            return new BaseResponse
+            {
+                Message = finalString.ToString(),
+                LogChannelId = modChannelLog
+            };
         }
 
 

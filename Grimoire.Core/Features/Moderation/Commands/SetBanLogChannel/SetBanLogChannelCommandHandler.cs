@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel
 {
-    public class SetBanLogChannelCommandHandler : ICommandHandler<SetBanLogChannelCommand>
+    public class SetBanLogChannelCommandHandler : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
     {
         private readonly IGrimoireDbContext _grimoireDbContext;
 
@@ -16,9 +16,10 @@ namespace Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel
             this._grimoireDbContext = grimoireDbContext;
         }
 
-        public async ValueTask<Unit> Handle(SetBanLogChannelCommand command, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(SetBanLogChannelCommand command, CancellationToken cancellationToken)
         {
             var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
+                .Include(x => x.Guild)
                 .FirstOrDefaultAsync(x => x.GuildId.Equals(command.GuildId), cancellationToken: cancellationToken);
             if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
 
@@ -26,7 +27,10 @@ namespace Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel
             this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-            return new Unit();
+            return new BaseResponse
+            {
+                LogChannelId = guildModerationSettings.Guild.ModChannelLog
+            };
         }
     }
 }

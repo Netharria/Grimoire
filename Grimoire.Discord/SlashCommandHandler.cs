@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
+using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands.EventArgs;
 using Grimoire.Core.Exceptions;
 using Microsoft.Extensions.Configuration;
@@ -111,6 +112,11 @@ namespace Grimoire.Discord
             else if (args.Exception is AnticipatedException)
             {
                 await args.Context.ReplyAsync(color: GrimoireColor.Orange, message: args.Exception.Message);
+            }
+            else if (args.Exception is UnauthorizedException)
+            {
+                await args.Context.ReplyAsync(color: GrimoireColor.Orange,
+                    message: $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request.");
             }
             else if (args.Exception is not null)
             {

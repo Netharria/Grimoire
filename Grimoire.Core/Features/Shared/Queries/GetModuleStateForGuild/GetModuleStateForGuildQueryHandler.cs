@@ -27,6 +27,7 @@ namespace Grimoire.Core.Features.Shared.Queries.GetModuleStateForGuild
                 Module.Leveling => await query.Select(x => x.LevelSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
                 Module.UserLog => await query.Select(x => x.UserLogSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
                 Module.Moderation => await query.Select(x => x.ModerationSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
+                Module.MessageLog => await query.Select(x => x.MessageLogSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
                 _ => throw new ArgumentOutOfRangeException(nameof(request), request, message: null)
             };
         }

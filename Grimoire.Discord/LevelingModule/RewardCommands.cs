@@ -7,7 +7,9 @@
 
 using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
 using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
+using Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
 using Grimoire.Core.Features.Leveling.Queries.GetRewards;
+using Newtonsoft.Json.Linq;
 
 namespace Grimoire.Discord.LevelingModule
 {
@@ -39,6 +41,7 @@ namespace Grimoire.Discord.LevelingModule
                     RewardLevel = (int)level,
                 });
             await ctx.ReplyAsync(GrimoireColor.Gold, message: response.Message, ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.Gold);
         }
 
         [SlashCommand("Remove", "Removes a reward from the server.")]
@@ -52,6 +55,7 @@ namespace Grimoire.Discord.LevelingModule
                 });
 
             await ctx.ReplyAsync(GrimoireColor.Gold, message: response.Message, ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.Gold);
         }
 
         [SlashCommand("View", "Displays all rewards on this server.")]

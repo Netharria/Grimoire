@@ -7,6 +7,7 @@
 
 using Grimoire.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand;
 using Grimoire.Core.Features.Shared.Queries.GetAllModuleStatesForGuild;
+using Grimoire.Discord.Extensions;
 
 namespace Grimoire.Discord.SharedModule
 {
@@ -29,7 +30,8 @@ namespace Grimoire.Discord.SharedModule
             await ctx.ReplyAsync(
                 title: "Current states of modules.",
                 message: $"**Leveling Enabled:** {response.LevelingIsEnabled}\n" +
-                $"**Logging Enabled:** {response.LoggingIsEnabled}\n" +
+                $"**User Log Enabled:** {response.UserLogIsEnabled}\n" +
+                $"**Message Log Enabled:** {response.MessageLogIsEnabled}\n" +
                 $"**Moderation Enabled:** {response.ModerationIsEnabled}\n");
         }
 
@@ -44,17 +46,10 @@ namespace Grimoire.Discord.SharedModule
                 Module = module,
                 Enable = enable
             });
-
+            await ctx.SendLogAsync(response, GrimoireColor.Purple,
+                message: $"{ctx.Member.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module.GetName()}");
             await ctx.ReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module.GetName()}",
                 ephemeral: false);
-
-            if (response.ModerationLog is null) return;
-            var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.ModerationLog.Value);
-
-            if (logChannel is null) return;
-            await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module.GetName()}")
-                .WithColor(GrimoireColor.Purple));
         }
     }
 }

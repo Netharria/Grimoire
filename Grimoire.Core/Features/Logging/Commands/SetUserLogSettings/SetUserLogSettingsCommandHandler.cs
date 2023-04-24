@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Logging.Commands.SetUserLogSettings
 {
-    public class SetUserLogSettingsCommandHandler : ICommandHandler<SetUserLogSettingsCommand, Unit>
+    public class SetUserLogSettingsCommandHandler : ICommandHandler<SetUserLogSettingsCommand, BaseResponse>
     {
         private readonly IGrimoireDbContext _grimoireDbContext;
 
@@ -16,32 +16,41 @@ namespace Grimoire.Core.Features.Logging.Commands.SetUserLogSettings
             this._grimoireDbContext = grimoireDbContext;
         }
 
-        public async ValueTask<Unit> Handle(SetUserLogSettingsCommand command, CancellationToken cancellationToken)
+        public async ValueTask<BaseResponse> Handle(SetUserLogSettingsCommand command, CancellationToken cancellationToken)
         {
-            var guild = await this._grimoireDbContext.GuildUserLogSettings.FirstOrDefaultAsync(x => x.GuildId == command.GuildId, cancellationToken);
-            if (guild == null) throw new AnticipatedException("Could not find server log settings..");
+            var userSettings = await this._grimoireDbContext.GuildUserLogSettings
+                .Where(x => x.GuildId == command.GuildId)
+                .Select(x => new
+                {
+                    UserSettings = x,
+                    x.Guild.ModChannelLog
+                }).FirstOrDefaultAsync(cancellationToken);
+            if (userSettings == null) throw new AnticipatedException("Could not find user log settings.");
             switch (command.UserLogSetting)
             {
                 case UserLogSetting.JoinLog:
-                    guild.JoinChannelLogId = command.ChannelId;
+                    userSettings.UserSettings.JoinChannelLogId = command.ChannelId;
                     break;
                 case UserLogSetting.LeaveLog:
-                    guild.LeaveChannelLogId = command.ChannelId;
+                    userSettings.UserSettings.LeaveChannelLogId = command.ChannelId;
                     break;
                 case UserLogSetting.UsernameLog:
-                    guild.UsernameChannelLogId = command.ChannelId;
+                    userSettings.UserSettings.UsernameChannelLogId = command.ChannelId;
                     break;
                 case UserLogSetting.NicknameLog:
-                    guild.NicknameChannelLogId = command.ChannelId;
+                    userSettings.UserSettings.NicknameChannelLogId = command.ChannelId;
                     break;
                 case UserLogSetting.AvatarLog:
-                    guild.AvatarChannelLogId = command.ChannelId;
+                    userSettings.UserSettings.AvatarChannelLogId = command.ChannelId;
                     break;
             }
 
-            this._grimoireDbContext.GuildUserLogSettings.Update(guild);
+            this._grimoireDbContext.GuildUserLogSettings.Update(userSettings.UserSettings);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new Unit();
+            return new BaseResponse
+            {
+                LogChannelId = userSettings.ModChannelLog
+            };
         }
     }
 }

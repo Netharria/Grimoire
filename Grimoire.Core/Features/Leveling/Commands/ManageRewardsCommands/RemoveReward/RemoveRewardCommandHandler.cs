@@ -21,12 +21,17 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveR
         public async ValueTask<BaseResponse> Handle(RemoveRewardCommand command, CancellationToken cancellationToken)
         {
             var result = await this._grimoireDbContext.Rewards
+                .Include(x => x.Guild)
                 .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
             if (result is not Reward reward)
                 throw new AnticipatedException($"Did not find a saved reward for role <@&{command.RoleId}>");
             this._grimoireDbContext.Rewards.Remove(reward);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { Message = $"Removed {reward.Mention()} reward" };
+            return new BaseResponse
+            {
+                Message = $"Removed {reward.Mention()} reward",
+                LogChannelId = result.Guild.ModChannelLog
+            };
         }
     }
 }

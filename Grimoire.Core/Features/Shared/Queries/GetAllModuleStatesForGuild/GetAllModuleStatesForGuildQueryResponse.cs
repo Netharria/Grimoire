@@ -10,7 +10,8 @@ namespace Grimoire.Core.Features.Shared.Queries.GetAllModuleStatesForGuild
     public sealed record GetAllModuleStatesForGuildQueryResponse : BaseResponse
     {
         public bool LevelingIsEnabled { get; init; }
-        public bool LoggingIsEnabled { get; init; }
+        public bool UserLogIsEnabled { get; init; }
         public bool ModerationIsEnabled { get; init; }
+        public bool MessageLogIsEnabled { get; init; }
     }
 }

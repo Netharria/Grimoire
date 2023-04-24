@@ -6,7 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text.RegularExpressions;
+using Grimoire.Core.Exceptions;
 using Grimoire.Core.Responses;
+using Grimoire.Discord.Enums;
 
 namespace Grimoire.Discord.Extensions
 {
@@ -75,6 +77,7 @@ namespace Grimoire.Discord.Extensions
         public static async Task SendLogAsync(this InteractionContext ctx,
             BaseResponse response,
             DiscordColor? color,
+            string title = "",
             string? message = null)
         {
             message ??= response.Message;
@@ -84,14 +87,32 @@ namespace Grimoire.Discord.Extensions
             if (logChannel is null) return;
             var embed = new DiscordEmbedBuilder()
                 .WithColor(color ?? GrimoireColor.Purple)
+                .WithTitle(title)
                 .WithDescription(message)
                 .WithTimestamp(DateTime.UtcNow)
                 .Build();
 
-            await ctx.CreateResponseAsync(
-                InteractionResponseType.ChannelMessageWithSource,
-                new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await logChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed));
 
+        }
+
+        public static DiscordChannel? GetChannelOptionAsync(this InteractionContext ctx, ChannelOption channelOption, DiscordChannel? selectedChannel)
+        {
+            switch (channelOption)
+            {
+                case ChannelOption.Off:
+                    return null;
+                case ChannelOption.CurrentChannel:
+                    return ctx.Channel;
+                case ChannelOption.SelectChannel:
+                    if (selectedChannel is not null)
+                    {
+                        return selectedChannel;
+                    }
+                    throw new AnticipatedException("Please specify a channel.");
+                default:
+                    throw new AnticipatedException("Options selected are not valid.");
+            }
         }
     }
 }

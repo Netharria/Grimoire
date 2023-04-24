@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands.SetAutoPardon
 {
-    public sealed record SetAutoPardonCommand : ICommand
+    public sealed record SetAutoPardonCommand : ICommand<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public Duration DurationType { get; init; }

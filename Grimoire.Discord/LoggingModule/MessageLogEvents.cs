@@ -13,7 +13,7 @@ using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessa
 using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Discord.MessageLogModule
+namespace Grimoire.Discord.LoggingModule
 {
     [DiscordMessageCreatedEventSubscriber]
     [DiscordMessageDeletedEventSubscriber]

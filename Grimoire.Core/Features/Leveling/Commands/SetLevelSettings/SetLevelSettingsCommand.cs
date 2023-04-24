@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Leveling.Commands.SetLevelSettings
 {
-    public sealed record SetLevelSettingsCommand : ICommand
+    public sealed record SetLevelSettingsCommand : ICommand<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public LevelSettings LevelSettings { get; init; }

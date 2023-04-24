@@ -5,10 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Commands.BanComands.AddBan
+namespace Grimoire.Core.Features.Shared.Queries.GetModerationLog
 {
-    public sealed record AddBanCommandResponse : BaseResponse
+    public class GetModLogQuery : IQuery<BaseResponse>
     {
-        public long SinId { get; init; }
+        public ulong GuildId { get; init; }
     }
 }

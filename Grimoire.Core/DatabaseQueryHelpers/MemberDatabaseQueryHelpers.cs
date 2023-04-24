@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+
 namespace Grimoire.Core.DatabaseQueryHelpers
 {
     public static class MemberDatabaseQueryHelpers
@@ -55,9 +57,9 @@ namespace Grimoire.Core.DatabaseQueryHelpers
             => members.Where(x => x.Guild.LevelSettings.ModuleEnabled);
 
         public static IQueryable<Member> WhereMemberNotIgnored(this IQueryable<Member> members, ulong channelId, ulong[] roleIds)
-            => members
+                => members
                 .WhereIgnored(false)
-                .Where(x => !x.Guild.Roles.Where(x => roleIds.Contains(x.Id)).Any(y => y.IsXpIgnored)
-                || !x.Guild.Channels.Where(x => x.Id == channelId).Any(y => y.IsXpIgnored));
+                .Where(x => !x.Guild.Channels.Where(y => y.Id == channelId).Any(y => y.IsXpIgnored))
+                .Where(x => !x.Guild.Roles.Where(y => roleIds.Any(z => z == y.Id)).Any(y => y.IsXpIgnored));
     }
 }

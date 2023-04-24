@@ -22,8 +22,8 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
         public async ValueTask<GainUserXpCommandResponse> Handle(GainUserXpCommand command, CancellationToken cancellationToken)
         {
             var result = await this._grimoireDbContext.Members
-                .WhereMemberHasId(command.UserId, command.GuildId)
                 .WhereLevelingEnabled()
+                .WhereMemberHasId(command.UserId, command.GuildId)
                 .WhereMemberNotIgnored(command.ChannelId, command.RoleIds)
                 .Select(x => new
                 {

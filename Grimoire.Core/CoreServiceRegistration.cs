@@ -20,8 +20,7 @@ namespace Grimoire.Core
         {
             services.AddDbContext<GrimoireDbContext>(options =>
                 options.UseNpgsql(
-                    configuration.GetConnectionString("GrimoireConnectionString"))
-                    /*.EnableDetailedErrors().EnableSensitiveDataLogging(false)*/,
+                    configuration.GetConnectionString("GrimoireConnectionString")),
                     ServiceLifetime.Transient)
 
                 .AddSingleton<IInviteService, InviteService>()

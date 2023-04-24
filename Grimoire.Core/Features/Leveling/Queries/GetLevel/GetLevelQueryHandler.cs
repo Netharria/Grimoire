@@ -27,16 +27,19 @@ namespace Grimoire.Core.Features.Leveling.Queries.GetLevel
                 .Select(x => new
                 {
                     Xp = x.XpHistory.Sum(x => x.Xp),
-                    Level = x.GetLevel(),
-                    LevelProgress = x.XpHistory.Sum(x => x.Xp) - x.GetXpNeeded(),
-                    TotalXpRequiredToLevel = x.GetXpNeeded(1) - x.GetXpNeeded()
+                    x.Guild.LevelSettings.Base,
+                    x.Guild.LevelSettings.Modifier
                 }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
             if (member is null)
                 throw new AnticipatedException("That user could not be found.");
 
+            var currentLevel = MemberExtensions.GetLevel(member.Xp, member.Base, member.Modifier);
+            var currentLevelXp = MemberExtensions.GetXpNeeded(currentLevel, member.Base, member.Modifier);
+            var nextLevelXp = MemberExtensions.GetXpNeeded(currentLevel, member.Base, member.Modifier, 1);
+
             var nextReward = await this._grimoireDbContext.Rewards
-                .Where(x => x.GuildId == request.GuildId && x.RewardLevel > member.Level)
+                .Where(x => x.GuildId == request.GuildId && x.RewardLevel > currentLevel)
                 .OrderBy(x => x.RewardLevel)
                 .Select(x => new { x.RoleId, x.RewardLevel })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
@@ -44,11 +47,11 @@ namespace Grimoire.Core.Features.Leveling.Queries.GetLevel
             return new GetLevelQueryResponse
             {
                 UsersXp = member.Xp,
-                UsersLevel = member.Level,
-                LevelProgress = member.LevelProgress,
-                XpForNextLevel = member.TotalXpRequiredToLevel,
+                UsersLevel = currentLevel,
+                LevelProgress = member.Xp - currentLevelXp,
+                XpForNextLevel = nextLevelXp - currentLevelXp,
+                NextRewardLevel = nextReward?.RewardLevel,
                 NextRoleRewardId = nextReward?.RoleId,
-                NextRewardLevel = nextReward?.RewardLevel
             };
         }
     }

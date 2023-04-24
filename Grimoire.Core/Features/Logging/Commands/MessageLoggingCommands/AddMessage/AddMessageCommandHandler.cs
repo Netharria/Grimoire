@@ -22,7 +22,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.AddMess
         {
             if (!await this._grimoireDbContext.Guilds
                 .WhereIdIs(command.GuildId)
-                .AnyAsync(x => x.UserLogSettings.ModuleEnabled,
+                .AnyAsync(x => x.MessageLogSettings.ModuleEnabled,
                 cancellationToken))
                 return Unit.Value;
             var message = new Message
