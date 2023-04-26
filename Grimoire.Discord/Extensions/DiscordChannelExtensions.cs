@@ -28,7 +28,7 @@ namespace Grimoire.Discord.Extensions
             messagesToDelete = messagesToDelete.Where(x => x.Timestamp > DateTimeOffset.UtcNow.AddDays(-14));
             if (messagesToDelete.Count() == 1)
                 await messagesToDelete.First().DeleteAsync(reason);
-            if(messagesToDelete.Count() > 1)
+            if (messagesToDelete.Count() > 1)
                 await messagesToDelete.Chunk(100).ToAsyncEnumerable()
                     .ForEachAsync(async messages => await channel.DeleteMessagesAsync(messages, reason));
             return messagesToDelete.Count();

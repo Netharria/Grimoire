@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-
 namespace Grimoire.Core.DatabaseQueryHelpers
 {
     public static class MemberDatabaseQueryHelpers
@@ -32,16 +30,26 @@ namespace Grimoire.Core.DatabaseQueryHelpers
                                 Type = XpHistoryType.Created,
                                 TimeOut = DateTime.UtcNow
                             }
+                        },
+                        NicknamesHistory = new List<NicknameHistory>
+                        {
+                            new NicknameHistory
+                            {
+                                GuildId = x.GuildId,
+                                UserId = x.UserId,
+                                Nickname = x.Nickname
+                            }
+                        },
+                        AvatarHistory = new List<Avatar>
+                        {
+                            new Avatar
+                            {
+                                UserId = x.UserId,
+                                GuildId = x.GuildId,
+                                FileName = x.AvatarUrl
+                            }
                         }
                     };
-                    if(x.Nickname is not null)
-                        member.NicknamesHistory.Add(
-                        new NicknameHistory
-                        {
-                            GuildId = x.GuildId,
-                            UserId = x.UserId,
-                            Nickname = x.Nickname
-                        });
                     return member;
                 });
 

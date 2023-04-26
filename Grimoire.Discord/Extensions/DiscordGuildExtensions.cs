@@ -9,15 +9,14 @@ namespace Grimoire.Discord.Extensions
 {
     public static class DiscordGuildExtensions
     {
-        public static async Task<DiscordAuditLogEntry?> GetRecentAuditLogAsync(this DiscordGuild guild, AuditLogActionType? actionType = null, int allowedTimeSpan = 500)
+        public static async Task<T?> GetRecentAuditLogAsync<T>(this DiscordGuild guild, AuditLogActionType? actionType = null, int allowedTimeSpan = 500)
+            where T : DiscordAuditLogEntry
         {
             var auditLogEntries = await guild.GetAuditLogsAsync(1, action_type: actionType);
             if (!auditLogEntries.Any())
                 return null;
-            var auditLogEntry = auditLogEntries[0];
-            if (auditLogEntry.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow)
-                return auditLogEntry;
-            return null;
+            return auditLogEntries.OfType<T>()
+                .FirstOrDefault(x => x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
         }
     }
 }

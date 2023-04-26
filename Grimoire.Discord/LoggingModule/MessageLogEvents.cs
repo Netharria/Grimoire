@@ -59,12 +59,12 @@ namespace Grimoire.Discord.LoggingModule
 
         public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
         {
-            var auditLogEntry = await args.Guild.GetRecentAuditLogAsync(AuditLogActionType.MessageDelete);
+            var auditLogEntry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogMessageEntry>(AuditLogActionType.MessageDelete);
             var response = await this._mediator.Send(
                 new DeleteMessageCommand
                 {
                     Id = args.Message.Id,
-                    DeletedByModerator = auditLogEntry?.UserResponsible?.Id,
+                    DeletedByModerator = auditLogEntry?.Target?.Id == args.Message.Id ? auditLogEntry?.UserResponsible?.Id : null,
                     GuildId = args.Guild.Id
                 });
             if (!response.Success || response.LoggingChannel is not ulong loggingChannelId)
@@ -100,6 +100,9 @@ namespace Grimoire.Discord.LoggingModule
                                 (auditLogEntry is null
                                 ? string.Empty
                                 : $"\n**Deleted By:** {auditLogEntry.UserResponsible.Mention}")
+                                + (response.ReferencedMessage is null
+                                ? string.Empty
+                                : $"\n[Referenced Message](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})")
                                 )
                 .WithTimestamp(DateTime.UtcNow)
                 .WithThumbnail(avatarUrl)

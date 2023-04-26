@@ -88,7 +88,8 @@ namespace Grimoire.Discord.LevelingModule
                 await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the level log.");
             }
             await ctx.ReplyAsync(message: $"Updated the level log to {channel?.Mention}", ephemeral: false);
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} updated the level log to {channel?.Mention}.");
+            await ctx.SendLogAsync(response, GrimoireColor.Purple,
+                message: $"{ctx.User.Mention} updated the level log to {channel?.Mention}.");
         }
     }
 }

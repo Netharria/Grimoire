@@ -35,7 +35,7 @@ namespace Grimoire.Discord.SharedModule
                 await ctx.ReplyAsync(message: "The moderation log is currently disabled.");
                 return;
             }
-                
+
             var channel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
             if (channel is null)
             {

@@ -72,23 +72,23 @@ namespace Grimoire.Discord.LoggingModule
                 [Choice("Avatar Change Log", 4)]
                 [Option("Setting", "The Setting to change.")] long loggingSetting,
                 [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
-                [Option("Value", "The channel to change the log to.")] DiscordChannel? value = null)
+                [Option("Value", "The channel to change the log to.")] DiscordChannel? channel = null)
             {
                 var logSetting = (UserLogSetting)loggingSetting;
-                value = ctx.GetChannelOptionAsync(option, value);
+                channel = ctx.GetChannelOptionAsync(option, channel);
                 var response = await this._mediator.Send(new SetUserLogSettingsCommand
                 {
                     GuildId = ctx.Guild.Id,
                     UserLogSetting = logSetting,
-                    ChannelId = value?.Id
+                    ChannelId = channel?.Id
                 });
                 if (option is ChannelOption.Off)
                 {
                     await ctx.ReplyAsync(message: $"Disabled {logSetting.GetName()}");
-                    await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled {logSetting.GetName()}.");
+                    await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} disabled {logSetting.GetName()}.");
                 }
-                await ctx.ReplyAsync(message: $"Updated {logSetting.GetName()} to {value}", ephemeral: false);
-                await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} updated {logSetting.GetName()} to {value}.");
+                await ctx.ReplyAsync(message: $"Updated {logSetting.GetName()} to {channel?.Mention}", ephemeral: false);
+                await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated {logSetting.GetName()} to {channel?.Mention}.");
             }
         }
 
@@ -135,10 +135,10 @@ namespace Grimoire.Discord.LoggingModule
                 [Choice("Edit Message Log", 2)]
                 [Option("Setting", "The Setting to change.")] long loggingSetting,
                 [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
-                [Option("Value", "The channel to change the log setting to.")] DiscordChannel? value = null)
+                [Option("Value", "The channel to change the log setting to.")] DiscordChannel? channel = null)
             {
                 var logSetting = (MessageLogSetting)loggingSetting;
-                var channel = ctx.GetChannelOptionAsync(option, value);
+                channel = ctx.GetChannelOptionAsync(option, channel);
 
                 var response = await this._mediator.Send(new SetMessageLogSettingsCommand
                 {
@@ -147,13 +147,13 @@ namespace Grimoire.Discord.LoggingModule
                     ChannelId = channel?.Id
                 });
 
-                if(option is ChannelOption.Off)
+                if (option is ChannelOption.Off)
                 {
                     await ctx.ReplyAsync(message: $"Disabled {logSetting.GetName()}");
-                    await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled {logSetting.GetName()}.");
+                    await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} disabled {logSetting.GetName()}.");
                 }
-                await ctx.ReplyAsync(message: $"Updated {logSetting.GetName()} to {value}", ephemeral: false);
-                await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} updated {logSetting.GetName()} to {value}.");
+                await ctx.ReplyAsync(message: $"Updated {logSetting.GetName()} to {channel?.Mention}", ephemeral: false);
+                await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated {logSetting.GetName()} to {channel?.Mention}.");
             }
         }
     }

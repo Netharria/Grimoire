@@ -7,7 +7,7 @@
 
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan;
-using Grimoire.Core.Features.Moderation.Queries.GetBan;
+using Grimoire.Core.Features.Moderation.Queries.GetLastBan;
 using Grimoire.Core.Features.Moderation.Queries.GetLock;
 using Grimoire.Core.Features.Moderation.Queries.GetUserMute;
 using Microsoft.Extensions.Logging;
@@ -50,8 +50,8 @@ namespace Grimoire.Discord.ModerationModule
                 };
                 try
                 {
-                    var banAuditLog = await args.Guild.GetRecentAuditLogAsync(AuditLogActionType.Ban, 1500);
-                    if (banAuditLog is not null)
+                    var banAuditLog = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(AuditLogActionType.Ban, 1500);
+                    if (banAuditLog is not null && banAuditLog.Target.Id == args.Member.Id)
                     {
                         addBanCommand.ModeratorId = banAuditLog.UserResponsible.Id;
                         addBanCommand.Reason = banAuditLog.Reason;

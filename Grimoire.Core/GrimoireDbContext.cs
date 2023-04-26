@@ -21,6 +21,9 @@ namespace Grimoire.Core
         public DbSet<Attachment> Attachments
             => this.Set<Attachment>();
 
+        public DbSet<Avatar> Avatars
+            => this.Set<Avatar>();
+
         public DbSet<Channel> Channels
             => this.Set<Channel>();
 

@@ -7,7 +7,6 @@
 
 using Grimoire.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand;
 using Grimoire.Core.Features.Shared.Queries.GetAllModuleStatesForGuild;
-using Grimoire.Discord.Extensions;
 
 namespace Grimoire.Discord.SharedModule
 {

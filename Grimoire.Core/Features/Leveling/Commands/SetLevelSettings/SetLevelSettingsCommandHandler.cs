@@ -50,7 +50,7 @@ namespace Grimoire.Core.Features.Leveling.Commands.SetLevelSettings
                     levelSettings.LevelSettings.Amount = amount;
                     break;
                 case LevelSettings.LogChannel:
-                    if(!ulong.TryParse(command.Value, out var value))
+                    if (!ulong.TryParse(command.Value, out var value))
                         throw new AnticipatedException("Please give a valid channel for Log Channel.");
                     levelSettings.LevelSettings.LevelChannelLogId = value == 0 ? null : value;
                     break;

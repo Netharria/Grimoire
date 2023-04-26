@@ -31,6 +31,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteM
                         .OrderByDescending(x => x.TimeStamp)
                         .First(y => y.Action != MessageAction.Deleted)
                         .MessageContent,
+                    ReferencedMessage = x.ReferencedMessageId,
                     Attachments = x.Attachments
                         .Select(x => new AttachmentDto
                         {

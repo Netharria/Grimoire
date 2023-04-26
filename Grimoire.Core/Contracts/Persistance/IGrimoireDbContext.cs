@@ -13,6 +13,8 @@ namespace Grimoire.Core.Contracts.Persistance
     {
         public DbSet<Attachment> Attachments { get; }
 
+        public DbSet<Avatar> Avatars { get; }
+
         public DbSet<Channel> Channels { get; }
 
         public DbSet<Guild> Guilds { get; }

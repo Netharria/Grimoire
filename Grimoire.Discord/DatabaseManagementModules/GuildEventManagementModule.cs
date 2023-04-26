@@ -45,7 +45,6 @@ namespace Grimoire.Discord.DatabaseManagementModules
                     {
                         Id = x.Key,
                         UserName = x.Value.GetUsernameWithDiscriminator(),
-                        Nickname = x.Value.Nickname,
                     }),
                 Members = args.Guilds.Values.SelectMany(x => x.Members)
                     .Select(x => x.Value).Select(x =>
@@ -53,7 +52,8 @@ namespace Grimoire.Discord.DatabaseManagementModules
                     {
                         GuildId = x.Guild.Id,
                         UserId = x.Id,
-                        Nickname = x.Nickname
+                        Nickname = x.Nickname,
+                        AvatarUrl = x.GetGuildAvatarUrl(ImageFormat.Auto)
                     }),
                 Roles = args.Guilds.Values.Select(x => new { x.Id, x.Roles })
                     .Select(x => x.Roles.Select(y =>
@@ -108,7 +108,8 @@ namespace Grimoire.Discord.DatabaseManagementModules
                         {
                             GuildId = x.Value.Guild.Id,
                             UserId = x.Key,
-                            Nickname = x.Value.Nickname
+                            Nickname = x.Value.Nickname,
+                            AvatarUrl = x.Value.GetGuildAvatarUrl(ImageFormat.Auto)
                         }),
                 Roles = args.Guild.Roles
                     .Select(x =>

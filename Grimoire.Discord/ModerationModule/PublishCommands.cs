@@ -9,6 +9,7 @@ using DSharpPlus.Exceptions;
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.BanCommands.PublishBan;
 using Grimoire.Core.Features.Moderation.Queries.GetBan;
+using Grimoire.Core.Features.Moderation.Queries.GetUnban;
 using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
 

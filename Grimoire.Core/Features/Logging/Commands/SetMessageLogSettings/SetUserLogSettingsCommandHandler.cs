@@ -41,7 +41,7 @@ namespace Grimoire.Core.Features.Logging.Commands.SetMessageLogSettings
             }
             this._grimoireDbContext.GuildMessageLogSettings.Update(messageSettings.LogSettings);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { LogChannelId = messageSettings.ModChannelLog};
+            return new BaseResponse { LogChannelId = messageSettings.ModChannelLog };
         }
     }
 }

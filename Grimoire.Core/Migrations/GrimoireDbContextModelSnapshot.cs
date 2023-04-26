@@ -42,6 +42,37 @@ namespace Grimoire.Core.Migrations
                     b.ToTable("Attachments");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.Avatar", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTimeOffset>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "GuildId");
+
+                    b.ToTable("Avatars");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.Channel", b =>
                 {
                     b.Property<decimal>("Id")
@@ -383,7 +414,6 @@ namespace Grimoire.Core.Migrations
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Nickname")
-                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
@@ -699,6 +729,17 @@ namespace Grimoire.Core.Migrations
                         .IsRequired();
 
                     b.Navigation("Message");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.Avatar", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Member", "Member")
+                        .WithMany("AvatarHistory")
+                        .HasForeignKey("UserId", "GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Channel", b =>
@@ -1220,6 +1261,8 @@ namespace Grimoire.Core.Migrations
             modelBuilder.Entity("Grimoire.Domain.Member", b =>
                 {
                     b.Navigation("ActiveMutes");
+
+                    b.Navigation("AvatarHistory");
 
                     b.Navigation("AwardRecipients");
 

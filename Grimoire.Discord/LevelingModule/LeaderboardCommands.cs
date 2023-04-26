@@ -42,7 +42,7 @@ namespace Grimoire.Discord.LevelingModule
                         throw new AnticipatedException("Must provide a user for this option.");
                     break;
             }
-                
+
             var getUserCenteredLeaderboardQuery = new GetLeaderboardQuery
             {
                 UserId = user?.Id,

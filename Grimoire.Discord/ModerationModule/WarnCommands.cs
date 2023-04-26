@@ -39,7 +39,7 @@ namespace Grimoire.Discord.ModerationModule
                 ModeratorId = ctx.User.Id,
                 Reason = reason
             });
-            
+
             await ctx.ReplyAsync(title: "Warning",
                 message: $"**Reason:** {reason}\n" +
                          $"{user.Mention}: Warning **ID {response.SinId}**",

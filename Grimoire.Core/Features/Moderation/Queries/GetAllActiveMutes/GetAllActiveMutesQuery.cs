@@ -5,12 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.UpdateMember
+namespace Grimoire.Core.Features.Moderation.Queries.GetAllActiveMutes
 {
-    public sealed record UpdateMemberCommand : ICommand
+    public sealed record GetAllActiveMutesQuery : IQuery<GetAllActiveMutesQueryResponse>
     {
-        public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
-        public string? Nickname { get; init; }
     }
 }

@@ -97,7 +97,8 @@ namespace Grimoire.Discord.LevelingModule
                 {
                     Id = member.Id,
                     Nickname = member.Nickname,
-                    UserName = member.GetUsernameWithDiscriminator()
+                    UserName = member.GetUsernameWithDiscriminator(),
+                    AvatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto)
                 };
             try
             {
@@ -106,7 +107,8 @@ namespace Grimoire.Discord.LevelingModule
                     return new UserDto
                     {
                         Id = user.Id,
-                        UserName = user.GetUsernameWithDiscriminator()
+                        UserName = user.GetUsernameWithDiscriminator(),
+                        AvatarUrl = user.GetAvatarUrl(ImageFormat.Auto)
                     };
             }
             catch (Exception)

@@ -29,18 +29,18 @@ namespace Grimoire.Discord.ModerationModule
             [Option("DurationType", "Select whether the duration will be in minutes hours or days")] DurationType durationType,
             [Minimum(0)]
             [Option("DurationAmount", "Select the amount of time the lock will last.")] long durationAmount,
-            [ChannelTypes(ChannelType.Text, ChannelType.PublicThread, ChannelType.PrivateThread, ChannelType.Category, ChannelType.Forum)]
+            [ChannelTypes(ChannelType.Text, ChannelType.PublicThread, ChannelType.PrivateThread, ChannelType.Category, ChannelType.GuildForum)]
             [Option("Channel", "The Channel to lock. Current channel if not specified.")] DiscordChannel? channel = null,
             [Option("Reason", "The reason why the channel is getting locked")] string? reason = null)
         {
             channel ??= ctx.Channel;
-            BaseResponse? response = null;
+            BaseResponse? response;
 
             if (channel.IsThread)
                 response = await this.ThreadLockAsync(ctx, channel, reason, durationType, durationAmount);
             else if (channel.Type is ChannelType.Text
                 || channel.Type is ChannelType.Category
-                || channel.Type is ChannelType.Forum)
+                || channel.Type is ChannelType.GuildForum)
                 response = await this.ChannelLockAsync(ctx, channel, reason, durationType, durationAmount);
             else
             {

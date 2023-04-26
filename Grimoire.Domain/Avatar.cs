@@ -9,14 +9,13 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain
 {
-    public class NicknameHistory : IIdentifiable<long>, IMember
+    public class Avatar : IIdentifiable<long>
     {
         public long Id { get; set; }
         public ulong UserId { get; set; }
-        public virtual Member Member { get; set; } = null!;
-        public string? Nickname { get; set; }
-        public DateTimeOffset Timestamp { get; }
         public ulong GuildId { get; set; }
-        public virtual Guild Guild { get; set; } = null!;
+        public virtual Member Member { get; set; } = null!;
+        public string FileName { get; set; } = string.Empty;
+        public DateTimeOffset Timestamp { get; }
     }
 }

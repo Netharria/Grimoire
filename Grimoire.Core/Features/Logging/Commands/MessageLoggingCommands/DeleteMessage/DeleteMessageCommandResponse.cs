@@ -12,6 +12,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteM
         public ulong? LoggingChannel { get; init; }
         public ulong UserId { get; init; }
         public string? MessageContent { get; init; }
+        public ulong? ReferencedMessage { get; init; }
         public AttachmentDto[] Attachments { get; init; } = Array.Empty<AttachmentDto>();
         public bool Success { get; init; } = false;
     }

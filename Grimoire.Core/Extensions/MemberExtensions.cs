@@ -29,13 +29,13 @@ namespace Grimoire.Core.Extensions
         public static long GetXpNeeded(int level, int @base, int modifier, int levelModifier = 0)
         {
             level = level - 2 + levelModifier;
-           return level switch
-               {
-                   < 0 => 0,
-                   0 => @base,
-                   _ => @base + ((long)Math.Round(@base * (modifier / 100.0) * level) * level)
-               };
+            return level switch
+            {
+                < 0 => 0,
+                0 => @base,
+                _ => @base + ((long)Math.Round(@base * (modifier / 100.0) * level) * level)
+            };
         }
-            
+
     }
 }

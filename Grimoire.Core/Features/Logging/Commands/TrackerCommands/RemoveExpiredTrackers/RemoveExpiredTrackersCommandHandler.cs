@@ -18,7 +18,8 @@ namespace Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredT
 
         public async ValueTask<IEnumerable<RemoveExpiredTrackersCommandResponse>> Handle(RemoveExpiredTrackersCommand command, CancellationToken cancellationToken)
         {
-            var results = await this._grimoireDbContext.Trackers.Where(x => x.EndTime < DateTimeOffset.UtcNow)
+            var results = await this._grimoireDbContext.Trackers
+                .Where(x => x.EndTime < DateTimeOffset.UtcNow)
                 .Select(x => new
                 {
                     Tracker = x,

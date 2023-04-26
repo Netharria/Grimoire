@@ -29,6 +29,7 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnore
                         UserId = x.Id,
                         GuildId = command.GuildId,
                         Nickname = x.Nickname,
+                        AvatarUrl = x.AvatarUrl
                     }), cancellationToken);
             await this._grimoireDbContext.Channels.AddMissingChannelsAsync(command.Channels, cancellationToken);
             await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);

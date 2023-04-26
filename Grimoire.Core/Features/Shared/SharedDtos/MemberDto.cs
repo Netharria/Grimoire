@@ -12,5 +12,6 @@ namespace Grimoire.Core.Features.Shared.SharedDtos
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
         public string? Nickname { get; init; }
+        public string AvatarUrl { get; init; } = string.Empty;
     }
 }

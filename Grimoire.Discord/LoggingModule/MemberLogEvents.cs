@@ -5,29 +5,34 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Net;
+using Grimoire.Core.Features.Logging.Commands.UpdateAvatar;
+using Grimoire.Core.Features.Logging.Commands.UpdateNickname;
+using Grimoire.Core.Features.Logging.Commands.UpdateUsername;
 using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule
 {
     [DiscordGuildMemberAddedEventSubscriber]
     [DiscordGuildMemberUpdatedEventSubscriber]
     [DiscordGuildMemberRemovedEventSubscriber]
-    [DiscordUserUpdatedEventSubscriber]
     internal class MemberLogEvents :
         IDiscordGuildMemberAddedEventSubscriber,
         IDiscordGuildMemberUpdatedEventSubscriber,
-        IDiscordGuildMemberRemovedEventSubscriber,
-        IDiscordUserUpdatedEventSubscriber
+        IDiscordGuildMemberRemovedEventSubscriber
     {
         private readonly IMediator _mediator;
         private readonly IInviteService _inviteService;
         private readonly HttpClient _httpClient;
+        private readonly IDiscordClientService _clientService;
 
-        public MemberLogEvents(IMediator mediator, IInviteService inviteService, IHttpClientFactory httpFactory)
+        public MemberLogEvents(IMediator mediator, IInviteService inviteService, IHttpClientFactory httpFactory, IDiscordClientService clientService)
         {
             this._mediator = mediator;
             this._inviteService = inviteService;
             this._httpClient = httpFactory.CreateClient();
+            this._clientService = clientService;
         }
 
         public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
@@ -67,6 +72,7 @@ namespace Grimoire.Discord.LoggingModule
                 embed.AddField("New Account", $"Created {accountAge.CustomTimeSpanString()}");
             await logChannel.SendMessageAsync(embed);
         }
+
         public async Task DiscordOnGuildMemberRemoved(DiscordClient sender, GuildMemberRemoveEventArgs args)
         {
             var settings = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = args.Guild.Id });
@@ -97,93 +103,116 @@ namespace Grimoire.Discord.LoggingModule
         }
         public async Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
         {
-            var settings = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = args.Guild.Id });
-            if (!settings.IsLoggingEnabled) return;
-            if (args.NicknameBefore != args.NicknameAfter && settings.NicknameChannelLog is not null)
+            var nicknameTask = this.ProcessNicknameChanges(args);
+            var usernameTask = this.ProcessUsernameChanges(args);
+            var avatarTask = this.ProcessAvatarChanges(args);
+
+            await Task.WhenAll(nicknameTask, usernameTask, avatarTask);
+        }
+
+        private async Task ProcessNicknameChanges(GuildMemberUpdateEventArgs args)
+        {
+            var nicknameResponse = await this._mediator.Send(new UpdateNicknameCommand
             {
-                var logChannel = args.Guild.Channels.GetValueOrDefault(settings.NicknameChannelLog.Value);
+                GuildId = args.Guild.Id,
+                UserId = args.Member.Id,
+                Nickname = args.NicknameAfter
+            });
+            if (nicknameResponse is not null && nicknameResponse.BeforeNickname != nicknameResponse.AfterNickname)
+            {
+                var logChannel = args.Guild.Channels.GetValueOrDefault(nicknameResponse.NicknameChannelLogId);
                 if (logChannel is not null)
                 {
                     var embed = new DiscordEmbedBuilder()
                     .WithTitle("Nickname Updated")
                     .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
-                        $"**Before:** {args.NicknameBefore}\n" +
-                        $"**After:** {args.NicknameAfter}")
+                        $"**Before:** {(string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname)? "None" : nicknameResponse.BeforeNickname)}\n" +
+                        $"**After:** {(string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)? "None" : nicknameResponse.AfterNickname)}")
                     .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
                     .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
                     .WithTimestamp(DateTimeOffset.UtcNow);
                     await logChannel.SendMessageAsync(embed);
                 }
             }
-            if (args.AvatarHashBefore != args.AvatarHashAfter && settings.AvatarChannelLog is not null)
+        }
+
+        private async Task ProcessUsernameChanges(GuildMemberUpdateEventArgs args)
+        {
+            var usernameResponse = await this._mediator.Send(new UpdateUsernameCommand
             {
-                var logChannel = args.Guild.Channels.GetValueOrDefault(settings.AvatarChannelLog.Value);
+                GuildId = args.Guild.Id,
+                UserId = args.Member.Id,
+                Username = args.MemberAfter.GetUsernameWithDiscriminator()
+            });
+            if (usernameResponse is not null && usernameResponse.BeforeUsername != usernameResponse.AfterUsername)
+            {
+                var logChannel = args.Guild.Channels.GetValueOrDefault(usernameResponse.UsernameChannelLogId);
                 if (logChannel is not null)
                 {
-                    var url = args.Member.GetAvatarUrl(ImageFormat.Auto);
-                    var stream = await this._httpClient.GetStreamAsync(url);
-                    var fileName = $"attachment{0}.{args.Member.GetAvatarUrl(ImageFormat.Auto).Split('.')[^1]}";
-
                     var embed = new DiscordEmbedBuilder()
-                    .WithTitle("Avatar Updated")
-                    .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
-                        $"Old avatar in thumbnail. New avatar down below")
-                    .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
-                    .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
-                    .WithTimestamp(DateTimeOffset.UtcNow)
-                    .WithImageUrl($"attachment://{fileName}");
-
-                    await logChannel.SendMessageAsync(new DiscordMessageBuilder()
-                        .AddEmbed(embed)
-                        .AddFile(fileName, stream));
+                            .WithTitle("Username Updated")
+                            .WithDescription($"**User:** <@!{args.MemberAfter.Id}>\n\n" +
+                                $"**Before:** {usernameResponse.BeforeUsername}\n" +
+                                $"**After:** {usernameResponse.AfterUsername}")
+                            .WithAuthor($"{args.MemberAfter.GetUsernameWithDiscriminator()} ({args.MemberAfter.Id})")
+                            .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
+                            .WithTimestamp(DateTimeOffset.UtcNow);
+                    await logChannel.SendMessageAsync(embed);
                 }
             }
         }
-        public async Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args)
+
+        private async Task ProcessAvatarChanges(GuildMemberUpdateEventArgs args)
         {
-            foreach (var guild in sender.Guilds.Values)
+            var avatarResponse = await this._mediator.Send(new UpdateAvatarCommand
             {
-                if (!guild.Members.ContainsKey(args.UserAfter.Id)) continue;
-                var settings = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = guild.Id });
-                if (!settings.IsLoggingEnabled) return;
-                if (args.UserBefore.Username != args.UserAfter.Username && settings.UsernameChannelLog is not null)
+                GuildId = args.Guild.Id,
+                UserId = args.Member.Id,
+                AvatarUrl = args.MemberAfter.GetGuildAvatarUrl(ImageFormat.Auto)
+            });
+            if (avatarResponse is not null && avatarResponse.BeforeAvatar != avatarResponse.AfterAvatar)
+            {
+                var logChannel = args.Guild.Channels.GetValueOrDefault(avatarResponse.AvatarChannelLogId);
+                if (logChannel is not null)
                 {
-                    var logChannel = guild.Channels.GetValueOrDefault(settings.UsernameChannelLog.Value);
-                    if (logChannel is not null)
+                    var url = args.Member.GetAvatarUrl(ImageFormat.Auto, 128);
+                    var afterStream = await this._httpClient.GetStreamAsync(url);
+                    var afterFileName = $"attachment0.{args.Member.GetAvatarUrl(ImageFormat.Auto).Split('.')[^1].Split('?')[0]}";
+                    Stream? beforeStream = null;
+                    var beforeFileName = $"attachment1.{avatarResponse.BeforeAvatar.Split('.')[^1].Split('?')[0]}";
+                    try
                     {
-                        var embed = new DiscordEmbedBuilder()
-                            .WithTitle("Username Updated")
-                            .WithDescription($"**User:** <@!{args.UserAfter.Id}>\n\n" +
-                                $"**Before:** {args.UserBefore.Username}\n" +
-                                $"**After:** {args.UserAfter.Username}")
-                            .WithAuthor($"{args.UserAfter.GetUsernameWithDiscriminator()} ({args.UserAfter.Id})")
-                            .WithThumbnail(args.UserAfter.GetAvatarUrl(ImageFormat.Auto))
-                            .WithTimestamp(DateTimeOffset.UtcNow);
-                        await logChannel.SendMessageAsync(embed);
+                        beforeStream = await this._httpClient.GetStreamAsync(avatarResponse.BeforeAvatar);
                     }
-                }
-                if (args.UserBefore.AvatarHash != args.UserAfter.AvatarHash && settings.AvatarChannelLog is not null)
-                {
-                    var logChannel = guild.Channels.GetValueOrDefault(settings.AvatarChannelLog.Value);
-                    if (logChannel is not null)
+                    catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
                     {
-                        var url = args.UserAfter.GetAvatarUrl(ImageFormat.Auto);
-                        var stream = await this._httpClient.GetStreamAsync(url);
-                        var fileName = $"attachment{0}.{args.UserAfter.GetAvatarUrl(ImageFormat.Auto).Split('.')[^1]}";
+                        _clientService.Client.Logger.LogInformation("Was not able to retrieve the old avatar image.");
+                    }
+                    var embed = new DiscordEmbedBuilder()
+                    .WithTitle("Avatar Updated")
+                    .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
+                        $"New Avatar is first image. Old avatar is second image.")
+                    .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
+                    .WithThumbnail(avatarResponse.BeforeAvatar)
+                    .WithTimestamp(DateTimeOffset.UtcNow)
+                    .WithImageUrl($"attachment://{afterFileName}");
 
-                        var embed = new DiscordEmbedBuilder()
+                    var message = new DiscordMessageBuilder()
+                        .AddEmbed(embed)
+                        .AddFile(afterFileName, afterStream);
+                    if (beforeStream is not null)
+                    {
+                        message.AddEmbed(new DiscordEmbedBuilder()
                             .WithTitle("Avatar Updated")
-                            .WithDescription($"**User:** <@!{args.UserAfter.Id}>\n\n" +
-                                $"Old avatar in thumbnail. New avatar down below")
-                            .WithAuthor($"{args.UserAfter.GetUsernameWithDiscriminator()} ({args.UserAfter.Id})")
-                            .WithThumbnail(args.UserBefore.GetAvatarUrl(ImageFormat.Auto))
+                            .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
+                                $"New Avatar is first image. Old avatar is second.")
+                            .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
+                            .WithThumbnail(avatarResponse.BeforeAvatar)
                             .WithTimestamp(DateTimeOffset.UtcNow)
-                            .WithImageUrl($"attachment://{fileName}");
-
-                        await logChannel.SendMessageAsync(new DiscordMessageBuilder()
-                            .AddEmbed(embed)
-                            .AddFile(fileName, stream));
+                            .WithImageUrl($"attachment://{beforeFileName}"));
+                        message.AddFile(beforeFileName, beforeStream);
                     }
+                    await logChannel.SendMessageAsync(message);
                 }
             }
         }

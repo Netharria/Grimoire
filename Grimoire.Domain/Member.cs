@@ -40,6 +40,7 @@ namespace Grimoire.Domain
         public virtual ICollection<Pardon> SinsPardoned { get; set; } = new List<Pardon>();
 
         public virtual ICollection<NicknameHistory> NicknamesHistory { get; set; } = new List<NicknameHistory>();
+        public virtual ICollection<Avatar> AvatarHistory { get; set; } = new List<Avatar>();
         public virtual ICollection<MessageHistory> MessagesDeletedAsModerator { get; set; } = new List<MessageHistory>();
         public virtual ICollection<XpHistory> XpHistory { get; set; } = new List<XpHistory>();
         public virtual ICollection<XpHistory> AwardRecipients { get; set; } = new List<XpHistory>();

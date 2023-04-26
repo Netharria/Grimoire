@@ -7,7 +7,7 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetBan
+namespace Grimoire.Core.Features.Moderation.Queries.GetLastBan
 {
     public class GetLastBanQueryHandler : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
     {

@@ -311,6 +311,28 @@ namespace Grimoire.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Avatars",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    FileName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Avatars", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Avatars_Members_UserId_GuildId",
+                        columns: x => new { x.UserId, x.GuildId },
+                        principalTable: "Members",
+                        principalColumns: new[] { "UserId", "GuildId" },
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Locks",
                 columns: table => new
                 {
@@ -386,7 +408,7 @@ namespace Grimoire.Core.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    Nickname = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Nickname = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
                 },
@@ -697,6 +719,11 @@ namespace Grimoire.Core.Migrations
                 column: "MessageId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Avatars_UserId_GuildId",
+                table: "Avatars",
+                columns: new[] { "UserId", "GuildId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Channels_GuildId",
                 table: "Channels",
                 column: "GuildId");
@@ -904,6 +931,9 @@ namespace Grimoire.Core.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Attachments");
+
+            migrationBuilder.DropTable(
+                name: "Avatars");
 
             migrationBuilder.DropTable(
                 name: "GuildLevelSettings");

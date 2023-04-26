@@ -7,9 +7,7 @@
 
 using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
 using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
-using Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
 using Grimoire.Core.Features.Leveling.Queries.GetRewards;
-using Newtonsoft.Json.Linq;
 
 namespace Grimoire.Discord.LevelingModule
 {
