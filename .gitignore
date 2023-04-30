@@ -362,7 +362,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 #Config File
-appsettings.json
+launchSettings.json
 
 #JetBrainsConfig File
 Cybermancy.sln.DotSettings
