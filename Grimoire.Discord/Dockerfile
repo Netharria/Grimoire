@@ -16,8 +16,6 @@ RUN dotnet build "Grimoire.Discord.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "Grimoire.Discord.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-EXPOSE 5432
-
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
