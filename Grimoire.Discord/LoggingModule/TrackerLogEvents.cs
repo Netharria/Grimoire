@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Queries.GetAllTrackersForUser;
 using Grimoire.Core.Features.Logging.Queries.GetTracker;
 using Grimoire.Core.Features.Logging.Queries.GetTrackerWithOldMessage;
 
@@ -14,14 +13,10 @@ namespace Grimoire.Discord.LoggingModule
     [DiscordMessageCreatedEventSubscriber]
     [DiscordMessageUpdatedEventSubscriber]
     [DiscordVoiceStateUpdatedEventSubscriber]
-    [DiscordGuildMemberUpdatedEventSubscriber]
-    [DiscordUserUpdatedEventSubscriber]
     public class TrackerLogEvents :
         IDiscordMessageCreatedEventSubscriber,
         IDiscordMessageUpdatedEventSubscriber,
-        IDiscordVoiceStateUpdatedEventSubscriber,
-        IDiscordGuildMemberUpdatedEventSubscriber,
-        IDiscordUserUpdatedEventSubscriber
+        IDiscordVoiceStateUpdatedEventSubscriber
     {
         private readonly IMediator _mediator;
         private readonly HttpClient _httpClient;
@@ -45,7 +40,7 @@ namespace Grimoire.Discord.LoggingModule
             var embeds = new List<DiscordEmbed>();
 
             var embed = new DiscordEmbedBuilder()
-                .WithAuthor($"{args.Message.Channel.Mention}")
+                .WithAuthor($"{args.Message.Channel.Name}")
                 .WithDescription($"**[Jump URL]({args.Message.JumpLink})**")
                 .WithFooter($"{args.Author.GetUsernameWithDiscriminator()}\t{args.Author.Id}\nMessage Sent",
                     args.Author.GetAvatarUrl(ImageFormat.Auto))
@@ -75,7 +70,7 @@ namespace Grimoire.Discord.LoggingModule
                     var embedTest = new DiscordEmbedBuilder()
                         .WithColor(DiscordColor.Red)
                         .WithTitle(default)
-                        .WithAuthor("Attachment(s) Deleted")
+                        .WithAuthor("Attachment(s)")
                         .WithUrl($"https://discord.com/users/{args.Author.Id}/{stride}")
                         .WithImageUrl($"attachment://{fileName}")
                         .WithDescription(string.Join(" | ", attachments));
@@ -152,92 +147,6 @@ namespace Grimoire.Discord.LoggingModule
                     .WithFooter($"{args.User.GetUsernameWithDiscriminator()}\n{args.User.Id}")
                     .WithTimestamp(DateTime.UtcNow);
             await loggingChannel.SendMessageAsync(embed);
-        }
-        public async Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
-        {
-            var response = await this._mediator.Send(new GetTrackerQuery{ UserId = args.Member.Id, GuildId = args.Guild.Id });
-            if (response is null) return;
-            if (args.NicknameBefore != args.NicknameAfter)
-            {
-                var logChannel = args.Guild.Channels.GetValueOrDefault(response.TrackerChannelId);
-                if (logChannel is not null)
-                {
-                    var embed = new DiscordEmbedBuilder()
-                    .WithDescription($"**Before:** {args.NicknameBefore}\n" +
-                        $"**After:** {args.NicknameAfter}")
-                    .WithAuthor(args.Member.GetUsernameWithDiscriminator())
-                    .WithFooter($"{args.Member.Id}")
-                    .WithTimestamp(DateTimeOffset.UtcNow);
-                    await logChannel.SendMessageAsync(embed);
-                }
-            }
-            if (args.AvatarHashBefore != args.AvatarHashAfter)
-            {
-                var logChannel = args.Guild.Channels.GetValueOrDefault(response.TrackerChannelId);
-                if (logChannel is not null)
-                {
-                    var url = args.Member.GetAvatarUrl(ImageFormat.Auto);
-                    var stream = await this._httpClient.GetStreamAsync(url);
-                    var fileName = $"attachment{0}.{args.Member.GetAvatarUrl(ImageFormat.Auto).Split('.')[^1]}";
-
-                    var embed = new DiscordEmbedBuilder()
-                    .WithDescription($"New avatar")
-                    .WithAuthor(args.Member.GetUsernameWithDiscriminator())
-                    .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
-                    .WithTimestamp(DateTimeOffset.UtcNow)
-                    .WithImageUrl($"attachment://{fileName}");
-
-                    await logChannel.SendMessageAsync(new DiscordMessageBuilder()
-                        .AddEmbed(embed)
-                        .AddFile(fileName, stream));
-                }
-            }
-        }
-
-        public async Task DiscordOnUserUpdated(DiscordClient sender, UserUpdateEventArgs args)
-        {
-            var response = await this._mediator.Send(new GetAllTrackersForUserQuery{ UserId = args.UserAfter.Id });
-            foreach (var tracker in response.Trackers)
-            {
-                var guild = sender.Guilds.GetValueOrDefault(tracker.GuildId);
-                if (guild is null) continue;
-                if (args.UserBefore.Username != args.UserAfter.Username)
-                {
-                    var logChannel = guild.Channels.GetValueOrDefault(tracker.TrackerChannelId);
-                    if (logChannel is not null)
-                    {
-                        var embed = new DiscordEmbedBuilder()
-                            .WithDescription($"**Before:** {args.UserBefore.Username}\n" +
-                                $"**After:** {args.UserAfter.Username}")
-                            .WithAuthor(args.UserAfter.GetUsernameWithDiscriminator())
-                            .WithFooter($"{args.UserAfter.Id}")
-                            .WithTimestamp(DateTimeOffset.UtcNow);
-                        await logChannel.SendMessageAsync(embed);
-                    }
-                }
-                if (args.UserBefore.AvatarHash != args.UserAfter.AvatarHash)
-                {
-                    var logChannel = guild.Channels.GetValueOrDefault(tracker.TrackerChannelId);
-                    if (logChannel is not null)
-                    {
-                        var url = args.UserAfter.GetAvatarUrl(ImageFormat.Auto);
-                        var stream = await this._httpClient.GetStreamAsync(url);
-                        var fileName = $"attachment{0}.{args.UserAfter.GetAvatarUrl(ImageFormat.Auto).Split('.')[^1]}";
-
-                        var embed = new DiscordEmbedBuilder()
-                            .WithDescription($"New avatar")
-                            .WithAuthor(args.UserAfter.GetUsernameWithDiscriminator())
-                            .WithThumbnail(args.UserBefore.GetAvatarUrl(ImageFormat.Auto))
-                            .WithTimestamp(DateTimeOffset.UtcNow)
-                            .WithImageUrl($"attachment://{fileName}");
-
-                        await logChannel.SendMessageAsync(new DiscordMessageBuilder()
-                            .AddEmbed(embed)
-                            .AddFile(fileName, stream));
-                    }
-                }
-            }
-
         }
     }
 }

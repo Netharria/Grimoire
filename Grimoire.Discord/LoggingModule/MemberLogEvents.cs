@@ -5,11 +5,13 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Net;
 using Grimoire.Core.Features.Logging.Commands.UpdateAvatar;
 using Grimoire.Core.Features.Logging.Commands.UpdateNickname;
 using Grimoire.Core.Features.Logging.Commands.UpdateUsername;
 using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
+using Grimoire.Discord.Notifications;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule
@@ -133,6 +135,14 @@ namespace Grimoire.Discord.LoggingModule
                     .WithTimestamp(DateTimeOffset.UtcNow);
                     await logChannel.SendMessageAsync(embed);
                 }
+                await this._mediator.Publish(new NicknameTrackerNotification
+                {
+                    UserId = args.Member.Id,
+                    GuildId = args.Guild.Id,
+                    Username = args.Member.GetUsernameWithDiscriminator(),
+                    BeforeNickname = nicknameResponse.BeforeNickname,
+                    AfterNickname = nicknameResponse.AfterNickname
+                });
             }
         }
 
@@ -159,6 +169,13 @@ namespace Grimoire.Discord.LoggingModule
                             .WithTimestamp(DateTimeOffset.UtcNow);
                     await logChannel.SendMessageAsync(embed);
                 }
+                await this._mediator.Publish(new UsernameTrackerNotification
+                {
+                    UserId = args.Member.Id,
+                    GuildId = args.Guild.Id,
+                    BeforeUsername = usernameResponse.BeforeUsername,
+                    AfterUsername = usernameResponse.AfterUsername
+                });
             }
         }
 
@@ -178,20 +195,10 @@ namespace Grimoire.Discord.LoggingModule
                     var url = args.Member.GetAvatarUrl(ImageFormat.Auto, 128);
                     var afterStream = await this._httpClient.GetStreamAsync(url);
                     var afterFileName = $"attachment0.{args.Member.GetAvatarUrl(ImageFormat.Auto).Split('.')[^1].Split('?')[0]}";
-                    Stream? beforeStream = null;
-                    var beforeFileName = $"attachment1.{avatarResponse.BeforeAvatar.Split('.')[^1].Split('?')[0]}";
-                    try
-                    {
-                        beforeStream = await this._httpClient.GetStreamAsync(avatarResponse.BeforeAvatar);
-                    }
-                    catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        _clientService.Client.Logger.LogInformation("Was not able to retrieve the old avatar image.");
-                    }
                     var embed = new DiscordEmbedBuilder()
                     .WithTitle("Avatar Updated")
                     .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
-                        $"New Avatar is first image. Old avatar is second image.")
+                        $"Old avatar in thumbnail. New avatar down below")
                     .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
                     .WithThumbnail(avatarResponse.BeforeAvatar)
                     .WithTimestamp(DateTimeOffset.UtcNow)
@@ -200,20 +207,16 @@ namespace Grimoire.Discord.LoggingModule
                     var message = new DiscordMessageBuilder()
                         .AddEmbed(embed)
                         .AddFile(afterFileName, afterStream);
-                    if (beforeStream is not null)
-                    {
-                        message.AddEmbed(new DiscordEmbedBuilder()
-                            .WithTitle("Avatar Updated")
-                            .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
-                                $"New Avatar is first image. Old avatar is second.")
-                            .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
-                            .WithThumbnail(avatarResponse.BeforeAvatar)
-                            .WithTimestamp(DateTimeOffset.UtcNow)
-                            .WithImageUrl($"attachment://{beforeFileName}"));
-                        message.AddFile(beforeFileName, beforeStream);
-                    }
                     await logChannel.SendMessageAsync(message);
                 }
+                await this._mediator.Publish(new AvatarTrackerNotification
+                {
+                    UserId = args.Member.Id,
+                    GuildId = args.Guild.Id,
+                    Username = args.Member.GetUsernameWithDiscriminator(),
+                    BeforeAvatar = avatarResponse.BeforeAvatar,
+                    AfterAvatar = args.Member.GetAvatarUrl(ImageFormat.Auto, 128)
+            });
             }
         }
     }

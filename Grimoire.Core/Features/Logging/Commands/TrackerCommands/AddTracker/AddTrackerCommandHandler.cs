@@ -24,8 +24,6 @@ namespace Grimoire.Core.Features.Logging.Commands.TrackerCommands.AddTracker
                 .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
                 .Select(x => new { Tracker = x, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-            if (result is null)
-                throw new AnticipatedException("Could not find that user.");
             if (result?.Tracker is null)
                 await this._grimoireDbContext.Trackers.AddAsync(new Tracker
                 {
