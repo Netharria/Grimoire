@@ -26,12 +26,12 @@ namespace Grimoire.Discord.LoggingModule
         IDiscordMessageUpdatedEventSubscriber
     {
         private readonly IMediator _mediator;
-        private readonly HttpClient _httpClient;
+        private readonly IDiscordImageEmbedService _attachmentUploadService;
 
-        public MessageLogEvents(IMediator mediator, IHttpClientFactory httpFactory)
+        public MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService)
         {
             this._mediator = mediator;
-            this._httpClient = httpFactory.CreateClient();
+            this._attachmentUploadService = attachmentUploadService;
         }
 
 
@@ -89,7 +89,15 @@ namespace Grimoire.Discord.LoggingModule
                 avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
             }
 
-            var embeds = new List<DiscordEmbed>();
+            var messageDescription =  $"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
+                    $"**Channel:** {ChannelExtensions.Mention(args.Channel.Id)}\n" +
+                    $"**Message Id:** {args.Message.Id}" +
+                    (auditLogEntry is null
+                    ? string.Empty
+                    : $"\n**Deleted By:** {auditLogEntry.UserResponsible.Mention}")
+                    + (response.ReferencedMessage is null
+                    ? string.Empty
+                    : $"\n[Referenced Message](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})");
 
             var embed = new DiscordEmbedBuilder()
                 .WithAuthor($"{userName} ({response.UserId})")
@@ -108,41 +116,14 @@ namespace Grimoire.Discord.LoggingModule
                 .WithThumbnail(avatarUrl)
                 .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
-            var files = new Dictionary<string, Stream>();
-
-            if (response.Attachments.Any())
-                foreach ((var attachment, var index) in response.Attachments.Select((x, i) => (x, i)))
-                {
-                    if (string.IsNullOrWhiteSpace(attachment.FileName))
-                        continue;
-
-                    var url = new Uri(Path.Combine("https://cdn.discordapp.com/attachments/", args.Channel.Id.ToString(), attachment.Id.ToString(), attachment.FileName));
-                    var stream = await this._httpClient.GetStreamAsync(url);
-                    var fileName = $"attachment{index}.{attachment.FileName.Split('.')[^1]}";
-
-                    var stride = 4 * (index / 4);
-                    var attachments = response.Attachments
-                        .Skip(stride)
-                        .Take(4)
-                        .Select(x => $"**{x.FileName}**")
-                        .ToArray();
-
-                    var imageEmbeds = new DiscordEmbedBuilder()
-                        .WithColor(DiscordColor.Red)
-                        .WithTitle(default)
-                        .WithAuthor("Attachment(s) Deleted")
-                        .WithUrl($"https://discord.com/users/{response.UserId}/{stride}")
-                        .WithImageUrl($"attachment://{fileName}")
-                        .WithDescription(string.Join(" | ", attachments));
-
-                    embeds.Add(imageEmbeds);
-                    files.Add(fileName, stream);
-                }
+            var messageBuilder = await this._attachmentUploadService.BuildImageEmbedAsync(
+                    response.Attachments,
+                    response.UserId,
+                    args.Channel.Id,
+                    embed);
             try
             {
-                var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
-                .AddEmbeds(embeds.Prepend(embed))
-                .AddFiles(files));
+                var message = await loggingChannel.SendMessageAsync(messageBuilder);
                 if (message is null) return;
                 await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
@@ -240,8 +221,9 @@ namespace Grimoire.Discord.LoggingModule
                 userName = user.GetUsernameWithDiscriminator();
                 avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
             }
-
-            var embed = new DiscordEmbedBuilder()
+            var embeds = new List<DiscordEmbedBuilder>
+            {
+                new DiscordEmbedBuilder()
                 .WithTitle($"Message edited in #{args.Channel.Name}")
                 .WithDescription($"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
                                 $"**Channel:** {args.Channel.Mention}\n" +
@@ -251,14 +233,34 @@ namespace Grimoire.Discord.LoggingModule
                 .WithTimestamp(DateTime.UtcNow)
                 .WithThumbnail(avatarUrl)
                 .AddMessageTextToFields("Before", response.MessageContent)
-                .AddMessageTextToFields("After", args.Message.Content);
+            };
 
+            if (response.MessageContent.Length + args.Message.Content.Length >= 5000)
+            {
+                embeds.Add(new DiscordEmbedBuilder()
+                .WithTitle($"Message edited in #{args.Channel.Name}")
+                .WithDescription($"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
+                                $"**Channel:** {args.Channel.Mention}\n" +
+                                $"**Message Id:** {response.MessageId}\n" +
+                                $"**[Jump Url]({args.Message.JumpLink})**")
+                .WithAuthor($"{userName} ({response.UserId})")
+                .WithTimestamp(DateTime.UtcNow)
+                .WithThumbnail(avatarUrl)
+                .AddMessageTextToFields("After", args.Message.Content));
+            }
+            else
+            {
+                embeds.First().AddMessageTextToFields("After", args.Message.Content);
+            }
             try
             {
-                var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
-                .AddEmbed(embed));
-                if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+                foreach (var embed in embeds)
+                {
+                    var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
+                        .AddEmbed(embed));
+                    if (message is null) return;
+                    await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+                }
             }
             catch (Exception ex)
             {

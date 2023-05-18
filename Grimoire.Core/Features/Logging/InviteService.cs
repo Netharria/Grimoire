@@ -11,51 +11,79 @@ namespace Grimoire.Core.Features.Logging
 {
     public interface IInviteService
     {
-        Invite CalculateInviteUsed(List<Invite> guildInvites);
-        void UpdateInvite(Invite invite);
-        void UpdateAllInvites(List<Invite> guildInvites);
-        void DeleteInvite(string inviteCode);
-        void DeleteAllInvites(List<string> inviteCodes);
+        Invite? CalculateInviteUsed(GuildInviteDto guildInvites);
+        void UpdateInvite(ulong guildId, Invite invite);
+        void UpdateGuildInvites(GuildInviteDto guildInvites);
+        void UpdateAllInvites(List<GuildInviteDto> guildInvites);
+        bool DeleteInvite(ulong guildId, string inviteCode);
     }
 
     public class InviteService : IInviteService
     {
-        private readonly ConcurrentDictionary<string, Invite> _invites = new();
+        private readonly ConcurrentDictionary<ulong, GuildInviteDto> _guilds = new();
 
-        public void UpdateInvite(Invite invite)
+        public void UpdateInvite(ulong guildId, Invite invite)
         {
-            if (invite is null) throw new ArgumentNullException(nameof(invite));
-            this._invites.AddOrUpdate(
+            if (!this._guilds.TryGetValue(guildId, out var guild))
+                throw new ArgumentException("Could not find guild.");
+            guild.Invites.AddOrUpdate(
                 invite.Code,
                 invite,
-                (code, existingInvite) =>
-                {
-                    if (invite.Url == existingInvite.Url)
-                        existingInvite.Uses = invite.Uses;
-                    else
-                        throw new ArgumentException($"Duplicate invite codes not allowed - code: {code}");
-                    return existingInvite;
-                });
+                (code, existingInvite) => invite);
         }
+        public void UpdateGuildInvites(GuildInviteDto guildInvites)
+            => this._guilds.AddOrUpdate(
+                        guildInvites.GuildId,
+                        guildInvites,
+                        (guildId, existingGuild) => guildInvites);
 
-        public void UpdateAllInvites(List<Invite> guildInvites) => guildInvites.ForEach(x => this.UpdateInvite(x));
+        public void UpdateAllInvites(List<GuildInviteDto> guildInvites)
+            => guildInvites.ForEach(guild =>
+                    this._guilds.AddOrUpdate(
+                        guild.GuildId,
+                        guild,
+                        (guildId, existingGuild) => guild));
 
-        public Invite CalculateInviteUsed(List<Invite> guildInvites)
+        public Invite? CalculateInviteUsed(GuildInviteDto guildInvites)
         {
-            foreach (var invite in guildInvites)
+            if (!this._guilds.TryGetValue(guildInvites.GuildId, out var guild))
+                throw new ArgumentException("Could not find guild.");
+            var inviteUsed = guildInvites.Invites
+                .Except(guild.Invites)
+                .Select(x => x.Value)
+                .FirstOrDefault();
+            if (inviteUsed is not null)
             {
-                this._invites.TryGetValue(invite.Code, out var inviteUsed);
-                if (inviteUsed is not null
-                    && invite.Uses == inviteUsed.Uses)
-                    continue;
-                this.UpdateInvite(invite);
-                return invite;
+                this.UpdateInvite(guildInvites.GuildId, inviteUsed);
+                return inviteUsed;
             }
-            return new Invite { Url = "Unknown Invite" };
+            inviteUsed = guild.Invites
+                .Except(guildInvites.Invites)
+                .Select(x => x.Value)
+                .FirstOrDefault();
+            if (inviteUsed is not null
+                && inviteUsed.Uses + 1 == inviteUsed.MaxUses)
+            {
+                if (!this.DeleteInvite(guildInvites.GuildId, inviteUsed.Code))
+                    throw new Exception("Was not able to delete invite.");
+                return inviteUsed;
+            }
+            return null;
         }
 
-        public void DeleteInvite(string inviteCode) => this._invites.TryRemove(inviteCode, out _);
+        public bool DeleteInvite(ulong guildId, string inviteCode)
+        {
+            if (!this._guilds.TryGetValue(guildId, out var guild))
+                throw new ArgumentException("Could not find guild.");
+            return guild.Invites.TryRemove(inviteCode, out _);
 
-        public void DeleteAllInvites(List<string> inviteCodes) => inviteCodes.ForEach(x => this.DeleteInvite(x));
+        }
+
+    }
+
+    public class GuildInviteDto
+    {
+        public ulong GuildId { get; init; }
+        public ConcurrentDictionary<string, Invite> Invites { get; init; } = new();
     }
 }

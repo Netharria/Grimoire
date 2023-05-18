@@ -10,10 +10,10 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnore
     public sealed class UpdateIgnoreStateForXpGainCommand : ICommand<BaseResponse>
     {
         public ulong GuildId { get; init; }
-        public UserDto[] Users { get; init; } = Array.Empty<UserDto>();
-        public RoleDto[] Roles { get; init; } = Array.Empty<RoleDto>();
-        public ChannelDto[] Channels { get; init; } = Array.Empty<ChannelDto>();
-        public string[] InvalidIds { get; init; } = Array.Empty<string>();
+        public UserDto[] Users { get; set; } = Array.Empty<UserDto>();
+        public RoleDto[] Roles { get; set; } = Array.Empty<RoleDto>();
+        public ChannelDto[] Channels { get; set; } = Array.Empty<ChannelDto>();
+        public string[] InvalidIds { get; set; } = Array.Empty<string>();
         public bool ShouldIgnore { get; init; }
     }
 }

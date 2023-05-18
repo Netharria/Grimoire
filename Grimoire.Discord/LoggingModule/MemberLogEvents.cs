@@ -5,14 +5,13 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Net;
+using System.Collections.Concurrent;
 using Grimoire.Core.Features.Logging.Commands.UpdateAvatar;
 using Grimoire.Core.Features.Logging.Commands.UpdateNickname;
 using Grimoire.Core.Features.Logging.Commands.UpdateUsername;
 using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
 using Grimoire.Discord.Notifications;
-using Microsoft.Extensions.Logging;
+using Grimoire.Domain;
 
 namespace Grimoire.Discord.LoggingModule
 {
@@ -26,15 +25,13 @@ namespace Grimoire.Discord.LoggingModule
     {
         private readonly IMediator _mediator;
         private readonly IInviteService _inviteService;
-        private readonly HttpClient _httpClient;
-        private readonly IDiscordClientService _clientService;
+        private readonly IDiscordImageEmbedService _imageEmbedService;
 
-        public MemberLogEvents(IMediator mediator, IInviteService inviteService, IHttpClientFactory httpFactory, IDiscordClientService clientService)
+        public MemberLogEvents(IMediator mediator, IInviteService inviteService, IDiscordImageEmbedService imageEmbedService)
         {
             this._mediator = mediator;
             this._inviteService = inviteService;
-            this._httpClient = httpFactory.CreateClient();
-            this._clientService = clientService;
+            this._imageEmbedService = imageEmbedService;
         }
 
         public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
@@ -47,24 +44,35 @@ namespace Grimoire.Discord.LoggingModule
 
             var accountAge = DateTime.UtcNow - args.Member.CreationTimestamp;
             var invites = await args.Guild.GetInvitesAsync();
-            var inviteUsed = this._inviteService.CalculateInviteUsed(
-                invites.Select(x =>
-                new Domain.Invite
-                {
-                    Code = x.Code,
-                    Inviter = x.Inviter.GetUsernameWithDiscriminator(),
-                    Url = x.ToString(),
-                    Uses = x.Uses
-                }).ToList());
+            var inviteUsed = this._inviteService.CalculateInviteUsed(new GuildInviteDto
+            {
+                GuildId = args.Guild.Id,
+                Invites = new ConcurrentDictionary<string, Invite>(
+                    invites.Select(x =>
+                        new Invite
+                        {
+                            Code = x.Code,
+                            Inviter = x.Inviter.GetUsernameWithDiscriminator(),
+                            Url = x.ToString(),
+                            Uses = x.Uses,
+                            MaxUses = x.MaxUses
+                        }).ToDictionary(x => x.Code))
+            });
+            var inviteUsedText = "";
+            if (inviteUsed is not null)
+                inviteUsedText = $"**Invite used:** {inviteUsed.Url} ({inviteUsed.Uses + 1} uses)\n**Created By:** {inviteUsed.Inviter}";
+            else if (!string.IsNullOrWhiteSpace(args.Guild.VanityUrlCode))
+                inviteUsedText = $"**Invite used:** Vanity Invite";
+            else
+                inviteUsedText = $"**Invite used:** Unknown Invite";
 
             var embed = new DiscordEmbedBuilder()
                 .WithTitle("User Joined")
                 .WithDescription($"**Name:** {args.Member.Mention}\n" +
                     $"**Created on:** {args.Member.CreationTimestamp:MMM dd, yyyy}\n" +
                     $"**Account age:** {accountAge.Days} days old\n" +
-                    $"**Invite used:** {inviteUsed.Url} ({inviteUsed.Uses} uses)\n" +
-                    $"**Created By:** {inviteUsed.Inviter}")
-                .WithColor(accountAge < TimeSpan.FromDays(7) ? GrimoireColor.Orange : GrimoireColor.Green)
+                    inviteUsedText)
+                .WithColor(accountAge < TimeSpan.FromDays(7) ? GrimoireColor.Yellow : GrimoireColor.Green)
                 .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
                 .WithFooter($"Total Members: {args.Guild.MemberCount}")
@@ -185,29 +193,26 @@ namespace Grimoire.Discord.LoggingModule
             {
                 GuildId = args.Guild.Id,
                 UserId = args.Member.Id,
-                AvatarUrl = args.MemberAfter.GetGuildAvatarUrl(ImageFormat.Auto)
+                AvatarUrl = args.MemberAfter.GetGuildAvatarUrl(ImageFormat.Auto, 128)
             });
             if (avatarResponse is not null && avatarResponse.BeforeAvatar != avatarResponse.AfterAvatar)
             {
                 var logChannel = args.Guild.Channels.GetValueOrDefault(avatarResponse.AvatarChannelLogId);
                 if (logChannel is not null)
                 {
-                    var url = args.Member.GetAvatarUrl(ImageFormat.Auto, 128);
-                    var afterStream = await this._httpClient.GetStreamAsync(url);
-                    var afterFileName = $"attachment0.{args.Member.GetAvatarUrl(ImageFormat.Auto).Split('.')[^1].Split('?')[0]}";
                     var embed = new DiscordEmbedBuilder()
                     .WithTitle("Avatar Updated")
                     .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
                         $"Old avatar in thumbnail. New avatar down below")
                     .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
                     .WithThumbnail(avatarResponse.BeforeAvatar)
-                    .WithTimestamp(DateTimeOffset.UtcNow)
-                    .WithImageUrl($"attachment://{afterFileName}");
-
-                    var message = new DiscordMessageBuilder()
-                        .AddEmbed(embed)
-                        .AddFile(afterFileName, afterStream);
-                    await logChannel.SendMessageAsync(message);
+                    .WithTimestamp(DateTimeOffset.UtcNow);
+                    var messageBuilder = await this._imageEmbedService
+                        .BuildImageEmbedAsync(new string[]{ avatarResponse.AfterAvatar },
+                        args.Member.Id,
+                        embed,
+                        false);
+                    await logChannel.SendMessageAsync(messageBuilder);
                 }
                 await this._mediator.Publish(new AvatarTrackerNotification
                 {
@@ -216,7 +221,7 @@ namespace Grimoire.Discord.LoggingModule
                     Username = args.Member.GetUsernameWithDiscriminator(),
                     BeforeAvatar = avatarResponse.BeforeAvatar,
                     AfterAvatar = args.Member.GetAvatarUrl(ImageFormat.Auto, 128)
-            });
+                });
             }
         }
     }

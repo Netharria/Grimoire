@@ -20,7 +20,8 @@ namespace Grimoire.Core.Features.Moderation.Commands.SetAutoPardon
         {
             var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
                 .Include(x => x.Guild.ModChannelLog)
-                .FirstOrDefaultAsync(x => x.GuildId.Equals(command.GuildId), cancellationToken: cancellationToken);
+                .FirstOrDefaultAsync(guildModerationSettings => guildModerationSettings.GuildId.Equals(command.GuildId),
+                cancellationToken);
             if (guildModerationSettings is null)
                 throw new AnticipatedException("Could not find the Servers settings.");
 

@@ -27,7 +27,7 @@ namespace Grimoire.Discord.ModerationModule
         [SlashCommand("View", "View the current configured mute role and any active mutes.")]
         public async Task ViewMutesAsync(InteractionContext ctx)
         {
-            var response = await _mediator.Send(new GetAllActiveMutesQuery{ GuildId = ctx.Guild.Id });
+            var response = await this._mediator.Send(new GetAllActiveMutesQuery{ GuildId = ctx.Guild.Id });
 
             DiscordRole? role = null;
             if (response.MuteRole is not null)
@@ -110,7 +110,7 @@ namespace Grimoire.Discord.ModerationModule
 
             if (!ctx.Guild.Roles.TryGetValue(response.RoleId, out var role))
             {
-                await ctx.ReplyAsync(GrimoireColor.Orange, message: "Could not find configured mute role.");
+                await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Could not find configured mute role.");
                 return;
             }
             await ctx.EditResponseAsync(new DiscordWebhookBuilder()

@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Concurrent;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Features.Logging;
 
@@ -34,7 +35,12 @@ namespace Grimoire.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds
 
             var membersAdded = await this._grimoireDbContext.Members.AddMissingMembersAsync(command.Members, cancellationToken);
 
-            this._inviteService.UpdateAllInvites(command.Invites.ToList());
+            this._inviteService.UpdateAllInvites(command.Guilds.Select(guild =>
+                    new GuildInviteDto
+                    {
+                        GuildId = guild.Id,
+                        Invites = new ConcurrentDictionary<string, Invite>(command.Invites.ToDictionary(x => x.Code))
+                    }).ToList());
 
             if (usersAdded || guildsAdded || rolesAdded || channelsAdded || membersAdded)
                 await this._grimoireDbContext.SaveChangesAsync(cancellationToken);

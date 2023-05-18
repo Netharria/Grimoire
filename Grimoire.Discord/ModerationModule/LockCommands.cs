@@ -71,7 +71,7 @@ namespace Grimoire.Discord.ModerationModule
                     return x;
                 }).ToEnumerable());
 
-            return await _mediator.Send(new LockChannelCommand
+            return await this._mediator.Send(new LockChannelCommand
             {
                 ChannelId = channel.Id,
                 PreviouslyAllowed = previousSetting.Allowed.GetLockPermissions().ToLong(),
@@ -86,7 +86,7 @@ namespace Grimoire.Discord.ModerationModule
 
         private async Task<BaseResponse> ThreadLockAsync(InteractionContext ctx, DiscordChannel channel, string? reason, DurationType durationType, long durationAmount)
         {
-            return await _mediator.Send(new LockChannelCommand
+            return await this._mediator.Send(new LockChannelCommand
             {
                 ChannelId = channel.Id,
                 ModeratorId = ctx.User.Id,
@@ -103,7 +103,7 @@ namespace Grimoire.Discord.ModerationModule
             [Option("Channel", "The Channel to unlock. Current channel if not specified.")] DiscordChannel? channel = null)
         {
             channel ??= ctx.Channel;
-            var response = await _mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = ctx.Guild.Id });
+            var response = await this._mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = ctx.Guild.Id });
 
             if (!channel.IsThread)
                 await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()

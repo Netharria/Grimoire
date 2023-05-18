@@ -53,40 +53,53 @@ namespace Grimoire.Discord.LevelingModule
             var matchedIds = await DiscordSnowflakeParser.ParseStringIntoIdsAndGroupByTypeAsync(ctx, value);
             if (!matchedIds.Any() || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
             {
-                await ctx.ReplyAsync(GrimoireColor.Orange, message: $"Could not parse any ids from the submited values.");
+                await ctx.ReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
                 return;
             }
+            var command = new UpdateIgnoreStateForXpGainCommand
+            {
+                GuildId = ctx.Guild.Id,
+                ShouldIgnore = shouldIgnore
+            };
 
-            var userDtos = matchedIds.ContainsKey("User") ? await matchedIds["User"]
+            if (matchedIds.TryGetValue("User", out var userIds))
+            {
+                command.Users = await userIds
                 .ToAsyncEnumerable()
                 .SelectAwait(async x => await BuildUserDto(ctx.Client, x, ctx.Guild.Id))
                 .OfType<UserDto>()
-                .ToArrayAsync() : Array.Empty<UserDto>();
+                .ToArrayAsync();
+            }
 
-            var response = await this._mediator.Send(new UpdateIgnoreStateForXpGainCommand
+            if (matchedIds.TryGetValue("Role", out var roleIds))
             {
-                Users = userDtos,
-                Roles = matchedIds.ContainsKey("Role") ? matchedIds["Role"]
+                command.Roles = roleIds
                     .Select(x =>
                         new RoleDto
                         {
                             Id = ulong.Parse(x),
                             GuildId = ctx.Guild.Id
-                        }).ToArray() : Array.Empty<RoleDto>(),
-                Channels = matchedIds.ContainsKey("Channel") ? matchedIds["Channel"]
+                        }).ToArray();
+            }
+
+            if (matchedIds.TryGetValue("Channel", out var channelIds))
+            {
+                command.Channels = channelIds
                     .Select(x =>
                         new ChannelDto
                         {
                             Id = ulong.Parse(x),
                             GuildId = ctx.Guild.Id
-                        }).ToArray() : Array.Empty<ChannelDto>(),
-                InvalidIds = matchedIds.ContainsKey("Invalid") ? matchedIds["Invalid"] : Array.Empty<string>(),
-                GuildId = ctx.Guild.Id,
-                ShouldIgnore = shouldIgnore
-            });
+                        }).ToArray();
+            }
+            if (matchedIds.TryGetValue("Invalid", out var invalidIds))
+            {
+                command.InvalidIds = invalidIds;
+            }
+            var response = await this._mediator.Send(command);
 
             await ctx.ReplyAsync(GrimoireColor.Green, message: response.Message, ephemeral: false);
-            await ctx.SendLogAsync(response, GrimoireColor.Gold);
+            await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
         }
 
         private async static ValueTask<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)

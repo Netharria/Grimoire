@@ -8,6 +8,7 @@
 using Grimoire.Core.Features.Shared.Commands.GuildCommands.AddGuild;
 using Grimoire.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds;
 using Grimoire.Domain;
+using Serilog;
 
 namespace Grimoire.Discord.DatabaseManagementModules
 {
@@ -23,15 +24,17 @@ namespace Grimoire.Discord.DatabaseManagementModules
     {
         private readonly IMediator _mediator;
         private readonly IInviteService _inviteService;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
         /// </summary>
         /// <param name="guildService"></param>
-        public GuildEventManagementModule(IMediator mediator, IInviteService inviteService)
+        public GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger logger)
         {
             this._mediator = mediator;
             this._inviteService = inviteService;
+            this._logger = logger;
         }
 
         public async Task DiscordOnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
@@ -87,6 +90,7 @@ namespace Grimoire.Discord.DatabaseManagementModules
                         Inviter = x.Inviter.GetUsernameWithDiscriminator(),
                         Url = x.ToString(),
                         Uses = x.Uses,
+                        MaxUses = x.MaxUses
                     }).ToEnumerable()
             });
 
@@ -135,6 +139,7 @@ namespace Grimoire.Discord.DatabaseManagementModules
                             Inviter = x.Inviter.GetUsernameWithDiscriminator(),
                             Url = x.ToString(),
                             Uses = x.Uses,
+                            MaxUses = x.MaxUses
                         }))
             });
 
@@ -142,20 +147,37 @@ namespace Grimoire.Discord.DatabaseManagementModules
 
         public Task DiscordOnInviteCreated(DiscordClient sender, InviteCreateEventArgs args)
         {
-            this._inviteService.UpdateInvite(
+            this._inviteService.UpdateInvite(args.Guild.Id,
                 new Invite
                 {
                     Code = args.Invite.Code,
                     Inviter = args.Invite.Inviter.GetUsernameWithDiscriminator(),
                     Url = args.Invite.ToString(),
                     Uses = args.Invite.Uses,
+                    MaxUses = args.Invite.MaxUses
                 });
             return Task.CompletedTask;
         }
         public async Task DiscordOnInviteDeleted(DiscordClient sender, InviteDeleteEventArgs args)
         {
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            this._inviteService.DeleteInvite(args.Invite.Code);
+            if (args.Invite.ExpiresAt < DateTime.UtcNow)
+            {
+                if (this._inviteService.DeleteInvite(args.Guild.Id, args.Invite.Code))
+                    return;
+                else
+                    throw new Exception("Was not able to delete expired invite");
+            }
+
+            var deletedInviteEntry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogInviteEntry>(AuditLogActionType.InviteDelete, 1500);
+            if (deletedInviteEntry == null)
+            {
+                if (args.Invite.MaxUses != args.Invite.Uses + 1)
+                    this._logger.Warning("Was not able to retrieve audit log entry for deleted invite.");
+                return;
+            }
+            if (deletedInviteEntry.Target.Code == args.Invite.Code)
+                if (!this._inviteService.DeleteInvite(args.Guild.Id, args.Invite.Code))
+                    throw new Exception("Was not able to delete expired invite");
         }
     }
 }

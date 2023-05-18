@@ -11,7 +11,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateM
     {
         public ulong MessageId { get; init; }
         public ulong? UpdateMessageLogChannelId { get; init; }
-        public string? MessageContent { get; init; }
+        public string MessageContent { get; init; } = string.Empty;
         public ulong UserId { get; init; }
         public bool Success { get; init; } = false;
     }

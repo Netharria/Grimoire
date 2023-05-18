@@ -22,7 +22,7 @@ namespace Grimoire.Core.Features.Shared.PipelineBehaviors
 
         public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
         {
-            var stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.GetTimestamp();
 
             try
             {
@@ -30,10 +30,10 @@ namespace Grimoire.Core.Features.Shared.PipelineBehaviors
             }
             finally
             {
-                stopwatch.Stop();
-                if (stopwatch.ElapsedMilliseconds > 100)
+                var delta = Stopwatch.GetElapsedTime(stopwatch);
+                if (delta.TotalMilliseconds > 100)
                     this._logger.LogWarning(
-                    "{ReqestType}; Execution time={ElapsedTime}ms", message.GetType(), stopwatch.ElapsedMilliseconds);
+                    "{ReqestType}; Execution time={ElapsedTime}ms", message.GetType(), delta.TotalMilliseconds);
             }
         }
     }

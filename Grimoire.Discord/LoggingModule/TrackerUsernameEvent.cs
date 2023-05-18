@@ -26,7 +26,7 @@ namespace Grimoire.Discord.LoggingModule
             var response = await this._mediator.Send(new GetTrackerQuery{ UserId = notification.UserId, GuildId = notification.GuildId }, cancellationToken);
 
             if (response is null) return;
-            if (!_clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
+            if (!this._clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
             if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
 
             var embed = new DiscordEmbedBuilder()

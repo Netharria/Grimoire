@@ -27,11 +27,12 @@ namespace Grimoire.Discord.LoggingModule
                 new GetTrackerQuery
                 {
                     UserId = notification.UserId,
-                    GuildId = notification.GuildId }
+                    GuildId = notification.GuildId
+                }
                 , cancellationToken);
 
             if (response is null) return;
-            if (!_clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
+            if (!this._clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
             if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"**Before:** {(string.IsNullOrWhiteSpace(notification.BeforeNickname) ? "None" : notification.BeforeNickname)}\n" +

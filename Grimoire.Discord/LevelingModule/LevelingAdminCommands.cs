@@ -30,7 +30,7 @@ namespace Grimoire.Discord.LevelingModule
         {
             await this._mediator.Send(new AwardUserXpCommand { UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id });
 
-            await ctx.ReplyAsync(GrimoireColor.Gold, message: $"{user.Mention} has been awarded {xpToAward} xp.", ephemeral: false);
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: $"{user.Mention} has been awarded {xpToAward} xp.", ephemeral: false);
         }
 
 
@@ -48,7 +48,7 @@ namespace Grimoire.Discord.LevelingModule
                     ReclaimerId = ctx.User.Id
                 });
 
-            await ctx.ReplyAsync(GrimoireColor.Gold, message: $"{amount} xp has been taken from {user.Mention}.", ephemeral: false);
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: $"{amount} xp has been taken from {user.Mention}.", ephemeral: false);
         }
     }
 }

@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Numerics;
 using Grimoire.Domain.Shared;
 
 namespace Grimoire.Core.DatabaseQueryHelpers
@@ -13,12 +14,12 @@ namespace Grimoire.Core.DatabaseQueryHelpers
     {
         public static IQueryable<TSource> WhereIdsAre<TSource, T>(this IQueryable<TSource> identifiables, T[] ids)
             where TSource : IIdentifiable<T>
-            where T : unmanaged, IComparable, IEquatable<T>
+            where T : IBinaryInteger<T>
             => identifiables.Where(x => ids.Contains(x.Id));
 
         public static IQueryable<TSource> WhereIdIs<TSource, T>(this IQueryable<TSource> identifiables, T id)
             where TSource : IIdentifiable<ulong>
-            where T : unmanaged, IComparable, IEquatable<T>
+            where T : IBinaryInteger<T>
             => identifiables.Where(x => x.Id.Equals(id));
     }
 }

@@ -26,7 +26,7 @@ namespace Grimoire.Discord.SharedModule
         [SlashCommand("View", "View the current moderation log channel.")]
         public async Task ViewAsync(InteractionContext ctx)
         {
-            var response = await _mediator.Send(new GetModLogQuery
+            var response = await this._mediator.Send(new GetModLogQuery
             {
                 GuildId = ctx.Guild.Id
             });

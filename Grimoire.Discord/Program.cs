@@ -39,6 +39,7 @@ Host.CreateDefaultBuilder(args)
         .AddCoreServices(context.Configuration)
         .AddSingleton<ITracer>(provider => new MockTracer())
         .AddHttpClient()
+        .AddTransient<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"];
@@ -47,6 +48,7 @@ Host.CreateDefaultBuilder(args)
             options.AutoReconnect = true;
             options.MinimumLogLevel = LogLevel.Debug;
             options.Intents = DiscordIntents.All;
+            options.LogUnknownEvents = false;
         })
         .AddDiscordInteractivity(options =>
         {

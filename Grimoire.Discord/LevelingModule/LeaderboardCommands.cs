@@ -52,7 +52,7 @@ namespace Grimoire.Discord.LevelingModule
             var response = await this._mediator.Send(getUserCenteredLeaderboardQuery);
 
             await ctx.ReplyAsync(
-                color: GrimoireColor.Gold,
+                color: GrimoireColor.DarkPurple,
                 title: "LeaderBoard",
                 message: response.LeaderboardText,
                 footer: $"Total Users {response.TotalUserCount}",

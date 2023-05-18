@@ -35,7 +35,7 @@ namespace Grimoire.Discord.ModerationModule
         {
             if (user is not DiscordMember member) throw new AnticipatedException("That user is not on the server.");
             if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
-            var response = await _mediator.Send(new MuteUserCommand
+            var response = await this._mediator.Send(new MuteUserCommand
             {
                 UserId = member.Id,
                 GuildId = ctx.Guild.Id,
@@ -58,7 +58,7 @@ namespace Grimoire.Discord.ModerationModule
         {
             if (user is not DiscordMember member) throw new AnticipatedException("That user is not on the server.");
             if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
-            var response = await _mediator.Send(new UnmuteUserCommand
+            var response = await this._mediator.Send(new UnmuteUserCommand
             {
                 UserId = member.Id,
                 GuildId = ctx.Guild.Id

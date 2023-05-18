@@ -111,11 +111,11 @@ namespace Grimoire.Discord
                 }
             else if (args.Exception is AnticipatedException)
             {
-                await args.Context.ReplyAsync(color: GrimoireColor.Orange, message: args.Exception.Message);
+                await args.Context.ReplyAsync(color: GrimoireColor.Yellow, message: args.Exception.Message);
             }
             else if (args.Exception is UnauthorizedException)
             {
-                await args.Context.ReplyAsync(color: GrimoireColor.Orange,
+                await args.Context.ReplyAsync(color: GrimoireColor.Yellow,
                     message: $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request.");
             }
             else if (args.Exception is not null)
@@ -136,7 +136,7 @@ namespace Grimoire.Discord
                     args.Exception.StackTrace);
 
 
-                await args.Context.ReplyAsync(color: GrimoireColor.Orange,
+                await args.Context.ReplyAsync(color: GrimoireColor.Yellow,
                     message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorByteString}]");
                 await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorByteString);
             }

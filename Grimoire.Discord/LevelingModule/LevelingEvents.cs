@@ -62,7 +62,7 @@ namespace Grimoire.Discord.LevelingModule
 
             if (newRewards.Any())
                 await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithColor(GrimoireColor.Gold)
+                    .WithColor(GrimoireColor.DarkPurple)
                     .WithTitle($"{member.Username}#{member.Discriminator}")
                     .WithDescription($"{member.Mention} has earned " +
                     $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x)))}")

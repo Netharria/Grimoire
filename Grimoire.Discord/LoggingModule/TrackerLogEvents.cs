@@ -19,12 +19,12 @@ namespace Grimoire.Discord.LoggingModule
         IDiscordVoiceStateUpdatedEventSubscriber
     {
         private readonly IMediator _mediator;
-        private readonly HttpClient _httpClient;
+        private readonly IDiscordImageEmbedService _imageEmbedService;
 
-        public TrackerLogEvents(IMediator mediator, IHttpClientFactory httpFactory)
+        public TrackerLogEvents(IMediator mediator, IDiscordImageEmbedService imageEmbedService)
         {
             this._mediator = mediator;
-            this._httpClient = httpFactory.CreateClient();
+            this._imageEmbedService = imageEmbedService;
         }
 
 
@@ -47,41 +47,11 @@ namespace Grimoire.Discord.LoggingModule
                 .WithTimestamp(DateTime.UtcNow)
                 .AddMessageTextToFields("**Content**", args.Message.Content, false);
 
-            var files = new Dictionary<string, Stream>();
-
-            if (args.Message.Attachments.Any())
-            {
-                foreach ((var attachment, var index) in args.Message.Attachments.Select((x, i) => (x, i)))
-                {
-                    if (string.IsNullOrWhiteSpace(attachment.FileName))
-                        continue;
-
-                    var url = new Uri(Path.Combine("https://cdn.discordapp.com/attachments/", args.Channel.Id.ToString(), attachment.Id.ToString(), attachment.FileName));
-                    var stream = await this._httpClient.GetStreamAsync(url);
-                    var fileName = $"attachment{index}.{attachment.FileName.Split('.')[^1]}";
-
-                    var stride = 4 * (index / 4);
-                    var attachments = args.Message.Attachments
-                        .Skip(stride)
-                        .Take(4)
-                        .Select(x => $"**{x.FileName}**")
-                        .ToArray();
-
-                    var embedTest = new DiscordEmbedBuilder()
-                        .WithColor(DiscordColor.Red)
-                        .WithTitle(default)
-                        .WithAuthor("Attachment(s)")
-                        .WithUrl($"https://discord.com/users/{args.Author.Id}/{stride}")
-                        .WithImageUrl($"attachment://{fileName}")
-                        .WithDescription(string.Join(" | ", attachments));
-
-                    embeds.Add(embedTest);
-                    files.Add(fileName, stream);
-                }
-            }
-            await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
-            .AddEmbeds(embeds.Prepend(embed))
-            .AddFiles(files));
+            var messageBuilder = await this._imageEmbedService.BuildImageEmbedAsync(
+                    args.Message.Attachments.Select(x => x.Url).ToArray(),
+                    args.Author.Id,
+                    embed);
+            await loggingChannel.SendMessageAsync(messageBuilder);
         }
         public async Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args)
         {

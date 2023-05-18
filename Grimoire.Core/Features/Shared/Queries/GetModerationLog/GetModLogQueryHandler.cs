@@ -20,7 +20,7 @@ namespace Grimoire.Core.Features.Shared.Queries.GetModerationLog
 
         public async ValueTask<BaseResponse> Handle(GetModLogQuery query, CancellationToken cancellationToken)
         {
-            var modChannelLog = await _grimoireDbContext.Guilds
+            var modChannelLog = await this._grimoireDbContext.Guilds
                 .WhereIdIs(query.GuildId)
                 .Select(x => x.ModChannelLog)
                 .FirstOrDefaultAsync(cancellationToken);

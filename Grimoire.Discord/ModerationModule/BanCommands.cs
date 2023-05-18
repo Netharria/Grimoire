@@ -37,12 +37,12 @@ namespace Grimoire.Discord.ModerationModule
         {
             if (!CheckIfCanBan(ctx, user))
             {
-                await ctx.ReplyAsync(GrimoireColor.Orange, "I do not have permissions to ban that user.");
+                await ctx.ReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
                 return;
             }
             if (ctx.User.Id == user.Id)
             {
-                await ctx.ReplyAsync(GrimoireColor.Orange, "You can't ban yourself.");
+                await ctx.ReplyAsync(GrimoireColor.Yellow, "You can't ban yourself.");
                 return;
             }
 
@@ -62,7 +62,7 @@ namespace Grimoire.Discord.ModerationModule
                         .WithTitle($"Ban ID {response.SinId}")
                         .WithDescription($"You have been banned from {ctx.Guild.Name} "
                         + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
-                        .WithColor(GrimoireColor.Orange));
+                        .WithColor(GrimoireColor.Yellow));
                 }
             }
             catch (Exception ex)
@@ -77,7 +77,7 @@ namespace Grimoire.Discord.ModerationModule
                 reason);
 
             await ctx.ReplyAsync(
-                GrimoireColor.Orange,
+                GrimoireColor.Yellow,
                 title: "Banned",
                 message: $"**Reason:** {reason}\n" +
                 $"{user.GetUsernameWithDiscriminator()}: Ban Id {response.SinId}");
@@ -92,7 +92,7 @@ namespace Grimoire.Discord.ModerationModule
             {
                 await ctx.Guild.UnbanMemberAsync(user.Id);
                 await ctx.ReplyAsync(
-                GrimoireColor.Orange,
+                GrimoireColor.Yellow,
                 title: "Unbanned",
                 message: $"{user.GetUsernameWithDiscriminator()} was unbanned.");
             }
@@ -102,7 +102,7 @@ namespace Grimoire.Discord.ModerationModule
                                     ? "user could not be found."
                                     : "error when communicating with discord. Try again before asking for help.";
                 await ctx.ReplyAsync(
-                GrimoireColor.Orange,
+                GrimoireColor.Yellow,
                 title: "Error",
                 message: $"{user.GetUsernameWithDiscriminator()} was not unbanned because {errorMessage}");
             }

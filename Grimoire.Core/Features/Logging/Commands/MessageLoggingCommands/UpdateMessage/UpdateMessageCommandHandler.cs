@@ -36,7 +36,7 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateM
                 }
                 ).FirstOrDefaultAsync(cancellationToken: cancellationToken);
             if (message is null
-                || message.MessageContent == command.MessageContent)
+                || message.MessageContent.Equals(command.MessageContent, StringComparison.CurrentCultureIgnoreCase))
                 return new UpdateMessageCommandResponse { Success = false };
 
             await this._grimoireDbContext.MessageHistory.AddAsync(

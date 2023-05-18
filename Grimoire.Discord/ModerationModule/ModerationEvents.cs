@@ -89,7 +89,7 @@ namespace Grimoire.Discord.ModerationModule
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithTitle($"{args.Member.GetUsernameWithDiscriminator()} banned")
                 .WithDescription(banMessage)
-                .WithColor(GrimoireColor.Orange));
+                .WithColor(GrimoireColor.Yellow));
         }
 
         public async Task DiscordOnGuildBanRemoved(DiscordClient sender, GuildBanRemoveEventArgs args)
@@ -139,7 +139,7 @@ namespace Grimoire.Discord.ModerationModule
 
         public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
         {
-            var response = await _mediator.Send(new GetUserMuteQuery
+            var response = await this._mediator.Send(new GetUserMuteQuery
             {
                 UserId = args.Member.Id,
                 GuildId = args.Guild.Id

@@ -18,7 +18,7 @@ namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelC
 
         public async ValueTask<UnlockChannelCommandResponse> Handle(UnlockChannelCommand command, CancellationToken cancellationToken)
         {
-            var result = await _grimoireDbContext.Locks
+            var result = await this._grimoireDbContext.Locks
                 .Where(x => x.ChannelId == command.ChannelId && x.GuildId == command.GuildId)
                 .Select(x => new
                 {

@@ -38,8 +38,8 @@ namespace Grimoire.Discord.LevelingModule
                     GuildId = ctx.Guild.Id,
                     RewardLevel = (int)level,
                 });
-            await ctx.ReplyAsync(GrimoireColor.Gold, message: response.Message, ephemeral: false);
-            await ctx.SendLogAsync(response, GrimoireColor.Gold);
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: response.Message, ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
         }
 
         [SlashCommand("Remove", "Removes a reward from the server.")]
@@ -52,15 +52,15 @@ namespace Grimoire.Discord.LevelingModule
                     RoleId = role.Id
                 });
 
-            await ctx.ReplyAsync(GrimoireColor.Gold, message: response.Message, ephemeral: false);
-            await ctx.SendLogAsync(response, GrimoireColor.Gold);
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: response.Message, ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
         }
 
         [SlashCommand("View", "Displays all rewards on this server.")]
         public async Task ViewAsync(InteractionContext ctx)
         {
             var response = await this._mediator.Send(new GetRewardsQuery{ GuildId = ctx.Guild.Id});
-            await ctx.ReplyAsync(GrimoireColor.Gold,
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple,
                 title: "Rewards",
                 message: response.Message,
                 ephemeral: false);

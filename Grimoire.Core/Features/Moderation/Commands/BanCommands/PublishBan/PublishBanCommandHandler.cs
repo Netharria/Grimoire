@@ -18,13 +18,13 @@ namespace Grimoire.Core.Features.Moderation.Commands.BanCommands.PublishBan
 
         public async ValueTask<Unit> Handle(PublishBanCommand command, CancellationToken cancellationToken)
         {
-            await _grimoireDbContext.PublishedMessages.AddAsync(new PublishedMessage
+            await this._grimoireDbContext.PublishedMessages.AddAsync(new PublishedMessage
             {
                 MessageId = command.MessageId,
                 SinId = command.SinId,
                 PublishType = command.PublishType,
             }, cancellationToken);
-            await _grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
             return new Unit();
         }

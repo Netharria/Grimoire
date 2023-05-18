@@ -44,12 +44,12 @@ namespace Grimoire.Discord.Extensions
             var parsedvalue = Regex.Match(s, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
             if (!ulong.TryParse(parsedvalue, out var parsedId))
             {
-                await ctx.ReplyAsync(GrimoireColor.Orange, message: "Please give a valid channel.");
+                await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");
                 return (false, 0);
             }
             if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
             {
-                await ctx.ReplyAsync(GrimoireColor.Orange, message: "Did not find that channel on this server.");
+                await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Did not find that channel on this server.");
                 return (false, 0);
             }
 
@@ -62,12 +62,12 @@ namespace Grimoire.Discord.Extensions
             var parsedvalue = Regex.Match(s, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
             if (!ulong.TryParse(parsedvalue, out var parsedId))
             {
-                await ctx.ReplyAsync(GrimoireColor.Orange, message: "Please give a valid channel.");
+                await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");
                 return (false, 0);
             }
             if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
             {
-                await ctx.ReplyAsync(GrimoireColor.Orange, message: "Did not find that channel on this server.");
+                await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Did not find that channel on this server.");
                 return (false, 0);
             }
 

@@ -10,6 +10,8 @@ namespace Grimoire.Discord.Extensions
     public static class DiscordUserExtensions
     {
         public static string GetUsernameWithDiscriminator(this DiscordUser discordUser)
-            => $"{discordUser.Username}#{discordUser.Discriminator}";
+            => string.IsNullOrWhiteSpace(discordUser.Discriminator)
+            ? discordUser.Username
+            : $"{discordUser.Username}#{discordUser.Discriminator}";
     }
 }

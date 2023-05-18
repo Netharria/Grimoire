@@ -14,35 +14,35 @@ namespace Grimoire.Discord.LoggingModule
     {
         private readonly IDiscordClientService _clientService;
         private readonly IMediator _mediator;
-        private readonly HttpClient _httpClient;
+        private readonly IDiscordImageEmbedService _imageEmbedService;
 
-        public TrackerAvatarEvent(IDiscordClientService clientService, IMediator mediator, IHttpClientFactory httpFactory)
+        public TrackerAvatarEvent(IDiscordClientService clientService, IMediator mediator, IDiscordImageEmbedService imageEmbedService)
         {
             this._clientService = clientService;
             this._mediator = mediator;
-            this._httpClient = httpFactory.CreateClient();
+            this._imageEmbedService = imageEmbedService;
         }
 
         public async ValueTask Handle(AvatarTrackerNotification notification, CancellationToken cancellationToken)
         {
             var response = await this._mediator.Send(new GetTrackerQuery{ UserId = notification.UserId, GuildId = notification.GuildId }, cancellationToken);
             if (response is null) return;
-            if (!_clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
+            if (!this._clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
             if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
-
-            var stream = await this._httpClient.GetStreamAsync(notification.AfterAvatar, cancellationToken);
-            var fileName = $"attachment{0}.{notification.AfterAvatar.Split('.')[^1].Split('?')[0]}";
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"New avatar")
                 .WithAuthor(notification.Username)
                 .WithThumbnail(notification.BeforeAvatar)
-                .WithTimestamp(DateTimeOffset.UtcNow)
-                .WithImageUrl($"attachment://{fileName}");
+                .WithTimestamp(DateTimeOffset.UtcNow);
 
-            await logChannel.SendMessageAsync(new DiscordMessageBuilder()
-                .AddEmbed(embed)
-                .AddFile(fileName, stream));
+
+            await logChannel.SendMessageAsync(await this._imageEmbedService
+                .BuildImageEmbedAsync(
+                new string[] { notification.AfterAvatar },
+                notification.UserId,
+                embed,
+                false));
         }
     }
 }

@@ -18,10 +18,10 @@ namespace Grimoire.Discord.Extensions
             if (1 == timeSpan.Days) stringBuilder.Append(timeSpan.Days).Append(" day ");
             if (1 < timeSpan.Hours) stringBuilder.Append(timeSpan.Hours).Append(" hours ");
             if (1 == timeSpan.Hours) stringBuilder.Append(timeSpan.Hours).Append(" hour ");
-            if (1 < timeSpan.Minutes) stringBuilder.Append(timeSpan.Hours).Append(" minutes ");
-            if (1 == timeSpan.Minutes) stringBuilder.Append(timeSpan.Hours).Append(" minute ");
-            if (0 == timeSpan.Days && 1 < timeSpan.Seconds) stringBuilder.Append(timeSpan.Hours).Append(" seconds ");
-            if (0 == timeSpan.Days && 1 == timeSpan.Seconds) stringBuilder.Append(timeSpan.Hours).Append(" second ");
+            if (1 < timeSpan.Minutes) stringBuilder.Append(timeSpan.Minutes).Append(" minutes ");
+            if (1 == timeSpan.Minutes) stringBuilder.Append(timeSpan.Minutes).Append(" minute ");
+            if (0 == timeSpan.Days && 1 < timeSpan.Seconds) stringBuilder.Append(timeSpan.Seconds).Append(" seconds ");
+            if (0 == timeSpan.Days && 1 == timeSpan.Seconds) stringBuilder.Append(timeSpan.Seconds).Append(" second ");
             return stringBuilder.ToString();
         }
     }
