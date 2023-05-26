@@ -13,5 +13,6 @@ namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember
         public ulong GuildId { get; init; }
         public string UserName { get; init; } = string.Empty;
         public string? Nickname { get; init; }
+        public string AvatarUrl { get; set; } = string.Empty;
     }
 }

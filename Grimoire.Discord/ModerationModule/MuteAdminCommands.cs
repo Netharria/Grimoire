@@ -13,7 +13,8 @@ namespace Grimoire.Discord.ModerationModule
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequirePermissions(Permissions.ManageGuild)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
+    [SlashRequireBotPermissions(Permissions.ManageRoles)]
     [SlashCommandGroup("Mutes", "Manages the mute role settings.")]
     public class MuteAdminCommands : ApplicationCommandModule
     {
@@ -73,8 +74,7 @@ namespace Grimoire.Discord.ModerationModule
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             var role = await ctx.Guild.CreateRoleAsync("Muted");
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder()
-                .WithContent($"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration."));
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: $"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration.");
 
             var response = await this._mediator.Send(new SetMuteRoleCommand
             {
@@ -82,18 +82,17 @@ namespace Grimoire.Discord.ModerationModule
                 GuildId = ctx.Guild.Id
             });
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder()
-                .WithContent($"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions"));
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions");
             try
             {
                 await SetMuteRolePermissionsAsync(ctx.Guild, role);
             }
             catch (Exception)
             {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Error occured when setting role permissions for {role.Mention}."));
+                await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Error occured when setting role permissions for {role.Mention}.");
                 throw;
             }
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Successfully created role {role.Mention} and set permissions for channels"));
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Successfully created role {role.Mention} and set permissions for channels");
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
                 message: $"{ctx.Member.Mention} asked {ctx.Guild.CurrentMember} to create {role.Mention} to use as a mute role.");
         }
@@ -110,21 +109,20 @@ namespace Grimoire.Discord.ModerationModule
 
             if (!ctx.Guild.Roles.TryGetValue(response.RoleId, out var role))
             {
-                await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Could not find configured mute role.");
+                await ctx.EditReplyAsync(GrimoireColor.Yellow, message: "Could not find configured mute role.");
                 return;
             }
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder()
-                .WithContent($"Refreshing permissions for {role.Mention} role."));
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Refreshing permissions for {role.Mention} role.");
             try
             {
                 await SetMuteRolePermissionsAsync(ctx.Guild, role);
             }
             catch (Exception)
             {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Error occured when setting role permissions for {role.Mention}."));
+                await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Error occured when setting role permissions for {role.Mention}.");
                 throw;
             }
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Succussfully refreshed permissions for {role.Mention} role."));
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Succussfully refreshed permissions for {role.Mention} role.");
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
                 message: $"{ctx.Member.Mention} asked {ctx.Guild.CurrentMember} to refresh the permissions of mute role {role.Mention}");
         }
@@ -138,39 +136,26 @@ namespace Grimoire.Discord.ModerationModule
                     || channel.Type == ChannelType.PrivateThread
                     || channel.Type == ChannelType.PublicThread)
                 {
-                    await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                    .SelectAwait(async x =>
-                    {
-                        if (x.Type == OverwriteType.Role)
-                            return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
-                        return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
-                    })
-                    .Select(x =>
-                    {
-                        if (x.Target.Id == role.Id)
-                        {
-                            x.Denied.SetLockPermissions();
-                        }
-                        return x;
-                    }).ToEnumerable());
+                    var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
+                    if(permissions is not null)
+                        await channel.AddOverwriteAsync(role,
+                                permissions.Allowed.RevokeLockPermissions(),
+                                permissions.Denied.SetLockPermissions());
+                    else
+                        await channel.AddOverwriteAsync(role,
+                                deny: PermissionValues.LockPermissions);
+
                 }
                 else if (channel.Type == ChannelType.Voice)
                 {
-                    await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                    .SelectAwait(async x =>
-                    {
-                        if (x.Type == OverwriteType.Role)
-                            return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
-                        return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
-                    })
-                    .Select(x =>
-                    {
-                        if (x.Target.Id == role.Id)
-                        {
-                            x.Deny(Permissions.Speak);
-                        }
-                        return x;
-                    }).ToEnumerable());
+                    var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
+                    if (permissions is not null)
+                        await channel.AddOverwriteAsync(role,
+                                permissions.Allowed.RevokeVoiceLockPermissions(),
+                                permissions.Denied.SetVoiceLockPermissions());
+                    else
+                        await channel.AddOverwriteAsync(role,
+                                deny: PermissionValues.VoiceLockPermissions);
                 }
             }
         }

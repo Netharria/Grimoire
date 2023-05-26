@@ -13,7 +13,7 @@ namespace Grimoire.Discord.ModerationModule
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequirePermissions(Permissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
     [SlashRequireBotPermissions(Permissions.BanMembers)]
     public class BanCommands : ApplicationCommandModule
     {

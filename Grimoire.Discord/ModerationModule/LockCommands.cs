@@ -5,15 +5,19 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System;
+using DSharpPlus;
 using Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel;
 using Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand;
 using Grimoire.Core.Responses;
+using Grimoire.Domain;
 
 namespace Grimoire.Discord.ModerationModule
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequirePermissions(Permissions.ManageMessages)]
+    [SlashRequireUserPermissions(Permissions.ManageMessages)]
+    [SlashRequireBotPermissions(Permissions.ManageChannels)]
     public class LockCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
@@ -48,28 +52,15 @@ namespace Grimoire.Discord.ModerationModule
                 return;
             }
             await ctx.ReplyAsync(message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()}", ephemeral: false); ;
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()} by {ctx.User.Mention}");
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()} by {ctx.User.Mention}");
         }
 
         private async Task<BaseResponse> ChannelLockAsync(InteractionContext ctx, DiscordChannel channel, string? reason, DurationType durationType, long durationAmount)
         {
             var previousSetting = channel.PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
-
-            await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                .SelectAwait(async x =>
-                {
-                    if (x.Type == OverwriteType.Role)
-                        return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
-                    return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
-                })
-                .Select(x =>
-                {
-                    if (x.Target.Id == ctx.Guild.EveryoneRole.Id)
-                    {
-                        x.Denied.SetLockPermissions();
-                    }
-                    return x;
-                }).ToEnumerable());
+            await channel.AddOverwriteAsync(ctx.Guild.EveryoneRole,
+                        previousSetting.Allowed.RevokeLockPermissions(),
+                        previousSetting.Denied.SetLockPermissions());
 
             return await this._mediator.Send(new LockChannelCommand
             {
@@ -106,25 +97,15 @@ namespace Grimoire.Discord.ModerationModule
             var response = await this._mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = ctx.Guild.Id });
 
             if (!channel.IsThread)
-                await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                .SelectAwait(async x =>
-                {
-                    if (x.Type == OverwriteType.Role)
-                        return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
-                    return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
-                })
-                .Select(x =>
-                {
-                    if (x.Target.Id == ctx.Guild.EveryoneRole.Id)
-                    {
-                        x.Allowed.RevertLockPermissions(response.PreviouslyAllowed);
-                        x.Denied.RevertLockPermissions(response.PreviouslyDenied);
-                    }
-                    return x;
-                }).ToEnumerable());
+            {
+                var permissions = channel.PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
+                await channel.AddOverwriteAsync(ctx.Guild.EveryoneRole,
+                    permissions.Allowed.RevertLockPermissions(response.PreviouslyAllowed)
+                    , permissions.Denied.RevertLockPermissions(response.PreviouslyDenied));
+            }
 
             await ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked", ephemeral: false); ;
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{channel.Mention} has been unlocked by {ctx.User.Mention}");
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{channel.Mention} has been unlocked by {ctx.User.Mention}");
         }
     }
 }

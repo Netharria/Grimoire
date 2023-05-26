@@ -21,7 +21,7 @@ namespace Grimoire.Core.Configuration
                 .HasForeignKey(x => new { x.UserId, x.GuildId })
                 .OnDelete(DeleteBehavior.Cascade);
             builder.Property(e => e.FileName)
-                .HasMaxLength(200)
+                .HasMaxLength(2048)
                 .IsRequired();
             builder.Property(x => x.Timestamp)
                 .HasDefaultValueSql("now()");

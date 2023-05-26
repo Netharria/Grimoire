@@ -5,9 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Drawing;
-using System.Xml.Linq;
-
 namespace Grimoire.Discord.Structs
 {
     public readonly struct GrimoireColor

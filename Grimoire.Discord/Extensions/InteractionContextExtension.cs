@@ -39,6 +39,29 @@ namespace Grimoire.Discord.Extensions
 
         }
 
+        public static async Task EditReplyAsync(
+            this InteractionContext ctx,
+            DiscordColor? color = null,
+            string message = "",
+            string title = "",
+            string footer = "",
+            DiscordEmbed? embed = null,
+            DateTime? timeStamp = null)
+        {
+            timeStamp ??= DateTime.UtcNow;
+            embed ??= new DiscordEmbedBuilder()
+                .WithColor(color ?? GrimoireColor.Purple)
+                .WithTitle(title)
+                .WithDescription(message)
+                .WithFooter(footer)
+                .WithTimestamp(timeStamp)
+                .Build();
+
+            await ctx.EditResponseAsync(
+                new DiscordWebhookBuilder().AddEmbed(embed));
+
+        }
+
         public static async ValueTask<(bool, ulong)> TryMatchStringToChannelAsync(this InteractionContext ctx, string s)
         {
             var parsedvalue = Regex.Match(s, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;

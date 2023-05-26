@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Shared.Commands.SetModLogCommmand;
 using Grimoire.Core.Features.Shared.Queries.GetModerationLog;
 using Grimoire.Discord.Enums;
@@ -13,7 +14,7 @@ namespace Grimoire.Discord.SharedModule
 {
     [SlashCommandGroup("ModLog", "View or set the moderation log channel.")]
     [SlashRequireGuild]
-    [SlashRequirePermissions(Permissions.ManageGuild)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
     public class ModLogSettings : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
@@ -53,6 +54,12 @@ namespace Grimoire.Discord.SharedModule
             [Option("Channel", "The channel to send to send the logs to.")] DiscordChannel? channel = null)
         {
             channel = ctx.GetChannelOptionAsync(option, channel);
+            if (channel is not null)
+            {
+                var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
+                if (!permissions.HasPermission(Permissions.SendMessages))
+                    throw new AnticipatedException($"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+            }
             var response = await this._mediator.Send(new SetModLogCommand
             {
                 GuildId = ctx.Guild.Id,

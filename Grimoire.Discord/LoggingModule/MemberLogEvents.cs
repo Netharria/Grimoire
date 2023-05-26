@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Concurrent;
+using Grimoire.Core.Features.Logging.Commands.AddLogMessage;
 using Grimoire.Core.Features.Logging.Commands.UpdateAvatar;
 using Grimoire.Core.Features.Logging.Commands.UpdateNickname;
 using Grimoire.Core.Features.Logging.Commands.UpdateUsername;
@@ -141,7 +142,9 @@ namespace Grimoire.Discord.LoggingModule
                     .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
                     .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
                     .WithTimestamp(DateTimeOffset.UtcNow);
-                    await logChannel.SendMessageAsync(embed);
+                    var message = await logChannel.SendMessageAsync(embed);
+                    if (message is null) return;
+                    await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
                 }
                 await this._mediator.Publish(new NicknameTrackerNotification
                 {
@@ -175,7 +178,9 @@ namespace Grimoire.Discord.LoggingModule
                             .WithAuthor($"{args.MemberAfter.GetUsernameWithDiscriminator()} ({args.MemberAfter.Id})")
                             .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
                             .WithTimestamp(DateTimeOffset.UtcNow);
-                    await logChannel.SendMessageAsync(embed);
+                    var message = await logChannel.SendMessageAsync(embed);
+                    if (message is null) return;
+                    await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
                 }
                 await this._mediator.Publish(new UsernameTrackerNotification
                 {
@@ -212,7 +217,9 @@ namespace Grimoire.Discord.LoggingModule
                         args.Member.Id,
                         embed,
                         false);
-                    await logChannel.SendMessageAsync(messageBuilder);
+                    var message = await logChannel.SendMessageAsync(messageBuilder);
+                    if (message is null) return;
+                    await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
                 }
                 await this._mediator.Publish(new AvatarTrackerNotification
                 {
@@ -220,7 +227,7 @@ namespace Grimoire.Discord.LoggingModule
                     GuildId = args.Guild.Id,
                     Username = args.Member.GetUsernameWithDiscriminator(),
                     BeforeAvatar = avatarResponse.BeforeAvatar,
-                    AfterAvatar = args.Member.GetAvatarUrl(ImageFormat.Auto, 128)
+                    AfterAvatar = avatarResponse.AfterAvatar
                 });
             }
         }

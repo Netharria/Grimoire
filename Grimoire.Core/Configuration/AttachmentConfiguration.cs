@@ -26,7 +26,7 @@ namespace Grimoire.Core.Configuration
                 .IsRequired();
 
             builder.Property(e => e.FileName)
-                .HasMaxLength(200)
+                .HasMaxLength(2048)
                 .IsRequired();
         }
     }

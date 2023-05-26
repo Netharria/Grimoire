@@ -24,7 +24,7 @@ namespace Grimoire.Core.Configuration
                 .HasForeignKey(x => x.UserId)
                 .IsRequired();
             builder.Property(x => x.Username)
-                .HasMaxLength(32)
+                .HasMaxLength(37)
                 .IsRequired();
             builder.Property(x => x.Timestamp)
                 .HasDefaultValueSql("now()");

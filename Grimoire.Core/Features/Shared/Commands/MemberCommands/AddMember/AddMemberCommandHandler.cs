@@ -46,10 +46,19 @@ namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember
                             GuildId = command.GuildId,
                             Type = XpHistoryType.Created,
                             Xp = 0,
-                            TimeOut = DateTime.UtcNow
+                            TimeOut = DateTimeOffset.UtcNow
+                        }
+                    },
+                    AvatarHistory = new List<Avatar>
+                    {
+                        new Avatar
+                        {
+                            UserId = command.UserId,
+                            GuildId = command.GuildId,
+                            FileName = command.AvatarUrl,
+                            Timestamp = DateTimeOffset.UtcNow
                         }
                     }
-
                 };
                 if (!string.IsNullOrWhiteSpace(command.Nickname))
                 {

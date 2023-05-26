@@ -28,29 +28,18 @@ namespace Grimoire.Discord.ModerationModule
             var response = await this._mediator.Send(new GetExpiredLocksQuery(), cancellationToken);
             foreach (var expiredLock in response)
             {
-                var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
+                 var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
                 if (guild is null) continue;
 
                 var channel = guild.Channels.GetValueOrDefault(expiredLock.ChannelId);
-
                 if (channel is null) continue;
                 if (!channel.IsThread)
-                    await channel.ModifyAsync(editModel => editModel.PermissionOverwrites = channel.PermissionOverwrites.ToAsyncEnumerable()
-                    .SelectAwait(async x =>
-                    {
-                        if (x.Type == OverwriteType.Role)
-                            return await new DiscordOverwriteBuilder(await x.GetRoleAsync()).FromAsync(x);
-                        return await new DiscordOverwriteBuilder(await x.GetMemberAsync()).FromAsync(x);
-                    })
-                    .Select(x =>
-                    {
-                        if (x.Target.Id == guild.EveryoneRole.Id)
-                        {
-                            x.Allowed.RevertLockPermissions(expiredLock.PreviouslyAllowed);
-                            x.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied);
-                        }
-                        return x;
-                    }).ToEnumerable());
+                {
+                    var permissions = channel.PermissionOverwrites.First(x => x.Id == guild.EveryoneRole.Id);
+                    await channel.AddOverwriteAsync(guild.EveryoneRole,
+                        permissions.Allowed.RevertLockPermissions(expiredLock.PreviouslyAllowed)
+                        , permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied));
+                }
 
                 _ = await this._mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = guild.Id }, cancellationToken);
 

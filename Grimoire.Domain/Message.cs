@@ -24,7 +24,7 @@ namespace Grimoire.Domain
 
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTimeOffset CreatedTimestamp { get; }
+        public DateTimeOffset CreatedTimestamp { get; set; }
 
         public ulong? ReferencedMessageId { get; set; }
 

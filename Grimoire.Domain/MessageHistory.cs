@@ -20,7 +20,7 @@ namespace Grimoire.Domain
         public string MessageContent { get; set; } = string.Empty;
         public ulong? DeletedByModeratorId { get; set; }
         public virtual Member? DeletedByModerator { get; set; } = null!;
-        public DateTimeOffset TimeStamp { get; }
+        public DateTimeOffset TimeStamp { get; set; }
     }
 
     public enum MessageAction

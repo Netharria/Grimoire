@@ -14,5 +14,9 @@ namespace Grimoire.Discord.Structs
               | Permissions.SendMessagesInThreads
               | Permissions.SendTtsMessages
               | Permissions.AddReactions;
+
+        public static Permissions VoiceLockPermissions
+            => Permissions.UseVoice
+            | Permissions.Speak;
     }
 }

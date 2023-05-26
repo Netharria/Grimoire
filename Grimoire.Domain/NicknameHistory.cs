@@ -15,7 +15,7 @@ namespace Grimoire.Domain
         public ulong UserId { get; set; }
         public virtual Member Member { get; set; } = null!;
         public string? Nickname { get; set; }
-        public DateTimeOffset Timestamp { get; }
+        public DateTimeOffset Timestamp { get; set; }
         public ulong GuildId { get; set; }
         public virtual Guild Guild { get; set; } = null!;
     }

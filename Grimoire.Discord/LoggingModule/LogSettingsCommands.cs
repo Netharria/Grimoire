@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Logging.Commands.SetMessageLogSettings;
 using Grimoire.Core.Features.Logging.Commands.SetUserLogSettings;
 using Grimoire.Core.Features.Logging.Queries.GetMessageLogSettings;
@@ -15,7 +16,7 @@ namespace Grimoire.Discord.LoggingModule
 {
     [SlashCommandGroup("Log", "View or change the settings of the Logging Modules.")]
     [SlashRequireGuild]
-    [SlashRequirePermissions(Permissions.ManageGuild)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
     public class LogSettingsCommands : ApplicationCommandModule
     {
         [SlashRequireModuleEnabled(Module.UserLog)]
@@ -76,6 +77,12 @@ namespace Grimoire.Discord.LoggingModule
             {
                 var logSetting = (UserLogSetting)loggingSetting;
                 channel = ctx.GetChannelOptionAsync(option, channel);
+                if (channel is not null)
+                {
+                    var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
+                    if (!permissions.HasPermission(Permissions.SendMessages))
+                        throw new AnticipatedException($"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+                }
                 var response = await this._mediator.Send(new SetUserLogSettingsCommand
                 {
                     GuildId = ctx.Guild.Id,
@@ -139,6 +146,12 @@ namespace Grimoire.Discord.LoggingModule
             {
                 var logSetting = (MessageLogSetting)loggingSetting;
                 channel = ctx.GetChannelOptionAsync(option, channel);
+                if (channel is not null)
+                {
+                    var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
+                    if (!permissions.HasPermission(Permissions.SendMessages))
+                        throw new AnticipatedException($"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+                }
 
                 var response = await this._mediator.Send(new SetMessageLogSettingsCommand
                 {

@@ -33,7 +33,7 @@ namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelC
 
             return new UnlockChannelCommandResponse
             {
-                LogChannelId = command.ChannelId,
+                LogChannelId = result.ModerationLogId,
                 PreviouslyAllowed = result.Lock.PreviouslyAllowed,
                 PreviouslyDenied = result.Lock.PreviouslyDenied
             };

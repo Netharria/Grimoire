@@ -47,14 +47,14 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
                 x.Reason,
                 Moderator = x.Moderator.Mention(),
                 Pardon = x.Pardon != null,
-                PardonModerator = x.Pardon!.Moderator.Mention(),
-                x.Pardon!.PardonDate
+                PardonModerator = x.Pardon != null ? x.Pardon.Moderator.Mention() : "",
+                PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue,
             }).ToListAsync(cancellationToken);
             var stringBuilder = new StringBuilder(2048);
             var resultStrings = new List<string>();
             result.ForEach(x =>
             {
-                var builder = $"**{x.Id} : {x.SinType}** : {x.InfractionOn}\n" +
+                var builder = $"**{x.Id} : {x.SinType}** : <t:{x.InfractionOn.ToUnixTimeSeconds()}:f>\n" +
                               $"Reason: {x.Reason}\n" +
                               $"Moderator: {x.Moderator}\n";
                 if (x.Pardon)
@@ -62,11 +62,12 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
                     builder = $"~~{builder}~~" +
                     $"**Pardoned by: {x.PardonModerator} on {x.PardonDate}**\n";
                 }
-                if (stringBuilder.Length + builder.Length > stringBuilder.MaxCapacity)
+                if (stringBuilder.Length + builder.Length > stringBuilder.Capacity)
                 {
                     resultStrings.Add(stringBuilder.ToString());
                     stringBuilder.Clear();
                 }
+                stringBuilder.Append(builder);
             });
             if (stringBuilder.Length > 0)
                 resultStrings.Add(stringBuilder.ToString());

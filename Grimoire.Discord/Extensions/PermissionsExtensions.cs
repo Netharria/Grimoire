@@ -14,12 +14,19 @@ namespace Grimoire.Discord.Extensions
 
         public static Permissions SetLockPermissions(this Permissions permissions)
             => permissions |= PermissionValues.LockPermissions;
-
+        public static Permissions RevokeLockPermissions(this Permissions permissions)
+            => permissions & ~PermissionValues.LockPermissions;
         public static Permissions RevertLockPermissions(this Permissions permissions, Permissions previosPermissions)
             => permissions &= previosPermissions ^ ~PermissionValues.LockPermissions;
 
         public static Permissions RevertLockPermissions(this Permissions permissions, long previosPermissions)
             => permissions.RevertLockPermissions((Permissions)previosPermissions);
+
+
+        public static Permissions SetVoiceLockPermissions(this Permissions permissions)
+            => permissions |= PermissionValues.VoiceLockPermissions;
+        public static Permissions RevokeVoiceLockPermissions(this Permissions permissions)
+            => permissions & ~PermissionValues.VoiceLockPermissions;
 
         public static long ToLong(this Permissions permissions)
             => (long)permissions;

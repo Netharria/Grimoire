@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
 using Grimoire.Core.Features.Leveling.Queries.GetLevelSettings;
 using Grimoire.Discord.Enums;
@@ -16,7 +17,7 @@ namespace Grimoire.Discord.LevelingModule
     [SlashCommandGroup("LevelSettings", "Changes the settings of the Leveling Module.")]
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Leveling)]
-    [SlashRequirePermissions(Permissions.ManageGuild)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
     public class LevelSettingsCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
@@ -76,6 +77,12 @@ namespace Grimoire.Discord.LevelingModule
             [Option("Channel", "The channel to change the log to.")] DiscordChannel? channel = null)
         {
             channel = ctx.GetChannelOptionAsync(option, channel);
+            if (channel is not null)
+            {
+                var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
+                if (!permissions.HasPermission(Permissions.SendMessages))
+                    throw new AnticipatedException($"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+            }
             var response = await this._mediator.Send(new SetLevelSettingsCommand
             {
                 GuildId = ctx.Guild.Id,

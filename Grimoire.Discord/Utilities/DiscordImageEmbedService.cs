@@ -66,7 +66,7 @@ namespace Grimoire.Discord.Utilities
                 messageBuilder.AddEmbed(imageEmbed);
                 messageBuilder.AddFile(fileName, stream);
             }
-            if(!messageBuilder.Embeds.Any())
+            if (!messageBuilder.Embeds.Any())
             {
                 messageBuilder.AddEmbed(embed);
             }

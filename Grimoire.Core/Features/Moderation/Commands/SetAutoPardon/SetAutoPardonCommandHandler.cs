@@ -19,7 +19,7 @@ namespace Grimoire.Core.Features.Moderation.Commands.SetAutoPardon
         public async ValueTask<BaseResponse> Handle(SetAutoPardonCommand command, CancellationToken cancellationToken)
         {
             var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
-                .Include(x => x.Guild.ModChannelLog)
+                .Include(x => x.Guild)
                 .FirstOrDefaultAsync(guildModerationSettings => guildModerationSettings.GuildId.Equals(command.GuildId),
                 cancellationToken);
             if (guildModerationSettings is null)

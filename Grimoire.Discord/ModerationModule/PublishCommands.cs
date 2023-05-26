@@ -17,7 +17,7 @@ namespace Grimoire.Discord.ModerationModule
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequirePermissions(Permissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
     [SlashCommandGroup("Publish", "Publishes a ban or unban to the public ban log channel.")]
     public class PublishCommands : ApplicationCommandModule
     {

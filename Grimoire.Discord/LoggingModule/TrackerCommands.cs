@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Logging.Commands.TrackerCommands.AddTracker;
 using Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveTracker;
 
@@ -12,7 +13,7 @@ namespace Grimoire.Discord.LoggingModule
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.MessageLog)]
-    [SlashRequirePermissions(Permissions.ManageGuild)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
     public class TrackerCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
@@ -48,6 +49,11 @@ namespace Grimoire.Discord.LoggingModule
             }
 
             discordChannel ??= ctx.Channel;
+
+            var permissions = discordChannel.PermissionsFor(ctx.Guild.CurrentMember);
+            if (!permissions.HasPermission(Permissions.SendMessages))
+                throw new AnticipatedException($"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+
             var response = await this._mediator.Send(
                 new AddTrackerCommand
                 {

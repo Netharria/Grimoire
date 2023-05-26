@@ -13,7 +13,7 @@ namespace Grimoire.Discord.ModerationModule
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequirePermissions(Permissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
     public class SinAdminCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;

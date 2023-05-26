@@ -23,7 +23,7 @@ namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel
             var result = await this._grimoireDbContext.Channels
                 .Where(x => x.GuildId == command.GuildId)
                 .Include(x => x.Lock)
-                .Include(x => x.Guild.ModChannelLog)
+                .Include(x => x.Guild)
                 .FirstAsync(x => x.Id == command.ChannelId, cancellationToken);
             if (result is null)
                 throw new AnticipatedException("Could not find that channel");
@@ -33,21 +33,23 @@ namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel
                 result.Lock.ModeratorId = command.ModeratorId;
                 result.Lock.EndTime = lockEndTime;
                 result.Lock.Reason = command.Reason;
-                this._grimoireDbContext.Channels.Update(result);
             }
             else
             {
-                await this._grimoireDbContext.Locks.AddAsync(new Lock
+                result.Lock = new Lock
                 {
                     ChannelId = command.ChannelId,
                     GuildId = command.GuildId,
                     Reason = command.Reason,
                     EndTime = lockEndTime,
-                    ModeratorId = command.GuildId,
+                    ModeratorId = command.ModeratorId,
                     PreviouslyAllowed = command.PreviouslyAllowed,
                     PreviouslyDenied = command.PreviouslyDenied
-                }, cancellationToken);
+                };
             }
+
+            this._grimoireDbContext.Channels.Update(result);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse
             {
                 LogChannelId = result.Guild.ModChannelLog

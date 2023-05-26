@@ -15,6 +15,6 @@ namespace Grimoire.Domain
         public ulong UserId { get; set; }
         public virtual User User { get; set; } = null!;
         public string Username { get; set; } = string.Empty;
-        public DateTimeOffset Timestamp { get; }
+        public DateTimeOffset Timestamp { get; set; }
     }
 }

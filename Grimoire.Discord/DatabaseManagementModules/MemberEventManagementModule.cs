@@ -27,7 +27,8 @@ namespace Grimoire.Discord.DatabaseManagementModules
                     Nickname = string.IsNullOrWhiteSpace(args.Member.DisplayName) ? null : args.Member.DisplayName,
                     GuildId = args.Guild.Id,
                     UserId = args.Member.Id,
-                    UserName = args.Member.GetUsernameWithDiscriminator()
+                    UserName = args.Member.GetUsernameWithDiscriminator(),
+                    AvatarUrl = args.Member.GetGuildAvatarUrl(ImageFormat.Auto, 128)
                 });
 
     }

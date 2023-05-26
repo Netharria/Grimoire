@@ -1,10 +1,4 @@
-// This file is part of the Grimoire Project.
-//
-// Copyright (c) Netharia 2021-Present.
-//
-// All rights reserved.
-// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
-
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,8 +6,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Grimoire.Core.Migrations
 {
-    public partial class Init : Migration
+    /// <inheritdoc />
+    public partial class init : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -132,7 +128,7 @@ namespace Grimoire.Core.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    Username = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Username = table.Column<string>(type: "character varying(37)", maxLength: 37, nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
@@ -318,7 +314,7 @@ namespace Grimoire.Core.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    FileName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    FileName = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
                 },
                 constraints: table =>
@@ -546,7 +542,7 @@ namespace Grimoire.Core.Migrations
                 {
                     Id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     MessageId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    FileName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false)
+                    FileName = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -824,7 +820,8 @@ namespace Grimoire.Core.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Mutes_UserId_GuildId",
                 table: "Mutes",
-                columns: new[] { "UserId", "GuildId" });
+                columns: new[] { "UserId", "GuildId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_NicknameHistory_GuildId",
@@ -927,6 +924,7 @@ namespace Grimoire.Core.Migrations
                 columns: new[] { "UserId", "GuildId" });
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

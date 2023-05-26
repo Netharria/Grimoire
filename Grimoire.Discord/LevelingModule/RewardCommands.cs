@@ -14,7 +14,7 @@ namespace Grimoire.Discord.LevelingModule
     [SlashCommandGroup("Rewards", "Commands for updating and viewing the server rewards")]
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Leveling)]
-    [SlashRequirePermissions(Permissions.ManageGuild)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
     public class RewardCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;

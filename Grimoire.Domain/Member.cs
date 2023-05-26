@@ -21,6 +21,8 @@ namespace Grimoire.Domain
 
         public bool IsXpIgnored { get; set; }
 
+        public virtual Mute? ActiveMute { get; set; }
+
         public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
         public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
@@ -32,8 +34,6 @@ namespace Grimoire.Domain
         public virtual ICollection<Sin> UserSins { get; set; } = new List<Sin>();
 
         public virtual ICollection<Sin> ModeratedSins { get; set; } = new List<Sin>();
-
-        public virtual ICollection<Mute> ActiveMutes { get; set; } = new List<Mute>();
 
         public virtual ICollection<Lock> ChannelsLocked { get; set; } = new List<Lock>();
 

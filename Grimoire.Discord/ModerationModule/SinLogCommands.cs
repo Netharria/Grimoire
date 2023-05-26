@@ -25,7 +25,7 @@ namespace Grimoire.Discord.ModerationModule
         public async Task SinLogAsync(
             InteractionContext ctx,
             [Option("Type", "The Type of logs to lookup.")] SinQueryType sinQueryType,
-            [Option("User", "The user to look up the logs for. Leave blank for self.")] DiscordUser? user)
+            [Option("User", "The user to look up the logs for. Leave blank for self.")] DiscordUser? user = null)
         {
             user ??= ctx.User;
 
@@ -44,6 +44,7 @@ namespace Grimoire.Discord.ModerationModule
             foreach (var message in response.SinList)
                 await ctx.ReplyAsync(GrimoireColor.Green, message: message,
                     ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
+            
         }
     }
 }

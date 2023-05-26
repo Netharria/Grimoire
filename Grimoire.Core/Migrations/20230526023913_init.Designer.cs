@@ -12,14 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Core.Migrations
 {
     [DbContext(typeof(GrimoireDbContext))]
-    [Migration("20230426020031_Init")]
-    partial class Init
+    [Migration("20230526023913_init")]
+    partial class init
     {
+        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.12")
+                .HasAnnotation("ProductVersion", "7.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -31,8 +32,8 @@ namespace Grimoire.Core.Migrations
 
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
 
                     b.Property<decimal>("MessageId")
                         .HasColumnType("numeric(20,0)");
@@ -54,8 +55,8 @@ namespace Grimoire.Core.Migrations
 
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
 
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
@@ -399,7 +400,8 @@ namespace Grimoire.Core.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.HasIndex("UserId", "GuildId");
+                    b.HasIndex("UserId", "GuildId")
+                        .IsUnique();
 
                     b.ToTable("Mutes");
                 });
@@ -675,8 +677,8 @@ namespace Grimoire.Core.Migrations
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasMaxLength(37)
+                        .HasColumnType("character varying(37)");
 
                     b.HasKey("Id");
 
@@ -968,8 +970,8 @@ namespace Grimoire.Core.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Grimoire.Domain.Member", "Member")
-                        .WithMany("ActiveMutes")
-                        .HasForeignKey("UserId", "GuildId")
+                        .WithOne("ActiveMute")
+                        .HasForeignKey("Grimoire.Domain.Mute", "UserId", "GuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1262,7 +1264,7 @@ namespace Grimoire.Core.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Member", b =>
                 {
-                    b.Navigation("ActiveMutes");
+                    b.Navigation("ActiveMute");
 
                     b.Navigation("AvatarHistory");
 

@@ -21,8 +21,8 @@ namespace Grimoire.Core.Configuration
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
             builder.HasOne(e => e.Member)
-                .WithMany(e => e.ActiveMutes)
-                .HasForeignKey(e => new { e.UserId, e.GuildId })
+                .WithOne(e => e.ActiveMute)
+                .HasForeignKey<Mute>(e => new { e.UserId, e.GuildId })
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             builder.Property(e => e.EndTime).IsRequired();

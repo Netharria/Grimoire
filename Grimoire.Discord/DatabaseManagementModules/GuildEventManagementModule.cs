@@ -56,7 +56,7 @@ namespace Grimoire.Discord.DatabaseManagementModules
                         GuildId = x.Guild.Id,
                         UserId = x.Id,
                         Nickname = x.Nickname,
-                        AvatarUrl = x.GetGuildAvatarUrl(ImageFormat.Auto)
+                        AvatarUrl = x.GetGuildAvatarUrl(ImageFormat.Auto, 128)
                     }),
                 Roles = args.Guilds.Values.Select(x => new { x.Id, x.Roles })
                     .Select(x => x.Roles.Select(y =>

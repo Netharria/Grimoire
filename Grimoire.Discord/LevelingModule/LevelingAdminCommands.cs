@@ -11,7 +11,7 @@ using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
 namespace Grimoire.Discord.LevelingModule
 {
     [SlashRequireGuild]
-    [SlashRequireUserPermissions(Permissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
     [SlashRequireModuleEnabled(Module.Leveling)]
     public class LevelingAdminCommands : ApplicationCommandModule
     {

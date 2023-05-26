@@ -13,7 +13,8 @@ namespace Grimoire.Discord.ModerationModule
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequirePermissions(Permissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
+    [SlashRequireBotPermissions(Permissions.ManageRoles)]
     public class MuteCommands : ApplicationCommandModule
     {
         private readonly IMediator _mediator;
@@ -48,7 +49,7 @@ namespace Grimoire.Discord.ModerationModule
             if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
             await member.GrantRoleAsync(muteRole, reason);
             await ctx.ReplyAsync(message: $"{member.Mention} has been muted for {durationAmount} {durationType.GetName()}", ephemeral: false); ;
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{member.Mention} has been muted for {durationAmount} {durationType.GetName()} by {ctx.User.Mention}");
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{member.Mention} has been muted for {durationAmount} {durationType.GetName()} by {ctx.User.Mention}");
         }
 
         [SlashCommand("Unmute", "Removes the mute on the user allowing them to speak.")]
@@ -67,7 +68,7 @@ namespace Grimoire.Discord.ModerationModule
             if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
             await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.Member.Mention}");
             await ctx.ReplyAsync(message: $"{member.Mention} has been unmuted", ephemeral: false); ;
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{member.Mention} has been unmuted by {ctx.User.Mention}");
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{member.Mention} has been unmuted by {ctx.User.Mention}");
 
         }
     }

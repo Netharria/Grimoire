@@ -13,7 +13,7 @@ using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
 namespace Grimoire.Discord.LevelingModule
 {
     [SlashRequireGuild]
-    [SlashRequireUserPermissions(Permissions.ManageGuild)]
+    [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
     [SlashRequireModuleEnabled(Module.Leveling)]
     [SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
     public class IgnoreCommands : ApplicationCommandModule
