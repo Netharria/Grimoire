@@ -20,7 +20,7 @@ namespace Grimoire.Domain
         public ulong GuildId { get; set; }
         public virtual Guild Guild { get; set; } = null!;
 
-        public DateTimeOffset PardonDate { get; }
+        public DateTimeOffset PardonDate { get; set; }
 
         public string Reason { get; set; } = string.Empty;
     }

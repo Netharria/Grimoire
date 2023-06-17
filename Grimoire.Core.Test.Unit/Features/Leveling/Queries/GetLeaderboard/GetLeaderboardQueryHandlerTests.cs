@@ -16,15 +16,11 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLeaderboard
     [TestFixture]
     public class GetLeaderboardQueryHandlerTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public void WhenCallingGetLeaderboardQueryHandler_IfProvidedUserNotFound_FailResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var CUT = new GetLeaderboardQueryHandler(context);
             var command = new GetLeaderboardQuery
@@ -42,7 +38,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLeaderboard
         [Test]
         public async Task WhenCallingGetLeaderboardQueryHandler_ReturnLeaderboardAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var CUT = new GetLeaderboardQueryHandler(context);
             var command = new GetLeaderboardQuery

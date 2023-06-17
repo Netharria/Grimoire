@@ -40,37 +40,78 @@ namespace Grimoire.Discord.Utilities
         public async Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed, bool displayFileNames = true)
         {
             var messageBuilder = new DiscordMessageBuilder();
-            foreach ((var url, var index) in urls.Select((x, i) => (x, i)))
+
+            var imageUrls = this.GetImageurls(urls);
+
+            var images = await this.GetImages(imageUrls);
+
+            foreach ((var url, var index) in imageUrls.Select((x, i) => (x, i)))
             {
-                if (string.IsNullOrWhiteSpace(url) || !this._validImageExtensions.Contains(Path.GetExtension(url)))
-                    continue;
-                var uri = new Uri(url);
-                var stream = await this._httpClient.GetStreamAsync(uri);
-                var fileName = $"attachment{index}.{Path.GetExtension(uri.AbsolutePath)}";
-
+                var fileName = $"attachment{index}.{Path.GetExtension(url.AbsolutePath)}";
                 var stride = 4 * (index / 4);
-
 
                 var imageEmbed = new DiscordEmbedBuilder(embed)
                         .WithUrl($"https://discord.com/users/{userId}/{stride}")
                         .WithImageUrl($"attachment://{fileName}");
-                if (displayFileNames)
-                {
-                    var attachments = urls
-                        .Skip(stride)
-                        .Take(4)
-                        .Select(x => $"**{Path.GetFileName(x)}**")
-                        .ToArray();
-                    imageEmbed.AddMessageTextToFields("Attachments", string.Join("\n", attachments));
-                }
+
+                AddAttachmentFileNames(imageUrls, stride, imageEmbed, displayFileNames);
+
                 messageBuilder.AddEmbed(imageEmbed);
+
+                var stream = images[index];
                 messageBuilder.AddFile(fileName, stream);
             }
+
+            this.AddNonImageEmbed(urls, embed, messageBuilder);
+
             if (!messageBuilder.Embeds.Any())
             {
                 messageBuilder.AddEmbed(embed);
             }
+
             return messageBuilder;
+        }
+
+        private Uri[] GetImageurls(string[] urls)
+            => urls
+                .Where(url =>
+                    !string.IsNullOrWhiteSpace(url)
+                    && this._validImageExtensions.Contains(Path.GetExtension(url)))
+                .Select(url => new Uri(url))
+                .ToArray();
+
+        private Task<Stream[]> GetImages(Uri[] uris)
+            => Task.WhenAll(
+                uris.Select(this._httpClient.GetStreamAsync));
+
+        private static void AddAttachmentFileNames(Uri[] imageUrls, int stride, DiscordEmbedBuilder imageEmbed, bool displayFileNames)
+        {
+            if (displayFileNames)
+            {
+                var attachments = imageUrls
+                        .Skip(stride)
+                        .Take(4)
+                        .Select(x => $"**{Path.GetFileName(x.AbsolutePath)}**")
+                        .ToArray();
+                imageEmbed.AddMessageTextToFields("Attachments", string.Join("\n", attachments));
+            }
+        }
+
+        private void AddNonImageEmbed(string[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
+        {
+            var nonImageAttachements = urls
+                .Where(url =>
+                    !string.IsNullOrWhiteSpace(url)
+                    && !this._validImageExtensions.Contains(Path.GetExtension(url)))
+                .Select(x => $"**{Path.GetFileName(x)}**")
+                .ToArray(); ;
+
+            if (nonImageAttachements.Any())
+            {
+                var imageEmbed = new DiscordEmbedBuilder(embed)
+                    .AddMessageTextToFields("Non-Image Attachments", string.Join("\n", nonImageAttachements));
+                messageBuilder.AddEmbed(imageEmbed);
+            }
         }
     }
 }

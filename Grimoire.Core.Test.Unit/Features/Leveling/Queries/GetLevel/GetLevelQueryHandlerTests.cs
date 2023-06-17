@@ -16,15 +16,11 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLevel
     [TestFixture]
     public class GetLevelQueryHandlerTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public void WhenCallingGetLevelQueryHandler_IfUserDoesNotExist_ReturnFailedResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var CUT = new GetLevelQueryHandler(context);
             var command = new GetLevelQuery
@@ -42,7 +38,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLevel
         [Test]
         public async Task WhenCallingGetLevelQueryHandler_IfUserExists_ReturnResponseAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var CUT = new GetLevelQueryHandler(context);
             var command = new GetLevelQuery

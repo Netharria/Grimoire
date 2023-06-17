@@ -26,6 +26,7 @@ namespace Grimoire.Discord.ModerationModule
         [SlashCommand("Warn", "Issue a warning to the user.")]
         public async Task WarnAsync(InteractionContext ctx,
             [Option("User", "The user to warn.")] DiscordUser user,
+            [MaximumLength(1000)]
             [Option("Reason", "The reason for the warn.")] string reason)
         {
             if (user is not DiscordMember member)
@@ -46,7 +47,7 @@ namespace Grimoire.Discord.ModerationModule
                 ephemeral: false);
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
                 title: "Warning",
-                message: $"**Mod:** {ctx.User.Mention}" +
+                message: $"**Mod:** {ctx.User.Mention}\n" +
                          $"**Reason:** {reason}\n" +
                          $"{user.Mention}: Warning **ID {response.SinId}**");
             try

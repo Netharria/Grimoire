@@ -49,7 +49,7 @@ namespace Grimoire.Core.Test.Unit
         {
             lock (_lock)
             {
-                using var context = this.CreateContext();
+                using var context = CreateContext();
                 context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
                 context.Guilds.AddRange(Guild1, Guild2);
@@ -62,7 +62,7 @@ namespace Grimoire.Core.Test.Unit
             }
         }
 
-        public GrimoireDbContext CreateContext()
+        public static GrimoireDbContext CreateContext()
         {
             var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())

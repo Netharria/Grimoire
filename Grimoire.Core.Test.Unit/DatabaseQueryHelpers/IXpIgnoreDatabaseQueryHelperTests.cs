@@ -16,15 +16,11 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class IXpIgnoreDatabaseQueryHelperTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenWhereIgnoredCalled_ReturnAllIgnoredItemsAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var result = await context.Members.WhereIgnored().ToListAsync();
 
@@ -34,7 +30,7 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhenWhereIgnoredCalled_WithFalseParameter_ReturnAllNotIgnoredItemsAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var result = await context.Members.WhereIgnored(false).ToListAsync();
 

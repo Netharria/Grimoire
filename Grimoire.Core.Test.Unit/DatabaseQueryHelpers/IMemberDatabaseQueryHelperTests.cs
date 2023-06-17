@@ -17,15 +17,11 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class IMemberDatabaseQueryHelperTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhereMembersHaveIds_WhenProvidedValidIds_ReturnsResultAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var result = await context.Members.WhereMembersHaveIds(new ulong[]{
                 TestDatabaseFixture.Member1.UserId },
@@ -39,7 +35,7 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WWhereMemberHasId_WhenProvidedValidId_ReturnsResultAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var result = await context.Members.WhereMemberHasId(
                 TestDatabaseFixture.Member2.UserId,

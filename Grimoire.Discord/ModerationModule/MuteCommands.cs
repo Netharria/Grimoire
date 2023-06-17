@@ -31,6 +31,7 @@ namespace Grimoire.Discord.ModerationModule
             [Option("DurationType", "Select whether the duration will be in minutes hours or days")] DurationType durationType,
             [Minimum(0)]
             [Option("DurationAmount", "Select the amount of time the mute will last.")] long durationAmount,
+            [MaximumLength(1000)]
             [Option("Reason", "The reason why the user is getting muted.")] string? reason = null
             )
         {

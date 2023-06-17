@@ -34,7 +34,7 @@ namespace Grimoire.Domain
 
         public string Reason { get; set; } = string.Empty;
 
-        public DateTimeOffset InfractionOn { get; }
+        public DateTimeOffset SinOn { get; set; }
 
         public SinType SinType { get; set; }
 

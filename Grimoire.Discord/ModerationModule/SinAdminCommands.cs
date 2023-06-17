@@ -40,7 +40,7 @@ namespace Grimoire.Discord.ModerationModule
 
             var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
 
-            await ctx.ReplyAsync(GrimoireColor.Green, message, "Pardoned");
+            await ctx.ReplyAsync(GrimoireColor.Green, message, "Pardoned", ephemeral: false);
 
             if (response.LogChannelId is null) return;
 
@@ -48,7 +48,11 @@ namespace Grimoire.Discord.ModerationModule
                 out var loggingChannel)) return;
 
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} pardoned {message} for {reason}")
+                .WithAuthor("Pardon")
+                .AddField("User", response.SinnerName, true)
+                .AddField("Sin Id", response.SinId.ToString(), true)
+                .AddField("Moderator", ctx.Member.Mention, true)
+                .AddField("Reason", reason, true)
                 .WithColor(GrimoireColor.Green));
         }
 
@@ -57,7 +61,7 @@ namespace Grimoire.Discord.ModerationModule
             [Minimum(0)]
             [Option("SinId", "The sin id that will have its reason updated.")] long sinId,
             [MaximumLength(1000)]
-            [Option("Reason", "The reason the sin will be updated to.")] string reason = "")
+            [Option("Reason", "The reason the sin will be updated to.")] string reason)
         {
             var response = await this._mediator.Send(new UpdateSinReasonCommand
             {
@@ -68,7 +72,12 @@ namespace Grimoire.Discord.ModerationModule
 
             var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
 
-            await ctx.ReplyAsync(GrimoireColor.Green, $"Updated reason to {reason} for {message}");
+            await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+                .WithAuthor("Pardoned")
+                .AddField("Id", response.SinId.ToString())
+                .AddField("User", response.SinnerName)
+                .WithTimestamp(DateTimeOffset.UtcNow)
+                .WithColor(GrimoireColor.Green));
 
             if (response.LogChannelId is null) return;
 
@@ -93,7 +102,7 @@ namespace Grimoire.Discord.ModerationModule
 
             var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
 
-            await ctx.ReplyAsync(GrimoireColor.Green, message, "Forgot");
+            await ctx.ReplyAsync(GrimoireColor.Green, message, "Forgot", ephemeral: false);
 
             if (response.LogChannelId is null) return;
 
@@ -101,7 +110,10 @@ namespace Grimoire.Discord.ModerationModule
                 out var loggingChannel)) return;
 
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} ordered {ctx.Guild.CurrentMember.Nickname} to forget {message}")
+                .WithAuthor($"{ctx.Guild.CurrentMember.Nickname} has been commanded to forget.")
+                .AddField("User", response.SinnerName, true)
+                .AddField("Sin Id", response.SinId.ToString(), true)
+                .AddField("Moderator", ctx.Member.Mention, true)
                 .WithColor(GrimoireColor.Green));
         }
     }

@@ -17,15 +17,11 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Re
 {
     public class ReclaimUserXpCommandHandlerTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenReclaimUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new ReclaimUserXpCommandHandler(context);
 
@@ -49,7 +45,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Re
         [Test]
         public async Task WhenReclaimUserXpCommandHandlerCalled_WithAllArgument_UpdateMemebersXpAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new ReclaimUserXpCommandHandler(context);
 
@@ -73,7 +69,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Re
         [Test]
         public void WhenReclaimUserXpCommandHandlerCalled_WithNegativeReward_ReturnFailedResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new ReclaimUserXpCommandHandler(context);
 
@@ -92,7 +88,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Re
         [Test]
         public void WhenReclaimUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new ReclaimUserXpCommandHandler(context);
 
@@ -111,7 +107,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Re
         [Test]
         public void WhenReclaimUserXpCommandHandlerCalled_WithNonNumber_ReturnFailedResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new ReclaimUserXpCommandHandler(context);
 

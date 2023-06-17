@@ -21,15 +21,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
 
         public async ValueTask<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
         {
-            IQueryable<Sin> queryable;
-            if (query.SinQueryType == SinQueryType.Mod)
-            {
-                queryable = this._grimoireDbContext.Sins.Where(x => x.ModeratorId == query.UserId && x.GuildId == query.GuildId);
-            }
-            else
-            {
-                queryable = this._grimoireDbContext.Sins.Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
-            }
+            var queryable = this._grimoireDbContext.Sins.Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
 
             queryable = query.SinQueryType switch
             {
@@ -43,7 +35,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
             {
                 x.Id,
                 x.SinType,
-                x.InfractionOn,
+                x.SinOn,
                 x.Reason,
                 Moderator = x.Moderator.Mention(),
                 Pardon = x.Pardon != null,
@@ -54,13 +46,13 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
             var resultStrings = new List<string>();
             result.ForEach(x =>
             {
-                var builder = $"**{x.Id} : {x.SinType}** : <t:{x.InfractionOn.ToUnixTimeSeconds()}:f>\n" +
-                              $"Reason: {x.Reason}\n" +
-                              $"Moderator: {x.Moderator}\n";
+                var builder = $"**{x.Id} : {x.SinType}** : <t:{x.SinOn.ToUnixTimeSeconds()}:f>\n" +
+                              $"\tReason: {x.Reason}\n" +
+                              $"\tModerator: {x.Moderator}\n";
                 if (x.Pardon)
                 {
                     builder = $"~~{builder}~~" +
-                    $"**Pardoned by: {x.PardonModerator} on {x.PardonDate}**\n";
+                    $"**Pardoned by: {x.PardonModerator} on <t:{x.PardonDate.ToUnixTimeSeconds()}:f>**\n";
                 }
                 if (stringBuilder.Length + builder.Length > stringBuilder.Capacity)
                 {

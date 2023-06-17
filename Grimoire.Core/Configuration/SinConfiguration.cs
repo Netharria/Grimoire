@@ -17,7 +17,7 @@ namespace Grimoire.Core.Configuration
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id)
-                .UseIdentityAlwaysColumn();
+                .UseIdentityColumn();
             builder.Property(e => e.Reason)
                 .HasMaxLength(1000);
             builder.HasOne(e => e.Member)
@@ -41,7 +41,7 @@ namespace Grimoire.Core.Configuration
             builder.HasOne(e => e.Pardon)
                 .WithOne(e => e.Sin)
                 .IsRequired(false);
-            builder.Property(e => e.InfractionOn)
+            builder.Property(e => e.SinOn)
                 .HasDefaultValueSql("now()");
         }
     }

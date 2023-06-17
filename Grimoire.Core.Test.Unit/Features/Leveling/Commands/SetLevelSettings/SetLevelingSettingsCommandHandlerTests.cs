@@ -19,15 +19,11 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
     [TestFixture]
     public class SetLevelingSettingsCommandHandlerTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public void WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -44,7 +40,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public void WhenUpdatingTextTime_IfNumberIsInvalid_FailResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -63,7 +59,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public void WhenUpdatingBase_IfNumberIsInvalid_FailResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -82,7 +78,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public void WhenUpdatingModifier_IfNumberIsInvalid_FailResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -101,7 +97,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public void WhenUpdatingAmount_IfNumberIsInvalid_FailResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -120,7 +116,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public void WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -139,7 +135,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public async Task WhenUpdatingTextTime_IfNumberIsValid_UpdateSettingAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -159,7 +155,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public async Task WhenUpdatingBase_IfNumberIsValid_UpdateSettingAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -179,7 +175,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public async Task WhenUpdatingModifier_IfNumberIsValid_UpdateSettingAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -199,7 +195,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public async Task WhenUpdatingAmount_IfNumberIsValid_UpdateSettingAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -219,7 +215,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public async Task WhenUpdatingLogChannel_IfNumberIsValid_UpdateSettingAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand
@@ -239,7 +235,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
         [Test]
         public async Task WhenUpdatingLogChannel_IfNumberIs0_UpdateSettingToNullAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new SetLevelSettingsCommandHandler(context);
             var command = new SetLevelSettingsCommand

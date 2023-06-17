@@ -27,7 +27,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetBan
                     x.UserId,
                     UsernameHistory = x.Member.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(),
                     x.Guild.ModerationSettings.PublicBanLog,
-                    x.InfractionOn,
+                    x.SinOn,
                     x.Guild.ModChannelLog,
                     x.Reason,
                     PublishedBan = x.PublishMessages.Where(x => x.PublishType  == PublishType.Ban).FirstOrDefault()
@@ -44,7 +44,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetBan
                 UserId = result.UserId,
                 Username = result.UsernameHistory.Username,
                 BanLogId = result.PublicBanLog.Value,
-                Date = result.InfractionOn,
+                Date = result.SinOn,
                 LogChannelId = result.ModChannelLog,
                 Reason = result.Reason,
                 PublishedMessage = result.PublishedBan?.MessageId

@@ -27,7 +27,7 @@ namespace Grimoire.Discord.Extensions
             timeStamp ??= DateTime.UtcNow;
             embed ??= new DiscordEmbedBuilder()
                 .WithColor(color ?? GrimoireColor.Purple)
-                .WithTitle(title)
+                .WithAuthor(title)
                 .WithDescription(message)
                 .WithFooter(footer)
                 .WithTimestamp(timeStamp)

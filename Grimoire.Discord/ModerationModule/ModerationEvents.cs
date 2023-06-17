@@ -36,12 +36,15 @@ namespace Grimoire.Discord.ModerationModule
         public async Task DiscordOnGuildBanAdded(DiscordClient sender, GuildBanAddEventArgs args)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(500));
-            var response = await this._mediator.Send(new GetLastBanQuery());
+            var response = await this._mediator.Send(new GetLastBanQuery
+            {
+                UserId = args.Member.Id,
+                GuildId = args.Guild.Id
+            });
 
             if (!response.ModerationModuleEnabled)
                 return;
-
-            if (response.SinOn > DateTimeOffset.UtcNow.AddSeconds(-5))
+            if (response.SinOn < DateTimeOffset.UtcNow.AddSeconds(-5))
             {
                 var addBanCommand = new AddBanCommand
                 {
@@ -54,7 +57,7 @@ namespace Grimoire.Discord.ModerationModule
                     if (banAuditLog is not null && banAuditLog.Target.Id == args.Member.Id)
                     {
                         addBanCommand.ModeratorId = banAuditLog.UserResponsible.Id;
-                        addBanCommand.Reason = banAuditLog.Reason;
+                        addBanCommand.Reason = banAuditLog.Reason ?? "";
                     }
                 }
                 catch (Exception ex) when (
@@ -72,29 +75,23 @@ namespace Grimoire.Discord.ModerationModule
             if (!args.Guild.Channels.TryGetValue(response.LogChannelId.Value,
                 out var loggingChannel)) return;
 
-            var banMessage = $"**Banned:** {args.Member.GetUsernameWithDiscriminator()} (ID {args.Member.Id})\n" +
-                            $"**SinId:** {response.SinId}\n" +
-                            $"**Mod:** <@{response.ModeratorId}>\n" +
-                            $"**Reason:** {(!string.IsNullOrWhiteSpace(response.Reason) ? response.Reason : "(no reason specified)")}\n";
-
-            if (string.IsNullOrWhiteSpace(response.Reason))
-            {
-                banMessage += $"Reason can be updated with `/reason {response.SinId} <your reason here>`";
-            }
-            else
-            {
-                banMessage += $"This can be published to the published to the public log channel with `/publish ban {response.SinId}`";
-            }
-
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithTitle($"{args.Member.GetUsernameWithDiscriminator()} banned")
-                .WithDescription(banMessage)
-                .WithColor(GrimoireColor.Yellow));
+                .WithAuthor($"Banned")
+                .AddField("User", args.Member.Mention, true)
+                .AddField("Sin Id", $"**{response.SinId}**", true)
+                .AddField("Mod", $"<@{response.ModeratorId}>", true)
+                .AddField("Reason", !string.IsNullOrWhiteSpace(response.Reason) ? response.Reason : "None", true)
+                .WithTimestamp(DateTimeOffset.UtcNow)
+                .WithColor(GrimoireColor.Red));
         }
 
         public async Task DiscordOnGuildBanRemoved(DiscordClient sender, GuildBanRemoveEventArgs args)
         {
-            var response = await this._mediator.Send(new GetLastBanQuery());
+            var response = await this._mediator.Send(new GetLastBanQuery
+            {
+                UserId = args.Member.Id,
+                GuildId = args.Guild.Id
+            });
 
             if (!response.ModerationModuleEnabled)
                 return;
@@ -103,13 +100,11 @@ namespace Grimoire.Discord.ModerationModule
 
             if (!args.Guild.Channels.TryGetValue(response.LogChannelId.Value,
                 out var loggingChannel)) return;
-
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithTitle($"{args.Member.GetUsernameWithDiscriminator()} unbanned")
-                .WithDescription($"**Sin Id:** {response.SinId}\n" +
-                $"**Unbanned:** {args.Member.GetUsernameWithDiscriminator()} (ID {args.Member.Id})\n" +
-                $"`/pardon {response.SinId} <reason>` to add an unban reason." +
-                $"Then `/publish unban {response.SinId}` to publish to public log channel.")
+                .WithAuthor("Unbanned")
+                .AddField("User", args.Member.Mention, true)
+                .AddField("Sin Id", $"**{response.SinId}**", true)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .WithColor(GrimoireColor.Green));
         }
 

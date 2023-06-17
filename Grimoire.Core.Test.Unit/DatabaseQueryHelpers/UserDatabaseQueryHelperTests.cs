@@ -17,15 +17,11 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class UserDatabaseQueryHelperTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenUsersAreNotInDatabase_AddThemAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var usersToAdd = new List<UserDto>
             {

@@ -5,44 +5,48 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core;
+using EFCore.BulkExtensions;
 using Grimoire.Domain;
 using Grimoire.MigrationTool.Domain;
-using Grimoire.MigrationTool.Domain.Lumberjack;
+using Grimoire.MigrationTool.Extensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace Grimoire.MigrationTool.MigrationServices
 {
-    public static class LumberjackMigrationService
+    public class LumberjackMigrationService
     {
-        public static async Task MigrateLumberJackDatabaseAsync(IConfiguration configuration)
+        private readonly LumberjackDbContext _lumberjackContext;
+
+        public LumberjackMigrationService(LumberjackDbContext context)
+        {
+            this._lumberjackContext = context;
+        }
+        public async Task MigrateLumberJackDatabaseAsync()
         {
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("LumberjackPath")))
             {
                 Log.Warning("Filepath for Lumberjack DB was empty.");
                 return;
             }
-            await MigrateSettingsAsync(configuration);
-            await MigrateChannelsAsync(configuration);
-            await MigrateUsersAsync(configuration);
-            await MigrateMembersAsync(configuration);
-            await MigrateUsernamesAsync(configuration);
-            await MigrateNicknamesAsync(configuration);
-            await MigrateAvatarsAsync(configuration);
-            await MigrateMessagesAsync(configuration);
-            await MigrateAttachmentsAsync(configuration);
-            await MigrateTrackers(configuration);
+            await this.MigrateSettingsAsync();
+            await this.MigrateChannelsAsync();
+            await this.MigrateUsersAsync();
+            await this.MigrateMembersAsync();
+            await this.MigrateUsernamesAsync();
+            await this.MigrateNicknamesAsync();
+            await this.MigrateAvatarsAsync();
+            await this.MigrateMessagesAsync();
+            await this.MigrateAttachmentsAsync();
+            await this.MigrateTrackers();
         }
 
-        private static async Task MigrateTrackers(IConfiguration configuration)
+        private async Task MigrateTrackers()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
 
-            var lumberjackTrackers = await lumberjackContext.Trackers
+            var lumberjackTrackers = await this._lumberjackContext.Trackers
                 .Select(tracker => new Grimoire.Domain.Tracker
                 {
                     UserId = tracker.UserId,
@@ -52,46 +56,42 @@ namespace Grimoire.MigrationTool.MigrationServices
                     ModeratorId = tracker.ModeratorId
                 }).ToListAsync();
 
-            var grimoireTrackers = await grimoireContext.Trackers.Select(x => new { x.UserId, x.GuildId }).ToListAsync();
+            var grimoireTrackers = await grimoireDbContext.Trackers.Select(x => new { x.UserId, x.GuildId }).ToListAsync();
 
             var attachmentsToAdd = lumberjackTrackers.ExceptBy(grimoireTrackers, x => new { x.UserId, x.GuildId });
 
-            await grimoireContext.AddRangeAsync(attachmentsToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.BulkInsertAsync(attachmentsToAdd);
+            await grimoireDbContext.BulkSaveChangesAsync();
         }
 
-        private static async Task MigrateAttachmentsAsync(IConfiguration configuration)
+        private async Task MigrateAttachmentsAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
-
-            var lumberjackAttachments = await lumberjackContext.AttachmentUrls
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
+            var lumberjackAttachments = await this._lumberjackContext.AttachmentUrls
                 .Select(attachment => new Attachment
                 {
-                    Id = ulong.Parse(new DirectoryInfo(Path.GetDirectoryName(attachment.Url)).Name),
+                    Id = ulong.Parse(new DirectoryInfo(Path.GetDirectoryName(attachment.Url)!).Name),
                     FileName = Path.GetFileName(attachment.Url),
                     MessageId = attachment.MessageId
                 }).ToListAsync();
-            var grimoireAttachments = await grimoireContext.Attachments.Select(x => x.Id).ToListAsync();
+            var grimoireAttachments = await grimoireDbContext.Attachments.Select(x => x.Id).ToListAsync();
 
             var attachmentsToAdd = lumberjackAttachments.ExceptBy(grimoireAttachments, x => x.Id);
-            await grimoireContext.AddRangeAsync(attachmentsToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.BulkInsertAsync(attachmentsToAdd);
+            await grimoireDbContext.BulkSaveChangesAsync();
         }
 
-        private static async Task MigrateMessagesAsync(IConfiguration configuration)
+        private async Task MigrateMessagesAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
-
-            var lumberjackMessages = await lumberjackContext.Messages
-                .Select(message => new Grimoire.Domain.Message
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
+            var lumberjackMessages = await this._lumberjackContext.Messages
+                .Select(message => new Message
                 {
                     Id = message.Id,
                     UserId = message.AuthorId,
                     ChannelId = message.ChannelId,
                     GuildId = message.GuildId,
-                    CreatedTimestamp = message.CreatedAt,
+                    CreatedTimestamp = message.CreatedAt.ToUniversalTime(),
                     MessageHistory = new List<MessageHistory>
                         {
                             new MessageHistory
@@ -100,24 +100,32 @@ namespace Grimoire.MigrationTool.MigrationServices
                                 MessageContent = message.CleanContent,
                                 GuildId = message.GuildId,
                                 Action = MessageAction.Created,
-                                TimeStamp = message.CreatedAt
+                                TimeStamp = message.CreatedAt.ToUniversalTime()
                             }
                         }
                 }).ToListAsync();
-            var grimoireMessages = await grimoireContext.Messages.Select(x => x.Id).ToListAsync();
 
+            var grimoireMessages = await grimoireDbContext.Messages.Select(x => x.Id).ToListAsync();
             var messagesToAdd = lumberjackMessages.ExceptBy(grimoireMessages, x => x.Id);
 
-            await grimoireContext.AddRangeAsync(messagesToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.BulkInsertAsync(messagesToAdd);
+            await grimoireDbContext.BulkSaveChangesAsync();
+
+            var messageHistoryToAdd = messagesToAdd.SelectMany(x => x.MessageHistory)
+                .ToList();
+
+            var bulkConfig = new BulkConfig();
+            bulkConfig.SqlBulkCopyOptions = bulkConfig.SqlBulkCopyOptions & ~SqlBulkCopyOptions.KeepIdentity;
+            bulkConfig.PropertiesToExclude = new List<string> { "Id" };
+
+            await grimoireDbContext.BulkInsertAsync(messageHistoryToAdd, bulkConfig);
+            await grimoireDbContext.BulkSaveChangesAsync();
         }
 
-        private static async Task MigrateAvatarsAsync(IConfiguration configuration)
+        private async Task MigrateAvatarsAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
-
-            var lumberjackAvatar = await lumberjackContext.Messages
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
+            var lumberjackAvatar = await this._lumberjackContext.Messages
                 .Select(x => new Avatar
                 {
                     UserId = x.AuthorId,
@@ -126,7 +134,7 @@ namespace Grimoire.MigrationTool.MigrationServices
                     Timestamp = x.CreatedAt
                 }).ToListAsync();
 
-            var grimoireAvatars = await grimoireContext.Avatars
+            var grimoireAvatars = await grimoireDbContext.Avatars
                 .Select(x => new
                 {
                     x.UserId,
@@ -142,16 +150,14 @@ namespace Grimoire.MigrationTool.MigrationServices
                     x.FileName
                 });
 
-            await grimoireContext.AddRangeAsync(avatarsToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.AddRangeAsync(avatarsToAdd);
+            await grimoireDbContext.SaveChangesAsync();
         }
 
-        private static async Task MigrateNicknamesAsync(IConfiguration configuration)
+        private async Task MigrateNicknamesAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
-
-            var lumberjackNicknames = await lumberjackContext.Messages
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
+            var lumberjackNicknames = await this._lumberjackContext.Messages
                 .Select(x => new NicknameHistory
                 {
                     GuildId = x.GuildId,
@@ -160,7 +166,7 @@ namespace Grimoire.MigrationTool.MigrationServices
                     Timestamp = x.CreatedAt
                 }).ToListAsync();
 
-            var grimoireNicknameHistory = await grimoireContext.NicknameHistory.Select(x => new
+            var grimoireNicknameHistory = await grimoireDbContext.NicknameHistory.Select(x => new
             {
                 x.GuildId,
                 x.UserId,
@@ -179,28 +185,33 @@ namespace Grimoire.MigrationTool.MigrationServices
                 x.Nickname
             });
 
-            await grimoireContext.AddRangeAsync(nickNamesToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.AddRangeAsync(nickNamesToAdd);
+            await grimoireDbContext.SaveChangesAsync();
         }
 
-        private static async Task MigrateUsernamesAsync(IConfiguration configuration)
+        private async Task MigrateUsernamesAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
 
-            var lumberjackUsernameHistory = await lumberjackContext.Messages
+            var lumberjackUsernameHistory = await this._lumberjackContext.Messages
                 .Select(x => new UsernameHistory
                 {
                     Username = x.AuthorName,
                     UserId = x.AuthorId,
-                    Timestamp = x.CreatedAt
+                    Timestamp = x.CreatedAt.ToUniversalTime()
                 })
                 .ToListAsync();
-            var grimoireUsernames = await grimoireContext.UsernameHistory.Select(x => new
+            var grimoireUsernames = await grimoireDbContext.UsernameHistory.Select(x => new
             {
                 x.Username,
                 x.UserId
             }).ToListAsync();
+
+            lumberjackUsernameHistory.ForEach(x =>
+            {
+                if (x.Username.EndsWith("#0"))
+                    x.Username = x.Username[..^2];
+            });
 
             var usernameHistoryToAdd = lumberjackUsernameHistory
                 .DistinctBy(x => new
@@ -214,16 +225,14 @@ namespace Grimoire.MigrationTool.MigrationServices
                     x.UserId
                 });
 
-            await grimoireContext.AddRangeAsync(usernameHistoryToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.AddRangeAsync(usernameHistoryToAdd);
+            await grimoireDbContext.SaveChangesAsync();
         }
 
-        private static async Task MigrateMembersAsync(IConfiguration configuration)
+        private async Task MigrateMembersAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
-
-            var lumberjackMembers = await lumberjackContext.Messages
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
+            var lumberjackMembers = await this._lumberjackContext.Messages
                 .Select(x => new Member
                 {
                     UserId = x.AuthorId,
@@ -240,60 +249,56 @@ namespace Grimoire.MigrationTool.MigrationServices
                             }
                         },
                 }).Distinct().ToListAsync();
-            var grimoireMembers = await grimoireContext.Members.
+            var grimoireMembers = await grimoireDbContext.Members.
                 Select(x => new { x.UserId, x.GuildId }).ToListAsync();
             var usersToAdd = lumberjackMembers.ExceptBy(grimoireMembers,x => new { x.UserId, x.GuildId });
 
-            await grimoireContext.AddRangeAsync(usersToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.AddRangeAsync(usersToAdd);
+            await grimoireDbContext.SaveChangesAsync();
         }
 
-        private static async Task MigrateUsersAsync(IConfiguration configuration)
+        private async Task MigrateUsersAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
-
-            var users = await lumberjackContext.Messages
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
+            var users = await this._lumberjackContext.Messages
                 .Select(x => new User
                 {
                     Id = x.AuthorId
                 })
                 .Distinct().ToListAsync();
-            var grimoireUsers = await grimoireContext.Users.Select(x => x.Id).ToListAsync();
+            var grimoireUsers = await grimoireDbContext.Users.Select(x => x.Id).ToListAsync();
             var usersToAdd = users.ExceptBy(grimoireUsers,x => x.Id);
 
-            await grimoireContext.AddRangeAsync(usersToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.BulkInsertAsync(usersToAdd);
+            await grimoireDbContext.BulkSaveChangesAsync();
         }
 
-        private static async Task MigrateChannelsAsync(IConfiguration configuration)
+        private async Task MigrateChannelsAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
-            var channels = await lumberjackContext.Messages
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
+
+            var channels = await this._lumberjackContext.Messages
                 .Select(x => new Channel
                 {
                     Id = x.ChannelId,
                     GuildId = x.GuildId
                 }).Distinct().ToListAsync();
 
-            var grimoireChannels = await grimoireContext.Channels.Select(x => x.Id).ToListAsync();
+            var grimoireChannels = await grimoireDbContext.Channels.Select(x => x.Id).ToListAsync();
 
             var channelsToAdd = channels.ExceptBy(grimoireChannels, x => x.Id);
-            await grimoireContext.AddRangeAsync(channelsToAdd);
-            await grimoireContext.SaveChangesAsync();
+            await grimoireDbContext.BulkInsertAsync(channelsToAdd);
+            await grimoireDbContext.BulkSaveChangesAsync();
         }
 
-        private static async Task MigrateSettingsAsync(IConfiguration configuration)
+        private async Task MigrateSettingsAsync()
         {
-            using var lumberjackContext = new LumberjackDbContext();
-            using var grimoireContext = GetGrimoireContext(configuration);
-
-            var lumberjackSettings = await lumberjackContext.LogChannels.ToListAsync();
+            using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
+            var lumberjackSettings = await this._lumberjackContext.LogChannels.ToListAsync();
 
             foreach (var lumberjackGuild in lumberjackSettings)
             {
-                var grimoireGuild = await grimoireContext.Guilds
+                var grimoireGuild = await grimoireDbContext.Guilds
                     .Include(x => x.MessageLogSettings)
                     .Include(x => x.UserLogSettings)
                     .Include(x => x.Channels)
@@ -309,87 +314,14 @@ namespace Grimoire.MigrationTool.MigrationServices
                         UserLogSettings = new GuildUserLogSettings(),
                         MessageLogSettings = new GuildMessageLogSettings()
                     };
-                    await grimoireContext.AddAsync(grimoireGuild);
-                    await grimoireContext.SaveChangesAsync();
+                    await grimoireDbContext.AddAsync(grimoireGuild);
+                    await grimoireDbContext.SaveChangesAsync();
                 }
                 grimoireGuild.UpdateGuildLogSettings(lumberjackGuild);
 
-                grimoireContext.Update(grimoireGuild);
-                await grimoireContext.SaveChangesAsync();
+                grimoireDbContext.Update(grimoireGuild);
             }
-        }
-
-        private static void UpdateGuildLogSettings(this Guild guild, LogChannelSettings logChannelSettings)
-        {
-            guild.UserLogSettings.JoinChannelLogId =
-                logChannelSettings.JoinLogId != 0
-                ? logChannelSettings.JoinLogId
-                : null;
-            guild.AddChannel(logChannelSettings.JoinLogId);
-            guild.UserLogSettings.LeaveChannelLogId =
-                logChannelSettings.LeaveLogId != 0
-                ? logChannelSettings.LeaveLogId
-                : null;
-            guild.AddChannel(logChannelSettings.LeaveLogId);
-            guild.UserLogSettings.UsernameChannelLogId =
-                logChannelSettings.UsernameLogId != 0
-                ? logChannelSettings.UsernameLogId
-                : null;
-            guild.AddChannel(logChannelSettings.UsernameLogId);
-            guild.UserLogSettings.NicknameChannelLogId =
-                logChannelSettings.NicknameLogId != 0
-                ? logChannelSettings.NicknameLogId
-                : null;
-            guild.AddChannel(logChannelSettings.NicknameLogId);
-            guild.UserLogSettings.AvatarChannelLogId =
-                logChannelSettings.AvatarLogId != 0
-                ? logChannelSettings.AvatarLogId
-                : null;
-            guild.AddChannel(logChannelSettings.AvatarLogId);
-            guild.UserLogSettings.ModuleEnabled = true;
-
-            guild.MessageLogSettings.DeleteChannelLogId =
-                logChannelSettings.DeleteLogId != 0
-                ? logChannelSettings.DeleteLogId
-                : null;
-            guild.AddChannel(logChannelSettings.DeleteLogId);
-            guild.MessageLogSettings.BulkDeleteChannelLogId =
-                logChannelSettings.BulkDeleteLogId != 0
-                ? logChannelSettings.BulkDeleteLogId
-                : null;
-            guild.AddChannel(logChannelSettings.BulkDeleteLogId);
-            guild.MessageLogSettings.EditChannelLogId =
-                logChannelSettings.EditLogId != 0
-                ? logChannelSettings.EditLogId
-                : null;
-            guild.AddChannel(logChannelSettings.EditLogId);
-            guild.MessageLogSettings.ModuleEnabled = true;
-
-            guild.ModChannelLog = logChannelSettings.ModLogId;
-            guild.AddChannel(logChannelSettings.ModLogId);
-        }
-
-        private static void AddChannel(this Guild guild, ulong? channelId)
-        {
-            if (channelId is not null && channelId != 0 && !guild.Channels.Any(x => x.Id == channelId))
-            {
-                guild.Channels.Add(new Channel
-                {
-                    Id = channelId.Value,
-                    GuildId = guild.Id
-                });
-            }
-        }
-
-        private static GrimoireDbContext GetGrimoireContext(IConfiguration configuration)
-        {
-            var connectionString =
-                    configuration.GetConnectionString("Grimoire");
-            return new GrimoireDbContext(
-                new DbContextOptionsBuilder<GrimoireDbContext>()
-                .UseNpgsql(connectionString)
-                .UseLoggerFactory(new LoggerFactory().AddSerilog())
-                .Options);
+            await grimoireDbContext.SaveChangesAsync();
         }
     }
 }

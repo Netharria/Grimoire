@@ -17,15 +17,11 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetIgnoredItems
     [TestFixture]
     public class GetIngoredItemsQueryHandlerTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenCallingGetIgnoredItemsHandler_IfNoIgnoredItems_ReturnFailedResponseAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             context.Guilds.Add(new Guild { Id = 34958734 });
             await context.SaveChangesAsync();
@@ -45,7 +41,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetIgnoredItems
         [Test]
         public async Task WhenCallingGetIgnoredItemsHandler_IfIgnoredItems_ReturnSuccessResponseAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var CUT = new GetIgnoredItemsQueryHandler(context);
             var command = new GetIgnoredItemsQuery

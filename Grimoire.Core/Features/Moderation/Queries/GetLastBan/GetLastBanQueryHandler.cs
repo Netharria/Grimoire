@@ -23,7 +23,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetLastBan
             var result = await this._grimoireDbContext.Sins
                 .WhereMemberHasId(request.UserId, request.GuildId)
                 .Where(x => x.SinType == SinType.Ban)
-                .OrderByDescending(x => x.InfractionOn)
+                .OrderByDescending(x => x.SinOn)
                 .Select(x => new GetLastBanQueryResponse
                 {
                     UserId = x.UserId,
@@ -31,7 +31,7 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetLastBan
                     ModeratorId = x.ModeratorId,
                     Reason = x.Reason,
                     SinId = x.Id,
-                    SinOn = x.InfractionOn,
+                    SinOn = x.SinOn,
                     LogChannelId = x.Guild.ModChannelLog,
                     ModerationModuleEnabled = x.Guild.ModerationSettings.ModuleEnabled
                 })

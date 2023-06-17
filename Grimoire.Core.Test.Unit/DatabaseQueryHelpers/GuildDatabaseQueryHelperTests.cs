@@ -17,15 +17,11 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class GuildDatabaseQueryHelperTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var guildsToAdd = new List<GuildDto>
             {

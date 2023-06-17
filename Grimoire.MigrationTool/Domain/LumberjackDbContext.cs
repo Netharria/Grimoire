@@ -7,6 +7,8 @@
 
 using Grimoire.MigrationTool.Domain.Lumberjack;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Grimoire.MigrationTool.Domain
 {
@@ -25,7 +27,8 @@ namespace Grimoire.MigrationTool.Domain
         public DbSet<Tracker> Trackers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlite($"Data Source={this.DbPath}");
+            => optionsBuilder.UseSqlite($"Data Source={this.DbPath}")
+                .UseLoggerFactory(new LoggerFactory().AddSerilog());
 
     }
 }

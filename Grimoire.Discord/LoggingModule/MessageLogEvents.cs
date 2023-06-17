@@ -59,12 +59,13 @@ namespace Grimoire.Discord.LoggingModule
 
         public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
         {
-            var auditLogEntry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogMessageEntry>(AuditLogActionType.MessageDelete);
+            // TODO: Implement better logic for figuring out if a moderator deleted the message. Probably cache log entries for a brief period and compare message count.
+            //var auditLogEntry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogMessageEntry>(AuditLogActionType.MessageDelete);
             var response = await this._mediator.Send(
                 new DeleteMessageCommand
                 {
                     Id = args.Message.Id,
-                    DeletedByModerator = auditLogEntry?.Target?.Id == args.Message.Id ? auditLogEntry?.UserResponsible?.Id : null,
+                    DeletedByModerator = null,
                     GuildId = args.Guild.Id
                 });
             if (!response.Success || response.LoggingChannel is not ulong loggingChannelId)
@@ -89,31 +90,17 @@ namespace Grimoire.Discord.LoggingModule
                 avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
             }
 
-            var messageDescription =  $"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
-                    $"**Channel:** {ChannelExtensions.Mention(args.Channel.Id)}\n" +
-                    $"**Message Id:** {args.Message.Id}" +
-                    (auditLogEntry is null
-                    ? string.Empty
-                    : $"\n**Deleted By:** {auditLogEntry.UserResponsible.Mention}")
-                    + (response.ReferencedMessage is null
-                    ? string.Empty
-                    : $"\n[Referenced Message](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})");
-
             var embed = new DiscordEmbedBuilder()
-                .WithAuthor($"{userName} ({response.UserId})")
-                .WithTitle($"Message deleted in #{args.Channel.Name}")
-                .WithDescription($"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
-                                $"**Channel:** {ChannelExtensions.Mention(args.Channel.Id)}\n" +
-                                $"**Message Id:** {args.Message.Id}" +
-                                (auditLogEntry is null
-                                ? string.Empty
-                                : $"\n**Deleted By:** {auditLogEntry.UserResponsible.Mention}")
-                                + (response.ReferencedMessage is null
-                                ? string.Empty
-                                : $"\n[Referenced Message](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})")
-                                )
-                .WithTimestamp(DateTime.UtcNow)
-                .WithThumbnail(avatarUrl)
+                .WithAuthor($"Message deleted in #{args.Channel.Name}")
+                .AddField("Author", UserExtensions.Mention(response.UserId), true)
+                .AddField("Channel", ChannelExtensions.Mention(args.Channel.Id), true)
+                .AddField("Message Id", args.Message.Id.ToString(), true).WithTimestamp(DateTime.UtcNow)
+                .WithThumbnail(avatarUrl);
+            //if (auditLogEntry is not null)
+            //    embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
+            if (response.ReferencedMessage is not null)
+                embed.AddField("Reply To", $"[Link](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})", true);
+            embed
                 .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
             var messageBuilder = await this._attachmentUploadService.BuildImageEmbedAsync(
@@ -224,12 +211,11 @@ namespace Grimoire.Discord.LoggingModule
             var embeds = new List<DiscordEmbedBuilder>
             {
                 new DiscordEmbedBuilder()
-                .WithTitle($"Message edited in #{args.Channel.Name}")
-                .WithDescription($"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
-                                $"**Channel:** {args.Channel.Mention}\n" +
-                                $"**Message Id:** {response.MessageId}\n" +
-                                $"**[Jump Url]({args.Message.JumpLink})**")
-                .WithAuthor($"{userName} ({response.UserId})")
+                .AddField("Author", UserExtensions.Mention(response.UserId), true)
+                .AddField("Channel", args.Channel.Mention, true)
+                .AddField("Message Id", response.MessageId.ToString(), true)
+                .AddField("Link", $"**[Jump Url]({args.Message.JumpLink})**", true)
+                .WithAuthor($"Message edited in #{args.Channel.Name}")
                 .WithTimestamp(DateTime.UtcNow)
                 .WithThumbnail(avatarUrl)
                 .AddMessageTextToFields("Before", response.MessageContent)
@@ -238,12 +224,11 @@ namespace Grimoire.Discord.LoggingModule
             if (response.MessageContent.Length + args.Message.Content.Length >= 5000)
             {
                 embeds.Add(new DiscordEmbedBuilder()
-                .WithTitle($"Message edited in #{args.Channel.Name}")
-                .WithDescription($"**Author:** {UserExtensions.Mention(response.UserId)}\n" +
-                                $"**Channel:** {args.Channel.Mention}\n" +
-                                $"**Message Id:** {response.MessageId}\n" +
-                                $"**[Jump Url]({args.Message.JumpLink})**")
-                .WithAuthor($"{userName} ({response.UserId})")
+                .AddField("Author", UserExtensions.Mention(response.UserId), true)
+                .AddField("Channel", args.Channel.Mention, true)
+                .AddField("Message Id", response.MessageId.ToString(), true)
+                .AddField("Link", $"**[Jump Url]({args.Message.JumpLink})**", true)
+                .WithAuthor($"Message edited in #{args.Channel.Name}")
                 .WithTimestamp(DateTime.UtcNow)
                 .WithThumbnail(avatarUrl)
                 .AddMessageTextToFields("After", args.Message.Content));

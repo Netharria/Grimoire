@@ -29,7 +29,7 @@ namespace Grimoire.Discord.LoggingModule
 
             var oldLogMessages = await this._mediator.Send(new GetOldLogMessagesQuery(), cancellationToken);
 
-            
+
             var result = await oldLogMessages
                 .ToAsyncEnumerable()
                 .Select(channel =>
@@ -70,7 +70,7 @@ namespace Grimoire.Discord.LoggingModule
         {
             try
             {
-                
+
                 if (channel is null)
                     return null;
                 return await channel.GetMessageAsync(messageId);

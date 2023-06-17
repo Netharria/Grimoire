@@ -18,15 +18,11 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Up
     [TestFixture]
     public class UpdateIgnoreStateForXpGainCommandHandlerTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_UpdateIgnoreStatusAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             //context.Database.BeginTransaction();
             var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
 
@@ -81,7 +77,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Up
         [Test]
         public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
 

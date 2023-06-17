@@ -76,25 +76,26 @@ namespace Grimoire.Discord.ModerationModule
                 deleteMessages ? (int)deleteDays : 0,
                 reason);
 
-            await ctx.ReplyAsync(
-                GrimoireColor.Yellow,
-                title: "Banned",
-                message: $"**Reason:** {reason}\n" +
-                $"{user.GetUsernameWithDiscriminator()}: Ban Id {response.SinId}");
+            await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+                .WithAuthor("Banned")
+                .WithDescription($"**Sin Id:** {response.SinId}\n" +
+                        $"**{user.GetUsernameWithDiscriminator()}** was banned "
+                        + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}." : "."))
+                .WithColor(GrimoireColor.Red));
         }
 
         [SlashCommand("Unban", "Bans a user from the server.")]
-        public async Task UnbanAsync(
+        public static async Task UnbanAsync(
             InteractionContext ctx,
             [Option("User", "The user to unban")] DiscordUser user)
         {
             try
             {
                 await ctx.Guild.UnbanMemberAsync(user.Id);
-                await ctx.ReplyAsync(
-                GrimoireColor.Yellow,
-                title: "Unbanned",
-                message: $"{user.GetUsernameWithDiscriminator()} was unbanned.");
+                await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+                .WithAuthor("Unbanned")
+                .WithDescription($"{user.GetUsernameWithDiscriminator()} was unbanned.")
+                .WithColor(GrimoireColor.Yellow));
             }
             catch (Exception ex) when (ex is NotFoundException || ex is ServerErrorException)
             {

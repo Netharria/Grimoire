@@ -18,15 +18,11 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Aw
     [TestFixture]
     public class AwardUserXpCommandHandlerTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenAwardUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var cut = new AwardUserXpCommandHandler(context);
 
@@ -49,7 +45,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.Aw
         [Test]
         public void WhenAwardUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
 
             var cut = new AwardUserXpCommandHandler(context);
             context.Database.BeginTransaction();

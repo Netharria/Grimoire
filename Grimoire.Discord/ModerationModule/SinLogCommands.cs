@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
+using Grimoire.Core.Features.Moderation.Queries.GetModActionsCounts;
 using Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser;
 
 namespace Grimoire.Discord.ModerationModule
@@ -32,6 +33,26 @@ namespace Grimoire.Discord.ModerationModule
 
             if ((!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages)) && ctx.User != user)
                 throw new AnticipatedException("Only moderators can look up logs for someone else.");
+            if (sinQueryType == SinQueryType.Mod)
+            {
+                var modResponse = await this._mediator.Send(new GetModActionCountsQuery
+                {
+                    UserId = user.Id,
+                    GuildId = ctx.Guild.Id
+                });
+                if (modResponse is null)
+                {
+                    await ctx.ReplyAsync(GrimoireColor.Red, "Did not find a moderator with that id.");
+                    return;
+                }
+                await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+                    .WithAuthor($"Moderation log for {user.GetUsernameWithDiscriminator()}")
+                    .AddField("Bans", modResponse.BanCount.ToString(), true)
+                    .AddField("Mutes", modResponse.MuteCount.ToString(), true)
+                    .AddField("Warns", modResponse.WarnCount.ToString(), true)
+                    .WithColor(GrimoireColor.Purple));
+                return;
+            }
             var response = await this._mediator.Send(new GetUserSinsQuery
             {
                 UserId = user.Id,
@@ -44,7 +65,7 @@ namespace Grimoire.Discord.ModerationModule
             foreach (var message in response.SinList)
                 await ctx.ReplyAsync(GrimoireColor.Green, message: message,
                     ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
-            
+
         }
     }
 }

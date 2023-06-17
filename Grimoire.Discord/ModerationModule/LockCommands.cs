@@ -5,12 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System;
-using DSharpPlus;
 using Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel;
 using Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand;
 using Grimoire.Core.Responses;
-using Grimoire.Domain;
 
 namespace Grimoire.Discord.ModerationModule
 {
@@ -35,6 +32,7 @@ namespace Grimoire.Discord.ModerationModule
             [Option("DurationAmount", "Select the amount of time the lock will last.")] long durationAmount,
             [ChannelTypes(ChannelType.Text, ChannelType.PublicThread, ChannelType.PrivateThread, ChannelType.Category, ChannelType.GuildForum)]
             [Option("Channel", "The Channel to lock. Current channel if not specified.")] DiscordChannel? channel = null,
+            [MaximumLength(1000)]
             [Option("Reason", "The reason why the channel is getting locked")] string? reason = null)
         {
             channel ??= ctx.Channel;

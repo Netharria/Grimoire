@@ -41,16 +41,18 @@ namespace Grimoire.Discord.ModerationModule
             });
 
             var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Ban);
-
-            await this._mediator.Send(new PublishBanCommand
+            if (response.PublishedMessage is null)
             {
-                SinId = sinId,
-                MessageId = banLogMessage.Id,
-                PublishType = PublishType.Ban
-            });
+                await this._mediator.Send(new PublishBanCommand
+                {
+                    SinId = sinId,
+                    MessageId = banLogMessage.Id,
+                    PublishType = PublishType.Ban
+                });
+            }
 
-            await ctx.ReplyAsync(GrimoireColor.Green, message: $"Successfully published ban : {sinId}");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.Member.GetUsernameWithDiscriminator} published ban reason of sin {sinId}");
+            await ctx.ReplyAsync(GrimoireColor.Green, message: $"Successfully published ban : {sinId}", ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.Member.GetUsernameWithDiscriminator()} published ban reason of sin {sinId}");
         }
 
         [SlashCommand("Unban", "Publishes an unban to the public ban log channel.")]
@@ -66,16 +68,18 @@ namespace Grimoire.Discord.ModerationModule
             });
 
             var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Unban);
-
-            await this._mediator.Send(new PublishBanCommand
+            if (response.PublishedMessage is null)
             {
-                SinId = sinId,
-                MessageId = banLogMessage.Id,
-                PublishType = PublishType.Unban
-            });
+                await this._mediator.Send(new PublishBanCommand
+                {
+                    SinId = sinId,
+                    MessageId = banLogMessage.Id,
+                    PublishType = PublishType.Unban
+                });
+            }
 
-            await ctx.ReplyAsync(GrimoireColor.Green, message: $"Successfully published unban : {sinId}");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.Member.GetUsernameWithDiscriminator} published unban reason of sin {sinId}");
+            await ctx.ReplyAsync(GrimoireColor.Green, message: $"Successfully published unban : {sinId}", ephemeral: false);
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.Member.GetUsernameWithDiscriminator()} published unban reason of sin {sinId}");
         }
 
         private static async Task<DiscordMessage> SendPublicLogMessage(InteractionContext ctx, GetBanQueryResponse response, PublishType publish)
@@ -92,7 +96,7 @@ namespace Grimoire.Discord.ModerationModule
                     var message = await banLogChannel.GetMessageAsync(response.PublishedMessage.Value);
                     return await message.ModifyAsync(new DiscordEmbedBuilder()
                         .WithTitle(publish.ToString())
-                        .WithDescription($"**Date:** {response.Date}\n" +
+                        .WithDescription($"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
                                         $"**User:** {response.Username} ({response.UserId})\n" +
                                         $"**Reason:** {response.Reason}")
                         .WithColor(GrimoireColor.Purple).Build());
@@ -105,7 +109,7 @@ namespace Grimoire.Discord.ModerationModule
 
             return await banLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithTitle(publish.ToString())
-                .WithDescription($"**Date:** {response.Date}\n" +
+                .WithDescription($"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
                                 $"**User:** {response.Username} ({response.UserId})\n" +
                                 $"**Reason:** {response.Reason}")
                 .WithColor(GrimoireColor.Purple));

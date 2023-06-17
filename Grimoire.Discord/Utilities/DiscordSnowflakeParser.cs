@@ -27,6 +27,6 @@ namespace Grimoire.Discord.Utilities
                     if (user != null) return "User";
                     return "Invalid";
                 })
-                .ToDictionaryAwaitAsync(k => new ValueTask<string>(k.Key), async v => await v.ToArrayAsync());
+                .ToDictionaryAwaitAsync(k => ValueTask.FromResult(k.Key), async v => await v.ToArrayAsync());
     }
 }

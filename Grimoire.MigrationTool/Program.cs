@@ -5,21 +5,32 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.MigrationTool.Domain;
 using Grimoire.MigrationTool.MigrationServices;
-using Microsoft.Extensions.Configuration;
 using Serilog;
 
-var directory = Directory.GetCurrentDirectory();
 
-var configuration = new ConfigurationBuilder()
-            .SetBasePath(directory)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
 
 Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(configuration)
-    .WriteTo.Console().CreateLogger();
+                .ReadFrom.Configuration(GrimoireDBContextBuilder.Configuration)
+                .CreateLogger();
 
-await LumberjackMigrationService.MigrateLumberJackDatabaseAsync(configuration);
+using (var lumberjackDbContext = new LumberjackDbContext())
+{
+    var lumberjackMigrationTool = new LumberjackMigrationService(lumberjackDbContext);
+    await lumberjackMigrationTool.MigrateLumberJackDatabaseAsync();
+}
+
+using (var anubisDbContext = new AnubisDbContext())
+{
+    var anubisMigrationTool = new AnubisMigrationService(anubisDbContext);
+    await anubisMigrationTool.MigrateAnubisDatabaseAsync();
+}
+
+using (var fuzzyDbContext = new FuzzyDbContext())
+{
+    var fuzzyMigrationTool = new FuzzyMigrationService(fuzzyDbContext);
+    await fuzzyMigrationTool.MigrateFuzzyDatabaseAsync();
+}
 
 Log.CloseAndFlush();

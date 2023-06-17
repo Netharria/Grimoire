@@ -42,8 +42,6 @@ namespace Grimoire.Discord.LoggingModule
             if (settings.JoinChannelLog is null) return;
             var logChannel = args.Guild.Channels.GetValueOrDefault(settings.JoinChannelLog.Value);
             if (logChannel is null) return;
-
-            var accountAge = DateTime.UtcNow - args.Member.CreationTimestamp;
             var invites = await args.Guild.GetInvitesAsync();
             var inviteUsed = this._inviteService.CalculateInviteUsed(new GuildInviteDto
             {
@@ -61,26 +59,24 @@ namespace Grimoire.Discord.LoggingModule
             });
             var inviteUsedText = "";
             if (inviteUsed is not null)
-                inviteUsedText = $"**Invite used:** {inviteUsed.Url} ({inviteUsed.Uses + 1} uses)\n**Created By:** {inviteUsed.Inviter}";
+                inviteUsedText = $"{inviteUsed.Url} ({inviteUsed.Uses} uses)\n**Created By:** {inviteUsed.Inviter}";
             else if (!string.IsNullOrWhiteSpace(args.Guild.VanityUrlCode))
-                inviteUsedText = $"**Invite used:** Vanity Invite";
+                inviteUsedText = $"Vanity Invite";
             else
-                inviteUsedText = $"**Invite used:** Unknown Invite";
+                inviteUsedText = $"Unknown Invite";
 
             var embed = new DiscordEmbedBuilder()
-                .WithTitle("User Joined")
-                .WithDescription($"**Name:** {args.Member.Mention}\n" +
-                    $"**Created on:** {args.Member.CreationTimestamp:MMM dd, yyyy}\n" +
-                    $"**Account age:** {accountAge.Days} days old\n" +
-                    inviteUsedText)
-                .WithColor(accountAge < TimeSpan.FromDays(7) ? GrimoireColor.Yellow : GrimoireColor.Green)
-                .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
+                .WithAuthor("User Joined")
+                .AddField("Name", args.Member.Mention, true)
+                .AddField("Created", Formatter.Timestamp(args.Member.CreationTimestamp), true)
+                .AddField("Invite Used", inviteUsedText)
+                .WithColor(args.Member.CreationTimestamp > DateTimeOffset.UtcNow.AddDays(-7) ? GrimoireColor.Yellow : GrimoireColor.Green)
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
                 .WithFooter($"Total Members: {args.Guild.MemberCount}")
                 .WithTimestamp(DateTimeOffset.UtcNow);
 
-            if (accountAge < TimeSpan.FromDays(7))
-                embed.AddField("New Account", $"Created {accountAge.CustomTimeSpanString()}");
+            if (args.Member.CreationTimestamp > DateTimeOffset.UtcNow.AddDays(-7))
+                embed.AddField("New Account", $"Created {Formatter.Timestamp(args.Member.CreationTimestamp)}");
             await logChannel.SendMessageAsync(embed);
         }
 
@@ -92,17 +88,12 @@ namespace Grimoire.Discord.LoggingModule
             var logChannel = args.Guild.Channels.GetValueOrDefault(settings.LeaveChannelLog.Value);
             if (logChannel is null) return;
 
-            var accountAge = DateTimeOffset.UtcNow - args.Member.CreationTimestamp;
-            var timeOnServer = DateTimeOffset.UtcNow - args.Member.JoinedAt;
-
             var embed = new DiscordEmbedBuilder()
-                .WithTitle("User Left")
-                .WithDescription($"**Name:** {args.Member.Mention}\n" +
-                    $"**Created on:** {args.Member.CreationTimestamp:MMM dd, yyyy}\n" +
-                    $"**Account age:** {accountAge.Days} days old\n" +
-                    $"**Joined on:** {args.Member.JoinedAt:MMM dd, yyyy} ({timeOnServer.Days} days ago)")
-                .WithColor(GrimoireColor.Purple)
-                .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
+                .WithAuthor("User Left")
+                .AddField("Name", args.Member.Mention, true)
+                .AddField("Created", Formatter.Timestamp(args.Member.CreationTimestamp), true)
+                .AddField("Joined", Formatter.Timestamp(args.Member.JoinedAt), true)
+                .WithColor(GrimoireColor.Red)
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
                 .WithFooter($"Total Members: {args.Guild.MemberCount}")
                 .WithTimestamp(DateTimeOffset.UtcNow)

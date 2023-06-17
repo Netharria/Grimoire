@@ -137,7 +137,7 @@ namespace Grimoire.Discord.ModerationModule
                     || channel.Type == ChannelType.PublicThread)
                 {
                     var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
-                    if(permissions is not null)
+                    if (permissions is not null)
                         await channel.AddOverwriteAsync(role,
                                 permissions.Allowed.RevokeLockPermissions(),
                                 permissions.Denied.SetLockPermissions());

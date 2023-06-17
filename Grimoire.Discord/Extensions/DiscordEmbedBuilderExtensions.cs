@@ -18,7 +18,7 @@ namespace Grimoire.Discord.Extensions
                 return embedBuilder.AddField(contentType, "`blank`");
             if (!string.IsNullOrWhiteSpace(content))
             {
-                var splitContent = Regex.Matches(content, @"([\s\S]{1," + splitSize + @"})(?:\s|$)").Select(x => x.Value).ToList();
+                var splitContent = Regex.Matches(content, @"([\s\S]{1," + splitSize + @"})(?:\s|$)", RegexOptions.None, TimeSpan.FromSeconds(1)).Select(x => x.Value).ToList();
 
                 if (splitContent.Sum(x => x.Length) != content.Length || splitContent.Any(x => x.Length > 1024))
                 {

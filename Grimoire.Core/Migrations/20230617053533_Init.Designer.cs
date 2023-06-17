@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Core.Migrations
 {
     [DbContext(typeof(GrimoireDbContext))]
-    [Migration("20230526023913_init")]
-    partial class init
+    [Migration("20230617053533_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -586,15 +586,10 @@ namespace Grimoire.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
-
-                    b.Property<DateTimeOffset>("InfractionOn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
 
                     b.Property<decimal>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
@@ -603,6 +598,11 @@ namespace Grimoire.Core.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset>("SinOn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<int>("SinType")
                         .HasColumnType("integer");

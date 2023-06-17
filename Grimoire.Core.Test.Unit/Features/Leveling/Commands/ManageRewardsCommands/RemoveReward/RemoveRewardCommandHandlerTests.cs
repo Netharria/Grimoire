@@ -16,15 +16,11 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsComman
     [TestFixture]
     public class AddRewardCommandHandlerTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenRemovingReward_IfRewardExists_RemoveRoleAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new RemoveRewardCommandHandler(context);
             var command = new RemoveRewardCommand
@@ -41,7 +37,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsComman
         [Test]
         public void WhenAddingReward_IfRewardExist_UpdateRole()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var CUT = new RemoveRewardCommandHandler(context);
             var command = new RemoveRewardCommand

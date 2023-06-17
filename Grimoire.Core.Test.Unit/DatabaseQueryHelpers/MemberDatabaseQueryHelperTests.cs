@@ -19,15 +19,11 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
     [TestFixture]
     public class MemberDatabaseQueryHelperTests
     {
-        public TestDatabaseFixture DatabaseFixture { get; set; } = null!;
-
-        [OneTimeSetUp]
-        public void Setup() => this.DatabaseFixture = new TestDatabaseFixture();
 
         [Test]
         public async Task WhenMembersAreNotInDatabase_AddThemAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            using var context = TestDatabaseFixture.CreateContext();
             context.Database.BeginTransaction();
             var membersToAdd = new List<MemberDto>
             {
@@ -45,7 +41,7 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhenWhereLoggingEnabledCalled_GetMembersInGuildsWhereLoggingIsEnabledAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            using var context = TestDatabaseFixture.CreateContext();
 
             var result = await context.Members.WhereLoggingEnabled().ToArrayAsync();
 
@@ -55,7 +51,7 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhenWhereLevelingEnabledCalled_GetMembersInGuildsWhereLevelingIsEnabledAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            using var context = TestDatabaseFixture.CreateContext();
 
             var result = await context.Members.WhereLevelingEnabled().ToArrayAsync();
 
@@ -65,7 +61,7 @@ namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
         [Test]
         public async Task WhenWhereMemberNotIgnoredCalled_GetMembersThatArentIgnoredAsync()
         {
-            var context = this.DatabaseFixture.CreateContext();
+            using var context = TestDatabaseFixture.CreateContext();
 
             var result = await context.Members.WhereMemberNotIgnored(
                 TestDatabaseFixture.Channel1.Id,

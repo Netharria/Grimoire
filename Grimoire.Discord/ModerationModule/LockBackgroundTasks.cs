@@ -28,7 +28,7 @@ namespace Grimoire.Discord.ModerationModule
             var response = await this._mediator.Send(new GetExpiredLocksQuery(), cancellationToken);
             foreach (var expiredLock in response)
             {
-                 var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
+                var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
                 if (guild is null) continue;
 
                 var channel = guild.Channels.GetValueOrDefault(expiredLock.ChannelId);

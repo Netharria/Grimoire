@@ -30,7 +30,7 @@ namespace Grimoire.Core.Features.Moderation.Commands.MuteCommands.MuteUserComman
                 }).FirstOrDefaultAsync(cancellationToken);
             if (response is null) throw new AnticipatedException("Could not find User.");
             if (response.MuteRole is null) throw new AnticipatedException("A mute role is not configured.");
-            if(response.ActiveMute is not null) this._grimoireDbContext.Mutes.Remove(response.ActiveMute);
+            if (response.ActiveMute is not null) this._grimoireDbContext.Mutes.Remove(response.ActiveMute);
             var lockEndTime = command.DurationType.GetDateTimeOffset(command.DurationAmount);
             var sin = new Sin
             {
