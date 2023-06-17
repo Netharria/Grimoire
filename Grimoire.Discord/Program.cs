@@ -11,6 +11,7 @@ using Grimoire.Discord.LevelingModule;
 using Grimoire.Discord.LoggingModule;
 using Grimoire.Discord.ModerationModule;
 using Grimoire.Discord.SharedModule;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +20,7 @@ using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
 using Serilog;
 
-Host.CreateDefaultBuilder(args)
+var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration(x =>
     {
         var configuration = new ConfigurationBuilder()
@@ -101,5 +102,10 @@ Host.CreateDefaultBuilder(args)
         .BuildServiceProvider()
     )
     .UseConsoleLifetime()
-    .Build()
-    .Run();
+    .Build();
+using (var scope = host.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<GrimoireDbContext>();
+    db.Database.Migrate();
+}
+host.Run();

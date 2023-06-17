@@ -27,10 +27,6 @@ namespace Grimoire.Core
                 .AddTransient<IGrimoireDbContext, GrimoireDbContext>()
                 .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
                 .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>));
-            using var dbContext = new GrimoireDbContext(
-                new DbContextOptionsBuilder<GrimoireDbContext>()
-                .UseNpgsql(configuration.GetConnectionString("Grimoire")).Options);
-            dbContext.Database.Migrate();
             return services;
         }
     }
