@@ -5,14 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EFCore.BulkExtensions;
-using Grimoire.Core;
-using Grimoire.Core.Features.Shared.SharedDtos;
 using Grimoire.Domain;
 using Grimoire.MigrationTool.Domain;
 using Grimoire.MigrationTool.Extensions;

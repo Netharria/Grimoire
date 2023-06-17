@@ -7,7 +7,6 @@
 
 using DSharpPlus.Interactivity.Enums;
 using Grimoire.Core;
-using Grimoire.Discord;
 using Grimoire.Discord.LevelingModule;
 using Grimoire.Discord.LoggingModule;
 using Grimoire.Discord.ModerationModule;
@@ -18,8 +17,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
-using OpenTracing;
-using OpenTracing.Mock;
 using Serilog;
 
 Host.CreateDefaultBuilder(args)
@@ -37,7 +34,6 @@ Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
         services
         .AddCoreServices(context.Configuration)
-        .AddSingleton<ITracer>(provider => new MockTracer())
         .AddHttpClient()
         .AddTransient<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddDiscord(options =>
@@ -71,34 +67,33 @@ Host.CreateDefaultBuilder(args)
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
                     //extension.RegisterCommands<ExampleSlashCommand>(guildId);
-                    //Shared
-                    extension.RegisterCommands<ModuleCommands>(guildId);
-                    extension.RegisterCommands<ModLogSettings>(guildId);
-                    extension.RegisterCommands<PurgeCommands>(guildId);
-                    //Leveling
-                    extension.RegisterCommands<LevelCommands>(guildId);
-                    extension.RegisterCommands<LeaderboardCommands>(guildId);
-                    extension.RegisterCommands<LevelSettingsCommands>(guildId);
-                    extension.RegisterCommands<LevelingAdminCommands>(guildId);
-                    extension.RegisterCommands<RewardCommands>(guildId);
-                    extension.RegisterCommands<IgnoreCommands>(guildId);
-
-                    //Logging
-                    extension.RegisterCommands<LogSettingsCommands>(guildId);
-                    extension.RegisterCommands<TrackerCommands>(guildId);
-
-                    //Moderation
-                    extension.RegisterCommands<ModerationSettingsCommands>(guildId);
-                    extension.RegisterCommands<MuteAdminCommands>(guildId);
-                    extension.RegisterCommands<BanCommands>(guildId);
-                    extension.RegisterCommands<SinAdminCommands>(guildId);
-                    extension.RegisterCommands<LockCommands>(guildId);
-                    extension.RegisterCommands<PublishCommands>(guildId);
-                    extension.RegisterCommands<SinLogCommands>(guildId);
-                    extension.RegisterCommands<MuteCommands>(guildId);
-                    extension.RegisterCommands<WarnCommands>(guildId);
                 }
-                extension.RegisterCommands<EmptySlashCommands>();
+                //Shared
+                extension.RegisterCommands<ModuleCommands>();
+                extension.RegisterCommands<ModLogSettings>();
+                extension.RegisterCommands<PurgeCommands>();
+                //Leveling
+                extension.RegisterCommands<LevelCommands>();
+                extension.RegisterCommands<LeaderboardCommands>();
+                extension.RegisterCommands<LevelSettingsCommands>();
+                extension.RegisterCommands<LevelingAdminCommands>();
+                extension.RegisterCommands<RewardCommands>();
+                extension.RegisterCommands<IgnoreCommands>();
+
+                //Logging
+                extension.RegisterCommands<LogSettingsCommands>();
+                extension.RegisterCommands<TrackerCommands>();
+
+                //Moderation
+                extension.RegisterCommands<ModerationSettingsCommands>();
+                extension.RegisterCommands<MuteAdminCommands>();
+                extension.RegisterCommands<BanCommands>();
+                extension.RegisterCommands<SinAdminCommands>();
+                extension.RegisterCommands<LockCommands>();
+                extension.RegisterCommands<PublishCommands>();
+                extension.RegisterCommands<SinLogCommands>();
+                extension.RegisterCommands<MuteCommands>();
+                extension.RegisterCommands<WarnCommands>();
             })
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient)
