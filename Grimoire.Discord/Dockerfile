@@ -15,7 +15,6 @@ RUN dotnet build "Grimoire.Discord.csproj" -c Release -o /app/build
 
 FROM build AS publish
 RUN dotnet publish "Grimoire.Discord.csproj" -c Release -o /app/publish /p:UseAppHost=false
-RUN dotnet database update
 
 FROM base AS final
 WORKDIR /app
