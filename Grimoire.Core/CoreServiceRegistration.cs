@@ -9,6 +9,7 @@ using Grimoire.Core.Features.Logging;
 using Grimoire.Core.Features.Shared.PipelineBehaviors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Core
 {
@@ -22,11 +23,14 @@ namespace Grimoire.Core
                 options.UseNpgsql(
                     configuration.GetConnectionString("Grimoire")),
                     ServiceLifetime.Transient)
-
                 .AddSingleton<IInviteService, InviteService>()
                 .AddTransient<IGrimoireDbContext, GrimoireDbContext>()
                 .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
                 .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>));
+            using var dbContext = new GrimoireDbContext(
+                new DbContextOptionsBuilder<GrimoireDbContext>()
+                .UseNpgsql(configuration.GetConnectionString("Grimoire")).Options);
+            dbContext.Database.Migrate();
             return services;
         }
     }
