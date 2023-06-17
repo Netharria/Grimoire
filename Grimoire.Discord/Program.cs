@@ -7,6 +7,7 @@
 
 using DSharpPlus.Interactivity.Enums;
 using Grimoire.Core;
+using Grimoire.Discord;
 using Grimoire.Discord.LevelingModule;
 using Grimoire.Discord.LoggingModule;
 using Grimoire.Discord.ModerationModule;
@@ -67,7 +68,7 @@ var host = Host.CreateDefaultBuilder(args)
                 if (x is not SlashCommandsExtension extension) return;
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
-                    //extension.RegisterCommands<ExampleSlashCommand>(guildId);
+                    extension.RegisterCommands<EmptySlashCommands>(guildId);
                 }
                 //Shared
                 extension.RegisterCommands<ModuleCommands>();
