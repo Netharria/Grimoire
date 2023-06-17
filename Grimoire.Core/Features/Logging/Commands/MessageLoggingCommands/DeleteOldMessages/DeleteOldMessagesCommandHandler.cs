@@ -19,11 +19,9 @@ namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteO
         public async ValueTask<Unit> Handle(DeleteOldMessagesCommand command, CancellationToken cancellationToken)
         {
             var oldDate = DateTimeOffset.UtcNow - TimeSpan.FromDays(31);
-            var oldMessages = await this._grimoireDbContext.Messages
+            await this._grimoireDbContext.Messages
                 .Where(x => x.CreatedTimestamp  <= oldDate)
-                .ToArrayAsync(cancellationToken: cancellationToken);
-            this._grimoireDbContext.Messages.RemoveRange(oldMessages);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+                .ExecuteDeleteAsync(cancellationToken);
             return Unit.Value;
         }
     }
