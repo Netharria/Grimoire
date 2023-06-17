@@ -12,35 +12,40 @@ using Grimoire.Discord.LevelingModule;
 using Grimoire.Discord.LoggingModule;
 using Grimoire.Discord.ModerationModule;
 using Grimoire.Discord.SharedModule;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
 using Serilog;
 
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureAppConfiguration(x =>
-    {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
-        x.AddConfiguration(configuration);
-    })
-    .UseSerilog((context, services, logConfig)
-        => logConfig
-        .ReadFrom.Configuration(context.Configuration))
-    .ConfigureServices((context, services) =>
-        services
-        .AddCoreServices(context.Configuration)
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration
+    .AddConfiguration(new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .Build());
+
+Log.Logger = new LoggerConfiguration()
+        .ReadFrom.Configuration(builder.Configuration)
+    .CreateBootstrapLogger();
+
+builder.Host.UseSerilog((context, services, configuration) =>
+        configuration
+        .ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services));
+
+builder.WebHost.UseUrls("http://localhost:24700");
+
+builder.Services
+        .AddCoreServices(builder.Configuration)
         .AddHttpClient()
         .AddTransient<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddDiscord(options =>
         {
-            options.Token = context.Configuration["token"];
+            options.Token = builder.Configuration["token"];
             options.TokenType = TokenType.Bot;
             options.LoggerFactory = new LoggerFactory().AddSerilog();
             options.AutoReconnect = true;
@@ -57,16 +62,11 @@ var host = Host.CreateDefaultBuilder(args)
             options.PaginationDeletion = PaginationDeletion.DeleteMessage;
         })
         .AddDiscordSlashCommands(
-            x =>
-            {
-                if (x is not SlashCommandsConfiguration config) return;
-                //Enables dependancy injection for commands
-                config.Services = services.BuildServiceProvider();
-            },
+            x => { },
             x =>
             {
                 if (x is not SlashCommandsExtension extension) return;
-                if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
+                if (ulong.TryParse(builder.Configuration["guildId"], out var guildId))
                 {
                     extension.RegisterCommands<EmptySlashCommands>(guildId);
                 }
@@ -99,14 +99,26 @@ var host = Host.CreateDefaultBuilder(args)
             })
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient)
-        .AddHostedService<TickerBackgroundService>()
-        .BuildServiceProvider()
-    )
-    .UseConsoleLifetime()
-    .Build();
-using (var scope = host.Services.CreateScope())
+        .AddHostedService<TickerBackgroundService>();
+
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<GrimoireDbContext>("Database")
+    .AddCheck<DiscordHealthCheck>("Discord");
+
+var app = builder.Build();
+
+app.UseSerilogRequestLogging();
+
+app.MapHealthChecks("/_health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<GrimoireDbContext>();
     db.Database.Migrate();
 }
-host.Run();
+
+app.Run();

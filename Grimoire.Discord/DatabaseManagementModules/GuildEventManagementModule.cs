@@ -8,7 +8,7 @@
 using Grimoire.Core.Features.Shared.Commands.GuildCommands.AddGuild;
 using Grimoire.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds;
 using Grimoire.Domain;
-using Serilog;
+using ILogger = Serilog.ILogger;
 
 namespace Grimoire.Discord.DatabaseManagementModules
 {

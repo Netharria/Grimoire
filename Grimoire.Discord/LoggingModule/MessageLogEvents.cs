@@ -11,7 +11,6 @@ using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessage;
 using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages;
 using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessage;
 using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage;
-using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule
 {

@@ -115,7 +115,7 @@ namespace Grimoire.MigrationTool.MigrationServices
                 .ToList();
 
             var bulkConfig = new BulkConfig();
-            bulkConfig.SqlBulkCopyOptions = bulkConfig.SqlBulkCopyOptions & ~SqlBulkCopyOptions.KeepIdentity;
+            bulkConfig.SqlBulkCopyOptions &= ~SqlBulkCopyOptions.KeepIdentity;
             bulkConfig.PropertiesToExclude = new List<string> { "Id" };
 
             await grimoireDbContext.BulkInsertAsync(messageHistoryToAdd, bulkConfig);

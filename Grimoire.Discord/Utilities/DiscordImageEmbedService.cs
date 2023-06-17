@@ -7,7 +7,6 @@
 
 
 using System.Collections.Immutable;
-using Microsoft.Extensions.Configuration;
 
 namespace Grimoire.Discord.Utilities
 {

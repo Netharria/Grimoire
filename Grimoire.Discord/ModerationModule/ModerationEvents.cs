@@ -10,7 +10,6 @@ using Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan;
 using Grimoire.Core.Features.Moderation.Queries.GetLastBan;
 using Grimoire.Core.Features.Moderation.Queries.GetLock;
 using Grimoire.Core.Features.Moderation.Queries.GetUserMute;
-using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule
 {

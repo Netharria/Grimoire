@@ -5,12 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Configuration;
 using Grimoire.Core.Features.Logging;
 using Grimoire.Core.Features.Shared.PipelineBehaviors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Core
 {
@@ -21,7 +19,7 @@ namespace Grimoire.Core
             IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("Grimoire");
-            if(string.IsNullOrWhiteSpace(connectionString))
+            if (string.IsNullOrWhiteSpace(connectionString))
             {
                 var section = configuration.GetSection("ConnectionProperties");
                 var hostname = section["Hostname"];
@@ -29,7 +27,7 @@ namespace Grimoire.Core
                 var dbName = section["DbName"];
                 var username = section["Username"];
                 var password = section["Password"];
-                connectionString = $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Prefer"; ;
+                connectionString = $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Require; Trust Server Certificate=true"; ;
             }
             services.AddDbContext<GrimoireDbContext>(options =>
                 options.UseNpgsql(connectionString),
