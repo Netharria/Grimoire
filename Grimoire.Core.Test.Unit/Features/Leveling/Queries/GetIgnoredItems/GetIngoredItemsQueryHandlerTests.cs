@@ -12,46 +12,45 @@ using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
 using Grimoire.Domain;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetIgnoredItems
+namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetIgnoredItems;
+
+[TestFixture]
+public class GetIngoredItemsQueryHandlerTests
 {
-    [TestFixture]
-    public class GetIngoredItemsQueryHandlerTests
+
+    [Test]
+    public async Task WhenCallingGetIgnoredItemsHandler_IfNoIgnoredItems_ReturnFailedResponseAsync()
     {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhenCallingGetIgnoredItemsHandler_IfNoIgnoredItems_ReturnFailedResponseAsync()
+        context.Guilds.Add(new Guild { Id = 34958734 });
+        await context.SaveChangesAsync();
+
+        var CUT = new GetIgnoredItemsQueryHandler(context);
+        var command = new GetIgnoredItemsQuery
         {
-            var context = TestDatabaseFixture.CreateContext();
+            GuildId = 34958734
+        };
 
-            context.Guilds.Add(new Guild { Id = 34958734 });
-            await context.SaveChangesAsync();
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-            var CUT = new GetIgnoredItemsQueryHandler(context);
-            var command = new GetIgnoredItemsQuery
-            {
-                GuildId = 34958734
-            };
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("This server does not have any ignored channels, roles or users.");
+    }
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+    [Test]
+    public async Task WhenCallingGetIgnoredItemsHandler_IfIgnoredItems_ReturnSuccessResponseAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
 
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("This server does not have any ignored channels, roles or users.");
-        }
-
-        [Test]
-        public async Task WhenCallingGetIgnoredItemsHandler_IfIgnoredItems_ReturnSuccessResponseAsync()
+        var CUT = new GetIgnoredItemsQueryHandler(context);
+        var command = new GetIgnoredItemsQuery
         {
-            var context = TestDatabaseFixture.CreateContext();
+            GuildId = TestDatabaseFixture.Guild1.Id
+        };
 
-            var CUT = new GetIgnoredItemsQueryHandler(context);
-            var command = new GetIgnoredItemsQuery
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id
-            };
+        var response = await CUT.Handle(command, default);
 
-            var response = await CUT.Handle(command, default);
-
-            response.Message.Should().Be("**Channels**\n<#12>\n\n**Roles**\n<@&7>\n\n**Users**\n");
-        }
+        response.Message.Should().Be("**Channels**\n<#12>\n\n**Roles**\n<@&7>\n\n**Users**\n");
     }
 }

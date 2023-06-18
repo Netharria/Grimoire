@@ -10,26 +10,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace Grimoire.MigrationTool.Domain
+namespace Grimoire.MigrationTool.Domain;
+
+public class FuzzyDbContext : DbContext
 {
-    public class FuzzyDbContext : DbContext
+    public string? DbPath;
+
+    public FuzzyDbContext()
     {
-        public string? DbPath;
-
-        public FuzzyDbContext()
-        {
-            this.DbPath = Environment.GetEnvironmentVariable("FuzzyPath");
-        }
-        public DbSet<Infraction> Infractions { get; set; }
-        public DbSet<Lock> Locks { get; set; }
-        public DbSet<ModerationSettings> ModerationSettings { get; set; }
-        public DbSet<Mute> MuteSettings { get; set; }
-        public DbSet<Pardon> Pardons { get; set; }
-        public DbSet<PublishedMessage> PublishedMessages { get; set; }
-        public DbSet<ThreadLock> ThreadLocks { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlite($"Data Source={this.DbPath}")
-                .UseLoggerFactory(new LoggerFactory().AddSerilog());
+        this.DbPath = Environment.GetEnvironmentVariable("FuzzyPath");
     }
+    public DbSet<Infraction> Infractions { get; set; }
+    public DbSet<Lock> Locks { get; set; }
+    public DbSet<ModerationSettings> ModerationSettings { get; set; }
+    public DbSet<Mute> MuteSettings { get; set; }
+    public DbSet<Pardon> Pardons { get; set; }
+    public DbSet<PublishedMessage> PublishedMessages { get; set; }
+    public DbSet<ThreadLock> ThreadLocks { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseSqlite($"Data Source={this.DbPath}")
+            .UseLoggerFactory(new LoggerFactory().AddSerilog());
 }

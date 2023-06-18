@@ -8,28 +8,27 @@
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Enums;
 
-namespace Grimoire.Core.Features.Shared.Queries.GetModuleStateForGuild
+namespace Grimoire.Core.Features.Shared.Queries.GetModuleStateForGuild;
+
+public class GetModuleStateForGuildQueryHandler : IRequestHandler<GetModuleStateForGuildQuery, bool>
 {
-    public class GetModuleStateForGuildQueryHandler : IRequestHandler<GetModuleStateForGuildQuery, bool>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetModuleStateForGuildQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public GetModuleStateForGuildQueryHandler(IGrimoireDbContext grimoireDbContext)
+    public async ValueTask<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
+    {
+        var query = this._grimoireDbContext.Guilds.AsNoTracking().WhereIdIs(request.GuildId);
+        return request.Module switch
         {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
-        {
-            var query = this._grimoireDbContext.Guilds.AsNoTracking().WhereIdIs(request.GuildId);
-            return request.Module switch
-            {
-                Module.Leveling => await query.Select(x => x.LevelSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
-                Module.UserLog => await query.Select(x => x.UserLogSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
-                Module.Moderation => await query.Select(x => x.ModerationSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
-                Module.MessageLog => await query.Select(x => x.MessageLogSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
-                _ => throw new ArgumentOutOfRangeException(nameof(request), request, message: null)
-            };
-        }
+            Module.Leveling => await query.Select(x => x.LevelSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
+            Module.UserLog => await query.Select(x => x.UserLogSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
+            Module.Moderation => await query.Select(x => x.ModerationSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
+            Module.MessageLog => await query.Select(x => x.MessageLogSettings.ModuleEnabled).FirstAsync(cancellationToken: cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(request), request, message: null)
+        };
     }
 }

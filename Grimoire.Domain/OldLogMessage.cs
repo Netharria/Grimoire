@@ -7,20 +7,19 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class OldLogMessage : IIdentifiable<ulong>
 {
-    public class OldLogMessage : IIdentifiable<ulong>
-    {
-        public ulong Id { get; set; }
+    public ulong Id { get; set; }
 
-        public ulong ChannelId { get; set; }
+    public ulong ChannelId { get; set; }
 
-        public virtual Channel Channel { get; set; } = null!;
+    public virtual Channel Channel { get; set; } = null!;
 
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public DateTimeOffset CreatedAt { get; }
-    }
+    public DateTimeOffset CreatedAt { get; }
 }

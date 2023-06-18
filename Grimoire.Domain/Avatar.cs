@@ -7,15 +7,14 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class Avatar : IIdentifiable<long>
 {
-    public class Avatar : IIdentifiable<long>
-    {
-        public long Id { get; set; }
-        public ulong UserId { get; set; }
-        public ulong GuildId { get; set; }
-        public virtual Member Member { get; set; } = null!;
-        public string FileName { get; set; } = string.Empty;
-        public DateTimeOffset Timestamp { get; set; }
-    }
+    public long Id { get; set; }
+    public ulong UserId { get; set; }
+    public ulong GuildId { get; set; }
+    public virtual Member Member { get; set; } = null!;
+    public string FileName { get; set; } = string.Empty;
+    public DateTimeOffset Timestamp { get; set; }
 }

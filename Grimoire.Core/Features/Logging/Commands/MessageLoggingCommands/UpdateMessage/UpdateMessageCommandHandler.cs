@@ -7,48 +7,47 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage
+namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage;
+
+public class UpdateMessageCommandHandler : ICommandHandler<UpdateMessageCommand, UpdateMessageCommandResponse>
 {
-    public class UpdateMessageCommandHandler : ICommandHandler<UpdateMessageCommand, UpdateMessageCommandResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public UpdateMessageCommandHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public UpdateMessageCommandHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
+    public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand command, CancellationToken cancellationToken)
+    {
+        var message = await this._grimoireDbContext.Messages
+            .WhereMessageLoggingIsEnabled()
+            .WhereIdIs(command.MessageId)
+            .Select(x => new UpdateMessageCommandResponse
+            {
+                UpdateMessageLogChannelId = x.Guild.MessageLogSettings.EditChannelLogId,
+                MessageId = x.Id,
+                UserId = x.UserId,
+                MessageContent = x.MessageHistory
+                    .OrderBy(x => x.TimeStamp)
+                    .Where(x => x.Action != MessageAction.Deleted)
+                    .First().MessageContent,
+                Success = true
+            }
+            ).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+        if (message is null
+            || message.MessageContent.Equals(command.MessageContent, StringComparison.CurrentCultureIgnoreCase))
+            return new UpdateMessageCommandResponse { Success = false };
 
-        public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand command, CancellationToken cancellationToken)
-        {
-            var message = await this._grimoireDbContext.Messages
-                .WhereMessageLoggingIsEnabled()
-                .WhereIdIs(command.MessageId)
-                .Select(x => new UpdateMessageCommandResponse
-                {
-                    UpdateMessageLogChannelId = x.Guild.MessageLogSettings.EditChannelLogId,
-                    MessageId = x.Id,
-                    UserId = x.UserId,
-                    MessageContent = x.MessageHistory
-                        .OrderBy(x => x.TimeStamp)
-                        .Where(x => x.Action != MessageAction.Deleted)
-                        .First().MessageContent,
-                    Success = true
-                }
-                ).FirstOrDefaultAsync(cancellationToken: cancellationToken);
-            if (message is null
-                || message.MessageContent.Equals(command.MessageContent, StringComparison.CurrentCultureIgnoreCase))
-                return new UpdateMessageCommandResponse { Success = false };
-
-            await this._grimoireDbContext.MessageHistory.AddAsync(
-                new MessageHistory
-                {
-                    MessageId = message.MessageId,
-                    Action = MessageAction.Updated,
-                    GuildId = command.GuildId,
-                    MessageContent = command.MessageContent
-                }, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return message;
-        }
+        await this._grimoireDbContext.MessageHistory.AddAsync(
+            new MessageHistory
+            {
+                MessageId = message.MessageId,
+                Action = MessageAction.Updated,
+                GuildId = command.GuildId,
+                MessageContent = command.MessageContent
+            }, cancellationToken);
+        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        return message;
     }
 }

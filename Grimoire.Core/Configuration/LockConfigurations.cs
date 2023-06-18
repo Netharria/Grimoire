@@ -8,37 +8,36 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class LockConfigurations : IEntityTypeConfiguration<Lock>
 {
-    [ExcludeFromCodeCoverage]
-    public class LockConfigurations : IEntityTypeConfiguration<Lock>
+    public void Configure(EntityTypeBuilder<Lock> builder)
     {
-        public void Configure(EntityTypeBuilder<Lock> builder)
-        {
-            builder.HasKey(e => e.ChannelId);
-            builder.HasOne(e => e.Channel)
-                .WithOne(e => e.Lock)
-                .HasForeignKey<Lock>(x => x.ChannelId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.Property(e => e.PreviouslyAllowed)
-                .IsRequired();
-            builder.Property(e => e.PreviouslyDenied)
-                .IsRequired();
-            builder.HasOne(e => e.Moderator)
-                .WithMany(e => e.ChannelsLocked)
-                .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired();
-            builder.HasOne(e => e.Guild)
-                .WithMany(e => e.LockedChannels)
-                .HasForeignKey(e => e.GuildId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.Property(e => e.Reason)
-                .HasMaxLength(1000);
-            builder.Property(e => e.EndTime)
-                .IsRequired();
-        }
+        builder.HasKey(e => e.ChannelId);
+        builder.HasOne(e => e.Channel)
+            .WithOne(e => e.Lock)
+            .HasForeignKey<Lock>(x => x.ChannelId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.Property(e => e.PreviouslyAllowed)
+            .IsRequired();
+        builder.Property(e => e.PreviouslyDenied)
+            .IsRequired();
+        builder.HasOne(e => e.Moderator)
+            .WithMany(e => e.ChannelsLocked)
+            .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+        builder.HasOne(e => e.Guild)
+            .WithMany(e => e.LockedChannels)
+            .HasForeignKey(e => e.GuildId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.Property(e => e.Reason)
+            .HasMaxLength(1000);
+        builder.Property(e => e.EndTime)
+            .IsRequired();
     }
 }

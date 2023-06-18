@@ -12,30 +12,29 @@ using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Features.Shared.SharedDtos;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
+namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
+
+[TestFixture]
+public class ChannelDatabaseQueryHelperTests
 {
-    [TestFixture]
-    public class ChannelDatabaseQueryHelperTests
+
+    [Test]
+    public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
     {
-
-        [Test]
-        public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var channelsToAdd = new List<ChannelDto>
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var channelsToAdd = new List<ChannelDto>
-            {
-                new ChannelDto() { Id = 2, GuildId = TestDatabaseFixture.Guild1.Id},
-                new ChannelDto() { Id = 3, GuildId = TestDatabaseFixture.Guild1.Id},
-                new ChannelDto() { Id = 4, GuildId = TestDatabaseFixture.Guild1.Id},
-                new ChannelDto() { Id = 5, GuildId = TestDatabaseFixture.Guild1.Id}
-            };
-            var result = await context.Channels.AddMissingChannelsAsync(channelsToAdd, default);
+            new ChannelDto() { Id = 2, GuildId = TestDatabaseFixture.Guild1.Id},
+            new ChannelDto() { Id = 3, GuildId = TestDatabaseFixture.Guild1.Id},
+            new ChannelDto() { Id = 4, GuildId = TestDatabaseFixture.Guild1.Id},
+            new ChannelDto() { Id = 5, GuildId = TestDatabaseFixture.Guild1.Id}
+        };
+        var result = await context.Channels.AddMissingChannelsAsync(channelsToAdd, default);
 
-            await context.SaveChangesAsync();
+        await context.SaveChangesAsync();
 
-            result.Should().BeTrue();
-            context.Channels.Should().HaveCount(5);
-        }
+        result.Should().BeTrue();
+        context.Channels.Should().HaveCount(5);
     }
 }

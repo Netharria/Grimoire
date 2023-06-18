@@ -8,17 +8,16 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class UserConfiguration : IEntityTypeConfiguration<User>
 {
-    [ExcludeFromCodeCoverage]
-    public class UserConfiguration : IEntityTypeConfiguration<User>
+    public void Configure(EntityTypeBuilder<User> builder)
     {
-        public void Configure(EntityTypeBuilder<User> builder)
-        {
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .IsRequired();
-        }
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .ValueGeneratedNever()
+            .IsRequired();
     }
 }

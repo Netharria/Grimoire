@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetMuteRole
+namespace Grimoire.Core.Features.Moderation.Queries.GetMuteRole;
+
+public class GetMuteRoleQuery : IRequest<GetMuteRoleQueryResponse>
 {
-    public class GetMuteRoleQuery : IRequest<GetMuteRoleQueryResponse>
-    {
-        public ulong GuildId { get; init; }
-    }
+    public ulong GuildId { get; init; }
 }

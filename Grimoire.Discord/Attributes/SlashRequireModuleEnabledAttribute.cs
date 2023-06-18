@@ -7,21 +7,20 @@
 
 using Grimoire.Core.Features.Shared.Queries.GetModuleStateForGuild;
 
-namespace Grimoire.Discord.Attributes
-{
-    public class SlashRequireModuleEnabledAttribute : SlashCheckBaseAttribute
-    {
-        public Module Module;
+namespace Grimoire.Discord.Attributes;
 
-        public SlashRequireModuleEnabledAttribute(Module module)
-        {
-            this.Module = module;
-        }
-        public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
-        {
-            if (ctx.Services.GetService(typeof(IMediator)) is not IMediator mediator)
-                throw new NullReferenceException($"Reflection was not able to grab a mediator instance to check if {this.Module.GetName()} was enabled.");
-            return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = Module });
-        }
+public class SlashRequireModuleEnabledAttribute : SlashCheckBaseAttribute
+{
+    public Module Module;
+
+    public SlashRequireModuleEnabledAttribute(Module module)
+    {
+        this.Module = module;
+    }
+    public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
+    {
+        if (ctx.Services.GetService(typeof(IMediator)) is not IMediator mediator)
+            throw new NullReferenceException($"Reflection was not able to grab a mediator instance to check if {this.Module.GetName()} was enabled.");
+        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = Module });
     }
 }

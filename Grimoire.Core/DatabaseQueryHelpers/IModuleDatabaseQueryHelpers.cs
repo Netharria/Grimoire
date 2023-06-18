@@ -8,20 +8,19 @@
 using Grimoire.Core.Enums;
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Core.DatabaseQueryHelpers
+namespace Grimoire.Core.DatabaseQueryHelpers;
+
+public static class IModuleDatabaseQueryHelpers
 {
-    public static class IModuleDatabaseQueryHelpers
+    public static IQueryable<IModule> GetModulesOfType(this IQueryable<Guild> databaseGuilds, Module module, CancellationToken cancellationToken = default)
     {
-        public static IQueryable<IModule> GetModulesOfType(this IQueryable<Guild> databaseGuilds, Module module, CancellationToken cancellationToken = default)
+        return module switch
         {
-            return module switch
-            {
-                Module.Leveling => databaseGuilds.Select(x => x.LevelSettings),
-                Module.UserLog => databaseGuilds.Select(x => x.UserLogSettings),
-                Module.Moderation => databaseGuilds.Select(x => x.ModerationSettings),
-                Module.MessageLog => databaseGuilds.Select(x => x.MessageLogSettings),
-                _ => throw new ArgumentOutOfRangeException(nameof(module), module, message: null)
-            };
-        }
+            Module.Leveling => databaseGuilds.Select(x => x.LevelSettings),
+            Module.UserLog => databaseGuilds.Select(x => x.UserLogSettings),
+            Module.Moderation => databaseGuilds.Select(x => x.ModerationSettings),
+            Module.MessageLog => databaseGuilds.Select(x => x.MessageLogSettings),
+            _ => throw new ArgumentOutOfRangeException(nameof(module), module, message: null)
+        };
     }
 }

@@ -7,28 +7,27 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public enum Duration
 {
-    public enum Duration
-    {
-        Days = 1,
-        Months = 2,
-        Years = 3,
-    }
+    Days = 1,
+    Months = 2,
+    Years = 3,
+}
 
-    public class GuildModerationSettings : IModule
-    {
-        public ulong GuildId { get; set; }
+public class GuildModerationSettings : IModule
+{
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public ulong? PublicBanLog { get; set; }
+    public ulong? PublicBanLog { get; set; }
 
-        public Duration DurationType { get; set; }
+    public Duration DurationType { get; set; }
 
-        public int Duration { get; set; }
+    public int Duration { get; set; }
 
-        public ulong? MuteRole { get; set; }
-        public bool ModuleEnabled { get; set; }
-    }
+    public ulong? MuteRole { get; set; }
+    public bool ModuleEnabled { get; set; }
 }

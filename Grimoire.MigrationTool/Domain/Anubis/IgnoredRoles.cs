@@ -8,15 +8,14 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Anubis
+namespace Grimoire.MigrationTool.Domain.Anubis;
+
+[Table("ignored_roles")]
+public record IgnoredRoles
 {
-    [Table("ignored_roles")]
-    public record IgnoredRoles
-    {
-        [Key]
-        [Column("role_id")]
-        public ulong RoleId { get; set; }
-        [Column("guild_id")]
-        public ulong GuildId { get; set; }
-    }
+    [Key]
+    [Column("role_id")]
+    public ulong RoleId { get; set; }
+    [Column("guild_id")]
+    public ulong GuildId { get; set; }
 }

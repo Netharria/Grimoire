@@ -8,33 +8,32 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class GuildMessageLogSettingsConfiguration : IEntityTypeConfiguration<GuildMessageLogSettings>
 {
-    [ExcludeFromCodeCoverage]
-    public class GuildMessageLogSettingsConfiguration : IEntityTypeConfiguration<GuildMessageLogSettings>
+    public void Configure(EntityTypeBuilder<GuildMessageLogSettings> builder)
     {
-        public void Configure(EntityTypeBuilder<GuildMessageLogSettings> builder)
-        {
-            builder.HasKey(e => e.GuildId);
-            builder.HasOne(e => e.Guild)
-                .WithOne(e => e.MessageLogSettings)
-                .HasForeignKey<GuildMessageLogSettings>(e => e.GuildId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.HasOne(e => e.DeleteChannelLog)
-                .WithOne()
-                .HasForeignKey<GuildMessageLogSettings>(e => e.DeleteChannelLogId)
-                .IsRequired(false);
-            builder.HasOne(e => e.BulkDeleteChannelLog)
-                .WithOne()
-                .HasForeignKey<GuildMessageLogSettings>(e => e.BulkDeleteChannelLogId)
-                .IsRequired(false);
-            builder.HasOne(e => e.EditChannelLog)
-                .WithOne()
-                .HasForeignKey<GuildMessageLogSettings>(e => e.EditChannelLogId)
-                .IsRequired(false);
-            builder.Property(x => x.ModuleEnabled)
-                .HasDefaultValue(value: false);
-        }
+        builder.HasKey(e => e.GuildId);
+        builder.HasOne(e => e.Guild)
+            .WithOne(e => e.MessageLogSettings)
+            .HasForeignKey<GuildMessageLogSettings>(e => e.GuildId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.HasOne(e => e.DeleteChannelLog)
+            .WithOne()
+            .HasForeignKey<GuildMessageLogSettings>(e => e.DeleteChannelLogId)
+            .IsRequired(false);
+        builder.HasOne(e => e.BulkDeleteChannelLog)
+            .WithOne()
+            .HasForeignKey<GuildMessageLogSettings>(e => e.BulkDeleteChannelLogId)
+            .IsRequired(false);
+        builder.HasOne(e => e.EditChannelLog)
+            .WithOne()
+            .HasForeignKey<GuildMessageLogSettings>(e => e.EditChannelLogId)
+            .IsRequired(false);
+        builder.Property(x => x.ModuleEnabled)
+            .HasDefaultValue(value: false);
     }
 }

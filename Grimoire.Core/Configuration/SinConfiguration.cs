@@ -8,41 +8,40 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class SinConfiguration : IEntityTypeConfiguration<Sin>
 {
-    [ExcludeFromCodeCoverage]
-    public class SinConfiguration : IEntityTypeConfiguration<Sin>
+    public void Configure(EntityTypeBuilder<Sin> builder)
     {
-        public void Configure(EntityTypeBuilder<Sin> builder)
-        {
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id)
-                .UseIdentityColumn();
-            builder.Property(e => e.Reason)
-                .HasMaxLength(1000);
-            builder.HasOne(e => e.Member)
-                .WithMany(e => e.UserSins)
-                .HasForeignKey(e => new { e.UserId, e.GuildId })
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.HasOne(e => e.Moderator)
-                .WithMany(e => e.ModeratedSins)
-                .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired();
-            builder.HasOne(e => e.Guild)
-                .WithMany(e => e.Sins)
-                .HasForeignKey(e => e.GuildId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.HasOne(e => e.Mute)
-                .WithOne(e => e.Sin)
-                .IsRequired(false);
-            builder.HasOne(e => e.Pardon)
-                .WithOne(e => e.Sin)
-                .IsRequired(false);
-            builder.Property(e => e.SinOn)
-                .HasDefaultValueSql("now()");
-        }
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .UseIdentityColumn();
+        builder.Property(e => e.Reason)
+            .HasMaxLength(1000);
+        builder.HasOne(e => e.Member)
+            .WithMany(e => e.UserSins)
+            .HasForeignKey(e => new { e.UserId, e.GuildId })
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.HasOne(e => e.Moderator)
+            .WithMany(e => e.ModeratedSins)
+            .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+        builder.HasOne(e => e.Guild)
+            .WithMany(e => e.Sins)
+            .HasForeignKey(e => e.GuildId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.HasOne(e => e.Mute)
+            .WithOne(e => e.Sin)
+            .IsRequired(false);
+        builder.HasOne(e => e.Pardon)
+            .WithOne(e => e.Sin)
+            .IsRequired(false);
+        builder.Property(e => e.SinOn)
+            .HasDefaultValueSql("now()");
     }
 }

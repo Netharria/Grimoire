@@ -7,40 +7,39 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetLastBan
+namespace Grimoire.Core.Features.Moderation.Queries.GetLastBan;
+
+public class GetLastBanQueryHandler : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
 {
-    public class GetLastBanQueryHandler : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetLastBanQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public GetLastBanQueryHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
+    public async ValueTask<GetLastBanQueryResponse> Handle(GetLastBanQuery request, CancellationToken cancellationToken)
+    {
+        var result = await this._grimoireDbContext.Sins
+            .WhereMemberHasId(request.UserId, request.GuildId)
+            .Where(x => x.SinType == SinType.Ban)
+            .OrderByDescending(x => x.SinOn)
+            .Select(x => new GetLastBanQueryResponse
+            {
+                UserId = x.UserId,
+                GuildId = x.GuildId,
+                ModeratorId = x.ModeratorId,
+                Reason = x.Reason,
+                SinId = x.Id,
+                SinOn = x.SinOn,
+                LogChannelId = x.Guild.ModChannelLog,
+                ModerationModuleEnabled = x.Guild.ModerationSettings.ModuleEnabled
+            })
+            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
-        public async ValueTask<GetLastBanQueryResponse> Handle(GetLastBanQuery request, CancellationToken cancellationToken)
-        {
-            var result = await this._grimoireDbContext.Sins
-                .WhereMemberHasId(request.UserId, request.GuildId)
-                .Where(x => x.SinType == SinType.Ban)
-                .OrderByDescending(x => x.SinOn)
-                .Select(x => new GetLastBanQueryResponse
-                {
-                    UserId = x.UserId,
-                    GuildId = x.GuildId,
-                    ModeratorId = x.ModeratorId,
-                    Reason = x.Reason,
-                    SinId = x.Id,
-                    SinOn = x.SinOn,
-                    LogChannelId = x.Guild.ModChannelLog,
-                    ModerationModuleEnabled = x.Guild.ModerationSettings.ModuleEnabled
-                })
-                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+        if (result is null)
+            return new GetLastBanQueryResponse();
 
-            if (result is null)
-                return new GetLastBanQueryResponse();
-
-            return result;
-        }
+        return result;
     }
 }

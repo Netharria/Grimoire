@@ -7,12 +7,11 @@
 
 using Grimoire.Core.Enums;
 
-namespace Grimoire.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand
+namespace Grimoire.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand;
+
+public sealed record EnableModuleCommand : ICommand<EnableModuleCommandResponse>
 {
-    public sealed record EnableModuleCommand : ICommand<EnableModuleCommandResponse>
-    {
-        public ulong GuildId { get; init; }
-        public Module Module { get; init; }
-        public bool Enable { get; init; }
-    }
+    public ulong GuildId { get; init; }
+    public Module Module { get; init; }
+    public bool Enable { get; init; }
 }

@@ -7,41 +7,40 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public enum SinType
 {
-    public enum SinType
-    {
-        Warn,
-        Mute,
-        Ban,
-    }
+    Warn,
+    Mute,
+    Ban,
+}
 
-    public class Sin : IIdentifiable<long>, IMember
-    {
-        public long Id { get; set; }
+public class Sin : IIdentifiable<long>, IMember
+{
+    public long Id { get; set; }
 
-        public ulong UserId { get; set; }
+    public ulong UserId { get; set; }
 
-        public virtual Member Member { get; set; } = null!;
+    public virtual Member Member { get; set; } = null!;
 
-        public ulong ModeratorId { get; set; }
+    public ulong ModeratorId { get; set; }
 
-        public virtual Member Moderator { get; set; } = null!;
+    public virtual Member Moderator { get; set; } = null!;
 
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public string Reason { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
 
-        public DateTimeOffset SinOn { get; set; }
+    public DateTimeOffset SinOn { get; set; }
 
-        public SinType SinType { get; set; }
+    public SinType SinType { get; set; }
 
-        public virtual Mute? Mute { get; set; }
+    public virtual Mute? Mute { get; set; }
 
-        public virtual Pardon? Pardon { get; set; }
+    public virtual Pardon? Pardon { get; set; }
 
-        public virtual ICollection<PublishedMessage> PublishMessages { get; set; } = new List<PublishedMessage>();
-    }
+    public virtual ICollection<PublishedMessage> PublishMessages { get; set; } = new List<PublishedMessage>();
 }

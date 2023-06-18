@@ -7,18 +7,17 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class Role : IIdentifiable<ulong>, IXpIgnore, IMentionable
 {
-    public class Role : IIdentifiable<ulong>, IXpIgnore, IMentionable
-    {
-        public ulong Id { get; set; }
+    public ulong Id { get; set; }
 
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public virtual Reward? Reward { get; set; }
+    public virtual Reward? Reward { get; set; }
 
-        public bool IsXpIgnored { get; set; }
-    }
+    public bool IsXpIgnored { get; set; }
 }

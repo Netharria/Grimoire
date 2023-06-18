@@ -8,26 +8,25 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class RoleConfiguration : IEntityTypeConfiguration<Role>
 {
-    [ExcludeFromCodeCoverage]
-    public class RoleConfiguration : IEntityTypeConfiguration<Role>
+    public void Configure(EntityTypeBuilder<Role> builder)
     {
-        public void Configure(EntityTypeBuilder<Role> builder)
-        {
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .IsRequired();
-            builder.HasOne(e => e.Guild)
-                .WithMany(e => e.Roles)
-                .HasForeignKey(x => x.GuildId)
-                .OnDelete(DeleteBehavior.Cascade);
-            builder.HasOne(e => e.Reward)
-                .WithOne(e => e.Role)
-                .IsRequired(false);
-            builder.Property(e => e.IsXpIgnored)
-                .HasDefaultValue(value: false);
-        }
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .ValueGeneratedNever()
+            .IsRequired();
+        builder.HasOne(e => e.Guild)
+            .WithMany(e => e.Roles)
+            .HasForeignKey(x => x.GuildId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(e => e.Reward)
+            .WithOne(e => e.Role)
+            .IsRequired(false);
+        builder.Property(e => e.IsXpIgnored)
+            .HasDefaultValue(value: false);
     }
 }

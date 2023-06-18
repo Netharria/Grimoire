@@ -8,55 +8,54 @@
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Queries.GetLeaderboard;
 
-namespace Grimoire.Discord.LevelingModule
+namespace Grimoire.Discord.LevelingModule;
+
+[SlashRequireGuild]
+[SlashRequireModuleEnabled(Module.Leveling)]
+public class LeaderboardCommands : ApplicationCommandModule
 {
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Leveling)]
-    public class LeaderboardCommands : ApplicationCommandModule
+    private readonly IMediator _mediator;
+
+    public LeaderboardCommands(IMediator mediator)
     {
-        private readonly IMediator _mediator;
+        this._mediator = mediator;
+    }
 
-        public LeaderboardCommands(IMediator mediator)
+    [SlashCommand("Leaderboard", "Posts the leaderboard for the server.")]
+    public async Task LeaderboardAsync(InteractionContext ctx,
+        [Choice("Top", 0)]
+        [Choice("Me", 1)]
+        [Choice("User", 2)]
+        [Option("Option", "The leaderboard search type.")] long option,
+        [Option("User", "User to find on the leaderboard.")] DiscordUser? user = null)
+    {
+        switch (option)
         {
-            this._mediator = mediator;
+            case 0:
+                user = null;
+                break;
+            case 1:
+                user = ctx.User;
+                break;
+            case 2:
+                if (user is null)
+                    throw new AnticipatedException("Must provide a user for this option.");
+                break;
         }
 
-        [SlashCommand("Leaderboard", "Posts the leaderboard for the server.")]
-        public async Task LeaderboardAsync(InteractionContext ctx,
-            [Choice("Top", 0)]
-            [Choice("Me", 1)]
-            [Choice("User", 2)]
-            [Option("Option", "The leaderboard search type.")] long option,
-            [Option("User", "User to find on the leaderboard.")] DiscordUser? user = null)
+        var getUserCenteredLeaderboardQuery = new GetLeaderboardQuery
         {
-            switch (option)
-            {
-                case 0:
-                    user = null;
-                    break;
-                case 1:
-                    user = ctx.User;
-                    break;
-                case 2:
-                    if (user is null)
-                        throw new AnticipatedException("Must provide a user for this option.");
-                    break;
-            }
+            UserId = user?.Id,
+            GuildId = ctx.Guild.Id,
+        };
 
-            var getUserCenteredLeaderboardQuery = new GetLeaderboardQuery
-            {
-                UserId = user?.Id,
-                GuildId = ctx.Guild.Id,
-            };
+        var response = await this._mediator.Send(getUserCenteredLeaderboardQuery);
 
-            var response = await this._mediator.Send(getUserCenteredLeaderboardQuery);
-
-            await ctx.ReplyAsync(
-                color: GrimoireColor.DarkPurple,
-                title: "LeaderBoard",
-                message: response.LeaderboardText,
-                footer: $"Total Users {response.TotalUserCount}",
-                ephemeral: !((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
-        }
+        await ctx.ReplyAsync(
+            color: GrimoireColor.DarkPurple,
+            title: "LeaderBoard",
+            message: response.LeaderboardText,
+            footer: $"Total Users {response.TotalUserCount}",
+            ephemeral: !((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
     }
 }

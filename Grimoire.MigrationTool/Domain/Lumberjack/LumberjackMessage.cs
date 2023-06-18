@@ -8,17 +8,16 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Lumberjack
+namespace Grimoire.MigrationTool.Domain.Lumberjack;
+
+[Table("lumberjack_messages")]
+public record LumberjackMessage
 {
-    [Table("lumberjack_messages")]
-    public record LumberjackMessage
-    {
-        [Key]
-        [Column("message_id")]
-        public ulong MessageId { get; set; }
-        [Column("channel_id")]
-        public ulong ChannelId { get; set; }
-        [Column("created_at")]
-        public DateTimeOffset CreatedAt { get; set; }
-    }
+    [Key]
+    [Column("message_id")]
+    public ulong MessageId { get; set; }
+    [Column("channel_id")]
+    public ulong ChannelId { get; set; }
+    [Column("created_at")]
+    public DateTimeOffset CreatedAt { get; set; }
 }

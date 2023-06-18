@@ -8,24 +8,23 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class ChannelConfiguration : IEntityTypeConfiguration<Channel>
 {
-    [ExcludeFromCodeCoverage]
-    public class ChannelConfiguration : IEntityTypeConfiguration<Channel>
+    public void Configure(EntityTypeBuilder<Channel> builder)
     {
-        public void Configure(EntityTypeBuilder<Channel> builder)
-        {
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .IsRequired();
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .ValueGeneratedNever()
+            .IsRequired();
 
-            builder.Property(e => e.IsXpIgnored)
-                .HasDefaultValue(value: false);
+        builder.Property(e => e.IsXpIgnored)
+            .HasDefaultValue(value: false);
 
-            builder.HasOne(e => e.Lock)
-                .WithOne(e => e.Channel)
-                .IsRequired(false);
-        }
+        builder.HasOne(e => e.Lock)
+            .WithOne(e => e.Channel)
+            .IsRequired(false);
     }
 }

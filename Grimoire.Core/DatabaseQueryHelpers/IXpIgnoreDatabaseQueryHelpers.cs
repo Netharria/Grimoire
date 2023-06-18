@@ -7,14 +7,13 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Core.DatabaseQueryHelpers
-{
-    public static class IXpIgnoreDatabaseQueryHelpers
-    {
-        public static IQueryable<TSource> WhereIgnored<TSource>(this IQueryable<TSource> ignorable) where TSource : IXpIgnore
-            => ignorable.Where(x => x.IsXpIgnored);
+namespace Grimoire.Core.DatabaseQueryHelpers;
 
-        public static IQueryable<TSource> WhereIgnored<TSource>(this IQueryable<TSource> ignorable, bool ignored) where TSource : IXpIgnore
-            => ignorable.Where(x => x.IsXpIgnored == ignored);
-    }
+public static class IXpIgnoreDatabaseQueryHelpers
+{
+    public static IQueryable<TSource> WhereIgnored<TSource>(this IQueryable<TSource> ignorable) where TSource : IXpIgnore
+        => ignorable.Where(x => x.IsXpIgnored);
+
+    public static IQueryable<TSource> WhereIgnored<TSource>(this IQueryable<TSource> ignorable, bool ignored) where TSource : IXpIgnore
+        => ignorable.Where(x => x.IsXpIgnored == ignored);
 }

@@ -7,13 +7,12 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class Attachment : IIdentifiable<ulong>
 {
-    public class Attachment : IIdentifiable<ulong>
-    {
-        public ulong Id { get; set; }
-        public ulong MessageId { get; set; }
-        public virtual Message Message { get; set; } = null!;
-        public string FileName { get; set; } = string.Empty;
-    }
+    public ulong Id { get; set; }
+    public ulong MessageId { get; set; }
+    public virtual Message Message { get; set; } = null!;
+    public string FileName { get; set; } = string.Empty;
 }

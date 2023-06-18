@@ -5,29 +5,28 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetAllActiveMutes
+namespace Grimoire.Core.Features.Moderation.Queries.GetAllActiveMutes;
+
+public class GetAllActiveMutesQueryHandler : IQueryHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
 {
-    public class GetAllActiveMutesQueryHandler : IQueryHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetAllActiveMutesQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public GetAllActiveMutesQueryHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request, CancellationToken cancellationToken)
-        {
-            var result = await this._grimoireDbContext.GuildModerationSettings
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new GetAllActiveMutesQueryResponse
-                {
-                    MuteRole = x.MuteRole,
-                    MutedUsers = x.Guild.ActiveMutes.Select(x => x.UserId).ToArray(),
-                }).FirstOrDefaultAsync(cancellationToken);
-            if (result is null)
-                throw new AnticipatedException("Could not find the settings for this server.");
-            return result;
-        }
+    public async ValueTask<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request, CancellationToken cancellationToken)
+    {
+        var result = await this._grimoireDbContext.GuildModerationSettings
+            .Where(x => x.GuildId == request.GuildId)
+            .Select(x => new GetAllActiveMutesQueryResponse
+            {
+                MuteRole = x.MuteRole,
+                MutedUsers = x.Guild.ActiveMutes.Select(x => x.UserId).ToArray(),
+            }).FirstOrDefaultAsync(cancellationToken);
+        if (result is null)
+            throw new AnticipatedException("Could not find the settings for this server.");
+        return result;
     }
 }

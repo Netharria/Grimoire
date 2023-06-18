@@ -12,38 +12,37 @@ using Grimoire.Core.DatabaseQueryHelpers;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
+namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
+
+[TestFixture]
+public class IMemberDatabaseQueryHelperTests
 {
-    [TestFixture]
-    public class IMemberDatabaseQueryHelperTests
+
+    [Test]
+    public async Task WhereMembersHaveIds_WhenProvidedValidIds_ReturnsResultAsync()
     {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhereMembersHaveIds_WhenProvidedValidIds_ReturnsResultAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
+        var result = await context.Members.WhereMembersHaveIds(new ulong[]{
+            TestDatabaseFixture.Member1.UserId },
+            TestDatabaseFixture.Member1.GuildId).ToArrayAsync();
 
-            var result = await context.Members.WhereMembersHaveIds(new ulong[]{
-                TestDatabaseFixture.Member1.UserId },
-                TestDatabaseFixture.Member1.GuildId).ToArrayAsync();
+        result.Should().HaveCount(1);
+        result.Should().AllSatisfy(x => x.UserId.Should().Be(TestDatabaseFixture.Member1.UserId))
+            .And.AllSatisfy(x => x.GuildId.Should().Be(TestDatabaseFixture.Member1.GuildId));
+    }
 
-            result.Should().HaveCount(1);
-            result.Should().AllSatisfy(x => x.UserId.Should().Be(TestDatabaseFixture.Member1.UserId))
-                .And.AllSatisfy(x => x.GuildId.Should().Be(TestDatabaseFixture.Member1.GuildId));
-        }
+    [Test]
+    public async Task WWhereMemberHasId_WhenProvidedValidId_ReturnsResultAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WWhereMemberHasId_WhenProvidedValidId_ReturnsResultAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
+        var result = await context.Members.WhereMemberHasId(
+            TestDatabaseFixture.Member2.UserId,
+            TestDatabaseFixture.Member2.GuildId).ToArrayAsync();
 
-            var result = await context.Members.WhereMemberHasId(
-                TestDatabaseFixture.Member2.UserId,
-                TestDatabaseFixture.Member2.GuildId).ToArrayAsync();
-
-            result.Should().HaveCount(1);
-            result.Should().AllSatisfy(x => x.UserId.Should().Be(TestDatabaseFixture.Member2.UserId))
-                .And.AllSatisfy(x => x.GuildId.Should().Be(TestDatabaseFixture.Member2.GuildId));
-        }
+        result.Should().HaveCount(1);
+        result.Should().AllSatisfy(x => x.UserId.Should().Be(TestDatabaseFixture.Member2.UserId))
+            .And.AllSatisfy(x => x.GuildId.Should().Be(TestDatabaseFixture.Member2.GuildId));
     }
 }

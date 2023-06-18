@@ -5,20 +5,19 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Discord.Extensions
+namespace Grimoire.Discord.Extensions;
+
+public static class DiscordClientExtensions
 {
-    public static class DiscordClientExtensions
+    public async static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ulong channelId)
     {
-        public async static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ulong channelId)
+        try
         {
-            try
-            {
-                return await client.GetChannelAsync(channelId);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return await client.GetChannelAsync(channelId);
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 }

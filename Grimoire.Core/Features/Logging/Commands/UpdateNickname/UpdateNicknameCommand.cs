@@ -5,12 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Logging.Commands.UpdateNickname
+namespace Grimoire.Core.Features.Logging.Commands.UpdateNickname;
+
+public sealed record UpdateNicknameCommand : ICommand<UpdateNicknameCommandResponse>
 {
-    public sealed record UpdateNicknameCommand : ICommand<UpdateNicknameCommandResponse>
-    {
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
-        public string? Nickname { get; init; }
-    }
+    public ulong UserId { get; init; }
+    public ulong GuildId { get; init; }
+    public string? Nickname { get; init; }
 }

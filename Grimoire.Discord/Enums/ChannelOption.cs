@@ -5,15 +5,14 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Discord.Enums
+namespace Grimoire.Discord.Enums;
+
+public enum ChannelOption
 {
-    public enum ChannelOption
-    {
-        [ChoiceName("Off")]
-        Off,
-        [ChoiceName("Current Channel")]
-        CurrentChannel,
-        [ChoiceName("Select Channel")]
-        SelectChannel
-    }
+    [ChoiceName("Off")]
+    Off,
+    [ChoiceName("Current Channel")]
+    CurrentChannel,
+    [ChoiceName("Select Channel")]
+    SelectChannel
 }

@@ -5,13 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Discord.Notifications
+namespace Grimoire.Discord.Notifications;
+
+public sealed record UsernameTrackerNotification : INotification
 {
-    public sealed record UsernameTrackerNotification : INotification
-    {
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
-        public string BeforeUsername { get; init; } = string.Empty;
-        public string AfterUsername { get; init; } = string.Empty;
-    }
+    public ulong UserId { get; init; }
+    public ulong GuildId { get; init; }
+    public string BeforeUsername { get; init; } = string.Empty;
+    public string AfterUsername { get; init; } = string.Empty;
 }

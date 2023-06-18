@@ -7,62 +7,61 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages
+namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages;
+
+public class BulkDeleteMessageCommandHandler : ICommandHandler<BulkDeleteMessageCommand, BulkDeleteMessageCommandResponse>
 {
-    public class BulkDeleteMessageCommandHandler : ICommandHandler<BulkDeleteMessageCommand, BulkDeleteMessageCommandResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public BulkDeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public BulkDeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand command, CancellationToken cancellationToken)
-        {
-            var messages = await this._grimoireDbContext.Messages
-                .WhereIdsAre(command.Ids)
-                .WhereMessageLoggingIsEnabled()
-                .Select(x => new
+    public async ValueTask<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand command, CancellationToken cancellationToken)
+    {
+        var messages = await this._grimoireDbContext.Messages
+            .WhereIdsAre(command.Ids)
+            .WhereMessageLoggingIsEnabled()
+            .Select(x => new
+            {
+                Message = new MessageDto
                 {
-                    Message = new MessageDto
+                    MessageId = x.Id,
+                    UserId = x.UserId,
+                    MessageContent = x.MessageHistory
+                    .OrderByDescending(x => x.TimeStamp)
+                    .First(x => x.Action != MessageAction.Deleted)
+                    .MessageContent,
+                    Attachments = x.Attachments
+                    .Select(x => new AttachmentDto
                     {
-                        MessageId = x.Id,
-                        UserId = x.UserId,
-                        MessageContent = x.MessageHistory
-                        .OrderByDescending(x => x.TimeStamp)
-                        .First(x => x.Action != MessageAction.Deleted)
-                        .MessageContent,
-                        Attachments = x.Attachments
-                        .Select(x => new AttachmentDto
-                        {
-                            Id = x.Id,
-                            FileName = x.FileName
-                        })
-                        .ToArray(),
-                        ChannelId = x.ChannelId
-                    },
-                    BulkDeleteLogId = x.Guild.MessageLogSettings.BulkDeleteChannelLogId
-                }
+                        Id = x.Id,
+                        FileName = x.FileName
+                    })
+                    .ToArray(),
+                    ChannelId = x.ChannelId
+                },
+                BulkDeleteLogId = x.Guild.MessageLogSettings.BulkDeleteChannelLogId
+            }
 
-                ).ToArrayAsync(cancellationToken: cancellationToken);
-            if (!messages.Any())
-                return new BulkDeleteMessageCommandResponse { Success = false };
+            ).ToArrayAsync(cancellationToken: cancellationToken);
+        if (!messages.Any())
+            return new BulkDeleteMessageCommandResponse { Success = false };
 
-            var messageHistory = messages.Select(x => new MessageHistory
-            {
-                MessageId = x.Message.MessageId,
-                Action = MessageAction.Deleted,
-                GuildId = command.GuildId
-            });
+        var messageHistory = messages.Select(x => new MessageHistory
+        {
+            MessageId = x.Message.MessageId,
+            Action = MessageAction.Deleted,
+            GuildId = command.GuildId
+        });
 
-            await this._grimoireDbContext.MessageHistory.AddRangeAsync(messageHistory, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new BulkDeleteMessageCommandResponse
-            {
-                BulkDeleteLogChannelId = messages.First()?.BulkDeleteLogId,
-                Messages = messages.Select(x => x.Message).ToArray()
-            };
-        }
+        await this._grimoireDbContext.MessageHistory.AddRangeAsync(messageHistory, cancellationToken);
+        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        return new BulkDeleteMessageCommandResponse
+        {
+            BulkDeleteLogChannelId = messages.First()?.BulkDeleteLogId,
+            Messages = messages.Select(x => x.Message).ToArray()
+        };
     }
 }

@@ -14,64 +14,63 @@ using Grimoire.Core.Features.Shared.SharedDtos;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
+namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
+
+[TestFixture]
+public class MemberDatabaseQueryHelperTests
 {
-    [TestFixture]
-    public class MemberDatabaseQueryHelperTests
+
+    [Test]
+    public async Task WhenMembersAreNotInDatabase_AddThemAsync()
     {
-
-        [Test]
-        public async Task WhenMembersAreNotInDatabase_AddThemAsync()
+        using var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var membersToAdd = new List<MemberDto>
         {
-            using var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var membersToAdd = new List<MemberDto>
+            new MemberDto() { UserId = TestDatabaseFixture.User1.Id, GuildId = TestDatabaseFixture.Guild2.Id},
+            new MemberDto() { UserId = TestDatabaseFixture.User2.Id, GuildId = TestDatabaseFixture.Guild2.Id}
+        };
+        var result = await context.Members.AddMissingMembersAsync(membersToAdd, default);
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        result.Should().BeTrue();
+        context.Members.Where(x => x.GuildId == TestDatabaseFixture.Guild2.Id).Should().HaveCount(2);
+    }
+
+    [Test]
+    public async Task WhenWhereLoggingEnabledCalled_GetMembersInGuildsWhereLoggingIsEnabledAsync()
+    {
+        using var context = TestDatabaseFixture.CreateContext();
+
+        var result = await context.Members.WhereLoggingEnabled().ToArrayAsync();
+
+        result.Should().AllSatisfy(x => x.Guild?.UserLogSettings?.ModuleEnabled.Should().BeTrue());
+    }
+
+    [Test]
+    public async Task WhenWhereLevelingEnabledCalled_GetMembersInGuildsWhereLevelingIsEnabledAsync()
+    {
+        using var context = TestDatabaseFixture.CreateContext();
+
+        var result = await context.Members.WhereLevelingEnabled().ToArrayAsync();
+
+        result.Should().AllSatisfy(x => x.Guild?.LevelSettings?.ModuleEnabled.Should().BeTrue());
+    }
+
+    [Test]
+    public async Task WhenWhereMemberNotIgnoredCalled_GetMembersThatArentIgnoredAsync()
+    {
+        using var context = TestDatabaseFixture.CreateContext();
+
+        var result = await context.Members.WhereMemberNotIgnored(
+            TestDatabaseFixture.Channel1.Id,
+            new ulong[]
             {
-                new MemberDto() { UserId = TestDatabaseFixture.User1.Id, GuildId = TestDatabaseFixture.Guild2.Id},
-                new MemberDto() { UserId = TestDatabaseFixture.User2.Id, GuildId = TestDatabaseFixture.Guild2.Id}
-            };
-            var result = await context.Members.AddMissingMembersAsync(membersToAdd, default);
+                TestDatabaseFixture.Role1.Id,
+                TestDatabaseFixture.Role2.Id
+            }).ToArrayAsync();
 
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-            result.Should().BeTrue();
-            context.Members.Where(x => x.GuildId == TestDatabaseFixture.Guild2.Id).Should().HaveCount(2);
-        }
-
-        [Test]
-        public async Task WhenWhereLoggingEnabledCalled_GetMembersInGuildsWhereLoggingIsEnabledAsync()
-        {
-            using var context = TestDatabaseFixture.CreateContext();
-
-            var result = await context.Members.WhereLoggingEnabled().ToArrayAsync();
-
-            result.Should().AllSatisfy(x => x.Guild?.UserLogSettings?.ModuleEnabled.Should().BeTrue());
-        }
-
-        [Test]
-        public async Task WhenWhereLevelingEnabledCalled_GetMembersInGuildsWhereLevelingIsEnabledAsync()
-        {
-            using var context = TestDatabaseFixture.CreateContext();
-
-            var result = await context.Members.WhereLevelingEnabled().ToArrayAsync();
-
-            result.Should().AllSatisfy(x => x.Guild?.LevelSettings?.ModuleEnabled.Should().BeTrue());
-        }
-
-        [Test]
-        public async Task WhenWhereMemberNotIgnoredCalled_GetMembersThatArentIgnoredAsync()
-        {
-            using var context = TestDatabaseFixture.CreateContext();
-
-            var result = await context.Members.WhereMemberNotIgnored(
-                TestDatabaseFixture.Channel1.Id,
-                new ulong[]
-                {
-                    TestDatabaseFixture.Role1.Id,
-                    TestDatabaseFixture.Role2.Id
-                }).ToArrayAsync();
-
-            result.Should().AllSatisfy(x => x.IsXpIgnored.Should().BeFalse());
-        }
+        result.Should().AllSatisfy(x => x.IsXpIgnored.Should().BeFalse());
     }
 }

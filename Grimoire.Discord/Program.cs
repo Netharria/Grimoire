@@ -1,3 +1,10 @@
+// This file is part of the Grimoire Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+
 using DSharpPlus.Interactivity.Enums;
 using Grimoire.Core;
 using Grimoire.Discord;
@@ -30,7 +37,7 @@ var host = Host.CreateDefaultBuilder(args)
         services
         .AddCoreServices(context.Configuration)
         .AddHttpClient()
-        .AddTransient<IDiscordImageEmbedService, DiscordImageEmbedService>()
+        .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"];
@@ -86,7 +93,7 @@ var host = Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<WarnCommands>();
             })
         .AddDiscordHostedService()
-        .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient)
+        .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
         .AddHostedService<TickerBackgroundService>()
     )
     .UseConsoleLifetime()

@@ -5,11 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Shared.SharedDtos
+namespace Grimoire.Core.Features.Shared.SharedDtos;
+
+public class AttachmentDto
 {
-    public class AttachmentDto
-    {
-        public ulong Id { get; init; }
-        public string FileName { get; init; } = string.Empty;
-    }
+    public ulong Id { get; init; }
+    public string FileName { get; init; } = string.Empty;
 }

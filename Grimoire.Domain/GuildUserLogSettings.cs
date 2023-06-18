@@ -7,33 +7,32 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class GuildUserLogSettings : IModule
 {
-    public class GuildUserLogSettings : IModule
-    {
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public ulong? JoinChannelLogId { get; set; }
+    public ulong? JoinChannelLogId { get; set; }
 
-        public virtual Channel? JoinChannelLog { get; set; }
+    public virtual Channel? JoinChannelLog { get; set; }
 
-        public ulong? LeaveChannelLogId { get; set; }
+    public ulong? LeaveChannelLogId { get; set; }
 
-        public virtual Channel? LeaveChannelLog { get; set; }
+    public virtual Channel? LeaveChannelLog { get; set; }
 
-        public ulong? UsernameChannelLogId { get; set; }
+    public ulong? UsernameChannelLogId { get; set; }
 
-        public virtual Channel? UsernameChannelLog { get; set; }
+    public virtual Channel? UsernameChannelLog { get; set; }
 
-        public ulong? NicknameChannelLogId { get; set; }
+    public ulong? NicknameChannelLogId { get; set; }
 
-        public virtual Channel? NicknameChannelLog { get; set; }
+    public virtual Channel? NicknameChannelLog { get; set; }
 
-        public ulong? AvatarChannelLogId { get; set; }
+    public ulong? AvatarChannelLogId { get; set; }
 
-        public virtual Channel? AvatarChannelLog { get; set; }
-        public bool ModuleEnabled { get; set; }
-    }
+    public virtual Channel? AvatarChannelLog { get; set; }
+    public bool ModuleEnabled { get; set; }
 }

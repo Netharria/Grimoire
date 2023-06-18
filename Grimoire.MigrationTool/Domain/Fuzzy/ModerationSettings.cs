@@ -8,23 +8,22 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Fuzzy
+namespace Grimoire.MigrationTool.Domain.Fuzzy;
+
+[Table("guilds")]
+public class ModerationSettings
 {
-    [Table("guilds")]
-    public class ModerationSettings
-    {
-        [Key]
-        [Column("id")]
-        public ulong Id { get; set; }
-        [Column("mod_log")]
-        public ulong? ModerationLog { get; set; }
-        [Column("public_log")]
-        public ulong? PublicBanLog { get; set; }
-        [Column("duration_type")]
-        public int DurationType { get; set; }
-        [Column("duration")]
-        public int Duration { get; set; }
-        [Column("mute_role")]
-        public ulong? MuteRole { get; set; }
-    }
+    [Key]
+    [Column("id")]
+    public ulong Id { get; set; }
+    [Column("mod_log")]
+    public ulong? ModerationLog { get; set; }
+    [Column("public_log")]
+    public ulong? PublicBanLog { get; set; }
+    [Column("duration_type")]
+    public int DurationType { get; set; }
+    [Column("duration")]
+    public int Duration { get; set; }
+    [Column("mute_role")]
+    public ulong? MuteRole { get; set; }
 }

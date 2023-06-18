@@ -7,12 +7,11 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class User : IIdentifiable<ulong>, IMentionable
 {
-    public class User : IIdentifiable<ulong>, IMentionable
-    {
-        public ulong Id { get; set; }
-        public virtual ICollection<Member> MemberProfiles { get; set; } = new List<Member>();
-        public virtual ICollection<UsernameHistory> UsernameHistories { get; set; } = new List<UsernameHistory>();
-    }
+    public ulong Id { get; set; }
+    public virtual ICollection<Member> MemberProfiles { get; set; } = new List<Member>();
+    public virtual ICollection<UsernameHistory> UsernameHistories { get; set; } = new List<UsernameHistory>();
 }

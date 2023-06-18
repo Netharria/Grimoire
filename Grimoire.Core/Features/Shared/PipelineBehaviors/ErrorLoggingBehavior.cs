@@ -7,30 +7,29 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Core.Features.Shared.PipelineBehaviors
+namespace Grimoire.Core.Features.Shared.PipelineBehaviors;
+
+public class ErrorLoggingBehavior<TMessage, TResponse> : IPipelineBehavior<TMessage, TResponse>
+    where TMessage : IMessage
 {
-    public class ErrorLoggingBehavior<TMessage, TResponse> : IPipelineBehavior<TMessage, TResponse>
-        where TMessage : IMessage
+    private readonly ILogger<ErrorLoggingBehavior<TMessage, TResponse>> _logger;
+
+    public ErrorLoggingBehavior(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger)
     {
-        private readonly ILogger<ErrorLoggingBehavior<TMessage, TResponse>> _logger;
+        this._logger = logger;
+    }
 
-        public ErrorLoggingBehavior(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger)
+    public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
+    {
+        try
         {
-            this._logger = logger;
+            return await next(message, cancellationToken);
         }
-
-        public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
+        catch (Exception e) when (e is not AnticipatedException)
         {
-            try
-            {
-                return await next(message, cancellationToken);
-            }
-            catch (Exception e) when (e is not AnticipatedException)
-            {
-                this._logger.LogError("Exception Thrown on {RequestType} - {ErrorMessage} - {ErrorStackTrace}",
-                typeof(TMessage).Name, e.Message, e.StackTrace);
-                throw;
-            }
+            this._logger.LogError("Exception Thrown on {RequestType} - {ErrorMessage} - {ErrorStackTrace}",
+            typeof(TMessage).Name, e.Message, e.StackTrace);
+            throw;
         }
     }
 }

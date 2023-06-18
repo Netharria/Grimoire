@@ -7,37 +7,36 @@
 
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+public class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistory>
 {
-    public class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistory>
+    public void Configure(EntityTypeBuilder<XpHistory> builder)
     {
-        public void Configure(EntityTypeBuilder<XpHistory> builder)
-        {
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id)
-                .UseIdentityAlwaysColumn();
-            builder.HasIndex(x => new { x.UserId, x.GuildId });
-            builder.HasOne(x => x.Member)
-                .WithMany(x => x.XpHistory)
-                .HasForeignKey(x => new { x.UserId, x.GuildId })
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
-            builder.HasOne(x => x.Guild)
-                .WithMany(x => x.XpHistory)
-                .HasForeignKey(x => x.GuildId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
-            builder.Property(x => x.Xp)
-                .IsRequired();
-            builder.Property(x => x.TimeOut)
-                .IsRequired();
-            builder.Property(x => x.Type)
-                .IsRequired();
-            builder.HasOne(x => x.Awarder)
-                .WithMany(x => x.AwardRecipients)
-                .HasForeignKey(x => new { x.AwarderId, x.GuildId })
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.Restrict);
-        }
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id)
+            .UseIdentityAlwaysColumn();
+        builder.HasIndex(x => new { x.UserId, x.GuildId });
+        builder.HasOne(x => x.Member)
+            .WithMany(x => x.XpHistory)
+            .HasForeignKey(x => new { x.UserId, x.GuildId })
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.Guild)
+            .WithMany(x => x.XpHistory)
+            .HasForeignKey(x => x.GuildId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(x => x.Xp)
+            .IsRequired();
+        builder.Property(x => x.TimeOut)
+            .IsRequired();
+        builder.Property(x => x.Type)
+            .IsRequired();
+        builder.HasOne(x => x.Awarder)
+            .WithMany(x => x.AwardRecipients)
+            .HasForeignKey(x => new { x.AwarderId, x.GuildId })
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

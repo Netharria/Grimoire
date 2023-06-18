@@ -8,33 +8,32 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Core.Features.Shared.PipelineBehaviors
+namespace Grimoire.Core.Features.Shared.PipelineBehaviors;
+
+public class RequestTimingBehavior<TMessage, TResponse> : IPipelineBehavior<TMessage, TResponse>
+    where TMessage : IMessage
 {
-    public class RequestTimingBehavior<TMessage, TResponse> : IPipelineBehavior<TMessage, TResponse>
-        where TMessage : IMessage
+    private readonly ILogger<RequestTimingBehavior<TMessage, TResponse>> _logger;
+
+    public RequestTimingBehavior(ILogger<RequestTimingBehavior<TMessage, TResponse>> logger)
     {
-        private readonly ILogger<RequestTimingBehavior<TMessage, TResponse>> _logger;
+        this._logger = logger;
+    }
 
-        public RequestTimingBehavior(ILogger<RequestTimingBehavior<TMessage, TResponse>> logger)
+    public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
+    {
+        var stopwatch = Stopwatch.GetTimestamp();
+
+        try
         {
-            this._logger = logger;
+            return await next(message, cancellationToken);
         }
-
-        public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
+        finally
         {
-            var stopwatch = Stopwatch.GetTimestamp();
-
-            try
-            {
-                return await next(message, cancellationToken);
-            }
-            finally
-            {
-                var delta = Stopwatch.GetElapsedTime(stopwatch);
-                if (delta.TotalMilliseconds > 100)
-                    this._logger.LogWarning(
-                    "{ReqestType}; Execution time={ElapsedTime}ms", message.GetType(), delta.TotalMilliseconds);
-            }
+            var delta = Stopwatch.GetElapsedTime(stopwatch);
+            if (delta.TotalMilliseconds > 100)
+                this._logger.LogWarning(
+                "{ReqestType}; Execution time={ElapsedTime}ms", message.GetType(), delta.TotalMilliseconds);
         }
     }
 }

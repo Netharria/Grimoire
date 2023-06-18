@@ -5,16 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Logging.Queries.GetAllTrackersForUser
-{
-    public sealed record GetAllTrackersForUserQueryResponse : BaseResponse
-    {
-        public UserTracker[] Trackers { get; init; } = Array.Empty<UserTracker>();
-    }
+namespace Grimoire.Core.Features.Logging.Queries.GetAllTrackersForUser;
 
-    public class UserTracker
-    {
-        public ulong TrackerChannelId { get; init; }
-        public ulong GuildId { get; init; }
-    }
+public sealed record GetAllTrackersForUserQueryResponse : BaseResponse
+{
+    public UserTracker[] Trackers { get; init; } = Array.Empty<UserTracker>();
+}
+
+public class UserTracker
+{
+    public ulong TrackerChannelId { get; init; }
+    public ulong GuildId { get; init; }
 }

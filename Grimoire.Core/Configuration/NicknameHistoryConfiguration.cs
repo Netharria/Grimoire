@@ -7,25 +7,24 @@
 
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+public class NicknameHistoryConfiguration : IEntityTypeConfiguration<NicknameHistory>
 {
-    public class NicknameHistoryConfiguration : IEntityTypeConfiguration<NicknameHistory>
+    public void Configure(EntityTypeBuilder<NicknameHistory> builder)
     {
-        public void Configure(EntityTypeBuilder<NicknameHistory> builder)
-        {
-            builder.HasKey(x => x.Id);
-            builder.Property(e => e.Id)
-                .UseIdentityAlwaysColumn();
-            builder.HasOne(x => x.Member)
-                .WithMany(x => x.NicknamesHistory)
-                .HasForeignKey(x => new { x.UserId, x.GuildId })
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
-            builder.Property(x => x.Nickname)
-                .HasMaxLength(32)
-                .IsRequired(false); ;
-            builder.Property(x => x.Timestamp)
-                .HasDefaultValueSql("now()");
-        }
+        builder.HasKey(x => x.Id);
+        builder.Property(e => e.Id)
+            .UseIdentityAlwaysColumn();
+        builder.HasOne(x => x.Member)
+            .WithMany(x => x.NicknamesHistory)
+            .HasForeignKey(x => new { x.UserId, x.GuildId })
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(x => x.Nickname)
+            .HasMaxLength(32)
+            .IsRequired(false); ;
+        builder.Property(x => x.Timestamp)
+            .HasDefaultValueSql("now()");
     }
 }

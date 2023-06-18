@@ -5,11 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Shared.Commands.ChannelCommands.AddChannel
+namespace Grimoire.Core.Features.Shared.Commands.ChannelCommands.AddChannel;
+
+public sealed record AddChannelCommand : ICommand
 {
-    public sealed record AddChannelCommand : ICommand
-    {
-        public ulong GuildId { get; init; }
-        public ulong ChannelId { get; init; }
-    }
+    public ulong GuildId { get; init; }
+    public ulong ChannelId { get; init; }
 }

@@ -8,21 +8,20 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class PublishedMessageConfiguration : IEntityTypeConfiguration<PublishedMessage>
 {
-    [ExcludeFromCodeCoverage]
-    public class PublishedMessageConfiguration : IEntityTypeConfiguration<PublishedMessage>
+    public void Configure(EntityTypeBuilder<PublishedMessage> builder)
     {
-        public void Configure(EntityTypeBuilder<PublishedMessage> builder)
-        {
-            builder.HasKey(e => new { e.SinId, e.PublishType });
-            builder.HasOne(e => e.Sin)
-                .WithMany(e => e.PublishMessages)
-                .HasForeignKey(e => e.SinId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.Property(e => e.PublishType)
-                .IsRequired();
-        }
+        builder.HasKey(e => new { e.SinId, e.PublishType });
+        builder.HasOne(e => e.Sin)
+            .WithMany(e => e.PublishMessages)
+            .HasForeignKey(e => e.SinId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.Property(e => e.PublishType)
+            .IsRequired();
     }
 }

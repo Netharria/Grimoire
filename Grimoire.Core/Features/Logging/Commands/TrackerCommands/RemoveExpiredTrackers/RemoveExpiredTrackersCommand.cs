@@ -5,9 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers
+namespace Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers;
+
+public sealed record RemoveExpiredTrackersCommand : ICommand<IEnumerable<RemoveExpiredTrackersCommandResponse>>
 {
-    public sealed record RemoveExpiredTrackersCommand : ICommand<IEnumerable<RemoveExpiredTrackersCommandResponse>>
-    {
-    }
 }

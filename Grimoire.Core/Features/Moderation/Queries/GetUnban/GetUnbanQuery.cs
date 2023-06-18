@@ -7,11 +7,10 @@
 
 using Grimoire.Core.Features.Moderation.Queries.GetBan;
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetUnban
+namespace Grimoire.Core.Features.Moderation.Queries.GetUnban;
+
+public sealed record GetUnbanQuery : IRequest<GetBanQueryResponse>
 {
-    public sealed record GetUnbanQuery : IRequest<GetBanQueryResponse>
-    {
-        public long SinId { get; init; }
-        public ulong GuildId { get; init; }
-    }
+    public long SinId { get; init; }
+    public ulong GuildId { get; init; }
 }

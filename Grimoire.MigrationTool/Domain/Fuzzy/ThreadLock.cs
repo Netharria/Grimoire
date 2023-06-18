@@ -8,23 +8,22 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Fuzzy
+namespace Grimoire.MigrationTool.Domain.Fuzzy;
+
+[Table("thread_locks")]
+public class ThreadLock
 {
-    [Table("thread_locks")]
-    public class ThreadLock
-    {
-        [Key]
-        [Column("channel_id")]
-        public ulong ChannelId { get; set; }
-        [Column("moderator_id")]
-        public ulong ModeratorId { get; set; }
-        [Column("moderator_name")]
-        public string ModeratorName { get; set; } = string.Empty;
-        [Column("guild_id")]
-        public ulong GuildId { get; set; }
-        [Column("reason")]
-        public string? Reason { get; set; }
-        [Column("end_time")]
-        public DateTime EndTime { get; set; }
-    }
+    [Key]
+    [Column("channel_id")]
+    public ulong ChannelId { get; set; }
+    [Column("moderator_id")]
+    public ulong ModeratorId { get; set; }
+    [Column("moderator_name")]
+    public string ModeratorName { get; set; } = string.Empty;
+    [Column("guild_id")]
+    public ulong GuildId { get; set; }
+    [Column("reason")]
+    public string? Reason { get; set; }
+    [Column("end_time")]
+    public DateTime EndTime { get; set; }
 }

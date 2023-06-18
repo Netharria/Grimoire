@@ -10,51 +10,50 @@ using FluentAssertions;
 using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsCommands.AddReward
+namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
+
+[TestFixture]
+public class AddRewardCommandHandlerTests
 {
-    [TestFixture]
-    public class AddRewardCommandHandlerTests
+    [Test]
+    public async Task WhenAddingReward_IfRewardDoesntExist_AddRoleAsync()
     {
-        [Test]
-        public async Task WhenAddingReward_IfRewardDoesntExist_AddRoleAsync()
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var CUT = new AddRewardCommandHandler(context);
+        var command = new AddRewardCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
+            RoleId = TestDatabaseFixture.Role1.Id,
+            GuildId = TestDatabaseFixture.Role1.GuildId,
+            RewardLevel = 10
+        };
 
-            var CUT = new AddRewardCommandHandler(context);
-            var command = new AddRewardCommand
-            {
-                RoleId = TestDatabaseFixture.Role1.Id,
-                GuildId = TestDatabaseFixture.Role1.GuildId,
-                RewardLevel = 10
-            };
+        var response = await CUT.Handle(command, default);
 
-            var response = await CUT.Handle(command, default);
+        context.ChangeTracker.Clear();
 
-            context.ChangeTracker.Clear();
+        response.Message.Should().Be("Added <@&6> reward at level 10");
+    }
 
-            response.Message.Should().Be("Added <@&6> reward at level 10");
-        }
+    [Test]
+    public async Task WhenAddingReward_IfRewardExist_UpdateRoleAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhenAddingReward_IfRewardExist_UpdateRoleAsync()
+        context.Database.BeginTransaction();
+
+        var CUT = new AddRewardCommandHandler(context);
+        var command = new AddRewardCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
+            RoleId = TestDatabaseFixture.Role2.Id,
+            GuildId = TestDatabaseFixture.Role2.GuildId,
+            RewardLevel = 15
+        };
 
-            context.Database.BeginTransaction();
+        var response = await CUT.Handle(command, default);
 
-            var CUT = new AddRewardCommandHandler(context);
-            var command = new AddRewardCommand
-            {
-                RoleId = TestDatabaseFixture.Role2.Id,
-                GuildId = TestDatabaseFixture.Role2.GuildId,
-                RewardLevel = 15
-            };
-
-            var response = await CUT.Handle(command, default);
-
-            context.ChangeTracker.Clear();
-            response.Message.Should().Be("Updated <@&7> reward to level 15");
-        }
+        context.ChangeTracker.Clear();
+        response.Message.Should().Be("Updated <@&7> reward to level 15");
     }
 }

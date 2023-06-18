@@ -12,29 +12,28 @@ using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Features.Shared.SharedDtos;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
+namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
+
+[TestFixture]
+public class GuildDatabaseQueryHelperTests
 {
-    [TestFixture]
-    public class GuildDatabaseQueryHelperTests
+
+    [Test]
+    public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
     {
-
-        [Test]
-        public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var guildsToAdd = new List<GuildDto>
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var guildsToAdd = new List<GuildDto>
-            {
-                new GuildDto() { Id = 1 },
-                new GuildDto() { Id = 2 },
-                new GuildDto() { Id = 3 }
-            };
-            var result = await context.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
+            new GuildDto() { Id = 1 },
+            new GuildDto() { Id = 2 },
+            new GuildDto() { Id = 3 }
+        };
+        var result = await context.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
 
-            await context.SaveChangesAsync();
-            context.ChangeTracker.Clear();
-            result.Should().BeTrue();
-            context.Guilds.Should().HaveCount(3);
-        }
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        result.Should().BeTrue();
+        context.Guilds.Should().HaveCount(3);
     }
 }

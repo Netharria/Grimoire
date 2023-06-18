@@ -7,24 +7,23 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Logging.Queries.GetTracker
+namespace Grimoire.Core.Features.Logging.Queries.GetTracker;
+
+public class GetTrackerQueryHandler : IRequestHandler<GetTrackerQuery, GetTrackerQueryResponse?>
 {
-    public class GetTrackerQueryHandler : IRequestHandler<GetTrackerQuery, GetTrackerQueryResponse?>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetTrackerQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
-
-        public GetTrackerQueryHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<GetTrackerQueryResponse?> Handle(GetTrackerQuery request, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Trackers
-            .WhereMemberHasId(request.UserId, request.GuildId)
-            .Select(x => new GetTrackerQueryResponse
-            {
-                TrackerChannelId = x.LogChannelId
-            }).FirstOrDefaultAsync(cancellationToken);
-
+        this._grimoireDbContext = grimoireDbContext;
     }
+
+    public async ValueTask<GetTrackerQueryResponse?> Handle(GetTrackerQuery request, CancellationToken cancellationToken)
+        => await this._grimoireDbContext.Trackers
+        .WhereMemberHasId(request.UserId, request.GuildId)
+        .Select(x => new GetTrackerQueryResponse
+        {
+            TrackerChannelId = x.LogChannelId
+        }).FirstOrDefaultAsync(cancellationToken);
+
 }

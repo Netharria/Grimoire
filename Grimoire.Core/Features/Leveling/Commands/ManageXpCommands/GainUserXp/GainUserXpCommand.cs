@@ -5,13 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp
+namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
+
+public sealed record GainUserXpCommand : ICommand<GainUserXpCommandResponse>
 {
-    public sealed record GainUserXpCommand : ICommand<GainUserXpCommandResponse>
-    {
-        public ulong GuildId { get; init; }
-        public ulong UserId { get; init; }
-        public ulong ChannelId { get; init; }
-        public ulong[] RoleIds { get; init; } = Array.Empty<ulong>();
-    }
+    public ulong GuildId { get; init; }
+    public ulong UserId { get; init; }
+    public ulong ChannelId { get; init; }
+    public ulong[] RoleIds { get; init; } = Array.Empty<ulong>();
 }

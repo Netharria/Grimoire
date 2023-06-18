@@ -5,28 +5,27 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class Lock
 {
-    public class Lock
-    {
-        public ulong ChannelId { get; set; }
+    public ulong ChannelId { get; set; }
 
-        public virtual Channel Channel { get; set; } = null!;
+    public virtual Channel Channel { get; set; } = null!;
 
-        public long PreviouslyAllowed { get; set; }
+    public long PreviouslyAllowed { get; set; }
 
-        public long PreviouslyDenied { get; set; }
+    public long PreviouslyDenied { get; set; }
 
-        public ulong ModeratorId { get; set; }
+    public ulong ModeratorId { get; set; }
 
-        public virtual Member Moderator { get; set; } = null!;
+    public virtual Member Moderator { get; set; } = null!;
 
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public string Reason { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
 
-        public DateTimeOffset EndTime { get; set; }
-    }
+    public DateTimeOffset EndTime { get; set; }
 }

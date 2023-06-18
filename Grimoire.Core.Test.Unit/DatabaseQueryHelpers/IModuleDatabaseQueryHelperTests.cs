@@ -14,31 +14,30 @@ using Grimoire.Domain;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
+namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
+
+[TestFixture]
+public class IModuleDatabaseQueryHelperTests
 {
-    [TestFixture]
-    public class IModuleDatabaseQueryHelperTests
+
+    [Test]
+    public async Task WhenGetModulesOfTypeCalled_ReturnCorrectTypeofModuleAsync()
     {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhenGetModulesOfTypeCalled_ReturnCorrectTypeofModuleAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
+        var levelingModule = await context.Guilds.GetModulesOfType(Module.Leveling)
+            .OfType<GuildLevelSettings>()
+            .ToListAsync();
+        levelingModule.Should().NotBeEmpty();
 
-            var levelingModule = await context.Guilds.GetModulesOfType(Module.Leveling)
-                .OfType<GuildLevelSettings>()
-                .ToListAsync();
-            levelingModule.Should().NotBeEmpty();
+        var loggingModule = await context.Guilds.GetModulesOfType(Module.UserLog)
+            .OfType<GuildUserLogSettings>()
+            .ToListAsync();
+        loggingModule.Should().NotBeEmpty();
 
-            var loggingModule = await context.Guilds.GetModulesOfType(Module.UserLog)
-                .OfType<GuildUserLogSettings>()
-                .ToListAsync();
-            loggingModule.Should().NotBeEmpty();
-
-            var moderationModule = await context.Guilds.GetModulesOfType(Module.Moderation)
-                .OfType<GuildModerationSettings>()
-                .ToListAsync();
-            moderationModule.Should().NotBeEmpty();
-        }
+        var moderationModule = await context.Guilds.GetModulesOfType(Module.Moderation)
+            .OfType<GuildModerationSettings>()
+            .ToListAsync();
+        moderationModule.Should().NotBeEmpty();
     }
 }

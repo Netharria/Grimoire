@@ -7,16 +7,15 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class NicknameHistory : IIdentifiable<long>, IMember
 {
-    public class NicknameHistory : IIdentifiable<long>, IMember
-    {
-        public long Id { get; set; }
-        public ulong UserId { get; set; }
-        public virtual Member Member { get; set; } = null!;
-        public string? Nickname { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
-        public ulong GuildId { get; set; }
-        public virtual Guild Guild { get; set; } = null!;
-    }
+    public long Id { get; set; }
+    public ulong UserId { get; set; }
+    public virtual Member Member { get; set; } = null!;
+    public string? Nickname { get; set; }
+    public DateTimeOffset Timestamp { get; set; }
+    public ulong GuildId { get; set; }
+    public virtual Guild Guild { get; set; } = null!;
 }

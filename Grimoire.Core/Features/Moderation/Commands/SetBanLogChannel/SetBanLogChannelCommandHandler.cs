@@ -5,32 +5,31 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel
+namespace Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel;
+
+public class SetBanLogChannelCommandHandler : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
 {
-    public class SetBanLogChannelCommandHandler : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDbContext)
+    public async ValueTask<BaseResponse> Handle(SetBanLogChannelCommand command, CancellationToken cancellationToken)
+    {
+        var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
+            .Include(x => x.Guild)
+            .FirstOrDefaultAsync(x => x.GuildId.Equals(command.GuildId), cancellationToken: cancellationToken);
+        if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
+
+        guildModerationSettings.PublicBanLog = command.ChannelId;
+        this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
+        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+
+        return new BaseResponse
         {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<BaseResponse> Handle(SetBanLogChannelCommand command, CancellationToken cancellationToken)
-        {
-            var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
-                .Include(x => x.Guild)
-                .FirstOrDefaultAsync(x => x.GuildId.Equals(command.GuildId), cancellationToken: cancellationToken);
-            if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
-
-            guildModerationSettings.PublicBanLog = command.ChannelId;
-            this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-
-            return new BaseResponse
-            {
-                LogChannelId = guildModerationSettings.Guild.ModChannelLog
-            };
-        }
+            LogChannelId = guildModerationSettings.Guild.ModChannelLog
+        };
     }
 }

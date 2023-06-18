@@ -8,19 +8,18 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Anubis
+namespace Grimoire.MigrationTool.Domain.Anubis;
+
+[Table("rewards")]
+public record Rewards
 {
-    [Table("rewards")]
-    public record Rewards
-    {
-        [Key]
-        [Column("reward_role")]
-        public ulong RewardRole { get; set; }
-        [Column("guild_id")]
-        public ulong GuildId { get; set; }
-        [Column("reward_level")]
-        public int RewardLevel { get; set; }
+    [Key]
+    [Column("reward_role")]
+    public ulong RewardRole { get; set; }
+    [Column("guild_id")]
+    public ulong GuildId { get; set; }
+    [Column("reward_level")]
+    public int RewardLevel { get; set; }
 
 
-    }
 }

@@ -5,56 +5,55 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel
+namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel;
+
+public class LockChannelCommandHandler : ICommandHandler<LockChannelCommand, BaseResponse>
 {
-    public class LockChannelCommandHandler : ICommandHandler<LockChannelCommand, BaseResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public LockChannelCommandHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public LockChannelCommandHandler(IGrimoireDbContext grimoireDbContext)
+    public async ValueTask<BaseResponse> Handle(LockChannelCommand command, CancellationToken cancellationToken)
+    {
+        var lockEndTime = command.DurationType.GetDateTimeOffset(command.DurationAmount);
+
+        var result = await this._grimoireDbContext.Channels
+            .Where(x => x.GuildId == command.GuildId)
+            .Include(x => x.Lock)
+            .Include(x => x.Guild)
+            .FirstAsync(x => x.Id == command.ChannelId, cancellationToken);
+        if (result is null)
+            throw new AnticipatedException("Could not find that channel");
+
+        if (result.Lock is not null)
         {
-            this._grimoireDbContext = grimoireDbContext;
+            result.Lock.ModeratorId = command.ModeratorId;
+            result.Lock.EndTime = lockEndTime;
+            result.Lock.Reason = command.Reason;
         }
-
-        public async ValueTask<BaseResponse> Handle(LockChannelCommand command, CancellationToken cancellationToken)
+        else
         {
-            var lockEndTime = command.DurationType.GetDateTimeOffset(command.DurationAmount);
-
-            var result = await this._grimoireDbContext.Channels
-                .Where(x => x.GuildId == command.GuildId)
-                .Include(x => x.Lock)
-                .Include(x => x.Guild)
-                .FirstAsync(x => x.Id == command.ChannelId, cancellationToken);
-            if (result is null)
-                throw new AnticipatedException("Could not find that channel");
-
-            if (result.Lock is not null)
+            result.Lock = new Lock
             {
-                result.Lock.ModeratorId = command.ModeratorId;
-                result.Lock.EndTime = lockEndTime;
-                result.Lock.Reason = command.Reason;
-            }
-            else
-            {
-                result.Lock = new Lock
-                {
-                    ChannelId = command.ChannelId,
-                    GuildId = command.GuildId,
-                    Reason = command.Reason,
-                    EndTime = lockEndTime,
-                    ModeratorId = command.ModeratorId,
-                    PreviouslyAllowed = command.PreviouslyAllowed,
-                    PreviouslyDenied = command.PreviouslyDenied
-                };
-            }
-
-            this._grimoireDbContext.Channels.Update(result);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse
-            {
-                LogChannelId = result.Guild.ModChannelLog
+                ChannelId = command.ChannelId,
+                GuildId = command.GuildId,
+                Reason = command.Reason,
+                EndTime = lockEndTime,
+                ModeratorId = command.ModeratorId,
+                PreviouslyAllowed = command.PreviouslyAllowed,
+                PreviouslyDenied = command.PreviouslyDenied
             };
         }
 
+        this._grimoireDbContext.Channels.Update(result);
+        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        return new BaseResponse
+        {
+            LogChannelId = result.Guild.ModChannelLog
+        };
     }
+
 }

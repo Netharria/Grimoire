@@ -7,32 +7,31 @@
 
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+public class MessageHistoryConfiguration : IEntityTypeConfiguration<MessageHistory>
 {
-    public class MessageHistoryConfiguration : IEntityTypeConfiguration<MessageHistory>
+    public void Configure(EntityTypeBuilder<MessageHistory> builder)
     {
-        public void Configure(EntityTypeBuilder<MessageHistory> builder)
-        {
-            builder.HasKey(x => x.Id);
-            builder.Property(e => e.Id)
-                .UseIdentityAlwaysColumn();
-            builder.HasOne(x => x.Message)
-                .WithMany(x => x.MessageHistory)
-                .HasForeignKey(x => x.MessageId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.Property(x => x.Action)
-                .IsRequired();
-            builder.Property(x => x.MessageContent)
-                .HasMaxLength(4000);
-            builder.HasOne(e => e.DeletedByModerator)
-                .WithMany(e => e.MessagesDeletedAsModerator)
-                .HasForeignKey(e => new { e.GuildId, e.DeletedByModeratorId })
-                .HasPrincipalKey(e => new { e.GuildId, e.UserId })
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired(false);
-            builder.Property(e => e.TimeStamp)
-                .HasDefaultValueSql("now()");
-        }
+        builder.HasKey(x => x.Id);
+        builder.Property(e => e.Id)
+            .UseIdentityAlwaysColumn();
+        builder.HasOne(x => x.Message)
+            .WithMany(x => x.MessageHistory)
+            .HasForeignKey(x => x.MessageId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.Property(x => x.Action)
+            .IsRequired();
+        builder.Property(x => x.MessageContent)
+            .HasMaxLength(4000);
+        builder.HasOne(e => e.DeletedByModerator)
+            .WithMany(e => e.MessagesDeletedAsModerator)
+            .HasForeignKey(e => new { e.GuildId, e.DeletedByModeratorId })
+            .HasPrincipalKey(e => new { e.GuildId, e.UserId })
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+        builder.Property(e => e.TimeStamp)
+            .HasDefaultValueSql("now()");
     }
 }

@@ -14,242 +14,241 @@ using Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings
+namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.SetLevelSettings;
+
+[TestFixture]
+public class SetLevelingSettingsCommandHandlerTests
 {
-    [TestFixture]
-    public class SetLevelingSettingsCommandHandlerTests
+
+    [Test]
+    public void WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponse()
     {
-
-        [Test]
-        public void WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponse()
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = 12341234
-            };
+            GuildId = 12341234
+        };
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-            context.ChangeTracker.Clear();
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("Could not find guild level settings.");
-        }
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+        context.ChangeTracker.Clear();
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("Could not find guild level settings.");
+    }
 
-        [Test]
-        public void WhenUpdatingTextTime_IfNumberIsInvalid_FailResponse()
+    [Test]
+    public void WhenUpdatingTextTime_IfNumberIsInvalid_FailResponse()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.TextTime,
-                Value = "adsfas"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.TextTime,
+            Value = "adsfas"
+        };
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-            context.ChangeTracker.Clear();
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("Please give a valid number for TextTime.");
-        }
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+        context.ChangeTracker.Clear();
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("Please give a valid number for TextTime.");
+    }
 
-        [Test]
-        public void WhenUpdatingBase_IfNumberIsInvalid_FailResponse()
+    [Test]
+    public void WhenUpdatingBase_IfNumberIsInvalid_FailResponse()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.Base,
-                Value = "adsfas"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.Base,
+            Value = "adsfas"
+        };
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-            context.ChangeTracker.Clear();
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("Please give a valid number for base XP.");
-        }
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+        context.ChangeTracker.Clear();
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("Please give a valid number for base XP.");
+    }
 
-        [Test]
-        public void WhenUpdatingModifier_IfNumberIsInvalid_FailResponse()
+    [Test]
+    public void WhenUpdatingModifier_IfNumberIsInvalid_FailResponse()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.Modifier,
-                Value = "adsfas"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.Modifier,
+            Value = "adsfas"
+        };
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-            context.ChangeTracker.Clear();
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("Please give a valid number for Modifier.");
-        }
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+        context.ChangeTracker.Clear();
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("Please give a valid number for Modifier.");
+    }
 
-        [Test]
-        public void WhenUpdatingAmount_IfNumberIsInvalid_FailResponse()
+    [Test]
+    public void WhenUpdatingAmount_IfNumberIsInvalid_FailResponse()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.Amount,
-                Value = "adsfas"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.Amount,
+            Value = "adsfas"
+        };
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-            context.ChangeTracker.Clear();
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("Please give a valid number for Amount.");
-        }
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+        context.ChangeTracker.Clear();
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("Please give a valid number for Amount.");
+    }
 
-        [Test]
-        public void WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponse()
+    [Test]
+    public void WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponse()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.LogChannel,
-                Value = "345"
-            };
-            context.ChangeTracker.Clear();
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.LogChannel,
+            Value = "345"
+        };
+        context.ChangeTracker.Clear();
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("Please give a valid channel for Log Channel.");
-        }
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("Please give a valid channel for Log Channel.");
+    }
 
-        [Test]
-        public async Task WhenUpdatingTextTime_IfNumberIsValid_UpdateSettingAsync()
+    [Test]
+    public async Task WhenUpdatingTextTime_IfNumberIsValid_UpdateSettingAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.TextTime,
-                Value = "23"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.TextTime,
+            Value = "23"
+        };
 
-            var response = await CUT.Handle(command, default);
-            context.ChangeTracker.Clear();
-            var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
+        var response = await CUT.Handle(command, default);
+        context.ChangeTracker.Clear();
+        var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
-            guildSettings.TextTime.Should().Be(TimeSpan.FromMinutes(23));
-        }
+        guildSettings.TextTime.Should().Be(TimeSpan.FromMinutes(23));
+    }
 
-        [Test]
-        public async Task WhenUpdatingBase_IfNumberIsValid_UpdateSettingAsync()
+    [Test]
+    public async Task WhenUpdatingBase_IfNumberIsValid_UpdateSettingAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.Base,
-                Value = "23"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.Base,
+            Value = "23"
+        };
 
-            var response = await CUT.Handle(command, default);
-            context.ChangeTracker.Clear();
-            var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
+        var response = await CUT.Handle(command, default);
+        context.ChangeTracker.Clear();
+        var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
-            guildSettings.Base.Should().Be(23);
-        }
+        guildSettings.Base.Should().Be(23);
+    }
 
-        [Test]
-        public async Task WhenUpdatingModifier_IfNumberIsValid_UpdateSettingAsync()
+    [Test]
+    public async Task WhenUpdatingModifier_IfNumberIsValid_UpdateSettingAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.Modifier,
-                Value = "23"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.Modifier,
+            Value = "23"
+        };
 
-            var response = await CUT.Handle(command, default);
-            context.ChangeTracker.Clear();
-            var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
+        var response = await CUT.Handle(command, default);
+        context.ChangeTracker.Clear();
+        var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
-            guildSettings.Modifier.Should().Be(23);
-        }
+        guildSettings.Modifier.Should().Be(23);
+    }
 
-        [Test]
-        public async Task WhenUpdatingAmount_IfNumberIsValid_UpdateSettingAsync()
+    [Test]
+    public async Task WhenUpdatingAmount_IfNumberIsValid_UpdateSettingAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.Amount,
-                Value = "23"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.Amount,
+            Value = "23"
+        };
 
-            var response = await CUT.Handle(command, default);
-            context.ChangeTracker.Clear();
-            var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
+        var response = await CUT.Handle(command, default);
+        context.ChangeTracker.Clear();
+        var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
-            guildSettings.Amount.Should().Be(23);
-        }
+        guildSettings.Amount.Should().Be(23);
+    }
 
-        [Test]
-        public async Task WhenUpdatingLogChannel_IfNumberIsValid_UpdateSettingAsync()
+    [Test]
+    public async Task WhenUpdatingLogChannel_IfNumberIsValid_UpdateSettingAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.LogChannel,
-                Value = "12345678901234567"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.LogChannel,
+            Value = "12345678901234567"
+        };
 
-            var response = await CUT.Handle(command, default);
-            context.ChangeTracker.Clear();
-            var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
+        var response = await CUT.Handle(command, default);
+        context.ChangeTracker.Clear();
+        var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
-            guildSettings.LevelChannelLogId.Should().Be(12345678901234567);
-        }
+        guildSettings.LevelChannelLogId.Should().Be(12345678901234567);
+    }
 
-        [Test]
-        public async Task WhenUpdatingLogChannel_IfNumberIs0_UpdateSettingToNullAsync()
+    [Test]
+    public async Task WhenUpdatingLogChannel_IfNumberIs0_UpdateSettingToNullAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new SetLevelSettingsCommandHandler(context);
+        var command = new SetLevelSettingsCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new SetLevelSettingsCommandHandler(context);
-            var command = new SetLevelSettingsCommand
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                LevelSettings = LevelSettings.LogChannel,
-                Value = "0"
-            };
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            LevelSettings = LevelSettings.LogChannel,
+            Value = "0"
+        };
 
-            var response = await CUT.Handle(command, default);
-            context.ChangeTracker.Clear();
-            var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
+        var response = await CUT.Handle(command, default);
+        context.ChangeTracker.Clear();
+        var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
-            guildSettings.LevelChannelLogId.Should().BeNull();
-        }
+        guildSettings.LevelChannelLogId.Should().BeNull();
     }
 }

@@ -8,19 +8,18 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Fuzzy
+namespace Grimoire.MigrationTool.Domain.Fuzzy;
+
+[Table("published_messages")]
+public class PublishedMessage
 {
-    [Table("published_messages")]
-    public class PublishedMessage
-    {
-        [Key]
-        [Column("rowid")]
-        public ulong Id { get; set; }
-        [Column("infraction_id")]
-        public int InfractionId { get; set; }
-        [Column("message_id")]
-        public ulong MessageId { get; set; }
-        [Column("publish_type")]
-        public int PublishType { get; set; }
-    }
+    [Key]
+    [Column("rowid")]
+    public ulong Id { get; set; }
+    [Column("infraction_id")]
+    public int InfractionId { get; set; }
+    [Column("message_id")]
+    public ulong MessageId { get; set; }
+    [Column("publish_type")]
+    public int PublishType { get; set; }
 }

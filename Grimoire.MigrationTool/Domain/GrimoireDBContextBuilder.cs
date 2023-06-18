@@ -11,26 +11,25 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace Grimoire.MigrationTool.Domain
+namespace Grimoire.MigrationTool.Domain;
+
+public static class GrimoireDBContextBuilder
 {
-    public static class GrimoireDBContextBuilder
+    public static readonly IConfigurationRoot Configuration = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .Build();
+
+    public static GrimoireDbContext GetGrimoireDbContext()
     {
-        public static readonly IConfigurationRoot Configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
 
-        public static GrimoireDbContext GetGrimoireDbContext()
-        {
+        var connectionString =
+                Configuration.GetConnectionString("Grimoire");
 
-            var connectionString =
-                    Configuration.GetConnectionString("Grimoire");
-
-            return new GrimoireDbContext(
-                new DbContextOptionsBuilder<GrimoireDbContext>()
-                .UseNpgsql(connectionString)
-                .UseLoggerFactory(new LoggerFactory().AddSerilog())
-                .Options);
-        }
+        return new GrimoireDbContext(
+            new DbContextOptionsBuilder<GrimoireDbContext>()
+            .UseNpgsql(connectionString)
+            .UseLoggerFactory(new LoggerFactory().AddSerilog())
+            .Options);
     }
 }

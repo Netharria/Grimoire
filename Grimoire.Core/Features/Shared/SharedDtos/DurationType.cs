@@ -5,24 +5,23 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Shared.SharedDtos
-{
-    public enum DurationType
-    {
-        Minutes,
-        Hours,
-        Days
-    }
+namespace Grimoire.Core.Features.Shared.SharedDtos;
 
-    public static class DurationTypeExtensions
-    {
-        public static DateTimeOffset GetDateTimeOffset(this DurationType durationType, long durationAmount)
-            => durationType switch
-            {
-                DurationType.Minutes => DateTime.UtcNow.AddMinutes(durationAmount),
-                DurationType.Hours => DateTime.UtcNow.AddHours(durationAmount),
-                DurationType.Days => DateTime.UtcNow.AddDays(durationAmount),
-                _ => throw new NotImplementedException(),
-            };
-    }
+public enum DurationType
+{
+    Minutes,
+    Hours,
+    Days
+}
+
+public static class DurationTypeExtensions
+{
+    public static DateTimeOffset GetDateTimeOffset(this DurationType durationType, long durationAmount)
+        => durationType switch
+        {
+            DurationType.Minutes => DateTime.UtcNow.AddMinutes(durationAmount),
+            DurationType.Hours => DateTime.UtcNow.AddHours(durationAmount),
+            DurationType.Days => DateTime.UtcNow.AddDays(durationAmount),
+            _ => throw new NotImplementedException(),
+        };
 }

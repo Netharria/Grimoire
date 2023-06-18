@@ -8,15 +8,14 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Lumberjack
+namespace Grimoire.MigrationTool.Domain.Lumberjack;
+
+[Table("attachment_urls")]
+public record AttachmentUrl
 {
-    [Table("attachment_urls")]
-    public record AttachmentUrl
-    {
-        [Key]
-        [Column("message_id")]
-        public ulong MessageId { get; set; }
-        [Column("attachment")]
-        public string Url { get; set; } = string.Empty;
-    }
+    [Key]
+    [Column("message_id")]
+    public ulong MessageId { get; set; }
+    [Column("attachment")]
+    public string Url { get; set; } = string.Empty;
 }

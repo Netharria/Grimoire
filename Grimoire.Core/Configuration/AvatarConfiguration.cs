@@ -7,24 +7,23 @@
 
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+public class AvatarConfiguration : IEntityTypeConfiguration<Avatar>
 {
-    public class AvatarConfiguration : IEntityTypeConfiguration<Avatar>
+    public void Configure(EntityTypeBuilder<Avatar> builder)
     {
-        public void Configure(EntityTypeBuilder<Avatar> builder)
-        {
-            builder.HasKey(x => x.Id);
-            builder.Property(e => e.Id)
-                .UseIdentityAlwaysColumn();
-            builder.HasOne(x => x.Member)
-                .WithMany(x => x.AvatarHistory)
-                .HasForeignKey(x => new { x.UserId, x.GuildId })
-                .OnDelete(DeleteBehavior.Cascade);
-            builder.Property(e => e.FileName)
-                .HasMaxLength(2048)
-                .IsRequired();
-            builder.Property(x => x.Timestamp)
-                .HasDefaultValueSql("now()");
-        }
+        builder.HasKey(x => x.Id);
+        builder.Property(e => e.Id)
+            .UseIdentityAlwaysColumn();
+        builder.HasOne(x => x.Member)
+            .WithMany(x => x.AvatarHistory)
+            .HasForeignKey(x => new { x.UserId, x.GuildId })
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(e => e.FileName)
+            .HasMaxLength(2048)
+            .IsRequired();
+        builder.Property(x => x.Timestamp)
+            .HasDefaultValueSql("now()");
     }
 }

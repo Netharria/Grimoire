@@ -5,13 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Shared.SharedDtos
+namespace Grimoire.Core.Features.Shared.SharedDtos;
+
+public class MemberDto
 {
-    public class MemberDto
-    {
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
-        public string? Nickname { get; init; }
-        public string AvatarUrl { get; init; } = string.Empty;
-    }
+    public ulong UserId { get; init; }
+    public ulong GuildId { get; init; }
+    public string? Nickname { get; init; }
+    public string AvatarUrl { get; init; } = string.Empty;
 }

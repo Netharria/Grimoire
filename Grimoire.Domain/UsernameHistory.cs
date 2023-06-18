@@ -7,14 +7,13 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class UsernameHistory : IIdentifiable<long>
 {
-    public class UsernameHistory : IIdentifiable<long>
-    {
-        public long Id { get; set; }
-        public ulong UserId { get; set; }
-        public virtual User User { get; set; } = null!;
-        public string Username { get; set; } = string.Empty;
-        public DateTimeOffset Timestamp { get; set; }
-    }
+    public long Id { get; set; }
+    public ulong UserId { get; set; }
+    public virtual User User { get; set; } = null!;
+    public string Username { get; set; } = string.Empty;
+    public DateTimeOffset Timestamp { get; set; }
 }

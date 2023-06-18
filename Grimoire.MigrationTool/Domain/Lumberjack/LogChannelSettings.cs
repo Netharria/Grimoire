@@ -8,33 +8,32 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Lumberjack
+namespace Grimoire.MigrationTool.Domain.Lumberjack;
+
+[Table("log_channels")]
+public record LogChannelSettings
 {
-    [Table("log_channels")]
-    public record LogChannelSettings
-    {
-        [Key]
-        [Column("guildid")]
-        public ulong GuildId { get; set; }
-        [Column("joinid")]
-        public ulong JoinLogId { get; set; }
-        [Column("leaveid")]
-        public ulong LeaveLogId { get; set; }
-        [Column("deleteid")]
-        public ulong DeleteLogId { get; set; }
-        [Column("delete_bulk")]
-        public ulong BulkDeleteLogId { get; set; }
-        [Column("edit")]
-        public ulong EditLogId { get; set; }
-        [Column("username")]
-        public ulong UsernameLogId { get; set; }
-        [Column("nickname")]
-        public ulong NicknameLogId { get; set; }
-        [Column("avatar")]
-        public ulong AvatarLogId { get; set; }
-        [Column("stat_member")]
-        public ulong MemberCountStatChannel { get; set; }
-        [Column("ljid")]
-        public ulong? ModLogId { get; set; }
-    }
+    [Key]
+    [Column("guildid")]
+    public ulong GuildId { get; set; }
+    [Column("joinid")]
+    public ulong JoinLogId { get; set; }
+    [Column("leaveid")]
+    public ulong LeaveLogId { get; set; }
+    [Column("deleteid")]
+    public ulong DeleteLogId { get; set; }
+    [Column("delete_bulk")]
+    public ulong BulkDeleteLogId { get; set; }
+    [Column("edit")]
+    public ulong EditLogId { get; set; }
+    [Column("username")]
+    public ulong UsernameLogId { get; set; }
+    [Column("nickname")]
+    public ulong NicknameLogId { get; set; }
+    [Column("avatar")]
+    public ulong AvatarLogId { get; set; }
+    [Column("stat_member")]
+    public ulong MemberCountStatChannel { get; set; }
+    [Column("ljid")]
+    public ulong? ModLogId { get; set; }
 }

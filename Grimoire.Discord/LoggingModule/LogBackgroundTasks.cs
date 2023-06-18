@@ -9,88 +9,87 @@ using Grimoire.Core.Features.Logging.Commands.DeleteOldLogMessages;
 using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteOldMessages;
 using Grimoire.Core.Features.Logging.Queries.GetOldLogMessages;
 
-namespace Grimoire.Discord.LoggingModule
+namespace Grimoire.Discord.LoggingModule;
+
+public class LogBackgroundTasks : INotificationHandler<TimedNotification>
 {
-    public class LogBackgroundTasks : INotificationHandler<TimedNotification>
+    private readonly IMediator _mediator;
+    private readonly IDiscordClientService _discordClientService;
+
+    public LogBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
     {
-        private readonly IMediator _mediator;
-        private readonly IDiscordClientService _discordClientService;
+        this._mediator = mediator;
+        this._discordClientService = discordClientService;
+    }
 
-        public LogBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
-        {
-            this._mediator = mediator;
-            this._discordClientService = discordClientService;
-        }
+    public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
+    {
+        if (notification.Time.Second % 60 != 0)
+            return;
 
-        public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
-        {
-            if (notification.Time.Second % 60 != 0)
-                return;
-
-            var oldLogMessages = await this._mediator.Send(new GetOldLogMessagesQuery(), cancellationToken);
+        var oldLogMessages = await this._mediator.Send(new GetOldLogMessagesQuery(), cancellationToken);
 
 
-            var result = await oldLogMessages
+        var result = await oldLogMessages
+            .ToAsyncEnumerable()
+            .Select(channel =>
+                new
+                {
+                    DiscordChannel = this.GetChannelAsync(channel.GuildId, channel.ChannelId),
+                    DatabaseChannel = channel
+                })
+            .SelectMany(channelInfo =>
+                channelInfo.DatabaseChannel.MessageIds
                 .ToAsyncEnumerable()
-                .Select(channel =>
-                    new
-                    {
-                        DiscordChannel = this.GetChannelAsync(channel.GuildId, channel.ChannelId),
-                        DatabaseChannel = channel
-                    })
-                .SelectMany(channelInfo =>
-                    channelInfo.DatabaseChannel.MessageIds
-                    .ToAsyncEnumerable()
-                    .SelectAwait(async messageId => await GetMessageAsync(channelInfo.DiscordChannel, messageId))
-                    .SelectAwait(async channel => await DeleteMessageAsync(channel))
-                    .Where(messageId => messageId != default)
-                    ).ToArrayAsync(cancellationToken: cancellationToken);
+                .SelectAwait(async messageId => await GetMessageAsync(channelInfo.DiscordChannel, messageId))
+                .SelectAwait(async channel => await DeleteMessageAsync(channel))
+                .Where(messageId => messageId != default)
+                ).ToArrayAsync(cancellationToken: cancellationToken);
 
-            await this._mediator.Send(new DeleteOldMessagesCommand(), cancellationToken);
-            if (result is ulong[] deletedMessageIds)
-                await this._mediator.Send(new DeleteOldLogMessagesCommand { DeletedOldLogMessageIds = deletedMessageIds }, cancellationToken);
-        }
+        await this._mediator.Send(new DeleteOldMessagesCommand(), cancellationToken);
+        if (result is ulong[] deletedMessageIds)
+            await this._mediator.Send(new DeleteOldLogMessagesCommand { DeletedOldLogMessageIds = deletedMessageIds }, cancellationToken);
+    }
 
-        private static async Task<ulong> DeleteMessageAsync(DiscordMessage? message)
+    private static async Task<ulong> DeleteMessageAsync(DiscordMessage? message)
+    {
+        try
         {
-            try
-            {
-                if (message is null)
-                    return default;
-                await message.DeleteAsync();
-                return message.Id;
-            }
-            catch (Exception)
-            {
+            if (message is null)
                 return default;
-            }
+            await message.DeleteAsync();
+            return message.Id;
         }
-
-        private static async Task<DiscordMessage?> GetMessageAsync(DiscordChannel? channel, ulong messageId)
+        catch (Exception)
         {
-            try
-            {
-
-                if (channel is null)
-                    return null;
-                return await channel.GetMessageAsync(messageId);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return default;
         }
+    }
 
-        private DiscordChannel? GetChannelAsync(ulong guildId, ulong channelId)
+    private static async Task<DiscordMessage?> GetMessageAsync(DiscordChannel? channel, ulong messageId)
+    {
+        try
         {
-            try
-            {
-                return this._discordClientService.Client.Guilds.GetValueOrDefault(guildId)?.Channels.GetValueOrDefault(channelId);
-            }
-            catch (Exception)
-            {
+
+            if (channel is null)
                 return null;
-            }
+            return await channel.GetMessageAsync(messageId);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private DiscordChannel? GetChannelAsync(ulong guildId, ulong channelId)
+    {
+        try
+        {
+            return this._discordClientService.Client.Guilds.GetValueOrDefault(guildId)?.Channels.GetValueOrDefault(channelId);
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 }

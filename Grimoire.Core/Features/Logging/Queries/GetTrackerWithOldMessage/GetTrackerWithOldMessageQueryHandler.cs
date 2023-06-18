@@ -7,31 +7,30 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Logging.Queries.GetTrackerWithOldMessage
+namespace Grimoire.Core.Features.Logging.Queries.GetTrackerWithOldMessage;
+
+public class GetTrackerWithOldMessageQueryHandler : IRequestHandler<GetTrackerWithOldMessageQuery, GetTrackerWithOldMessageQueryResponse?>
 {
-    public class GetTrackerWithOldMessageQueryHandler : IRequestHandler<GetTrackerWithOldMessageQuery, GetTrackerWithOldMessageQueryResponse?>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetTrackerWithOldMessageQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
-
-        public GetTrackerWithOldMessageQueryHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<GetTrackerWithOldMessageQueryResponse?> Handle(GetTrackerWithOldMessageQuery request, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Trackers
-            .WhereMemberHasId(request.UserId, request.GuildId)
-            .Select(x => new GetTrackerWithOldMessageQueryResponse
-            {
-                TrackerChannelId = x.LogChannelId,
-                OldMessageContent = x.Member.Messages
-                    .Where(x => x.Id == request.MessageId)
-                    .Select(x => x.MessageHistory
-                        .Where(x => x.Action != MessageAction.Deleted
-                            && x.TimeStamp < DateTime.UtcNow.AddSeconds(1))
-                        .OrderByDescending(x => x.TimeStamp)
-                        .First().MessageContent)
-                    .First()
-            }).FirstOrDefaultAsync(cancellationToken);
+        this._grimoireDbContext = grimoireDbContext;
     }
+
+    public async ValueTask<GetTrackerWithOldMessageQueryResponse?> Handle(GetTrackerWithOldMessageQuery request, CancellationToken cancellationToken)
+        => await this._grimoireDbContext.Trackers
+        .WhereMemberHasId(request.UserId, request.GuildId)
+        .Select(x => new GetTrackerWithOldMessageQueryResponse
+        {
+            TrackerChannelId = x.LogChannelId,
+            OldMessageContent = x.Member.Messages
+                .Where(x => x.Id == request.MessageId)
+                .Select(x => x.MessageHistory
+                    .Where(x => x.Action != MessageAction.Deleted
+                        && x.TimeStamp < DateTime.UtcNow.AddSeconds(1))
+                    .OrderByDescending(x => x.TimeStamp)
+                    .First().MessageContent)
+                .First()
+        }).FirstOrDefaultAsync(cancellationToken);
 }

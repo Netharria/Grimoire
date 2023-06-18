@@ -8,25 +8,24 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Grimoire.MigrationTool.Domain.Anubis
+namespace Grimoire.MigrationTool.Domain.Anubis;
+
+[Table("level_settings")]
+public record LevelSettings
 {
-    [Table("level_settings")]
-    public record LevelSettings
-    {
-        [Key]
-        [Column("guild_id")]
-        public ulong GuildId { get; set; }
-        [Column("text_time")]
-        public int TextTime { get; set; }
-        [Column("base")]
-        public int Base { get; set; }
-        [Column("modifier")]
-        public int Modifier { get; set; }
-        [Column("amount")]
-        public int Amount { get; set; }
-        [Column("user_channel")]
-        public ulong UserChannel { get; set; }
-        [Column("log_channel")]
-        public ulong LevelLog { get; set; }
-    }
+    [Key]
+    [Column("guild_id")]
+    public ulong GuildId { get; set; }
+    [Column("text_time")]
+    public int TextTime { get; set; }
+    [Column("base")]
+    public int Base { get; set; }
+    [Column("modifier")]
+    public int Modifier { get; set; }
+    [Column("amount")]
+    public int Amount { get; set; }
+    [Column("user_channel")]
+    public ulong UserChannel { get; set; }
+    [Column("log_channel")]
+    public ulong LevelLog { get; set; }
 }

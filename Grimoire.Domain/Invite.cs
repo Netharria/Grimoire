@@ -5,14 +5,13 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public record Invite
 {
-    public record Invite
-    {
-        public string Code { get; set; } = string.Empty;
-        public string Inviter { get; set; } = string.Empty;
-        public int Uses { get; set; }
-        public int MaxUses { get; set; }
-        public string Url { get; set; } = string.Empty;
-    }
+    public string Code { get; set; } = string.Empty;
+    public string Inviter { get; set; } = string.Empty;
+    public int Uses { get; set; }
+    public int MaxUses { get; set; }
+    public string Url { get; set; } = string.Empty;
 }

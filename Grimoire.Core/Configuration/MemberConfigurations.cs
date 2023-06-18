@@ -8,26 +8,25 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class MemberConfigurations : IEntityTypeConfiguration<Member>
 {
-    [ExcludeFromCodeCoverage]
-    public class MemberConfigurations : IEntityTypeConfiguration<Member>
+    public void Configure(EntityTypeBuilder<Member> builder)
     {
-        public void Configure(EntityTypeBuilder<Member> builder)
-        {
-            builder.HasKey(e => new { e.UserId, e.GuildId });
-            builder.HasOne(e => e.Guild)
-                .WithMany(e => e.Members)
-                .HasForeignKey(e => e.GuildId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.HasOne(e => e.User)
-                .WithMany(e => e.MemberProfiles)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.Property(e => e.IsXpIgnored)
-                .HasDefaultValue(value: false);
-        }
+        builder.HasKey(e => new { e.UserId, e.GuildId });
+        builder.HasOne(e => e.Guild)
+            .WithMany(e => e.Members)
+            .HasForeignKey(e => e.GuildId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.HasOne(e => e.User)
+            .WithMany(e => e.MemberProfiles)
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.Property(e => e.IsXpIgnored)
+            .HasDefaultValue(value: false);
     }
 }

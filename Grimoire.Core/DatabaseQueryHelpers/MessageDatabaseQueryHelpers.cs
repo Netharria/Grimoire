@@ -5,13 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.DatabaseQueryHelpers
+namespace Grimoire.Core.DatabaseQueryHelpers;
+
+public static class MessageDatabaseQueryHelpers
 {
-    public static class MessageDatabaseQueryHelpers
-    {
-        public static IQueryable<Message> WhereMessageLoggingIsEnabled(this IQueryable<Message> messages)
-            => messages.Where(x => x.Guild.MessageLogSettings.ModuleEnabled);
-        public static IQueryable<Message> WhereUserLoggingIsEnabled(this IQueryable<Message> messages)
-            => messages.Where(x => x.Guild.UserLogSettings.ModuleEnabled);
-    }
+    public static IQueryable<Message> WhereMessageLoggingIsEnabled(this IQueryable<Message> messages)
+        => messages.Where(x => x.Guild.MessageLogSettings.ModuleEnabled);
+    public static IQueryable<Message> WhereUserLoggingIsEnabled(this IQueryable<Message> messages)
+        => messages.Where(x => x.Guild.UserLogSettings.ModuleEnabled);
 }

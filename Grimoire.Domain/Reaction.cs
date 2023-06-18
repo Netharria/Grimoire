@@ -7,26 +7,25 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class Reaction : IMember
 {
-    public class Reaction : IMember
-    {
-        public ulong MessageId { get; set; }
+    public ulong MessageId { get; set; }
 
-        public virtual Message Message { get; set; } = null!;
+    public virtual Message Message { get; set; } = null!;
 
-        public ulong UserId { get; set; }
+    public ulong UserId { get; set; }
 
-        public virtual Member Member { get; set; } = null!;
+    public virtual Member Member { get; set; } = null!;
 
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public ulong EmojiId { get; set; }
+    public ulong EmojiId { get; set; }
 
-        public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
-        public string ImageUrl { get; set; } = string.Empty;
-    }
+    public string ImageUrl { get; set; } = string.Empty;
 }

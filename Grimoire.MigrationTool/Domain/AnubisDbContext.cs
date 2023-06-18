@@ -10,25 +10,24 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace Grimoire.MigrationTool.Domain
+namespace Grimoire.MigrationTool.Domain;
+
+public class AnubisDbContext : DbContext
 {
-    public class AnubisDbContext : DbContext
+
+    public string? DbPath;
+
+    public AnubisDbContext()
     {
-
-        public string? DbPath;
-
-        public AnubisDbContext()
-        {
-            this.DbPath = Environment.GetEnvironmentVariable("AnubisPath");
-        }
-        public DbSet<IgnoredChannels> IgnoredChannels { get; set; }
-        public DbSet<IgnoredRoles> IgnoredRoles { get; set; }
-        public DbSet<LevelSettings> LevelSettings { get; set; }
-        public DbSet<Rewards> Rewards { get; set; }
-        public DbSet<UserLevels> UserLevels { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlite($"Data Source={this.DbPath}")
-                .UseLoggerFactory(new LoggerFactory().AddSerilog());
+        this.DbPath = Environment.GetEnvironmentVariable("AnubisPath");
     }
+    public DbSet<IgnoredChannels> IgnoredChannels { get; set; }
+    public DbSet<IgnoredRoles> IgnoredRoles { get; set; }
+    public DbSet<LevelSettings> LevelSettings { get; set; }
+    public DbSet<Rewards> Rewards { get; set; }
+    public DbSet<UserLevels> UserLevels { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseSqlite($"Data Source={this.DbPath}")
+            .UseLoggerFactory(new LoggerFactory().AddSerilog());
 }

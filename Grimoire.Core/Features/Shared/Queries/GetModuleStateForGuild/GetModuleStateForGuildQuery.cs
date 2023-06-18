@@ -7,11 +7,10 @@
 
 using Grimoire.Core.Enums;
 
-namespace Grimoire.Core.Features.Shared.Queries.GetModuleStateForGuild
+namespace Grimoire.Core.Features.Shared.Queries.GetModuleStateForGuild;
+
+public class GetModuleStateForGuildQuery : IRequest<bool>
 {
-    public class GetModuleStateForGuildQuery : IRequest<bool>
-    {
-        public ulong GuildId { get; init; }
-        public Module Module { get; init; }
-    }
+    public ulong GuildId { get; init; }
+    public Module Module { get; init; }
 }

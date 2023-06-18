@@ -8,29 +8,28 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+internal class GuildModerationSettingsConfiguration : IEntityTypeConfiguration<GuildModerationSettings>
 {
-    [ExcludeFromCodeCoverage]
-    internal class GuildModerationSettingsConfiguration : IEntityTypeConfiguration<GuildModerationSettings>
+    public void Configure(EntityTypeBuilder<GuildModerationSettings> builder)
     {
-        public void Configure(EntityTypeBuilder<GuildModerationSettings> builder)
-        {
-            builder.HasKey(e => e.GuildId);
-            builder.HasOne(e => e.Guild)
-                .WithOne(e => e.ModerationSettings)
-                .HasForeignKey<GuildModerationSettings>(x => x.GuildId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.Property(e => e.PublicBanLog)
-                .IsRequired(false);
-            builder.Property(e => e.DurationType)
-                .HasDefaultValue(Duration.Years);
-            builder.Property(e => e.Duration)
-                .HasDefaultValue(30);
-            builder.Property(e => e.MuteRole)
-                .IsRequired(false);
-            builder.Property(x => x.ModuleEnabled)
-                .HasDefaultValue(value: false);
-        }
+        builder.HasKey(e => e.GuildId);
+        builder.HasOne(e => e.Guild)
+            .WithOne(e => e.ModerationSettings)
+            .HasForeignKey<GuildModerationSettings>(x => x.GuildId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.Property(e => e.PublicBanLog)
+            .IsRequired(false);
+        builder.Property(e => e.DurationType)
+            .HasDefaultValue(Duration.Years);
+        builder.Property(e => e.Duration)
+            .HasDefaultValue(30);
+        builder.Property(e => e.MuteRole)
+            .IsRequired(false);
+        builder.Property(x => x.ModuleEnabled)
+            .HasDefaultValue(value: false);
     }
 }

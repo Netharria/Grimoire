@@ -7,45 +7,44 @@
 
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.ForgetSin
+namespace Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.ForgetSin;
+
+public class ForgetSinCommandHandler : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
 {
-    public class ForgetSinCommandHandler : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public ForgetSinCommandHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public ForgetSinCommandHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<ForgetSinCommandResponse> Handle(ForgetSinCommand command, CancellationToken cancellationToken)
-        {
-            var result = await this._grimoireDbContext.Sins
-                .Where(x => x.Id == command.SinId)
-                .Where(x => x.GuildId == command.GuildId)
-                .Select(x => new
-                {
-                    Sin = x,
-                    UserName = x.Member.User.UsernameHistories
-                    .OrderByDescending(x => x.Id)
-                    .Select(x => x.Username)
-                    .FirstOrDefault(),
-                    x.Guild.ModChannelLog
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (result is null) throw new AnticipatedException("Could not find a sin with that ID.");
-
-
-            this._grimoireDbContext.Sins.Remove(result.Sin);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-
-            return new ForgetSinCommandResponse
+    public async ValueTask<ForgetSinCommandResponse> Handle(ForgetSinCommand command, CancellationToken cancellationToken)
+    {
+        var result = await this._grimoireDbContext.Sins
+            .Where(x => x.Id == command.SinId)
+            .Where(x => x.GuildId == command.GuildId)
+            .Select(x => new
             {
-                SinId = command.SinId,
-                SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId),
-                LogChannelId = result.ModChannelLog
-            };
-        }
+                Sin = x,
+                UserName = x.Member.User.UsernameHistories
+                .OrderByDescending(x => x.Id)
+                .Select(x => x.Username)
+                .FirstOrDefault(),
+                x.Guild.ModChannelLog
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (result is null) throw new AnticipatedException("Could not find a sin with that ID.");
+
+
+        this._grimoireDbContext.Sins.Remove(result.Sin);
+        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+
+        return new ForgetSinCommandResponse
+        {
+            SinId = command.SinId,
+            SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId),
+            LogChannelId = result.ModChannelLog
+        };
     }
 }

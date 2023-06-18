@@ -12,32 +12,31 @@ using Grimoire.Core.DatabaseQueryHelpers;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
+namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
+
+[TestFixture]
+public class IIdentifiableDatabaseQueryHelperTests
 {
-    [TestFixture]
-    public class IIdentifiableDatabaseQueryHelperTests
+
+    [Test]
+    public async Task WhereIdsAre_WhenProvidedValidIds_ReturnsResultAsync()
     {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhereIdsAre_WhenProvidedValidIds_ReturnsResultAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
+        var result = await context.Guilds.WhereIdsAre(new ulong[]{ TestDatabaseFixture.Guild1.Id }).ToArrayAsync();
 
-            var result = await context.Guilds.WhereIdsAre(new ulong[]{ TestDatabaseFixture.Guild1.Id }).ToArrayAsync();
+        result.Should().HaveCount(1);
+        result.Should().AllSatisfy(x => x.Id.Should().Be(TestDatabaseFixture.Guild1.Id));
+    }
 
-            result.Should().HaveCount(1);
-            result.Should().AllSatisfy(x => x.Id.Should().Be(TestDatabaseFixture.Guild1.Id));
-        }
+    [Test]
+    public async Task WhereIdIs_WhenProvidedValidId_ReturnsResultAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhereIdIs_WhenProvidedValidId_ReturnsResultAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
+        var result = await context.Guilds.WhereIdIs(TestDatabaseFixture.Guild2.Id).ToArrayAsync();
 
-            var result = await context.Guilds.WhereIdIs(TestDatabaseFixture.Guild2.Id).ToArrayAsync();
-
-            result.Should().HaveCount(1);
-            result.Should().AllSatisfy(x => x.Id.Should().Be(TestDatabaseFixture.Guild2.Id));
-        }
+        result.Should().HaveCount(1);
+        result.Should().AllSatisfy(x => x.Id.Should().Be(TestDatabaseFixture.Guild2.Id));
     }
 }

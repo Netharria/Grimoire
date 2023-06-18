@@ -8,31 +8,30 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class GuildConfiguration : IEntityTypeConfiguration<Guild>
 {
-    [ExcludeFromCodeCoverage]
-    public class GuildConfiguration : IEntityTypeConfiguration<Guild>
+    public void Configure(EntityTypeBuilder<Guild> builder)
     {
-        public void Configure(EntityTypeBuilder<Guild> builder)
-        {
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .IsRequired();
-            builder.Property(e => e.ModChannelLog).
-                IsRequired(false);
-            builder.HasOne(e => e.UserLogSettings)
-                .WithOne(e => e.Guild)
-                .HasForeignKey<GuildUserLogSettings>(e => e.GuildId)
-                .IsRequired(false);
-            builder.HasOne(e => e.LevelSettings)
-                .WithOne(e => e.Guild)
-                .HasForeignKey<GuildLevelSettings>(e => e.GuildId)
-                .IsRequired(false);
-            builder.HasOne(e => e.ModerationSettings)
-                .WithOne(e => e.Guild)
-                .HasForeignKey<GuildModerationSettings>(e => e.GuildId)
-                .IsRequired(false);
-        }
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .ValueGeneratedNever()
+            .IsRequired();
+        builder.Property(e => e.ModChannelLog).
+            IsRequired(false);
+        builder.HasOne(e => e.UserLogSettings)
+            .WithOne(e => e.Guild)
+            .HasForeignKey<GuildUserLogSettings>(e => e.GuildId)
+            .IsRequired(false);
+        builder.HasOne(e => e.LevelSettings)
+            .WithOne(e => e.Guild)
+            .HasForeignKey<GuildLevelSettings>(e => e.GuildId)
+            .IsRequired(false);
+        builder.HasOne(e => e.ModerationSettings)
+            .WithOne(e => e.Guild)
+            .HasForeignKey<GuildModerationSettings>(e => e.GuildId)
+            .IsRequired(false);
     }
 }

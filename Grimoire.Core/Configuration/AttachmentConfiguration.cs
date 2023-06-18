@@ -8,26 +8,25 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
-{
-    [ExcludeFromCodeCoverage]
-    public class AttachmentConfiguration : IEntityTypeConfiguration<Attachment>
-    {
-        public void Configure(EntityTypeBuilder<Attachment> builder)
-        {
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .IsRequired();
-            builder.HasOne(e => e.Message)
-                .WithMany(x => x.Attachments)
-                .HasForeignKey(e => e.MessageId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
+namespace Grimoire.Core.Configuration;
 
-            builder.Property(e => e.FileName)
-                .HasMaxLength(2048)
-                .IsRequired();
-        }
+[ExcludeFromCodeCoverage]
+public class AttachmentConfiguration : IEntityTypeConfiguration<Attachment>
+{
+    public void Configure(EntityTypeBuilder<Attachment> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .ValueGeneratedNever()
+            .IsRequired();
+        builder.HasOne(e => e.Message)
+            .WithMany(x => x.Attachments)
+            .HasForeignKey(e => e.MessageId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        builder.Property(e => e.FileName)
+            .HasMaxLength(2048)
+            .IsRequired();
     }
 }

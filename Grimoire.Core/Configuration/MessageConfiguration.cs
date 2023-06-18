@@ -8,29 +8,28 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class MessageConfiguration : IEntityTypeConfiguration<Message>
 {
-    [ExcludeFromCodeCoverage]
-    public class MessageConfiguration : IEntityTypeConfiguration<Message>
+    public void Configure(EntityTypeBuilder<Message> builder)
     {
-        public void Configure(EntityTypeBuilder<Message> builder)
-        {
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .IsRequired();
-            builder.HasOne(e => e.Member)
-                .WithMany(e => e.Messages)
-                .HasForeignKey(e => new { e.UserId, e.GuildId })
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.HasOne(e => e.Channel)
-                .WithMany(e => e.Messages)
-                .HasForeignKey(e => e.ChannelId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.Property(e => e.CreatedTimestamp)
-                .HasDefaultValueSql("now()");
-        }
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .ValueGeneratedNever()
+            .IsRequired();
+        builder.HasOne(e => e.Member)
+            .WithMany(e => e.Messages)
+            .HasForeignKey(e => new { e.UserId, e.GuildId })
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.HasOne(e => e.Channel)
+            .WithMany(e => e.Messages)
+            .HasForeignKey(e => e.ChannelId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.Property(e => e.CreatedTimestamp)
+            .HasDefaultValueSql("now()");
     }
 }

@@ -8,39 +8,38 @@
 using Grimoire.Core.Features.Logging.Queries.GetTracker;
 using Grimoire.Discord.Notifications;
 
-namespace Grimoire.Discord.LoggingModule
+namespace Grimoire.Discord.LoggingModule;
+
+public class TrackerNicknameEvent : INotificationHandler<NicknameTrackerNotification>
 {
-    public class TrackerNicknameEvent : INotificationHandler<NicknameTrackerNotification>
+    private readonly IDiscordClientService _clientService;
+    private readonly IMediator _mediator;
+
+    public TrackerNicknameEvent(IDiscordClientService clientService, IMediator mediator)
     {
-        private readonly IDiscordClientService _clientService;
-        private readonly IMediator _mediator;
+        this._clientService = clientService;
+        this._mediator = mediator;
+    }
 
-        public TrackerNicknameEvent(IDiscordClientService clientService, IMediator mediator)
-        {
-            this._clientService = clientService;
-            this._mediator = mediator;
-        }
+    public async ValueTask Handle(NicknameTrackerNotification notification, CancellationToken cancellationToken)
+    {
+        var response = await this._mediator.Send(
+            new GetTrackerQuery
+            {
+                UserId = notification.UserId,
+                GuildId = notification.GuildId
+            }
+            , cancellationToken);
 
-        public async ValueTask Handle(NicknameTrackerNotification notification, CancellationToken cancellationToken)
-        {
-            var response = await this._mediator.Send(
-                new GetTrackerQuery
-                {
-                    UserId = notification.UserId,
-                    GuildId = notification.GuildId
-                }
-                , cancellationToken);
-
-            if (response is null) return;
-            if (!this._clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
-            if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
-            var embed = new DiscordEmbedBuilder()
-                .WithDescription($"**Before:** {(string.IsNullOrWhiteSpace(notification.BeforeNickname) ? "None" : notification.BeforeNickname)}\n" +
-                    $"**After:** {(string.IsNullOrWhiteSpace(notification.AfterNickname) ? "None" : notification.AfterNickname)}")
-                .WithAuthor(notification.Username)
-                .WithFooter($"{notification.UserId}")
-                .WithTimestamp(DateTimeOffset.UtcNow);
-            await logChannel.SendMessageAsync(embed);
-        }
+        if (response is null) return;
+        if (!this._clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
+        if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
+        var embed = new DiscordEmbedBuilder()
+            .WithDescription($"**Before:** {(string.IsNullOrWhiteSpace(notification.BeforeNickname) ? "None" : notification.BeforeNickname)}\n" +
+                $"**After:** {(string.IsNullOrWhiteSpace(notification.AfterNickname) ? "None" : notification.AfterNickname)}")
+            .WithAuthor(notification.Username)
+            .WithFooter($"{notification.UserId}")
+            .WithTimestamp(DateTimeOffset.UtcNow);
+        await logChannel.SendMessageAsync(embed);
     }
 }

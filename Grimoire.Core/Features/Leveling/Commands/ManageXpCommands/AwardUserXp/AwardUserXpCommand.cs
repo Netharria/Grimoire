@@ -5,13 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp
+namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
+
+public sealed record AwardUserXpCommand : ICommand
 {
-    public sealed record AwardUserXpCommand : ICommand
-    {
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
-        public long XpToAward { get; init; }
-        public ulong? AwarderId { get; init; }
-    }
+    public ulong UserId { get; init; }
+    public ulong GuildId { get; init; }
+    public long XpToAward { get; init; }
+    public ulong? AwarderId { get; init; }
 }

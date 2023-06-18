@@ -8,29 +8,28 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class OldLogMessageConfiguration : IEntityTypeConfiguration<OldLogMessage>
 {
-    [ExcludeFromCodeCoverage]
-    public class OldLogMessageConfiguration : IEntityTypeConfiguration<OldLogMessage>
+    public void Configure(EntityTypeBuilder<OldLogMessage> builder)
     {
-        public void Configure(EntityTypeBuilder<OldLogMessage> builder)
-        {
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .IsRequired();
-            builder.HasOne(e => e.Channel)
-                .WithMany(e => e.OldMessages)
-                .HasForeignKey(x => x.ChannelId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
-            builder.HasOne(e => e.Guild)
-                .WithMany(e => e.OldLogMessages)
-                .HasForeignKey(x => x.GuildId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
-            builder.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()");
-        }
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .ValueGeneratedNever()
+            .IsRequired();
+        builder.HasOne(e => e.Channel)
+            .WithMany(e => e.OldMessages)
+            .HasForeignKey(x => x.ChannelId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(e => e.Guild)
+            .WithMany(e => e.OldLogMessages)
+            .HasForeignKey(x => x.GuildId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(e => e.CreatedAt)
+            .HasDefaultValueSql("now()");
     }
 }

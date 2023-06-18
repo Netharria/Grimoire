@@ -7,27 +7,26 @@
 
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+public class ReactionConfiguration : IEntityTypeConfiguration<Reaction>
 {
-    public class ReactionConfiguration : IEntityTypeConfiguration<Reaction>
+    public void Configure(EntityTypeBuilder<Reaction> builder)
     {
-        public void Configure(EntityTypeBuilder<Reaction> builder)
-        {
-            builder.HasKey(x => new { x.MessageId, x.EmojiId });
-            builder.HasOne(x => x.Message)
-                .WithMany(x => x.Reactions)
-                .HasForeignKey(x => x.MessageId)
-                .OnDelete(DeleteBehavior.Cascade);
-            builder.HasOne(x => x.Member)
-                .WithMany(x => x.Reactions)
-                .HasForeignKey(x => new { x.UserId, x.GuildId })
-                .OnDelete(DeleteBehavior.Restrict);
-            builder.Property(x => x.Name)
-                .HasMaxLength(32)
-                .IsRequired();
-            builder.Property(x => x.ImageUrl)
-                .HasMaxLength(300)
-                .IsRequired();
-        }
+        builder.HasKey(x => new { x.MessageId, x.EmojiId });
+        builder.HasOne(x => x.Message)
+            .WithMany(x => x.Reactions)
+            .HasForeignKey(x => x.MessageId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.Member)
+            .WithMany(x => x.Reactions)
+            .HasForeignKey(x => new { x.UserId, x.GuildId })
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.Name)
+            .HasMaxLength(32)
+            .IsRequired();
+        builder.Property(x => x.ImageUrl)
+            .HasMaxLength(300)
+            .IsRequired();
     }
 }

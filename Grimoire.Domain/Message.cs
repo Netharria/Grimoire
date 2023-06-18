@@ -7,31 +7,30 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class Message : IIdentifiable<ulong>, IMember
 {
-    public class Message : IIdentifiable<ulong>, IMember
-    {
-        public ulong Id { get; set; }
+    public ulong Id { get; set; }
 
-        public ulong UserId { get; set; }
-        public virtual Member Member { get; set; } = null!;
+    public ulong UserId { get; set; }
+    public virtual Member Member { get; set; } = null!;
 
-        public ulong ChannelId { get; set; }
+    public ulong ChannelId { get; set; }
 
-        public virtual Channel Channel { get; set; } = null!;
+    public virtual Channel Channel { get; set; } = null!;
 
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public DateTimeOffset CreatedTimestamp { get; set; }
+    public DateTimeOffset CreatedTimestamp { get; set; }
 
-        public ulong? ReferencedMessageId { get; set; }
+    public ulong? ReferencedMessageId { get; set; }
 
-        public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+    public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
 
-        public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
-        public virtual ICollection<MessageHistory> MessageHistory { get; set; } = new List<MessageHistory>();
+    public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+    public virtual ICollection<MessageHistory> MessageHistory { get; set; } = new List<MessageHistory>();
 
-    }
 }

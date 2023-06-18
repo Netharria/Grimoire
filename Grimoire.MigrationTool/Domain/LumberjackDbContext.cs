@@ -10,25 +10,24 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace Grimoire.MigrationTool.Domain
+namespace Grimoire.MigrationTool.Domain;
+
+public class LumberjackDbContext : DbContext
 {
-    public class LumberjackDbContext : DbContext
+    public string? DbPath;
+
+    public LumberjackDbContext()
     {
-        public string? DbPath;
-
-        public LumberjackDbContext()
-        {
-            this.DbPath = Environment.GetEnvironmentVariable("LumberjackPath");
-        }
-        public DbSet<AttachmentUrl> AttachmentUrls { get; set; }
-        public DbSet<LogChannelSettings> LogChannels { get; set; }
-        public DbSet<LumberjackMessage> LumberjackMessages { get; set; }
-        public DbSet<Message> Messages { get; set; }
-        public DbSet<Tracker> Trackers { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlite($"Data Source={this.DbPath}")
-                .UseLoggerFactory(new LoggerFactory().AddSerilog());
-
+        this.DbPath = Environment.GetEnvironmentVariable("LumberjackPath");
     }
+    public DbSet<AttachmentUrl> AttachmentUrls { get; set; }
+    public DbSet<LogChannelSettings> LogChannels { get; set; }
+    public DbSet<LumberjackMessage> LumberjackMessages { get; set; }
+    public DbSet<Message> Messages { get; set; }
+    public DbSet<Tracker> Trackers { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseSqlite($"Data Source={this.DbPath}")
+            .UseLoggerFactory(new LoggerFactory().AddSerilog());
+
 }

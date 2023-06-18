@@ -7,22 +7,21 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class Mute : IMember
 {
-    public class Mute : IMember
-    {
-        public long SinId { get; set; }
+    public long SinId { get; set; }
 
-        public virtual Sin Sin { get; set; } = null!;
+    public virtual Sin Sin { get; set; } = null!;
 
-        public ulong UserId { get; set; }
+    public ulong UserId { get; set; }
 
-        public virtual Member Member { get; set; } = null!;
+    public virtual Member Member { get; set; } = null!;
 
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public DateTimeOffset EndTime { get; set; }
-    }
+    public DateTimeOffset EndTime { get; set; }
 }

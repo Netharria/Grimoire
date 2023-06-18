@@ -7,18 +7,17 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public class Reward : IMentionable
 {
-    public class Reward : IMentionable
-    {
-        public ulong RoleId { get; set; }
+    public ulong RoleId { get; set; }
 
-        public virtual Role Role { get; set; } = null!;
+    public virtual Role Role { get; set; } = null!;
 
-        public ulong GuildId { get; set; }
+    public ulong GuildId { get; set; }
 
-        public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; set; } = null!;
 
-        public int RewardLevel { get; set; }
-    }
+    public int RewardLevel { get; set; }
 }

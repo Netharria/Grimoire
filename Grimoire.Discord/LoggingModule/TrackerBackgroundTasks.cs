@@ -7,42 +7,41 @@
 
 using Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers;
 
-namespace Grimoire.Discord.LoggingModule
+namespace Grimoire.Discord.LoggingModule;
+
+public class TrackerBackgroundTasks : INotificationHandler<TimedNotification>
 {
-    public class TrackerBackgroundTasks : INotificationHandler<TimedNotification>
+    private readonly IMediator _mediator;
+    private readonly IDiscordClientService _discordClientService;
+
+    public TrackerBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
     {
-        private readonly IMediator _mediator;
-        private readonly IDiscordClientService _discordClientService;
+        this._mediator = mediator;
+        this._discordClientService = discordClientService;
+    }
 
-        public TrackerBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
+    public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
+    {
+        if (notification.Time.Second % 5 != 0)
+            return;
+        var response = await this._mediator.Send(new RemoveExpiredTrackersCommand(), cancellationToken);
+        foreach (var expiredTracker in response)
         {
-            this._mediator = mediator;
-            this._discordClientService = discordClientService;
-        }
+            var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
+            if (guild is null) continue;
 
-        public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
-        {
-            if (notification.Time.Second % 5 != 0)
-                return;
-            var response = await this._mediator.Send(new RemoveExpiredTrackersCommand(), cancellationToken);
-            foreach (var expiredTracker in response)
+            var embed = new DiscordEmbedBuilder()
+                .WithDescription($"Tracker on {UserExtensions.Mention(expiredTracker.UserId)} has expired.");
+
+            var channel = guild.Channels.GetValueOrDefault(expiredTracker.TrackerChannelId);
+            if (channel is not null)
+                await channel.SendMessageAsync(embed);
+
+            if (expiredTracker.LogChannelId is not null)
             {
-                var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
-                if (guild is null) continue;
-
-                var embed = new DiscordEmbedBuilder()
-                    .WithDescription($"Tracker on {UserExtensions.Mention(expiredTracker.UserId)} has expired.");
-
-                var channel = guild.Channels.GetValueOrDefault(expiredTracker.TrackerChannelId);
-                if (channel is not null)
-                    await channel.SendMessageAsync(embed);
-
-                if (expiredTracker.LogChannelId is not null)
-                {
-                    var ModerationLogChannel = guild.Channels.GetValueOrDefault(expiredTracker.LogChannelId.Value);
-                    if (ModerationLogChannel is not null)
-                        await ModerationLogChannel.SendMessageAsync(embed);
-                }
+                var ModerationLogChannel = guild.Channels.GetValueOrDefault(expiredTracker.LogChannelId.Value);
+                if (ModerationLogChannel is not null)
+                    await ModerationLogChannel.SendMessageAsync(embed);
             }
         }
     }

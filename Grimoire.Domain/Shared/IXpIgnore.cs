@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Domain.Shared
+namespace Grimoire.Domain.Shared;
+
+public interface IXpIgnore : IMentionable
 {
-    public interface IXpIgnore : IMentionable
-    {
-        bool IsXpIgnored { get; set; }
-    }
+    bool IsXpIgnored { get; set; }
 }

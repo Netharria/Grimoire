@@ -8,29 +8,28 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class PardonConfiguration : IEntityTypeConfiguration<Pardon>
 {
-    [ExcludeFromCodeCoverage]
-    public class PardonConfiguration : IEntityTypeConfiguration<Pardon>
+    public void Configure(EntityTypeBuilder<Pardon> builder)
     {
-        public void Configure(EntityTypeBuilder<Pardon> builder)
-        {
-            builder.HasKey(e => e.SinId);
-            builder.HasOne(e => e.Sin)
-                .WithOne(e => e.Pardon)
-                .HasForeignKey<Pardon>(e => e.SinId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.HasOne(e => e.Moderator)
-                .WithMany(e => e.SinsPardoned)
-                .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired();
-            builder.Property(e => e.PardonDate)
-                .HasDefaultValueSql("now()");
-            builder.Property(e => e.Reason)
-                .HasMaxLength(1000)
-                .IsRequired();
-        }
+        builder.HasKey(e => e.SinId);
+        builder.HasOne(e => e.Sin)
+            .WithOne(e => e.Pardon)
+            .HasForeignKey<Pardon>(e => e.SinId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.HasOne(e => e.Moderator)
+            .WithMany(e => e.SinsPardoned)
+            .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+        builder.Property(e => e.PardonDate)
+            .HasDefaultValueSql("now()");
+        builder.Property(e => e.Reason)
+            .HasMaxLength(1000)
+            .IsRequired();
     }
 }

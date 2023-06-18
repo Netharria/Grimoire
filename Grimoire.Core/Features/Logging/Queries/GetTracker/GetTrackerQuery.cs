@@ -5,11 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Logging.Queries.GetTracker
+namespace Grimoire.Core.Features.Logging.Queries.GetTracker;
+
+public sealed record GetTrackerQuery : IRequest<GetTrackerQueryResponse?>
 {
-    public sealed record GetTrackerQuery : IRequest<GetTrackerQueryResponse?>
-    {
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
-    }
+    public ulong UserId { get; init; }
+    public ulong GuildId { get; init; }
 }

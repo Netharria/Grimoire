@@ -5,11 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetLock
+namespace Grimoire.Core.Features.Moderation.Queries.GetLock;
+
+public record GetLockQuery : IQuery<bool>
 {
-    public record GetLockQuery : IQuery<bool>
-    {
-        public ulong ChannelId { get; init; }
-        public ulong GuildId { get; init; }
-    }
+    public ulong ChannelId { get; init; }
+    public ulong GuildId { get; init; }
 }

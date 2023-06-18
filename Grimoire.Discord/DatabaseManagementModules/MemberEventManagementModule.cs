@@ -7,29 +7,28 @@
 
 using Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember;
 
-namespace Grimoire.Discord.DatabaseManagementModules
+namespace Grimoire.Discord.DatabaseManagementModules;
+
+[DiscordGuildMemberAddedEventSubscriber]
+internal class MemberEventManagementModule :
+    IDiscordGuildMemberAddedEventSubscriber
 {
-    [DiscordGuildMemberAddedEventSubscriber]
-    internal class MemberEventManagementModule :
-        IDiscordGuildMemberAddedEventSubscriber
+    private readonly IMediator _mediator;
+
+    public MemberEventManagementModule(IMediator mediator)
     {
-        private readonly IMediator _mediator;
-
-        public MemberEventManagementModule(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
-
-        public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
-            => await this._mediator.Send(
-                new AddMemberCommand
-                {
-                    Nickname = string.IsNullOrWhiteSpace(args.Member.DisplayName) ? null : args.Member.DisplayName,
-                    GuildId = args.Guild.Id,
-                    UserId = args.Member.Id,
-                    UserName = args.Member.GetUsernameWithDiscriminator(),
-                    AvatarUrl = args.Member.GetGuildAvatarUrl(ImageFormat.Auto, 128)
-                });
-
+        this._mediator = mediator;
     }
+
+    public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
+        => await this._mediator.Send(
+            new AddMemberCommand
+            {
+                Nickname = string.IsNullOrWhiteSpace(args.Member.DisplayName) ? null : args.Member.DisplayName,
+                GuildId = args.Guild.Id,
+                UserId = args.Member.Id,
+                UserName = args.Member.GetUsernameWithDiscriminator(),
+                AvatarUrl = args.Member.GetGuildAvatarUrl(ImageFormat.Auto, 128)
+            });
+
 }

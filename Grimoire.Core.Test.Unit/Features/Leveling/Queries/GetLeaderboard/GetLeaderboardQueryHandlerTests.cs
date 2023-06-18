@@ -11,45 +11,44 @@ using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Queries.GetLeaderboard;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLeaderboard
+namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLeaderboard;
+
+[TestFixture]
+public class GetLeaderboardQueryHandlerTests
 {
-    [TestFixture]
-    public class GetLeaderboardQueryHandlerTests
+
+    [Test]
+    public void WhenCallingGetLeaderboardQueryHandler_IfProvidedUserNotFound_FailResponse()
     {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public void WhenCallingGetLeaderboardQueryHandler_IfProvidedUserNotFound_FailResponse()
+        var CUT = new GetLeaderboardQueryHandler(context);
+        var command = new GetLeaderboardQuery
         {
-            var context = TestDatabaseFixture.CreateContext();
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            UserId = 234081234
+        };
 
-            var CUT = new GetLeaderboardQueryHandler(context);
-            var command = new GetLeaderboardQuery
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                UserId = 234081234
-            };
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("Could not find user on leaderboard.");
+    }
 
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("Could not find user on leaderboard.");
-        }
+    [Test]
+    public async Task WhenCallingGetLeaderboardQueryHandler_ReturnLeaderboardAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhenCallingGetLeaderboardQueryHandler_ReturnLeaderboardAsync()
+        var CUT = new GetLeaderboardQueryHandler(context);
+        var command = new GetLeaderboardQuery
         {
-            var context = TestDatabaseFixture.CreateContext();
+            GuildId = TestDatabaseFixture.Guild1.Id
+        };
 
-            var CUT = new GetLeaderboardQueryHandler(context);
-            var command = new GetLeaderboardQuery
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id
-            };
+        var response = await CUT.Handle(command, default);
 
-            var response = await CUT.Handle(command, default);
-
-            response.LeaderboardText.Should().Be("**1** <@!4> **XP:** 0\n**2** <@!5> **XP:** 0\n");
-            response.TotalUserCount.Should().Be(2);
-        }
+        response.LeaderboardText.Should().Be("**1** <@!4> **XP:** 0\n**2** <@!5> **XP:** 0\n");
+        response.TotalUserCount.Should().Be(2);
     }
 }

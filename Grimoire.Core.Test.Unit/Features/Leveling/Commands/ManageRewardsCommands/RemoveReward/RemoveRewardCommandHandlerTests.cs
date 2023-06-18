@@ -11,45 +11,44 @@ using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward
+namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
+
+[TestFixture]
+public class AddRewardCommandHandlerTests
 {
-    [TestFixture]
-    public class AddRewardCommandHandlerTests
+
+    [Test]
+    public async Task WhenRemovingReward_IfRewardExists_RemoveRoleAsync()
     {
-
-        [Test]
-        public async Task WhenRemovingReward_IfRewardExists_RemoveRoleAsync()
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new RemoveRewardCommandHandler(context);
+        var command = new RemoveRewardCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new RemoveRewardCommandHandler(context);
-            var command = new RemoveRewardCommand
-            {
-                RoleId = TestDatabaseFixture.Role2.Id
-            };
+            RoleId = TestDatabaseFixture.Role2.Id
+        };
 
-            var response = await CUT.Handle(command, default);
+        var response = await CUT.Handle(command, default);
 
-            context.ChangeTracker.Clear();
-            response.Message.Should().Be("Removed <@&7> reward");
-        }
+        context.ChangeTracker.Clear();
+        response.Message.Should().Be("Removed <@&7> reward");
+    }
 
-        [Test]
-        public void WhenAddingReward_IfRewardExist_UpdateRole()
+    [Test]
+    public void WhenAddingReward_IfRewardExist_UpdateRole()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var CUT = new RemoveRewardCommandHandler(context);
+        var command = new RemoveRewardCommand
         {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var CUT = new RemoveRewardCommandHandler(context);
-            var command = new RemoveRewardCommand
-            {
-                RoleId = TestDatabaseFixture.Role1.Id
-            };
+            RoleId = TestDatabaseFixture.Role1.Id
+        };
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async() => await CUT.Handle(command, default));
+        var response = Assert.ThrowsAsync<AnticipatedException>(async() => await CUT.Handle(command, default));
 
-            context.ChangeTracker.Clear();
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("Did not find a saved reward for role <@&6>");
-        }
+        context.ChangeTracker.Clear();
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("Did not find a saved reward for role <@&6>");
     }
 }

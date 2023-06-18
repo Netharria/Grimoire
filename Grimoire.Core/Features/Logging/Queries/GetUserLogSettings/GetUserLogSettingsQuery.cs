@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Logging.Queries.GetUserLogSettings
+namespace Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
+
+public sealed record GetUserLogSettingsQuery : IRequest<GetUserLogSettingsQueryResponse>
 {
-    public sealed record GetUserLogSettingsQuery : IRequest<GetUserLogSettingsQueryResponse>
-    {
-        public ulong GuildId { get; init; }
-    }
+    public ulong GuildId { get; init; }
 }

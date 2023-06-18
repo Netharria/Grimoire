@@ -7,27 +7,26 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Domain
+namespace Grimoire.Domain;
+
+public enum XpHistoryType
 {
-    public enum XpHistoryType
-    {
-        Earned,
-        Awarded,
-        Reclaimed,
-        Migrated,
-        Created
-    }
-    public class XpHistory : IMember
-    {
-        public long Id { get; set; }
-        public ulong UserId { get; set; }
-        public virtual Member Member { get; set; } = null!;
-        public ulong GuildId { get; set; }
-        public virtual Guild Guild { get; set; } = null!;
-        public long Xp { get; set; }
-        public DateTimeOffset TimeOut { get; set; }
-        public XpHistoryType Type { get; set; }
-        public ulong? AwarderId { get; set; }
-        public Member? Awarder { get; set; }
-    }
+    Earned,
+    Awarded,
+    Reclaimed,
+    Migrated,
+    Created
+}
+public class XpHistory : IMember
+{
+    public long Id { get; set; }
+    public ulong UserId { get; set; }
+    public virtual Member Member { get; set; } = null!;
+    public ulong GuildId { get; set; }
+    public virtual Guild Guild { get; set; } = null!;
+    public long Xp { get; set; }
+    public DateTimeOffset TimeOut { get; set; }
+    public XpHistoryType Type { get; set; }
+    public ulong? AwarderId { get; set; }
+    public Member? Awarder { get; set; }
 }

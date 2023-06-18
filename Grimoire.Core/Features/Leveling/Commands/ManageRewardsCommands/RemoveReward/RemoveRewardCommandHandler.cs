@@ -7,31 +7,30 @@
 
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward
+namespace Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
+
+public class RemoveRewardCommandHandler : ICommandHandler<RemoveRewardCommand, BaseResponse>
 {
-    public class RemoveRewardCommandHandler : ICommandHandler<RemoveRewardCommand, BaseResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public RemoveRewardCommandHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public RemoveRewardCommandHandler(IGrimoireDbContext grimoireDbContext)
+    public async ValueTask<BaseResponse> Handle(RemoveRewardCommand command, CancellationToken cancellationToken)
+    {
+        var result = await this._grimoireDbContext.Rewards
+            .Include(x => x.Guild)
+            .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
+        if (result is not Reward reward)
+            throw new AnticipatedException($"Did not find a saved reward for role <@&{command.RoleId}>");
+        this._grimoireDbContext.Rewards.Remove(reward);
+        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        return new BaseResponse
         {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<BaseResponse> Handle(RemoveRewardCommand command, CancellationToken cancellationToken)
-        {
-            var result = await this._grimoireDbContext.Rewards
-                .Include(x => x.Guild)
-                .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
-            if (result is not Reward reward)
-                throw new AnticipatedException($"Did not find a saved reward for role <@&{command.RoleId}>");
-            this._grimoireDbContext.Rewards.Remove(reward);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse
-            {
-                Message = $"Removed {reward.Mention()} reward",
-                LogChannelId = result.Guild.ModChannelLog
-            };
-        }
+            Message = $"Removed {reward.Mention()} reward",
+            LogChannelId = result.Guild.ModChannelLog
+        };
     }
 }

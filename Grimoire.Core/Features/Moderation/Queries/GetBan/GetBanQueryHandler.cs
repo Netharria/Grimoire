@@ -5,50 +5,49 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetBan
+namespace Grimoire.Core.Features.Moderation.Queries.GetBan;
+
+public class GetBanQueryHandler : IRequestHandler<GetBanQuery, GetBanQueryResponse>
 {
-    public class GetBanQueryHandler : IRequestHandler<GetBanQuery, GetBanQueryResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetBanQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public GetBanQueryHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<GetBanQueryResponse> Handle(GetBanQuery request, CancellationToken cancellationToken)
-        {
-            var result = await this._grimoireDbContext.Sins
-                .Where(x => x.SinType == SinType.Ban)
-                .Where(x => x.Id == request.SinId)
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new
-                {
-                    x.UserId,
-                    UsernameHistory = x.Member.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(),
-                    x.Guild.ModerationSettings.PublicBanLog,
-                    x.SinOn,
-                    x.Guild.ModChannelLog,
-                    x.Reason,
-                    PublishedBan = x.PublishMessages.Where(x => x.PublishType  == PublishType.Ban).FirstOrDefault()
-                })
-                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-
-            if (result is null)
-                throw new AnticipatedException("Could not find a ban with that Sin Id");
-            if (result.PublicBanLog is null)
-                throw new AnticipatedException("No Public Ban Log is configured.");
-
-            return new GetBanQueryResponse
+    public async ValueTask<GetBanQueryResponse> Handle(GetBanQuery request, CancellationToken cancellationToken)
+    {
+        var result = await this._grimoireDbContext.Sins
+            .Where(x => x.SinType == SinType.Ban)
+            .Where(x => x.Id == request.SinId)
+            .Where(x => x.GuildId == request.GuildId)
+            .Select(x => new
             {
-                UserId = result.UserId,
-                Username = result.UsernameHistory.Username,
-                BanLogId = result.PublicBanLog.Value,
-                Date = result.SinOn,
-                LogChannelId = result.ModChannelLog,
-                Reason = result.Reason,
-                PublishedMessage = result.PublishedBan?.MessageId
-            };
-        }
+                x.UserId,
+                UsernameHistory = x.Member.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(),
+                x.Guild.ModerationSettings.PublicBanLog,
+                x.SinOn,
+                x.Guild.ModChannelLog,
+                x.Reason,
+                PublishedBan = x.PublishMessages.Where(x => x.PublishType  == PublishType.Ban).FirstOrDefault()
+            })
+            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+        if (result is null)
+            throw new AnticipatedException("Could not find a ban with that Sin Id");
+        if (result.PublicBanLog is null)
+            throw new AnticipatedException("No Public Ban Log is configured.");
+
+        return new GetBanQueryResponse
+        {
+            UserId = result.UserId,
+            Username = result.UsernameHistory.Username,
+            BanLogId = result.PublicBanLog.Value,
+            Date = result.SinOn,
+            LogChannelId = result.ModChannelLog,
+            Reason = result.Reason,
+            PublishedMessage = result.PublishedBan?.MessageId
+        };
     }
 }

@@ -5,78 +5,77 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember
+namespace Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember;
+
+public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
 {
-    public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public AddMemberCommandHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public AddMemberCommandHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
+    public async ValueTask<Unit> Handle(AddMemberCommand command, CancellationToken cancellationToken)
+    {
+        var userExists = await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken);
+        var memberExists = await this._grimoireDbContext.Members.AnyAsync(x => x.UserId == command.UserId && x.GuildId == command.GuildId, cancellationToken);
 
-        public async ValueTask<Unit> Handle(AddMemberCommand command, CancellationToken cancellationToken)
-        {
-            var userExists = await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken);
-            var memberExists = await this._grimoireDbContext.Members.AnyAsync(x => x.UserId == command.UserId && x.GuildId == command.GuildId, cancellationToken);
-
-            if (!userExists)
-                await this._grimoireDbContext.Users.AddAsync(new User
-                {
-                    Id = command.UserId,
-                    UsernameHistories = new List<UsernameHistory> {
-                            new UsernameHistory {
-                                Username = command.UserName,
-                                UserId = command.UserId
-                            }
-                        }
-                }, cancellationToken);
-
-            if (!memberExists)
+        if (!userExists)
+            await this._grimoireDbContext.Users.AddAsync(new User
             {
-                var member = new Member
-                {
-                    UserId = command.UserId,
-                    GuildId = command.GuildId,
-                    XpHistory = new List<XpHistory>
-                    {
-                        new XpHistory {
-                            UserId = command.UserId,
-                            GuildId = command.GuildId,
-                            Type = XpHistoryType.Created,
-                            Xp = 0,
-                            TimeOut = DateTimeOffset.UtcNow
-                        }
-                    },
-                    AvatarHistory = new List<Avatar>
-                    {
-                        new Avatar
-                        {
-                            UserId = command.UserId,
-                            GuildId = command.GuildId,
-                            FileName = command.AvatarUrl,
-                            Timestamp = DateTimeOffset.UtcNow
+                Id = command.UserId,
+                UsernameHistories = new List<UsernameHistory> {
+                        new UsernameHistory {
+                            Username = command.UserName,
+                            UserId = command.UserId
                         }
                     }
-                };
-                if (!string.IsNullOrWhiteSpace(command.Nickname))
+            }, cancellationToken);
+
+        if (!memberExists)
+        {
+            var member = new Member
+            {
+                UserId = command.UserId,
+                GuildId = command.GuildId,
+                XpHistory = new List<XpHistory>
                 {
-                    member.NicknamesHistory.Add(
-                    new NicknameHistory
+                    new XpHistory {
+                        UserId = command.UserId,
+                        GuildId = command.GuildId,
+                        Type = XpHistoryType.Created,
+                        Xp = 0,
+                        TimeOut = DateTimeOffset.UtcNow
+                    }
+                },
+                AvatarHistory = new List<Avatar>
+                {
+                    new Avatar
                     {
                         UserId = command.UserId,
                         GuildId = command.GuildId,
-                        Nickname = command.Nickname
-                    });
+                        FileName = command.AvatarUrl,
+                        Timestamp = DateTimeOffset.UtcNow
+                    }
                 }
-
-                await this._grimoireDbContext.Members.AddAsync(member, cancellationToken);
-
+            };
+            if (!string.IsNullOrWhiteSpace(command.Nickname))
+            {
+                member.NicknamesHistory.Add(
+                new NicknameHistory
+                {
+                    UserId = command.UserId,
+                    GuildId = command.GuildId,
+                    Nickname = command.Nickname
+                });
             }
-            if (!userExists || !memberExists)
-                await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return Unit.Value;
+
+            await this._grimoireDbContext.Members.AddAsync(member, cancellationToken);
+
         }
+        if (!userExists || !memberExists)
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        return Unit.Value;
     }
 }

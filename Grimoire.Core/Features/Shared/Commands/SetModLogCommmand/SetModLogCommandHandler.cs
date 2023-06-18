@@ -7,31 +7,30 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Shared.Commands.SetModLogCommmand
+namespace Grimoire.Core.Features.Shared.Commands.SetModLogCommmand;
+
+public class SetModLogCommandHandler : ICommandHandler<SetModLogCommand, BaseResponse>
 {
-    public class SetModLogCommandHandler : ICommandHandler<SetModLogCommand, BaseResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public SetModLogCommandHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public SetModLogCommandHandler(IGrimoireDbContext grimoireDbContext)
+    public async ValueTask<BaseResponse> Handle(SetModLogCommand command, CancellationToken cancellationToken)
+    {
+        var guild = await this._grimoireDbContext.Guilds
+            .WhereIdIs(command.GuildId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (guild is null)
+            throw new AnticipatedException("Could not find the settings for this server.");
+        guild.ModChannelLog = command.ChannelId;
+        this._grimoireDbContext.Guilds.Update(guild);
+        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        return new BaseResponse
         {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<BaseResponse> Handle(SetModLogCommand command, CancellationToken cancellationToken)
-        {
-            var guild = await this._grimoireDbContext.Guilds
-                .WhereIdIs(command.GuildId)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (guild is null)
-                throw new AnticipatedException("Could not find the settings for this server.");
-            guild.ModChannelLog = command.ChannelId;
-            this._grimoireDbContext.Guilds.Update(guild);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse
-            {
-                LogChannelId = command.ChannelId,
-            };
-        }
+            LogChannelId = command.ChannelId,
+        };
     }
 }

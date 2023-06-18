@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
+namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser;
+
+public record GetUserSinsQueryResponse : BaseResponse
 {
-    public record GetUserSinsQueryResponse : BaseResponse
-    {
-        public string[] SinList { get; init; } = Array.Empty<string>();
-    }
+    public string[] SinList { get; init; } = Array.Empty<string>();
 }

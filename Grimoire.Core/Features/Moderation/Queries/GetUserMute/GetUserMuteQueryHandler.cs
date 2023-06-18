@@ -7,23 +7,22 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetUserMute
+namespace Grimoire.Core.Features.Moderation.Queries.GetUserMute;
+
+public class GetUserMuteQueryHandler : IQueryHandler<GetUserMuteQuery, ulong?>
 {
-    public class GetUserMuteQueryHandler : IQueryHandler<GetUserMuteQuery, ulong?>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetUserMuteQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
-
-        public GetUserMuteQueryHandler(IGrimoireDbContext grimoireDbContext)
-        {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<ulong?> Handle(GetUserMuteQuery query, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Mutes
-                .WhereMemberHasId(query.UserId, query.GuildId)
-                .Where(x => x.Guild.ModerationSettings.ModuleEnabled)
-                .Select(x =>
-                    x.Guild.ModerationSettings.MuteRole)
-                .FirstOrDefaultAsync(cancellationToken);
+        this._grimoireDbContext = grimoireDbContext;
     }
+
+    public async ValueTask<ulong?> Handle(GetUserMuteQuery query, CancellationToken cancellationToken)
+        => await this._grimoireDbContext.Mutes
+            .WhereMemberHasId(query.UserId, query.GuildId)
+            .Where(x => x.Guild.ModerationSettings.ModuleEnabled)
+            .Select(x =>
+                x.Guild.ModerationSettings.MuteRole)
+            .FirstOrDefaultAsync(cancellationToken);
 }

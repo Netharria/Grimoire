@@ -7,20 +7,19 @@
 
 using Grimoire.Domain.Shared;
 
-namespace Grimoire.Core.Extensions
+namespace Grimoire.Core.Extensions;
+
+public static class IMentionableExtensions
 {
-    public static class IMentionableExtensions
-    {
-        public static string Mention<TSource>(this TSource ignorable) where TSource : IMentionable
-            =>
-            ignorable switch
-            {
-                Member member => $"<@!{member.UserId}>",
-                User user => $"<@!{user.Id}>",
-                Role role => $"<@&{role.Id}>",
-                Reward reward => $"<@&{reward.RoleId}>",
-                Channel channel => $"<#{channel.Id}>",
-                _ => throw new NotImplementedException(),
-            };
-    }
+    public static string Mention<TSource>(this TSource ignorable) where TSource : IMentionable
+        =>
+        ignorable switch
+        {
+            Member member => $"<@!{member.UserId}>",
+            User user => $"<@!{user.Id}>",
+            Role role => $"<@&{role.Id}>",
+            Reward reward => $"<@&{reward.RoleId}>",
+            Channel channel => $"<#{channel.Id}>",
+            _ => throw new NotImplementedException(),
+        };
 }

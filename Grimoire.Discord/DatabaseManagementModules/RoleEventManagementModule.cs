@@ -8,25 +8,24 @@
 using Grimoire.Core.Features.Shared.Commands.RoleCommands.AddRole;
 using Grimoire.Core.Features.Shared.Commands.RoleCommands.DeleteRole;
 
-namespace Grimoire.Discord.DatabaseManagementModules
+namespace Grimoire.Discord.DatabaseManagementModules;
+
+[DiscordGuildRoleCreatedEventSubscriber]
+[DiscordGuildRoleDeletedEventSubscriber]
+public class RoleEventManagementModule :
+    IDiscordGuildRoleCreatedEventSubscriber,
+    IDiscordGuildRoleDeletedEventSubscriber
 {
-    [DiscordGuildRoleCreatedEventSubscriber]
-    [DiscordGuildRoleDeletedEventSubscriber]
-    public class RoleEventManagementModule :
-        IDiscordGuildRoleCreatedEventSubscriber,
-        IDiscordGuildRoleDeletedEventSubscriber
+    private readonly IMediator _mediator;
+
+    public RoleEventManagementModule(IMediator mediator)
     {
-        private readonly IMediator _mediator;
-
-        public RoleEventManagementModule(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
-
-        public async Task DiscordOnGuildRoleCreated(DiscordClient sender, GuildRoleCreateEventArgs args)
-            => await this._mediator.Send(new AddRoleCommand { RoleId = args.Role.Id, GuildId = args.Guild.Id });
-        public async Task DiscordOnGuildRoleDeleted(DiscordClient sender, GuildRoleDeleteEventArgs args)
-            => await this._mediator.Send(new DeleteRoleCommand { RoleId = args.Role.Id });
-
+        this._mediator = mediator;
     }
+
+    public async Task DiscordOnGuildRoleCreated(DiscordClient sender, GuildRoleCreateEventArgs args)
+        => await this._mediator.Send(new AddRoleCommand { RoleId = args.Role.Id, GuildId = args.Guild.Id });
+    public async Task DiscordOnGuildRoleDeleted(DiscordClient sender, GuildRoleDeleteEventArgs args)
+        => await this._mediator.Send(new DeleteRoleCommand { RoleId = args.Role.Id });
+
 }

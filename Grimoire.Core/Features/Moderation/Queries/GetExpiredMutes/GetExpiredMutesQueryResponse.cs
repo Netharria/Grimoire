@@ -5,12 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetExpiredMutes
+namespace Grimoire.Core.Features.Moderation.Queries.GetExpiredMutes;
+
+public sealed record GetExpiredMutesQueryResponse : BaseResponse
 {
-    public sealed record GetExpiredMutesQueryResponse : BaseResponse
-    {
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
-        public ulong MuteRole { get; init; }
-    }
+    public ulong UserId { get; init; }
+    public ulong GuildId { get; init; }
+    public ulong MuteRole { get; init; }
 }

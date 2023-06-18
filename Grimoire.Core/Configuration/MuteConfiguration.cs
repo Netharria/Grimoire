@@ -8,24 +8,23 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Core.Configuration
+namespace Grimoire.Core.Configuration;
+
+[ExcludeFromCodeCoverage]
+public class MuteConfiguration : IEntityTypeConfiguration<Mute>
 {
-    [ExcludeFromCodeCoverage]
-    public class MuteConfiguration : IEntityTypeConfiguration<Mute>
+    public void Configure(EntityTypeBuilder<Mute> builder)
     {
-        public void Configure(EntityTypeBuilder<Mute> builder)
-        {
-            builder.HasKey(e => e.SinId);
-            builder.HasOne(e => e.Sin).WithOne(e => e.Mute)
-                .HasForeignKey<Mute>(e => e.SinId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired();
-            builder.HasOne(e => e.Member)
-                .WithOne(e => e.ActiveMute)
-                .HasForeignKey<Mute>(e => new { e.UserId, e.GuildId })
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired();
-            builder.Property(e => e.EndTime).IsRequired();
-        }
+        builder.HasKey(e => e.SinId);
+        builder.HasOne(e => e.Sin).WithOne(e => e.Mute)
+            .HasForeignKey<Mute>(e => e.SinId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+        builder.HasOne(e => e.Member)
+            .WithOne(e => e.ActiveMute)
+            .HasForeignKey<Mute>(e => new { e.UserId, e.GuildId })
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+        builder.Property(e => e.EndTime).IsRequired();
     }
 }

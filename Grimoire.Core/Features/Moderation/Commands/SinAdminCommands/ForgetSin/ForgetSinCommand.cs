@@ -5,11 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.ForgetSin
+namespace Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.ForgetSin;
+
+public sealed record ForgetSinCommand : ICommand<ForgetSinCommandResponse>
 {
-    public sealed record ForgetSinCommand : ICommand<ForgetSinCommandResponse>
-    {
-        public long SinId { get; init; }
-        public ulong GuildId { get; init; }
-    }
+    public long SinId { get; init; }
+    public ulong GuildId { get; init; }
 }

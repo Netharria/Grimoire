@@ -5,11 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand
+namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand;
+
+public record UnlockChannelCommandResponse : BaseResponse
 {
-    public record UnlockChannelCommandResponse : BaseResponse
-    {
-        public long PreviouslyAllowed { get; init; }
-        public long PreviouslyDenied { get; init; }
-    }
+    public long PreviouslyAllowed { get; init; }
+    public long PreviouslyDenied { get; init; }
 }

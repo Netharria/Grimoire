@@ -8,66 +8,65 @@
 using System.Text;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser
+namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser;
+
+public class GetUserSinsQueryHandler : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
 {
-    public class GetUserSinsQueryHandler : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetUserSinsQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public GetUserSinsQueryHandler(IGrimoireDbContext grimoireDbContext)
+    public async ValueTask<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
+    {
+        var queryable = this._grimoireDbContext.Sins.Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
+
+        queryable = query.SinQueryType switch
         {
-            this._grimoireDbContext = grimoireDbContext;
-        }
+            SinQueryType.Warn => queryable.Where(x => x.SinType == SinType.Warn),
+            SinQueryType.Mute => queryable.Where(x => x.SinType == SinType.Mute),
+            SinQueryType.Ban => queryable.Where(x => x.SinType == SinType.Ban),
+            _ => queryable
+        };
 
-        public async ValueTask<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
+        var result = await queryable.Select(x => new
         {
-            var queryable = this._grimoireDbContext.Sins.Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
-
-            queryable = query.SinQueryType switch
+            x.Id,
+            x.SinType,
+            x.SinOn,
+            x.Reason,
+            Moderator = x.Moderator.Mention(),
+            Pardon = x.Pardon != null,
+            PardonModerator = x.Pardon != null ? x.Pardon.Moderator.Mention() : "",
+            PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue,
+        }).ToListAsync(cancellationToken);
+        var stringBuilder = new StringBuilder(2048);
+        var resultStrings = new List<string>();
+        result.ForEach(x =>
+        {
+            var builder = $"**{x.Id} : {x.SinType}** : <t:{x.SinOn.ToUnixTimeSeconds()}:f>\n" +
+                          $"\tReason: {x.Reason}\n" +
+                          $"\tModerator: {x.Moderator}\n";
+            if (x.Pardon)
             {
-                SinQueryType.Warn => queryable.Where(x => x.SinType == SinType.Warn),
-                SinQueryType.Mute => queryable.Where(x => x.SinType == SinType.Mute),
-                SinQueryType.Ban => queryable.Where(x => x.SinType == SinType.Ban),
-                _ => queryable
-            };
-
-            var result = await queryable.Select(x => new
+                builder = $"~~{builder}~~" +
+                $"**Pardoned by: {x.PardonModerator} on <t:{x.PardonDate.ToUnixTimeSeconds()}:f>**\n";
+            }
+            if (stringBuilder.Length + builder.Length > stringBuilder.Capacity)
             {
-                x.Id,
-                x.SinType,
-                x.SinOn,
-                x.Reason,
-                Moderator = x.Moderator.Mention(),
-                Pardon = x.Pardon != null,
-                PardonModerator = x.Pardon != null ? x.Pardon.Moderator.Mention() : "",
-                PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue,
-            }).ToListAsync(cancellationToken);
-            var stringBuilder = new StringBuilder(2048);
-            var resultStrings = new List<string>();
-            result.ForEach(x =>
-            {
-                var builder = $"**{x.Id} : {x.SinType}** : <t:{x.SinOn.ToUnixTimeSeconds()}:f>\n" +
-                              $"\tReason: {x.Reason}\n" +
-                              $"\tModerator: {x.Moderator}\n";
-                if (x.Pardon)
-                {
-                    builder = $"~~{builder}~~" +
-                    $"**Pardoned by: {x.PardonModerator} on <t:{x.PardonDate.ToUnixTimeSeconds()}:f>**\n";
-                }
-                if (stringBuilder.Length + builder.Length > stringBuilder.Capacity)
-                {
-                    resultStrings.Add(stringBuilder.ToString());
-                    stringBuilder.Clear();
-                }
-                stringBuilder.Append(builder);
-            });
-            if (stringBuilder.Length > 0)
                 resultStrings.Add(stringBuilder.ToString());
+                stringBuilder.Clear();
+            }
+            stringBuilder.Append(builder);
+        });
+        if (stringBuilder.Length > 0)
+            resultStrings.Add(stringBuilder.ToString());
 
-            return new GetUserSinsQueryResponse
-            {
-                SinList = resultStrings.ToArray()
-            };
-        }
+        return new GetUserSinsQueryResponse
+        {
+            SinList = resultStrings.ToArray()
+        };
     }
 }

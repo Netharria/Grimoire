@@ -7,27 +7,26 @@
 
 using Grimoire.Core.DatabaseQueryHelpers;
 
-namespace Grimoire.Core.Features.Shared.Queries.GetModerationLog
+namespace Grimoire.Core.Features.Shared.Queries.GetModerationLog;
+
+public class GetModLogQueryHandler : IQueryHandler<GetModLogQuery, BaseResponse>
 {
-    public class GetModLogQueryHandler : IQueryHandler<GetModLogQuery, BaseResponse>
+    private readonly IGrimoireDbContext _grimoireDbContext;
+
+    public GetModLogQueryHandler(IGrimoireDbContext grimoireDbContext)
     {
-        private readonly IGrimoireDbContext _grimoireDbContext;
+        this._grimoireDbContext = grimoireDbContext;
+    }
 
-        public GetModLogQueryHandler(IGrimoireDbContext grimoireDbContext)
+    public async ValueTask<BaseResponse> Handle(GetModLogQuery query, CancellationToken cancellationToken)
+    {
+        var modChannelLog = await this._grimoireDbContext.Guilds
+            .WhereIdIs(query.GuildId)
+            .Select(x => x.ModChannelLog)
+            .FirstOrDefaultAsync(cancellationToken);
+        return new BaseResponse
         {
-            this._grimoireDbContext = grimoireDbContext;
-        }
-
-        public async ValueTask<BaseResponse> Handle(GetModLogQuery query, CancellationToken cancellationToken)
-        {
-            var modChannelLog = await this._grimoireDbContext.Guilds
-                .WhereIdIs(query.GuildId)
-                .Select(x => x.ModChannelLog)
-                .FirstOrDefaultAsync(cancellationToken);
-            return new BaseResponse
-            {
-                LogChannelId = modChannelLog
-            };
-        }
+            LogChannelId = modChannelLog
+        };
     }
 }

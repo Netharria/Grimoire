@@ -11,50 +11,49 @@ using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Queries.GetLevel;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLevel
+namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLevel;
+
+[TestFixture]
+public class GetLevelQueryHandlerTests
 {
-    [TestFixture]
-    public class GetLevelQueryHandlerTests
+
+    [Test]
+    public void WhenCallingGetLevelQueryHandler_IfUserDoesNotExist_ReturnFailedResponse()
     {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public void WhenCallingGetLevelQueryHandler_IfUserDoesNotExist_ReturnFailedResponse()
+        var CUT = new GetLevelQueryHandler(context);
+        var command = new GetLevelQuery
         {
-            var context = TestDatabaseFixture.CreateContext();
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            UserId = 234081234
+        };
 
-            var CUT = new GetLevelQueryHandler(context);
-            var command = new GetLevelQuery
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                UserId = 234081234
-            };
+        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-            var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+        response.Should().NotBeNull();
+        response?.Message.Should().Be("That user could not be found.");
+    }
 
-            response.Should().NotBeNull();
-            response?.Message.Should().Be("That user could not be found.");
-        }
+    [Test]
+    public async Task WhenCallingGetLevelQueryHandler_IfUserExists_ReturnResponseAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhenCallingGetLevelQueryHandler_IfUserExists_ReturnResponseAsync()
+        var CUT = new GetLevelQueryHandler(context);
+        var command = new GetLevelQuery
         {
-            var context = TestDatabaseFixture.CreateContext();
+            GuildId = TestDatabaseFixture.Guild1.Id,
+            UserId = TestDatabaseFixture.Member1.UserId
+        };
 
-            var CUT = new GetLevelQueryHandler(context);
-            var command = new GetLevelQuery
-            {
-                GuildId = TestDatabaseFixture.Guild1.Id,
-                UserId = TestDatabaseFixture.Member1.UserId
-            };
+        var response = await CUT.Handle(command, default);
 
-            var response = await CUT.Handle(command, default);
-
-            response.UsersXp.Should().Be(0);
-            response.UsersLevel.Should().Be(1);
-            response.LevelProgress.Should().Be(0);
-            response.XpForNextLevel.Should().Be(10);
-            response.NextRoleRewardId.Should().Be(7);
-            response.NextRewardLevel.Should().Be(10);
-        }
+        response.UsersXp.Should().Be(0);
+        response.UsersLevel.Should().Be(1);
+        response.LevelProgress.Should().Be(0);
+        response.XpForNextLevel.Should().Be(10);
+        response.NextRoleRewardId.Should().Be(7);
+        response.NextRewardLevel.Should().Be(10);
     }
 }

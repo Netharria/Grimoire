@@ -7,22 +7,21 @@
 
 using System.Text;
 
-namespace Grimoire.Discord.Extensions
+namespace Grimoire.Discord.Extensions;
+
+public static class TimespanExtensions
 {
-    public static class TimespanExtensions
+    public static string CustomTimeSpanString(this TimeSpan timeSpan)
     {
-        public static string CustomTimeSpanString(this TimeSpan timeSpan)
-        {
-            var stringBuilder = new StringBuilder();
-            if (1 < timeSpan.Days) stringBuilder.Append(timeSpan.Days).Append(" days ");
-            if (1 == timeSpan.Days) stringBuilder.Append(timeSpan.Days).Append(" day ");
-            if (1 < timeSpan.Hours) stringBuilder.Append(timeSpan.Hours).Append(" hours ");
-            if (1 == timeSpan.Hours) stringBuilder.Append(timeSpan.Hours).Append(" hour ");
-            if (1 < timeSpan.Minutes) stringBuilder.Append(timeSpan.Minutes).Append(" minutes ");
-            if (1 == timeSpan.Minutes) stringBuilder.Append(timeSpan.Minutes).Append(" minute ");
-            if (0 == timeSpan.Days && 1 < timeSpan.Seconds) stringBuilder.Append(timeSpan.Seconds).Append(" seconds ");
-            if (0 == timeSpan.Days && 1 == timeSpan.Seconds) stringBuilder.Append(timeSpan.Seconds).Append(" second ");
-            return stringBuilder.ToString();
-        }
+        var stringBuilder = new StringBuilder();
+        if (1 < timeSpan.Days) stringBuilder.Append(timeSpan.Days).Append(" days ");
+        if (1 == timeSpan.Days) stringBuilder.Append(timeSpan.Days).Append(" day ");
+        if (1 < timeSpan.Hours) stringBuilder.Append(timeSpan.Hours).Append(" hours ");
+        if (1 == timeSpan.Hours) stringBuilder.Append(timeSpan.Hours).Append(" hour ");
+        if (1 < timeSpan.Minutes) stringBuilder.Append(timeSpan.Minutes).Append(" minutes ");
+        if (1 == timeSpan.Minutes) stringBuilder.Append(timeSpan.Minutes).Append(" minute ");
+        if (0 == timeSpan.Days && 1 < timeSpan.Seconds) stringBuilder.Append(timeSpan.Seconds).Append(" seconds ");
+        if (0 == timeSpan.Days && 1 == timeSpan.Seconds) stringBuilder.Append(timeSpan.Seconds).Append(" second ");
+        return stringBuilder.ToString();
     }
 }

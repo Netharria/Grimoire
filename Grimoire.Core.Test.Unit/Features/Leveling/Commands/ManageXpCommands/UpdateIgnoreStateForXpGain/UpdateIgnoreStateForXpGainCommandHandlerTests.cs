@@ -13,83 +13,82 @@ using Grimoire.Core.Features.Shared.SharedDtos;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain
+namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
+
+[TestFixture]
+public class UpdateIgnoreStateForXpGainCommandHandlerTests
 {
-    [TestFixture]
-    public class UpdateIgnoreStateForXpGainCommandHandlerTests
+
+    [Test]
+    public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_UpdateIgnoreStatusAsync()
     {
+        var context = TestDatabaseFixture.CreateContext();
+        //context.Database.BeginTransaction();
+        var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
 
-        [Test]
-        public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_UpdateIgnoreStatusAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
-            //context.Database.BeginTransaction();
-            var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
-
-            var result = await cut.Handle(
-                new UpdateIgnoreStateForXpGainCommand
+        var result = await cut.Handle(
+            new UpdateIgnoreStateForXpGainCommand
+            {
+                Users = new [] { new UserDto { Id = TestDatabaseFixture.Member1.UserId } },
+                GuildId = TestDatabaseFixture.Member1.GuildId,
+                ShouldIgnore = true,
+                Channels = new []
                 {
-                    Users = new [] { new UserDto { Id = TestDatabaseFixture.Member1.UserId } },
-                    GuildId = TestDatabaseFixture.Member1.GuildId,
-                    ShouldIgnore = true,
-                    Channels = new []
+                    new ChannelDto
                     {
-                        new ChannelDto
-                        {
-                            Id = TestDatabaseFixture.Channel1.Id,
-                            GuildId = TestDatabaseFixture.Channel1.GuildId
-                        }
-                    },
-                    Roles = new []
-                    {
-                        new RoleDto
-                        {
-                            Id = TestDatabaseFixture.Role1.Id,
-                            GuildId = TestDatabaseFixture.Role1.GuildId
-                        }
+                        Id = TestDatabaseFixture.Channel1.Id,
+                        GuildId = TestDatabaseFixture.Channel1.GuildId
                     }
-                }, default);
-            context.ChangeTracker.Clear();
-            result.Message.Should().Be("<@!4> <@&6> <#3>  are now ignored for xp gain.");
-
-            var member = await context.Members.Where(x =>
-                x.UserId == TestDatabaseFixture.Member1.UserId
-                && x.GuildId == TestDatabaseFixture.Member1.GuildId
-                ).FirstAsync();
-
-            member.IsXpIgnored.Should().BeTrue();
-
-            var role = await context.Roles.Where(x =>
-                x.Id == TestDatabaseFixture.Role1.Id
-                && x.GuildId == TestDatabaseFixture.Role1.GuildId
-                ).FirstAsync();
-
-            role.IsXpIgnored.Should().BeTrue();
-
-            var channel = await context.Channels.Where(x =>
-                x.Id == TestDatabaseFixture.Channel1.Id
-                && x.GuildId == TestDatabaseFixture.Channel1.GuildId
-                ).FirstAsync();
-
-            channel.IsXpIgnored.Should().BeTrue();
-        }
-
-        [Test]
-        public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
-            context.Database.BeginTransaction();
-            var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
-
-            var result = await cut.Handle(
-                new UpdateIgnoreStateForXpGainCommand
+                },
+                Roles = new []
                 {
-                    GuildId = TestDatabaseFixture.Member1.GuildId,
-                    ShouldIgnore = true,
-                    InvalidIds = new [] { "asldfkja" }
-                }, default);
-            context.ChangeTracker.Clear();
-            result.Message.Should().Be("Could not match asldfkja with a role, channel or user. ");
-        }
+                    new RoleDto
+                    {
+                        Id = TestDatabaseFixture.Role1.Id,
+                        GuildId = TestDatabaseFixture.Role1.GuildId
+                    }
+                }
+            }, default);
+        context.ChangeTracker.Clear();
+        result.Message.Should().Be("<@!4> <@&6> <#3>  are now ignored for xp gain.");
+
+        var member = await context.Members.Where(x =>
+            x.UserId == TestDatabaseFixture.Member1.UserId
+            && x.GuildId == TestDatabaseFixture.Member1.GuildId
+            ).FirstAsync();
+
+        member.IsXpIgnored.Should().BeTrue();
+
+        var role = await context.Roles.Where(x =>
+            x.Id == TestDatabaseFixture.Role1.Id
+            && x.GuildId == TestDatabaseFixture.Role1.GuildId
+            ).FirstAsync();
+
+        role.IsXpIgnored.Should().BeTrue();
+
+        var channel = await context.Channels.Where(x =>
+            x.Id == TestDatabaseFixture.Channel1.Id
+            && x.GuildId == TestDatabaseFixture.Channel1.GuildId
+            ).FirstAsync();
+
+        channel.IsXpIgnored.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
+        context.Database.BeginTransaction();
+        var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
+
+        var result = await cut.Handle(
+            new UpdateIgnoreStateForXpGainCommand
+            {
+                GuildId = TestDatabaseFixture.Member1.GuildId,
+                ShouldIgnore = true,
+                InvalidIds = new [] { "asldfkja" }
+            }, default);
+        context.ChangeTracker.Clear();
+        result.Message.Should().Be("Could not match asldfkja with a role, channel or user. ");
     }
 }

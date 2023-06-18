@@ -7,68 +7,67 @@
 
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
 
-namespace Grimoire.Discord.LevelingModule
+namespace Grimoire.Discord.LevelingModule;
+
+[DiscordMessageCreatedEventSubscriber]
+public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
 {
-    [DiscordMessageCreatedEventSubscriber]
-    public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
+    private readonly IMediator _mediator;
+
+    public LevelingEvents(IMediator mediator)
     {
-        private readonly IMediator _mediator;
+        this._mediator = mediator;
+    }
 
-        public LevelingEvents(IMediator mediator)
+    public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
+    {
+        if (args.Message.MessageType is not MessageType.Default or MessageType.Reply ||
+            args.Author is not DiscordMember member) return;
+        if (member.IsBot) return;
+        var response = await this._mediator.Send(new GainUserXpCommand
         {
-            this._mediator = mediator;
-        }
+            ChannelId = args.Channel.Id,
+            GuildId = args.Guild.Id,
+            UserId = member.Id,
+            RoleIds = member.Roles.Select(x => x.Id).ToArray()
+        });
+        if (!response.Success) return;
 
-        public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
-        {
-            if (args.Message.MessageType is not MessageType.Default or MessageType.Reply ||
-                args.Author is not DiscordMember member) return;
-            if (member.IsBot) return;
-            var response = await this._mediator.Send(new GainUserXpCommand
-            {
-                ChannelId = args.Channel.Id,
-                GuildId = args.Guild.Id,
-                UserId = member.Id,
-                RoleIds = member.Roles.Select(x => x.Id).ToArray()
-            });
-            if (!response.Success) return;
+        var newRewards = response.EarnedRewards
+            .Where(x => !member.Roles.Any(y => y.Id == x))
+            .ToArray();
 
-            var newRewards = response.EarnedRewards
-                .Where(x => !member.Roles.Any(y => y.Id == x))
-                .ToArray();
+        var rolesToAdd = newRewards
+            .Join(args.Guild.Roles, x => x, y => y.Key, (x, y) => y.Value)
+            .Concat(member.Roles)
+            .Distinct()
+            .ToArray();
 
-            var rolesToAdd = newRewards
-                .Join(args.Guild.Roles, x => x, y => y.Key, (x, y) => y.Value)
-                .Concat(member.Roles)
-                .Distinct()
-                .ToArray();
+        if (rolesToAdd.Except(member.Roles).Any())
+            await member.ReplaceRolesAsync(rolesToAdd);
 
-            if (rolesToAdd.Except(member.Roles).Any())
-                await member.ReplaceRolesAsync(rolesToAdd);
+        if (response.LoggingChannel is null) return;
 
-            if (response.LoggingChannel is null) return;
+        if (!args.Guild.Channels.TryGetValue(response.LoggingChannel.Value,
+            out var loggingChannel)) return;
 
-            if (!args.Guild.Channels.TryGetValue(response.LoggingChannel.Value,
-                out var loggingChannel)) return;
+        if (response.PreviousLevel < response.CurrentLevel)
+            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
+                .WithColor(GrimoireColor.Purple)
+                .WithTitle(member.GetUsernameWithDiscriminator())
+                .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
+                .WithFooter($"{member.Id}")
+                .WithTimestamp(DateTime.UtcNow)
+                .Build());
 
-            if (response.PreviousLevel < response.CurrentLevel)
-                await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithColor(GrimoireColor.Purple)
-                    .WithTitle(member.GetUsernameWithDiscriminator())
-                    .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
-                    .WithFooter($"{member.Id}")
-                    .WithTimestamp(DateTime.UtcNow)
-                    .Build());
-
-            if (newRewards.Any())
-                await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithColor(GrimoireColor.DarkPurple)
-                    .WithTitle($"{member.Username}#{member.Discriminator}")
-                    .WithDescription($"{member.Mention} has earned " +
-                    $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x)))}")
-                    .WithFooter($"{member.Id}")
-                    .WithTimestamp(DateTime.UtcNow)
-                    .Build());
-        }
+        if (newRewards.Any())
+            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
+                .WithColor(GrimoireColor.DarkPurple)
+                .WithTitle($"{member.Username}#{member.Discriminator}")
+                .WithDescription($"{member.Mention} has earned " +
+                $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x)))}")
+                .WithFooter($"{member.Id}")
+                .WithTimestamp(DateTime.UtcNow)
+                .Build());
     }
 }

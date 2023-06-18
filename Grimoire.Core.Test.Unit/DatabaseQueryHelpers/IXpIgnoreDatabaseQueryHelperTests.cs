@@ -11,30 +11,29 @@ using Grimoire.Core.DatabaseQueryHelpers;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
-namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers
+namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
+
+[TestFixture]
+public class IXpIgnoreDatabaseQueryHelperTests
 {
-    [TestFixture]
-    public class IXpIgnoreDatabaseQueryHelperTests
+
+    [Test]
+    public async Task WhenWhereIgnoredCalled_ReturnAllIgnoredItemsAsync()
     {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhenWhereIgnoredCalled_ReturnAllIgnoredItemsAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
+        var result = await context.Members.WhereIgnored().ToListAsync();
 
-            var result = await context.Members.WhereIgnored().ToListAsync();
+        result.Should().NotBeEmpty().And.AllSatisfy(x => x.IsXpIgnored.Should().BeTrue());
+    }
 
-            result.Should().NotBeEmpty().And.AllSatisfy(x => x.IsXpIgnored.Should().BeTrue());
-        }
+    [Test]
+    public async Task WhenWhereIgnoredCalled_WithFalseParameter_ReturnAllNotIgnoredItemsAsync()
+    {
+        var context = TestDatabaseFixture.CreateContext();
 
-        [Test]
-        public async Task WhenWhereIgnoredCalled_WithFalseParameter_ReturnAllNotIgnoredItemsAsync()
-        {
-            var context = TestDatabaseFixture.CreateContext();
+        var result = await context.Members.WhereIgnored(false).ToListAsync();
 
-            var result = await context.Members.WhereIgnored(false).ToListAsync();
-
-            result.Should().NotBeEmpty().And.AllSatisfy(x => x.IsXpIgnored.Should().BeFalse());
-        }
+        result.Should().NotBeEmpty().And.AllSatisfy(x => x.IsXpIgnored.Should().BeFalse());
     }
 }
