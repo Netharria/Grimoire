@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Core.Migrations
 {
     [DbContext(typeof(GrimoireDbContext))]
-    [Migration("20230617053533_Init")]
+    [Migration("20230619152716_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -591,7 +591,7 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("ModeratorId")
+                    b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Reason")
@@ -1124,8 +1124,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Moderator")
                         .WithMany("ModeratedSins")
                         .HasForeignKey("ModeratorId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Grimoire.Domain.Member", "Member")
                         .WithMany("UserSins")

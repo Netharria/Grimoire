@@ -80,7 +80,7 @@ public class FuzzyMigrationService
                 Id = x.Id,
                 UserId = x.UserId,
                 GuildId = x.GuildId,
-                ModeratorId = x.ModeratorId,
+                ModeratorId = x.ModeratorId == 0 ? null : x.ModeratorId,
                 Reason = x.Reason  ?? "",
                 SinType = x.InfractionType switch
                 {
@@ -172,6 +172,7 @@ public class FuzzyMigrationService
             }).ToListAsync();
         fuzzyUsers.AddRange(await this._fuzzyDbContext
             .Infractions
+            .Where(x => x.ModeratorId != 0)
             .Select(x => new Member
             {
                 UserId = x.ModeratorId,
@@ -263,6 +264,7 @@ public class FuzzyMigrationService
             }).ToListAsync();
         fuzzyUsers.AddRange(await this._fuzzyDbContext
             .Infractions
+            .Where(x => x.ModeratorId != 0)
             .Select(x => new User
             {
                 Id = x.ModeratorId

@@ -29,7 +29,7 @@ public class SinConfiguration : IEntityTypeConfiguration<Sin>
             .WithMany(e => e.ModeratedSins)
             .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
             .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired();
+            .IsRequired(false);
         builder.HasOne(e => e.Guild)
             .WithMany(e => e.Sins)
             .HasForeignKey(e => e.GuildId)

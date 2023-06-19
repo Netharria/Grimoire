@@ -24,9 +24,9 @@ public class Sin : IIdentifiable<long>, IMember
 
     public virtual Member Member { get; set; } = null!;
 
-    public ulong ModeratorId { get; set; }
+    public ulong? ModeratorId { get; set; }
 
-    public virtual Member Moderator { get; set; } = null!;
+    public virtual Member? Moderator { get; set; } = null!;
 
     public ulong GuildId { get; set; }
 

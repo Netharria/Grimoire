@@ -11,7 +11,7 @@ namespace Grimoire.Core.Extensions;
 
 public static class IMentionableExtensions
 {
-    public static string Mention<TSource>(this TSource ignorable) where TSource : IMentionable
+    public static string Mention<TSource>(this TSource? ignorable) where TSource : IMentionable
         =>
         ignorable switch
         {
@@ -20,6 +20,7 @@ public static class IMentionableExtensions
             Role role => $"<@&{role.Id}>",
             Reward reward => $"<@&{reward.RoleId}>",
             Channel channel => $"<#{channel.Id}>",
+            null => "Unknown User",
             _ => throw new NotImplementedException(),
         };
 }
