@@ -12,6 +12,6 @@ public sealed record GainUserXpCommandResponse : BaseResponse
     public ulong[] EarnedRewards { get; init; } = Array.Empty<ulong>();
     public int PreviousLevel { get; init; }
     public int CurrentLevel { get; init; }
-    public ulong? LoggingChannel { get; init; }
+    public ulong? LevelLogChannel { get; init; }
     public bool Success { get; init; } = false;
 }

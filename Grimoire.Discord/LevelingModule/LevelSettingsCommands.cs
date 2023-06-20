@@ -54,7 +54,7 @@ public class LevelSettingsCommands : ApplicationCommandModule
         [Choice("Amount per xp gain.", 3)]
         [Option("Setting", "The Setting to change.")] long levelSettings,
         [Maximum(int.MaxValue)]
-        [Minimum(0)]
+        [Minimum(1)]
         [Option("Value", "The value to change the setting to.")] long value)
     {
         var levelSetting = (LevelSettings)levelSettings;

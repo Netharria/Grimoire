@@ -20,7 +20,8 @@ public class GetLevelQueryHandlerTests
     [Test]
     public void WhenCallingGetLevelQueryHandler_IfUserDoesNotExist_ReturnFailedResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var CUT = new GetLevelQueryHandler(context);
         var command = new GetLevelQuery
@@ -38,7 +39,8 @@ public class GetLevelQueryHandlerTests
     [Test]
     public async Task WhenCallingGetLevelQueryHandler_IfUserExists_ReturnResponseAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var CUT = new GetLevelQueryHandler(context);
         var command = new GetLevelQuery

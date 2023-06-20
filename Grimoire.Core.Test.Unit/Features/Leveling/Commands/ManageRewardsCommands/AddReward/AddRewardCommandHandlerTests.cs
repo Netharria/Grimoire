@@ -18,7 +18,8 @@ public class AddRewardCommandHandlerTests
     [Test]
     public async Task WhenAddingReward_IfRewardDoesntExist_AddRoleAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
 
         var CUT = new AddRewardCommandHandler(context);
@@ -39,7 +40,8 @@ public class AddRewardCommandHandlerTests
     [Test]
     public async Task WhenAddingReward_IfRewardExist_UpdateRoleAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         context.Database.BeginTransaction();
 

@@ -22,7 +22,8 @@ public class AwardUserXpCommandHandlerTests
     [Test]
     public async Task WhenAwardUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var cut = new AwardUserXpCommandHandler(context);
 
@@ -45,7 +46,8 @@ public class AwardUserXpCommandHandlerTests
     [Test]
     public void WhenAwardUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var cut = new AwardUserXpCommandHandler(context);
         context.Database.BeginTransaction();

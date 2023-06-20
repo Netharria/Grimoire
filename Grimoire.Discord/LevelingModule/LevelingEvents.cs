@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
 
 namespace Grimoire.Discord.LevelingModule;
@@ -44,11 +45,25 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
             .ToArray();
 
         if (rolesToAdd.Except(member.Roles).Any())
-            await member.ReplaceRolesAsync(rolesToAdd);
+        {
+            try
+            {
+                await member.ReplaceRolesAsync(rolesToAdd);
+            }
+            catch (UnauthorizedException)
+            {
+                await SendErrorLogs(
+                    args.Guild.Channels,
+                    args.Guild.CurrentMember.DisplayName,
+                    newRewards,
+                    response.LogChannelId,
+                    response.LevelLogChannel);
+            }
+        }
 
-        if (response.LoggingChannel is null) return;
+        if (response.LevelLogChannel is null) return;
 
-        if (!args.Guild.Channels.TryGetValue(response.LoggingChannel.Value,
+        if (!args.Guild.Channels.TryGetValue(response.LevelLogChannel.Value,
             out var loggingChannel)) return;
 
         if (response.PreviousLevel < response.CurrentLevel)
@@ -69,5 +84,30 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
                 .WithFooter($"{member.Id}")
                 .WithTimestamp(DateTime.UtcNow)
                 .Build());
+    }
+
+    private static async Task SendErrorLogs(
+        IReadOnlyDictionary<ulong, DiscordChannel> channels,
+        string displayName,
+        ulong[] rewards,
+        ulong? modLogChannelId,
+        ulong? levelLogChannelId)
+    {
+        if (modLogChannelId is not null)
+        {
+            if (channels.TryGetValue(modLogChannelId.Value, out var modLogChannel))
+                await modLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
+                    .WithColor(GrimoireColor.Red)
+                    .WithDescription($"{displayName} tried to grant roles " +
+                    $"{string.Join(' ', rewards.Select(RoleExtensions.Mention))} but did not have sufficent permissions."));
+        }
+        if (levelLogChannelId is not null)
+        {
+            if (channels.TryGetValue(levelLogChannelId.Value, out var levelLogChannel))
+                await levelLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
+                    .WithColor(GrimoireColor.Red)
+                    .WithDescription($"{displayName} tried to grant roles " +
+                    $"{string.Join(' ', rewards.Select(RoleExtensions.Mention))} but did not have sufficent permissions."));
+        }
     }
 }

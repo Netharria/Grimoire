@@ -8,8 +8,8 @@
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.SetAutoPardon;
 using Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel;
+using Grimoire.Core.Features.Moderation.Queries.GetModerationSettings;
 using Grimoire.Discord.Enums;
-using Grimoire.Domain;
 
 namespace Grimoire.Discord.ModerationModule;
 
@@ -65,12 +65,38 @@ public class ModerationSettingsCommands : ApplicationCommandModule
         var response = await this._mediator.Send(new SetAutoPardonCommand
         {
             GuildId = ctx.Guild.Id,
-            DurationType = durationType,
-            DurationAmount = durationAmount
+            DurationAmount = durationType.GetTimeSpan(durationAmount)
         });
 
         await ctx.ReplyAsync(message: $"Will now auto pardon sins after {durationAmount} {durationType.GetName()}", ephemeral: false);
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"Auto pardon was updated by {ctx.User.Mention} " +
             $"to pardon sins after {durationAmount} {durationType.GetName()}.");
     }
+
+    [SlashCommand("View", "See current moderation settings")]
+    public async Task ViewSettingsAsync(InteractionContext ctx)
+    {
+        var response = await this._mediator.Send(new GetModerationSettingsQuery
+        {
+            GuildId = ctx.Guild.Id
+        });
+
+        var banLog = response.PublicBanLog is null ?
+            "None" :
+            ctx.Guild.GetChannel(response.PublicBanLog.Value).Mention;
+
+        var autoPardonString =
+            response.AutoPardonAfter.Days % 365 == 0
+            ? $"{response.AutoPardonAfter.Days / 365} years"
+            : response.AutoPardonAfter.Days % 30 == 0
+            ? $"{response.AutoPardonAfter.Days / 30} months"
+            : $"{response.AutoPardonAfter.Days} days";
+
+        await ctx.ReplyAsync(
+                title: "Current Logging System Settings",
+                message: $"**Module Enabled:** {response.ModuleEnabled}\n" +
+                $"**Auto Pardon Duration:** {autoPardonString}\n" +
+                $"**Ban Log:** {banLog}\n");
+    }
+
 }

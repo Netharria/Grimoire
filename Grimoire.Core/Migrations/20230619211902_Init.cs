@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -60,8 +59,7 @@ namespace Grimoire.Core.Migrations
                 {
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     PublicBanLog = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
-                    DurationType = table.Column<int>(type: "integer", nullable: false, defaultValue: 3),
-                    Duration = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
+                    AutoPardonAfter = table.Column<TimeSpan>(type: "interval", nullable: false, defaultValue: new TimeSpan(10950, 0, 0, 0, 0)),
                     MuteRole = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     ModuleEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },

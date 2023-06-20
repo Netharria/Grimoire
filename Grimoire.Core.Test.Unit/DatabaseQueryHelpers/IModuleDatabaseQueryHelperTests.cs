@@ -23,7 +23,8 @@ public class IModuleDatabaseQueryHelperTests
     [Test]
     public async Task WhenGetModulesOfTypeCalled_ReturnCorrectTypeofModuleAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var levelingModule = await context.Guilds.GetModulesOfType(Module.Leveling)
             .OfType<GuildLevelSettings>()

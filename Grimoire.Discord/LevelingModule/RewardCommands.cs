@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
 using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
 using Grimoire.Core.Features.Leveling.Queries.GetRewards;
@@ -27,10 +28,14 @@ public class RewardCommands : ApplicationCommandModule
     [SlashCommand("Add", "Adds or updates rewards for the server.")]
     public async Task AddAsync(InteractionContext ctx,
         [Option("Role", "The role to be added as a reward")] DiscordRole role,
-        [Minimum(0)]
+        [Minimum(1)]
         [Maximum(int.MaxValue)]
         [Option("Level", "The level the reward is awarded at.")] long level)
     {
+        if (ctx.Guild.CurrentMember.Hierarchy < role.Position)
+            throw new AnticipatedException($"{ctx.Guild.CurrentMember.DisplayName} will not be able to apply this " +
+                $"reward role because the role has a higher rank than it does.");
+        
         var response = await this._mediator.Send(
             new AddRewardCommand
             {

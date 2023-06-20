@@ -21,7 +21,8 @@ public class GuildDatabaseQueryHelperTests
     [Test]
     public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var guildsToAdd = new List<GuildDto>
         {

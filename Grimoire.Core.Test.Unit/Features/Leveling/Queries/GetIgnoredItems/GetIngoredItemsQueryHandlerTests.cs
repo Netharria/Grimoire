@@ -21,7 +21,8 @@ public class GetIngoredItemsQueryHandlerTests
     [Test]
     public async Task WhenCallingGetIgnoredItemsHandler_IfNoIgnoredItems_ReturnFailedResponseAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         context.Guilds.Add(new Guild { Id = 34958734 });
         await context.SaveChangesAsync();
@@ -41,7 +42,8 @@ public class GetIngoredItemsQueryHandlerTests
     [Test]
     public async Task WhenCallingGetIgnoredItemsHandler_IfIgnoredItems_ReturnSuccessResponseAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var CUT = new GetIgnoredItemsQueryHandler(context);
         var command = new GetIgnoredItemsQuery

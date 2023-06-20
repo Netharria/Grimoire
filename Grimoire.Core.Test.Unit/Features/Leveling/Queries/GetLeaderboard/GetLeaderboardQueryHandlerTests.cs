@@ -20,7 +20,8 @@ public class GetLeaderboardQueryHandlerTests
     [Test]
     public void WhenCallingGetLeaderboardQueryHandler_IfProvidedUserNotFound_FailResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var CUT = new GetLeaderboardQueryHandler(context);
         var command = new GetLeaderboardQuery
@@ -38,7 +39,8 @@ public class GetLeaderboardQueryHandlerTests
     [Test]
     public async Task WhenCallingGetLeaderboardQueryHandler_ReturnLeaderboardAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var CUT = new GetLeaderboardQueryHandler(context);
         var command = new GetLeaderboardQuery

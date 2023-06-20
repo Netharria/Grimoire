@@ -23,10 +23,8 @@ internal class GuildModerationSettingsConfiguration : IEntityTypeConfiguration<G
             .IsRequired();
         builder.Property(e => e.PublicBanLog)
             .IsRequired(false);
-        builder.Property(e => e.DurationType)
-            .HasDefaultValue(Duration.Years);
-        builder.Property(e => e.Duration)
-            .HasDefaultValue(30);
+        builder.Property(e => e.AutoPardonAfter)
+            .HasDefaultValue(TimeSpan.FromDays(30 * 365));
         builder.Property(e => e.MuteRole)
             .IsRequired(false);
         builder.Property(x => x.ModuleEnabled)

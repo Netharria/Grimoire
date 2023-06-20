@@ -20,7 +20,8 @@ public class IXpIgnoreDatabaseQueryHelperTests
     [Test]
     public async Task WhenWhereIgnoredCalled_ReturnAllIgnoredItemsAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var result = await context.Members.WhereIgnored().ToListAsync();
 
@@ -30,7 +31,8 @@ public class IXpIgnoreDatabaseQueryHelperTests
     [Test]
     public async Task WhenWhereIgnoredCalled_WithFalseParameter_ReturnAllNotIgnoredItemsAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var result = await context.Members.WhereIgnored(false).ToListAsync();
 

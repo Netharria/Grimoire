@@ -10,7 +10,7 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
 
-public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, Unit>
+public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;
 
@@ -19,11 +19,15 @@ public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, Uni
         this._grimoireDbContext = grimoireDbContext;
     }
 
-    public async ValueTask<Unit> Handle(AwardUserXpCommand command, CancellationToken cancellationToken)
+    public async ValueTask<BaseResponse> Handle(AwardUserXpCommand command, CancellationToken cancellationToken)
     {
 
         var member = await this._grimoireDbContext.Members
             .WhereMemberHasId(command.UserId, command.GuildId)
+            .Select(x => new
+            {
+                x.Guild.ModChannelLog
+            })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
         if (member is null)
@@ -39,6 +43,9 @@ public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, Uni
             AwarderId = command.AwarderId,
         }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return new Unit();
+        return new BaseResponse()
+        {
+            LogChannelId = member.ModChannelLog
+        };
     }
 }

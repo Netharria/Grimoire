@@ -21,7 +21,8 @@ public class IIdentifiableDatabaseQueryHelperTests
     [Test]
     public async Task WhereIdsAre_WhenProvidedValidIds_ReturnsResultAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        var context = databaseFixture.CreateContext();
 
         var result = await context.Guilds.WhereIdsAre(new ulong[]{ TestDatabaseFixture.Guild1.Id }).ToArrayAsync();
 
@@ -32,7 +33,8 @@ public class IIdentifiableDatabaseQueryHelperTests
     [Test]
     public async Task WhereIdIs_WhenProvidedValidId_ReturnsResultAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        var context = databaseFixture.CreateContext();
 
         var result = await context.Guilds.WhereIdIs(TestDatabaseFixture.Guild2.Id).ToArrayAsync();
 

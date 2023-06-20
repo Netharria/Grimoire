@@ -31,17 +31,19 @@ public class GetUserSinsQueryHandler : IQueryHandler<GetUserSinsQuery, GetUserSi
             _ => queryable
         };
 
-        var result = await queryable.Select(x => new
-        {
-            x.Id,
-            x.SinType,
-            x.SinOn,
-            x.Reason,
-            Moderator = x.Moderator.Mention(),
-            Pardon = x.Pardon != null,
-            PardonModerator = x.Pardon != null ? x.Pardon.Moderator.Mention() : "",
-            PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue,
-        }).ToListAsync(cancellationToken);
+        var result = await queryable
+            .Where(x => x.SinOn > DateTimeOffset.UtcNow - x.Guild.ModerationSettings.AutoPardonAfter)
+            .Select(x => new
+            {
+                x.Id,
+                x.SinType,
+                x.SinOn,
+                x.Reason,
+                Moderator = x.Moderator.Mention(),
+                Pardon = x.Pardon != null,
+                PardonModerator = x.Pardon != null ? x.Pardon.Moderator.Mention() : "",
+                PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue,
+            }).ToListAsync(cancellationToken);
         var stringBuilder = new StringBuilder(2048);
         var resultStrings = new List<string>();
         result.ForEach(x =>

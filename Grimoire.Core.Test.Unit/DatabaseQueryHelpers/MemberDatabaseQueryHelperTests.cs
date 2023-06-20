@@ -23,7 +23,8 @@ public class MemberDatabaseQueryHelperTests
     [Test]
     public async Task WhenMembersAreNotInDatabase_AddThemAsync()
     {
-        using var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var membersToAdd = new List<MemberDto>
         {
@@ -41,7 +42,8 @@ public class MemberDatabaseQueryHelperTests
     [Test]
     public async Task WhenWhereLoggingEnabledCalled_GetMembersInGuildsWhereLoggingIsEnabledAsync()
     {
-        using var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var result = await context.Members.WhereLoggingEnabled().ToArrayAsync();
 
@@ -51,7 +53,8 @@ public class MemberDatabaseQueryHelperTests
     [Test]
     public async Task WhenWhereLevelingEnabledCalled_GetMembersInGuildsWhereLevelingIsEnabledAsync()
     {
-        using var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var result = await context.Members.WhereLevelingEnabled().ToArrayAsync();
 
@@ -61,14 +64,14 @@ public class MemberDatabaseQueryHelperTests
     [Test]
     public async Task WhenWhereMemberNotIgnoredCalled_GetMembersThatArentIgnoredAsync()
     {
-        using var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var result = await context.Members.WhereMemberNotIgnored(
             TestDatabaseFixture.Channel1.Id,
             new ulong[]
             {
-                TestDatabaseFixture.Role1.Id,
-                TestDatabaseFixture.Role2.Id
+                TestDatabaseFixture.Role1.Id
             }).ToArrayAsync();
 
         result.Should().AllSatisfy(x => x.IsXpIgnored.Should().BeFalse());

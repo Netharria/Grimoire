@@ -5,10 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Moderation.Commands.SetAutoPardon;
-
-public sealed record SetAutoPardonCommand : ICommand<BaseResponse>
+namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
+public sealed record ReclaimUserXpCommandResponse : BaseResponse
 {
-    public ulong GuildId { get; init; }
-    public TimeSpan DurationAmount { get; init; }
+    public long XpTaken { get; init; }
 }

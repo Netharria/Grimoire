@@ -21,7 +21,8 @@ public class ChannelDatabaseQueryHelperTests
     [Test]
     public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var channelsToAdd = new List<ChannelDto>
         {

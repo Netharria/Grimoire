@@ -112,15 +112,14 @@ public static class GuildExtensions
         guild.ModerationSettings.PublicBanLog = moderationSettings.PublicBanLog;
         guild.AddChannel(moderationSettings.PublicBanLog);
 
-        guild.ModerationSettings.DurationType = moderationSettings.DurationType switch
+        guild.ModerationSettings.AutoPardonAfter = moderationSettings.DurationType switch
         {
-            1 => Duration.Days,
-            2 => Duration.Months,
-            3 => Duration.Years,
-            _ => Duration.Years
+            1 => TimeSpan.FromDays(moderationSettings.Duration),
+            2 => TimeSpan.FromDays(moderationSettings.Duration * 30),
+            3 => TimeSpan.FromDays(moderationSettings.Duration * 365),
+            _ => TimeSpan.FromDays(moderationSettings.Duration * 365)
         };
 
-        guild.ModerationSettings.Duration = moderationSettings.Duration;
         guild.ModerationSettings.MuteRole = moderationSettings.MuteRole;
         guild.AddRole(moderationSettings.MuteRole);
 

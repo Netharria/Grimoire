@@ -21,7 +21,8 @@ public class RoleDatabaseQueryHelperTests
     [Test]
     public async Task WhenRolesAreNotInDatabase_AddThemAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var rolesToAdd = new List<RoleDto>
         {

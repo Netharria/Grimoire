@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
 
-public sealed record AwardUserXpCommand : ICommand
+public sealed record AwardUserXpCommand : ICommand<BaseResponse>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }

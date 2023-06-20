@@ -184,15 +184,10 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<int>("Duration")
+                    b.Property<TimeSpan>("AutoPardonAfter")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(30);
-
-                    b.Property<int>("DurationType")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(3);
+                        .HasColumnType("interval")
+                        .HasDefaultValue(new TimeSpan(10950, 0, 0, 0, 0));
 
                     b.Property<bool>("ModuleEnabled")
                         .ValueGeneratedOnAdd()

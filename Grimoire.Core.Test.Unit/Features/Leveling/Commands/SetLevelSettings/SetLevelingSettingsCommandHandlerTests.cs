@@ -23,7 +23,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public void WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -40,7 +41,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public void WhenUpdatingTextTime_IfNumberIsInvalid_FailResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -59,7 +61,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public void WhenUpdatingBase_IfNumberIsInvalid_FailResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -78,7 +81,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public void WhenUpdatingModifier_IfNumberIsInvalid_FailResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -97,7 +101,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public void WhenUpdatingAmount_IfNumberIsInvalid_FailResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -116,14 +121,15 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public void WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
         {
             GuildId = TestDatabaseFixture.Guild1.Id,
             LevelSettings = LevelSettings.LogChannel,
-            Value = "345"
+            Value = "Something"
         };
         context.ChangeTracker.Clear();
         var response = Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
@@ -135,7 +141,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public async Task WhenUpdatingTextTime_IfNumberIsValid_UpdateSettingAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -155,7 +162,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public async Task WhenUpdatingBase_IfNumberIsValid_UpdateSettingAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -175,7 +183,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public async Task WhenUpdatingModifier_IfNumberIsValid_UpdateSettingAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -195,7 +204,8 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public async Task WhenUpdatingAmount_IfNumberIsValid_UpdateSettingAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
@@ -215,27 +225,29 @@ public class SetLevelingSettingsCommandHandlerTests
     [Test]
     public async Task WhenUpdatingLogChannel_IfNumberIsValid_UpdateSettingAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand
         {
             GuildId = TestDatabaseFixture.Guild1.Id,
             LevelSettings = LevelSettings.LogChannel,
-            Value = "12345678901234567"
+            Value = TestDatabaseFixture.Channel2.Id.ToString()
         };
 
         var response = await CUT.Handle(command, default);
         context.ChangeTracker.Clear();
         var guildSettings = await context.GuildLevelSettings.FirstAsync(x => x.GuildId == TestDatabaseFixture.Guild1.Id);
 
-        guildSettings.LevelChannelLogId.Should().Be(12345678901234567);
+        guildSettings.LevelChannelLogId.Should().Be(12);
     }
 
     [Test]
     public async Task WhenUpdatingLogChannel_IfNumberIs0_UpdateSettingToNullAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new SetLevelSettingsCommandHandler(context);
         var command = new SetLevelSettingsCommand

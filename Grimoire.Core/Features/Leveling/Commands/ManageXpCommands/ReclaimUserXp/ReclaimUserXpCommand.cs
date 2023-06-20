@@ -7,9 +7,16 @@
 
 namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
 
-public sealed record ReclaimUserXpCommand : ICommand
+public enum XpOption
 {
-    public string XpToTake { get; init; } = string.Empty;
+    All,
+    Amount
+}
+
+public sealed record ReclaimUserXpCommand : ICommand<ReclaimUserXpCommandResponse>
+{
+    public XpOption XpOption { get; init; }
+    public long XpToTake { get; init; }
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
     public ulong? ReclaimerId { get; init; }

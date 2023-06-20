@@ -49,7 +49,7 @@ public class TestDatabaseFixture
     {
         lock (_lock)
         {
-            using var context = CreateContext();
+            using var context = this.CreateContext();
             context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
             context.Guilds.AddRange(Guild1, Guild2);
@@ -62,7 +62,9 @@ public class TestDatabaseFixture
         }
     }
 
-    public static GrimoireDbContext CreateContext()
+#pragma warning disable CA1822 // Mark members as static
+    public GrimoireDbContext CreateContext()
+#pragma warning restore CA1822 // Mark members as static
     {
         var configuration = new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
@@ -70,7 +72,7 @@ public class TestDatabaseFixture
         .Build();
         return new GrimoireDbContext(
             new DbContextOptionsBuilder<GrimoireDbContext>()
-                .UseNpgsql(configuration.GetConnectionString("GrimoireConnectionString"))
+                .UseNpgsql(configuration.GetConnectionString("Grimoire"))
                 .Options);
     }
 }

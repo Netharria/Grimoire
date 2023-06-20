@@ -21,7 +21,8 @@ public class IMemberDatabaseQueryHelperTests
     [Test]
     public async Task WhereMembersHaveIds_WhenProvidedValidIds_ReturnsResultAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var result = await context.Members.WhereMembersHaveIds(new ulong[]{
             TestDatabaseFixture.Member1.UserId },
@@ -35,7 +36,8 @@ public class IMemberDatabaseQueryHelperTests
     [Test]
     public async Task WWhereMemberHasId_WhenProvidedValidId_ReturnsResultAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var result = await context.Members.WhereMemberHasId(
             TestDatabaseFixture.Member2.UserId,

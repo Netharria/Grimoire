@@ -20,7 +20,8 @@ public class AddRewardCommandHandlerTests
     [Test]
     public async Task WhenRemovingReward_IfRewardExists_RemoveRoleAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new RemoveRewardCommandHandler(context);
         var command = new RemoveRewardCommand
@@ -37,7 +38,8 @@ public class AddRewardCommandHandlerTests
     [Test]
     public void WhenAddingReward_IfRewardExist_UpdateRole()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var CUT = new RemoveRewardCommandHandler(context);
         var command = new RemoveRewardCommand

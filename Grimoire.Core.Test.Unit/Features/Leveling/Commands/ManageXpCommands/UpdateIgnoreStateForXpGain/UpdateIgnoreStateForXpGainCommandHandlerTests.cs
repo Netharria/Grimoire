@@ -22,7 +22,8 @@ public class UpdateIgnoreStateForXpGainCommandHandlerTests
     [Test]
     public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_UpdateIgnoreStatusAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         //context.Database.BeginTransaction();
         var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
 
@@ -77,7 +78,8 @@ public class UpdateIgnoreStateForXpGainCommandHandlerTests
     [Test]
     public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
 

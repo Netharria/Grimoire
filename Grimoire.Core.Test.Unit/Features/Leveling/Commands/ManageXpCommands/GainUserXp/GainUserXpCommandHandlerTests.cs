@@ -21,7 +21,8 @@ public class GainUserXpCommandHandlerTests
     [Test]
     public async Task WhenAwardUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
 
         var cut = new GainUserXpCommandHandler(context);
         context.Database.BeginTransaction();
@@ -38,7 +39,7 @@ public class GainUserXpCommandHandlerTests
         result.EarnedRewards.Should().BeEmpty();
         result.PreviousLevel.Should().BeGreaterThan(0);
         result.CurrentLevel.Should().BeGreaterThan(0);
-        result.LoggingChannel.Should().Be(TestDatabaseFixture.Guild2.LevelSettings.LevelChannelLogId);
+        result.LevelLogChannel.Should().Be(TestDatabaseFixture.Guild2.LevelSettings.LevelChannelLogId);
 
         var member = await context.Members.Where(x =>
             x.UserId == TestDatabaseFixture.Member1.UserId
@@ -51,7 +52,8 @@ public class GainUserXpCommandHandlerTests
     [Test]
     public async Task WhenAwardUserXpCommandHandlerCalled_AndMemberInvalid_ReturnFalseResponseAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var cut = new GainUserXpCommandHandler(context);
 

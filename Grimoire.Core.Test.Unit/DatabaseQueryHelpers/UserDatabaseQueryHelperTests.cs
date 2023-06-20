@@ -21,7 +21,8 @@ public class UserDatabaseQueryHelperTests
     [Test]
     public async Task WhenUsersAreNotInDatabase_AddThemAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var usersToAdd = new List<UserDto>
         {

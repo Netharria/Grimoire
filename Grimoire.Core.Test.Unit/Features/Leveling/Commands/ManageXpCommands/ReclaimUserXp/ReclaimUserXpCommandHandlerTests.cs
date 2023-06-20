@@ -21,7 +21,8 @@ public class ReclaimUserXpCommandHandlerTests
     [Test]
     public async Task WhenReclaimUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var cut = new ReclaimUserXpCommandHandler(context);
 
@@ -30,7 +31,8 @@ public class ReclaimUserXpCommandHandlerTests
             {
                 UserId = TestDatabaseFixture.Member1.UserId,
                 GuildId = TestDatabaseFixture.Member1.GuildId,
-                XpToTake = "400"
+                XpToTake = 400,
+                XpOption = XpOption.Amount
             }, default);
         context.ChangeTracker.Clear();
 
@@ -45,7 +47,8 @@ public class ReclaimUserXpCommandHandlerTests
     [Test]
     public async Task WhenReclaimUserXpCommandHandlerCalled_WithAllArgument_UpdateMemebersXpAsync()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var cut = new ReclaimUserXpCommandHandler(context);
 
@@ -54,7 +57,8 @@ public class ReclaimUserXpCommandHandlerTests
             {
                 UserId = TestDatabaseFixture.Member1.UserId,
                 GuildId = TestDatabaseFixture.Member1.GuildId,
-                XpToTake = "All"
+                XpToTake = 0,
+                XpOption = XpOption.All
             }, default);
         context.ChangeTracker.Clear();
 
@@ -67,28 +71,10 @@ public class ReclaimUserXpCommandHandlerTests
     }
 
     [Test]
-    public void WhenReclaimUserXpCommandHandlerCalled_WithNegativeReward_ReturnFailedResponse()
-    {
-        var context = TestDatabaseFixture.CreateContext();
-        context.Database.BeginTransaction();
-        var cut = new ReclaimUserXpCommandHandler(context);
-
-        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new ReclaimUserXpCommand
-            {
-                UserId = TestDatabaseFixture.Member1.UserId,
-                GuildId = TestDatabaseFixture.Member1.GuildId,
-                XpToTake = "-20"
-            }, default));
-        context.ChangeTracker.Clear();
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("Xp needs to be a positive value.");
-    }
-
-    [Test]
     public void WhenReclaimUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
     {
-        var context = TestDatabaseFixture.CreateContext();
+        var databaseFixture = new TestDatabaseFixture();
+        using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
         var cut = new ReclaimUserXpCommandHandler(context);
 
@@ -97,29 +83,11 @@ public class ReclaimUserXpCommandHandlerTests
             {
                 UserId = 20001,
                 GuildId = TestDatabaseFixture.Member1.GuildId,
-                XpToTake = "20"
+                XpToTake = 20,
+                XpOption = XpOption.Amount
             }, default));
         context.ChangeTracker.Clear();
         response.Should().NotBeNull();
         response?.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
-    }
-
-    [Test]
-    public void WhenReclaimUserXpCommandHandlerCalled_WithNonNumber_ReturnFailedResponse()
-    {
-        var context = TestDatabaseFixture.CreateContext();
-        context.Database.BeginTransaction();
-        var cut = new ReclaimUserXpCommandHandler(context);
-
-        var response = Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new ReclaimUserXpCommand
-            {
-                UserId = TestDatabaseFixture.Member1.UserId,
-                GuildId = TestDatabaseFixture.Member1.GuildId,
-                XpToTake = "asdfasfd"
-            }, default));
-        context.ChangeTracker.Clear();
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("Xp needs to be a valid number.");
     }
 }

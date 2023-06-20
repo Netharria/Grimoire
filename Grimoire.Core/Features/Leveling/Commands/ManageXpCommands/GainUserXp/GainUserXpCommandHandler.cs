@@ -33,7 +33,8 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
                 x.Guild.LevelSettings.Modifier,
                 x.Guild.LevelSettings.Amount,
                 x.Guild.LevelSettings.LevelChannelLogId,
-                x.Guild.LevelSettings.TextTime
+                x.Guild.LevelSettings.TextTime,
+                x.Guild.ModChannelLog
             }).FirstOrDefaultAsync(cancellationToken);
 
         if (result is null || (result.XpHistory is not null && result.XpHistory.TimeOut > DateTime.UtcNow))
@@ -65,7 +66,8 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
             EarnedRewards = earnedRewards,
             PreviousLevel = previousLevel,
             CurrentLevel = currentLevel,
-            LoggingChannel = result.LevelChannelLogId
+            LevelLogChannel = result.LevelChannelLogId,
+            LogChannelId = result.ModChannelLog,
         };
 
     }
