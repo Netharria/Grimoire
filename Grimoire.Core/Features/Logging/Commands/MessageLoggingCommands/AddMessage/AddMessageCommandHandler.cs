@@ -25,7 +25,7 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
             .AnyAsync(x => x.MessageLogSettings.ModuleEnabled,
             cancellationToken))
             return Unit.Value;
-        if(!await this._grimoireDbContext.Channels.AnyAsync(x => x.Id == command.ChannelId))
+        if(!await this._grimoireDbContext.Channels.AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
         {
             var channel = new Channel
             {

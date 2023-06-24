@@ -14,7 +14,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FE0DA0F4-085D-4261-BEE2-EE43EBB982DA}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grimoire.MigrationTool", "Grimoire.MigrationTool\Grimoire.MigrationTool.csproj", "{2C3BBCB2-64D4-4428-AACE-2D87544E043C}"
