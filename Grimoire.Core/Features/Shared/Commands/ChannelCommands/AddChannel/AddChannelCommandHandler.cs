@@ -18,6 +18,8 @@ public class AddChannelCommandHandler : ICommandHandler<AddChannelCommand>
 
     public async ValueTask<Unit> Handle(AddChannelCommand command, CancellationToken cancellationToken)
     {
+        if (await this._grimoireDbContext.Channels.AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
+            return Unit.Value;
         await this._grimoireDbContext.Channels.AddAsync(new Channel
         {
             Id = command.ChannelId,

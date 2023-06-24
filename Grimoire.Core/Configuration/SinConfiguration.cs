@@ -17,7 +17,7 @@ public class SinConfiguration : IEntityTypeConfiguration<Sin>
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id)
-            .UseIdentityColumn();
+            .UseIdentityAlwaysColumn();
         builder.Property(e => e.Reason)
             .HasMaxLength(1000);
         builder.HasOne(e => e.Member)
@@ -37,9 +37,11 @@ public class SinConfiguration : IEntityTypeConfiguration<Sin>
             .IsRequired();
         builder.HasOne(e => e.Mute)
             .WithOne(e => e.Sin)
+            .HasForeignKey<Mute>(e => e.SinId)
             .IsRequired(false);
         builder.HasOne(e => e.Pardon)
             .WithOne(e => e.Sin)
+            .HasForeignKey<Pardon>(e => e.SinId)
             .IsRequired(false);
         builder.Property(e => e.SinOn)
             .HasDefaultValueSql("now()");

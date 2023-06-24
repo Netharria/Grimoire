@@ -40,10 +40,10 @@ public class TrackerLogEvents :
         var embeds = new List<DiscordEmbed>();
 
         var embed = new DiscordEmbedBuilder()
-            .WithAuthor($"{args.Message.Channel.Name}")
-            .WithDescription($"**[Jump URL]({args.Message.JumpLink})**")
-            .WithFooter($"{args.Author.GetUsernameWithDiscriminator()}\t{args.Author.Id}\nMessage Sent",
-                args.Author.GetAvatarUrl(ImageFormat.Auto))
+            .AddField("User", args.Author.Mention, true)
+            .AddField("Channel", args.Channel.Mention, true)
+            .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
+            .WithFooter("Message Sent", args.Author.GetAvatarUrl(ImageFormat.Auto))
             .WithTimestamp(DateTime.UtcNow)
             .AddMessageTextToFields("**Content**", args.Message.Content, false);
 
@@ -68,11 +68,11 @@ public class TrackerLogEvents :
         if (loggingChannel is null) return;
 
         var embed = new DiscordEmbedBuilder()
-            .WithAuthor($"{args.Message.Channel.Mention}")
-            .WithDescription($"**[Jump URL]({args.Message.JumpLink})**")
+            .AddField("User", args.Author.Mention, true)
+            .AddField("Channel", args.Channel.Mention, true)
+            .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
+            .WithFooter("Message Sent", args.Author.GetAvatarUrl(ImageFormat.Auto))
             .WithTimestamp(DateTime.UtcNow)
-            .WithFooter($"{args.Author.GetUsernameWithDiscriminator()}\t{args.Author.Id}\nMessage Edited",
-                args.Author.GetAvatarUrl(ImageFormat.Auto))
             .AddMessageTextToFields("Before", response.OldMessageContent)
             .AddMessageTextToFields("After", args.Message.Content);
 
@@ -84,38 +84,39 @@ public class TrackerLogEvents :
         if (response is null) return;
 
         var loggingChannel = args.Guild.Channels.GetValueOrDefault(response.TrackerChannelId);
+
         if (loggingChannel is null) return;
 
-        if (args.Before.Channel == args.After.Channel) return;
-        DiscordEmbedBuilder embed;
-        if (args.Before.Channel is null)
+        if(args.Before?.Channel is null && args.After?.Channel is null) return;
+
+        if (args.Before?.Channel is null)
         {
-            embed = new DiscordEmbedBuilder()
+            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithAuthor("Joined Voice Channel")
-                .WithDescription($"**Channel:** {args.After.Channel.Name}")
-                .WithFooter($"{args.User.GetUsernameWithDiscriminator()}\n{args.User.Id}")
-                .WithTimestamp(DateTime.UtcNow);
-            await loggingChannel.SendMessageAsync(embed);
+                .AddField("User", args.User.Mention, true)
+                .AddField("Channel", args.After.Channel.Mention, true)
+                .WithTimestamp(DateTime.UtcNow));
             return;
         }
 
-        if (args.After.Channel is null)
+        if (args.After?.Channel is null)
         {
-            embed = new DiscordEmbedBuilder()
+            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithAuthor("Left Voice Channel")
-                .WithDescription($"**Channel:** {args.Before.Channel.Name}")
-                .WithFooter($"{args.User.GetUsernameWithDiscriminator()}\n{args.User.Id}")
-                .WithTimestamp(DateTime.UtcNow);
-            await loggingChannel.SendMessageAsync(embed);
+                .AddField("User", args.User.Mention, true)
+                .AddField("Channel", args.Before.Channel.Mention, true)
+                .WithTimestamp(DateTime.UtcNow));
             return;
         }
 
-        embed = new DiscordEmbedBuilder()
-                .WithAuthor("Moved Voice Channels")
-                .WithDescription($"**From:** {args.Before.Channel.Name}\n" +
-                $"**To:** {args.After.Channel.Name}")
-                .WithFooter($"{args.User.GetUsernameWithDiscriminator()}\n{args.User.Id}")
-                .WithTimestamp(DateTime.UtcNow);
-        await loggingChannel.SendMessageAsync(embed);
+        if(args.Before.Channel != args.After.Channel)
+        {
+            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
+                    .WithAuthor("Moved Voice Channels")
+                    .AddField("User", args.User.Mention, true)
+                    .AddField("From", args.Before.Channel.Mention, true)
+                    .AddField("To", args.After.Channel.Mention, true)
+                    .WithTimestamp(DateTime.UtcNow));
+        }
     }
 }

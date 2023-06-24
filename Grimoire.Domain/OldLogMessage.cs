@@ -22,4 +22,6 @@ public class OldLogMessage : IIdentifiable<ulong>
     public virtual Guild Guild { get; set; } = null!;
 
     public DateTimeOffset CreatedAt { get; }
+
+    public int TimesTried { get; set; }
 }

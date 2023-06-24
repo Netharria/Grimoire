@@ -31,5 +31,7 @@ public class OldLogMessageConfiguration : IEntityTypeConfiguration<OldLogMessage
             .OnDelete(DeleteBehavior.Cascade);
         builder.Property(e => e.CreatedAt)
             .HasDefaultValueSql("now()");
+        builder.Property(e => e.TimesTried)
+            .HasDefaultValue(0);
     }
 }

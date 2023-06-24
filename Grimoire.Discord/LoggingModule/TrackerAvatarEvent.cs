@@ -31,10 +31,10 @@ public class TrackerAvatarEvent : INotificationHandler<AvatarTrackerNotification
         if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
 
         var embed = new DiscordEmbedBuilder()
-            .WithDescription($"New avatar")
-            .WithAuthor(notification.Username)
-            .WithThumbnail(notification.BeforeAvatar)
-            .WithTimestamp(DateTimeOffset.UtcNow);
+                .WithAuthor("Avatar Updated")
+                .WithDescription($"**User:** <@!{notification.UserId}>")
+                .WithColor(GrimoireColor.Purple)
+                .WithTimestamp(DateTimeOffset.UtcNow);
 
 
         await logChannel.SendMessageAsync(await this._imageEmbedService

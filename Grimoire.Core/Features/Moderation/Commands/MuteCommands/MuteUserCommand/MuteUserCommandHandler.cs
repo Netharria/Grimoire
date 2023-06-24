@@ -52,6 +52,7 @@ public class MuteUserCommandHandler : ICommandHandler<MuteUserCommand, MuteUserC
         {
             MuteRole = response.MuteRole.Value,
             LogChannelId = response.ModChannelLog,
+            SinId = sin.Id
         };
     }
 }

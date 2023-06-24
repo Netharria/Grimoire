@@ -25,7 +25,7 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
 
     public DiscordImageEmbedService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
-        this._httpClient = httpClientFactory.CreateClient();
+        this._httpClient = httpClientFactory.CreateClient("Default");
         var validExtensions = configuration.GetValue<string>("validImageExtensions");
         if (string.IsNullOrWhiteSpace(validExtensions))
             throw new ArgumentException("Did not find the configuration for valid extensions");

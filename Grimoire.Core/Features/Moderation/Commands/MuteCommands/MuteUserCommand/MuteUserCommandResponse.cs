@@ -10,4 +10,5 @@ namespace Grimoire.Core.Features.Moderation.Commands.MuteCommands.MuteUserComman
 public sealed record MuteUserCommandResponse : BaseResponse
 {
     public ulong MuteRole { get; init; }
+    public long SinId { get; init; }
 }

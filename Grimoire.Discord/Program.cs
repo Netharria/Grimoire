@@ -16,9 +16,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
+using Polly;
+using Polly.Extensions.Http;
 using Serilog;
 
 var host = Host.CreateDefaultBuilder(args)
@@ -36,7 +39,6 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
         services
         .AddCoreServices(context.Configuration)
-        .AddHttpClient()
         .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddDiscord(options =>
         {
@@ -95,6 +97,12 @@ var host = Host.CreateDefaultBuilder(args)
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
         .AddHostedService<TickerBackgroundService>()
+        .AddHttpClient("Default")
+        .AddPolicyHandler(
+            HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+            .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
     )
     .UseConsoleLifetime()
     .Build();

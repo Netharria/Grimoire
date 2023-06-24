@@ -7,6 +7,7 @@
 
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan;
+using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
@@ -59,10 +60,10 @@ public class BanCommands : ApplicationCommandModule
             if (user is DiscordMember member)
             {
                 await member.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithTitle($"Ban ID {response.SinId}")
+                    .WithAuthor($"Ban ID {response.SinId}")
                     .WithDescription($"You have been banned from {ctx.Guild.Name} "
                     + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
-                    .WithColor(GrimoireColor.Yellow));
+                    .WithColor(GrimoireColor.Red));
             }
         }
         catch (Exception ex)
@@ -76,12 +77,18 @@ public class BanCommands : ApplicationCommandModule
             deleteMessages ? (int)deleteDays : 0,
             reason);
 
-        await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+        var embed = new DiscordEmbedBuilder()
             .WithAuthor("Banned")
-            .WithDescription($"**Sin Id:** {response.SinId}\n" +
-                    $"**{user.GetUsernameWithDiscriminator()}** was banned "
-                    + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}." : "."))
-            .WithColor(GrimoireColor.Red));
+            .AddField("User", user.Mention, true)
+            .AddField("Moderator", ctx.User.Mention, true)
+            .AddField("Sin Id", $"**{response.SinId}**", true)
+            .WithColor(GrimoireColor.Red)
+            .WithTimestamp(DateTimeOffset.UtcNow);
+
+        if (!string.IsNullOrWhiteSpace(reason))
+            embed.AddField("Reason", reason);
+
+        await ctx.CreateResponseAsync(embed);
     }
 
     [SlashCommand("Unban", "Bans a user from the server.")]
@@ -94,8 +101,9 @@ public class BanCommands : ApplicationCommandModule
             await ctx.Guild.UnbanMemberAsync(user.Id);
             await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
             .WithAuthor("Unbanned")
-            .WithDescription($"{user.GetUsernameWithDiscriminator()} was unbanned.")
-            .WithColor(GrimoireColor.Yellow));
+            .AddField("User", user.Mention, true)
+            .AddField("Moderator", ctx.User.Mention, true)
+            .WithColor(GrimoireColor.Green));
         }
         catch (Exception ex) when (ex is NotFoundException || ex is ServerErrorException)
         {

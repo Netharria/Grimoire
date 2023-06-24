@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Logging.Commands.DeleteOldLogMessages;
 using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteOldMessages;
 using Grimoire.Core.Features.Logging.Queries.GetOldLogMessages;
@@ -30,8 +31,7 @@ public class LogBackgroundTasks : INotificationHandler<TimedNotification>
         var oldLogMessages = await this._mediator.Send(new GetOldLogMessagesQuery(), cancellationToken);
 
 
-        var result = await oldLogMessages
-            .ToAsyncEnumerable()
+         var resultTask = oldLogMessages
             .Select(channel =>
                 new
                 {
@@ -40,44 +40,49 @@ public class LogBackgroundTasks : INotificationHandler<TimedNotification>
                 })
             .SelectMany(channelInfo =>
                 channelInfo.DatabaseChannel.MessageIds
-                .ToAsyncEnumerable()
-                .SelectAwait(async messageId => await GetMessageAsync(channelInfo.DiscordChannel, messageId))
-                .SelectAwait(async channel => await DeleteMessageAsync(channel))
-                .Where(messageId => messageId != default)
-                ).ToArrayAsync(cancellationToken: cancellationToken);
+                .Select(messageId => DeleteMessageAsync(channelInfo.DiscordChannel, messageId))
+                ).ToArray();
+
+        var result = await Task.WhenAll(resultTask);
 
         await this._mediator.Send(new DeleteOldMessagesCommand(), cancellationToken);
-        if (result is ulong[] deletedMessageIds)
-            await this._mediator.Send(new DeleteOldLogMessagesCommand { DeletedOldLogMessageIds = deletedMessageIds }, cancellationToken);
+        if (result is not null)
+            await this._mediator.Send(new DeleteOldLogMessagesCommand { DeletedOldLogMessageIds = result }, cancellationToken);
     }
 
-    private static async Task<ulong> DeleteMessageAsync(DiscordMessage? message)
+    private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, ulong messageId)
     {
         try
         {
-            if (message is null)
-                return default;
-            await message.DeleteAsync();
-            return message.Id;
-        }
-        catch (Exception)
-        {
-            return default;
-        }
-    }
-
-    private static async Task<DiscordMessage?> GetMessageAsync(DiscordChannel? channel, ulong messageId)
-    {
-        try
-        {
-
             if (channel is null)
-                return null;
-            return await channel.GetMessageAsync(messageId);
+                return new DeleteMessageResult
+                {
+                    WasSuccessful = false,
+                    MessageId = messageId
+                };
+            var message =  await channel.GetMessageAsync(messageId);
+            await message.DeleteAsync();
+            return new DeleteMessageResult
+            {
+                WasSuccessful = true,
+                MessageId = messageId
+            };
+        }
+        catch (NotFoundException)
+        {
+            return new DeleteMessageResult
+            {
+                WasSuccessful = false,
+                MessageId = messageId
+            };
         }
         catch (Exception)
         {
-            return null;
+            return new DeleteMessageResult
+            {
+                WasSuccessful = false,
+                MessageId = messageId
+            };
         }
     }
 

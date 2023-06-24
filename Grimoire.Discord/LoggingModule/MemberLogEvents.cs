@@ -105,11 +105,9 @@ internal class MemberLogEvents :
     }
     public async Task DiscordOnGuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs args)
     {
-        var nicknameTask = this.ProcessNicknameChanges(args);
-        var usernameTask = this.ProcessUsernameChanges(args);
-        var avatarTask = this.ProcessAvatarChanges(args);
-
-        await Task.WhenAll(nicknameTask, usernameTask, avatarTask);
+        await this.ProcessNicknameChanges(args);
+        await this.ProcessUsernameChanges(args);
+        await this.ProcessAvatarChanges(args);
     }
 
     private async Task ProcessNicknameChanges(GuildMemberUpdateEventArgs args)
@@ -126,13 +124,13 @@ internal class MemberLogEvents :
             if (logChannel is not null)
             {
                 var embed = new DiscordEmbedBuilder()
-                .WithTitle("Nickname Updated")
-                .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
-                    $"**Before:** {(string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname)? "None" : nicknameResponse.BeforeNickname)}\n" +
-                    $"**After:** {(string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)? "None" : nicknameResponse.AfterNickname)}")
-                .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
+                .WithAuthor("Nickname Updated")
+                .AddField("User", $"<@!{args.Member.Id}>")
+                .AddField("Before", string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname)? "None" : nicknameResponse.BeforeNickname, true)
+                .AddField("After", string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)? "None" : nicknameResponse.AfterNickname, true)
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
-                .WithTimestamp(DateTimeOffset.UtcNow);
+                .WithTimestamp(DateTimeOffset.UtcNow)
+                .WithColor(GrimoireColor.Mint);
                 var message = await logChannel.SendMessageAsync(embed);
                 if (message is null) return;
                 await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
@@ -162,13 +160,13 @@ internal class MemberLogEvents :
             if (logChannel is not null)
             {
                 var embed = new DiscordEmbedBuilder()
-                        .WithTitle("Username Updated")
-                        .WithDescription($"**User:** <@!{args.MemberAfter.Id}>\n\n" +
-                            $"**Before:** {usernameResponse.BeforeUsername}\n" +
-                            $"**After:** {usernameResponse.AfterUsername}")
-                        .WithAuthor($"{args.MemberAfter.GetUsernameWithDiscriminator()} ({args.MemberAfter.Id})")
+                        .WithAuthor("Username Updated")
+                        .AddField("User", $"<@!{args.MemberAfter.Id}>")
+                        .AddField("Before", usernameResponse.BeforeUsername, true)
+                        .AddField("After", usernameResponse.AfterUsername, true)
                         .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
-                        .WithTimestamp(DateTimeOffset.UtcNow);
+                        .WithTimestamp(DateTimeOffset.UtcNow)
+                        .WithColor(GrimoireColor.Mint);
                 var message = await logChannel.SendMessageAsync(embed);
                 if (message is null) return;
                 await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
@@ -197,11 +195,11 @@ internal class MemberLogEvents :
             if (logChannel is not null)
             {
                 var embed = new DiscordEmbedBuilder()
-                .WithTitle("Avatar Updated")
+                .WithAuthor("Avatar Updated")
                 .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
                     $"Old avatar in thumbnail. New avatar down below")
-                .WithAuthor($"{args.Member.GetUsernameWithDiscriminator()} ({args.Member.Id})")
                 .WithThumbnail(avatarResponse.BeforeAvatar)
+                .WithColor(GrimoireColor.Purple)
                 .WithTimestamp(DateTimeOffset.UtcNow);
                 var messageBuilder = await this._imageEmbedService
                     .BuildImageEmbedAsync(new string[]{ avatarResponse.AfterAvatar },

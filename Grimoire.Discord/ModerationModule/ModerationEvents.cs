@@ -75,14 +75,18 @@ public class ModerationEvents :
         if (!args.Guild.Channels.TryGetValue(response.LogChannelId.Value,
             out var loggingChannel)) return;
 
-        await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
+        var embed = new DiscordEmbedBuilder()
             .WithAuthor($"Banned")
             .AddField("User", args.Member.Mention, true)
             .AddField("Sin Id", $"**{response.SinId}**", true)
-            .AddField("Mod", $"<@{response.ModeratorId}>", true)
-            .AddField("Reason", !string.IsNullOrWhiteSpace(response.Reason) ? response.Reason : "None", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
-            .WithColor(GrimoireColor.Red));
+            .WithColor(GrimoireColor.Red);
+        if (response.ModeratorId is not null)
+            embed.AddField("Mod", $"<@{response.ModeratorId}>", true);
+
+        embed.AddField("Reason", !string.IsNullOrWhiteSpace(response.Reason) ? response.Reason : "None", true);
+
+        await loggingChannel.SendMessageAsync(embed);
     }
 
     public async Task DiscordOnGuildBanRemoved(DiscordClient sender, GuildBanRemoveEventArgs args)
@@ -100,12 +104,17 @@ public class ModerationEvents :
 
         if (!args.Guild.Channels.TryGetValue(response.LogChannelId.Value,
             out var loggingChannel)) return;
-        await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-            .WithAuthor("Unbanned")
+
+        var embed = new DiscordEmbedBuilder()
+            .WithAuthor($"Unbanned")
             .AddField("User", args.Member.Mention, true)
             .AddField("Sin Id", $"**{response.SinId}**", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
-            .WithColor(GrimoireColor.Green));
+            .WithColor(GrimoireColor.Green);
+        if (response.ModeratorId is not null)
+            embed.AddField("Mod", $"<@{response.ModeratorId}>", true);
+
+        await loggingChannel.SendMessageAsync(embed);
     }
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
@@ -129,7 +138,7 @@ public class ModerationEvents :
         if (args.Channel.PermissionsFor(member).HasPermission(Permissions.ManageMessages))
             return;
         if (await this._mediator.Send(new GetLockQuery { ChannelId = args.Channel.Id, GuildId = args.Guild.Id }))
-            await args.Message.DeleteAsync();
+            await args.Message.DeleteReactionAsync(args.Emoji, args.User, "Thread is locked.");
     }
 
     public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)

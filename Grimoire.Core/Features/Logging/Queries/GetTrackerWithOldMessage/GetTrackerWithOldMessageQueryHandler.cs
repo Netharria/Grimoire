@@ -28,7 +28,7 @@ public class GetTrackerWithOldMessageQueryHandler : IRequestHandler<GetTrackerWi
                 .Where(x => x.Id == request.MessageId)
                 .Select(x => x.MessageHistory
                     .Where(x => x.Action != MessageAction.Deleted
-                        && x.TimeStamp < DateTime.UtcNow.AddSeconds(1))
+                        && x.TimeStamp < DateTime.UtcNow.AddSeconds(-1))
                     .OrderByDescending(x => x.TimeStamp)
                     .First().MessageContent)
                 .First()

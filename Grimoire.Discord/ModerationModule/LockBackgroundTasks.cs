@@ -32,7 +32,10 @@ public class LockBackgroundTasks : INotificationHandler<TimedNotification>
             if (guild is null) continue;
 
             var channel = guild.Channels.GetValueOrDefault(expiredLock.ChannelId);
+            channel ??= guild.Threads.GetValueOrDefault(expiredLock.ChannelId);
+
             if (channel is null) continue;
+
             if (!channel.IsThread)
             {
                 var permissions = channel.PermissionOverwrites.First(x => x.Id == guild.EveryoneRole.Id);

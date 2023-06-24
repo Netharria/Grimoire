@@ -25,6 +25,15 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
             .AnyAsync(x => x.MessageLogSettings.ModuleEnabled,
             cancellationToken))
             return Unit.Value;
+        if(!await this._grimoireDbContext.Channels.AnyAsync(x => x.Id == command.ChannelId))
+        {
+            var channel = new Channel
+            {
+                GuildId = command.GuildId,
+                Id = command.ChannelId
+            };
+            await this._grimoireDbContext.Channels.AddAsync(channel, cancellationToken);
+        }
         var message = new Message
         {
             Id = command.MessageId,

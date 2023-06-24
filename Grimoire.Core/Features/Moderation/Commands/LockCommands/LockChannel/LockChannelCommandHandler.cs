@@ -22,9 +22,13 @@ public class LockChannelCommandHandler : ICommandHandler<LockChannelCommand, Bas
 
         var result = await this._grimoireDbContext.Channels
             .Where(x => x.GuildId == command.GuildId)
-            .Include(x => x.Lock)
-            .Include(x => x.Guild)
-            .FirstAsync(x => x.Id == command.ChannelId, cancellationToken);
+            .Where(x => x.Id == command.ChannelId)
+            .Select(x => new
+            {
+                x.Lock,
+                x.Guild.ModChannelLog
+            })
+            .FirstOrDefaultAsync(cancellationToken);
         if (result is null)
             throw new AnticipatedException("Could not find that channel");
 
@@ -33,10 +37,14 @@ public class LockChannelCommandHandler : ICommandHandler<LockChannelCommand, Bas
             result.Lock.ModeratorId = command.ModeratorId;
             result.Lock.EndTime = lockEndTime;
             result.Lock.Reason = command.Reason;
+            this._grimoireDbContext.Locks.Update(result.Lock);
         }
         else
         {
-            result.Lock = new Lock
+            var local = this._grimoireDbContext.Locks.Local.FirstOrDefault(x => x.ChannelId == command.ChannelId);
+            if (local is not null)
+                this._grimoireDbContext.Entry(local).State = EntityState.Detached;
+            var lockToAdd = new Lock
             {
                 ChannelId = command.ChannelId,
                 GuildId = command.GuildId,
@@ -46,13 +54,12 @@ public class LockChannelCommandHandler : ICommandHandler<LockChannelCommand, Bas
                 PreviouslyAllowed = command.PreviouslyAllowed,
                 PreviouslyDenied = command.PreviouslyDenied
             };
+            await this._grimoireDbContext.Locks.AddAsync(lockToAdd);
         }
-
-        this._grimoireDbContext.Channels.Update(result);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse
         {
-            LogChannelId = result.Guild.ModChannelLog
+            LogChannelId = result.ModChannelLog
         };
     }
 

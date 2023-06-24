@@ -77,7 +77,6 @@ public class FuzzyMigrationService
         {
             var sin = new Sin
             {
-                Id = x.Id,
                 UserId = x.UserId,
                 GuildId = x.GuildId,
                 ModeratorId = x.ModeratorId == 0 ? null : x.ModeratorId,
@@ -98,7 +97,6 @@ public class FuzzyMigrationService
                 {
                     GuildId = x.GuildId,
                     ModeratorId = x.Pardon.ModeratorId,
-                    SinId = x.Id,
                     Reason = x.Pardon.Reason ?? "",
                     PardonDate = x.Pardon.PardonOn.ToUniversalTime()
                 };
@@ -107,7 +105,6 @@ public class FuzzyMigrationService
             {
                 sin.Mute = new Mute
                 {
-                    SinId = x.Id,
                     UserId= x.UserId,
                     GuildId = x.GuildId,
                     EndTime = x.Mute.EndTime.ToUniversalTime()
@@ -118,9 +115,9 @@ public class FuzzyMigrationService
 
 
         var grimoireSins = await grimoireDbContext.Sins
-            .Select(x => x.Id).ToListAsync();
+            .Select(x => new { x.UserId, x.ModeratorId, x.GuildId, x.Reason, x.SinOn, x.SinType }).ToListAsync();
 
-        var sinsToAdd = sins.ExceptBy(grimoireSins, x => x.Id);
+        var sinsToAdd = sins.ExceptBy(grimoireSins, x => new { x.UserId, x.ModeratorId, x.GuildId, x.Reason, x.SinOn, x.SinType });
         await grimoireDbContext.AddRangeAsync(sinsToAdd);
         await grimoireDbContext.SaveChangesAsync();
     }

@@ -13,18 +13,18 @@ public static class PermissionsExtensions
         => permissions & PermissionValues.LockPermissions;
 
     public static Permissions SetLockPermissions(this Permissions permissions)
-        => permissions |= PermissionValues.LockPermissions;
+        => permissions | PermissionValues.LockPermissions;
     public static Permissions RevokeLockPermissions(this Permissions permissions)
         => permissions & ~PermissionValues.LockPermissions;
-    public static Permissions RevertLockPermissions(this Permissions permissions, Permissions previosPermissions)
-        => permissions &= previosPermissions ^ ~PermissionValues.LockPermissions;
+    public static Permissions RevertLockPermissions(this Permissions permissions, Permissions previousPermissions)
+        => permissions & (previousPermissions ^ ~PermissionValues.LockPermissions);
 
-    public static Permissions RevertLockPermissions(this Permissions permissions, long previosPermissions)
-        => permissions.RevertLockPermissions((Permissions)previosPermissions);
+    public static Permissions RevertLockPermissions(this Permissions permissions, long previousPermissions)
+        => permissions.RevertLockPermissions((Permissions)previousPermissions);
 
 
     public static Permissions SetVoiceLockPermissions(this Permissions permissions)
-        => permissions |= PermissionValues.VoiceLockPermissions;
+        => permissions | PermissionValues.VoiceLockPermissions;
     public static Permissions RevokeVoiceLockPermissions(this Permissions permissions)
         => permissions & ~PermissionValues.VoiceLockPermissions;
 

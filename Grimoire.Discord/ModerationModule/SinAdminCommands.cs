@@ -73,9 +73,10 @@ public class SinAdminCommands : ApplicationCommandModule
         var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
 
         await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
-            .WithAuthor("Pardoned")
-            .AddField("Id", response.SinId.ToString())
-            .AddField("User", response.SinnerName)
+            .WithAuthor("Reason Updated")
+            .AddField("Id", response.SinId.ToString(), true)
+            .AddField("User", response.SinnerName, true)
+            .AddField("Reason", reason)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green));
 

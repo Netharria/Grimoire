@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -260,7 +261,8 @@ namespace Grimoire.Core.Migrations
                     Id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    TimesTried = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
                 },
                 constraints: table =>
                 {
@@ -428,7 +430,7 @@ namespace Grimoire.Core.Migrations
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),

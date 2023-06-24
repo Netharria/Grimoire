@@ -30,11 +30,12 @@ public class TrackerUsernameEvent : INotificationHandler<UsernameTrackerNotifica
         if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
 
         var embed = new DiscordEmbedBuilder()
-                    .WithDescription($"**Before:** {notification.BeforeUsername}\n" +
-                        $"**After:** {notification.AfterUsername}")
-                    .WithAuthor(notification.AfterUsername)
-                    .WithFooter($"{notification.UserId}")
-                    .WithTimestamp(DateTimeOffset.UtcNow);
+                        .WithAuthor("Username Updated")
+                        .AddField("User", $"<@!{notification.UserId}>")
+                        .AddField("Before", notification.BeforeUsername, true)
+                        .AddField("After", notification.AfterUsername, true)
+                        .WithTimestamp(DateTimeOffset.UtcNow)
+                        .WithColor(GrimoireColor.Mint);
         await logChannel.SendMessageAsync(embed);
     }
 }

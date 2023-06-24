@@ -35,11 +35,12 @@ public class TrackerNicknameEvent : INotificationHandler<NicknameTrackerNotifica
         if (!this._clientService.Client.Guilds.TryGetValue(notification.GuildId, out var guild)) return;
         if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
         var embed = new DiscordEmbedBuilder()
-            .WithDescription($"**Before:** {(string.IsNullOrWhiteSpace(notification.BeforeNickname) ? "None" : notification.BeforeNickname)}\n" +
-                $"**After:** {(string.IsNullOrWhiteSpace(notification.AfterNickname) ? "None" : notification.AfterNickname)}")
-            .WithAuthor(notification.Username)
-            .WithFooter($"{notification.UserId}")
-            .WithTimestamp(DateTimeOffset.UtcNow);
+                .WithAuthor("Nickname Updated")
+                .AddField("User", $"<@!{notification.UserId}>")
+                .AddField("Before", string.IsNullOrWhiteSpace(notification.BeforeNickname)? "None" : notification.BeforeNickname, true)
+                .AddField("After", string.IsNullOrWhiteSpace(notification.AfterNickname)? "None" : notification.AfterNickname, true)
+                .WithTimestamp(DateTimeOffset.UtcNow)
+                .WithColor(GrimoireColor.Mint);
         await logChannel.SendMessageAsync(embed);
     }
 }

@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Drawing;
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.WarnCommands;
@@ -40,26 +41,36 @@ public class WarnCommands : ApplicationCommandModule
             ModeratorId = ctx.User.Id,
             Reason = reason
         });
+        var embed = new DiscordEmbedBuilder()
+            .WithAuthor("Warn")
+            .AddField("User", user.Mention, true)
+            .AddField("Sin Id", $"**{response.SinId}**", true)
+            .AddField("Moderator", ctx.User.Mention, true)
+            .AddField("Reason", reason)
+            .WithColor(GrimoireColor.Yellow)
+            .WithTimestamp(DateTimeOffset.UtcNow);
 
-        await ctx.ReplyAsync(title: "Warning",
-            message: $"**Reason:** {reason}\n" +
-                     $"{user.Mention}: Warning **ID {response.SinId}**",
-            ephemeral: false);
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            title: "Warning",
-            message: $"**Mod:** {ctx.User.Mention}\n" +
-                     $"**Reason:** {reason}\n" +
-                     $"{user.Mention}: Warning **ID {response.SinId}**");
+        await ctx.CreateResponseAsync(embed);
+
         try
         {
             await member.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithTitle($"Warning Id {response.SinId}")
-            .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}"));
+                .WithAuthor($"Warning Id {response.SinId}")
+            .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
+            .WithColor(GrimoireColor.Yellow));
         }
         catch (UnauthorizedException)
         {
             await ctx.SendLogAsync(response, GrimoireColor.Red,
                 message: $"Was not able to send a direct message with the warn details to {user.Mention}");
         }
+
+        if (response.LogChannelId is null) return;
+
+        var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
+
+        if (logChannel is null) return;
+
+        await logChannel.SendMessageAsync(embed);
     }
 }

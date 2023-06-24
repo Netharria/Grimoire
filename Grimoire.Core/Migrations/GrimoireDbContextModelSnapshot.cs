@@ -446,6 +446,11 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
+                    b.Property<int>("TimesTried")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("ChannelId");
@@ -578,7 +583,7 @@ namespace Grimoire.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");

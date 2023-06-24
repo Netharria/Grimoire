@@ -14,4 +14,5 @@ public readonly struct GrimoireColor
     public static readonly DiscordColor Red = new(163, 0, 0);
     public static readonly DiscordColor Yellow = new(255, 186, 8);
     public static readonly DiscordColor Green = new(118, 205, 101);
+    public static readonly DiscordColor Mint = new(34, 255, 194);
 }

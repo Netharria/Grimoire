@@ -50,17 +50,14 @@ public class LockCommands : ApplicationCommandModule
             return;
         }
         await ctx.ReplyAsync(message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()}", ephemeral: false); ;
-        await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()} by {ctx.User.Mention}");
+        await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()} by {ctx.User.Mention}"
+            + (string.IsNullOrWhiteSpace(reason) ? "" : $"for {reason}"));
     }
 
     private async Task<BaseResponse> ChannelLockAsync(InteractionContext ctx, DiscordChannel channel, string? reason, DurationType durationType, long durationAmount)
     {
         var previousSetting = channel.PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
-        await channel.AddOverwriteAsync(ctx.Guild.EveryoneRole,
-                    previousSetting.Allowed.RevokeLockPermissions(),
-                    previousSetting.Denied.SetLockPermissions());
-
-        return await this._mediator.Send(new LockChannelCommand
+        var response = await this._mediator.Send(new LockChannelCommand
         {
             ChannelId = channel.Id,
             PreviouslyAllowed = previousSetting.Allowed.GetLockPermissions().ToLong(),
@@ -71,6 +68,11 @@ public class LockCommands : ApplicationCommandModule
             DurationType = durationType,
             DurationAmount = durationAmount
         });
+        await channel.AddOverwriteAsync(ctx.Guild.EveryoneRole,
+                    previousSetting.Allowed.RevokeLockPermissions(),
+                    previousSetting.Denied.SetLockPermissions());
+
+        return response;
     }
 
     private async Task<BaseResponse> ThreadLockAsync(InteractionContext ctx, DiscordChannel channel, string? reason, DurationType durationType, long durationAmount)

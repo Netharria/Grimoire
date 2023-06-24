@@ -9,5 +9,11 @@ namespace Grimoire.Core.Features.Logging.Commands.DeleteOldLogMessages;
 
 public sealed record DeleteOldLogMessagesCommand : ICommand
 {
-    public ulong[] DeletedOldLogMessageIds { get; init; } = Array.Empty<ulong>();
+    public DeleteMessageResult[] DeletedOldLogMessageIds { get; init; } = Array.Empty<DeleteMessageResult>();
+}
+
+public sealed record DeleteMessageResult
+{
+    public bool WasSuccessful { get; init; }
+    public ulong MessageId { get; init; }
 }
