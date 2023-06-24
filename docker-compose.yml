@@ -1,0 +1,20 @@
+services:
+  grimoire:
+    build: .
+    ports: 
+      - 5433:5433 #put the ports your database uses here.
+    extra_hosts:
+      - "host.docker.internal:host-gateway" #Hostname for you database use "host.docker.internal:host-gateway" if database is hosted locally.
+    restart: unless-stopped
+    environment:
+      CONNECTIONSTRINGS__GRIMOIRE: #Your database Database String
+      TOKEN: #Your DiscordToken
+      CHANNELID: #Optional: Channel grimoire will post error logs to.
+      GUILDID: #Optional: The guild that experimental commands will be registered to.
+      #CONNECTIONSTRINGS__GRIMOIRE takes precident over the following properites.
+      CONNECTIONPROPERTIES__HOSTNAME: #The hostname of the database. Set to host.docker.internal if database is hosted locally.
+      CONNECTIONPROPERTIES__PORT: #The port the database Uses
+      CONNECTIONPROPERTIES__DBNAME: #The name of the database.
+      CONNECTIONPROPERTIES__USERNAME: #The Database User
+      CONNECTIONPROPERTIES__PASSWORD: #The Database User Password
+      

@@ -54,7 +54,7 @@ public class LockChannelCommandHandler : ICommandHandler<LockChannelCommand, Bas
                 PreviouslyAllowed = command.PreviouslyAllowed,
                 PreviouslyDenied = command.PreviouslyDenied
             };
-            await this._grimoireDbContext.Locks.AddAsync(lockToAdd);
+            await this._grimoireDbContext.Locks.AddAsync(lockToAdd, cancellationToken);
         }
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse
