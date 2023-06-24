@@ -18,7 +18,7 @@ public class GetOldLogMessagesQueryHandler : IRequestHandler<GetOldLogMessagesQu
 
     public async ValueTask<IEnumerable<GetOldLogMessagesQueryResponse>> Handle(GetOldLogMessagesQuery request, CancellationToken cancellationToken)
     {
-        var oldDate = DateTime.UtcNow - TimeSpan.FromMinutes(1);
+        var oldDate = DateTime.UtcNow - TimeSpan.FromDays(30);
         return await this._grimoireDbContext.OldLogMessages
             .Where(x => x.CreatedAt < oldDate)
             .GroupBy(x => new { x.ChannelId, x.GuildId })
