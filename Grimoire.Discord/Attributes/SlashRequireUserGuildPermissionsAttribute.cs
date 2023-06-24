@@ -40,7 +40,7 @@ internal class SlashRequireUserGuildPermissionsAttribute : SlashCheckBaseAttribu
         if (usr.Id == ctx.Guild.OwnerId)
             return Task.FromResult(true);
 
-        var pusr = ctx.Guild.Permissions;
+        var pusr = usr.Permissions;
 
         if ((pusr & Permissions.Administrator) != 0)
             return Task.FromResult(true);
