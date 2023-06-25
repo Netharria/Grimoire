@@ -82,6 +82,7 @@ public class GuildEventManagementModule :
                 ),
             Invites = args.Guilds.Values
                 .ToAsyncEnumerable()
+                .Where(x => x.CurrentMember.Permissions.HasPermission(Permissions.CreateInstantInvite))
                 .SelectManyAwait(async x => (await x.GetInvitesAsync()).ToAsyncEnumerable())
                 .Select(x =>
                 new Invite
@@ -129,7 +130,8 @@ public class GuildEventManagementModule :
                     Id = x.Value.Id,
                     GuildId = args.Guild.Id
                 }),
-            Invites = await args.Guild
+            Invites = args.Guild.CurrentMember.Permissions.HasPermission(Permissions.CreateInstantInvite)
+            ? await args.Guild
                 .GetInvitesAsync()
                 .ContinueWith(x => x.Result
                     .Select(x =>
@@ -141,6 +143,7 @@ public class GuildEventManagementModule :
                         Uses = x.Uses,
                         MaxUses = x.MaxUses
                     }))
+            : Enumerable.Empty<Invite>()
         });
 
 

@@ -162,8 +162,8 @@ internal class MemberLogEvents :
                 var embed = new DiscordEmbedBuilder()
                         .WithAuthor("Username Updated")
                         .AddField("User", $"<@!{args.MemberAfter.Id}>")
-                        .AddField("Before", usernameResponse.BeforeUsername, true)
-                        .AddField("After", usernameResponse.AfterUsername, true)
+                        .AddField("Before", string.IsNullOrWhiteSpace(usernameResponse.BeforeUsername)? "Unknown" : usernameResponse.BeforeUsername, true)
+                        .AddField("After", string.IsNullOrWhiteSpace(usernameResponse.AfterUsername)? "Unknown" : usernameResponse.AfterUsername, true)
                         .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
                         .WithTimestamp(DateTimeOffset.UtcNow)
                         .WithColor(GrimoireColor.Mint);
