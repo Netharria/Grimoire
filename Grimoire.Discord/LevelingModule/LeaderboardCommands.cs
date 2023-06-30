@@ -42,6 +42,7 @@ public class LeaderboardCommands : ApplicationCommandModule
                     throw new AnticipatedException("Must provide a user for this option.");
                 break;
         }
+        await ctx.DeferAsync(!((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
 
         var getUserCenteredLeaderboardQuery = new GetLeaderboardQuery
         {
@@ -50,12 +51,10 @@ public class LeaderboardCommands : ApplicationCommandModule
         };
 
         var response = await this._mediator.Send(getUserCenteredLeaderboardQuery);
-
-        await ctx.ReplyAsync(
+        await ctx.EditReplyAsync(
             color: GrimoireColor.DarkPurple,
             title: "LeaderBoard",
             message: response.LeaderboardText,
-            footer: $"Total Users {response.TotalUserCount}",
-            ephemeral: !((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
+            footer: $"Total Users {response.TotalUserCount}");
     }
 }
