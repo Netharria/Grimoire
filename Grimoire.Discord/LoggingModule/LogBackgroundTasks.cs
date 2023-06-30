@@ -31,19 +31,19 @@ public class LogBackgroundTasks : INotificationHandler<TimedNotification>
         var oldLogMessages = await this._mediator.Send(new GetOldLogMessagesQuery(), cancellationToken);
 
 
-         var resultTask = oldLogMessages
+         var result = await oldLogMessages
+            .ToAsyncEnumerable()
             .Select(channel =>
                 new
                 {
-                    DiscordChannel = this.GetChannelAsync(channel.GuildId, channel.ChannelId),
+                    DiscordChannel = this.GetChannel(channel.GuildId, channel.ChannelId),
                     DatabaseChannel = channel
                 })
             .SelectMany(channelInfo =>
                 channelInfo.DatabaseChannel.MessageIds
-                .Select(messageId => DeleteMessageAsync(channelInfo.DiscordChannel, messageId))
-                ).ToArray();
-
-        var result = await Task.WhenAll(resultTask);
+                .ToAsyncEnumerable()
+                .SelectAwait(async messageId => await DeleteMessageAsync(channelInfo.DiscordChannel, messageId))
+                ).ToArrayAsync(cancellationToken);
 
         await this._mediator.Send(new DeleteOldMessagesCommand(), cancellationToken);
         if (result is not null)
@@ -86,7 +86,7 @@ public class LogBackgroundTasks : INotificationHandler<TimedNotification>
         }
     }
 
-    private DiscordChannel? GetChannelAsync(ulong guildId, ulong channelId)
+    private DiscordChannel? GetChannel(ulong guildId, ulong channelId)
     {
         try
         {

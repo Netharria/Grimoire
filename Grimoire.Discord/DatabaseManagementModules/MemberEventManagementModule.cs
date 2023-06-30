@@ -24,7 +24,7 @@ internal class MemberEventManagementModule :
         => await this._mediator.Send(
             new AddMemberCommand
             {
-                Nickname = string.IsNullOrWhiteSpace(args.Member.DisplayName) ? null : args.Member.DisplayName,
+                Nickname = string.IsNullOrWhiteSpace(args.Member.Nickname) ? null : args.Member.Nickname,
                 GuildId = args.Guild.Id,
                 UserId = args.Member.Id,
                 UserName = args.Member.GetUsernameWithDiscriminator(),

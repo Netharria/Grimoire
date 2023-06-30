@@ -19,7 +19,7 @@ public static class UserDatabaseQueryHelpers
                 Id = x.Id,
                 UsernameHistories = new List<UsernameHistory> {
                     new UsernameHistory {
-                        Username = x.UserName,
+                        Username = x.Username,
                         UserId = x.Id,
                     }
                 }
@@ -28,5 +28,22 @@ public static class UserDatabaseQueryHelpers
         if (usersToAdd.Any())
             await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);
         return usersToAdd.Any();
+    }
+
+    public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames, IEnumerable<UserDto> users, CancellationToken cancellationToken = default)
+    {
+        var usernamesToAdd = users
+            .ExceptBy(databaseUsernames
+            .OrderByDescending(x => x.Timestamp)
+            .Select(x => new { x.UserId, x.Username })
+            , x => new { UserId = x.Id, x.Username })
+            .Select(x => new UsernameHistory
+            {
+                UserId = x.Id,
+                Username = x.Username
+            });
+        if (usernamesToAdd.Any())
+            await databaseUsernames.AddRangeAsync(usernamesToAdd, cancellationToken);
+        return usernamesToAdd.Any();
     }
 }

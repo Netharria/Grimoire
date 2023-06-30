@@ -23,6 +23,7 @@ public class DeleteMessageCommandHandler : ICommandHandler<DeleteMessageCommand,
         var message = await this._grimoireDbContext.Messages
             .WhereIdIs(command.Id)
             .WhereMessageLoggingIsEnabled()
+            .Where(x => x.CreatedTimestamp < DateTime.UtcNow.AddSeconds(-2))
             .Select(x => new DeleteMessageCommandResponse
             {
                 LoggingChannel = x.Guild.MessageLogSettings.DeleteChannelLogId,

@@ -27,18 +27,22 @@ public class MessageLogEvents :
 {
     private readonly IMediator _mediator;
     private readonly IDiscordImageEmbedService _attachmentUploadService;
+    private readonly IDiscordAuditLogParserService _logParserService;
 
-    public MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService)
+    public MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService)
     {
         this._mediator = mediator;
         this._attachmentUploadService = attachmentUploadService;
+        this._logParserService = logParserService;
     }
 
 
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
-        if (args.Guild is null) return;
+        if (args.Guild is null
+            || args.Message.MessageType is not MessageType.Default or MessageType.Reply)
+            return;
         await this._mediator.Send(new AddMessageCommand
         {
             Attachments = args.Message.Attachments
@@ -59,13 +63,12 @@ public class MessageLogEvents :
 
     public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
     {
-        // TODO: Implement better logic for figuring out if a moderator deleted the message. Probably cache log entries for a brief period and compare message count.
-        //var auditLogEntry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogMessageEntry>(AuditLogActionType.MessageDelete);
+        var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Message.Id);
         var response = await this._mediator.Send(
             new DeleteMessageCommand
             {
                 Id = args.Message.Id,
-                DeletedByModerator = null,
+                DeletedByModerator = auditLogEntry?.UserResponsible.Id,
                 GuildId = args.Guild.Id
             });
         if (!response.Success || response.LoggingChannel is not ulong loggingChannelId)
@@ -73,7 +76,6 @@ public class MessageLogEvents :
         var channel = await sender.GetChannelOrDefaultAsync(loggingChannelId);
         if (channel is not DiscordChannel loggingChannel)
             return;
-
         string userName;
         string avatarUrl;
         if (args.Guild.Members.TryGetValue(response.UserId, out var member))
@@ -97,10 +99,10 @@ public class MessageLogEvents :
             .AddField("Message Id", args.Message.Id.ToString(), true).WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Red)
             .WithThumbnail(avatarUrl);
-        //if (auditLogEntry is not null)
-        //    embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
+        if (auditLogEntry is not null)
+            embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
         if (response.ReferencedMessage is not null)
-            embed.AddField("Reply To", $"[Link](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})", true);
+            embed.WithDescription($"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
         embed
             .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
@@ -213,10 +215,11 @@ public class MessageLogEvents :
         var embeds = new List<DiscordEmbedBuilder>
         {
             new DiscordEmbedBuilder()
+            .WithDescription($"**[Jump Url]({args.Message.JumpLink})**")
             .AddField("Author", UserExtensions.Mention(response.UserId), true)
             .AddField("Channel", args.Channel.Mention, true)
             .AddField("Message Id", response.MessageId.ToString(), true)
-            .AddField("Link", $"**[Jump Url]({args.Message.JumpLink})**", true)
+           // .AddField("Link", $"**[Jump Url]({args.Message.JumpLink})**", true)
             .WithAuthor($"Message edited in #{args.Channel.Name}")
             .WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Yellow)

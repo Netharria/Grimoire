@@ -110,7 +110,7 @@ public class IgnoreCommands : ApplicationCommandModule
             {
                 Id = member.Id,
                 Nickname = member.Nickname,
-                UserName = member.GetUsernameWithDiscriminator(),
+                Username = member.GetUsernameWithDiscriminator(),
                 AvatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto)
             };
         try
@@ -120,7 +120,7 @@ public class IgnoreCommands : ApplicationCommandModule
                 return new UserDto
                 {
                     Id = user.Id,
-                    UserName = user.GetUsernameWithDiscriminator(),
+                    Username = user.GetUsernameWithDiscriminator(),
                     AvatarUrl = user.GetAvatarUrl(ImageFormat.Auto)
                 };
         }

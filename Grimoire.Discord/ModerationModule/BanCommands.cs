@@ -7,7 +7,6 @@
 
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan;
-using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
