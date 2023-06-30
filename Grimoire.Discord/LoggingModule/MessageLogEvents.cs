@@ -219,7 +219,6 @@ public class MessageLogEvents :
             .AddField("Author", UserExtensions.Mention(response.UserId), true)
             .AddField("Channel", args.Channel.Mention, true)
             .AddField("Message Id", response.MessageId.ToString(), true)
-           // .AddField("Link", $"**[Jump Url]({args.Message.JumpLink})**", true)
             .WithAuthor($"Message edited in #{args.Channel.Name}")
             .WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Yellow)
