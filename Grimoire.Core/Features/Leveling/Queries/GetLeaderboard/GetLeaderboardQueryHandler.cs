@@ -43,8 +43,12 @@ public class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQuery, G
         var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
         var leaderboardText = new StringBuilder();
 
-        for (var i = startIndex; i < 15 && i < totalMemberCount; i++)
-            leaderboardText.Append($"**{i + 1}** {RankedMembers[i].Mention} **XP:** {RankedMembers[i].Xp}\n");
+        for (var i = 0; i < 15 && startIndex < totalMemberCount; i++)
+        {
+            leaderboardText.Append($"**{startIndex + 1}** {RankedMembers[startIndex].Mention} **XP:** {RankedMembers[startIndex].Xp}\n");
+            startIndex++;
+        }
+            
 
         return new GetLeaderboardQueryResponse { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
     }
