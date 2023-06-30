@@ -16,7 +16,7 @@ Q: How long is message data stored for?
 A: Grimoire will purge all message data 30 days after the original message was sent.
 
 Q: How do I invite Grimoire to my server?  
-A: You can find an invite link here. **Update** Temporarily bot is offline due to some issues with the main server I make this for. I hope to have this resolved in the next couple of weeks.
+A: You can find an invite link [here.](https://discord.com/api/oauth2/authorize?client_id=885624963866959963&permissions=1512197975231&scope=applications.commands%20bot)
 
 Q: Can I run my own copy of Grimoire?  
 A: You sure can. The requirements to run are listed in the [Requirements Section](#Requirements)

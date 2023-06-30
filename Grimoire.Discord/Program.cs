@@ -16,7 +16,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
@@ -40,6 +39,7 @@ var host = Host.CreateDefaultBuilder(args)
         services
         .AddCoreServices(context.Configuration)
         .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
+        .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"];
@@ -97,6 +97,7 @@ var host = Host.CreateDefaultBuilder(args)
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
         .AddHostedService<TickerBackgroundService>()
+        .AddMemoryCache()
         .AddHttpClient("Default")
         .AddPolicyHandler(
             HttpPolicyExtensions

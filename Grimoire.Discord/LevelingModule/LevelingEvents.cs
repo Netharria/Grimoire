@@ -69,7 +69,7 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
         if (response.PreviousLevel < response.CurrentLevel)
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithColor(GrimoireColor.Purple)
-                .WithTitle(member.GetUsernameWithDiscriminator())
+                .WithAuthor(member.GetUsernameWithDiscriminator())
                 .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
                 .WithFooter($"{member.Id}")
                 .WithTimestamp(DateTime.UtcNow)
@@ -78,7 +78,7 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
         if (newRewards.Any())
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithColor(GrimoireColor.DarkPurple)
-                .WithTitle($"{member.Username}#{member.Discriminator}")
+                .WithAuthor($"{member.Username}#{member.Discriminator}")
                 .WithDescription($"{member.Mention} has earned " +
                 $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x)))}")
                 .WithFooter($"{member.Id}")

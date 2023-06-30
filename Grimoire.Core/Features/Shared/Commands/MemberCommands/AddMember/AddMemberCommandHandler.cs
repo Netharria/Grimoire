@@ -58,18 +58,17 @@ public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
                         FileName = command.AvatarUrl,
                         Timestamp = DateTimeOffset.UtcNow
                     }
+                },
+                NicknamesHistory = new List<NicknameHistory>
+                {
+                    new NicknameHistory
+                    {
+                        UserId = command.UserId,
+                        GuildId = command.GuildId,
+                        Nickname = command.Nickname
+                    }
                 }
             };
-            if (!string.IsNullOrWhiteSpace(command.Nickname))
-            {
-                member.NicknamesHistory.Add(
-                new NicknameHistory
-                {
-                    UserId = command.UserId,
-                    GuildId = command.GuildId,
-                    Nickname = command.Nickname
-                });
-            }
 
             await this._grimoireDbContext.Members.AddAsync(member, cancellationToken);
 

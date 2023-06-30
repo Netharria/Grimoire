@@ -58,6 +58,43 @@ public static class MemberDatabaseQueryHelpers
         return membersToAdd.Any();
     }
 
+    public static async Task<bool> AddMissingNickNameHistoryAsync(this DbSet<NicknameHistory> databaseNicknames, IEnumerable<MemberDto> users, CancellationToken cancellationToken = default)
+    {
+        var nicknamesToAdd = users
+            .ExceptBy(databaseNicknames
+            .OrderByDescending(x => x.Timestamp)
+            .Select(x => new { x.UserId, x.GuildId, x.Nickname })
+            , x => new { x.UserId, x.GuildId, x.Nickname })
+            .Select(x =>  new NicknameHistory
+            {
+                GuildId = x.GuildId,
+                UserId = x.UserId,
+                Nickname = x.Nickname
+            });
+        if (nicknamesToAdd.Any())
+            await databaseNicknames.AddRangeAsync(nicknamesToAdd, cancellationToken);
+        return nicknamesToAdd.Any();
+    }
+
+    public static async Task<bool> AddMissingAvatarsHistoryAsync(this DbSet<Avatar> databaseAvatars, IEnumerable<MemberDto> users, CancellationToken cancellationToken = default)
+    {
+        
+        var avatarsToAdd = users
+            .ExceptBy(databaseAvatars
+            .OrderByDescending(x => x.Timestamp)
+            .Select(x => new { x.UserId, x.GuildId, x.FileName })
+            , x => new { x.UserId, x.GuildId, FileName = x.AvatarUrl })
+            .Select(x =>  new Avatar
+            {
+                UserId = x.UserId,
+                GuildId = x.GuildId,
+                FileName = x.AvatarUrl
+            });
+        if (avatarsToAdd.Any())
+            await databaseAvatars.AddRangeAsync(avatarsToAdd, cancellationToken);
+        return avatarsToAdd.Any();
+    }
+
     public static IQueryable<Member> WhereLoggingEnabled(this IQueryable<Member> members)
         => members.Where(x => x.Guild.UserLogSettings.ModuleEnabled);
 

@@ -126,8 +126,8 @@ internal class MemberLogEvents :
                 var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Nickname Updated")
                 .AddField("User", $"<@!{args.Member.Id}>")
-                .AddField("Before", string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname)? "None" : nicknameResponse.BeforeNickname, true)
-                .AddField("After", string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)? "None" : nicknameResponse.AfterNickname, true)
+                .AddField("Before", string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname)? "`None`" : nicknameResponse.BeforeNickname, true)
+                .AddField("After", string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)? "`None`" : nicknameResponse.AfterNickname, true)
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
                 .WithTimestamp(DateTimeOffset.UtcNow)
                 .WithColor(GrimoireColor.Mint);
@@ -162,8 +162,8 @@ internal class MemberLogEvents :
                 var embed = new DiscordEmbedBuilder()
                         .WithAuthor("Username Updated")
                         .AddField("User", $"<@!{args.MemberAfter.Id}>")
-                        .AddField("Before", string.IsNullOrWhiteSpace(usernameResponse.BeforeUsername)? "Unknown" : usernameResponse.BeforeUsername, true)
-                        .AddField("After", string.IsNullOrWhiteSpace(usernameResponse.AfterUsername)? "Unknown" : usernameResponse.AfterUsername, true)
+                        .AddField("Before", string.IsNullOrWhiteSpace(usernameResponse.BeforeUsername)? "`Unknown`" : usernameResponse.BeforeUsername, true)
+                        .AddField("After", string.IsNullOrWhiteSpace(usernameResponse.AfterUsername)? "`Unknown`" : usernameResponse.AfterUsername, true)
                         .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
                         .WithTimestamp(DateTimeOffset.UtcNow)
                         .WithColor(GrimoireColor.Mint);

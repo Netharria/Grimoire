@@ -55,7 +55,7 @@ public class TrackerLogEvents :
     }
     public async Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args)
     {
-        if (args.Message.Content.Length == 0) return;
+        if (string.IsNullOrWhiteSpace(args.Message.Content)) return;
         var response = await this._mediator.Send(
             new GetTrackerWithOldMessageQuery
             {

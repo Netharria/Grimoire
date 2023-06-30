@@ -45,6 +45,12 @@ public class AddGuildCommandHandler : ICommandHandler<AddGuildCommand>
 
         var membersAdded = await this._grimoireDbContext.Members.AddMissingMembersAsync(command.Members, cancellationToken);
 
+        var usernamesUpdated = await this._grimoireDbContext.UsernameHistory.AddMissingUsernameHistoryAsync(command.Users, cancellationToken);
+
+        var nicknamesUpdated = await this._grimoireDbContext.NicknameHistory.AddMissingNickNameHistoryAsync(command.Members, cancellationToken);
+
+        var avatarsUpdated = await this._grimoireDbContext.Avatars.AddMissingAvatarsHistoryAsync(command.Members, cancellationToken);
+
         this._inviteService.UpdateGuildInvites(
             new GuildInviteDto
             {
@@ -52,7 +58,7 @@ public class AddGuildCommandHandler : ICommandHandler<AddGuildCommand>
                 Invites = new ConcurrentDictionary<string, Invite>(command.Invites.ToDictionary(x => x.Code))
             });
 
-        if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded)
+        if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded || usernamesUpdated || nicknamesUpdated || avatarsUpdated)
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;

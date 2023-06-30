@@ -47,7 +47,7 @@ public class GuildEventManagementModule :
                 new UserDto
                 {
                     Id = x.Key,
-                    UserName = x.Value.GetUsernameWithDiscriminator(),
+                    Username = x.Value.GetUsernameWithDiscriminator(),
                 }),
             Members = args.Guilds.Values.SelectMany(x => x.Members)
                 .Select(x => x.Value).Select(x =>
@@ -82,7 +82,7 @@ public class GuildEventManagementModule :
                 ),
             Invites = args.Guilds.Values
                 .ToAsyncEnumerable()
-                .Where(x => x.CurrentMember.Permissions.HasPermission(Permissions.CreateInstantInvite))
+                .Where(x => x.CurrentMember.Permissions.HasPermission(Permissions.ManageGuild))
                 .SelectManyAwait(async x => (await x.GetInvitesAsync()).ToAsyncEnumerable())
                 .Select(x =>
                 new Invite
@@ -105,7 +105,7 @@ public class GuildEventManagementModule :
                 new UserDto
                 {
                     Id = x.Key,
-                    UserName = x.Value.GetUsernameWithDiscriminator()
+                    Username = x.Value.GetUsernameWithDiscriminator()
                 }),
             Members = args.Guild.Members
                 .Select(x =>
@@ -130,7 +130,7 @@ public class GuildEventManagementModule :
                     Id = x.Value.Id,
                     GuildId = args.Guild.Id
                 }),
-            Invites = args.Guild.CurrentMember.Permissions.HasPermission(Permissions.CreateInstantInvite)
+            Invites = args.Guild.CurrentMember.Permissions.HasPermission(Permissions.ManageGuild)
             ? await args.Guild
                 .GetInvitesAsync()
                 .ContinueWith(x => x.Result
