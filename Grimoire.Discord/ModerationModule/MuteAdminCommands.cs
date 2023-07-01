@@ -5,9 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.SetMuteRole;
 using Grimoire.Core.Features.Moderation.Queries.GetAllActiveMutes;
 using Grimoire.Core.Features.Moderation.Queries.GetMuteRole;
+using Serilog;
 
 namespace Grimoire.Discord.ModerationModule;
 
@@ -16,13 +18,15 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireBotPermissions(Permissions.ManageRoles)]
 [SlashCommandGroup("Mutes", "Manages the mute role settings.")]
-public class MuteAdminCommands : ApplicationCommandModule
+public partial class MuteAdminCommands : ApplicationCommandModule
 {
     private readonly IMediator _mediator;
+    private readonly ILogger _logger;
 
-    public MuteAdminCommands(IMediator mediator)
+    public MuteAdminCommands(IMediator mediator, ILogger logger)
     {
         this._mediator = mediator;
+        this._logger = logger;
     }
 
     [SlashCommand("View", "View the current configured mute role and any active mutes.")]
@@ -83,16 +87,20 @@ public class MuteAdminCommands : ApplicationCommandModule
         });
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions");
-        try
+        var result = await this.SetMuteRolePermissionsAsync(ctx.Guild, role)
+                .Where(x => !x.WasSuccessful)
+                .ToArrayAsync();
+
+        if (!result.Any())
         {
-            await SetMuteRolePermissionsAsync(ctx.Guild, role);
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Successfully created role {role.Mention} and set permissions for channels");
         }
-        catch (Exception)
+        else
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Error occured when setting role permissions for {role.Mention}.");
-            throw;
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Successfully created role {role.Mention} but, " +
+                $"was not able to set permissions for the following channels. {string.Join(' ', result.Select(x => x.Channel.Mention))}");
         }
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Successfully created role {role.Mention} and set permissions for channels");
+        
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.Member.Mention} asked {ctx.Guild.CurrentMember} to create {role.Mention} to use as a mute role.");
     }
@@ -113,30 +121,49 @@ public class MuteAdminCommands : ApplicationCommandModule
             return;
         }
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Refreshing permissions for {role.Mention} role.");
-        try
+        var result = await this.SetMuteRolePermissionsAsync(ctx.Guild, role)
+                .Where(x => !x.WasSuccessful)
+                .ToArrayAsync();
+
+        if(!result.Any())
         {
-            await SetMuteRolePermissionsAsync(ctx.Guild, role);
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Succussfully refreshed permissions for {role.Mention} role.");
         }
-        catch (Exception)
+        else
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Error occured when setting role permissions for {role.Mention}.");
-            throw;
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Was not able to set permissions for the following channels. " +
+                $"{string.Join(' ', result.Select(x => x.Channel.Mention))}");
         }
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Succussfully refreshed permissions for {role.Mention} role.");
+        
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.Member.Mention} asked {ctx.Guild.CurrentMember} to refresh the permissions of mute role {role.Mention}");
     }
 
-    private static async Task SetMuteRolePermissionsAsync(DiscordGuild guild, DiscordRole role)
+    private async IAsyncEnumerable<OverwriteChannelResult> SetMuteRolePermissionsAsync(DiscordGuild guild, DiscordRole role)
     {
         foreach (var (_, channel) in guild.Channels)
         {
             if (channel.Type == ChannelType.Text
                 || channel.Type == ChannelType.Category
-                || channel.Type == ChannelType.PrivateThread
-                || channel.Type == ChannelType.PublicThread)
+                || channel.Type == ChannelType.GuildForum)
             {
-                var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
+                yield return await this.OverwriteChannelAsync(channel, role);
+
+            }
+            else if (channel.Type == ChannelType.Voice)
+            {
+                yield return await this.OverwriteVoiceChannelAsync(channel, role);
+            }
+        }
+    }
+
+    private async Task<OverwriteChannelResult> OverwriteChannelAsync(DiscordChannel channel, DiscordRole role)
+    {
+        var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
+        foreach (var tryAttempt in Enumerable.Range(1, 3))
+        {
+            try
+            {
                 if (permissions is not null)
                     await channel.AddOverwriteAsync(role,
                             permissions.Allowed.RevokeLockPermissions(),
@@ -144,11 +171,49 @@ public class MuteAdminCommands : ApplicationCommandModule
                 else
                     await channel.AddOverwriteAsync(role,
                             deny: PermissionValues.LockPermissions);
-
+                return new OverwriteChannelResult
+                {
+                    WasSuccessful = true,
+                    Channel = channel,
+                };
             }
-            else if (channel.Type == ChannelType.Voice)
+            catch (DiscordException ex) when (ex is BadRequestException or ServerErrorException)
             {
-                var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
+                if(tryAttempt < 3)
+                {
+                    this._logger.Warning("Exception was thrown while trying to overwrite channel mute permissions. " +
+                        "Trying again. Attempt: ({attempt}) Exception Message : ({message})", tryAttempt, ex.Message);
+                    await Task.Delay(1 * tryAttempt);
+                }
+                else
+                {
+                    this._logger.Error(ex, "Was not able to successfully overwrite channel mute permissions after ({attempt})" +
+                        "Exception Message : ({message})", tryAttempt, ex.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                this._logger.Error(ex, "A non transient exception was thrown while trying to overwrite channel mute permissions." +
+                        "Exception Message : ({message})", tryAttempt, ex.Message);
+                break;
+            }
+
+        }
+        return new OverwriteChannelResult
+        {
+            WasSuccessful = false,
+            Channel = channel,
+        };
+    }
+
+    private async Task<OverwriteChannelResult> OverwriteVoiceChannelAsync(DiscordChannel channel, DiscordRole role)
+    {
+        var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
+
+        foreach (var tryAttempt in Enumerable.Range(1, 3))
+        {
+            try
+            {
                 if (permissions is not null)
                     await channel.AddOverwriteAsync(role,
                             permissions.Allowed.RevokeVoiceLockPermissions(),
@@ -156,7 +221,39 @@ public class MuteAdminCommands : ApplicationCommandModule
                 else
                     await channel.AddOverwriteAsync(role,
                             deny: PermissionValues.VoiceLockPermissions);
+                return new OverwriteChannelResult
+                {
+                    WasSuccessful = true,
+                    Channel = channel,
+                };
             }
+            catch (DiscordException ex) when (ex is BadRequestException or ServerErrorException)
+            {
+                if (tryAttempt < 3)
+                {
+                    this._logger.Warning("Exception was thrown while trying to overwrite channel mute permissions. " +
+                        "Trying again. Attempt: ({attempt}) Exception Message : ({message})", tryAttempt, ex.Message);
+                    await Task.Delay(1 * tryAttempt);
+                }
+                else
+                {
+                    this._logger.Error(ex, "Was not able to successfully overwrite channel mute permissions after ({attempt})" +
+                        "Exception Message : ({message})", tryAttempt, ex.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                this._logger.Error(ex, "A non transient exception was thrown while trying to  overwrite channel mute permissions." +
+                        "Exception Message : ({message})", tryAttempt, ex.Message);
+                break;
+            }
+
         }
+        return new OverwriteChannelResult
+        {
+            WasSuccessful = false,
+            Channel = channel,
+        };
     }
 }
+

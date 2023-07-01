@@ -12,8 +12,7 @@ public sealed record AddTrackerCommand : ICommand<AddTrackerCommandResponse>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
-    public DurationType DurationType { get; init; }
-    public long DurationAmount { get; init; }
+    public TimeSpan Duration { get; init; }
     public ulong ChannelId { get; init; }
     public ulong ModeratorId { get; init; }
 }

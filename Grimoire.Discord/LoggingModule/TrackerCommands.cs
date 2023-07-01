@@ -59,8 +59,7 @@ public class TrackerCommands : ApplicationCommandModule
             {
                 UserId = member.Id,
                 GuildId = ctx.Guild.Id,
-                DurationType = durationType,
-                DurationAmount = durationAmount,
+                Duration = durationType.GetTimeSpan(durationAmount),
                 ChannelId = discordChannel.Id,
                 ModeratorId = ctx.Member.Id,
             });

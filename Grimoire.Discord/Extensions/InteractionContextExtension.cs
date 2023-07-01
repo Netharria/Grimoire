@@ -38,7 +38,8 @@ public static class InteractionContextExtension
             await ctx.CreateResponseAsync(
             InteractionResponseType.ChannelMessageWithSource,
             new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
-        } catch(BadRequestException)
+        }
+        catch(BadRequestException)
         {
             await ctx.EditResponseAsync(
                     new DiscordWebhookBuilder().AddEmbed(embed));
@@ -58,7 +59,7 @@ public static class InteractionContextExtension
         timeStamp ??= DateTime.UtcNow;
         embed ??= new DiscordEmbedBuilder()
             .WithColor(color ?? GrimoireColor.Purple)
-            .WithTitle(title)
+            .WithAuthor(title)
             .WithDescription(message)
             .WithFooter(footer)
             .WithTimestamp(timeStamp)
