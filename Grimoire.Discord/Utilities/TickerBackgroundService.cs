@@ -7,6 +7,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace Grimoire.Discord.Utilities;
 
@@ -14,10 +15,12 @@ public class TickerBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly PeriodicTimer _timer = new(TimeSpan.FromSeconds(1));
+    private readonly ILogger _logger;
 
-    public TickerBackgroundService(IServiceProvider serviceProvider)
+    public TickerBackgroundService(IServiceProvider serviceProvider, ILogger logger)
     {
         this._serviceProvider = serviceProvider;
+        this._logger = logger;
     }
 
 
@@ -26,10 +29,17 @@ public class TickerBackgroundService : BackgroundService
         while (await _timer.WaitForNextTickAsync(stoppingToken)
             && !stoppingToken.IsCancellationRequested)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-            var timeNow = TimeOnly.FromDateTime(DateTime.UtcNow);
-            await mediator.Publish(new TimedNotification(timeNow), stoppingToken);
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                var timeNow = TimeOnly.FromDateTime(DateTime.UtcNow);
+                await mediator.Publish(new TimedNotification(timeNow), stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Exception was thrown when running a background task. Message: ({message})", ex.Message);
+            }
         }
     }
 }

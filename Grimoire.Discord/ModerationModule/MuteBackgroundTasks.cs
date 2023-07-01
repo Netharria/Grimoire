@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.MuteCommands.UnmuteUserCommand;
 using Grimoire.Core.Features.Moderation.Queries.GetExpiredMutes;
 
@@ -37,7 +38,20 @@ public class MuteBackgroundTasks : INotificationHandler<TimedNotification>
             if (user is null) continue;
             var role = guild.Roles.GetValueOrDefault(expiredLock.MuteRole);
             if (role is null) continue;
-            await user.RevokeRoleAsync(role);
+            try
+            {
+                await user.RevokeRoleAsync(role);
+            }
+            catch (DiscordException)
+            {
+                if (expiredLock.LogChannelId is not null)
+                {
+                    var ModerationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
+                    if (ModerationLogChannel is not null)
+                        await ModerationLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
+                            .WithDescription($"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually."));
+                }
+            }
             _ = await this._mediator.Send(new UnmuteUserCommand { UserId = user.Id, GuildId = guild.Id }, cancellationToken);
 
             var embed = new DiscordEmbedBuilder()

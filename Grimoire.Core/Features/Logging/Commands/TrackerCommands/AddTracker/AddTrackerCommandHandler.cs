@@ -18,13 +18,19 @@ public class AddTrackerCommandHandler : ICommandHandler<AddTrackerCommand, AddTr
 
     public async ValueTask<AddTrackerCommandResponse> Handle(AddTrackerCommand command, CancellationToken cancellationToken)
     {
-        var trackerEndTime = command.DurationType.GetDateTimeOffset(command.DurationAmount);
+        var trackerEndTime = DateTimeOffset.UtcNow + command.Duration;
 
         var result = await this._grimoireDbContext.Trackers
             .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
             .Select(x => new { Tracker = x, x.Guild.ModChannelLog })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (result?.Tracker is null)
+        {
+            var local = this._grimoireDbContext.Trackers.Local
+                .FirstOrDefault(x => x.UserId == command.UserId
+                    && x.GuildId == command.GuildId);
+            if (local is not null)
+                this._grimoireDbContext.Entry(local).State = EntityState.Detached;
             await this._grimoireDbContext.Trackers.AddAsync(new Tracker
             {
                 UserId = command.UserId,
@@ -33,11 +39,13 @@ public class AddTrackerCommandHandler : ICommandHandler<AddTrackerCommand, AddTr
                 LogChannelId = command.ChannelId,
                 ModeratorId = command.ModeratorId
             }, cancellationToken);
+        }
         else
         {
             result.Tracker.LogChannelId = command.ChannelId;
             result.Tracker.EndTime = trackerEndTime;
             result.Tracker.ModeratorId = command.ModeratorId;
+            this._grimoireDbContext.Trackers.Update(result.Tracker);
         }
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new AddTrackerCommandResponse

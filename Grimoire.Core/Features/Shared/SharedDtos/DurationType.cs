@@ -24,4 +24,13 @@ public static class DurationTypeExtensions
             DurationType.Days => DateTime.UtcNow.AddDays(durationAmount),
             _ => throw new NotImplementedException(),
         };
+
+    public static TimeSpan GetTimeSpan(this DurationType durationType, long durationAmount)
+        => durationType switch
+        {
+            DurationType.Minutes => TimeSpan.FromMinutes(durationAmount),
+            DurationType.Hours => TimeSpan.FromHours(durationAmount),
+            DurationType.Days => TimeSpan.FromHours(durationAmount),
+            _ => throw new NotImplementedException(),
+        };
 }
