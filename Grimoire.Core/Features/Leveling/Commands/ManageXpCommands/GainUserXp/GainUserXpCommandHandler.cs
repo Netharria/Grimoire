@@ -29,7 +29,8 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
             .Select(x => new
             {
                 Xp = x.XpHistory.Sum(x => x.Xp),
-                XpHistory = x.XpHistory.OrderByDescending(x => x.TimeOut).First(),
+                Timeout = x.XpHistory.Select(x => x.TimeOut)
+                    .OrderByDescending(x => x).First(),
                 x.Guild.LevelSettings.Base,
                 x.Guild.LevelSettings.Modifier,
                 x.Guild.LevelSettings.Amount,
@@ -39,7 +40,7 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
                 Rewards = x.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel })
             }).FirstOrDefaultAsync(cancellationToken);
 
-        if (result is null || (result.XpHistory is not null && result.XpHistory.TimeOut > DateTime.UtcNow))
+        if (result is null || result.Timeout > DateTime.UtcNow)
 
             return new GainUserXpCommandResponse { Success = false };
 
