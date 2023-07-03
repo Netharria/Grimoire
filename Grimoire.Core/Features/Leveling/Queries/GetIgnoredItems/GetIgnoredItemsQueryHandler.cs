@@ -37,14 +37,17 @@ public class GetIgnoredItemsQueryHandler : IRequestHandler<GetIgnoredItemsQuery,
             throw new AnticipatedException("This server does not have any ignored channels, roles or users.");
 
         var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
+
         foreach (var channel in ignoredItems.IgnoredChannels)
             ignoredMessageBuilder.Append(ChannelExtensions.Mention(channel)).Append('\n');
 
         ignoredMessageBuilder.Append("\n**Roles**\n");
+
         foreach (var role in ignoredItems.IgnoredRoles)
             ignoredMessageBuilder.Append(RoleExtensions.Mention(role)).Append('\n');
 
         ignoredMessageBuilder.Append("\n**Users**\n");
+
         foreach (var member in ignoredItems.IgnoredMembers)
             ignoredMessageBuilder.Append(UserExtensions.Mention(member)).Append('\n');
 

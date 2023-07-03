@@ -51,7 +51,7 @@ public class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQuery, G
             leaderboardText.Append($"**{startIndex + 1}** {RankedMembers[startIndex].Mention} **XP:** {RankedMembers[startIndex].Xp}\n");
             startIndex++;
         }
-            
+
 
         return new GetLeaderboardQueryResponse { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
     }

@@ -28,7 +28,7 @@ public class UsernameHistoryConfiguration : IEntityTypeConfiguration<UsernameHis
             .IsRequired();
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
-        builder.HasIndex(x => new { x.UserId, x.Timestamp})
+        builder.HasIndex(x => new { x.UserId, x.Timestamp })
             .IsDescending(false, true);
     }
 }

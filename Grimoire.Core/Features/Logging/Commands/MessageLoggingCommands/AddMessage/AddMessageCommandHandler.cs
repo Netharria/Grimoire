@@ -32,7 +32,7 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
             throw new KeyNotFoundException("Guild was not found in database.");
         if (!result.ModuleEnabled)
             return Unit.Value;
-        if(!result.ChannelExists)
+        if (!result.ChannelExists)
         {
             var channel = new Channel
             {

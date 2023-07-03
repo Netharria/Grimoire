@@ -79,7 +79,7 @@ public static class MemberDatabaseQueryHelpers
 
     public static async Task<bool> AddMissingAvatarsHistoryAsync(this DbSet<Avatar> databaseAvatars, IEnumerable<MemberDto> users, CancellationToken cancellationToken = default)
     {
-        
+
         var avatarsToAdd = users
             .ExceptBy(databaseAvatars
             .AsNoTracking()

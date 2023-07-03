@@ -31,7 +31,7 @@ public class LogBackgroundTasks : INotificationHandler<TimedNotification>
         var oldLogMessages = await this._mediator.Send(new GetOldLogMessagesQuery(), cancellationToken);
 
 
-         var result = await oldLogMessages
+        var result = await oldLogMessages
             .ToAsyncEnumerable()
             .Select(channel =>
                 new

@@ -87,7 +87,7 @@ public class TrackerLogEvents :
 
         if (loggingChannel is null) return;
 
-        if(args.Before?.Channel is null && args.After?.Channel is null) return;
+        if (args.Before?.Channel is null && args.After?.Channel is null) return;
 
         if (args.Before?.Channel is null)
         {
@@ -109,7 +109,7 @@ public class TrackerLogEvents :
             return;
         }
 
-        if(args.Before.Channel != args.After.Channel)
+        if (args.Before.Channel != args.After.Channel)
         {
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithAuthor("Moved Voice Channels")
