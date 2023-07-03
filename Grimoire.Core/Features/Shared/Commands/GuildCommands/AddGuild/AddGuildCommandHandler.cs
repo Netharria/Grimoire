@@ -26,7 +26,9 @@ public class AddGuildCommandHandler : ICommandHandler<AddGuildCommand>
     {
         var usersAdded = await this._grimoireDbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
 
-        var guildExists = await this._grimoireDbContext.Guilds.AnyAsync(x => x.Id == command.GuildId, cancellationToken);
+        var guildExists = await this._grimoireDbContext.Guilds
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == command.GuildId, cancellationToken);
 
         if (!guildExists)
             await this._grimoireDbContext.Guilds.AddAsync(

@@ -22,6 +22,7 @@ public class ReclaimUserXpCommandHandler : ICommandHandler<ReclaimUserXpCommand,
     public async ValueTask<ReclaimUserXpCommandResponse> Handle(ReclaimUserXpCommand command, CancellationToken cancellationToken)
     {
         var member = await this._grimoireDbContext.Members
+            .AsNoTracking()
             .WhereMemberHasId(command.UserId, command.GuildId)
             .Select(x => new
             {

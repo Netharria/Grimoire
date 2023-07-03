@@ -19,6 +19,7 @@ public class GetAllActiveMutesQueryHandler : IQueryHandler<GetAllActiveMutesQuer
     public async ValueTask<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.GuildModerationSettings
+            .AsNoTracking()
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => new GetAllActiveMutesQueryResponse
             {

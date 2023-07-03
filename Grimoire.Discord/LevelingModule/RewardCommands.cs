@@ -35,7 +35,7 @@ public class RewardCommands : ApplicationCommandModule
         if (ctx.Guild.CurrentMember.Hierarchy < role.Position)
             throw new AnticipatedException($"{ctx.Guild.CurrentMember.DisplayName} will not be able to apply this " +
                 $"reward role because the role has a higher rank than it does.");
-        
+
         var response = await this._mediator.Send(
             new AddRewardCommand
             {

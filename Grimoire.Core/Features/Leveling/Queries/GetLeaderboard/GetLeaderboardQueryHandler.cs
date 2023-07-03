@@ -22,6 +22,7 @@ public class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQuery, G
     public async ValueTask<GetLeaderboardQueryResponse> Handle(GetLeaderboardQuery request, CancellationToken cancellationToken)
     {
         var RankedMembers = await this._grimoireDbContext.Members
+            .AsNoTracking()
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp), Mention = x.User.Mention() })
             .OrderByDescending(x => x.Xp)
@@ -41,6 +42,8 @@ public class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQuery, G
             memberPosition++;
 
         var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
+        if (startIndex + 15 > totalMemberCount)
+            startIndex = totalMemberCount - 15;
         var leaderboardText = new StringBuilder();
 
         for (var i = 0; i < 15 && startIndex < totalMemberCount; i++)
@@ -48,7 +51,7 @@ public class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQuery, G
             leaderboardText.Append($"**{startIndex + 1}** {RankedMembers[startIndex].Mention} **XP:** {RankedMembers[startIndex].Xp}\n");
             startIndex++;
         }
-            
+
 
         return new GetLeaderboardQueryResponse { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
     }

@@ -21,6 +21,7 @@ public class DeleteMessageCommandHandler : ICommandHandler<DeleteMessageCommand,
     public async ValueTask<DeleteMessageCommandResponse> Handle(DeleteMessageCommand command, CancellationToken cancellationToken)
     {
         var message = await this._grimoireDbContext.Messages
+            .AsNoTracking()
             .WhereIdIs(command.Id)
             .WhereMessageLoggingIsEnabled()
             .Where(x => x.CreatedTimestamp < DateTime.UtcNow.AddSeconds(-2))

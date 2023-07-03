@@ -20,6 +20,7 @@ public class GetModActionCountsQueryHandler : IQueryHandler<GetModActionCountsQu
 
     public async ValueTask<GetModActionCountsQueryResponse?> Handle(GetModActionCountsQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Members
+            .AsNoTracking()
             .WhereMemberHasId(query.UserId, query.GuildId)
             .Select(x => new GetModActionCountsQueryResponse
             {

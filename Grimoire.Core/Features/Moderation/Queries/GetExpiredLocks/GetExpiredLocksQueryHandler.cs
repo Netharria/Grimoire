@@ -17,7 +17,9 @@ public class GetExpiredLocksQueryHandler : IQueryHandler<GetExpiredLocksQuery, I
     }
 
     public async ValueTask<IEnumerable<GetExpiredLocksQueryResponse>> Handle(GetExpiredLocksQuery query, CancellationToken cancellationToken)
-     => await this._grimoireDbContext.Locks.Where(x => x.EndTime < DateTimeOffset.UtcNow)
+     => await this._grimoireDbContext.Locks
+            .AsNoTracking()
+            .Where(x => x.EndTime < DateTimeOffset.UtcNow)
             .Select(x => new GetExpiredLocksQueryResponse
             {
                 ChannelId = x.ChannelId,

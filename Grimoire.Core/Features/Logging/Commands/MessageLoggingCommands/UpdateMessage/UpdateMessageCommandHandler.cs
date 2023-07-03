@@ -21,6 +21,7 @@ public class UpdateMessageCommandHandler : ICommandHandler<UpdateMessageCommand,
     public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand command, CancellationToken cancellationToken)
     {
         var message = await this._grimoireDbContext.Messages
+            .AsNoTracking()
             .WhereMessageLoggingIsEnabled()
             .WhereIdIs(command.MessageId)
             .Select(x => new UpdateMessageCommandResponse
@@ -29,7 +30,7 @@ public class UpdateMessageCommandHandler : ICommandHandler<UpdateMessageCommand,
                 MessageId = x.Id,
                 UserId = x.UserId,
                 MessageContent = x.MessageHistory
-                    .OrderBy(x => x.TimeStamp)
+                    .OrderByDescending(x => x.TimeStamp)
                     .Where(x => x.Action != MessageAction.Deleted)
                     .First().MessageContent,
                 Success = true

@@ -33,5 +33,7 @@ public class MessageHistoryConfiguration : IEntityTypeConfiguration<MessageHisto
             .IsRequired(false);
         builder.Property(e => e.TimeStamp)
             .HasDefaultValueSql("now()");
+        builder.HasIndex(x => new { x.MessageId, x.TimeStamp, x.Action })
+            .IsDescending(false, true, false);
     }
 }

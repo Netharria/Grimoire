@@ -21,6 +21,7 @@ public class GetModLogQueryHandler : IQueryHandler<GetModLogQuery, BaseResponse>
     public async ValueTask<BaseResponse> Handle(GetModLogQuery query, CancellationToken cancellationToken)
     {
         var modChannelLog = await this._grimoireDbContext.Guilds
+            .AsNoTracking()
             .WhereIdIs(query.GuildId)
             .Select(x => x.ModChannelLog)
             .FirstOrDefaultAsync(cancellationToken);

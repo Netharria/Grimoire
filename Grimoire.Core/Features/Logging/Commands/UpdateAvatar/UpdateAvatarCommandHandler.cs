@@ -19,6 +19,7 @@ public class UpdateAvatarCommandHandler : ICommandHandler<UpdateAvatarCommand, U
     public async ValueTask<UpdateAvatarCommandResponse> Handle(UpdateAvatarCommand command, CancellationToken cancellationToken)
     {
         var currentAvatar = await this._grimoireDbContext.Avatars
+            .AsNoTracking()
             .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
             .Where(x => x.Member.Guild.UserLogSettings.ModuleEnabled)
             .OrderByDescending(x => x.Timestamp)
@@ -29,7 +30,7 @@ public class UpdateAvatarCommandHandler : ICommandHandler<UpdateAvatarCommand, U
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (currentAvatar is null
-            || currentAvatar.FileName == command.AvatarUrl)
+            || currentAvatar.FileName.Equals(command.AvatarUrl, StringComparison.Ordinal))
             return new UpdateAvatarCommandResponse();
 
         await this._grimoireDbContext.Avatars.AddAsync(

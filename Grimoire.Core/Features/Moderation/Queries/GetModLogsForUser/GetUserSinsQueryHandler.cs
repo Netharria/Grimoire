@@ -21,7 +21,8 @@ public class GetUserSinsQueryHandler : IQueryHandler<GetUserSinsQuery, GetUserSi
 
     public async ValueTask<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
     {
-        var queryable = this._grimoireDbContext.Sins.Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
+        var queryable = this._grimoireDbContext.Sins
+            .AsNoTracking().Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
 
         queryable = query.SinQueryType switch
         {

@@ -39,12 +39,12 @@ public static class InteractionContextExtension
             InteractionResponseType.ChannelMessageWithSource,
             new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
-        catch(BadRequestException)
+        catch (BadRequestException)
         {
             await ctx.EditResponseAsync(
                     new DiscordWebhookBuilder().AddEmbed(embed));
         }
-        
+
     }
 
     public static async Task EditReplyAsync(

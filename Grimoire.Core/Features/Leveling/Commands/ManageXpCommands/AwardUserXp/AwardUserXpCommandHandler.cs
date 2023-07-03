@@ -23,6 +23,7 @@ public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, Bas
     {
 
         var member = await this._grimoireDbContext.Members
+            .AsNoTracking()
             .WhereMemberHasId(command.UserId, command.GuildId)
             .Select(x => new
             {

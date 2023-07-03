@@ -19,6 +19,7 @@ public class GetBanQueryHandler : IRequestHandler<GetBanQuery, GetBanQueryRespon
     public async ValueTask<GetBanQueryResponse> Handle(GetBanQuery request, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Sins
+            .AsNoTracking()
             .Where(x => x.SinType == SinType.Ban)
             .Where(x => x.Id == request.SinId)
             .Where(x => x.GuildId == request.GuildId)

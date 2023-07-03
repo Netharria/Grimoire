@@ -20,6 +20,7 @@ public class GetTrackerWithOldMessageQueryHandler : IRequestHandler<GetTrackerWi
 
     public async ValueTask<GetTrackerWithOldMessageQueryResponse?> Handle(GetTrackerWithOldMessageQuery request, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Trackers
+        .AsNoTracking()
         .WhereMemberHasId(request.UserId, request.GuildId)
         .Select(x => new GetTrackerWithOldMessageQueryResponse
         {

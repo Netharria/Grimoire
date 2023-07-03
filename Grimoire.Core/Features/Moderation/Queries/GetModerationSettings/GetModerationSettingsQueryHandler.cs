@@ -18,6 +18,7 @@ public class GetModerationSettingsQueryHandler : IQueryHandler<GetModerationSett
     public async ValueTask<GetModerationSettingsQueryResponse> Handle(GetModerationSettingsQuery query, CancellationToken cancellationToken)
     {
         var result =  await this._context.GuildModerationSettings
+            .AsNoTracking()
             .Where(x => x.GuildId == query.GuildId)
             .Select(x => new GetModerationSettingsQueryResponse
             {

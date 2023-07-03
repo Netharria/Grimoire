@@ -39,5 +39,6 @@ public class LockConfigurations : IEntityTypeConfiguration<Lock>
             .HasMaxLength(1000);
         builder.Property(e => e.EndTime)
             .IsRequired();
+        builder.HasIndex(x => x.EndTime);
     }
 }

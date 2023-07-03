@@ -16,7 +16,9 @@ public class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistory>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
             .UseIdentityAlwaysColumn();
-        builder.HasIndex(x => new { x.UserId, x.GuildId });
+        builder.HasIndex(x => new { x.UserId, x.GuildId, x.TimeOut })
+            .IsDescending(false, false, true)
+            .IncludeProperties(x => x.Xp);
         builder.HasOne(x => x.Member)
             .WithMany(x => x.XpHistory)
             .HasForeignKey(x => new { x.UserId, x.GuildId })

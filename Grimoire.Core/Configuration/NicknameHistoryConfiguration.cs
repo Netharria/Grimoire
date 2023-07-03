@@ -26,5 +26,7 @@ public class NicknameHistoryConfiguration : IEntityTypeConfiguration<NicknameHis
             .IsRequired(false); ;
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
+        builder.HasIndex(x => new { x.UserId, x.GuildId, x.Timestamp })
+            .IsDescending(false, false, true);
     }
 }

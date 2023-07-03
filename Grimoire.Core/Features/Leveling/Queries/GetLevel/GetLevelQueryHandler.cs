@@ -22,14 +22,17 @@ public class GetLevelQueryHandler : IRequestHandler<GetLevelQuery, GetLevelQuery
     public async ValueTask<GetLevelQueryResponse> Handle(GetLevelQuery request, CancellationToken cancellationToken)
     {
         var member = await this._grimoireDbContext.Members
+            .AsNoTracking()
             .WhereMemberHasId(request.UserId, request.GuildId)
             .Include(x => x.Guild.LevelSettings)
-            .Select(x => new
+            .Select(Member => new
             {
-                Xp = x.XpHistory.Sum(x => x.Xp),
-                x.Guild.LevelSettings.Base,
-                x.Guild.LevelSettings.Modifier
-            }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                Xp = Member.XpHistory.Sum(x => x.Xp),
+                Member.Guild.LevelSettings.Base,
+                Member.Guild.LevelSettings.Modifier,
+                Rewards = Member.Guild.Rewards.OrderBy(reward => reward.RewardLevel)
+                .Select(reward => new { reward.RoleId, reward.RewardLevel })
+            }).FirstOrDefaultAsync(cancellationToken);
 
         if (member is null)
             throw new AnticipatedException("That user could not be found.");
@@ -38,11 +41,7 @@ public class GetLevelQueryHandler : IRequestHandler<GetLevelQuery, GetLevelQuery
         var currentLevelXp = MemberExtensions.GetXpNeeded(currentLevel, member.Base, member.Modifier);
         var nextLevelXp = MemberExtensions.GetXpNeeded(currentLevel, member.Base, member.Modifier, 1);
 
-        var nextReward = await this._grimoireDbContext.Rewards
-            .Where(x => x.GuildId == request.GuildId && x.RewardLevel > currentLevel)
-            .OrderBy(x => x.RewardLevel)
-            .Select(x => new { x.RoleId, x.RewardLevel })
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+        var nextReward = member.Rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 
         return new GetLevelQueryResponse
         {

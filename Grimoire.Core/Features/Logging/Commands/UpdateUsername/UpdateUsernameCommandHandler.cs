@@ -21,6 +21,7 @@ public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameComman
     public async ValueTask<UpdateUsernameCommandResponse> Handle(UpdateUsernameCommand command, CancellationToken cancellationToken)
     {
         var currentUsername = await this._grimoireDbContext.Members
+            .AsNoTracking()
             .WhereMemberHasId(command.UserId, command.GuildId)
             .Where(x => x.Guild.UserLogSettings.ModuleEnabled)
             .Select(x => new
@@ -29,7 +30,7 @@ public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameComman
                 x.Guild.UserLogSettings.UsernameChannelLogId
             }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (currentUsername is null
-            || currentUsername.Username == command.Username)
+            || currentUsername.Username.Equals(command.Username, StringComparison.CurrentCultureIgnoreCase))
             return new UpdateUsernameCommandResponse();
 
         await this._grimoireDbContext.UsernameHistory.AddAsync(

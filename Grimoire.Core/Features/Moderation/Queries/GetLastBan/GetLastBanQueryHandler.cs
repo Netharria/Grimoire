@@ -21,6 +21,7 @@ public class GetLastBanQueryHandler : IRequestHandler<GetLastBanQuery, GetLastBa
     public async ValueTask<GetLastBanQueryResponse> Handle(GetLastBanQuery request, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Sins
+            .AsNoTracking()
             .WhereMemberHasId(request.UserId, request.GuildId)
             .Where(x => x.SinType == SinType.Ban)
             .OrderByDescending(x => x.SinOn)

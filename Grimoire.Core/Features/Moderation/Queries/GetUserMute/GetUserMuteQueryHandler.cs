@@ -20,6 +20,7 @@ public class GetUserMuteQueryHandler : IQueryHandler<GetUserMuteQuery, ulong?>
 
     public async ValueTask<ulong?> Handle(GetUserMuteQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Mutes
+            .AsNoTracking()
             .WhereMemberHasId(query.UserId, query.GuildId)
             .Where(x => x.Guild.ModerationSettings.ModuleEnabled)
             .Select(x =>

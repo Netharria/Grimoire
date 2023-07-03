@@ -24,7 +24,7 @@ public class LevelTextCommands : BaseCommandModule
     {
         this._mediator = mediator;
     }
-    
+
     [Command("level")]
     public async Task LevelCommandAsync(CommandContext ctx, DiscordMember? member = null)
     {
@@ -62,7 +62,7 @@ public class LevelTextCommands : BaseCommandModule
             .Build();
         await ctx.RespondAsync(embed);
     }
-    
+
     [Command("leaderboard")]
     public async Task LeaderboardAsync(CommandContext ctx, string user = "all")
     {
@@ -85,8 +85,8 @@ public class LevelTextCommands : BaseCommandModule
             default:
                 var matchId = Regex.Match(user, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1));
                 if (matchId.Success)
-                if (ulong.TryParse(matchId.Value, out var userId))
-                    ctx.Guild.Members.TryGetValue(userId, out member);
+                    if (ulong.TryParse(matchId.Value, out var userId))
+                        ctx.Guild.Members.TryGetValue(userId, out member);
                 break;
         }
 

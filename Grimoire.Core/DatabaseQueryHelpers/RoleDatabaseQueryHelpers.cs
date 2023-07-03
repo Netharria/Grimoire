@@ -12,7 +12,7 @@ public static class RoleDatabaseQueryHelpers
     public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles, IEnumerable<RoleDto> roles, CancellationToken cancellationToken = default)
     {
         var rolesToAdd = roles
-            .ExceptBy(databaseRoles.Select(x => x.Id),
+            .ExceptBy(databaseRoles.AsNoTracking().Select(x => x.Id),
             x => x.Id)
             .Select(x => new Role
             {

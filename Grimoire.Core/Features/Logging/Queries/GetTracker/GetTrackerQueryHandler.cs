@@ -20,6 +20,7 @@ public class GetTrackerQueryHandler : IRequestHandler<GetTrackerQuery, GetTracke
 
     public async ValueTask<GetTrackerQueryResponse?> Handle(GetTrackerQuery request, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Trackers
+        .AsNoTracking()
         .WhereMemberHasId(request.UserId, request.GuildId)
         .Select(x => new GetTrackerQueryResponse
         {

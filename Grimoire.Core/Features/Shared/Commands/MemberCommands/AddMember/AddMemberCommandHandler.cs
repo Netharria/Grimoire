@@ -18,8 +18,10 @@ public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
 
     public async ValueTask<Unit> Handle(AddMemberCommand command, CancellationToken cancellationToken)
     {
-        var userExists = await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken);
-        var memberExists = await this._grimoireDbContext.Members.AnyAsync(x => x.UserId == command.UserId && x.GuildId == command.GuildId, cancellationToken);
+        var userExists = await this._grimoireDbContext.Users
+            .AsNoTracking().AnyAsync(x => x.Id == command.UserId, cancellationToken);
+        var memberExists = await this._grimoireDbContext.Members
+            .AsNoTracking().AnyAsync(x => x.UserId == command.UserId && x.GuildId == command.GuildId, cancellationToken);
 
         if (!userExists)
             await this._grimoireDbContext.Users.AddAsync(new User

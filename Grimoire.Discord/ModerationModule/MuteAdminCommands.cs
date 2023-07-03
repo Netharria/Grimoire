@@ -100,7 +100,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
             await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Successfully created role {role.Mention} but, " +
                 $"was not able to set permissions for the following channels. {string.Join(' ', result.Select(x => x.Channel.Mention))}");
         }
-        
+
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.Member.Mention} asked {ctx.Guild.CurrentMember} to create {role.Mention} to use as a mute role.");
     }
@@ -125,7 +125,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
                 .Where(x => !x.WasSuccessful)
                 .ToArrayAsync();
 
-        if(!result.Any())
+        if (!result.Any())
         {
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Succussfully refreshed permissions for {role.Mention} role.");
         }
@@ -134,7 +134,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
             await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Was not able to set permissions for the following channels. " +
                 $"{string.Join(' ', result.Select(x => x.Channel.Mention))}");
         }
-        
+
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.Member.Mention} asked {ctx.Guild.CurrentMember} to refresh the permissions of mute role {role.Mention}");
     }
@@ -179,7 +179,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
             }
             catch (DiscordException ex) when (ex is BadRequestException or ServerErrorException)
             {
-                if(tryAttempt < 3)
+                if (tryAttempt < 3)
                 {
                     this._logger.Warning("Exception was thrown while trying to overwrite channel mute permissions. " +
                         "Trying again. Attempt: ({attempt}) Exception Message : ({message})", tryAttempt, ex.Message);

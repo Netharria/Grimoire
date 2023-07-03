@@ -71,7 +71,7 @@ public class TrackerCommands : ApplicationCommandModule
 
         if (logChannel is null) return;
         await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-            .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator} placed a tracker on {member.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}")
+            .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} placed a tracker on {member.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}")
             .WithColor(GrimoireColor.Purple));
     }
 
@@ -89,7 +89,7 @@ public class TrackerCommands : ApplicationCommandModule
 
         if (logChannel is null) return;
         await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-            .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator} removed a tracker on {member.Mention}")
+            .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} removed a tracker on {member.Mention}")
             .WithColor(GrimoireColor.Purple));
     }
 }
