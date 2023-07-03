@@ -27,13 +27,13 @@ public class MessageLogEvents :
 {
     private readonly IMediator _mediator;
     private readonly IDiscordImageEmbedService _attachmentUploadService;
-    private readonly IDiscordAuditLogParserService _logParserService;
+    //private readonly IDiscordAuditLogParserService _logParserService;
 
-    public MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService)
+    public MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService/*, IDiscordAuditLogParserService logParserService*/)
     {
         this._mediator = mediator;
         this._attachmentUploadService = attachmentUploadService;
-        this._logParserService = logParserService;
+        //this._logParserService = logParserService;
     }
 
 
@@ -63,12 +63,12 @@ public class MessageLogEvents :
 
     public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
     {
-        var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Message.Id);
+        //var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Message.Id);
         var response = await this._mediator.Send(
             new DeleteMessageCommand
             {
                 Id = args.Message.Id,
-                DeletedByModerator = auditLogEntry?.UserResponsible.Id,
+                DeletedByModerator = null, //auditLogEntry?.UserResponsible.Id,
                 GuildId = args.Guild.Id
             });
         if (!response.Success || response.LoggingChannel is not ulong loggingChannelId)
@@ -99,8 +99,8 @@ public class MessageLogEvents :
             .AddField("Message Id", args.Message.Id.ToString(), true).WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Red)
             .WithThumbnail(avatarUrl);
-        if (auditLogEntry is not null)
-            embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
+        //if (auditLogEntry is not null)
+        //    embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
         if (response.ReferencedMessage is not null)
             embed.WithDescription($"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
         embed

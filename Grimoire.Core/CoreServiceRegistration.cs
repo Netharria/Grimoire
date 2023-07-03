@@ -29,7 +29,7 @@ public static class CoreServiceRegistration
             var password = section["Password"];
             connectionString = $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Require; Trust Server Certificate=true"; ;
         }
-        services.AddDbContext<GrimoireDbContext>(options =>
+        services.AddDbContextFactory<GrimoireDbContext>(options =>
             options.UseNpgsql(connectionString))
             .AddSingleton<IInviteService, InviteService>()
             .AddScoped<IGrimoireDbContext, GrimoireDbContext>()
