@@ -41,7 +41,7 @@ var host = Host.CreateDefaultBuilder(args)
         services
         .AddCoreServices(context.Configuration)
         .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
-        //.AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
+        .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"];
@@ -96,7 +96,7 @@ var host = Host.CreateDefaultBuilder(args)
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
         .AddHostedService<TickerBackgroundService>()
-        //.AddMemoryCache()
+        .AddMemoryCache()
         .AddHttpClient("Default")
         .AddPolicyHandler(
             HttpPolicyExtensions

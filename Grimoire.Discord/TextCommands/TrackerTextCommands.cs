@@ -16,6 +16,7 @@ namespace Grimoire.Discord.TextCommands;
 [RequireGuild]
 [RequireModuleEnabled(Module.Leveling)]
 [RequireUserGuildPermissions(Permissions.ManageMessages)]
+[ModuleLifespan(ModuleLifespan.Transient)]
 public class TrackerTextCommands : BaseCommandModule
 {
     private readonly IMediator _mediator;

@@ -15,6 +15,7 @@ namespace Grimoire.Discord.TextCommands;
 
 [RequireGuild]
 [RequireModuleEnabled(Module.Leveling)]
+[ModuleLifespan(ModuleLifespan.Transient)]
 public class LevelTextCommands : BaseCommandModule
 {
     private readonly IMediator _mediator;
