@@ -19,6 +19,7 @@ public class GetMuteRoleQueryHandler : IRequestHandler<GetMuteRoleQuery, GetMute
     public async ValueTask<GetMuteRoleQueryResponse> Handle(GetMuteRoleQuery request, CancellationToken cancellationToken)
     {
         var muteRoleId = await this._grimoireDbContext.GuildModerationSettings
+            .AsNoTracking()
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => x.MuteRole)
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);

@@ -17,7 +17,8 @@ public class GetMessageAuthorQueryHandler : IQueryHandler<GetMessageAuthorQuery,
 
     public async ValueTask<ulong?> Handle(GetMessageAuthorQuery query, CancellationToken cancellationToken)
     {
-        var message = await this._grimoire.Messages.FirstOrDefaultAsync(x => x.Id == query.MessageId, cancellationToken);
+        var message = await this._grimoire.Messages
+            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.MessageId, cancellationToken);
         return message?.UserId;
     }
 }

@@ -27,5 +27,6 @@ public class RewardConfiguration : IEntityTypeConfiguration<Reward>
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.Property(e => e.RewardLevel).IsRequired();
+        builder.HasIndex(e => new { e.GuildId, e.RewardLevel });
     }
 }

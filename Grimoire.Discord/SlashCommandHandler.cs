@@ -49,6 +49,8 @@ public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDisco
 
     private async Task SendErrorLogToLogChannel(DiscordClient client, string action, Exception exception, string? errorId = "")
     {
+        if (action.Equals("COMMAND_ERRORED") && exception is NullReferenceException)
+            return;
         if (!ulong.TryParse(this._configuration.GetSection("channelId").Value, out var channelId))
             return;
         var channel = await client.GetChannelOrDefaultAsync(channelId);

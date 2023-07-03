@@ -82,6 +82,7 @@ public class UpdateIgnoreStateForXpGainCommandHandler : ICommandHandler<UpdateIg
         if (couldNotMatch.Length > 0) finalString.Append("Could not match ").Append(couldNotMatch).Append("with a role, channel or user. ");
         if (newIgnoredItems.Length > 0) finalString.Append(newIgnoredItems).Append(command.ShouldIgnore ? " are now ignored for xp gain." : " are no longer ignored for xp gain.");
         var modChannelLog = await this._grimoireDbContext.Guilds
+                .AsNoTracking()
                 .WhereIdIs(command.GuildId)
                 .Select(x => x.ModChannelLog)
                 .FirstOrDefaultAsync(cancellationToken);

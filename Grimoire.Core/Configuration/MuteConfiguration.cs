@@ -26,5 +26,6 @@ public class MuteConfiguration : IEntityTypeConfiguration<Mute>
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.Property(e => e.EndTime).IsRequired();
+        builder.HasIndex(x => x.EndTime);
     }
 }

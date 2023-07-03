@@ -12,7 +12,7 @@ public static class ChannelDatabaseQueryHelpers
     public static async Task<bool> AddMissingChannelsAsync(this DbSet<Channel> databaseChannels, IEnumerable<ChannelDto> channels, CancellationToken cancellationToken = default)
     {
         var channelsToAdd = channels
-            .ExceptBy(databaseChannels.Select(x => x.Id),
+            .ExceptBy(databaseChannels.AsNoTracking().Select(x => x.Id),
             x => x.Id)
             .Select(x => new Channel
             {

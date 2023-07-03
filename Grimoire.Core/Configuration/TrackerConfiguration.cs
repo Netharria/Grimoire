@@ -33,5 +33,6 @@ public class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
             .IsRequired();
         builder.Property(e => e.EndTime)
             .IsRequired();
+        builder.HasIndex(x => x.EndTime);
     }
 }

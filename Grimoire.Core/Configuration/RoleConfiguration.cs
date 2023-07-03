@@ -28,5 +28,7 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
             .IsRequired(false);
         builder.Property(e => e.IsXpIgnored)
             .HasDefaultValue(value: false);
+        builder.HasIndex(e => e.IsXpIgnored)
+            .HasFilter("\"IsXpIgnored\" = TRUE");
     }
 }

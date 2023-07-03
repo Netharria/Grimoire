@@ -31,5 +31,6 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
             .IsRequired();
         builder.Property(e => e.CreatedTimestamp)
             .HasDefaultValueSql("now()");
+        builder.HasIndex(x => x.CreatedTimestamp);
     }
 }

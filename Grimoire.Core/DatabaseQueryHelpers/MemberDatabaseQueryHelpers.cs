@@ -12,7 +12,7 @@ public static class MemberDatabaseQueryHelpers
     public static async Task<bool> AddMissingMembersAsync(this DbSet<Member> databaseMembers, IEnumerable<MemberDto> members, CancellationToken cancellationToken = default)
     {
         var membersToAdd = members
-            .ExceptBy(databaseMembers.Select(x => new { x.UserId, x.GuildId }),
+            .ExceptBy(databaseMembers.AsNoTracking().Select(x => new { x.UserId, x.GuildId }),
             x => new { x.UserId, x.GuildId })
             .Select(x =>
             {
@@ -62,6 +62,7 @@ public static class MemberDatabaseQueryHelpers
     {
         var nicknamesToAdd = users
             .ExceptBy(databaseNicknames
+            .AsNoTracking()
             .OrderByDescending(x => x.Timestamp)
             .Select(x => new { x.UserId, x.GuildId, x.Nickname })
             , x => new { x.UserId, x.GuildId, x.Nickname })
@@ -81,6 +82,7 @@ public static class MemberDatabaseQueryHelpers
         
         var avatarsToAdd = users
             .ExceptBy(databaseAvatars
+            .AsNoTracking()
             .OrderByDescending(x => x.Timestamp)
             .Select(x => new { x.UserId, x.GuildId, x.FileName })
             , x => new { x.UserId, x.GuildId, FileName = x.AvatarUrl })

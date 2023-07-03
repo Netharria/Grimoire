@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Grimoire.Core.Configuration;
 
@@ -26,5 +27,7 @@ public class NicknameHistoryConfiguration : IEntityTypeConfiguration<NicknameHis
             .IsRequired(false); ;
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
+        builder.HasIndex(x => new { x.UserId, x.GuildId, x.Timestamp })
+            .IsDescending(false, false, true);
     }
 }

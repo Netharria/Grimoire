@@ -28,5 +28,7 @@ public class MemberConfigurations : IEntityTypeConfiguration<Member>
             .IsRequired();
         builder.Property(e => e.IsXpIgnored)
             .HasDefaultValue(value: false);
+        builder.HasIndex(e => e.IsXpIgnored)
+            .HasFilter("\"IsXpIgnored\" = TRUE");
     }
 }

@@ -26,5 +26,7 @@ public class ChannelConfiguration : IEntityTypeConfiguration<Channel>
         builder.HasOne(e => e.Lock)
             .WithOne(e => e.Channel)
             .IsRequired(false);
+        builder.HasIndex(e => e.IsXpIgnored)
+            .HasFilter("\"IsXpIgnored\" = TRUE");
     }
 }

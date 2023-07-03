@@ -19,6 +19,7 @@ public class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand>
     public async ValueTask<Unit> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
     {
         var userName = await this._grimoireDbContext.UsernameHistory
+            .AsNoTracking()
             .Where(x => x.UserId == command.UserId)
             .OrderByDescending(x => x.Timestamp)
             .Select(x => x.Username)

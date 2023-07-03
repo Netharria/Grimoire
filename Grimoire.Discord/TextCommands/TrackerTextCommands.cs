@@ -83,7 +83,7 @@ public class TrackerTextCommands : BaseCommandModule
         var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.ModerationLogId.Value);
         if (logChannel is null) return;
         await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-        .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator} placed a tracker on {member.Mention} in {channel.Mention} for {duration:d\\.hh\\:mm}")
+        .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} placed a tracker on {member.Mention} in {channel.Mention} for {duration:d\\.hh\\:mm}")
             .WithColor(GrimoireColor.Purple));
     }
 
@@ -104,7 +104,7 @@ public class TrackerTextCommands : BaseCommandModule
 
         if (logChannel is null) return;
         await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-            .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator} removed a tracker on {member.Mention}")
+            .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} removed a tracker on {member.Mention}")
             .WithColor(GrimoireColor.Purple));
     }
 }

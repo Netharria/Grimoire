@@ -21,6 +21,7 @@ public class GetRewardsQueryHandler : IRequestHandler<GetRewardsQuery, BaseRespo
     public async ValueTask<BaseResponse> Handle(GetRewardsQuery request, CancellationToken cancellationToken)
     {
         var rewards = await this._grimoireDbContext.Rewards
+            .AsNoTracking()
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => $"Level:{x.RewardLevel} Role:{x.Mention()}")
             .ToListAsync(cancellationToken: cancellationToken);

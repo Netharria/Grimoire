@@ -22,6 +22,7 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
     public async ValueTask<GainUserXpCommandResponse> Handle(GainUserXpCommand command, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Members
+            .AsNoTracking()
             .WhereLevelingEnabled()
             .WhereMemberHasId(command.UserId, command.GuildId)
             .WhereMemberNotIgnored(command.ChannelId, command.RoleIds)
@@ -34,7 +35,8 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
                 x.Guild.LevelSettings.Amount,
                 x.Guild.LevelSettings.LevelChannelLogId,
                 x.Guild.LevelSettings.TextTime,
-                x.Guild.ModChannelLog
+                x.Guild.ModChannelLog,
+                Rewards = x.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel })
             }).FirstOrDefaultAsync(cancellationToken);
 
         if (result is null || (result.XpHistory is not null && result.XpHistory.TimeOut > DateTime.UtcNow))
@@ -54,11 +56,10 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
         }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-        var earnedRewards = await this._grimoireDbContext.Rewards
-            .Where(x => x.GuildId == command.GuildId)
+        var earnedRewards = result.Rewards
             .Where(x => x.RewardLevel <= currentLevel)
             .Select(x => x.RoleId )
-            .ToArrayAsync(cancellationToken: cancellationToken);
+            .ToArray();
 
         return new GainUserXpCommandResponse
         {

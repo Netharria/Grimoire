@@ -13,14 +13,6 @@ namespace Grimoire.Core.Features.Leveling;
 
 public static class LevelingExtensions
 {
-    public static IQueryable<Member> GetRankedUsersAsync(
-        this IQueryable<Member> member,
-        ulong guildId, int count = 15, int page = 0) =>
-        member.Where(x => x.GuildId == guildId)
-            .OrderByDescending(x => x.XpHistory.Sum(x => x.Xp))
-            .Skip(page * 15)
-            .Take(count);
-
     public static IEnumerable<T> UpdateIgnoredStatus<T>(this IEnumerable<T> ignorableItems, bool shouldBeIgnored, StringBuilder? outputString = null) where T : IXpIgnore
     {
         foreach (var ignorable in ignorableItems)

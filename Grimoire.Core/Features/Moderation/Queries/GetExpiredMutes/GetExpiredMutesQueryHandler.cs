@@ -18,7 +18,9 @@ public class GetExpiredMutesQueryHandler : IQueryHandler<GetExpiredMutesQuery, I
 
     public async ValueTask<IList<GetExpiredMutesQueryResponse>> Handle(GetExpiredMutesQuery query, CancellationToken cancellationToken)
     {
-        var response = await this._grimoireDbContext.Mutes.Where(x => x.EndTime < DateTimeOffset.UtcNow)
+        var response = await this._grimoireDbContext.Mutes
+            .AsNoTracking()
+            .Where(x => x.EndTime < DateTimeOffset.UtcNow)
             .Where(x => x.Guild.ModerationSettings.MuteRole != null)
             .Select(x => new
             {

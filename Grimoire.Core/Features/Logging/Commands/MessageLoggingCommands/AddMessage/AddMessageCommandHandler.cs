@@ -20,12 +20,19 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
 
     public async ValueTask<Unit> Handle(AddMessageCommand command, CancellationToken cancellationToken)
     {
-        if (!await this._grimoireDbContext.Guilds
+        var result = await this._grimoireDbContext.Guilds
+            .AsNoTracking()
             .WhereIdIs(command.GuildId)
-            .AnyAsync(x => x.MessageLogSettings.ModuleEnabled,
-            cancellationToken))
+            .Select(guild => new
+            {
+                guild.MessageLogSettings.ModuleEnabled,
+                ChannelExists = guild.Channels.Any(x => x.Id == command.ChannelId)
+            }).FirstOrDefaultAsync(cancellationToken);
+        if (result is null)
+            throw new KeyNotFoundException("Guild was not found in database.");
+        if (!result.ModuleEnabled)
             return Unit.Value;
-        if(!await this._grimoireDbContext.Channels.AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
+        if(!result.ChannelExists)
         {
             var channel = new Channel
             {

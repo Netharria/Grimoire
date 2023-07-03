@@ -18,5 +18,6 @@ public class GetLockQueryHandler : IQueryHandler<GetLockQuery, bool>
 
     public async ValueTask<bool> Handle(GetLockQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Locks
+            .AsNoTracking()
             .AnyAsync(x => x.ChannelId == query.ChannelId && x.GuildId == query.GuildId, cancellationToken);
 }

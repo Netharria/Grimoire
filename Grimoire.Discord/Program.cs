@@ -45,16 +45,12 @@ var host = Host.CreateDefaultBuilder(args)
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"];
-            options.TokenType = TokenType.Bot;
             options.LoggerFactory = new LoggerFactory().AddSerilog();
-            options.AutoReconnect = true;
-            options.MinimumLogLevel = LogLevel.Debug;
             options.Intents = DiscordIntents.All;
             options.LogUnknownEvents = false;
         })
         .AddDiscordInteractivity(options =>
         {
-            options.PaginationBehaviour = PaginationBehaviour.WrapAround;
             options.ResponseBehavior = InteractionResponseBehavior.Ack;
             options.ResponseMessage = "That's not a valid button";
             options.Timeout = TimeSpan.FromMinutes(2);
@@ -62,8 +58,7 @@ var host = Host.CreateDefaultBuilder(args)
         })
         .AddDiscordCommandsNext(x => x.StringPrefixes = new [] { ">" },
         x => x?.RegisterCommands(Assembly.GetExecutingAssembly()))
-        .AddDiscordSlashCommands(
-            x => {  },
+        .AddDiscordSlashCommands(extension:
             x =>
             {
                 if (x is not SlashCommandsExtension extension) return;

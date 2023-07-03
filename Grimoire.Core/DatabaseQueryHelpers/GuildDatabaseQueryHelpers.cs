@@ -13,7 +13,8 @@ public static class GuildDatabaseQueryHelpers
     {
         var guildsToAdd = guilds
             .ExceptBy(
-            databaseGuilds.Select(x => x.Id),
+            databaseGuilds
+            .AsNoTracking().Select(x => x.Id),
             x => x.Id)
             .Select(x => new Guild
             {

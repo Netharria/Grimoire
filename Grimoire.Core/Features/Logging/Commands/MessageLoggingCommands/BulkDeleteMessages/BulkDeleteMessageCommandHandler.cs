@@ -21,6 +21,7 @@ public class BulkDeleteMessageCommandHandler : ICommandHandler<BulkDeleteMessage
     public async ValueTask<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand command, CancellationToken cancellationToken)
     {
         var messages = await this._grimoireDbContext.Messages
+            .AsNoTracking()
             .WhereIdsAre(command.Ids)
             .WhereMessageLoggingIsEnabled()
             .Select(x => new

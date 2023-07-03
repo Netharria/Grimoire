@@ -20,6 +20,7 @@ public class GetAllModuleStatesForGuildQueryHandler : IRequestHandler<GetAllModu
 
     public async ValueTask<GetAllModuleStatesForGuildQueryResponse> Handle(GetAllModuleStatesForGuildQuery request, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Guilds
+            .AsNoTracking()
             .WhereIdIs(request.GuildId)
             .Select(x => new GetAllModuleStatesForGuildQueryResponse
             {
