@@ -31,7 +31,7 @@ public class RequestTimingBehavior<TMessage, TResponse> : IPipelineBehavior<TMes
         finally
         {
             var delta = Stopwatch.GetElapsedTime(stopwatch);
-            if (delta.TotalMilliseconds > 100)
+            if (delta.TotalMilliseconds > 150)
                 this._logger.LogWarning(
                 "{ReqestType}; Execution time={ElapsedTime}ms", message.GetType(), delta.TotalMilliseconds);
         }
