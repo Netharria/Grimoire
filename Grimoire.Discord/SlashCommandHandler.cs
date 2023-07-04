@@ -6,11 +6,14 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands.EventArgs;
 using Grimoire.Core.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting.Attributes;
+using Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting.Events;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
 
@@ -18,7 +21,8 @@ namespace Grimoire.Discord;
 
 [DiscordSlashCommandsEventsSubscriber]
 [DiscordClientErroredEventSubscriber]
-public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber
+[DiscordCommandsNextEventsSubscriber]
+public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber, IDiscordCommandsNextEventsSubscriber
 {
     private readonly ILogger<SlashCommandHandler> _logger;
     private readonly IConfiguration _configuration;
@@ -158,4 +162,7 @@ public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDisco
             args.Context.Interaction.Data.Name,
             log.ToString());
     }
+
+    public Task CommandsOnCommandExecuted(CommandsNextExtension sender, CommandExecutionEventArgs args) => Task.CompletedTask;
+    public Task CommandsOnCommandErrored(CommandsNextExtension sender, CommandErrorEventArgs args) => Task.CompletedTask;
 }
