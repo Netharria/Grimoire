@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Logging.Commands.UpdateAvatar;
 
-public sealed record UpdateAvatarCommand : ICommand<UpdateAvatarCommandResponse>
+public sealed record UpdateAvatarCommand : ICommand<UpdateAvatarCommandResponse?>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }

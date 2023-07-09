@@ -34,14 +34,16 @@ public class DeleteOldLogMessagesCommandHandler : ICommandHandler<DeleteOldLogMe
             .Select(x => x.MessageId)
             .ToArray();
 
-        await this._grimoireDbContext.OldLogMessages
+        if(erroredMessages.Any())
+        {
+            await this._grimoireDbContext.OldLogMessages
             .WhereIdsAre(erroredMessages)
             .ExecuteUpdateAsync(x => x.SetProperty(p => p.TimesTried, p => p.TimesTried + 1), cancellationToken);
 
-        await this._grimoireDbContext.OldLogMessages
-            .Where(x => x.TimesTried >= 3)
-            .ExecuteDeleteAsync(cancellationToken);
-
+            await this._grimoireDbContext.OldLogMessages
+                .Where(x => x.TimesTried >= 3)
+                .ExecuteDeleteAsync(cancellationToken);
+        }
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }

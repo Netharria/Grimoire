@@ -118,10 +118,10 @@ internal class MemberLogEvents :
             UserId = args.Member.Id,
             Nickname = args.NicknameAfter
         });
-        if (nicknameResponse is not null && nicknameResponse.BeforeNickname != nicknameResponse.AfterNickname)
+        if (nicknameResponse is not null && !string.Equals(nicknameResponse.BeforeNickname, nicknameResponse.AfterNickname, StringComparison.CurrentCultureIgnoreCase))
         {
-            var logChannel = args.Guild.Channels.GetValueOrDefault(nicknameResponse.NicknameChannelLogId);
-            if (logChannel is not null)
+            if (nicknameResponse.NicknameChannelLogId is not null
+                && args.Guild.Channels.TryGetValue(nicknameResponse.NicknameChannelLogId.Value, out var logChannel))
             {
                 var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Nickname Updated")
@@ -154,10 +154,10 @@ internal class MemberLogEvents :
             UserId = args.Member.Id,
             Username = args.MemberAfter.GetUsernameWithDiscriminator()
         });
-        if (usernameResponse is not null && usernameResponse.BeforeUsername != usernameResponse.AfterUsername)
+        if (usernameResponse is not null && !usernameResponse.BeforeUsername.Equals(usernameResponse.AfterUsername, StringComparison.CurrentCultureIgnoreCase))
         {
-            var logChannel = args.Guild.Channels.GetValueOrDefault(usernameResponse.UsernameChannelLogId);
-            if (logChannel is not null)
+            if (usernameResponse.UsernameChannelLogId is not null
+                && args.Guild.Channels.TryGetValue(usernameResponse.UsernameChannelLogId.Value, out var logChannel))
             {
                 var embed = new DiscordEmbedBuilder()
                         .WithAuthor("Username Updated")
@@ -189,10 +189,10 @@ internal class MemberLogEvents :
             UserId = args.Member.Id,
             AvatarUrl = args.MemberAfter.GetGuildAvatarUrl(ImageFormat.Auto, 128)
         });
-        if (avatarResponse is not null && avatarResponse.BeforeAvatar != avatarResponse.AfterAvatar)
+        if (avatarResponse is not null && !avatarResponse.BeforeAvatar.Equals(avatarResponse.AfterAvatar, StringComparison.Ordinal))
         {
-            var logChannel = args.Guild.Channels.GetValueOrDefault(avatarResponse.AvatarChannelLogId);
-            if (logChannel is not null)
+            if (avatarResponse.AvatarChannelLogId is not null
+                && args.Guild.Channels.TryGetValue(avatarResponse.AvatarChannelLogId.Value, out var logChannel))
             {
                 var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Avatar Updated")

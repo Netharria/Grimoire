@@ -9,7 +9,7 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Logging.Commands.UpdateNickname;
 
-public class UpdateNicknameCommandHandler : ICommandHandler<UpdateNicknameCommand, UpdateNicknameCommandResponse>
+public class UpdateNicknameCommandHandler : ICommandHandler<UpdateNicknameCommand, UpdateNicknameCommandResponse?>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;
 
@@ -18,7 +18,7 @@ public class UpdateNicknameCommandHandler : ICommandHandler<UpdateNicknameComman
         this._grimoireDbContext = grimoireDbContext;
     }
 
-    public async ValueTask<UpdateNicknameCommandResponse> Handle(UpdateNicknameCommand command, CancellationToken cancellationToken)
+    public async ValueTask<UpdateNicknameCommandResponse?> Handle(UpdateNicknameCommand command, CancellationToken cancellationToken)
     {
         var currentNickname = await this._grimoireDbContext.NicknameHistory
             .AsNoTracking()
@@ -33,7 +33,7 @@ public class UpdateNicknameCommandHandler : ICommandHandler<UpdateNicknameComman
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (currentNickname is null
             || string.Equals(currentNickname.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase))
-            return new UpdateNicknameCommandResponse();
+            return null;
 
         await this._grimoireDbContext.NicknameHistory.AddAsync(
             new NicknameHistory
@@ -43,13 +43,11 @@ public class UpdateNicknameCommandHandler : ICommandHandler<UpdateNicknameComman
                 Nickname = command.Nickname
             }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        if (currentNickname.NicknameChannelLogId is null)
-            return new UpdateNicknameCommandResponse();
         return new UpdateNicknameCommandResponse
         {
             BeforeNickname = currentNickname.Nickname,
             AfterNickname = command.Nickname,
-            NicknameChannelLogId = currentNickname.NicknameChannelLogId.Value
+            NicknameChannelLogId = currentNickname.NicknameChannelLogId
         };
     }
 }

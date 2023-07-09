@@ -11,5 +11,5 @@ public sealed record UpdateNicknameCommandResponse : BaseResponse
 {
     public string? BeforeNickname { get; init; }
     public string? AfterNickname { get; init; }
-    public ulong NicknameChannelLogId { get; init; }
+    public ulong? NicknameChannelLogId { get; init; }
 }

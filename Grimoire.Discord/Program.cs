@@ -97,7 +97,7 @@ var host = Host.CreateDefaultBuilder(args)
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
         .AddHostedService<TickerBackgroundService>()
         .AddMemoryCache()
-        .AddHttpClient("Default")
+        .AddHttpClient("Default", x => x.Timeout = TimeSpan.FromSeconds(30))
         .AddPolicyHandler(
             HttpPolicyExtensions
             .HandleTransientHttpError()
