@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Logging.Commands.UpdateAvatar;
 
-public class UpdateAvatarCommandHandler : ICommandHandler<UpdateAvatarCommand, UpdateAvatarCommandResponse>
+public class UpdateAvatarCommandHandler : ICommandHandler<UpdateAvatarCommand, UpdateAvatarCommandResponse?>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;
 
@@ -16,7 +16,7 @@ public class UpdateAvatarCommandHandler : ICommandHandler<UpdateAvatarCommand, U
         this._grimoireDbContext = grimoireDbContext;
     }
 
-    public async ValueTask<UpdateAvatarCommandResponse> Handle(UpdateAvatarCommand command, CancellationToken cancellationToken)
+    public async ValueTask<UpdateAvatarCommandResponse?> Handle(UpdateAvatarCommand command, CancellationToken cancellationToken)
     {
         var currentAvatar = await this._grimoireDbContext.Avatars
             .AsNoTracking()
@@ -31,7 +31,7 @@ public class UpdateAvatarCommandHandler : ICommandHandler<UpdateAvatarCommand, U
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (currentAvatar is null
             || currentAvatar.FileName.Equals(command.AvatarUrl, StringComparison.Ordinal))
-            return new UpdateAvatarCommandResponse();
+            return null;
 
         await this._grimoireDbContext.Avatars.AddAsync(
             new Avatar
@@ -41,13 +41,11 @@ public class UpdateAvatarCommandHandler : ICommandHandler<UpdateAvatarCommand, U
                 FileName = command.AvatarUrl
             }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        if (currentAvatar.AvatarChannelLogId is null)
-            return new UpdateAvatarCommandResponse();
         return new UpdateAvatarCommandResponse
         {
             BeforeAvatar = currentAvatar.FileName,
             AfterAvatar = command.AvatarUrl,
-            AvatarChannelLogId = currentAvatar.AvatarChannelLogId.Value
+            AvatarChannelLogId = currentAvatar.AvatarChannelLogId
         };
     }
 }

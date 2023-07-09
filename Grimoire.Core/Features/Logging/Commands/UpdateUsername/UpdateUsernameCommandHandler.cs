@@ -9,7 +9,7 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Logging.Commands.UpdateUsername;
 
-public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameCommand, UpdateUsernameCommandResponse>
+public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameCommand, UpdateUsernameCommandResponse?>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;
 
@@ -18,7 +18,7 @@ public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameComman
         this._grimoireDbContext = grimoireDbContext;
     }
 
-    public async ValueTask<UpdateUsernameCommandResponse> Handle(UpdateUsernameCommand command, CancellationToken cancellationToken)
+    public async ValueTask<UpdateUsernameCommandResponse?> Handle(UpdateUsernameCommand command, CancellationToken cancellationToken)
     {
         var currentUsername = await this._grimoireDbContext.Members
             .AsNoTracking()
@@ -31,7 +31,7 @@ public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameComman
             }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (currentUsername is null
             || currentUsername.Username.Equals(command.Username, StringComparison.CurrentCultureIgnoreCase))
-            return new UpdateUsernameCommandResponse();
+            return null;
 
         await this._grimoireDbContext.UsernameHistory.AddAsync(
             new UsernameHistory
@@ -40,13 +40,11 @@ public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameComman
                 Username = command.Username
             }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        if (currentUsername.UsernameChannelLogId is null)
-            return new UpdateUsernameCommandResponse();
         return new UpdateUsernameCommandResponse
         {
             BeforeUsername = currentUsername.Username,
             AfterUsername = command.Username,
-            UsernameChannelLogId = currentUsername.UsernameChannelLogId.Value
+            UsernameChannelLogId = currentUsername.UsernameChannelLogId
         };
     }
 }

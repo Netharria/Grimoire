@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Logging.Commands.UpdateNickname;
 
-public sealed record UpdateNicknameCommand : ICommand<UpdateNicknameCommandResponse>
+public sealed record UpdateNicknameCommand : ICommand<UpdateNicknameCommandResponse?>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }

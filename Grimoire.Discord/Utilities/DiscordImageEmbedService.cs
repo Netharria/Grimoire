@@ -45,9 +45,9 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
 
         var images = await this.GetImages(imageUrls);
 
-        foreach ((var url, var index) in imageUrls.Select((x, i) => (x, i)))
+        foreach ((var image, var index) in images.Where(x => x.Successful).Select((x, i) => (x, i)))
         {
-            var fileName = $"attachment{index}.{Path.GetExtension(url.AbsolutePath)}";
+            var fileName = $"attachment{index}.{Path.GetExtension(image.Uri.AbsolutePath)}";
             var stride = 4 * (index / 4);
 
             var imageEmbed = new DiscordEmbedBuilder(embed)
@@ -59,11 +59,14 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
             messageBuilder.AddEmbed(imageEmbed);
 
             var stream = images[index];
-            messageBuilder.AddFile(fileName, stream);
+            messageBuilder.AddFile(fileName, image.Stream);
         }
 
         this.AddNonImageEmbed(urls, embed, messageBuilder);
-
+        AddImagesThatFailedDownload(
+            images.Where(x => !x.Successful).Select(x => x.Uri.AbsolutePath).ToArray(),
+            embed,
+            messageBuilder);
         if (!messageBuilder.Embeds.Any())
         {
             messageBuilder.AddEmbed(embed);
@@ -80,9 +83,29 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
             .Select(url => new Uri(url))
             .ToArray();
 
-    private Task<Stream[]> GetImages(Uri[] uris)
-        => Task.WhenAll(
-            uris.Select(this._httpClient.GetStreamAsync));
+    private async Task<ImageDownloadResult[]> GetImages(Uri[] uris)
+        => await Task.WhenAll(uris.Select(this.GetImage));
+
+    private async Task<ImageDownloadResult> GetImage(Uri uri)
+    {
+        try
+        {
+            return new ImageDownloadResult
+            {
+                Uri = uri,
+                Successful = true,
+                Stream = await this._httpClient.GetStreamAsync(uri)
+            };
+        }
+        catch (HttpRequestException)
+        {
+            return new ImageDownloadResult
+            {
+                Uri = uri,
+                Successful = false
+            };
+        }
+    }
 
     private static void AddAttachmentFileNames(Uri[] imageUrls, int stride, DiscordEmbedBuilder imageEmbed, bool displayFileNames)
     {
@@ -113,4 +136,21 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
             messageBuilder.AddEmbed(imageEmbed);
         }
     }
+
+    private static void AddImagesThatFailedDownload(string[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
+    {
+        if (urls.Any())
+        {
+            var imageEmbed = new DiscordEmbedBuilder(embed)
+                .AddMessageTextToFields("Failed to download these images.", string.Join("\n", urls));
+            messageBuilder.AddEmbed(imageEmbed);
+        }
+    }
+}
+
+public class ImageDownloadResult{
+    public required Uri Uri { get; init; }
+    public required bool Successful { get; init; }
+    public Stream? Stream { get; init; }
+
 }

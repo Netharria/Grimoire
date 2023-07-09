@@ -11,5 +11,5 @@ public sealed record UpdateAvatarCommandResponse : BaseResponse
 {
     public string BeforeAvatar { get; init; } = string.Empty;
     public string AfterAvatar { get; init; } = string.Empty;
-    public ulong AvatarChannelLogId { get; init; }
+    public ulong? AvatarChannelLogId { get; init; }
 }
