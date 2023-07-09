@@ -54,7 +54,7 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
             }
             catch (Exception)
             {
-                break;
+                return null;
             }
         }
 
