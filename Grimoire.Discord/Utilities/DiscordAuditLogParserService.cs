@@ -33,6 +33,8 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
     {
         if (!this._discordClientService.Client.Guilds.TryGetValue(guildId, out var guild))
             return null;
+        if (!guild.CurrentMember.Permissions.HasPermission(Permissions.ViewAuditLog))
+            return null;
 
         IReadOnlyList<DiscordAuditLogEntry> auditLogEntries = new List<DiscordAuditLogEntry>();
 
@@ -49,6 +51,10 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
                     await Task.Delay(500 * i);
                 else
                     return null;
+            }
+            catch (Exception)
+            {
+                break;
             }
         }
 
