@@ -30,7 +30,7 @@ public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameComman
                 x.Guild.UserLogSettings.UsernameChannelLogId
             }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (currentUsername is null
-            || currentUsername.Username.Equals(command.Username, StringComparison.CurrentCultureIgnoreCase))
+            || string.Equals(currentUsername.Username, command.Username, StringComparison.CurrentCultureIgnoreCase))
             return null;
 
         await this._grimoireDbContext.UsernameHistory.AddAsync(

@@ -30,7 +30,7 @@ public class UpdateAvatarCommandHandler : ICommandHandler<UpdateAvatarCommand, U
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (currentAvatar is null
-            || currentAvatar.FileName.Equals(command.AvatarUrl, StringComparison.Ordinal))
+            || string.Equals(currentAvatar.FileName, command.AvatarUrl, StringComparison.Ordinal))
             return null;
 
         await this._grimoireDbContext.Avatars.AddAsync(

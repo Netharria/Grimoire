@@ -34,9 +34,9 @@ public static class UserDatabaseQueryHelpers
     {
         var usernamesToAdd = users
             .ExceptBy(databaseUsernames
-            .OrderByDescending(x => x.Timestamp)
             .AsNoTracking()
-            .Select(x => new { x.UserId, x.Username })
+            .GroupBy(x => x.UserId)
+            .Select(x => new { UserId = x.Key, x.OrderByDescending(x => x.Timestamp).First().Username })
             , x => new { UserId = x.Id, x.Username })
             .Select(x => new UsernameHistory
             {

@@ -34,7 +34,7 @@ public class DeleteOldLogMessagesCommandHandler : ICommandHandler<DeleteOldLogMe
             .Select(x => x.MessageId)
             .ToArray();
 
-        if(erroredMessages.Any())
+        if (erroredMessages.Any())
         {
             await this._grimoireDbContext.OldLogMessages
             .WhereIdsAre(erroredMessages)

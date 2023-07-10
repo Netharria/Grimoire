@@ -38,14 +38,14 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
 
         IReadOnlyList<DiscordAuditLogEntry> auditLogEntries = new List<DiscordAuditLogEntry>();
 
-        for(var i = 1; i <= 3; i++)
+        for (var i = 1; i <= 3; i++)
         {
             try
             {
                 auditLogEntries = await guild.GetAuditLogsAsync(10, action_type: AuditLogActionType.MessageDelete);
                 break;
             }
-            catch(ServerErrorException ex) when (ex.WebResponse.ResponseCode == 502)
+            catch (ServerErrorException ex) when (ex.WebResponse.ResponseCode == 502)
             {
                 if (i < 3)
                     await Task.Delay(500 * i);
