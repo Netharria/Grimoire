@@ -63,8 +63,8 @@ public static class MemberDatabaseQueryHelpers
         var nicknamesToAdd = users
             .ExceptBy(databaseNicknames
             .AsNoTracking()
-            .OrderByDescending(x => x.Timestamp)
-            .Select(x => new { x.UserId, x.GuildId, x.Nickname })
+            .GroupBy(x => new { x.UserId, x.GuildId })
+            .Select(x => new { x.Key.UserId, x.Key.GuildId, x.OrderByDescending(x => x.Timestamp).First().Nickname })
             , x => new { x.UserId, x.GuildId, x.Nickname })
             .Select(x =>  new NicknameHistory
             {
@@ -83,8 +83,8 @@ public static class MemberDatabaseQueryHelpers
         var avatarsToAdd = users
             .ExceptBy(databaseAvatars
             .AsNoTracking()
-            .OrderByDescending(x => x.Timestamp)
-            .Select(x => new { x.UserId, x.GuildId, x.FileName })
+            .GroupBy(x => new { x.UserId, x.GuildId })
+            .Select(x => new { x.Key.UserId, x.Key.GuildId, x.OrderByDescending(x => x.Timestamp).First().FileName })
             , x => new { x.UserId, x.GuildId, FileName = x.AvatarUrl })
             .Select(x =>  new Avatar
             {

@@ -97,7 +97,7 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
                 Stream = await this._httpClient.GetStreamAsync(uri)
             };
         }
-        catch (Exception ex) when (ex is TaskCanceledException or HttpRequestException) 
+        catch (Exception ex) when (ex is TaskCanceledException or HttpRequestException)
         {
             return new ImageDownloadResult
             {
@@ -148,7 +148,8 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
     }
 }
 
-public class ImageDownloadResult{
+public class ImageDownloadResult
+{
     public required Uri Uri { get; init; }
     public required bool Successful { get; init; }
     public Stream? Stream { get; init; }
