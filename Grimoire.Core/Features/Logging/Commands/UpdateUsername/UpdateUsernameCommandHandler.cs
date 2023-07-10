@@ -26,7 +26,7 @@ public class UpdateUsernameCommandHandler : ICommandHandler<UpdateUsernameComman
             .Where(x => x.Guild.UserLogSettings.ModuleEnabled)
             .Select(x => new
             {
-                x.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First().Username,
+                x.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(x => x.Timestamp < DateTime.UtcNow.AddSeconds(2)).Username,
                 x.Guild.UserLogSettings.UsernameChannelLogId
             }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
         if (currentUsername is null

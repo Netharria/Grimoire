@@ -18,12 +18,23 @@ public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
 
     public async ValueTask<Unit> Handle(AddMemberCommand command, CancellationToken cancellationToken)
     {
-        var userExists = await this._grimoireDbContext.Users
-            .AsNoTracking().AnyAsync(x => x.Id == command.UserId, cancellationToken);
-        var memberExists = await this._grimoireDbContext.Members
-            .AsNoTracking().AnyAsync(x => x.UserId == command.UserId && x.GuildId == command.GuildId, cancellationToken);
+        var userResult = await this._grimoireDbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == command.UserId)
+            .Select(x => new
+            {
+                x.UsernameHistories.OrderByDescending(username => username.Timestamp).First().Username,
+            }).FirstOrDefaultAsync(cancellationToken);
+        var memberResult = await this._grimoireDbContext.Members
+            .AsNoTracking()
+            .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
+            .Select(x => new
+            {
+                x.NicknamesHistory.OrderByDescending(Nickname => Nickname.Timestamp).First().Nickname,
+                x.AvatarHistory.OrderByDescending(avatar => avatar.Timestamp).First().FileName
+            }).FirstOrDefaultAsync(cancellationToken);
 
-        if (!userExists)
+        if (userResult is null)
             await this._grimoireDbContext.Users.AddAsync(new User
             {
                 Id = command.UserId,
@@ -35,7 +46,19 @@ public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
                     }
             }, cancellationToken);
 
-        if (!memberExists)
+        if(userResult is not null)
+        {
+            if(!string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                await this._grimoireDbContext.UsernameHistory.AddAsync(new UsernameHistory
+                {
+                    Username = command.UserName,
+                    UserId = command.UserId
+                }, cancellationToken);
+            }
+        }
+
+        if (memberResult is null)
         {
             var member = new Member
             {
@@ -57,8 +80,7 @@ public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
                     {
                         UserId = command.UserId,
                         GuildId = command.GuildId,
-                        FileName = command.AvatarUrl,
-                        Timestamp = DateTimeOffset.UtcNow
+                        FileName = command.AvatarUrl
                     }
                 },
                 NicknamesHistory = new List<NicknameHistory>
@@ -73,9 +95,35 @@ public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
             };
 
             await this._grimoireDbContext.Members.AddAsync(member, cancellationToken);
-
         }
-        if (!userExists || !memberExists)
+
+        if (memberResult is not null)
+        {
+            if (!string.Equals(memberResult.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase))
+            {
+                await this._grimoireDbContext.NicknameHistory.AddAsync(new NicknameHistory
+                {
+                    UserId = command.UserId,
+                    GuildId = command.GuildId,
+                    Nickname = command.Nickname
+                }, cancellationToken);
+            }
+
+            if (!string.Equals(memberResult.FileName, command.AvatarUrl, StringComparison.Ordinal))
+            {
+                await this._grimoireDbContext.Avatars.AddAsync(new Avatar
+                {
+                    UserId = command.UserId,
+                    GuildId = command.GuildId,
+                    FileName = command.AvatarUrl
+                }, cancellationToken);
+            }
+        }
+        if (userResult is null
+            || memberResult is null
+            || !string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase)
+            || !string.Equals(memberResult.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase)
+            || !string.Equals(memberResult.FileName, command.AvatarUrl, StringComparison.Ordinal))
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }
