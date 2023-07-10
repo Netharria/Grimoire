@@ -61,7 +61,8 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
                 new MessageHistory
                 {
                     MessageId = command.MessageId,
-                    MessageContent = command.MessageContent,
+                    MessageContent = command.MessageContent
+                        .Replace("\x00", ""),
                     GuildId = command.GuildId,
                     Action = MessageAction.Created
                 }
