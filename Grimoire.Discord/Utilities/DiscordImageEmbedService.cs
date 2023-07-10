@@ -63,10 +63,9 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
         }
 
         this.AddNonImageEmbed(urls, embed, messageBuilder);
-        AddImagesThatFailedDownload(
-            images.Where(x => !x.Successful).Select(x => x.Uri.AbsolutePath).ToArray(),
-            embed,
-            messageBuilder);
+
+        AddImagesThatFailedDownload(images, embed, messageBuilder);
+
         if (!messageBuilder.Embeds.Any())
         {
             messageBuilder.AddEmbed(embed);
@@ -137,12 +136,14 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
         }
     }
 
-    private static void AddImagesThatFailedDownload(string[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
+    private static void AddImagesThatFailedDownload(ImageDownloadResult[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
     {
-        if (urls.Any())
+
+        var failedFiles = urls.Where(x => !x.Successful).Select(x => Path.GetFileName(x.Uri.AbsolutePath)).ToArray();
+        if (failedFiles.Any())
         {
             var imageEmbed = new DiscordEmbedBuilder(embed)
-                .AddMessageTextToFields("Failed to download these images.", string.Join("\n", urls));
+                .AddMessageTextToFields("Failed to download these images.", string.Join("\n", failedFiles));
             messageBuilder.AddEmbed(imageEmbed);
         }
     }
