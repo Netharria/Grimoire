@@ -24,6 +24,8 @@ public class Channel : IIdentifiable<ulong>, IXpIgnore, IMentionable
     public virtual ICollection<OldLogMessage> OldMessages { get; set; } = new HashSet<OldLogMessage>();
 
     public virtual ICollection<Tracker> Trackers { get; set; } = new List<Tracker>();
+    public virtual ICollection<MemberCommandOverride> MemberCommandOverrides { get; set; } = new List<MemberCommandOverride>();
+    public virtual ICollection<RoleCommandOverride> RoleCommandOverrides { get; set; } = new List<RoleCommandOverride>();
 
     public virtual Lock? Lock { get; set; }
 }

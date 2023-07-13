@@ -9,12 +9,13 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
 using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
+using Grimoire.Domain.Enums;
 
 namespace Grimoire.Discord.LevelingModule;
 
 [SlashRequireGuild]
-[SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireModuleEnabled(Module.Leveling)]
+[SlashRequireGuildPermisssionsOrOverride(Permissions.ManageGuild, CommandPermissions.Ignore)]
 [SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
 public class IgnoreCommands : ApplicationCommandModule
 {

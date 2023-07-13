@@ -9,7 +9,7 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class UsernameHistory : IIdentifiable<long>
+public class UsernameHistory
 {
     public long Id { get; set; }
     public ulong UserId { get; set; }

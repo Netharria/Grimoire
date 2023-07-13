@@ -44,4 +44,5 @@ public class Member : IXpIgnore, IMember, IMentionable
     public virtual ICollection<MessageHistory> MessagesDeletedAsModerator { get; set; } = new List<MessageHistory>();
     public virtual ICollection<XpHistory> XpHistory { get; set; } = new List<XpHistory>();
     public virtual ICollection<XpHistory> AwardRecipients { get; set; } = new List<XpHistory>();
+    public virtual ICollection<MemberCommandOverride> MemberCommandOverrides { get; set; } = new List<MemberCommandOverride>();
 }

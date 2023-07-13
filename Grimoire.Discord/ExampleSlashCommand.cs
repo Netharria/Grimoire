@@ -62,4 +62,29 @@ public class ExampleSlashCommand : ApplicationCommandModule
         var embedPages = interactivity.GeneratePagesInEmbed(pageBuild.ToString(), SplitType.Line);
         return interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: true, ctx.Member, embedPages);
     }
+
+    /// <summary>
+    /// A sample command that shows how to send a paginated response to an interaction.
+    /// </summary>
+    /// <param name="ctx">The context which triggered the interaction.</param>
+    /// <returns>The completed task.</returns>
+    [SlashCommand("RoleSwap", "A slash command made to test the DSharpPlusSlashCommands library!")]
+    public async static Task RoleSwapAsync(InteractionContext ctx)
+    {
+        if (ctx.Member.Roles.Any())
+            await ctx.Member.ReplaceRolesAsync(new List<DiscordRole>());
+        else
+        {
+            var roles = ctx.Guild.Roles.Where(x => !x.Value.IsManaged).Select(x => x.Value);
+            await ctx.Member.ReplaceRolesAsync(roles);
+        }
+
+
+
+        await ctx.CreateResponseAsync(
+            InteractionResponseType.ChannelMessageWithSource,
+            new DiscordInteractionResponseBuilder()
+                .WithContent($"Pong: {ctx.Client.Ping}ms")
+                .AsEphemeral(ephemeral: true));
+    }
 }

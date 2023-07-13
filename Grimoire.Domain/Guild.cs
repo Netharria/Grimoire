@@ -38,6 +38,8 @@ public class Guild : IIdentifiable<ulong>
     public virtual ICollection<Lock> LockedChannels { get; set; } = new List<Lock>();
 
     public virtual ICollection<XpHistory> XpHistory { get; set; } = new List<XpHistory>();
+    public virtual ICollection<MemberCommandOverride> MemberCommandOverrides { get; set; } = new List<MemberCommandOverride>();
+    public virtual ICollection<RoleCommandOverride> RoleCommandOverrides { get; set; } = new List<RoleCommandOverride>();
 
     public virtual GuildUserLogSettings UserLogSettings { get; set; } = null!;
 

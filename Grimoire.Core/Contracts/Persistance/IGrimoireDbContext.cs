@@ -29,6 +29,8 @@ public interface IGrimoireDbContext
 
     public DbSet<Member> Members { get; }
 
+    public DbSet<MemberCommandOverride> MemberCommandOverrides { get; }
+
     public DbSet<Lock> Locks { get; }
 
     public DbSet<Message> Messages { get; }
@@ -48,6 +50,8 @@ public interface IGrimoireDbContext
     public DbSet<Reward> Rewards { get; }
 
     public DbSet<Role> Roles { get; }
+
+    public DbSet<RoleCommandOverride> RoleCommandOverrides { get; }
 
     public DbSet<Sin> Sins { get; }
 

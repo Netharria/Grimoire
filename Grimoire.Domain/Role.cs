@@ -20,4 +20,5 @@ public class Role : IIdentifiable<ulong>, IXpIgnore, IMentionable
     public virtual Reward? Reward { get; set; }
 
     public bool IsXpIgnored { get; set; }
+    public virtual ICollection<RoleCommandOverride> RoleCommandOverrides { get; set; } = new List<RoleCommandOverride>();
 }

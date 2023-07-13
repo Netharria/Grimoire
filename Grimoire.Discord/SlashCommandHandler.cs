@@ -5,11 +5,13 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Security.Cryptography;
 using System.Text;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands.EventArgs;
 using Grimoire.Core.Exceptions;
+using Grimoire.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting.Attributes;
@@ -104,6 +106,14 @@ public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDisco
                     var value = Enum.ToObject(typeof(Permissions), requireUserGuildPermissions.Permissions).ToString();
                     await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} server permissions to use this command.");
                 }
+
+                if (check is SlashRequireGuildPermisssionsOrOverrideAttribute requireGuildPermissionsOrOverride)
+                {
+                    var value = Enum.ToObject(typeof(Permissions), requireGuildPermissionsOrOverride.Permissions).ToString();
+                    var commandValue = Enum.ToObject(typeof(CommandPermissions), requireGuildPermissionsOrOverride.CommandPermission).ToString();
+                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} server permissions or have a command override for {commandValue} set to use this command.");
+                }
+
                 if (check is SlashRequireBotPermissionsAttribute requireBotPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireBotPermissions.Permissions).ToString();
@@ -130,8 +140,7 @@ public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDisco
         }
         else if (args.Exception is not null)
         {
-            var errorUlong = args.Context.User.Id + args.Context.InteractionId;
-            var errorBytes = BitConverter.GetBytes(errorUlong);
+            var errorBytes = RandomNumberGenerator.GetBytes(8);
             var errorByteString = Convert.ToHexString(errorBytes, 0, 5);
 
             var commandOptions = args.Context.Interaction.Data.Options;

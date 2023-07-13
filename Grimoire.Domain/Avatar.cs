@@ -9,7 +9,7 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class Avatar : IIdentifiable<long>
+public class Avatar
 {
     public long Id { get; set; }
     public ulong UserId { get; set; }

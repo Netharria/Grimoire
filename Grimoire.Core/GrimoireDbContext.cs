@@ -45,6 +45,9 @@ public class GrimoireDbContext : DbContext, IGrimoireDbContext
     public DbSet<Member> Members
         => this.Set<Member>();
 
+    public DbSet<MemberCommandOverride> MemberCommandOverrides
+        => this.Set<MemberCommandOverride>();
+
     public DbSet<Lock> Locks
         => this.Set<Lock>();
 
@@ -74,6 +77,9 @@ public class GrimoireDbContext : DbContext, IGrimoireDbContext
 
     public DbSet<Role> Roles
         => this.Set<Role>();
+
+    public DbSet<RoleCommandOverride> RoleCommandOverrides
+        => this.Set<RoleCommandOverride>();
 
     public DbSet<Sin> Sins
         => this.Set<Sin>();
