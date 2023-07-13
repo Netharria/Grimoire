@@ -13,7 +13,7 @@ namespace Grimoire.Discord.Utilities;
 
 public interface IDiscordAuditLogParserService
 {
-    Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong targetId);
+    Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong targetId);
 }
 
 public class DiscordAuditLogParserService : IDiscordAuditLogParserService

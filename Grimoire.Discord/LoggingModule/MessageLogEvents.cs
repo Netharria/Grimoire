@@ -63,7 +63,7 @@ public class MessageLogEvents :
 
     public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
     {
-        var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Message.Id);
+        var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Channel.Id, args.Message.Id);
         var response = await this._mediator.Send(
             new DeleteMessageCommand
             {
