@@ -13,7 +13,7 @@ namespace Grimoire.Discord.Utilities;
 
 public interface IDiscordAuditLogParserService
 {
-    Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong targetId);
+    Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong targetId);
 }
 
 public class DiscordAuditLogParserService : IDiscordAuditLogParserService
@@ -29,7 +29,7 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
         this._mediator = mediator;
     }
 
-    public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong messageId)
+    public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong messageId)
     {
         if (!this._discordClientService.Client.Guilds.TryGetValue(guildId, out var guild))
             return null;
@@ -67,10 +67,13 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
         var deleteEntry = auditLogEntries
             .OrderByDescending(x => x.CreationTimestamp)
             .OfType<DiscordAuditLogMessageEntry>()
-            .Where(x => x.Target.Id == result)
+            .Where(x => x.Target.Id == result && x.Channel.Id == channelId)
             .FirstOrDefault();
 
         if (deleteEntry is null) return null;
+
+        if(deleteEntry.CreationTimestamp < DateTime.UtcNow.AddMinutes(-10))
+            return null;
 
         if (_memoryCache.TryGetValue(deleteEntry.Id, out DiscordAuditLogMessageEntry? cachedEntry))
         {
