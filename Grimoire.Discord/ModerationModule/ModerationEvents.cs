@@ -10,6 +10,7 @@ using Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan;
 using Grimoire.Core.Features.Moderation.Queries.GetLastBan;
 using Grimoire.Core.Features.Moderation.Queries.GetLock;
 using Grimoire.Core.Features.Moderation.Queries.GetUserMute;
+using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
@@ -35,7 +36,6 @@ public class ModerationEvents :
 
     public async Task DiscordOnGuildBanAdded(DiscordClient sender, GuildBanAddEventArgs args)
     {
-        await Task.Delay(TimeSpan.FromMilliseconds(500));
         var response = await this._mediator.Send(new GetLastBanQuery
         {
             UserId = args.Member.Id,
@@ -44,7 +44,7 @@ public class ModerationEvents :
 
         if (!response.ModerationModuleEnabled)
             return;
-        if (response.SinOn < DateTimeOffset.UtcNow.AddSeconds(-5))
+        if (response.LastSin is null || response.LastSin.SinOn < DateTimeOffset.UtcNow.AddSeconds(-5))
         {
             var addBanCommand = new AddBanCommand
             {
@@ -68,7 +68,11 @@ public class ModerationEvents :
             }
             await this._mediator.Send(addBanCommand);
 
-            response = await this._mediator.Send(new GetLastBanQuery());
+            response = await this._mediator.Send(new GetLastBanQuery
+                {
+                    UserId = args.Member.Id,
+                    GuildId = args.Guild.Id
+                });
         }
         if (response.LogChannelId is null) return;
 
@@ -78,13 +82,13 @@ public class ModerationEvents :
         var embed = new DiscordEmbedBuilder()
             .WithAuthor($"Banned")
             .AddField("User", args.Member.Mention, true)
-            .AddField("Sin Id", $"**{response.SinId}**", true)
+            .AddField("Sin Id", $"**{response.LastSin?.SinId}**", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Red);
-        if (response.ModeratorId is not null)
-            embed.AddField("Mod", $"<@{response.ModeratorId}>", true);
+        if (response.LastSin?.ModeratorId is not null)
+            embed.AddField("Mod", $"<@{response.LastSin.ModeratorId}>", true);
 
-        embed.AddField("Reason", !string.IsNullOrWhiteSpace(response.Reason) ? response.Reason : "None", true);
+        embed.AddField("Reason", !string.IsNullOrWhiteSpace(response.LastSin?.Reason) ? response.LastSin?.Reason : "None", true);
 
         await loggingChannel.SendMessageAsync(embed);
     }
@@ -100,6 +104,9 @@ public class ModerationEvents :
         if (!response.ModerationModuleEnabled)
             return;
 
+        if (response.LastSin is null)
+            return;
+
         if (response.LogChannelId is null) return;
 
         if (!args.Guild.Channels.TryGetValue(response.LogChannelId.Value,
@@ -108,11 +115,11 @@ public class ModerationEvents :
         var embed = new DiscordEmbedBuilder()
             .WithAuthor($"Unbanned")
             .AddField("User", args.Member.Mention, true)
-            .AddField("Sin Id", $"**{response.SinId}**", true)
+            .AddField("Sin Id", $"**{response.LastSin.SinId}**", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green);
-        if (response.ModeratorId is not null)
-            embed.AddField("Mod", $"<@{response.ModeratorId}>", true);
+        if (response.LastSin.ModeratorId is not null)
+            embed.AddField("Mod", $"<@{response.LastSin.ModeratorId}>", true);
 
         await loggingChannel.SendMessageAsync(embed);
     }

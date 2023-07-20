@@ -20,5 +20,6 @@ public class GuildModerationSettings : IModule
     public TimeSpan AutoPardonAfter { get; set; }
 
     public ulong? MuteRole { get; set; }
+    public virtual Role? MuteRoleNav { get; set; }
     public bool ModuleEnabled { get; set; }
 }
