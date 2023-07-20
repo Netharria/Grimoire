@@ -25,7 +25,9 @@ internal class GuildModerationSettingsConfiguration : IEntityTypeConfiguration<G
             .IsRequired(false);
         builder.Property(e => e.AutoPardonAfter)
             .HasDefaultValue(TimeSpan.FromDays(30 * 365));
-        builder.Property(e => e.MuteRole)
+        builder.HasOne(e => e.MuteRoleNav)
+            .WithOne()
+            .HasForeignKey<GuildModerationSettings>(e => e.MuteRole)
             .IsRequired(false);
         builder.Property(x => x.ModuleEnabled)
             .HasDefaultValue(value: false);

@@ -15,6 +15,8 @@ public class Guild : IIdentifiable<ulong>
 
     public ulong? ModChannelLog { get; set; }
 
+    public virtual Channel? ModLogChannel { get; set; }
+
     public virtual ICollection<Channel> Channels { get; set; } = new List<Channel>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();

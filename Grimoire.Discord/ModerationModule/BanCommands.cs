@@ -79,13 +79,11 @@ public class BanCommands : ApplicationCommandModule
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Banned")
             .AddField("User", user.Mention, true)
-            .AddField("Moderator", ctx.User.Mention, true)
             .AddField("Sin Id", $"**{response.SinId}**", true)
+            .AddField("Moderator", ctx.User.Mention, true)
+            .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason)
             .WithColor(GrimoireColor.Red)
             .WithTimestamp(DateTimeOffset.UtcNow);
-
-        if (!string.IsNullOrWhiteSpace(reason))
-            embed.AddField("Reason", reason);
 
         await ctx.CreateResponseAsync(embed);
     }

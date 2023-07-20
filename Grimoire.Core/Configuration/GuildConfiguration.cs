@@ -19,8 +19,10 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
         builder.Property(e => e.Id)
             .ValueGeneratedNever()
             .IsRequired();
-        builder.Property(e => e.ModChannelLog).
-            IsRequired(false);
+        builder.HasOne(e => e.ModLogChannel)
+            .WithMany()
+            .HasForeignKey(e => e.ModChannelLog)
+            .IsRequired(false);
         builder.HasOne(e => e.UserLogSettings)
             .WithOne(e => e.Guild)
             .HasForeignKey<GuildUserLogSettings>(e => e.GuildId)
