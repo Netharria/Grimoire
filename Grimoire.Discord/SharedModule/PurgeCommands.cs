@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Xml.Linq;
+
 namespace Grimoire.Discord.SharedModule;
 
 [SlashRequirePermissions(Permissions.ManageMessages)]
@@ -18,9 +20,10 @@ public class PurgeCommands : ApplicationCommandModule
         [Maximum(1000)]
         [Option("Count", "The number of matching messages to delete.")] long count)
     {
+        await ctx.DeferAsync(true);
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync((int)count, $"{ctx.User.Username} purged these messages.");
-        await ctx.ReplyAsync(GrimoireColor.Green,
+        await ctx.EditReplyAsync(GrimoireColor.Green,
             message: PurgeMessageBuilder(messagesDeleted));
     }
 
@@ -31,10 +34,11 @@ public class PurgeCommands : ApplicationCommandModule
         [Maximum(1000)]
         [Option("Count", "The number of matching messages to delete.")] long count)
     {
+        await ctx.DeferAsync(true);
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync((int)count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
-            messages => messages.Author == user);
-        await ctx.ReplyAsync(GrimoireColor.Green,
+           messages => messages.Author == user);
+        await ctx.EditReplyAsync(GrimoireColor.Green,
             message: PurgeMessageBuilder(messagesDeleted));
     }
 
