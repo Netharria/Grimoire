@@ -19,7 +19,7 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordGuildMemberAddedEventSubscriber]
 [DiscordGuildMemberUpdatedEventSubscriber]
 [DiscordGuildMemberRemovedEventSubscriber]
-internal class MemberLogEvents :
+public sealed class MemberLogEvents :
     IDiscordGuildMemberAddedEventSubscriber,
     IDiscordGuildMemberUpdatedEventSubscriber,
     IDiscordGuildMemberRemovedEventSubscriber

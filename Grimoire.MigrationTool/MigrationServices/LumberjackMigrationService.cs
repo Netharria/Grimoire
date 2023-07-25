@@ -209,7 +209,7 @@ public class LumberjackMigrationService
 
         lumberjackUsernameHistory.ForEach(x =>
         {
-            if (x.Username.EndsWith("#0"))
+            if (x.Username.EndsWith("#0", StringComparison.OrdinalIgnoreCase))
                 x.Username = x.Username[..^2];
         });
 

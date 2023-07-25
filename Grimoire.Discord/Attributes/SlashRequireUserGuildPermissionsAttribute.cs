@@ -12,7 +12,7 @@ using DSharpPlus.CommandsNext.Attributes;
 namespace Grimoire.Discord.Attributes;
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-internal class SlashRequireUserGuildPermissionsAttribute : SlashCheckBaseAttribute
+public sealed class SlashRequireUserGuildPermissionsAttribute : SlashCheckBaseAttribute
 {
     /// <summary>
     /// Gets the permissions required by this attribute.

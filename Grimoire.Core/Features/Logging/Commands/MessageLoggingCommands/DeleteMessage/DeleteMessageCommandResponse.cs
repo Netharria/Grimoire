@@ -14,5 +14,5 @@ public sealed record DeleteMessageCommandResponse : BaseResponse
     public string? MessageContent { get; init; }
     public ulong? ReferencedMessage { get; init; }
     public AttachmentDto[] Attachments { get; init; } = Array.Empty<AttachmentDto>();
-    public bool Success { get; init; } = false;
+    public bool Success { get; init; }
 }

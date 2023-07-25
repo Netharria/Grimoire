@@ -49,6 +49,8 @@ dotnet_style_qualification_for_field = true:silent
 dotnet_style_qualification_for_property = true:error
 dotnet_style_qualification_for_method = true:error
 dotnet_style_qualification_for_event = true:error
+dotnet_diagnostic.CA1852.severity = warning
+dotnet_diagnostic.CA1310.severity = warning
 
 # Project files
 [*.{csproj,targets,yml}]
@@ -161,7 +163,7 @@ csharp_style_pattern_local_over_anonymous_function = true:warning
 csharp_style_prefer_index_operator = true:suggestion
 csharp_style_prefer_range_operator = true:suggestion
 csharp_style_throw_expression = false:warning
-csharp_style_unused_value_assignment_preference = discard_variable:silent
+csharp_style_unused_value_assignment_preference = discard_variable:suggestion
 csharp_style_unused_value_expression_statement_preference = discard_variable:silent
 
 # 'using' directive preferences
@@ -228,7 +230,7 @@ dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case
 
 dotnet_naming_rule.async_methods_should_be_async_suffix.severity = error
 dotnet_naming_rule.async_methods_should_be_async_suffix.symbols = async_methods
-dotnet_naming_rule.async_methods_should_be_async_suffix.style = async_suffix
+dotnet_naming_rule.async_methods_should_be_async_suffix.style = pascal_case
 
 dotnet_naming_rule.const_fields_should_be_pascal_case.severity = warning
 dotnet_naming_rule.const_fields_should_be_pascal_case.symbols = const_fields
@@ -306,3 +308,6 @@ csharp_style_allow_blank_line_after_token_in_conditional_expression_experimental
 csharp_style_allow_blank_line_after_colon_in_constructor_initializer_experimental = true:silent
 csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental = true:silent
 csharp_style_prefer_extended_property_pattern = true:suggestion
+dotnet_diagnostic.CA1311.severity = warning
+dotnet_diagnostic.CA1805.severity = warning
+csharp_style_prefer_readonly_struct_member = true:suggestion

@@ -10,7 +10,7 @@ using Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember;
 namespace Grimoire.Discord.DatabaseManagementModules;
 
 [DiscordGuildMemberAddedEventSubscriber]
-internal class MemberEventManagementModule :
+public sealed class MemberEventManagementModule :
     IDiscordGuildMemberAddedEventSubscriber
 {
     private readonly IMediator _mediator;

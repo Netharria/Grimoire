@@ -64,8 +64,8 @@ public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDisco
             var shortStackTrace = string.Empty;
             if (exception.StackTrace is not null)
                 shortStackTrace = string.Join('\n', exception.StackTrace.Split('\n')
-                    .Where(x => x.StartsWith("   at Grimoire"))
-                    .Select(x => x[(x.IndexOf(" in ") + 4)..])
+                    .Where(x => x.StartsWith("   at Grimoire", StringComparison.OrdinalIgnoreCase))
+                    .Select(x => x[(x.IndexOf(" in ", StringComparison.OrdinalIgnoreCase) + 4)..])
                     .Select(x => '\"' + x.Replace(":line", "\" line")));
             await channel.SendMessageAsync($"Encountered exception while executing {action} {errorIdString}\n" +
                 $"```csharp\n{exception.Message}\n{shortStackTrace}\n```");
