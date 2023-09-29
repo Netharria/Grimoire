@@ -58,7 +58,7 @@ public class WarnCommands : ApplicationCommandModule
             .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
             .WithColor(GrimoireColor.Yellow));
         }
-        catch (UnauthorizedException)
+        catch (Exception ex) when (ex is BadRequestException or UnauthorizedException)
         {
             await ctx.SendLogAsync(response, GrimoireColor.Red,
                 message: $"Was not able to send a direct message with the warn details to {user.Mention}");
