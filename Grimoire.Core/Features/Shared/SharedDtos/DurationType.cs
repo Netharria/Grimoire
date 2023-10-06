@@ -30,7 +30,7 @@ public static class DurationTypeExtensions
         {
             DurationType.Minutes => TimeSpan.FromMinutes(durationAmount),
             DurationType.Hours => TimeSpan.FromHours(durationAmount),
-            DurationType.Days => TimeSpan.FromHours(durationAmount),
+            DurationType.Days => TimeSpan.FromDays(durationAmount),
             _ => throw new NotImplementedException(),
         };
 }
