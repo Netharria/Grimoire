@@ -52,7 +52,7 @@ public class SinAdminCommands : ApplicationCommandModule
             .AddField("User", response.SinnerName, true)
             .AddField("Sin Id", response.SinId.ToString(), true)
             .AddField("Moderator", ctx.Member.Mention, true)
-            .AddField("Reason", reason, true)
+            .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason, true)
             .WithColor(GrimoireColor.Green));
     }
 
