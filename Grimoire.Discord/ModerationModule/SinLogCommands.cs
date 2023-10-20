@@ -61,9 +61,11 @@ public class SinLogCommands : ApplicationCommandModule
         });
         if (!response.SinList.Any())
             await ctx.ReplyAsync(GrimoireColor.Green, message: "That user does not have any logs",
+                title: $"Sin log for {user.GetUsernameWithDiscriminator()}",
                 ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
         foreach (var message in response.SinList)
             await ctx.ReplyAsync(GrimoireColor.Green, message: message,
+                title: $"Sin log for {user.GetUsernameWithDiscriminator()}",
                 ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
 
     }
