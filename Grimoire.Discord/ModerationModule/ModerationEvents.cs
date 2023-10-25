@@ -10,7 +10,6 @@ using Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan;
 using Grimoire.Core.Features.Moderation.Queries.GetLastBan;
 using Grimoire.Core.Features.Moderation.Queries.GetLock;
 using Grimoire.Core.Features.Moderation.Queries.GetUserMute;
-using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
@@ -69,10 +68,10 @@ public class ModerationEvents :
             await this._mediator.Send(addBanCommand);
 
             response = await this._mediator.Send(new GetLastBanQuery
-                {
-                    UserId = args.Member.Id,
-                    GuildId = args.Guild.Id
-                });
+            {
+                UserId = args.Member.Id,
+                GuildId = args.Guild.Id
+            });
         }
         if (response.LogChannelId is null) return;
 

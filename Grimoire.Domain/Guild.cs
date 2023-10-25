@@ -41,6 +41,12 @@ public class Guild : IIdentifiable<ulong>
 
     public virtual ICollection<XpHistory> XpHistory { get; set; } = new List<XpHistory>();
 
+    public virtual ICollection<IgnoredChannel> IgnoredChannels { get; set; } = new List<IgnoredChannel>();
+
+    public virtual ICollection<IgnoredMember> IgnoredMembers { get; set; } = new List<IgnoredMember>();
+
+    public virtual ICollection<IgnoredRole> IgnoredRoles { get; set; } = new List<IgnoredRole>();
+
     public virtual GuildUserLogSettings UserLogSettings { get; set; } = null!;
 
     public virtual GuildLevelSettings LevelSettings { get; set; } = null!;

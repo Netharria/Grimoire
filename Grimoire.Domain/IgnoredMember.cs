@@ -8,18 +8,10 @@
 using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
-
-public class Reward : IMentionable
+public class IgnoredMember : IMember
 {
-    public ulong RoleId { get; set; }
-
-    public virtual Role Role { get; set; } = null!;
-
+    public ulong UserId { get; set; }
+    public virtual Member Member { get; set; } = null!;
     public ulong GuildId { get; set; }
-
     public virtual Guild Guild { get; set; } = null!;
-
-    public int RewardLevel { get; set; }
-
-    public string? RewardMessage { get; set; }
 }

@@ -9,6 +9,7 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
 using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
+using Grimoire.Core.Responses;
 
 namespace Grimoire.Discord.LevelingModule;
 
@@ -56,11 +57,9 @@ public class IgnoreCommands : ApplicationCommandModule
             await ctx.ReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
             return;
         }
-        var command = new UpdateIgnoreStateForXpGainCommand
-        {
-            GuildId = ctx.Guild.Id,
-            ShouldIgnore = shouldIgnore
-        };
+        IUpdateIgnoreForXpGain command = shouldIgnore
+            ? new AddIgnoreForXpGainCommand{ GuildId = ctx.Guild.Id }
+            : new RemoveIgnoreForXpGainCommand { GuildId = ctx.Guild.Id };
 
         if (matchedIds.TryGetValue("User", out var userIds))
         {

@@ -30,7 +30,9 @@ public class RewardCommands : ApplicationCommandModule
         [Option("Role", "The role to be added as a reward")] DiscordRole role,
         [Minimum(1)]
         [Maximum(int.MaxValue)]
-        [Option("Level", "The level the reward is awarded at.")] long level)
+        [Option("Level", "The level the reward is awarded at.")] long level,
+        [MaximumLength(2048)]
+        [Option("Message", "The message to send to users when they earn a reward.")] string message = "")
     {
         if (ctx.Guild.CurrentMember.Hierarchy < role.Position)
             throw new AnticipatedException($"{ctx.Guild.CurrentMember.DisplayName} will not be able to apply this " +
@@ -42,6 +44,7 @@ public class RewardCommands : ApplicationCommandModule
                 RoleId = role.Id,
                 GuildId = ctx.Guild.Id,
                 RewardLevel = (int)level,
+                Message = string.IsNullOrWhiteSpace(message) ? null : message
             });
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: response.Message, ephemeral: false);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
