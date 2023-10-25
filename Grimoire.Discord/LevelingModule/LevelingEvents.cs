@@ -22,7 +22,7 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
-        if (args.Message.MessageType is not MessageType.Default or MessageType.Reply ||
+        if (args.Message.MessageType is not MessageType.Default and not MessageType.Reply ||
             args.Author is not DiscordMember member) return;
         if (member.IsBot) return;
         var response = await this._mediator.Send(new GainUserXpCommand
