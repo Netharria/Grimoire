@@ -41,7 +41,7 @@ public class MessageLogEvents :
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
         if (args.Guild is null
-            || args.Message.MessageType is not MessageType.Default or MessageType.Reply)
+            || args.Message.MessageType is not MessageType.Default and not MessageType.Reply)
             return;
         await this._mediator.Send(new AddMessageCommand
         {
