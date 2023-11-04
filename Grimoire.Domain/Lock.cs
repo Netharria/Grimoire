@@ -17,9 +17,9 @@ public class Lock
 
     public long PreviouslyDenied { get; set; }
 
-    public ulong ModeratorId { get; set; }
+    public ulong? ModeratorId { get; set; }
 
-    public virtual Member Moderator { get; set; } = null!;
+    public virtual Member? Moderator { get; set; } = null!;
 
     public ulong GuildId { get; set; }
 

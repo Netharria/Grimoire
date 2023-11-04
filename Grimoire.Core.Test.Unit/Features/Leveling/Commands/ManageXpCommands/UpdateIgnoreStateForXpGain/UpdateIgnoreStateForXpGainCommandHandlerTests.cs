@@ -20,19 +20,18 @@ public class UpdateIgnoreStateForXpGainCommandHandlerTests
 {
 
     [Test]
-    public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_UpdateIgnoreStatusAsync()
+    public async Task WhenAddIgnoreForXpGainCommandHandlerCalled_AddIgnoreStatusAsync()
     {
         var databaseFixture = new TestDatabaseFixture();
         using var context = databaseFixture.CreateContext();
         //context.Database.BeginTransaction();
-        var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
+        var cut = new AddIgnoreForXpGainCommandHandler(context);
 
         var result = await cut.Handle(
-            new UpdateIgnoreStateForXpGainCommand
+            new AddIgnoreForXpGainCommand
             {
                 Users = new [] { new UserDto { Id = TestDatabaseFixture.Member1.UserId } },
                 GuildId = TestDatabaseFixture.Member1.GuildId,
-                ShouldIgnore = true,
                 Channels = new []
                 {
                     new ChannelDto
@@ -58,21 +57,21 @@ public class UpdateIgnoreStateForXpGainCommandHandlerTests
             && x.GuildId == TestDatabaseFixture.Member1.GuildId
             ).FirstAsync();
 
-        member.IsXpIgnored.Should().BeTrue();
+        member.IsIgnoredMember.Should().NotBeNull();
 
         var role = await context.Roles.Where(x =>
             x.Id == TestDatabaseFixture.Role1.Id
             && x.GuildId == TestDatabaseFixture.Role1.GuildId
             ).FirstAsync();
 
-        role.IsXpIgnored.Should().BeTrue();
+        role.IsIgnoredRole.Should().NotBeNull();
 
         var channel = await context.Channels.Where(x =>
             x.Id == TestDatabaseFixture.Channel1.Id
             && x.GuildId == TestDatabaseFixture.Channel1.GuildId
             ).FirstAsync();
 
-        channel.IsXpIgnored.Should().BeTrue();
+        channel.IsIgnoredChannel.Should().NotBeNull();
     }
 
     [Test]
@@ -81,13 +80,12 @@ public class UpdateIgnoreStateForXpGainCommandHandlerTests
         var databaseFixture = new TestDatabaseFixture();
         using var context = databaseFixture.CreateContext();
         context.Database.BeginTransaction();
-        var cut = new UpdateIgnoreStateForXpGainCommandHandler(context);
+        var cut = new AddIgnoreForXpGainCommandHandler(context);
 
         var result = await cut.Handle(
-            new UpdateIgnoreStateForXpGainCommand
+            new AddIgnoreForXpGainCommand
             {
                 GuildId = TestDatabaseFixture.Member1.GuildId,
-                ShouldIgnore = true,
                 InvalidIds = new [] { "asldfkja" }
             }, default);
         context.ChangeTracker.Clear();

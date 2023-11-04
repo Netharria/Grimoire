@@ -105,7 +105,7 @@ public static class MemberDatabaseQueryHelpers
 
     public static IQueryable<Member> WhereMemberNotIgnored(this IQueryable<Member> members, ulong channelId, ulong[] roleIds)
             => members
-            .WhereIgnored(false)
-            .Where(x => !x.Guild.Channels.Where(y => y.Id == channelId).Any(y => y.IsXpIgnored))
-            .Where(x => !x.Guild.Roles.Where(y => roleIds.Any(z => z == y.Id)).Any(y => y.IsXpIgnored));
+            .Where(x => x.IsIgnoredMember == null)
+            .Where(x => !x.Guild.IgnoredChannels.Any(y => y.ChannelId == channelId))
+            .Where(x => !x.Guild.IgnoredRoles.Any(y => roleIds.Any(z => z == y.RoleId)));
 }

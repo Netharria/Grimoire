@@ -37,18 +37,23 @@ public class TrackerCommands : ApplicationCommandModule
             return;
         }
 
-        if (!ctx.Guild.Members.TryGetValue(user.Id, out var member))
+        if (ctx.Guild.Members.TryGetValue(user.Id, out var member))
+        {
+            if (member.Permissions.HasPermission(Permissions.ManageGuild))
+            {
+                await ctx.ReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
+                return;
+            }
+        }
+
+
+        discordChannel ??= ctx.Channel;
+
+        if (!ctx.Guild.Channels.ContainsKey(discordChannel.Id))
         {
             await ctx.ReplyAsync(message: "<_<\n>_>\nThat channel is not on this server.\n Try a different one.");
             return;
         }
-        if (member.Permissions.HasPermission(Permissions.ManageGuild))
-        {
-            await ctx.ReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
-            return;
-        }
-
-        discordChannel ??= ctx.Channel;
 
         var permissions = discordChannel.PermissionsFor(ctx.Guild.CurrentMember);
         if (!permissions.HasPermission(Permissions.SendMessages))
@@ -57,21 +62,21 @@ public class TrackerCommands : ApplicationCommandModule
         var response = await this._mediator.Send(
             new AddTrackerCommand
             {
-                UserId = member.Id,
+                UserId = user.Id,
                 GuildId = ctx.Guild.Id,
                 Duration = durationType.GetTimeSpan(durationAmount),
                 ChannelId = discordChannel.Id,
                 ModeratorId = ctx.Member.Id,
             });
 
-        await ctx.ReplyAsync(message: $"Tracker placed on {member.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}", ephemeral: false);
+        await ctx.ReplyAsync(message: $"Tracker placed on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}", ephemeral: false);
 
         if (response.ModerationLogId is null) return;
         var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.ModerationLogId.Value);
 
         if (logChannel is null) return;
         await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-            .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} placed a tracker on {member.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}")
+            .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}")
             .WithColor(GrimoireColor.Purple));
     }
 

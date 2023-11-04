@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
-using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -47,7 +46,7 @@ public class TickerBackgroundService : BackgroundService
             {
                 var delta = Stopwatch.GetElapsedTime(stopwatch);
                 if (delta.TotalMilliseconds > 1000)
-                    this._logger.Warning("Background Task Execution time={ElapsedTime}ms", delta.TotalMilliseconds);
+                    this._logger.Warning("Background Task took more than 1 second to complete Execution time={ElapsedTime}ms", delta.TotalMilliseconds);
             }
         }
     }
