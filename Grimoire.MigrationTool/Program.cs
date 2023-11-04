@@ -15,7 +15,7 @@ Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(GrimoireDBContextBuilder.Configuration)
                 .CreateLogger();
 
-if (args[0] is "all")
+if (string.Equals(args[0], "all", StringComparison.OrdinalIgnoreCase))
 {
     using (var lumberjackDbContext = new LumberjackDbContext())
     {
@@ -35,7 +35,7 @@ if (args[0] is "all")
         await fuzzyMigrationTool.MigrateFuzzyDatabaseAsync();
     }
 }
-else if (args[0] is "ignore-tables")
+else if (string.Equals(args[0], "ignore-tables", StringComparison.OrdinalIgnoreCase))
 {
     await IgnoreTableMigration.MigrateIgnoreEntriesAsync();
 }
