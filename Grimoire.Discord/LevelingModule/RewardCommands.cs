@@ -31,8 +31,8 @@ public class RewardCommands : ApplicationCommandModule
         [Minimum(1)]
         [Maximum(int.MaxValue)]
         [Option("Level", "The level the reward is awarded at.")] long level,
-        [MaximumLength(2048)]
-        [Option("Message", "The message to send to users when they earn a reward.")] string message = "")
+        [MaximumLength(4096)]
+        [Option("Message", "The message to send to users when they earn a reward. Discord Markdown applies.")] string message = "")
     {
         if (ctx.Guild.CurrentMember.Hierarchy < role.Position)
             throw new AnticipatedException($"{ctx.Guild.CurrentMember.DisplayName} will not be able to apply this " +

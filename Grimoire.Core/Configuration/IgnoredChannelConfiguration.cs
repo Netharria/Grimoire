@@ -20,10 +20,10 @@ internal class IgnoredChannelConfiguration : IEntityTypeConfiguration<IgnoredCha
         builder.HasOne(e => e.Channel)
             .WithOne(e => e.IsIgnoredChannel)
             .HasForeignKey<IgnoredChannel>(e => e.ChannelId)
-            .IsRequired(true);
+            .IsRequired();
         builder.HasOne(e => e.Guild)
             .WithMany(e => e.IgnoredChannels)
             .HasForeignKey(e => e.GuildId)
-            .IsRequired(true);
+            .IsRequired();
     }
 }

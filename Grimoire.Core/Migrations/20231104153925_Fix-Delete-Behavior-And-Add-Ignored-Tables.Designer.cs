@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Core.Migrations
 {
     [DbContext(typeof(GrimoireDbContext))]
-    [Migration("20231021010459_Add-Ignored-Tables")]
-    partial class AddIgnoredTables
+    [Migration("20231104153925_Fix-Delete-Behavior-And-Add-Ignored-Tables")]
+    partial class FixDeleteBehaviorAndAddIgnoredTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -321,7 +321,7 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("ModeratorId")
+                    b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<long>("PreviouslyAllowed")
@@ -444,7 +444,7 @@ namespace Grimoire.Core.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Mute", b =>
                 {
-                    b.Property<long>("SinId")
+                    b.Property<long?>("SinId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("EndTime")
@@ -541,7 +541,7 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("ModeratorId")
+                    b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTimeOffset>("PardonDate")
@@ -624,7 +624,8 @@ namespace Grimoire.Core.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("RewardMessage")
-                        .HasColumnType("text");
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
 
                     b.HasKey("RoleId");
 
@@ -711,7 +712,7 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("LogChannelId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("ModeratorId")
+                    b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
                     b.HasKey("UserId", "GuildId");
@@ -1029,8 +1030,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Moderator")
                         .WithMany("ChannelsLocked")
                         .HasForeignKey("ModeratorId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Channel");
 
@@ -1192,8 +1192,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Moderator")
                         .WithMany("SinsPardoned")
                         .HasForeignKey("ModeratorId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Guild");
 
@@ -1230,7 +1229,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Member")
                         .WithMany("Reactions")
                         .HasForeignKey("UserId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Guild");
@@ -1312,8 +1311,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Moderator")
                         .WithMany("TrackedUsers")
                         .HasForeignKey("ModeratorId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Grimoire.Domain.Member", "Member")
                         .WithMany("Trackers")

@@ -15,22 +15,33 @@ Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(GrimoireDBContextBuilder.Configuration)
                 .CreateLogger();
 
-using (var lumberjackDbContext = new LumberjackDbContext())
+if (args[0] is "all")
 {
-    var lumberjackMigrationTool = new LumberjackMigrationService(lumberjackDbContext);
-    await lumberjackMigrationTool.MigrateLumberJackDatabaseAsync();
-}
+    using (var lumberjackDbContext = new LumberjackDbContext())
+    {
+        var lumberjackMigrationTool = new LumberjackMigrationService(lumberjackDbContext);
+        await lumberjackMigrationTool.MigrateLumberJackDatabaseAsync();
+    }
 
-using (var anubisDbContext = new AnubisDbContext())
-{
-    var anubisMigrationTool = new AnubisMigrationService(anubisDbContext);
-    await anubisMigrationTool.MigrateAnubisDatabaseAsync();
-}
+    using (var anubisDbContext = new AnubisDbContext())
+    {
+        var anubisMigrationTool = new AnubisMigrationService(anubisDbContext);
+        await anubisMigrationTool.MigrateAnubisDatabaseAsync();
+    }
 
-using (var fuzzyDbContext = new FuzzyDbContext())
+    using (var fuzzyDbContext = new FuzzyDbContext())
+    {
+        var fuzzyMigrationTool = new FuzzyMigrationService(fuzzyDbContext);
+        await fuzzyMigrationTool.MigrateFuzzyDatabaseAsync();
+    }
+}
+else if (args[0] is "ignore-tables")
 {
-    var fuzzyMigrationTool = new FuzzyMigrationService(fuzzyDbContext);
-    await fuzzyMigrationTool.MigrateFuzzyDatabaseAsync();
+    await IgnoreTableMigration.MigrateIgnoreEntriesAsync();
+}
+else
+{
+    throw new ArgumentNullException(nameof(args), "Please provide argument 'all' or 'ignore-table' to select migration scope");
 }
 
 Log.CloseAndFlush();

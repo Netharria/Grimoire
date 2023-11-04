@@ -71,7 +71,8 @@ public class AddIgnoreForXpGainCommandHandler : ICommandHandler<AddIgnoreForXpGa
             {
                 newIgnoredItems.Append(UserExtensions.Mention(ignorable.UserId)).Append(' ');
             }
-            await this._grimoireDbContext.IgnoredMembers.AddRangeAsync(allUsersToIgnore);
+            if (allUsersToIgnore.Any())
+                await this._grimoireDbContext.IgnoredMembers.AddRangeAsync(allUsersToIgnore);
         }
 
         if (command.Roles.Any())
@@ -89,7 +90,8 @@ public class AddIgnoreForXpGainCommandHandler : ICommandHandler<AddIgnoreForXpGa
             {
                 newIgnoredItems.Append(RoleExtensions.Mention(ignorable.RoleId)).Append(' ');
             }
-            await this._grimoireDbContext.IgnoredRoles.AddRangeAsync(allRolesToIgnore);
+            if (allRolesToIgnore.Any())
+                await this._grimoireDbContext.IgnoredRoles.AddRangeAsync(allRolesToIgnore);
         }
 
         if (command.Channels.Any())
@@ -105,9 +107,10 @@ public class AddIgnoreForXpGainCommandHandler : ICommandHandler<AddIgnoreForXpGa
                 }).ToArray();
             foreach (var ignorable in allChannelsToIgnore)
             {
-                newIgnoredItems.Append(UserExtensions.Mention(ignorable.ChannelId)).Append(' ');
+                newIgnoredItems.Append(ChannelExtensions.Mention(ignorable.ChannelId)).Append(' ');
             }
-            await this._grimoireDbContext.IgnoredChannels.AddRangeAsync(allChannelsToIgnore);
+            if (allChannelsToIgnore.Any())
+                await this._grimoireDbContext.IgnoredChannels.AddRangeAsync(allChannelsToIgnore);
         }
 
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);

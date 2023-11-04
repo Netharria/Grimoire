@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
 using Serilog;
@@ -62,12 +63,18 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
                     response.LogChannelId,
                     response.LevelLogChannel);
             }
-            foreach (var reward in newRewards.Where(x => string.IsNullOrWhiteSpace(x.Message)))
+            foreach (var reward in newRewards.Where(x => !string.IsNullOrWhiteSpace(x.Message)))
             {
                 try
                 {
-                    await member.SendMessageAsync(new DiscordEmbedBuilder().WithAuthor(args.Guild.CurrentMember.DisplayName)
-                    .WithDescription(reward.Message));
+                    if (args.Guild.Roles.TryGetValue(reward.RoleId, out var role))
+                    {
+                        await member.SendMessageAsync(new DiscordEmbedBuilder()
+                            .WithAuthor($"Congratulations on earning {role.Name}!", iconUrl: args.Guild.IconUrl)
+                            .WithFooter($"Message from the moderators of {args.Guild.Name}.")
+                            .WithDescription(Regex.Unescape(reward!.Message!)));
+                    }
+                    
                 }
                 catch (Exception ex)
                 {

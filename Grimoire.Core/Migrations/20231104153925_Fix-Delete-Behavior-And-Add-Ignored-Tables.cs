@@ -5,16 +5,45 @@
 namespace Grimoire.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class AddIgnoredTables : Migration
+    public partial class FixDeleteBehaviorAndAddIgnoredTables : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_Reaction_Members_UserId_GuildId",
+                table: "Reaction");
+
+            migrationBuilder.AlterColumn<decimal>(
+                name: "ModeratorId",
+                table: "Trackers",
+                type: "numeric(20,0)",
+                nullable: true,
+                oldClrType: typeof(decimal),
+                oldType: "numeric(20,0)");
+
             migrationBuilder.AddColumn<string>(
                 name: "RewardMessage",
                 table: "Rewards",
-                type: "text",
+                type: "character varying(4096)",
+                maxLength: 4096,
                 nullable: true);
+
+            migrationBuilder.AlterColumn<decimal>(
+                name: "ModeratorId",
+                table: "Pardons",
+                type: "numeric(20,0)",
+                nullable: true,
+                oldClrType: typeof(decimal),
+                oldType: "numeric(20,0)");
+
+            migrationBuilder.AlterColumn<decimal>(
+                name: "ModeratorId",
+                table: "Locks",
+                type: "numeric(20,0)",
+                nullable: true,
+                oldClrType: typeof(decimal),
+                oldType: "numeric(20,0)");
 
             migrationBuilder.CreateTable(
                 name: "IgnoredChannels",
@@ -133,6 +162,14 @@ namespace Grimoire.Core.Migrations
                 column: "ModChannelLog",
                 principalTable: "Channels",
                 principalColumn: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Reaction_Members_UserId_GuildId",
+                table: "Reaction",
+                columns: new[] { "UserId", "GuildId" },
+                principalTable: "Members",
+                principalColumns: new[] { "UserId", "GuildId" },
+                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
@@ -145,6 +182,10 @@ namespace Grimoire.Core.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Guilds_Channels_ModChannelLog",
                 table: "Guilds");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Reaction_Members_UserId_GuildId",
+                table: "Reaction");
 
             migrationBuilder.DropTable(
                 name: "IgnoredChannels");
@@ -166,6 +207,44 @@ namespace Grimoire.Core.Migrations
             migrationBuilder.DropColumn(
                 name: "RewardMessage",
                 table: "Rewards");
+
+            migrationBuilder.AlterColumn<decimal>(
+                name: "ModeratorId",
+                table: "Trackers",
+                type: "numeric(20,0)",
+                nullable: false,
+                defaultValue: 0m,
+                oldClrType: typeof(decimal),
+                oldType: "numeric(20,0)",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<decimal>(
+                name: "ModeratorId",
+                table: "Pardons",
+                type: "numeric(20,0)",
+                nullable: false,
+                defaultValue: 0m,
+                oldClrType: typeof(decimal),
+                oldType: "numeric(20,0)",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<decimal>(
+                name: "ModeratorId",
+                table: "Locks",
+                type: "numeric(20,0)",
+                nullable: false,
+                defaultValue: 0m,
+                oldClrType: typeof(decimal),
+                oldType: "numeric(20,0)",
+                oldNullable: true);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Reaction_Members_UserId_GuildId",
+                table: "Reaction",
+                columns: new[] { "UserId", "GuildId" },
+                principalTable: "Members",
+                principalColumns: new[] { "UserId", "GuildId" },
+                onDelete: ReferentialAction.Restrict);
         }
     }
 }

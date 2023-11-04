@@ -20,10 +20,10 @@ internal class IgnoredMemberConfiguration : IEntityTypeConfiguration<IgnoredMemb
         builder.HasOne(e => e.Member)
             .WithOne(e => e.IsIgnoredMember)
             .HasForeignKey<IgnoredMember>(e => new { e.UserId, e.GuildId })
-            .IsRequired(true);
+            .IsRequired();
         builder.HasOne(e => e.Guild)
             .WithMany(e => e.IgnoredMembers)
             .HasForeignKey(e => e.GuildId)
-            .IsRequired(true);
+            .IsRequired();
     }
 }

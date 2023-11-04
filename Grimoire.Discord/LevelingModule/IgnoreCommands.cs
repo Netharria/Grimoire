@@ -51,6 +51,7 @@ public class IgnoreCommands : ApplicationCommandModule
 
     private async Task UpdateIgnoreState(InteractionContext ctx, string value, bool shouldIgnore)
     {
+        await ctx.DeferAsync();
         var matchedIds = await DiscordSnowflakeParser.ParseStringIntoIdsAndGroupByTypeAsync(ctx, value);
         if (!matchedIds.Any() || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
@@ -97,7 +98,11 @@ public class IgnoreCommands : ApplicationCommandModule
         }
         var response = await this._mediator.Send(command);
 
-        await ctx.ReplyAsync(GrimoireColor.Green, message: response.Message, ephemeral: false);
+        
+        await ctx.EditReplyAsync(GrimoireColor.Green,
+            string.IsNullOrWhiteSpace(response.Message)
+            ? "All items in list provided were not ignored"
+            : response.Message);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 

@@ -107,5 +107,5 @@ public static class MemberDatabaseQueryHelpers
             => members
             .Where(x => x.IsIgnoredMember == null)
             .Where(x => !x.Guild.IgnoredChannels.Any(y => y.ChannelId == channelId))
-            .Where(x => !x.Guild.Roles.Any(y => roleIds.Any(z => z == y.Id)));
+            .Where(x => !x.Guild.IgnoredRoles.Any(y => roleIds.Any(z => z == y.RoleId)));
 }

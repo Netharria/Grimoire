@@ -23,8 +23,7 @@ public class RemoveExpiredTrackersCommandHandler : ICommandHandler<RemoveExpired
             .Select(x => new
             {
                 Tracker = x,
-                ModerationLogId = x.Guild.ModChannelLog,
-                TrackerChannelId = x.LogChannelId
+                ModerationLogId = x.Guild.ModChannelLog
             }).ToArrayAsync(cancellationToken: cancellationToken);
         if (results.Any())
         {
@@ -37,7 +36,7 @@ public class RemoveExpiredTrackersCommandHandler : ICommandHandler<RemoveExpired
             UserId = x.Tracker.UserId,
             GuildId = x.Tracker.GuildId,
             LogChannelId = x.ModerationLogId,
-            TrackerChannelId = x.TrackerChannelId
+            TrackerChannelId = x.Tracker.LogChannelId
         });
     }
 }

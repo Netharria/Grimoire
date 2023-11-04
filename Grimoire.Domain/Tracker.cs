@@ -25,7 +25,7 @@ public class Tracker : IMember
 
     public DateTimeOffset EndTime { get; set; }
 
-    public ulong ModeratorId { get; set; }
+    public ulong? ModeratorId { get; set; }
 
-    public virtual Member Moderator { get; set; } = null!;
+    public virtual Member? Moderator { get; set; } = null!;
 }

@@ -25,6 +25,7 @@ public class GetIgnoredItemsQueryHandler : IRequestHandler<GetIgnoredItemsQuery,
 
         var ignoredItems = await this._grimoireDbContext.Guilds
             .AsNoTracking()
+            .AsSplitQuery()
             .WhereIdIs(request.GuildId)
             .Select(x => new
             {
