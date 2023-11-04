@@ -78,7 +78,7 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
         => urls
             .Where(url =>
                 !string.IsNullOrWhiteSpace(url)
-                && this._validImageExtensions.Contains(Path.GetExtension(url.Split('?')[0])))
+                && this._validImageExtensions.Contains(Path.GetExtension(url.Split('?')[0]), StringComparer.OrdinalIgnoreCase))
             .Select(url => new Uri(url))
             .ToArray();
 

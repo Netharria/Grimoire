@@ -11,21 +11,21 @@ namespace Grimoire.Discord;
 public class ExampleContextMenus : ApplicationCommandModule
 {
     [ContextMenu(ApplicationCommandType.MessageContextMenu, "Delete")]
-    public async Task DeleteMessageAsync(ContextMenuContext ctx)
+    public static async Task DeleteMessageAsync(ContextMenuContext ctx)
     {
         await ctx.TargetMessage.DeleteAsync();
         await ctx.CreateResponseAsync(new DiscordEmbedBuilder().WithDescription("Message was deleted"));
     }
 
     [ContextMenu(ApplicationCommandType.UserContextMenu, "ChannelBan")]
-    public async Task ChannelBanAsync(ContextMenuContext ctx)
+    public static async Task ChannelBanAsync(ContextMenuContext ctx)
     {
         await ctx.Channel.AddOverwriteAsync(ctx.TargetMember, Permissions.None, Permissions.SendMessages);
         await ctx.CreateResponseAsync(new DiscordEmbedBuilder().WithDescription("User was channel banned."));
     }
 
     [ContextMenu(ApplicationCommandType.MessageContextMenu, "Settings")]
-    public async Task MessageSettingsAsync(ContextMenuContext ctx)
+    public static async Task MessageSettingsAsync(ContextMenuContext ctx)
     {
         await ctx.DeferAsync();
         var rows = new List<DiscordActionRowComponent>()

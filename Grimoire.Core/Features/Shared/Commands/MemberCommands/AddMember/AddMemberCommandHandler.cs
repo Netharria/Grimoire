@@ -46,9 +46,9 @@ public class AddMemberCommandHandler : ICommandHandler<AddMemberCommand>
                     }
             }, cancellationToken);
 
-        if(userResult is not null)
+        if (userResult is not null)
         {
-            if(!string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase))
+            if (!string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase))
             {
                 await this._grimoireDbContext.UsernameHistory.AddAsync(new UsernameHistory
                 {

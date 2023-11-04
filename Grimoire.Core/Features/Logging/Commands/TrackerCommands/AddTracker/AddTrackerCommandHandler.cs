@@ -25,7 +25,8 @@ public class AddTrackerCommandHandler : ICommandHandler<AddTrackerCommand, AddTr
         var result = await this._grimoireDbContext.Guilds
             .Where(x => x.Id == command.GuildId)
             .Select(x =>
-            new {
+            new
+            {
                 Tracker = x.Trackers.FirstOrDefault(y => y.UserId == command.UserId),
                 x.ModChannelLog,
                 MemberExist = x.Members.Any(y => y.UserId == command.UserId)

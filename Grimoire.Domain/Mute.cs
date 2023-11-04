@@ -11,9 +11,9 @@ namespace Grimoire.Domain;
 
 public class Mute : IMember
 {
-    public long SinId { get; set; }
+    public long? SinId { get; set; }
 
-    public virtual Sin Sin { get; set; } = null!;
+    public virtual Sin? Sin { get; set; } = null!;
 
     public ulong UserId { get; set; }
 

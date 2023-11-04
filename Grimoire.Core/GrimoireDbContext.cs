@@ -42,11 +42,20 @@ public class GrimoireDbContext : DbContext, IGrimoireDbContext
     public DbSet<GuildModerationSettings> GuildModerationSettings
         => this.Set<GuildModerationSettings>();
 
-    public DbSet<Member> Members
-        => this.Set<Member>();
+    public DbSet<IgnoredChannel> IgnoredChannels
+        => this.Set<IgnoredChannel>();
+
+    public DbSet<IgnoredMember> IgnoredMembers
+        => this.Set<IgnoredMember>();
+
+    public DbSet<IgnoredRole> IgnoredRoles
+        => this.Set<IgnoredRole>();
 
     public DbSet<Lock> Locks
         => this.Set<Lock>();
+
+    public DbSet<Member> Members
+        => this.Set<Member>();
 
     public DbSet<Message> Messages
         => this.Set<Message>();

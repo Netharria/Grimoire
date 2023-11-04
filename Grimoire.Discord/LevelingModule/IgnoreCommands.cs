@@ -9,6 +9,7 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
 using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
+using Grimoire.Core.Responses;
 
 namespace Grimoire.Discord.LevelingModule;
 
@@ -50,17 +51,16 @@ public class IgnoreCommands : ApplicationCommandModule
 
     private async Task UpdateIgnoreState(InteractionContext ctx, string value, bool shouldIgnore)
     {
+        await ctx.DeferAsync();
         var matchedIds = await DiscordSnowflakeParser.ParseStringIntoIdsAndGroupByTypeAsync(ctx, value);
         if (!matchedIds.Any() || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
             return;
         }
-        var command = new UpdateIgnoreStateForXpGainCommand
-        {
-            GuildId = ctx.Guild.Id,
-            ShouldIgnore = shouldIgnore
-        };
+        IUpdateIgnoreForXpGain command = shouldIgnore
+            ? new AddIgnoreForXpGainCommand{ GuildId = ctx.Guild.Id }
+            : new RemoveIgnoreForXpGainCommand { GuildId = ctx.Guild.Id };
 
         if (matchedIds.TryGetValue("User", out var userIds))
         {
@@ -98,7 +98,11 @@ public class IgnoreCommands : ApplicationCommandModule
         }
         var response = await this._mediator.Send(command);
 
-        await ctx.ReplyAsync(GrimoireColor.Green, message: response.Message, ephemeral: false);
+        
+        await ctx.EditReplyAsync(GrimoireColor.Green,
+            string.IsNullOrWhiteSpace(response.Message)
+            ? "All items in list provided were not ignored"
+            : response.Message);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 

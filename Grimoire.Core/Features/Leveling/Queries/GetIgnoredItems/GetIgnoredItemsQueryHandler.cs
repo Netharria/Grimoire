@@ -25,12 +25,13 @@ public class GetIgnoredItemsQueryHandler : IRequestHandler<GetIgnoredItemsQuery,
 
         var ignoredItems = await this._grimoireDbContext.Guilds
             .AsNoTracking()
+            .AsSplitQuery()
             .WhereIdIs(request.GuildId)
             .Select(x => new
             {
-                IgnoredRoles = x.Roles.Where(x => x.IsXpIgnored).Select(x => x.Id),
-                IgnoredChannels = x.Channels.Where(x => x.IsXpIgnored).Select(x => x.Id),
-                IgnoredMembers = x.Members.Where(x => x.IsXpIgnored).Select(x => x.UserId)
+                IgnoredRoles = x.IgnoredRoles.Select(x => x.RoleId),
+                IgnoredChannels = x.IgnoredChannels.Select(x => x.ChannelId),
+                IgnoredMembers = x.IgnoredMembers.Select(x => x.UserId)
             }).FirstAsync(cancellationToken: cancellationToken);
 
         if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredMembers.Any())

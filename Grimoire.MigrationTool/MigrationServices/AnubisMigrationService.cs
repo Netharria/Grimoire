@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using EFCore.BulkExtensions;
-using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Domain;
 using Grimoire.MigrationTool.Domain;
 using Grimoire.MigrationTool.Extensions;
@@ -41,16 +40,18 @@ public class AnubisMigrationService
     {
         using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
         var ignoredAnubisChannels = await this._anubisContext.IgnoredChannels
-            .Select(x => x.ChannelId)
+            .Select(x => new IgnoredChannel{ ChannelId = x.ChannelId, GuildId = x.GuildId })
             .ToListAsync();
 
         foreach (var ignoredChannel in ignoredAnubisChannels)
         {
-            var grimoireChannel = await grimoireDbContext.Channels
-                .FirstAsync(x => x.Id == ignoredChannel);
 
-            grimoireChannel.IsXpIgnored = true;
-            grimoireDbContext.Update(grimoireChannel);
+            var grimoireChannel = await grimoireDbContext.IgnoredChannels
+                .AnyAsync(x => x.ChannelId == ignoredChannel.ChannelId);
+            if (!grimoireChannel)
+            {
+                await grimoireDbContext.IgnoredChannels.AddAsync(ignoredChannel);
+            }
         }
         await grimoireDbContext.SaveChangesAsync();
     }
@@ -59,16 +60,18 @@ public class AnubisMigrationService
     {
         using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
         var ignoredAnubisRoles = await this._anubisContext.IgnoredRoles
-            .Select(x => x.RoleId)
+            .Select(x => new IgnoredRole { RoleId = x.RoleId, GuildId = x.GuildId })
             .ToListAsync();
 
         foreach (var ignoredRole in ignoredAnubisRoles)
         {
-            var grimoireRole = await grimoireDbContext.Roles
-                .FirstAsync(x => x.Id == ignoredRole);
 
-            grimoireRole.IsXpIgnored = true;
-            grimoireDbContext.Update(grimoireRole);
+            var grimoireChannel = await grimoireDbContext.IgnoredRoles
+                .AnyAsync(x => x.RoleId == ignoredRole.RoleId);
+            if (!grimoireChannel)
+            {
+                await grimoireDbContext.IgnoredRoles.AddAsync(ignoredRole);
+            }
         }
         await grimoireDbContext.SaveChangesAsync();
     }
@@ -78,17 +81,18 @@ public class AnubisMigrationService
         using var grimoireDbContext = GrimoireDBContextBuilder.GetGrimoireDbContext();
         var ignoredAnubisUsers = await this._anubisContext.UserLevels
             .Where(x => x.IgnoredXp)
-            .Select(x => new { x.UserId, x.GuildId })
+            .Select(x => new IgnoredMember { UserId = x.UserId, GuildId = x.GuildId })
             .ToListAsync();
 
-        foreach (var ignoredUser in ignoredAnubisUsers)
+        foreach (var ignoredMembers in ignoredAnubisUsers)
         {
-            var grimoireUser = await grimoireDbContext.Members
-                .WhereMemberHasId(ignoredUser.UserId, ignoredUser.GuildId)
-                .FirstAsync();
 
-            grimoireUser.IsXpIgnored = true;
-            grimoireDbContext.Update(grimoireUser);
+            var grimoireChannel = await grimoireDbContext.IgnoredMembers
+                .AnyAsync(x => x.UserId == ignoredMembers.UserId);
+            if (!grimoireChannel)
+            {
+                await grimoireDbContext.IgnoredMembers.AddAsync(ignoredMembers);
+            }
         }
         await grimoireDbContext.SaveChangesAsync();
     }

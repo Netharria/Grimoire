@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.DatabaseQueryHelpers;
-using Grimoire.Domain;
 
 namespace Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessage;
 
@@ -43,11 +42,11 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
             };
             await this._grimoireDbContext.Channels.AddAsync(channel, cancellationToken);
         }
-        if(!result.MemberExists)
+        if (!result.MemberExists)
         {
-            if(!await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
+            if (!await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
             {
-                await this._grimoireDbContext.Users.AddAsync(new User { Id = command.UserId });
+                await this._grimoireDbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
             }
             await this._grimoireDbContext.Members.AddAsync(new Member
             {
@@ -64,7 +63,7 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
                             TimeOut = DateTime.UtcNow
                         }
                     },
-            });
+            }, cancellationToken);
         }
         var message = new Message
         {
