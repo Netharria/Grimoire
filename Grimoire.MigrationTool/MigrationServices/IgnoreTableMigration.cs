@@ -5,11 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Grimoire.Domain;
 using Grimoire.MigrationTool.Domain;
 
@@ -26,7 +21,7 @@ internal class IgnoreTableMigration
             {
                 ChannelId = x.Id,
                 GuildId = x.GuildId,
-            }).ToList();
+            }).ToList().DistinctBy(x => new { x.ChannelId, x.GuildId });
         await grimoireDbContext.IgnoredChannels.AddRangeAsync(channels);
 
         var members = grimoireDbContext.Members.Where(x => x.IsXpIgnored)
@@ -34,7 +29,7 @@ internal class IgnoreTableMigration
             {
                 UserId = x.UserId,
                 GuildId = x.GuildId,
-            }).ToList();
+            }).ToList().DistinctBy(x => new { x.UserId, x.GuildId });
         await grimoireDbContext.IgnoredMembers.AddRangeAsync(members);
 
         var roles = grimoireDbContext.Roles.Where(x => x.IsXpIgnored)
@@ -42,7 +37,7 @@ internal class IgnoreTableMigration
             {
                 RoleId = x.Id,
                 GuildId = x.GuildId,
-            }).ToList();
+            }).ToList().DistinctBy(x => new { x.RoleId, x.GuildId });
         await grimoireDbContext.IgnoredRoles.AddRangeAsync(roles);
 #pragma warning restore CS0618 // Type or member is obsolete
 
