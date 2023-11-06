@@ -18,9 +18,10 @@ public class PurgeCommands : ApplicationCommandModule
         [Maximum(1000)]
         [Option("Count", "The number of matching messages to delete.")] long count)
     {
+        await ctx.DeferAsync(true);
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync((int)count, $"{ctx.User.Username} purged these messages.");
-        await ctx.ReplyAsync(GrimoireColor.Green,
+        await ctx.EditReplyAsync(GrimoireColor.Green,
             message: PurgeMessageBuilder(messagesDeleted));
     }
 
@@ -31,10 +32,11 @@ public class PurgeCommands : ApplicationCommandModule
         [Maximum(1000)]
         [Option("Count", "The number of matching messages to delete.")] long count)
     {
+        await ctx.DeferAsync(true);
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync((int)count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
-            messages => messages.Author == user);
-        await ctx.ReplyAsync(GrimoireColor.Green,
+           messages => messages.Author == user);
+        await ctx.EditReplyAsync(GrimoireColor.Green,
             message: PurgeMessageBuilder(messagesDeleted));
     }
 

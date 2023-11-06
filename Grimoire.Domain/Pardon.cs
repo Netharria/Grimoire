@@ -13,9 +13,9 @@ public class Pardon
 
     public virtual Sin Sin { get; set; } = null!;
 
-    public ulong ModeratorId { get; set; }
+    public ulong? ModeratorId { get; set; }
 
-    public virtual Member Moderator { get; set; } = null!;
+    public virtual Member? Moderator { get; set; }
 
     public ulong GuildId { get; set; }
     public virtual Guild Guild { get; set; } = null!;

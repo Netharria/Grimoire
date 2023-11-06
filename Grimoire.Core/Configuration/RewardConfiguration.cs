@@ -26,6 +26,9 @@ public class RewardConfiguration : IEntityTypeConfiguration<Reward>
             .HasForeignKey(e => e.GuildId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
+        builder.Property(e => e.RewardMessage)
+            .HasMaxLength(4096)
+            .IsRequired(false);
         builder.Property(e => e.RewardLevel).IsRequired();
         builder.HasIndex(e => new { e.GuildId, e.RewardLevel });
     }

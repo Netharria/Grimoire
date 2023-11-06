@@ -9,11 +9,14 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class Channel : IIdentifiable<ulong>, IXpIgnore, IMentionable
+public class Channel : IIdentifiable<ulong>, IMentionable
 {
     public ulong Id { get; set; }
 
+    [Obsolete("This property has moved to the IgnoredChannel Table.")]
     public bool IsXpIgnored { get; set; }
+
+    public virtual IgnoredChannel? IsIgnoredChannel { get; set; }
 
     public ulong GuildId { get; set; }
 

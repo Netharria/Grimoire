@@ -35,14 +35,30 @@ public class TestDatabaseFixture
             UserLogSettings = new GuildUserLogSettings(),
         };
     public static Channel Channel1 { get; } = new Channel { Id = 3, GuildId = 1 };
-    public static Channel Channel2 { get; } = new Channel { Id = 12, GuildId = 1, IsXpIgnored = true };
+    public static Channel Channel2 { get; } = new Channel
+    {
+        Id = 12,
+        GuildId = 1,
+        IsIgnoredChannel = new IgnoredChannel { ChannelId = 12, GuildId = 1 }
+    };
     public static User User1 { get; } = new User { Id = 4 };
     public static User User2 { get; } = new User { Id = 5 };
     public static Member Member1 { get; } = new Member { UserId = User1.Id, GuildId = Guild1.Id, Guild = Guild1 };
     public static Member Member2 { get; } = new Member { UserId = User2.Id, GuildId = Guild1.Id, Guild = Guild1 };
-    public static Member Member3 { get; } = new Member { UserId = User1.Id, GuildId = Guild2.Id, Guild = Guild2, IsXpIgnored = true };
+    public static Member Member3 { get; } = new Member
+    {
+        UserId = User1.Id,
+        GuildId = Guild2.Id,
+        Guild = Guild2,
+        IsIgnoredMember = new IgnoredMember { UserId = User1.Id, GuildId = Guild2.Id }
+    };
     public static Role Role1 { get; } = new Role { Id = 6, GuildId = Guild1.Id, };
-    public static Role Role2 { get; } = new Role { Id = 7, GuildId = Guild1.Id, IsXpIgnored = true };
+    public static Role Role2 { get; } = new Role
+    {
+        Id = 7,
+        GuildId = Guild1.Id,
+        IsIgnoredRole = new IgnoredRole { RoleId = 7, GuildId = Guild1.Id }
+    };
     public static Reward Reward1 { get; } = new Reward { RoleId = Role2.Id, GuildId = Guild1.Id, RewardLevel = 10 };
 
     public TestDatabaseFixture()

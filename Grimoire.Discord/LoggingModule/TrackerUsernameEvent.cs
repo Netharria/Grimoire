@@ -32,8 +32,8 @@ public class TrackerUsernameEvent : INotificationHandler<UsernameTrackerNotifica
         var embed = new DiscordEmbedBuilder()
                         .WithAuthor("Username Updated")
                         .AddField("User", $"<@!{notification.UserId}>")
-                        .AddField("Before", notification.BeforeUsername, true)
-                        .AddField("After", notification.AfterUsername, true)
+                        .AddField("Before", string.IsNullOrWhiteSpace(notification.BeforeUsername)? "`Unknown`" : notification.BeforeUsername, true)
+                        .AddField("After", string.IsNullOrWhiteSpace(notification.AfterUsername)? "`Unknown`" : notification.AfterUsername, true)
                         .WithTimestamp(DateTimeOffset.UtcNow)
                         .WithColor(GrimoireColor.Mint);
         await logChannel.SendMessageAsync(embed);

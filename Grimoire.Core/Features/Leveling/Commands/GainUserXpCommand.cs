@@ -10,6 +10,14 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
 
+public sealed record GainUserXpCommand : ICommand<GainUserXpCommandResponse>
+{
+    public ulong GuildId { get; init; }
+    public ulong UserId { get; init; }
+    public ulong ChannelId { get; init; }
+    public ulong[] RoleIds { get; init; } = Array.Empty<ulong>();
+}
+
 public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainUserXpCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;
@@ -37,7 +45,7 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
                 x.Guild.LevelSettings.LevelChannelLogId,
                 x.Guild.LevelSettings.TextTime,
                 x.Guild.ModChannelLog,
-                Rewards = x.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel })
+                Rewards = x.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel, reward.RewardMessage })
             }).FirstOrDefaultAsync(cancellationToken);
 
         if (result is null || result.Timeout > DateTime.UtcNow)
@@ -59,7 +67,11 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
 
         var earnedRewards = result.Rewards
             .Where(x => x.RewardLevel <= currentLevel)
-            .Select(x => x.RoleId )
+            .Select(x => new RewardDto
+            {
+                RoleId = x.RoleId,
+                Message = x.RewardMessage
+            } )
             .ToArray();
 
         return new GainUserXpCommandResponse
@@ -73,4 +85,19 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
         };
 
     }
+}
+
+public sealed record GainUserXpCommandResponse : BaseResponse
+{
+    public RewardDto[] EarnedRewards { get; init; } = Array.Empty<RewardDto>();
+    public int PreviousLevel { get; init; }
+    public int CurrentLevel { get; init; }
+    public ulong? LevelLogChannel { get; init; }
+    public bool Success { get; init; } = false;
+}
+
+public sealed record RewardDto
+{
+    public ulong RoleId { get; init; }
+    public string? Message { get; init; }
 }

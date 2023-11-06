@@ -26,7 +26,8 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
             .Select(guild => new
             {
                 guild.MessageLogSettings.ModuleEnabled,
-                ChannelExists = guild.Channels.Any(x => x.Id == command.ChannelId)
+                ChannelExists = guild.Channels.Any(x => x.Id == command.ChannelId),
+                MemberExists = guild.Members.Any(x => x.UserId == command.UserId)
             }).FirstOrDefaultAsync(cancellationToken);
         if (result is null)
             throw new KeyNotFoundException("Guild was not found in database.");
@@ -40,6 +41,29 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
                 Id = command.ChannelId
             };
             await this._grimoireDbContext.Channels.AddAsync(channel, cancellationToken);
+        }
+        if (!result.MemberExists)
+        {
+            if (!await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
+            {
+                await this._grimoireDbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
+            }
+            await this._grimoireDbContext.Members.AddAsync(new Member
+            {
+                UserId = command.UserId,
+                GuildId = command.GuildId,
+                XpHistory = new List<XpHistory>
+                    {
+                        new XpHistory
+                        {
+                            UserId = command.UserId,
+                            GuildId = command.GuildId,
+                            Xp = 0,
+                            Type = XpHistoryType.Created,
+                            TimeOut = DateTime.UtcNow
+                        }
+                    },
+            }, cancellationToken);
         }
         var message = new Message
         {
@@ -61,7 +85,8 @@ public class AddMessageCommandHandler : ICommandHandler<AddMessageCommand>
                 new MessageHistory
                 {
                     MessageId = command.MessageId,
-                    MessageContent = command.MessageContent,
+                    MessageContent = command.MessageContent
+                        .Replace("\x00", ""),
                     GuildId = command.GuildId,
                     Action = MessageAction.Created
                 }

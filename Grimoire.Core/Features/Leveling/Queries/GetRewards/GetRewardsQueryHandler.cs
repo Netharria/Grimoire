@@ -23,7 +23,7 @@ public class GetRewardsQueryHandler : IRequestHandler<GetRewardsQuery, BaseRespo
         var rewards = await this._grimoireDbContext.Rewards
             .AsNoTracking()
             .Where(x => x.GuildId == request.GuildId)
-            .Select(x => $"Level:{x.RewardLevel} Role:{x.Mention()}")
+            .Select(x => $"Level:{x.RewardLevel} Role:{x.Mention()} {(x.RewardMessage == null ? "" : $"Reward Message: {x.RewardMessage}")}")
             .ToListAsync(cancellationToken: cancellationToken);
         if (!rewards.Any())
             throw new AnticipatedException("This guild does not have any rewards.");

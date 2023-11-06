@@ -10,10 +10,16 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetLastBan;
 public sealed record GetLastBanQueryResponse : BaseResponse
 {
     public ulong UserId { get; set; }
+    public ulong GuildId { get; set; }
+    public bool ModerationModuleEnabled { get; set; }
+
+    public LastSin? LastSin { get; set; }
+}
+
+public sealed record LastSin
+{
     public long SinId { get; set; }
     public ulong? ModeratorId { get; set; }
     public string Reason { get; set; } = string.Empty;
-    public ulong GuildId { get; set; }
     public DateTimeOffset SinOn { get; set; }
-    public bool ModerationModuleEnabled { get; set; }
 }

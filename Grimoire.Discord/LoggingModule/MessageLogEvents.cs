@@ -41,7 +41,7 @@ public class MessageLogEvents :
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
         if (args.Guild is null
-            || args.Message.MessageType is not MessageType.Default or MessageType.Reply)
+            || args.Message.MessageType is not MessageType.Default and not MessageType.Reply)
             return;
         await this._mediator.Send(new AddMessageCommand
         {
@@ -76,19 +76,16 @@ public class MessageLogEvents :
         var channel = await sender.GetChannelOrDefaultAsync(loggingChannelId);
         if (channel is not DiscordChannel loggingChannel)
             return;
-        string userName;
         string avatarUrl;
         if (args.Guild.Members.TryGetValue(response.UserId, out var member))
         {
-            if (member.IsBot && !member.Roles.Any(x => x.Id == 732962687360827472)) return;
-            userName = member.GetUsernameWithDiscriminator();
+            if (member.IsBot) return;
             avatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto);
         }
         else
         {
             var user = await sender.GetUserAsync(response.UserId);
             if (user is null || user.IsBot) return;
-            userName = user.GetUsernameWithDiscriminator();
             avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
         }
 
@@ -96,7 +93,8 @@ public class MessageLogEvents :
             .WithAuthor($"Message deleted in #{args.Channel.Name}")
             .AddField("Author", UserExtensions.Mention(response.UserId), true)
             .AddField("Channel", ChannelExtensions.Mention(args.Channel.Id), true)
-            .AddField("Message Id", args.Message.Id.ToString(), true).WithTimestamp(DateTime.UtcNow)
+            .AddField("Message Id", args.Message.Id.ToString(), true)
+            .WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Red)
             .WithThumbnail(avatarUrl);
         if (auditLogEntry is not null)
@@ -197,19 +195,16 @@ public class MessageLogEvents :
         if (channel is not DiscordChannel loggingChannel)
             return;
 
-        string userName;
         string avatarUrl;
         if (args.Guild.Members.TryGetValue(response.UserId, out var member))
         {
-            if (member.IsBot && !member.Roles.Any(x => x.Id == 732962687360827472)) return;
-            userName = member.GetUsernameWithDiscriminator();
+            if (member.IsBot) return;
             avatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto);
         }
         else
         {
             var user = await sender.GetUserAsync(response.UserId);
             if (user is null || user.IsBot) return;
-            userName = user.GetUsernameWithDiscriminator();
             avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
         }
         var embeds = new List<DiscordEmbedBuilder>

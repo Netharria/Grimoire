@@ -10,6 +10,14 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
 
+public sealed record AwardUserXpCommand : ICommand<BaseResponse>
+{
+    public ulong UserId { get; init; }
+    public ulong GuildId { get; init; }
+    public long XpToAward { get; init; }
+    public ulong? AwarderId { get; init; }
+}
+
 public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;

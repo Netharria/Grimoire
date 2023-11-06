@@ -12,5 +12,5 @@ public sealed record AddBanCommand : ICommand<AddBanCommandResponse>
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
     public string Reason { get; set; } = string.Empty;
-    public ulong ModeratorId { get; set; }
+    public ulong? ModeratorId { get; set; }
 }

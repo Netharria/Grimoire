@@ -29,7 +29,7 @@ public class LockConfigurations : IEntityTypeConfiguration<Lock>
             .WithMany(e => e.ChannelsLocked)
             .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
             .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired();
+            .IsRequired(false);
         builder.HasOne(e => e.Guild)
             .WithMany(e => e.LockedChannels)
             .HasForeignKey(e => e.GuildId)

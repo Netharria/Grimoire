@@ -20,21 +20,26 @@ public class GetLastBanQueryHandler : IRequestHandler<GetLastBanQuery, GetLastBa
 
     public async ValueTask<GetLastBanQueryResponse> Handle(GetLastBanQuery request, CancellationToken cancellationToken)
     {
-        var result = await this._grimoireDbContext.Sins
+        var result = await this._grimoireDbContext.Members
             .AsNoTracking()
             .WhereMemberHasId(request.UserId, request.GuildId)
-            .Where(x => x.SinType == SinType.Ban)
-            .OrderByDescending(x => x.SinOn)
-            .Select(x => new GetLastBanQueryResponse
+            .Select(member => new GetLastBanQueryResponse
             {
-                UserId = x.UserId,
-                GuildId = x.GuildId,
-                ModeratorId = x.ModeratorId,
-                Reason = x.Reason,
-                SinId = x.Id,
-                SinOn = x.SinOn,
-                LogChannelId = x.Guild.ModChannelLog,
-                ModerationModuleEnabled = x.Guild.ModerationSettings.ModuleEnabled
+                UserId = member.UserId,
+                GuildId = member.GuildId,
+                LastSin = member.UserSins.OrderByDescending(x => x.SinOn)
+                        .Where(sin => sin.SinType == SinType.Ban)
+                        .Select(sin => new LastSin
+                        {
+                            SinId = sin.Id,
+                            ModeratorId = sin.ModeratorId,
+                            Reason = sin.Reason,
+                            SinOn = sin.SinOn
+                        })
+                    .FirstOrDefault(),
+
+                LogChannelId = member.Guild.ModChannelLog,
+                ModerationModuleEnabled = member.Guild.ModerationSettings.ModuleEnabled
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 

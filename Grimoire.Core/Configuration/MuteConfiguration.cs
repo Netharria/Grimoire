@@ -19,7 +19,7 @@ public class MuteConfiguration : IEntityTypeConfiguration<Mute>
         builder.HasOne(e => e.Sin).WithOne(e => e.Mute)
             .HasForeignKey<Mute>(e => e.SinId)
             .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired();
+            .IsRequired(false);
         builder.HasOne(e => e.Member)
             .WithOne(e => e.ActiveMute)
             .HasForeignKey<Mute>(e => new { e.UserId, e.GuildId })

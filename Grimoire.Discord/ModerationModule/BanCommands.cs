@@ -30,7 +30,7 @@ public class BanCommands : ApplicationCommandModule
         [Option("User", "The user to ban")] DiscordUser user,
         [MaximumLength(1000)]
         [Option("Reason", "The reason for the ban. This can be updated later with the 'Reason' command.")] string reason = "",
-        [Option("DeleteMessages", "Deletes the messages of the user of the last few days. Default is true.")] bool deleteMessages = true,
+        [Option("DeleteMessages", "Deletes the messages of the user of the last few days. Default is false.")] bool deleteMessages = false,
         [Maximum(7)]
         [Minimum(0)]
         [Option("DeleteDays", "Number of days of messages to delete. Default is 7")] long deleteDays = 7)
@@ -79,13 +79,11 @@ public class BanCommands : ApplicationCommandModule
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Banned")
             .AddField("User", user.Mention, true)
-            .AddField("Moderator", ctx.User.Mention, true)
             .AddField("Sin Id", $"**{response.SinId}**", true)
+            .AddField("Moderator", ctx.User.Mention, true)
+            .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason)
             .WithColor(GrimoireColor.Red)
             .WithTimestamp(DateTimeOffset.UtcNow);
-
-        if (!string.IsNullOrWhiteSpace(reason))
-            embed.AddField("Reason", reason);
 
         await ctx.CreateResponseAsync(embed);
     }

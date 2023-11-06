@@ -27,11 +27,17 @@ public interface IGrimoireDbContext
 
     public DbSet<GuildModerationSettings> GuildModerationSettings { get; }
 
-    public DbSet<Member> Members { get; }
+    public DbSet<IgnoredChannel> IgnoredChannels { get; }
+
+    public DbSet<IgnoredMember> IgnoredMembers { get; }
+
+    public DbSet<IgnoredRole> IgnoredRoles { get; }
 
     public DbSet<MemberCommandOverride> MemberCommandOverrides { get; }
 
     public DbSet<Lock> Locks { get; }
+
+    public DbSet<Member> Members { get; }
 
     public DbSet<Message> Messages { get; }
 

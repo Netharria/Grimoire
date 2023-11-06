@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -29,6 +30,7 @@ public class TickerBackgroundService : BackgroundService
         while (await _timer.WaitForNextTickAsync(stoppingToken)
             && !stoppingToken.IsCancellationRequested)
         {
+            var stopwatch = Stopwatch.GetTimestamp();
             try
             {
                 using var scope = _serviceProvider.CreateScope();
@@ -39,6 +41,12 @@ public class TickerBackgroundService : BackgroundService
             catch (Exception ex)
             {
                 _logger.Error(ex, "Exception was thrown when running a background task. Message: ({message})", ex.Message);
+            }
+            finally
+            {
+                var delta = Stopwatch.GetElapsedTime(stopwatch);
+                if (delta.TotalMilliseconds > 1000)
+                    this._logger.Warning("Background Task took more than 1 second to complete Execution time={ElapsedTime}ms", delta.TotalMilliseconds);
             }
         }
     }

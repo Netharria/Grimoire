@@ -7,6 +7,22 @@
 
 namespace Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
 
+public sealed record SetLevelSettingsCommand : ICommand<BaseResponse>
+{
+    public ulong GuildId { get; init; }
+    public LevelSettings LevelSettings { get; init; }
+    public string Value { get; init; } = string.Empty;
+}
+public enum LevelSettings
+{
+    TextTime,
+    Base,
+    Modifier,
+    Amount,
+    LogChannel,
+}
+
+
 public class SetLevelSettingsCommandHandler : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;

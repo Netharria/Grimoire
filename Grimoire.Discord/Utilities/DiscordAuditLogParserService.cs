@@ -76,6 +76,9 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
         if (deleteEntry.CreationTimestamp < DateTime.UtcNow.AddMinutes(-10))
             return null;
 
+        if (deleteEntry.CreationTimestamp < DateTime.UtcNow.AddMinutes(-10))
+            return null;
+
         if (_memoryCache.TryGetValue(deleteEntry.Id, out DiscordAuditLogMessageEntry? cachedEntry))
         {
             if (cachedEntry is null)

@@ -154,7 +154,7 @@ internal class MemberLogEvents :
             UserId = args.Member.Id,
             Username = args.MemberAfter.GetUsernameWithDiscriminator()
         });
-        if (usernameResponse is not null && !usernameResponse.BeforeUsername.Equals(usernameResponse.AfterUsername, StringComparison.CurrentCultureIgnoreCase))
+        if (usernameResponse is not null && !string.Equals(usernameResponse.BeforeUsername, usernameResponse.AfterUsername, StringComparison.CurrentCultureIgnoreCase))
         {
             if (usernameResponse.UsernameChannelLogId is not null
                 && args.Guild.Channels.TryGetValue(usernameResponse.UsernameChannelLogId.Value, out var logChannel))
@@ -189,7 +189,7 @@ internal class MemberLogEvents :
             UserId = args.Member.Id,
             AvatarUrl = args.MemberAfter.GetGuildAvatarUrl(ImageFormat.Auto, 128)
         });
-        if (avatarResponse is not null && !avatarResponse.BeforeAvatar.Equals(avatarResponse.AfterAvatar, StringComparison.Ordinal))
+        if (avatarResponse is not null && !string.Equals(avatarResponse.BeforeAvatar, avatarResponse.AfterAvatar, StringComparison.Ordinal))
         {
             if (avatarResponse.AvatarChannelLogId is not null
                 && args.Guild.Channels.TryGetValue(avatarResponse.AvatarChannelLogId.Value, out var logChannel))

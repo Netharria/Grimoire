@@ -20,4 +20,6 @@ public class Reward : IMentionable
     public virtual Guild Guild { get; set; } = null!;
 
     public int RewardLevel { get; set; }
+
+    public string? RewardMessage { get; set; }
 }

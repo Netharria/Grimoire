@@ -17,7 +17,7 @@ namespace Grimoire.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.5")
+                .HasAnnotation("ProductVersion", "7.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -106,6 +106,8 @@ namespace Grimoire.Core.Migrations
                         .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ModChannelLog");
 
                     b.ToTable("Guilds");
                 });
@@ -206,6 +208,9 @@ namespace Grimoire.Core.Migrations
 
                     b.HasKey("GuildId");
 
+                    b.HasIndex("MuteRole")
+                        .IsUnique();
+
                     b.ToTable("GuildModerationSettings");
                 });
 
@@ -254,6 +259,54 @@ namespace Grimoire.Core.Migrations
                     b.ToTable("GuildUserLogSettings");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.IgnoredChannel", b =>
+                {
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("ChannelId");
+
+                    b.HasIndex("GuildId");
+
+                    b.ToTable("IgnoredChannels");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.IgnoredMember", b =>
+                {
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("GuildId");
+
+                    b.HasIndex("UserId", "GuildId")
+                        .IsUnique();
+
+                    b.ToTable("IgnoredMembers");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.IgnoredRole", b =>
+                {
+                    b.Property<decimal>("RoleId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("RoleId");
+
+                    b.HasIndex("GuildId");
+
+                    b.ToTable("IgnoredRoles");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.Lock", b =>
                 {
                     b.Property<decimal>("ChannelId")
@@ -265,7 +318,7 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("ModeratorId")
+                    b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<long>("PreviouslyAllowed")
@@ -422,7 +475,7 @@ namespace Grimoire.Core.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Mute", b =>
                 {
-                    b.Property<long>("SinId")
+                    b.Property<long?>("SinId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("EndTime")
@@ -519,7 +572,7 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("ModeratorId")
+                    b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTimeOffset>("PardonDate")
@@ -600,6 +653,10 @@ namespace Grimoire.Core.Migrations
 
                     b.Property<int>("RewardLevel")
                         .HasColumnType("integer");
+
+                    b.Property<string>("RewardMessage")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
 
                     b.HasKey("RoleId");
 
@@ -720,7 +777,7 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("LogChannelId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("ModeratorId")
+                    b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
                     b.HasKey("UserId", "GuildId");
@@ -850,6 +907,15 @@ namespace Grimoire.Core.Migrations
                     b.Navigation("Guild");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.Guild", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Channel", "ModLogChannel")
+                        .WithMany()
+                        .HasForeignKey("ModChannelLog");
+
+                    b.Navigation("ModLogChannel");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.GuildLevelSettings", b =>
                 {
                     b.HasOne("Grimoire.Domain.Guild", "Guild")
@@ -905,7 +971,13 @@ namespace Grimoire.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Grimoire.Domain.Role", "MuteRoleNav")
+                        .WithOne()
+                        .HasForeignKey("Grimoire.Domain.GuildModerationSettings", "MuteRole");
+
                     b.Navigation("Guild");
+
+                    b.Navigation("MuteRoleNav");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.GuildUserLogSettings", b =>
@@ -949,6 +1021,63 @@ namespace Grimoire.Core.Migrations
                     b.Navigation("UsernameChannelLog");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.IgnoredChannel", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Channel", "Channel")
+                        .WithOne("IsIgnoredChannel")
+                        .HasForeignKey("Grimoire.Domain.IgnoredChannel", "ChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Grimoire.Domain.Guild", "Guild")
+                        .WithMany("IgnoredChannels")
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Channel");
+
+                    b.Navigation("Guild");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.IgnoredMember", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Guild", "Guild")
+                        .WithMany("IgnoredMembers")
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Grimoire.Domain.Member", "Member")
+                        .WithOne("IsIgnoredMember")
+                        .HasForeignKey("Grimoire.Domain.IgnoredMember", "UserId", "GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Guild");
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.IgnoredRole", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Guild", "Guild")
+                        .WithMany("IgnoredRoles")
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Grimoire.Domain.Role", "Role")
+                        .WithOne("IsIgnoredRole")
+                        .HasForeignKey("Grimoire.Domain.IgnoredRole", "RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Guild");
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.Lock", b =>
                 {
                     b.HasOne("Grimoire.Domain.Channel", "Channel")
@@ -966,8 +1095,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Moderator")
                         .WithMany("ChannelsLocked")
                         .HasForeignKey("ModeratorId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Channel");
 
@@ -1154,8 +1282,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Moderator")
                         .WithMany("SinsPardoned")
                         .HasForeignKey("ModeratorId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Guild");
 
@@ -1192,7 +1319,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Member")
                         .WithMany("Reactions")
                         .HasForeignKey("UserId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Guild");
@@ -1299,8 +1426,7 @@ namespace Grimoire.Core.Migrations
                     b.HasOne("Grimoire.Domain.Member", "Moderator")
                         .WithMany("TrackedUsers")
                         .HasForeignKey("ModeratorId", "GuildId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Grimoire.Domain.Member", "Member")
                         .WithMany("Trackers")
@@ -1356,6 +1482,8 @@ namespace Grimoire.Core.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Channel", b =>
                 {
+                    b.Navigation("IsIgnoredChannel");
+
                     b.Navigation("Lock");
 
                     b.Navigation("MemberCommandOverrides");
@@ -1374,6 +1502,12 @@ namespace Grimoire.Core.Migrations
                     b.Navigation("ActiveMutes");
 
                     b.Navigation("Channels");
+
+                    b.Navigation("IgnoredChannels");
+
+                    b.Navigation("IgnoredMembers");
+
+                    b.Navigation("IgnoredRoles");
 
                     b.Navigation("LevelSettings")
                         .IsRequired();
@@ -1422,7 +1556,7 @@ namespace Grimoire.Core.Migrations
 
                     b.Navigation("ChannelsLocked");
 
-                    b.Navigation("MemberCommandOverrides");
+                    b.Navigation("IsIgnoredMember");
 
                     b.Navigation("Messages");
 
@@ -1456,6 +1590,8 @@ namespace Grimoire.Core.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Role", b =>
                 {
+                    b.Navigation("IsIgnoredRole");
+
                     b.Navigation("Reward");
 
                     b.Navigation("RoleCommandOverrides");

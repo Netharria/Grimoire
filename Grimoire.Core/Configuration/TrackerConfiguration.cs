@@ -30,7 +30,7 @@ public class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
             .WithMany(e => e.TrackedUsers)
             .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
             .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired();
+            .IsRequired(false);
         builder.Property(e => e.EndTime)
             .IsRequired();
         builder.HasIndex(x => x.EndTime);

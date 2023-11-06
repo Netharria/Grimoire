@@ -8,7 +8,10 @@
 using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
-
+public sealed class RemoveRewardCommand : ICommand<BaseResponse>
+{
+    public ulong RoleId { get; init; }
+}
 public class RemoveRewardCommandHandler : ICommandHandler<RemoveRewardCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;

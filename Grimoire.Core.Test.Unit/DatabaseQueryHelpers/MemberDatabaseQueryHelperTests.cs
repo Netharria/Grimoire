@@ -74,6 +74,6 @@ public class MemberDatabaseQueryHelperTests
                 TestDatabaseFixture.Role1.Id
             }).ToArrayAsync();
 
-        result.Should().AllSatisfy(x => x.IsXpIgnored.Should().BeFalse());
+        result.Should().AllSatisfy(x => x.IsIgnoredMember.Should().NotBeNull());
     }
 }

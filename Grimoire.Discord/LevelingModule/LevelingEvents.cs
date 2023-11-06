@@ -5,8 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
+using Serilog;
 
 namespace Grimoire.Discord.LevelingModule;
 
@@ -14,15 +16,17 @@ namespace Grimoire.Discord.LevelingModule;
 public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
 {
     private readonly IMediator _mediator;
+    private readonly ILogger _logger;
 
-    public LevelingEvents(IMediator mediator)
+    public LevelingEvents(IMediator mediator, ILogger logger)
     {
         this._mediator = mediator;
+        this._logger = logger;
     }
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
-        if (args.Message.MessageType is not MessageType.Default or MessageType.Reply ||
+        if (args.Message.MessageType is not MessageType.Default and not MessageType.Reply ||
             args.Author is not DiscordMember member) return;
         if (member.IsBot) return;
         var response = await this._mediator.Send(new GainUserXpCommand
@@ -35,11 +39,11 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
         if (!response.Success) return;
 
         var newRewards = response.EarnedRewards
-            .Where(x => !member.Roles.Any(y => y.Id == x))
+            .Where(x => !member.Roles.Any(y => y.Id == x.RoleId))
             .ToArray();
 
         var rolesToAdd = newRewards
-            .Join(args.Guild.Roles, x => x, y => y.Key, (x, y) => y.Value)
+            .Join(args.Guild.Roles, x => x.RoleId, y => y.Key, (x, y) => y.Value)
             .Concat(member.Roles)
             .Distinct()
             .ToArray();
@@ -55,9 +59,27 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
                 await SendErrorLogs(
                     args.Guild.Channels,
                     args.Guild.CurrentMember.DisplayName,
-                    newRewards,
+                    newRewards.Select(x => x.RoleId).ToArray(),
                     response.LogChannelId,
                     response.LevelLogChannel);
+            }
+            foreach (var reward in newRewards.Where(x => !string.IsNullOrWhiteSpace(x.Message)))
+            {
+                try
+                {
+                    if (args.Guild.Roles.TryGetValue(reward.RoleId, out var role))
+                    {
+                        await member.SendMessageAsync(new DiscordEmbedBuilder()
+                            .WithAuthor($"Congratulations on earning {role.Name}!", iconUrl: args.Guild.IconUrl)
+                            .WithFooter($"Message from the moderators of {args.Guild.Name}.")
+                            .WithDescription(Regex.Unescape(reward!.Message!)));
+                    }
+                    
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning("Failure to send reward message Reward: {roleId} Message: {message}", reward.RoleId, reward.Message, ex);
+                }
             }
         }
 
@@ -80,7 +102,7 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
                 .WithColor(GrimoireColor.DarkPurple)
                 .WithAuthor($"{member.Username}#{member.Discriminator}")
                 .WithDescription($"{member.Mention} has earned " +
-                $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x)))}")
+                $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x.RoleId)))}")
                 .WithFooter($"{member.Id}")
                 .WithTimestamp(DateTime.UtcNow)
                 .Build());

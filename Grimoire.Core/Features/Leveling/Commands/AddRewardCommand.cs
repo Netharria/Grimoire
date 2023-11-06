@@ -10,6 +10,14 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
 
+public sealed record AddRewardCommand : ICommand<BaseResponse>
+{
+    public ulong RoleId { get; init; }
+    public ulong GuildId { get; init; }
+    public int RewardLevel { get; init; }
+    public string? Message { get; init; }
+}
+
 public class AddRewardCommandHandler : ICommandHandler<AddRewardCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext;
@@ -30,7 +38,8 @@ public class AddRewardCommandHandler : ICommandHandler<AddRewardCommand, BaseRes
             {
                 GuildId = command.GuildId,
                 RoleId = command.RoleId,
-                RewardLevel = command.RewardLevel
+                RewardLevel = command.RewardLevel,
+                RewardMessage = command.Message
             };
             await this._grimoireDbContext.Rewards.AddAsync(reward, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
@@ -46,6 +55,7 @@ public class AddRewardCommandHandler : ICommandHandler<AddRewardCommand, BaseRes
         }
 
         reward.RewardLevel = command.RewardLevel;
+        reward.RewardMessage = command.Message;
         this._grimoireDbContext.Rewards.Update(reward);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse

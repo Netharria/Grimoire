@@ -22,7 +22,8 @@ public class UsernameHistoryConfiguration : IEntityTypeConfiguration<UsernameHis
         builder.HasOne(x => x.User)
             .WithMany(x => x.UsernameHistories)
             .HasForeignKey(x => x.UserId)
-            .IsRequired();
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
         builder.Property(x => x.Username)
             .HasMaxLength(37)
             .IsRequired();

@@ -8,24 +8,10 @@
 using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
-
-public class Tracker : IMember
+public class IgnoredMember : IMember
 {
     public ulong UserId { get; set; }
-
     public virtual Member Member { get; set; } = null!;
-
     public ulong GuildId { get; set; }
-
     public virtual Guild Guild { get; set; } = null!;
-
-    public ulong LogChannelId { get; set; }
-
-    public virtual Channel LogChannel { get; set; } = null!;
-
-    public DateTimeOffset EndTime { get; set; }
-
-    public ulong? ModeratorId { get; set; }
-
-    public virtual Member? Moderator { get; set; } = null!;
 }

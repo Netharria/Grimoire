@@ -21,7 +21,7 @@ public class ReactionConfiguration : IEntityTypeConfiguration<Reaction>
         builder.HasOne(x => x.Member)
             .WithMany(x => x.Reactions)
             .HasForeignKey(x => new { x.UserId, x.GuildId })
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
         builder.Property(x => x.Name)
             .HasMaxLength(32)
             .IsRequired();
