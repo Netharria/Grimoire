@@ -7,7 +7,7 @@
 
 using System.Threading.Tasks;
 using FluentAssertions;
-using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
+using Grimoire.Core.Features.Leveling.Commands;
 using NUnit.Framework;
 
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands.ManageRewardsCommands.AddReward;

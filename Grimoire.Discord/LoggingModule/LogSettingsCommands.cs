@@ -7,9 +7,7 @@
 
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Logging.Commands;
-using Grimoire.Core.Features.Logging.Commands.SetUserLogSettings;
-using Grimoire.Core.Features.Logging.Queries.GetMessageLogSettings;
-using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
+using Grimoire.Core.Features.Logging.Queries;
 using Grimoire.Discord.Enums;
 
 namespace Grimoire.Discord.LoggingModule;

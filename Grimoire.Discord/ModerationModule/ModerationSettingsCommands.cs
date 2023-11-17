@@ -6,9 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.SetAutoPardon;
-using Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel;
-using Grimoire.Core.Features.Moderation.Queries.GetModerationSettings;
+using Grimoire.Core.Features.Moderation.Commands;
+using Grimoire.Core.Features.Moderation.Queries;
 using Grimoire.Discord.Enums;
 
 namespace Grimoire.Discord.ModerationModule;

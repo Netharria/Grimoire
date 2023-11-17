@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
+using Grimoire.Core.Features.Leveling.Commands;
 using Grimoire.Core.Features.Leveling.Queries;
 using Grimoire.Discord.Enums;
 

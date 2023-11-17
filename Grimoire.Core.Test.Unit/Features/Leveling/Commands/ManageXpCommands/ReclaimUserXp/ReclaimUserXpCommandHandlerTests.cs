@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
+using Grimoire.Core.Features.Leveling.Commands;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

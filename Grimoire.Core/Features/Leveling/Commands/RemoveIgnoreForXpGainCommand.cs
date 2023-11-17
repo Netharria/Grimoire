@@ -9,7 +9,7 @@ using System.Text;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 public sealed class RemoveIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
 {
@@ -34,10 +34,8 @@ public class RemoveIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbCo
                 .WhereMembersHaveIds(command.Users.Select(x => x.Id).ToArray(), command.GuildId)
                 .ToArrayAsync(cancellationToken);
             foreach (var ignorable in allUsersToIgnore)
-            {
                 newIgnoredItems.Append(UserExtensions.Mention(ignorable.UserId)).Append(' ');
-            }
-            if(allUsersToIgnore.Length != 0)
+            if (allUsersToIgnore.Length != 0)
                 this._grimoireDbContext.IgnoredMembers.RemoveRange(allUsersToIgnore);
         }
 
@@ -48,10 +46,8 @@ public class RemoveIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbCo
                 .Where(x => rolesIds.Contains(x.RoleId))
                 .ToArrayAsync(cancellationToken);
             foreach (var ignorable in allRolesToIgnore)
-            {
                 newIgnoredItems.Append(RoleExtensions.Mention(ignorable.RoleId)).Append(' ');
-            }
-            if(allRolesToIgnore.Length != 0)
+            if (allRolesToIgnore.Length != 0)
                 this._grimoireDbContext.IgnoredRoles.RemoveRange(allRolesToIgnore);
         }
 
@@ -62,10 +58,8 @@ public class RemoveIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbCo
                 .Where(x => channelIds.Contains(x.ChannelId))
                 .ToArrayAsync(cancellationToken);
             foreach (var ignorable in allChannelsToIgnore)
-            {
                 newIgnoredItems.Append(ChannelExtensions.Mention(ignorable.ChannelId)).Append(' ');
-            }
-            if(allChannelsToIgnore.Length != 0)
+            if (allChannelsToIgnore.Length != 0)
                 this._grimoireDbContext.IgnoredChannels.RemoveRange(allChannelsToIgnore);
         }
 

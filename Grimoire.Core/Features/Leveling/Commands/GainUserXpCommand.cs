@@ -8,7 +8,7 @@
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 public sealed record GainUserXpCommand : ICommand<GainUserXpCommandResponse>
 {

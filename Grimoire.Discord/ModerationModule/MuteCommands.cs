@@ -6,8 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.MuteCommands.MuteUserCommand;
-using Grimoire.Core.Features.Moderation.Commands.MuteCommands.UnmuteUserCommand;
+using Grimoire.Core.Features.Moderation.Commands;
 
 namespace Grimoire.Discord.ModerationModule;
 

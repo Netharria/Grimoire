@@ -9,7 +9,7 @@ using System.Text;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 
 public interface IUpdateIgnoreForXpGain : ICommand<BaseResponse>
@@ -63,9 +63,7 @@ public class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbConte
                     GuildId = command.GuildId
                 }).ToArray();
             foreach (var ignorable in allUsersToIgnore)
-            {
                 newIgnoredItems.Append(UserExtensions.Mention(ignorable.UserId)).Append(' ');
-            }
             if (allUsersToIgnore.Length != 0)
                 await this._grimoireDbContext.IgnoredMembers.AddRangeAsync(allUsersToIgnore);
         }
@@ -82,9 +80,7 @@ public class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbConte
                     GuildId = command.GuildId
                 }).ToArray();
             foreach (var ignorable in allRolesToIgnore)
-            {
                 newIgnoredItems.Append(RoleExtensions.Mention(ignorable.RoleId)).Append(' ');
-            }
             if (allRolesToIgnore.Length != 0)
                 await this._grimoireDbContext.IgnoredRoles.AddRangeAsync(allRolesToIgnore);
         }
@@ -101,9 +97,7 @@ public class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbConte
                     GuildId = command.GuildId
                 }).ToArray();
             foreach (var ignorable in allChannelsToIgnore)
-            {
                 newIgnoredItems.Append(ChannelExtensions.Mention(ignorable.ChannelId)).Append(' ');
-            }
             if (allChannelsToIgnore.Length != 0)
                 await this._grimoireDbContext.IgnoredChannels.AddRangeAsync(allChannelsToIgnore);
         }

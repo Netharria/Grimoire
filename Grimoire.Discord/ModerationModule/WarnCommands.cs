@@ -7,7 +7,7 @@
 
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.WarnCommands;
+using Grimoire.Core.Features.Moderation.Commands;
 
 namespace Grimoire.Discord.ModerationModule;
 

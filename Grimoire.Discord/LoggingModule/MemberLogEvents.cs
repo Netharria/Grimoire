@@ -7,7 +7,7 @@
 
 using System.Collections.Concurrent;
 using Grimoire.Core.Features.Logging.Commands;
-using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
+using Grimoire.Core.Features.Logging.Queries;
 using Grimoire.Discord.Notifications;
 using Grimoire.Domain;
 

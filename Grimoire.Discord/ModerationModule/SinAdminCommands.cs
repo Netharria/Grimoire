@@ -5,9 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.ForgetSin;
-using Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.PardonSin;
-using Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.UpdateSinReason;
+using Grimoire.Core.Features.Moderation.Commands;
 
 namespace Grimoire.Discord.ModerationModule;
 

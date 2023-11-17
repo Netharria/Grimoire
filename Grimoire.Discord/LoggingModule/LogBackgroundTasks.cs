@@ -8,7 +8,7 @@
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Logging.Commands;
 using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands;
-using Grimoire.Core.Features.Logging.Queries.GetOldLogMessages;
+using Grimoire.Core.Features.Logging.Queries;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 

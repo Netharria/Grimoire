@@ -6,8 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
-using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
+using Grimoire.Core.Features.Leveling.Commands;
 
 namespace Grimoire.Discord.LevelingModule;
 

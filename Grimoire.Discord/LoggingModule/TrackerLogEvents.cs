@@ -5,8 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Queries.GetTracker;
-using Grimoire.Core.Features.Logging.Queries.GetTrackerWithOldMessage;
+using Grimoire.Core.Features.Logging.Queries;
 
 namespace Grimoire.Discord.LoggingModule;
 

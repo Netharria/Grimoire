@@ -6,9 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.SetMuteRole;
-using Grimoire.Core.Features.Moderation.Queries.GetAllActiveMutes;
-using Grimoire.Core.Features.Moderation.Queries.GetMuteRole;
+using Grimoire.Core.Features.Moderation.Commands;
+using Grimoire.Core.Features.Moderation.Queries;
 using Serilog;
 
 namespace Grimoire.Discord.ModerationModule;

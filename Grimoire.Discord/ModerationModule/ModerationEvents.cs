@@ -6,10 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan;
-using Grimoire.Core.Features.Moderation.Queries.GetLastBan;
-using Grimoire.Core.Features.Moderation.Queries.GetLock;
-using Grimoire.Core.Features.Moderation.Queries.GetUserMute;
+using Grimoire.Core.Features.Moderation.Commands;
+using Grimoire.Core.Features.Moderation.Queries;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;

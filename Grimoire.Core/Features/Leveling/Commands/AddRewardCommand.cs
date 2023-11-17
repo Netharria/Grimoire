@@ -8,7 +8,7 @@
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 public sealed record AddRewardCommand : ICommand<BaseResponse>
 {

@@ -7,7 +7,7 @@
 
 using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
-using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
+using Grimoire.Core.Features.Leveling.Commands;
 using Serilog;
 
 namespace Grimoire.Discord.LevelingModule;

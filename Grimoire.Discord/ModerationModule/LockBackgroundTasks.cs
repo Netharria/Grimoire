@@ -5,8 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand;
-using Grimoire.Core.Features.Moderation.Queries.GetExpiredLocks;
+using Grimoire.Core.Features.Moderation.Commands;
+using Grimoire.Core.Features.Moderation.Queries;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
