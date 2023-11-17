@@ -15,14 +15,9 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashRequireBotPermissions(Permissions.ManageRoles)]
-public class MuteCommands : ApplicationCommandModule
+public class MuteCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public MuteCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Mute", "Prevents the user from being able to speak.")]
     public async Task MuteUserAsync(

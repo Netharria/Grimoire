@@ -30,24 +30,24 @@ public class UpdateIgnoreStateForXpGainCommandHandlerTests
         var result = await cut.Handle(
             new AddIgnoreForXpGainCommand
             {
-                Users = new [] { new UserDto { Id = TestDatabaseFixture.Member1.UserId } },
+                Users = [new UserDto { Id = TestDatabaseFixture.Member1.UserId }],
                 GuildId = TestDatabaseFixture.Member1.GuildId,
-                Channels = new []
-                {
+                Channels =
+                [
                     new ChannelDto
                     {
                         Id = TestDatabaseFixture.Channel1.Id,
                         GuildId = TestDatabaseFixture.Channel1.GuildId
                     }
-                },
-                Roles = new []
-                {
+                ],
+                Roles =
+                [
                     new RoleDto
                     {
                         Id = TestDatabaseFixture.Role1.Id,
                         GuildId = TestDatabaseFixture.Role1.GuildId
                     }
-                }
+                ]
             }, default);
         context.ChangeTracker.Clear();
         result.Message.Should().Be("<@!4> <@&6> <#3>  are now ignored for xp gain.");
@@ -86,7 +86,7 @@ public class UpdateIgnoreStateForXpGainCommandHandlerTests
             new AddIgnoreForXpGainCommand
             {
                 GuildId = TestDatabaseFixture.Member1.GuildId,
-                InvalidIds = new [] { "asldfkja" }
+                InvalidIds = ["asldfkja"]
             }, default);
         context.ChangeTracker.Clear();
         result.Message.Should().Be("Could not match asldfkja with a role, channel or user. ");

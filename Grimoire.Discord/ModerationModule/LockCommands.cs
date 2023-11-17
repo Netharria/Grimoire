@@ -15,14 +15,9 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserPermissions(Permissions.ManageMessages)]
 [SlashRequireBotPermissions(Permissions.ManageChannels)]
-public class LockCommands : ApplicationCommandModule
+public class LockCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public LockCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Lock", "Prevents users from being able to speak in the channel")]
     public async Task LockChannelAsync(

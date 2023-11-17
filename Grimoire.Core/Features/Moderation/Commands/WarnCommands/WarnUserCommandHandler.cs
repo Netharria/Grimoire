@@ -9,14 +9,9 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Commands.WarnCommands;
 
-public class WarnUserCommandHandler : ICommandHandler<WarnUserCommand, WarnUserCommandResponse>
+public class WarnUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<WarnUserCommand, WarnUserCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public WarnUserCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<WarnUserCommandResponse> Handle(WarnUserCommand command, CancellationToken cancellationToken)
     {

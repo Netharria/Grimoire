@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Logging.Queries.GetMessageLogSettings;
 
-public class GetMessageLogSettingsQueryHandler : IRequestHandler<GetMessageLogSettingsQuery, GetMessageLogSettingsQueryResponse>
+public class GetMessageLogSettingsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetMessageLogSettingsQuery, GetMessageLogSettingsQueryResponse>
 {
-    private readonly GrimoireDbContext _grimoireDbContext;
-
-    public GetMessageLogSettingsQueryHandler(GrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetMessageLogSettingsQueryResponse> Handle(GetMessageLogSettingsQuery request, CancellationToken cancellationToken)
     {

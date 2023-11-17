@@ -13,20 +13,13 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordMessageCreatedEventSubscriber]
 [DiscordMessageUpdatedEventSubscriber]
 [DiscordVoiceStateUpdatedEventSubscriber]
-public class TrackerLogEvents :
+public class TrackerLogEvents(IMediator mediator, IDiscordImageEmbedService imageEmbedService) :
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageUpdatedEventSubscriber,
     IDiscordVoiceStateUpdatedEventSubscriber
 {
-    private readonly IMediator _mediator;
-    private readonly IDiscordImageEmbedService _imageEmbedService;
-
-    public TrackerLogEvents(IMediator mediator, IDiscordImageEmbedService imageEmbedService)
-    {
-        this._mediator = mediator;
-        this._imageEmbedService = imageEmbedService;
-    }
-
+    private readonly IMediator _mediator = mediator;
+    private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {

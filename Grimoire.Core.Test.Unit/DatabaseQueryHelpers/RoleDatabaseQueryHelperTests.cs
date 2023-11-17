@@ -26,10 +26,10 @@ public class RoleDatabaseQueryHelperTests
         context.Database.BeginTransaction();
         var rolesToAdd = new List<RoleDto>
         {
-            new RoleDto() { Id = TestDatabaseFixture.Role1.Id, GuildId = TestDatabaseFixture.Guild1.Id },
-            new RoleDto() { Id = TestDatabaseFixture.Role2.Id, GuildId = TestDatabaseFixture.Guild1.Id },
-            new RoleDto() { Id = 4, GuildId = TestDatabaseFixture.Guild1.Id },
-            new RoleDto() { Id = 5, GuildId = TestDatabaseFixture.Guild1.Id }
+            new() { Id = TestDatabaseFixture.Role1.Id, GuildId = TestDatabaseFixture.Guild1.Id },
+            new() { Id = TestDatabaseFixture.Role2.Id, GuildId = TestDatabaseFixture.Guild1.Id },
+            new() { Id = 4, GuildId = TestDatabaseFixture.Guild1.Id },
+            new() { Id = 5, GuildId = TestDatabaseFixture.Guild1.Id }
         };
         var result = await context.Roles.AddMissingRolesAsync(rolesToAdd, default);
 

@@ -30,7 +30,7 @@ public static class DiscordEmbedBuilderExtensions
                         content.Length, splitContent.Sum(x => x.Length));
                 splitContent = content.Chunk(splitSize).Select(x => string.Concat(x)).ToList();
             }
-            if (splitContent.Any())
+            if (splitContent.Count != 0)
                 embedBuilder.AddField(contentType, splitContent[0]);
             if (splitContent.Count > 1)
                 foreach (var x in splitContent.Skip(1))

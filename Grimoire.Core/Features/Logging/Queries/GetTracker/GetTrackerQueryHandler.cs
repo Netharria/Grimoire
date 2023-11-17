@@ -9,14 +9,9 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Logging.Queries.GetTracker;
 
-public class GetTrackerQueryHandler : IRequestHandler<GetTrackerQuery, GetTrackerQueryResponse?>
+public class GetTrackerQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetTrackerQuery, GetTrackerQueryResponse?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetTrackerQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetTrackerQueryResponse?> Handle(GetTrackerQuery request, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Trackers

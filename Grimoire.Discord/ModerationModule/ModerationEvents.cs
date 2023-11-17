@@ -19,19 +19,14 @@ namespace Grimoire.Discord.ModerationModule;
 [DiscordMessageCreatedEventSubscriber]
 [DiscordMessageReactionAddedEventSubscriber]
 [DiscordGuildMemberAddedEventSubscriber]
-public class ModerationEvents :
+public class ModerationEvents(IMediator mediator) :
     IDiscordGuildBanAddedEventSubscriber,
     IDiscordGuildBanRemovedEventSubscriber,
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageReactionAddedEventSubscriber,
     IDiscordGuildMemberAddedEventSubscriber
 {
-    private readonly IMediator _mediator;
-
-    public ModerationEvents(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     public async Task DiscordOnGuildBanAdded(DiscordClient sender, GuildBanAddEventArgs args)
     {

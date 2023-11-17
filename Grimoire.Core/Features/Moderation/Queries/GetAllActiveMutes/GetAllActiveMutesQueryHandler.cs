@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetAllActiveMutes;
 
-public class GetAllActiveMutesQueryHandler : IQueryHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
+public class GetAllActiveMutesQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetAllActiveMutesQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request, CancellationToken cancellationToken)
     {

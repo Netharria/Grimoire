@@ -7,28 +7,24 @@
 
 using Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand;
 using Grimoire.Core.Features.Moderation.Queries.GetExpiredLocks;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace Grimoire.Discord.ModerationModule;
 
-public class LockBackgroundTasks : INotificationHandler<TimedNotification>
+public class LockBackgroundTasks(IServiceProvider serviceProvider, ILogger logger)
+    : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
-    private readonly IMediator _mediator;
-    private readonly IDiscordClientService _discordClientService;
 
-    public LockBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
+    protected override async Task RunTask(CancellationToken stoppingToken)
     {
-        this._mediator = mediator;
-        this._discordClientService = discordClientService;
-    }
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+        var discordClientService = _serviceProvider.GetRequiredService<IDiscordClientService>();
 
-    public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
-    {
-        if (notification.Time.Second % 5 != 0)
-            return;
-        var response = await this._mediator.Send(new GetExpiredLocksQuery(), cancellationToken);
+        var response = await mediator.Send(new GetExpiredLocksQuery(), stoppingToken);
         foreach (var expiredLock in response)
         {
-            var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
+            var guild = discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
             if (guild is null) continue;
 
             var channel = guild.Channels.GetValueOrDefault(expiredLock.ChannelId);
@@ -44,7 +40,7 @@ public class LockBackgroundTasks : INotificationHandler<TimedNotification>
                     , permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied));
             }
 
-            _ = await this._mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = guild.Id }, cancellationToken);
+            _ = await mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = guild.Id }, stoppingToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Lock on {channel.Mention} has expired.");

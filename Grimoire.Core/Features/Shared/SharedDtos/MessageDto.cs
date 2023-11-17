@@ -13,5 +13,5 @@ public class MessageDto
     public ulong ChannelId { get; init; }
     public ulong MessageId { get; init; }
     public string MessageContent { get; init; } = string.Empty;
-    public AttachmentDto[] Attachments { get; init; } = Array.Empty<AttachmentDto>();
+    public AttachmentDto[] Attachments { get; init; } = [];
 }

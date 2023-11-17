@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetExpiredLocks;
 
-public class GetExpiredLocksQueryHandler : IQueryHandler<GetExpiredLocksQuery, IEnumerable<GetExpiredLocksQueryResponse>>
+public class GetExpiredLocksQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetExpiredLocksQuery, IEnumerable<GetExpiredLocksQueryResponse>>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetExpiredLocksQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<IEnumerable<GetExpiredLocksQueryResponse>> Handle(GetExpiredLocksQuery query, CancellationToken cancellationToken)
      => await this._grimoireDbContext.Locks

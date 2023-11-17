@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetLock;
 
-public class GetLockQueryHandler : IQueryHandler<GetLockQuery, bool>
+public class GetLockQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetLockQuery, bool>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetLockQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<bool> Handle(GetLockQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Locks

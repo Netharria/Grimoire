@@ -9,14 +9,9 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Commands.BanCommands.AddBan;
 
-public class AddBanCommandHandler : ICommandHandler<AddBanCommand, AddBanCommandResponse>
+public class AddBanCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddBanCommand, AddBanCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public AddBanCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<AddBanCommandResponse> Handle(AddBanCommand command, CancellationToken cancellationToken)
     {

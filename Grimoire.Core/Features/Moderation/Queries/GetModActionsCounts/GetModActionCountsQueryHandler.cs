@@ -9,14 +9,9 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetModActionsCounts;
 
-public class GetModActionCountsQueryHandler : IQueryHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
+public class GetModActionCountsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetModActionCountsQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetModActionCountsQueryResponse?> Handle(GetModActionCountsQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Members

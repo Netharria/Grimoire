@@ -13,16 +13,10 @@ using Serilog;
 namespace Grimoire.Discord.LevelingModule;
 
 [DiscordMessageCreatedEventSubscriber]
-public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
+public class LevelingEvents(IMediator mediator, ILogger logger) : IDiscordMessageCreatedEventSubscriber
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger _logger;
-
-    public LevelingEvents(IMediator mediator, ILogger logger)
-    {
-        this._mediator = mediator;
-        this._logger = logger;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ILogger _logger = logger;
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
@@ -97,7 +91,7 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
                 .WithTimestamp(DateTime.UtcNow)
                 .Build());
 
-        if (newRewards.Any())
+        if (newRewards.Length != 0)
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithColor(GrimoireColor.DarkPurple)
                 .WithAuthor($"{member.Username}#{member.Discriminator}")

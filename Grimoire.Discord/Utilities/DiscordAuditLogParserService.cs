@@ -16,18 +16,11 @@ public interface IDiscordAuditLogParserService
     Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong targetId);
 }
 
-public class DiscordAuditLogParserService : IDiscordAuditLogParserService
+public class DiscordAuditLogParserService(IDiscordClientService discordClientService, IMemoryCache memoryCache, IMediator mediator) : IDiscordAuditLogParserService
 {
-    private readonly IDiscordClientService _discordClientService;
-    private readonly IMemoryCache _memoryCache;
-    private readonly IMediator _mediator;
-
-    public DiscordAuditLogParserService(IDiscordClientService discordClientService, IMemoryCache memoryCache, IMediator mediator)
-    {
-        this._discordClientService = discordClientService;
-        this._memoryCache = memoryCache;
-        this._mediator = mediator;
-    }
+    private readonly IDiscordClientService _discordClientService = discordClientService;
+    private readonly IMemoryCache _memoryCache = memoryCache;
+    private readonly IMediator _mediator = mediator;
 
     public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong messageId)
     {

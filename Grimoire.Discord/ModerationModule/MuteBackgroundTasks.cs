@@ -8,29 +8,23 @@
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands.MuteCommands.UnmuteUserCommand;
 using Grimoire.Core.Features.Moderation.Queries.GetExpiredMutes;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace Grimoire.Discord.ModerationModule;
 
-public class MuteBackgroundTasks : INotificationHandler<TimedNotification>
+public class MuteBackgroundTasks(IServiceProvider serviceProvider, ILogger logger)
+    : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
-    private readonly IMediator _mediator;
-
-    private readonly IDiscordClientService _discordClientService;
-
-    public MuteBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
+    protected override async Task RunTask(CancellationToken stoppingToken)
     {
-        this._mediator = mediator;
-        this._discordClientService = discordClientService;
-    }
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+        var discordClientService = _serviceProvider.GetRequiredService<IDiscordClientService>();
 
-    public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
-    {
-        if (notification.Time.Second % 5 != 0)
-            return;
-        var response = await this._mediator.Send(new GetExpiredMutesQuery(), cancellationToken);
+        var response = await mediator.Send(new GetExpiredMutesQuery(), stoppingToken);
         foreach (var expiredLock in response)
         {
-            var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
+            var guild = discordClientService.Client.Guilds.GetValueOrDefault(expiredLock.GuildId);
             if (guild is null) continue;
 
             var user = guild.Members.GetValueOrDefault(expiredLock.UserId);
@@ -52,7 +46,7 @@ public class MuteBackgroundTasks : INotificationHandler<TimedNotification>
                             .WithDescription($"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually."));
                 }
             }
-            _ = await this._mediator.Send(new UnmuteUserCommand { UserId = user.Id, GuildId = guild.Id }, cancellationToken);
+            _ = await mediator.Send(new UnmuteUserCommand { UserId = user.Id, GuildId = guild.Id }, stoppingToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Mute on {user.Mention} has expired.");
@@ -68,3 +62,4 @@ public class MuteBackgroundTasks : INotificationHandler<TimedNotification>
         }
     }
 }
+

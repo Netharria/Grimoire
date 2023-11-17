@@ -8,7 +8,7 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
+using Grimoire.Core.Features.Leveling.Queries;
 using Grimoire.Domain;
 using NUnit.Framework;
 

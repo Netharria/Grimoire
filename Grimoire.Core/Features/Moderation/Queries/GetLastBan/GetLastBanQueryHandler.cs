@@ -9,14 +9,9 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetLastBan;
 
-public class GetLastBanQueryHandler : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
+public class GetLastBanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetLastBanQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetLastBanQueryResponse> Handle(GetLastBanQuery request, CancellationToken cancellationToken)
     {

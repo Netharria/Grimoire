@@ -26,10 +26,10 @@ public class ChannelDatabaseQueryHelperTests
         context.Database.BeginTransaction();
         var channelsToAdd = new List<ChannelDto>
         {
-            new ChannelDto() { Id = 2, GuildId = TestDatabaseFixture.Guild1.Id},
-            new ChannelDto() { Id = 3, GuildId = TestDatabaseFixture.Guild1.Id},
-            new ChannelDto() { Id = 4, GuildId = TestDatabaseFixture.Guild1.Id},
-            new ChannelDto() { Id = 5, GuildId = TestDatabaseFixture.Guild1.Id}
+            new() { Id = 2, GuildId = TestDatabaseFixture.Guild1.Id},
+            new() { Id = 3, GuildId = TestDatabaseFixture.Guild1.Id},
+            new() { Id = 4, GuildId = TestDatabaseFixture.Guild1.Id},
+            new() { Id = 5, GuildId = TestDatabaseFixture.Guild1.Id}
         };
         var result = await context.Channels.AddMissingChannelsAsync(channelsToAdd, default);
 

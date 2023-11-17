@@ -5,29 +5,24 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers;
+using Grimoire.Core.Features.Logging.Commands.TrackerCommands;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerBackgroundTasks : INotificationHandler<TimedNotification>
+public class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger logger)
+    : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
-    private readonly IMediator _mediator;
-    private readonly IDiscordClientService _discordClientService;
 
-    public TrackerBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
+    protected override async Task RunTask(CancellationToken stoppingToken)
     {
-        this._mediator = mediator;
-        this._discordClientService = discordClientService;
-    }
-
-    public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
-    {
-        if (notification.Time.Second % 5 != 0)
-            return;
-        var response = await this._mediator.Send(new RemoveExpiredTrackersCommand(), cancellationToken);
+        var mediator = _serviceProvider.GetRequiredService<IMediator>();
+        var discordClientService = _serviceProvider.GetRequiredService<IDiscordClientService>();
+        var response = await mediator.Send(new RemoveExpiredTrackersCommand(),stoppingToken);
         foreach (var expiredTracker in response)
         {
-            var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
+            var guild = discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
             if (guild is null) continue;
 
             var embed = new DiscordEmbedBuilder()

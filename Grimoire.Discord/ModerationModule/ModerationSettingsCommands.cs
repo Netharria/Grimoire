@@ -17,14 +17,9 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class ModerationSettingsCommands : ApplicationCommandModule
+public class ModerationSettingsCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public ModerationSettingsCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("PublicBanLog", "Set public channel to publish ban and unbans to.")]
     public async Task BanLogAsync(

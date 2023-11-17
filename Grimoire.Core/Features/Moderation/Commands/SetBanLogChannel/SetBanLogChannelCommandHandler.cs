@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel;
 
-public class SetBanLogChannelCommandHandler : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
+public class SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetBanLogChannelCommand command, CancellationToken cancellationToken)
     {

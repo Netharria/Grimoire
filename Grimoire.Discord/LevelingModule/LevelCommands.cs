@@ -5,20 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Leveling.Queries.GetLevel;
+using Grimoire.Core.Features.Leveling.Queries;
 
 namespace Grimoire.Discord.LevelingModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LevelCommands : ApplicationCommandModule
+public class LevelCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public LevelCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     /// <summary>
     ///

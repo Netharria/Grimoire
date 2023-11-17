@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetMuteRole;
 
-public class GetMuteRoleQueryHandler : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
+public class GetMuteRoleQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetMuteRoleQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetMuteRoleQueryResponse> Handle(GetMuteRoleQuery request, CancellationToken cancellationToken)
     {

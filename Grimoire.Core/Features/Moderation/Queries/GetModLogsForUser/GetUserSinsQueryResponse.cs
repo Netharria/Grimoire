@@ -9,5 +9,5 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser;
 
 public record GetUserSinsQueryResponse : BaseResponse
 {
-    public string[] SinList { get; init; } = Array.Empty<string>();
+    public string[] SinList { get; init; } = [];
 }

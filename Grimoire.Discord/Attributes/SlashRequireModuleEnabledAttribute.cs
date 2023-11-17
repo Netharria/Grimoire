@@ -7,19 +7,15 @@
 
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Grimoire.Core.Features.Shared.Queries.GetModuleStateForGuild;
+using Grimoire.Core.Features.Shared.Queries;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Discord.Attributes;
 
-public class SlashRequireModuleEnabledAttribute : SlashCheckBaseAttribute
+public class SlashRequireModuleEnabledAttribute(Module module) : SlashCheckBaseAttribute
 {
-    public Module Module;
+    public Module Module = module;
 
-    public SlashRequireModuleEnabledAttribute(Module module)
-    {
-        this.Module = module;
-    }
     public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
     {
         using var scope = ctx.Services.CreateScope();
@@ -28,14 +24,9 @@ public class SlashRequireModuleEnabledAttribute : SlashCheckBaseAttribute
     }
 }
 
-public class RequireModuleEnabledAttribute : CheckBaseAttribute
+public class RequireModuleEnabledAttribute(Module module) : CheckBaseAttribute
 {
-    public Module Module;
-
-    public RequireModuleEnabledAttribute(Module module)
-    {
-        this.Module = module;
-    }
+    public Module Module = module;
 
     public override async Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
     {

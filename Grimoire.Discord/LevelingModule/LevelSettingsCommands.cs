@@ -7,7 +7,7 @@
 
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
-using Grimoire.Core.Features.Leveling.Queries.GetLevelSettings;
+using Grimoire.Core.Features.Leveling.Queries;
 using Grimoire.Discord.Enums;
 
 namespace Grimoire.Discord.LevelingModule;
@@ -18,14 +18,9 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class LevelSettingsCommands : ApplicationCommandModule
+public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public LevelSettingsCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("View", "View the current settings for the leveling module.")]
     public async Task ViewAsync(InteractionContext ctx)

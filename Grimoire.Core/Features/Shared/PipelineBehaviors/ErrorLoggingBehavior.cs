@@ -9,15 +9,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Core.Features.Shared.PipelineBehaviors;
 
-public class ErrorLoggingBehavior<TMessage, TResponse> : IPipelineBehavior<TMessage, TResponse>
+public class ErrorLoggingBehavior<TMessage, TResponse>(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : IMessage
 {
-    private readonly ILogger<ErrorLoggingBehavior<TMessage, TResponse>> _logger;
-
-    public ErrorLoggingBehavior(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger)
-    {
-        this._logger = logger;
-    }
+    private readonly ILogger<ErrorLoggingBehavior<TMessage, TResponse>> _logger = logger;
 
     public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
     {

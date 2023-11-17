@@ -9,14 +9,9 @@ using Grimoire.Core.Features.Moderation.Queries.GetBan;
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetUnban;
 
-public class GetUnbanQueryHandler : IRequestHandler<GetUnbanQuery, GetBanQueryResponse>
+public class GetUnbanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetUnbanQuery, GetBanQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetUnbanQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetBanQueryResponse> Handle(GetUnbanQuery request, CancellationToken cancellationToken)
     {

@@ -9,14 +9,9 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Commands.MuteCommands.UnmuteUserCommand;
 
-public class UnmuteUserCommandHandler : ICommandHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
+public class UnmuteUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public UnmuteUserCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UnmuteUserCommandResponse> Handle(UnmuteUserCommand command, CancellationToken cancellationToken)
     {

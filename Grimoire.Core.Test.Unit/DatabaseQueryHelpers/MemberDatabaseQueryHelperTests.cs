@@ -28,8 +28,8 @@ public class MemberDatabaseQueryHelperTests
         context.Database.BeginTransaction();
         var membersToAdd = new List<MemberDto>
         {
-            new MemberDto() { UserId = TestDatabaseFixture.User1.Id, GuildId = TestDatabaseFixture.Guild2.Id},
-            new MemberDto() { UserId = TestDatabaseFixture.User2.Id, GuildId = TestDatabaseFixture.Guild2.Id}
+            new() { UserId = TestDatabaseFixture.User1.Id, GuildId = TestDatabaseFixture.Guild2.Id},
+            new() { UserId = TestDatabaseFixture.User2.Id, GuildId = TestDatabaseFixture.Guild2.Id}
         };
         var result = await context.Members.AddMissingMembersAsync(membersToAdd, default);
 
@@ -69,10 +69,9 @@ public class MemberDatabaseQueryHelperTests
 
         var result = await context.Members.WhereMemberNotIgnored(
             TestDatabaseFixture.Channel1.Id,
-            new ulong[]
-            {
+            [
                 TestDatabaseFixture.Role1.Id
-            }).ToArrayAsync();
+            ]).ToArrayAsync();
 
         result.Should().AllSatisfy(x => x.IsIgnoredMember.Should().NotBeNull());
     }

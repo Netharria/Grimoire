@@ -6,14 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetModerationSettings;
-public class GetModerationSettingsQueryHandler : IQueryHandler<GetModerationSettingsQuery, GetModerationSettingsQueryResponse>
+public class GetModerationSettingsQueryHandler(IGrimoireDbContext context) : IQueryHandler<GetModerationSettingsQuery, GetModerationSettingsQueryResponse>
 {
-    private readonly IGrimoireDbContext _context;
-
-    public GetModerationSettingsQueryHandler(IGrimoireDbContext context)
-    {
-        this._context = context;
-    }
+    private readonly IGrimoireDbContext _context = context;
 
     public async ValueTask<GetModerationSettingsQueryResponse> Handle(GetModerationSettingsQuery query, CancellationToken cancellationToken)
     {

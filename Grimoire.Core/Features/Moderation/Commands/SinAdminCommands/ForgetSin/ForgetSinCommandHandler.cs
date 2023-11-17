@@ -9,14 +9,9 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.ForgetSin;
 
-public class ForgetSinCommandHandler : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
+public class ForgetSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public ForgetSinCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<ForgetSinCommandResponse> Handle(ForgetSinCommand command, CancellationToken cancellationToken)
     {

@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands.SetAutoPardon;
 
-public class SetAutoPardonCommandHandler : ICommandHandler<SetAutoPardonCommand, BaseResponse>
+public class SetAutoPardonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetAutoPardonCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public SetAutoPardonCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetAutoPardonCommand command, CancellationToken cancellationToken)
     {

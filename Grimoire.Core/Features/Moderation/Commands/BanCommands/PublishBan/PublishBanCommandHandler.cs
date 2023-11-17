@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands.BanCommands.PublishBan;
 
-public class PublishBanCommandHandler : ICommandHandler<PublishBanCommand>
+public class PublishBanCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<PublishBanCommand>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public PublishBanCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<Unit> Handle(PublishBanCommand command, CancellationToken cancellationToken)
     {

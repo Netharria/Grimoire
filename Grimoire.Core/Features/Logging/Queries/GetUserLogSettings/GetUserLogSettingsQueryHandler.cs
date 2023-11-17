@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
 
-public class GetUserLogSettingsQueryHandler : IRequestHandler<GetUserLogSettingsQuery, GetUserLogSettingsQueryResponse>
+public class GetUserLogSettingsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUserLogSettingsQuery, GetUserLogSettingsQueryResponse>
 {
-    private readonly GrimoireDbContext _grimoireDbContext;
-
-    public GetUserLogSettingsQueryHandler(GrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetUserLogSettingsQueryResponse> Handle(GetUserLogSettingsQuery request, CancellationToken cancellationToken)
     {

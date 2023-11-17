@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.UnlockChannelCommand;
 
-public class UnlockChannelCommandHandler : ICommandHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
+public class UnlockChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public UnlockChannelCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UnlockChannelCommandResponse> Handle(UnlockChannelCommand command, CancellationToken cancellationToken)
     {

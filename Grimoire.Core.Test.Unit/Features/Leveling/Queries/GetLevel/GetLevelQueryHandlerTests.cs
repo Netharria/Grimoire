@@ -8,7 +8,7 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Leveling.Queries.GetLevel;
+using Grimoire.Core.Features.Leveling.Queries;
 using NUnit.Framework;
 
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries.GetLevel;

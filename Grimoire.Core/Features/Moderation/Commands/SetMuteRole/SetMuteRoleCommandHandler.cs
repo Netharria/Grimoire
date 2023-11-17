@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands.SetMuteRole;
 
-public class SetMuteRoleCommandHandler : ICommandHandler<SetMuteRoleCommand, BaseResponse>
+public class SetMuteRoleCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMuteRoleCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public SetMuteRoleCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetMuteRoleCommand command, CancellationToken cancellationToken)
     {

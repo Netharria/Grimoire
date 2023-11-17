@@ -11,5 +11,5 @@ public sealed record GetOldLogMessagesQueryResponse : BaseResponse
 {
     public ulong ChannelId { get; init; }
     public ulong GuildId { get; init; }
-    public ulong[] MessageIds { get; init; } = Array.Empty<ulong>();
+    public ulong[] MessageIds { get; init; } = [];
 }

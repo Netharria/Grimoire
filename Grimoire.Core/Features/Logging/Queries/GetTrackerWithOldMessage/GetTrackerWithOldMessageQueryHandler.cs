@@ -9,14 +9,9 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Logging.Queries.GetTrackerWithOldMessage;
 
-public class GetTrackerWithOldMessageQueryHandler : IRequestHandler<GetTrackerWithOldMessageQuery, GetTrackerWithOldMessageQueryResponse?>
+public class GetTrackerWithOldMessageQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetTrackerWithOldMessageQuery, GetTrackerWithOldMessageQueryResponse?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetTrackerWithOldMessageQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetTrackerWithOldMessageQueryResponse?> Handle(GetTrackerWithOldMessageQuery request, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Trackers

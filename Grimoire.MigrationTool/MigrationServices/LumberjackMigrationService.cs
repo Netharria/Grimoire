@@ -15,14 +15,10 @@ using Serilog;
 
 namespace Grimoire.MigrationTool.MigrationServices;
 
-public class LumberjackMigrationService
+public class LumberjackMigrationService(LumberjackDbContext context)
 {
-    private readonly LumberjackDbContext _lumberjackContext;
+    private readonly LumberjackDbContext _lumberjackContext = context;
 
-    public LumberjackMigrationService(LumberjackDbContext context)
-    {
-        this._lumberjackContext = context;
-    }
     public async Task MigrateLumberJackDatabaseAsync()
     {
         if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("LumberjackPath")))
@@ -94,8 +90,7 @@ public class LumberjackMigrationService
                 CreatedTimestamp = message.CreatedAt.ToUniversalTime(),
                 MessageHistory = new List<MessageHistory>
                     {
-                        new MessageHistory
-                        {
+                        new() {
                             MessageId = message.Id,
                             MessageContent = message.CleanContent,
                             GuildId = message.GuildId,
@@ -116,7 +111,7 @@ public class LumberjackMigrationService
 
         var bulkConfig = new BulkConfig();
         bulkConfig.SqlBulkCopyOptions &= ~SqlBulkCopyOptions.KeepIdentity;
-        bulkConfig.PropertiesToExclude = new List<string> { "Id" };
+        bulkConfig.PropertiesToExclude = ["Id"];
 
         await grimoireDbContext.BulkInsertAsync(messageHistoryToAdd, bulkConfig);
         await grimoireDbContext.BulkSaveChangesAsync();
@@ -239,8 +234,7 @@ public class LumberjackMigrationService
                 GuildId = x.GuildId,
                 XpHistory = new List<XpHistory>
                     {
-                        new XpHistory
-                        {
+                        new() {
                             UserId = x.AuthorId,
                             GuildId = x.GuildId,
                             Xp = 0,

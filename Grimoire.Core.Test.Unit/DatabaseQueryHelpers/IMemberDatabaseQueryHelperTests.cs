@@ -24,8 +24,8 @@ public class IMemberDatabaseQueryHelperTests
         var databaseFixture = new TestDatabaseFixture();
         using var context = databaseFixture.CreateContext();
 
-        var result = await context.Members.WhereMembersHaveIds(new ulong[]{
-            TestDatabaseFixture.Member1.UserId },
+        var result = await context.Members.WhereMembersHaveIds([
+            TestDatabaseFixture.Member1.UserId ],
             TestDatabaseFixture.Member1.GuildId).ToArrayAsync();
 
         result.Should().HaveCount(1);

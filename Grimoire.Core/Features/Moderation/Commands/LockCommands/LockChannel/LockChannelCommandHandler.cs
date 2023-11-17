@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands.LockCommands.LockChannel;
 
-public class LockChannelCommandHandler : ICommandHandler<LockChannelCommand, BaseResponse>
+public class LockChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<LockChannelCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public LockChannelCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(LockChannelCommand command, CancellationToken cancellationToken)
     {

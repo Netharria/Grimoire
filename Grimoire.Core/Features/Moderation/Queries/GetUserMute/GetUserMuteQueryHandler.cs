@@ -9,14 +9,9 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetUserMute;
 
-public class GetUserMuteQueryHandler : IQueryHandler<GetUserMuteQuery, ulong?>
+public class GetUserMuteQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserMuteQuery, ulong?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetUserMuteQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<ulong?> Handle(GetUserMuteQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Mutes

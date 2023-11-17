@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Logging.Queries.GetOldLogMessages;
 
-public class GetOldLogMessagesQueryHandler : IRequestHandler<GetOldLogMessagesQuery, IEnumerable<GetOldLogMessagesQueryResponse>>
+public class GetOldLogMessagesQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetOldLogMessagesQuery, IEnumerable<GetOldLogMessagesQueryResponse>>
 {
-    private readonly GrimoireDbContext _grimoireDbContext;
-
-    public GetOldLogMessagesQueryHandler(GrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<IEnumerable<GetOldLogMessagesQueryResponse>> Handle(GetOldLogMessagesQuery request, CancellationToken cancellationToken)
     {

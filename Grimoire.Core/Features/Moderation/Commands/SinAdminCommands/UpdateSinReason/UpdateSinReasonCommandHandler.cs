@@ -9,14 +9,9 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.UpdateSinReason;
 
-public class UpdateSinReasonCommandHandler : ICommandHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
+public class UpdateSinReasonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public UpdateSinReasonCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UpdateSinReasonCommandResponse> Handle(UpdateSinReasonCommand command, CancellationToken cancellationToken)
     {

@@ -7,14 +7,9 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetBan;
 
-public class GetBanQueryHandler : IRequestHandler<GetBanQuery, GetBanQueryResponse>
+public class GetBanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetBanQuery, GetBanQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetBanQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetBanQueryResponse> Handle(GetBanQuery request, CancellationToken cancellationToken)
     {

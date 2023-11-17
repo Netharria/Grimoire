@@ -14,14 +14,9 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LevelingAdminCommands : ApplicationCommandModule
+public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public LevelingAdminCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Award", "Awards a user some xp.")]
     public async Task AwardAsync(InteractionContext ctx,

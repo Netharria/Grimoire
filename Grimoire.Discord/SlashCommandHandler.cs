@@ -19,23 +19,17 @@ using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
 
 namespace Grimoire.Discord;
 
+/// <summary>
+/// Initializes a new instance of the <see cref="SlashCommandHandler"/> class.
+/// </summary>
+/// <param name="logger"></param>
 [DiscordSlashCommandsEventsSubscriber]
 [DiscordClientErroredEventSubscriber]
 [DiscordCommandsNextEventsSubscriber]
-public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber, IDiscordCommandsNextEventsSubscriber
+public class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration) : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber, IDiscordCommandsNextEventsSubscriber
 {
-    private readonly ILogger<SlashCommandHandler> _logger;
-    private readonly IConfiguration _configuration;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SlashCommandHandler"/> class.
-    /// </summary>
-    /// <param name="logger"></param>
-    public SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration)
-    {
-        this._logger = logger;
-        this._configuration = configuration;
-    }
+    private readonly ILogger<SlashCommandHandler> _logger = logger;
+    private readonly IConfiguration _configuration = configuration;
 
     private static async Task<StringBuilder> BuildSlashCommandLogAsync(StringBuilder builder, IEnumerable<DiscordInteractionDataOption> commandOptions)
     {

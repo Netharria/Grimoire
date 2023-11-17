@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Logging.Commands.SetMessageLogSettings;
+using Grimoire.Core.Features.Logging.Commands;
 using Grimoire.Core.Features.Logging.Commands.SetUserLogSettings;
 using Grimoire.Core.Features.Logging.Queries.GetMessageLogSettings;
 using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
@@ -21,14 +21,10 @@ public class LogSettingsCommands : ApplicationCommandModule
 {
     [SlashRequireModuleEnabled(Module.UserLog)]
     [SlashCommandGroup("User", "View or change the User Log Module Settings.")]
-    public class UserLogSettingsCommands : ApplicationCommandModule
+    public class UserLogSettingsCommands(IMediator mediator) : ApplicationCommandModule
     {
-        private readonly IMediator _mediator;
+        private readonly IMediator _mediator = mediator;
 
-        public UserLogSettingsCommands(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
         [SlashCommand("View", "View the current settings for the User Log module.")]
         public async Task ViewAsync(InteractionContext ctx)
         {
@@ -101,14 +97,9 @@ public class LogSettingsCommands : ApplicationCommandModule
 
     [SlashCommandGroup("Message", "View or change the Message Log Module Settings.")]
     [SlashRequireModuleEnabled(Module.MessageLog)]
-    public class MessageLogSettingsCommands : ApplicationCommandModule
+    public class MessageLogSettingsCommands(IMediator mediator) : ApplicationCommandModule
     {
-        private readonly IMediator _mediator;
-
-        public MessageLogSettingsCommands(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
+        private readonly IMediator _mediator = mediator;
 
         [SlashCommand("View", "View the current settings for the Message Log Module.")]
         public async Task ViewAsync(InteractionContext ctx)

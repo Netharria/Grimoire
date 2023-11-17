@@ -15,14 +15,9 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashRequireBotPermissions(Permissions.BanMembers)]
-public class BanCommands : ApplicationCommandModule
+public class BanCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public BanCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Ban", "Bans a user from the server.")]
     public async Task BanAsync(

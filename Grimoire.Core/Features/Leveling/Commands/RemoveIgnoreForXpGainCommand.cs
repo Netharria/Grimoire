@@ -14,26 +14,21 @@ namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnore
 public sealed class RemoveIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
 {
     public ulong GuildId { get; init; }
-    public UserDto[] Users { get; set; } = Array.Empty<UserDto>();
-    public RoleDto[] Roles { get; set; } = Array.Empty<RoleDto>();
-    public ChannelDto[] Channels { get; set; } = Array.Empty<ChannelDto>();
-    public string[] InvalidIds { get; set; } = Array.Empty<string>();
+    public UserDto[] Users { get; set; } = [];
+    public RoleDto[] Roles { get; set; } = [];
+    public ChannelDto[] Channels { get; set; } = [];
+    public string[] InvalidIds { get; set; } = [];
 }
 
-public class RemoveIgnoreForXpGainCommandHandler : ICommandHandler<RemoveIgnoreForXpGainCommand, BaseResponse>
+public class RemoveIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveIgnoreForXpGainCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public RemoveIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(RemoveIgnoreForXpGainCommand command, CancellationToken cancellationToken)
     {
         var newIgnoredItems = new StringBuilder();
 
-        if (command.Users.Any())
+        if (command.Users.Length != 0)
         {
             var allUsersToIgnore = await this._grimoireDbContext.IgnoredMembers
                 .WhereMembersHaveIds(command.Users.Select(x => x.Id).ToArray(), command.GuildId)
@@ -42,11 +37,11 @@ public class RemoveIgnoreForXpGainCommandHandler : ICommandHandler<RemoveIgnoreF
             {
                 newIgnoredItems.Append(UserExtensions.Mention(ignorable.UserId)).Append(' ');
             }
-            if(allUsersToIgnore.Any())
+            if(allUsersToIgnore.Length != 0)
                 this._grimoireDbContext.IgnoredMembers.RemoveRange(allUsersToIgnore);
         }
 
-        if (command.Roles.Any())
+        if (command.Roles.Length != 0)
         {
             var rolesIds = command.Roles.Select(x => x.Id).ToArray();
             var allRolesToIgnore = await this._grimoireDbContext.IgnoredRoles
@@ -56,11 +51,11 @@ public class RemoveIgnoreForXpGainCommandHandler : ICommandHandler<RemoveIgnoreF
             {
                 newIgnoredItems.Append(RoleExtensions.Mention(ignorable.RoleId)).Append(' ');
             }
-            if(allRolesToIgnore.Any())
+            if(allRolesToIgnore.Length != 0)
                 this._grimoireDbContext.IgnoredRoles.RemoveRange(allRolesToIgnore);
         }
 
-        if (command.Channels.Any())
+        if (command.Channels.Length != 0)
         {
             var channelIds = command.Channels.Select(x => x.Id).ToArray();
             var allChannelsToIgnore = await this._grimoireDbContext.IgnoredChannels
@@ -70,14 +65,14 @@ public class RemoveIgnoreForXpGainCommandHandler : ICommandHandler<RemoveIgnoreF
             {
                 newIgnoredItems.Append(ChannelExtensions.Mention(ignorable.ChannelId)).Append(' ');
             }
-            if(allChannelsToIgnore.Any())
+            if(allChannelsToIgnore.Length != 0)
                 this._grimoireDbContext.IgnoredChannels.RemoveRange(allChannelsToIgnore);
         }
 
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         var couldNotMatch = new StringBuilder();
-        if (command.InvalidIds.Any())
+        if (command.InvalidIds.Length != 0)
             foreach (var id in command.InvalidIds)
                 couldNotMatch.Append(id).Append(' ');
 

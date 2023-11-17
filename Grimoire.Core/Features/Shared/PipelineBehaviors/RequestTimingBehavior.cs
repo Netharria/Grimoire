@@ -10,15 +10,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Core.Features.Shared.PipelineBehaviors;
 
-public class RequestTimingBehavior<TMessage, TResponse> : IPipelineBehavior<TMessage, TResponse>
+public class RequestTimingBehavior<TMessage, TResponse>(ILogger<RequestTimingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : IMessage
 {
-    private readonly ILogger<RequestTimingBehavior<TMessage, TResponse>> _logger;
-
-    public RequestTimingBehavior(ILogger<RequestTimingBehavior<TMessage, TResponse>> logger)
-    {
-        this._logger = logger;
-    }
+    private readonly ILogger<RequestTimingBehavior<TMessage, TResponse>> _logger = logger;
 
     public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
     {

@@ -26,9 +26,9 @@ public class GuildDatabaseQueryHelperTests
         context.Database.BeginTransaction();
         var guildsToAdd = new List<GuildDto>
         {
-            new GuildDto() { Id = 1 },
-            new GuildDto() { Id = 2 },
-            new GuildDto() { Id = 3 }
+            new() { Id = 1 },
+            new() { Id = 2 },
+            new() { Id = 3 }
         };
         var result = await context.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
 

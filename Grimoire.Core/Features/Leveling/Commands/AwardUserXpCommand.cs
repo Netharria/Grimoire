@@ -18,14 +18,9 @@ public sealed record AwardUserXpCommand : ICommand<BaseResponse>
     public ulong? AwarderId { get; init; }
 }
 
-public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, BaseResponse>
+public class AwardUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AwardUserXpCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public AwardUserXpCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(AwardUserXpCommand command, CancellationToken cancellationToken)
     {

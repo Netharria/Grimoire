@@ -18,16 +18,10 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireBotPermissions(Permissions.ManageRoles)]
 [SlashCommandGroup("Mutes", "Manages the mute role settings.")]
-public partial class MuteAdminCommands : ApplicationCommandModule
+public partial class MuteAdminCommands(IMediator mediator, ILogger logger) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger _logger;
-
-    public MuteAdminCommands(IMediator mediator, ILogger logger)
-    {
-        this._mediator = mediator;
-        this._logger = logger;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ILogger _logger = logger;
 
     [SlashCommand("View", "View the current configured mute role and any active mutes.")]
     public async Task ViewMutesAsync(InteractionContext ctx)
@@ -47,7 +41,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
             embed.AddField("Mute Role", role.Mention);
         else
             embed.AddField("Mute Role", "None");
-        if (users is not null && users.Any())
+        if (users is not null && users.Length != 0)
             embed.AddField("Muted Users", string.Join(" ", users.Select(x => x.Mention)));
         else
             embed.AddField("Muted Users", "None");
@@ -91,7 +85,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
                 .Where(x => !x.WasSuccessful)
                 .ToArrayAsync();
 
-        if (!result.Any())
+        if (result.Length == 0)
         {
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Successfully created role {role.Mention} and set permissions for channels");
         }
@@ -125,7 +119,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
                 .Where(x => !x.WasSuccessful)
                 .ToArrayAsync();
 
-        if (!result.Any())
+        if (result.Length == 0)
         {
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Succussfully refreshed permissions for {role.Mention} role.");
         }

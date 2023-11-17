@@ -8,23 +8,18 @@
 using System.Text.RegularExpressions;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Grimoire.Core.Features.Leveling.Queries.GetLeaderboard;
-using Grimoire.Core.Features.Leveling.Queries.GetLevel;
+using Grimoire.Core.Features.Leveling.Queries;
 
 namespace Grimoire.Discord.TextCommands;
 
 [RequireGuild]
 [RequireModuleEnabled(Module.Leveling)]
 [ModuleLifespan(ModuleLifespan.Transient)]
-public class LevelTextCommands : BaseCommandModule
+public class LevelTextCommands(IMediator mediator) : BaseCommandModule
 {
-    private readonly IMediator _mediator;
+    private readonly IMediator _mediator = mediator;
     const ulong GuildId = 539925898128785460;
     const ulong ChannelId = 613131646929207355;
-    public LevelTextCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
 
     [Command("level")]
     public async Task LevelCommandAsync(CommandContext ctx, DiscordMember? member = null)

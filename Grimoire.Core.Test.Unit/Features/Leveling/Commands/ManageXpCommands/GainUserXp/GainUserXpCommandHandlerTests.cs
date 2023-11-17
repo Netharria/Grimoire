@@ -32,7 +32,7 @@ public class GainUserXpCommandHandlerTests
                 UserId = TestDatabaseFixture.Member1.UserId,
                 GuildId = TestDatabaseFixture.Member1.GuildId,
                 ChannelId = TestDatabaseFixture.Channel1.Id,
-                RoleIds = new [] { TestDatabaseFixture.Role1.Id }
+                RoleIds = [TestDatabaseFixture.Role1.Id]
             }, default);
         context.ChangeTracker.Clear();
         result.Success.Should().BeTrue();
@@ -63,7 +63,7 @@ public class GainUserXpCommandHandlerTests
                 UserId = TestDatabaseFixture.Member3.UserId,
                 GuildId = TestDatabaseFixture.Member3.GuildId,
                 ChannelId = TestDatabaseFixture.Channel1.Id,
-                RoleIds = new [] { TestDatabaseFixture.Role1.Id }
+                RoleIds = [TestDatabaseFixture.Role1.Id]
             }, default);
         context.ChangeTracker.Clear();
         result.Success.Should().BeFalse();

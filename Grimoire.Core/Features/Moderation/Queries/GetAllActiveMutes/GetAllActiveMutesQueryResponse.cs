@@ -10,5 +10,5 @@ namespace Grimoire.Core.Features.Moderation.Queries.GetAllActiveMutes;
 public sealed record GetAllActiveMutesQueryResponse : BaseResponse
 {
     public ulong? MuteRole { get; init; }
-    public ulong[] MutedUsers { get; init; } = Array.Empty<ulong>();
+    public ulong[] MutedUsers { get; init; } = [];
 }

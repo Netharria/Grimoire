@@ -10,14 +10,9 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser;
 
-public class GetUserSinsQueryHandler : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
+public class GetUserSinsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GetUserSinsQueryHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
     {
@@ -69,7 +64,7 @@ public class GetUserSinsQueryHandler : IQueryHandler<GetUserSinsQuery, GetUserSi
 
         return new GetUserSinsQueryResponse
         {
-            SinList = resultStrings.ToArray()
+            SinList = [.. resultStrings]
         };
     }
 }

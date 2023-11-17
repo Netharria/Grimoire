@@ -23,14 +23,9 @@ public enum LevelSettings
 }
 
 
-public class SetLevelSettingsCommandHandler : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
+public class SetLevelSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public SetLevelSettingsCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetLevelSettingsCommand command, CancellationToken cancellationToken)
     {

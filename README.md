@@ -23,7 +23,7 @@ A: You sure can. The requirements to run are listed in the [Requirements Section
 
 # Requirements
 
-Grimoire runs using [.NET 7](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) and a [PostgreSQL database](https://www.postgresql.org/download/). Optionally you can run Grimoire in a [docker container](https://www.docker.com/get-started/).
+Grimoire runs using [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) and a [PostgreSQL database](https://www.postgresql.org/download/). Optionally you can run Grimoire in a [docker container](https://www.docker.com/get-started/).
 
 You will also need a [Discord Bot Account and Token](https://discord.com/developers/docs/getting-started)
 
@@ -65,7 +65,7 @@ In the future I will make the `docker-compose.yml` create a PostgreSQL database 
 
 ## Manually
 
-* Install the [.NET 7 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
+* Install the [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 * Clone this repository: `git clone https://github.com/Netharria/Grimoire`
 * Set the [configuration](#configuration) in the `appsettings.json`
 * Change director to Grimoire.Discord

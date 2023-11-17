@@ -14,14 +14,9 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
-public class SinAdminCommands : ApplicationCommandModule
+public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public SinAdminCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Pardon", "Pardon a user's sin. This leaves the sin in the logs but marks it as pardoned.")]
     public async Task PardonAsync(InteractionContext ctx,

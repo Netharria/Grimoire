@@ -9,14 +9,9 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.PardonSin;
 
-public class PardonSinCommandHandler : ICommandHandler<PardonSinCommand, PardonSinCommandResponse>
+public class PardonSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<PardonSinCommand, PardonSinCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public PardonSinCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<PardonSinCommandResponse> Handle(PardonSinCommand command, CancellationToken cancellationToken)
     {

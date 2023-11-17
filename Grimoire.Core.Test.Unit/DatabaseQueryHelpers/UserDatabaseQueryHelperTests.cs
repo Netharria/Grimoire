@@ -26,9 +26,9 @@ public class UserDatabaseQueryHelperTests
         context.Database.BeginTransaction();
         var usersToAdd = new List<UserDto>
         {
-            new UserDto() { Id = TestDatabaseFixture.User1.Id },
-            new UserDto() { Id = TestDatabaseFixture.User2.Id },
-            new UserDto() { Id = 45 }
+            new() { Id = TestDatabaseFixture.User1.Id },
+            new() { Id = TestDatabaseFixture.User2.Id },
+            new() { Id = 45 }
         };
         var result = await context.Users.AddMissingUsersAsync(usersToAdd, default);
 

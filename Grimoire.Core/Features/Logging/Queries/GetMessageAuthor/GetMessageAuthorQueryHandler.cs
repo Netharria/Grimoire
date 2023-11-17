@@ -6,14 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 namespace Grimoire.Core.Features.Logging.Queries.GetMessageAuthor;
-public class GetMessageAuthorQueryHandler : IQueryHandler<GetMessageAuthorQuery, ulong?>
+public class GetMessageAuthorQueryHandler(IGrimoireDbContext grimoire) : IQueryHandler<GetMessageAuthorQuery, ulong?>
 {
-    private readonly IGrimoireDbContext _grimoire;
-
-    public GetMessageAuthorQueryHandler(IGrimoireDbContext grimoire)
-    {
-        this._grimoire = grimoire;
-    }
+    private readonly IGrimoireDbContext _grimoire = grimoire;
 
     public async ValueTask<ulong?> Handle(GetMessageAuthorQuery query, CancellationToken cancellationToken)
     {
