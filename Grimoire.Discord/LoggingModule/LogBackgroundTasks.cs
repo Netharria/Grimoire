@@ -17,10 +17,10 @@ namespace Grimoire.Discord.LoggingModule;
 public class LogBackgroundTasks(IServiceProvider serviceProvider, ILogger logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromMinutes(1))
 {
-    protected override async Task RunTask(CancellationToken stoppingToken)
+    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
     {
-        var mediator = _serviceProvider.GetRequiredService<IMediator>();
-        var discordClientService = _serviceProvider.GetRequiredService<IDiscordClientService>();
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var discordClientService = serviceProvider.GetRequiredService<IDiscordClientService>();
         var oldLogMessages = await mediator.Send(new GetOldLogMessagesQuery(), stoppingToken);
 
         var result = await oldLogMessages
@@ -34,7 +34,7 @@ public class LogBackgroundTasks(IServiceProvider serviceProvider, ILogger logger
             .SelectMany(channelInfo =>
                 channelInfo.DatabaseChannel.MessageIds
                 .ToAsyncEnumerable()
-                .SelectAwait(async messageId => await DeleteMessageAsync(channelInfo.DiscordChannel, messageId))
+                .SelectAwait(async messageId => await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, stoppingToken))
                 ).ToArrayAsync(stoppingToken);
 
         await mediator.Send(new DeleteOldMessagesCommand(), stoppingToken);
@@ -42,7 +42,7 @@ public class LogBackgroundTasks(IServiceProvider serviceProvider, ILogger logger
             await mediator.Send(new DeleteOldLogMessagesCommand { DeletedOldLogMessageIds = result }, stoppingToken);
     }
 
-    private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, ulong messageId)
+    private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, ulong messageId, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -52,8 +52,8 @@ public class LogBackgroundTasks(IServiceProvider serviceProvider, ILogger logger
                     WasSuccessful = false,
                     MessageId = messageId
                 };
-            var message =  await channel.GetMessageAsync(messageId);
-            await message.DeleteAsync();
+            var message =  await channel.GetMessageAsync(messageId).WaitAsync(cancellationToken);
+            await message.DeleteAsync().WaitAsync(cancellationToken);
             return new DeleteMessageResult
             {
                 WasSuccessful = true,

@@ -11,9 +11,10 @@ namespace Grimoire.Discord.Utilities;
 
 public static class DiscordSnowflakeParser
 {
+    public static readonly Regex MatchSnowflake = new(@"(\d{17,21})", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
 
     public static async ValueTask<Dictionary<string, string[]>> ParseStringIntoIdsAndGroupByTypeAsync(InteractionContext ctx, string value) =>
-        await Regex.Matches(value, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1))
+        await MatchSnowflake.Matches(value)
             .Where(x => x.Success)
             .Select(x => x.Value)
             .ToAsyncEnumerable()

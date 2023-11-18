@@ -15,10 +15,10 @@ public class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger lo
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
 
-    protected override async Task RunTask(CancellationToken stoppingToken)
+    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
     {
-        var mediator = _serviceProvider.GetRequiredService<IMediator>();
-        var discordClientService = _serviceProvider.GetRequiredService<IDiscordClientService>();
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var discordClientService = serviceProvider.GetRequiredService<IDiscordClientService>();
         var response = await mediator.Send(new RemoveExpiredTrackersCommand(),stoppingToken);
         foreach (var expiredTracker in response)
         {
@@ -30,7 +30,7 @@ public class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger lo
 
             var channel = guild.Channels.GetValueOrDefault(expiredTracker.TrackerChannelId);
             if (channel is not null)
-                await channel.SendMessageAsync(embed);
+                await channel.SendMessageAsync(embed).WaitAsync(stoppingToken);
 
             if (expiredTracker.LogChannelId is not null)
             {

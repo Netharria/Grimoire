@@ -12,17 +12,19 @@ namespace Grimoire.Discord.Extensions;
 
 public static class DiscordEmbedBuilderExtensions
 {
+
     public static DiscordEmbedBuilder AddMessageTextToFields(this DiscordEmbedBuilder embedBuilder, string contentType, string? content, bool addBlankField = true, int splitSize = 1024)
     {
         if (string.IsNullOrWhiteSpace(content) && addBlankField)
             return embedBuilder.AddField(contentType, "`blank`");
         if (!string.IsNullOrWhiteSpace(content))
         {
-            var splitContent = Regex.Matches(content, @"([\s\S]{1," + splitSize + @"})(?:\s|$)", RegexOptions.None, TimeSpan.FromSeconds(1)).Select(x => x.Value).ToList();
-
-            if (splitContent.Sum(x => x.Length) != content.Length || splitContent.Any(x => x.Length > 1024))
+            var splitContent = Regex.Matches(content, @"([\s\S]{1," + splitSize + @"})(?:\s|$)", RegexOptions.None, TimeSpan.FromSeconds(1))
+                .Select(x => x.Value.Trim()).ToList();
+            
+            if (splitContent.Sum(x => x.Length) != content.Length || splitContent.Any(x => x.Length > splitSize))
             {
-                if (splitContent.Any(x => x.Length > 1024))
+                if (splitContent.Any(x => x.Length > splitSize))
                     Log.Logger.Warning("Defaulting to crude embed field splitter because the regex returned a string that was longer than {splitSize}. String lengths {lengths}",
                         splitSize, string.Join(' ', splitContent.Select(x => $"{x.Length}")));
                 else
@@ -30,7 +32,7 @@ public static class DiscordEmbedBuilderExtensions
                         content.Length, splitContent.Sum(x => x.Length));
                 splitContent = content.Chunk(splitSize).Select(x => string.Concat(x)).ToList();
             }
-            if (splitContent.Count != 0)
+            if (splitContent.Count > 0)
                 embedBuilder.AddField(contentType, splitContent[0]);
             if (splitContent.Count > 1)
                 foreach (var x in splitContent.Skip(1))

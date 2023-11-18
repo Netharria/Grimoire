@@ -79,7 +79,7 @@ public class LevelTextCommands(IMediator mediator) : BaseCommandModule
                 member = ctx.Member;
                 break;
             default:
-                var matchId = Regex.Match(user, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1));
+                var matchId = DiscordSnowflakeParser.MatchSnowflake.Match(user);
                 if (matchId.Success)
                     if (ulong.TryParse(matchId.Value, out var userId))
                         ctx.Guild.Members.TryGetValue(userId, out member);
