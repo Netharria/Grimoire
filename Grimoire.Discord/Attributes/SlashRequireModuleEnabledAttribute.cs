@@ -20,7 +20,7 @@ public class SlashRequireModuleEnabledAttribute(Module module) : SlashCheckBaseA
     {
         using var scope = ctx.Services.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = Module });
+        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = this.Module });
     }
 }
 
@@ -32,6 +32,6 @@ public class RequireModuleEnabledAttribute(Module module) : CheckBaseAttribute
     {
         using var scope = ctx.Services.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = Module });
+        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = this.Module });
     }
 }

@@ -45,7 +45,8 @@ public class GetLeaderboardQueryHandler(IGrimoireDbContext grimoireDbContext) : 
         var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
         if (startIndex + 15 > totalMemberCount)
             startIndex = totalMemberCount - 15;
-
+        if (startIndex < 0)
+            startIndex = 0;
         var leaderboardText = new StringBuilder();
 
         for (var i = 0; i < 15 && startIndex < totalMemberCount; i++)

@@ -94,9 +94,6 @@ public static class MemberDatabaseQueryHelpers
         return avatarsToAdd.Any();
     }
 
-    public static IQueryable<Member> WhereLoggingEnabled(this IQueryable<Member> members)
-        => members.Where(x => x.Guild.UserLogSettings.ModuleEnabled);
-
     public static IQueryable<Member> WhereLevelingEnabled(this IQueryable<Member> members)
         => members.Where(x => x.Guild.LevelSettings.ModuleEnabled);
 

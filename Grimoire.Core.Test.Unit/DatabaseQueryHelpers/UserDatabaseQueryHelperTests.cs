@@ -5,36 +5,50 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Features.Shared.SharedDtos;
-using NUnit.Framework;
+using Grimoire.Domain;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
 
 namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
 
-[TestFixture]
-public class UserDatabaseQueryHelperTests
+[Collection("Test collection")]
+public class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private readonly GrimoireDbContext _dbContext = new(
+        new DbContextOptionsBuilder<GrimoireDbContext>()
+            .UseNpgsql(factory.ConnectionString)
+            .Options);
+    private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
+    private const long USER_1 = 1;
+    private const long USER_2 = 2;
 
-    [Test]
+    public async Task InitializeAsync()
+    {
+        await this._dbContext.AddAsync(new User { Id = USER_1 });
+        await this._dbContext.AddAsync(new User { Id = USER_2 });
+        await this._dbContext.SaveChangesAsync();
+    }
+    public Task DisposeAsync() => this._resetDatabase();
+
+    [Fact]
     public async Task WhenUsersAreNotInDatabase_AddThemAsync()
     {
-        var databaseFixture = new TestDatabaseFixture();
-        using var context = databaseFixture.CreateContext();
-        context.Database.BeginTransaction();
         var usersToAdd = new List<UserDto>
         {
-            new() { Id = TestDatabaseFixture.User1.Id },
-            new() { Id = TestDatabaseFixture.User2.Id },
+            new() { Id = USER_1 },
+            new() { Id = USER_2 },
             new() { Id = 45 }
         };
-        var result = await context.Users.AddMissingUsersAsync(usersToAdd, default);
+        var result = await this._dbContext.Users.AddMissingUsersAsync(usersToAdd, default);
 
-        await context.SaveChangesAsync();
-        context.ChangeTracker.Clear();
+        await this._dbContext.SaveChangesAsync();
         result.Should().BeTrue();
-        context.Users.Should().HaveCount(3);
+        this._dbContext.Users.Should().HaveCount(3);
     }
 }

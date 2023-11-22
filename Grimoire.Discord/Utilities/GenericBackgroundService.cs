@@ -12,19 +12,19 @@ using Serilog;
 namespace Grimoire.Discord.Utilities;
 
 public abstract class GenericBackgroundService(IServiceProvider serviceProvider, ILogger logger, TimeSpan timeSpan) : BackgroundService
-{ 
+{
     private readonly PeriodicTimer _timer = new(timeSpan);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.Information("Starting Background task {Type}", this.GetType().Name);
-        
-        while (await _timer.WaitForNextTickAsync(stoppingToken))
+
+        while (await this._timer.WaitForNextTickAsync(stoppingToken))
         {
             try
             {
                 using var scope = serviceProvider.CreateScope();
-                await this.RunTask(serviceProvider, stoppingToken);
+                await this.RunTask(scope.ServiceProvider, stoppingToken);
             }
             catch (Exception ex)
             {

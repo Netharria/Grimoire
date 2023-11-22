@@ -21,7 +21,7 @@ public static class DiscordEmbedBuilderExtensions
         {
             var splitContent = Regex.Matches(content, @"([\s\S]{1," + splitSize + @"})(?:\s|$)", RegexOptions.None, TimeSpan.FromSeconds(1))
                 .Select(x => x.Value.Trim()).ToList();
-            
+
             if (splitContent.Sum(x => x.Length) != content.Length || splitContent.Any(x => x.Length > splitSize))
             {
                 if (splitContent.Any(x => x.Length > splitSize))

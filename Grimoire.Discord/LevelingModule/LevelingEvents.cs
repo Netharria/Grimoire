@@ -68,11 +68,11 @@ public class LevelingEvents(IMediator mediator, ILogger logger) : IDiscordMessag
                             .WithFooter($"Message from the moderators of {args.Guild.Name}.")
                             .WithDescription(Regex.Unescape(reward!.Message!)));
                     }
-                    
+
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning("Failure to send reward message Reward: {roleId} Message: {message}", reward.RoleId, reward.Message, ex);
+                    this._logger.Warning("Failure to send reward message Reward: {roleId} Message: {message}", reward.RoleId, reward.Message, ex);
                 }
             }
         }

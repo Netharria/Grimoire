@@ -68,7 +68,7 @@ public class DiscordAuditLogParserService(IDiscordClientService discordClientSer
         if (deleteEntry.CreationTimestamp < DateTime.UtcNow.AddMinutes(-10))
             return null;
 
-        if (_memoryCache.TryGetValue(deleteEntry.Id, out DiscordAuditLogMessageEntry? cachedEntry))
+        if (this._memoryCache.TryGetValue(deleteEntry.Id, out DiscordAuditLogMessageEntry? cachedEntry))
         {
             if (cachedEntry is null)
                 return null;
@@ -77,7 +77,7 @@ public class DiscordAuditLogParserService(IDiscordClientService discordClientSer
                 return null;
         }
 
-        _memoryCache.Set(deleteEntry.Id, deleteEntry, TimeSpan.FromMinutes(10));
+        this._memoryCache.Set(deleteEntry.Id, deleteEntry, TimeSpan.FromMinutes(10));
         return deleteEntry;
     }
 }

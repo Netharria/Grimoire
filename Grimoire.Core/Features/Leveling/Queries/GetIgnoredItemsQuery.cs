@@ -5,9 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Text;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
-using System.Text;
 
 namespace Grimoire.Core.Features.Leveling.Queries;
 

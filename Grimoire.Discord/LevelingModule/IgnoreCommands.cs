@@ -92,7 +92,7 @@ public class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
         }
         var response = await this._mediator.Send(command);
 
-        
+
         await ctx.EditReplyAsync(GrimoireColor.Green,
             string.IsNullOrWhiteSpace(response.Message)
             ? "All items in list provided were not ignored"

@@ -5,37 +5,62 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Features.Shared.SharedDtos;
-using NUnit.Framework;
+using Grimoire.Domain;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
 
 namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
 
-[TestFixture]
-public class ChannelDatabaseQueryHelperTests
+[Collection("Test collection")]
+public class ChannelDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private readonly GrimoireDbContext _dbContext = new(
+        new DbContextOptionsBuilder<GrimoireDbContext>()
+            .UseNpgsql(factory.ConnectionString)
+            .Options);
+    private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
+    private const ulong GUILD_ID = 1;
+    private const ulong CHANNEL_1 = 1;
+    private const ulong CHANNEL_2 = 2;
+    private const ulong CHANNEL_3 = 3;
 
-    [Test]
+    public async Task InitializeAsync()
+    {
+        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
+        await this._dbContext.AddAsync(new Channel { Id = CHANNEL_1, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Channel { Id = CHANNEL_2, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Channel { Id = CHANNEL_3, GuildId = GUILD_ID });
+        await this._dbContext.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync() => this._resetDatabase();
+
+    [Fact]
     public async Task WhenChannelsAreNotInDatabase_AddThemAsync()
     {
-        var databaseFixture = new TestDatabaseFixture();
-        using var context = databaseFixture.CreateContext();
-        context.Database.BeginTransaction();
+        //Arrange
+
+
         var channelsToAdd = new List<ChannelDto>
         {
-            new() { Id = 2, GuildId = TestDatabaseFixture.Guild1.Id},
-            new() { Id = 3, GuildId = TestDatabaseFixture.Guild1.Id},
-            new() { Id = 4, GuildId = TestDatabaseFixture.Guild1.Id},
-            new() { Id = 5, GuildId = TestDatabaseFixture.Guild1.Id}
+            new() { Id = CHANNEL_2, GuildId = GUILD_ID },
+            new() { Id = CHANNEL_3, GuildId = GUILD_ID },
+            new() { Id = 4, GuildId = GUILD_ID },
+            new() { Id = 5, GuildId = GUILD_ID }
         };
-        var result = await context.Channels.AddMissingChannelsAsync(channelsToAdd, default);
 
-        await context.SaveChangesAsync();
+        //Act
+        var result = await this._dbContext.Channels.AddMissingChannelsAsync(channelsToAdd, default);
+        await this._dbContext.SaveChangesAsync();
 
+        //Assert
         result.Should().BeTrue();
-        context.Channels.Should().HaveCount(5);
+        this._dbContext.Channels.Should().HaveCount(5);
     }
 }
