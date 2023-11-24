@@ -6,8 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Concurrent;
-using Grimoire.Core.Features.Logging.Commands;
-using Grimoire.Core.Features.Logging.Queries;
+using Grimoire.Core.Features.LogCleanup.Commands;
+using Grimoire.Core.Features.UserLogging.Commands;
+using Grimoire.Core.Features.UserLogging.Queries;
 using Grimoire.Discord.Notifications;
 using Grimoire.Domain;
 

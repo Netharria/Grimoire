@@ -29,8 +29,24 @@ public class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsync
     private const ulong GUILD_2 = 2;
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild { Id = GUILD_1 });
-        await this._dbContext.AddAsync(new Guild { Id = GUILD_2 });
+        await this._dbContext.AddAsync(
+            new Guild
+            {
+                Id = GUILD_1,
+                LevelSettings = new GuildLevelSettings(),
+                MessageLogSettings = new GuildMessageLogSettings(),
+                ModerationSettings = new GuildModerationSettings(),
+                UserLogSettings = new GuildUserLogSettings()
+            });
+        await this._dbContext.AddAsync(
+            new Guild
+            {
+                Id = GUILD_2,
+                LevelSettings = new GuildLevelSettings(),
+                MessageLogSettings = new GuildMessageLogSettings(),
+                ModerationSettings = new GuildModerationSettings(),
+                UserLogSettings = new GuildUserLogSettings()
+            });
         await this._dbContext.SaveChangesAsync();
     }
     public Task DisposeAsync() => this._resetDatabase();
@@ -48,6 +64,20 @@ public class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsync
 
         await this._dbContext.SaveChangesAsync();
         result.Should().BeTrue();
-        this._dbContext.Guilds.Should().HaveCount(3);
+        var guilds = await this._dbContext.Guilds
+            .Include(x => x.LevelSettings)
+            .Include(x => x.MessageLogSettings)
+            .Include(x => x.ModerationSettings)
+            .Include(x => x.UserLogSettings)
+            .ToListAsync();
+        guilds.Should().HaveCount(3)
+            .And.AllSatisfy(x =>
+            {
+                x.LevelSettings.Should().NotBeNull();
+                x.MessageLogSettings.Should().NotBeNull();
+                x.ModerationSettings.Should().NotBeNull();
+                x.UserLogSettings.Should().NotBeNull();
+                x.Id.Should().BeOneOf(GUILD_1, GUILD_2, 3);
+            });
     }
 }

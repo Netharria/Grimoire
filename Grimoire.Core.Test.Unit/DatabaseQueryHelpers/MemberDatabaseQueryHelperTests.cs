@@ -42,6 +42,24 @@ public class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyn
         await this._dbContext.AddAsync(new User { Id = MEMBER_1 });
         await this._dbContext.AddAsync(new User { Id = MEMBER_2 });
         await this._dbContext.AddAsync(new Member { UserId = MEMBER_1, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new XpHistory
+        {
+            UserId = MEMBER_1,
+            GuildId = GUILD_ID,
+            Xp = 0,
+            Type = XpHistoryType.Created,
+            TimeOut = DateTime.UtcNow
+        });
+        await this._dbContext.AddAsync(new NicknameHistory
+        {
+            UserId = MEMBER_1,
+            GuildId = GUILD_ID
+        });
+        await this._dbContext.AddAsync(new Avatar
+        {
+            UserId = MEMBER_1,
+            GuildId = GUILD_ID
+        });
         await this._dbContext.AddAsync(new Role { Id = ROLE_ID, GuildId = GUILD_ID });
         await this._dbContext.AddAsync(new Channel { Id = CHANNEL_ID, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
@@ -54,13 +72,77 @@ public class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyn
         var membersToAdd = new List<MemberDto>
         {
             new() { UserId = MEMBER_1, GuildId = GUILD_ID },
-            new() { UserId = MEMBER_2, GuildId = GUILD_ID }
+            new() { UserId = MEMBER_2, GuildId = GUILD_ID, Nickname = "Nick2", AvatarUrl = "Avatar2" }
         };
         var result = await this._dbContext.Members.AddMissingMembersAsync(membersToAdd, default);
 
         await this._dbContext.SaveChangesAsync();
         result.Should().BeTrue();
-        this._dbContext.Members.Where(x => x.GuildId == GUILD_ID).Should().HaveCount(2);
+        var members = await this._dbContext.Members
+            .Where(x => x.GuildId == GUILD_ID)
+            .Include(x => x.XpHistory)
+            .Include(x => x.NicknamesHistory)
+            .Include(x => x.AvatarHistory)
+            .ToListAsync();
+        members.Should().HaveCount(2)
+            .And.AllSatisfy(x =>
+            {
+                x.UserId.Should().BeOneOf(MEMBER_1, MEMBER_2);
+                x.XpHistory.Should().HaveCount(1)
+                     .And.AllSatisfy(x =>
+                     {
+                         x.Type.Should().Be(XpHistoryType.Created);
+                         x.Xp.Should().Be(0);
+                     });
+                x.NicknamesHistory.Should().HaveCount(1)
+                    .And.AllSatisfy(x => x.Nickname.Should().BeOneOf((string?) null, "Nick2"));
+                x.AvatarHistory.Should().HaveCount(1)
+                    .And.AllSatisfy(x => x.FileName.Should().BeOneOf("", "Avatar2"));
+            });
+    }
+
+    [Fact]
+    public async Task WhenNickNamesAreNotInDatabase_AddThemAsync()
+    {
+        var membersToAdd = new List<MemberDto>
+        {
+            new() { UserId = MEMBER_1, GuildId = GUILD_ID, Nickname = "Nick" }
+        };
+        var result = await this._dbContext.NicknameHistory.AddMissingNickNameHistoryAsync(membersToAdd, default);
+
+        await this._dbContext.SaveChangesAsync();
+        result.Should().BeTrue();
+        var members = await this._dbContext.NicknameHistory
+            .Where(x => x.GuildId == GUILD_ID && x.UserId == MEMBER_1)
+            .ToListAsync();
+        members.Should().HaveCount(2)
+            .And.AllSatisfy(x =>
+            {
+                x.UserId.Should().BeOneOf(MEMBER_1);
+                x.Nickname.Should().BeOneOf((string?) null, "Nick");
+            });
+    }
+
+    [Fact]
+    public async Task WhenAvatarsAreNotInDatabase_AddThemAsync()
+    {
+        var membersToAdd = new List<MemberDto>
+        {
+            new() { UserId = MEMBER_1, GuildId = GUILD_ID, AvatarUrl = "Avatar" }
+        };
+        var result = await this._dbContext.Avatars.AddMissingAvatarsHistoryAsync(membersToAdd, default);
+
+        await this._dbContext.SaveChangesAsync();
+        result.Should().BeTrue();
+        var members = await this._dbContext.Avatars
+            .Where(x => x.GuildId == GUILD_ID && x.UserId == MEMBER_1)
+            .ToListAsync();
+        members.Should().HaveCount(2)
+            .And.AllSatisfy(x =>
+            {
+                x.UserId.Should().Be(MEMBER_1);
+                x.FileName.Should().BeOneOf("", "Avatar");
+            });
     }
 
     [Fact]
@@ -110,7 +192,7 @@ public class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyn
 
         var result = await this._dbContext.Members.WhereMemberNotIgnored(
             CHANNEL_ID,
-            [ 10 ]).ToArrayAsync();
+            [ 10, ROLE_ID ]).ToArrayAsync();
 
         result.Should().BeEmpty();
     }

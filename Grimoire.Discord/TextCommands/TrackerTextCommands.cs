@@ -8,7 +8,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands;
+using Grimoire.Core.Features.MessageLogging.Commands;
 
 namespace Grimoire.Discord.TextCommands;
 

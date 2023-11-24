@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands;
+using Grimoire.Core.Features.MessageLogging.Commands;
 
 namespace Grimoire.Discord.LoggingModule;
 

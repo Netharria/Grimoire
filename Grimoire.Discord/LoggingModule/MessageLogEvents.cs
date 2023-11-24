@@ -6,8 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Grimoire.Core.Features.Logging.Commands;
-using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands;
+using Grimoire.Core.Features.LogCleanup.Commands;
+using Grimoire.Core.Features.MessageLogging.Commands;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;

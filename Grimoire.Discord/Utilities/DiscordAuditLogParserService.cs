@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Exceptions;
-using Grimoire.Core.Features.Logging.Queries;
+using Grimoire.Core.Features.MessageLogging.Queries;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Discord.Utilities;

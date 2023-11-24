@@ -49,7 +49,7 @@
   <ItemGroup>
     <Using Include="Grimoire.Core.Enums" />
     <Using Include="Grimoire.Core.Extensions" />
-    <Using Include="Grimoire.Core.Features.Logging" />
+    <Using Include="Grimoire.Core.Features.UserLogging" />
     <Using Include="Grimoire.Core.Features.Shared.SharedDtos" />
     <Using Include="Grimoire.Discord.Attributes" />
     <Using Include="Grimoire.Discord.Extensions" />
