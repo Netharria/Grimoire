@@ -32,10 +32,10 @@ public static class GetUserLevelingInfo
                     x.Guild.LevelSettings.ModuleEnabled,
                     x.Guild.LevelSettings.Base,
                     x.Guild.LevelSettings.Modifier,
+                    Xp = x.XpHistory.Sum(x => x.Xp),
                     Rewards = x.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel }),
                     Response = new Response
                     {
-                        Xp = x.XpHistory.Sum(x => x.Xp),
                         IsXpIgnored = x.IsIgnoredMember != null
                         || x.Guild.IgnoredRoles.Any(y => query.RoleIds.Any(z => z == y.RoleId))
                     }
@@ -44,7 +44,7 @@ public static class GetUserLevelingInfo
                 throw new AnticipatedException("Could not find that user. Have they been on the server before?");
             if (!result.ModuleEnabled)
                 return null;
-            result.Response.Level = MemberExtensions.GetLevel(result.Response.Xp, result.Base, result.Modifier);
+            result.Response.Level = MemberExtensions.GetLevel(result.Xp, result.Base, result.Modifier);
             result.Response.EarnedRewards = result.Rewards
                 .Where(x => x.RewardLevel <= result.Response.Level)
                 .Select(x => x.RoleId)
@@ -55,7 +55,6 @@ public static class GetUserLevelingInfo
 
     public sealed record Response
     {
-        public required long Xp { get; init; }
         public int Level { get; internal set; }
         public required bool IsXpIgnored { get; init; }
         public ulong[] EarnedRewards { get; internal set; } = [];

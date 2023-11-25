@@ -136,7 +136,6 @@ public class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsyncLifet
 
         //Assert
         result.Should().NotBeNull();
-        result!.Xp.Should().Be(0);
         result!.Level.Should().Be(1);
         result!.IsXpIgnored.Should().BeFalse();
         result!.EarnedRewards.Should().NotBeNull()
@@ -192,7 +191,6 @@ public class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsyncLifet
 
         //Assert
         result.Should().NotBeNull();
-        result!.Xp.Should().Be(300);
         result!.Level.Should().Be(8);
         result!.IsXpIgnored.Should().BeFalse();
         result!.EarnedRewards.Should().NotBeNull()
@@ -223,7 +221,6 @@ public class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsyncLifet
 
         //Assert
         result.Should().NotBeNull();
-        result!.Xp.Should().Be(0);
         result!.Level.Should().Be(1);
         result!.IsXpIgnored.Should().BeTrue();
         result!.EarnedRewards.Should().NotBeNull()
@@ -253,7 +250,6 @@ public class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsyncLifet
 
         //Assert
         result.Should().NotBeNull();
-        result!.Xp.Should().Be(0);
         result!.Level.Should().Be(1);
         result!.IsXpIgnored.Should().BeTrue();
         result!.EarnedRewards.Should().NotBeNull()
@@ -282,7 +278,6 @@ public class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsyncLifet
 
         //Assert
         result.Should().NotBeNull();
-        result!.Xp.Should().Be(0);
         result!.Level.Should().Be(1);
         result!.IsXpIgnored.Should().BeFalse();
         result!.EarnedRewards.Should().NotBeNull()
@@ -312,7 +307,6 @@ public class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsyncLifet
 
         //Assert
         result.Should().NotBeNull();
-        result!.Xp.Should().Be(0);
         result!.Level.Should().Be(1);
         result!.IsXpIgnored.Should().BeTrue();
         result!.EarnedRewards.Should().NotBeNull()

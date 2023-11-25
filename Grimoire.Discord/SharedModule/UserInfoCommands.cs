@@ -112,8 +112,7 @@ public class UserInfoCommands(IMediator mediator) : ApplicationCommandModule
         var response = await this._mediator.Send(query);
 
         if (response is not null)
-            embed.AddField("Xp", response.Xp.ToString(), true)
-                .AddField("Level", response.Level.ToString(), true)
+            embed.AddField("Level", response.Level.ToString(), true)
                 .AddField("Can Gain Xp", response.IsXpIgnored ? "No" : "Yes", true)
                 .AddField("Earned Rewards",
                 response.EarnedRewards.Length == 0

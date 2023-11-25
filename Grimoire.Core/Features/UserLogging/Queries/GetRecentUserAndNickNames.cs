@@ -26,6 +26,7 @@ public static class GetRecentUserAndNickNames
         {
             var result = await this._dbContext.Members
                 .AsNoTracking()
+                .AsSplitQuery()
                 .WhereMemberHasId(query.UserId, query.GuildId)
                 .Select(x => new
                 {
