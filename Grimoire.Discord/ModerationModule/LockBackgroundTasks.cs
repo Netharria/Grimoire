@@ -8,11 +8,11 @@
 using Grimoire.Core.Features.Moderation.Commands;
 using Grimoire.Core.Features.Moderation.Queries;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
 
-public class LockBackgroundTasks(IServiceProvider serviceProvider, ILogger logger)
+public class LockBackgroundTasks(IServiceProvider serviceProvider, ILogger<LockBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
 

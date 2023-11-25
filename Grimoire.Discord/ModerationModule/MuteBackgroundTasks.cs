@@ -9,11 +9,11 @@ using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands;
 using Grimoire.Core.Features.Moderation.Queries;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
 
-public class MuteBackgroundTasks(IServiceProvider serviceProvider, ILogger logger)
+public class MuteBackgroundTasks(IServiceProvider serviceProvider, ILogger<MuteBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)

@@ -7,17 +7,17 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.Utilities;
 
-public abstract class GenericBackgroundService(IServiceProvider serviceProvider, ILogger logger, TimeSpan timeSpan) : BackgroundService
+public abstract class GenericBackgroundService(IServiceProvider serviceProvider, ILogger<GenericBackgroundService> logger, TimeSpan timeSpan) : BackgroundService
 {
     private readonly PeriodicTimer _timer = new(timeSpan);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.Information("Starting Background task {Type}", this.GetType().Name);
+        logger.LogInformation("Starting Background task {Type}", this.GetType().Name);
 
         while (await this._timer.WaitForNextTickAsync(stoppingToken))
         {
@@ -28,7 +28,7 @@ public abstract class GenericBackgroundService(IServiceProvider serviceProvider,
             }
             catch (Exception ex)
             {
-                logger.Error(ex, "Exception was thrown when running a background task. Message: ({message})", ex.Message);
+                logger.LogError(ex, "Exception was thrown when running a background task. Message: ({message})", ex.Message);
             }
         }
     }

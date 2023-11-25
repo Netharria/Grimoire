@@ -7,7 +7,7 @@
 
 using Grimoire.Core.Features.Shared.Commands;
 using Grimoire.Domain;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.DatabaseManagementModules;
 
@@ -19,7 +19,7 @@ namespace Grimoire.Discord.DatabaseManagementModules;
 [DiscordGuildCreatedEventSubscriber]
 [DiscordInviteCreatedEventSubscriber]
 [DiscordInviteDeletedEventSubscriber]
-public class GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger logger) :
+public partial class GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger<GuildEventManagementModule> logger) :
     IDiscordGuildDownloadCompletedEventSubscriber,
     IDiscordGuildCreatedEventSubscriber,
     IDiscordInviteCreatedEventSubscriber,
@@ -167,11 +167,14 @@ public class GuildEventManagementModule(IMediator mediator, IInviteService invit
         if (deletedInviteEntry == null)
         {
             if (args.Invite.MaxUses != args.Invite.Uses + 1)
-                this._logger.Warning("Was not able to retrieve audit log entry for deleted invite.");
+                LogAuditError(_logger);
             return;
         }
         if (deletedInviteEntry.Target.Code == args.Invite.Code)
             if (!this._inviteService.DeleteInvite(args.Guild.Id, args.Invite.Code))
                 throw new Exception("Was not able to delete expired invite");
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to retrieve audit log entry for deleted invite.")]
+    public static partial void LogAuditError(ILogger logger);
 }

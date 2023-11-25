@@ -10,11 +10,11 @@ using Grimoire.Core.Features.LogCleanup.Commands;
 using Grimoire.Core.Features.LogCleanup.Queries;
 using Grimoire.Core.Features.MessageLogging.Commands;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class LogBackgroundTasks(IServiceProvider serviceProvider, ILogger logger)
+public class LogBackgroundTasks(IServiceProvider serviceProvider, ILogger<LogBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromMinutes(1))
 {
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)

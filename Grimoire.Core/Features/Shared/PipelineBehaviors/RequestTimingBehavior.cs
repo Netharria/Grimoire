@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Core.Features.Shared.PipelineBehaviors;
 
-public class RequestTimingBehavior<TMessage, TResponse>(ILogger<RequestTimingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
+public partial class RequestTimingBehavior<TMessage, TResponse>(ILogger<RequestTimingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : IMessage
 {
     private readonly ILogger<RequestTimingBehavior<TMessage, TResponse>> _logger = logger;
@@ -27,8 +27,10 @@ public class RequestTimingBehavior<TMessage, TResponse>(ILogger<RequestTimingBeh
         {
             var delta = Stopwatch.GetElapsedTime(stopwatch);
             if (delta.TotalMilliseconds > 150)
-                this._logger.LogWarning(
-                "{ReqestType}; Execution time={ElapsedTime}ms", message.GetType(), delta.TotalMilliseconds);
+                LogHandlerDurationWarning(_logger, message.GetType(), delta.TotalMilliseconds);
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "{RequestType}; Execution time={ElapsedTime}ms")]
+    public static partial void LogHandlerDurationWarning(ILogger logger, Type requestType, double elapsedTime);
 }

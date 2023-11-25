@@ -8,12 +8,12 @@
 using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Leveling.Commands;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LevelingModule;
 
 [DiscordMessageCreatedEventSubscriber]
-public class LevelingEvents(IMediator mediator, ILogger logger) : IDiscordMessageCreatedEventSubscriber
+public partial class LevelingEvents(IMediator mediator, ILogger<LevelingEvents> logger) : IDiscordMessageCreatedEventSubscriber
 {
     private readonly IMediator _mediator = mediator;
     private readonly ILogger _logger = logger;
@@ -72,7 +72,7 @@ public class LevelingEvents(IMediator mediator, ILogger logger) : IDiscordMessag
                 }
                 catch (Exception ex)
                 {
-                    this._logger.Warning("Failure to send reward message Reward: {roleId} Message: {message}", reward.RoleId, reward.Message, ex);
+                    LogRewardMessageFailure(_logger, ex, reward.RoleId, reward.Message);
                 }
             }
         }
@@ -101,6 +101,9 @@ public class LevelingEvents(IMediator mediator, ILogger logger) : IDiscordMessag
                 .WithTimestamp(DateTime.UtcNow)
                 .Build());
     }
+
+    [LoggerMessage(LogLevel.Warning, "Failure to send reward message Reward: {roleId} Message: {message}")]
+    public static partial void LogRewardMessageFailure(ILogger logger, Exception ex, ulong roleId, string? message);
 
     private static async Task SendErrorLogs(
         IReadOnlyDictionary<ulong, DiscordChannel> channels,

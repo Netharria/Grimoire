@@ -95,7 +95,7 @@ public class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyn
                          x.Xp.Should().Be(0);
                      });
                 x.NicknamesHistory.Should().HaveCount(1)
-                    .And.AllSatisfy(x => x.Nickname.Should().BeOneOf((string?) null, "Nick2"));
+                    .And.AllSatisfy(x => x.Nickname.Should().BeOneOf((string?)null, "Nick2"));
                 x.AvatarHistory.Should().HaveCount(1)
                     .And.AllSatisfy(x => x.FileName.Should().BeOneOf("", "Avatar2"));
             });
@@ -119,7 +119,7 @@ public class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyn
             .And.AllSatisfy(x =>
             {
                 x.UserId.Should().BeOneOf(MEMBER_1);
-                x.Nickname.Should().BeOneOf((string?) null, "Nick");
+                x.Nickname.Should().BeOneOf((string?)null, "Nick");
             });
     }
 

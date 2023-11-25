@@ -71,7 +71,7 @@ public static class InteractionContextExtension
 
     public static async ValueTask<(bool, ulong)> TryMatchStringToChannelAsync(this InteractionContext ctx, string s)
     {
-        var parsedvalue = DiscordSnowflakeParser.MatchSnowflake.Match(s).Value;
+        var parsedvalue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
         if (!ulong.TryParse(parsedvalue, out var parsedId))
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");
@@ -89,7 +89,7 @@ public static class InteractionContextExtension
     public static async ValueTask<(bool, ulong)> TryMatchStringToChannelOrDefaultAsync(this InteractionContext ctx, string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return (true, ctx.Channel.Id);
-        var parsedvalue = DiscordSnowflakeParser.MatchSnowflake.Match(s).Value;
+        var parsedvalue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
         if (!ulong.TryParse(parsedvalue, out var parsedId))
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");

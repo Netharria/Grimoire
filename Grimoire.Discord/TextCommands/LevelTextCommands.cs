@@ -78,7 +78,7 @@ public class LevelTextCommands(IMediator mediator) : BaseCommandModule
                 member = ctx.Member;
                 break;
             default:
-                var matchId = DiscordSnowflakeParser.MatchSnowflake.Match(user);
+                var matchId = DiscordSnowflakeParser.MatchSnowflake().Match(user);
                 if (matchId.Success)
                     if (ulong.TryParse(matchId.Value, out var userId))
                         ctx.Guild.Members.TryGetValue(userId, out member);

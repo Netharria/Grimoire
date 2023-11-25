@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Core.Features.Shared.PipelineBehaviors;
 
-public class ErrorLoggingBehavior<TMessage, TResponse>(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
+public partial class ErrorLoggingBehavior<TMessage, TResponse>(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : IMessage
 {
     private readonly ILogger<ErrorLoggingBehavior<TMessage, TResponse>> _logger = logger;
@@ -22,9 +22,11 @@ public class ErrorLoggingBehavior<TMessage, TResponse>(ILogger<ErrorLoggingBehav
         }
         catch (Exception e) when (e is not AnticipatedException)
         {
-            this._logger.LogError("Exception Thrown on {RequestType} - {ErrorMessage} - {ErrorStackTrace}",
-            typeof(TMessage).Name, e.Message, e.StackTrace);
+            LogHandlerError(_logger, e, typeof(TMessage).Name);
             throw;
         }
     }
+
+    [LoggerMessage(LogLevel.Error, "Exception Thrown on {RequestType}")]
+    public static partial void LogHandlerError(ILogger logger, Exception ex, string requestType);
 }

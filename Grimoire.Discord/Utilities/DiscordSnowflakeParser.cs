@@ -9,12 +9,14 @@ using System.Text.RegularExpressions;
 
 namespace Grimoire.Discord.Utilities;
 
-public static class DiscordSnowflakeParser
+public static partial class DiscordSnowflakeParser
 {
-    public static readonly Regex MatchSnowflake = new(@"(\d{17,21})", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+
+    [GeneratedRegex(@"(\d{17,21})", RegexOptions.Compiled, 1000)]
+    public static partial Regex MatchSnowflake();
 
     public static async ValueTask<Dictionary<string, string[]>> ParseStringIntoIdsAndGroupByTypeAsync(InteractionContext ctx, string value) =>
-        await MatchSnowflake.Matches(value)
+        await MatchSnowflake().Matches(value)
             .Where(x => x.Success)
             .Select(x => x.Value)
             .ToAsyncEnumerable()

@@ -7,11 +7,11 @@
 
 using Grimoire.Core.Features.MessageLogging.Commands;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger logger)
+public class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger<TrackerBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
 
