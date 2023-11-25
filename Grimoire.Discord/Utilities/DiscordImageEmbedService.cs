@@ -99,7 +99,7 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
                 Stream = await this._httpClient.GetStreamAsync(uri)
             };
         }
-        catch (Exception ex) // when (ex is TaskCanceledException or HttpRequestException) # Figure out why this isn't catching permission denied errors. Should be 403 right?
+        catch (Exception ex)
         {
             LogDownloadError(_logger, ex, uri.OriginalString);
             return new ImageDownloadResult
