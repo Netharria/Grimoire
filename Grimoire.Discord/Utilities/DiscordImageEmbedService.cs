@@ -18,14 +18,14 @@ public interface IDiscordImageEmbedService
     Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed, bool displayFileNames = true);
 }
 
-public class DiscordImageEmbedService : IDiscordImageEmbedService
+public partial class DiscordImageEmbedService : IDiscordImageEmbedService
 {
 
     private readonly HttpClient _httpClient;
     private readonly IReadOnlyList<string> _validImageExtensions;
     private readonly ILogger<DiscordImageEmbedService> _logger;
 
-    public DiscordImageEmbedService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger logger)
+    public DiscordImageEmbedService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<DiscordImageEmbedService> logger)
     {
         this._httpClient = httpClientFactory.CreateClient("Default");
         var validExtensions = configuration.GetValue<string>("validImageExtensions");
