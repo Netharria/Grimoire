@@ -117,4 +117,7 @@ using (var scope = host.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<GrimoireDbContext>();
     db.Database.Migrate();
 }
+
+AppContext.SetSwitch("System.Net.SocketsHttpHandler.Http3Support", false);
+
 host.Run();
