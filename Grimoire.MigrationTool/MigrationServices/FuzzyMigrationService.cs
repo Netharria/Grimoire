@@ -13,14 +13,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.MigrationTool.MigrationServices;
 
-public class FuzzyMigrationService
+public class FuzzyMigrationService(FuzzyDbContext fuzzyDbContext)
 {
-    private readonly FuzzyDbContext _fuzzyDbContext;
-
-    public FuzzyMigrationService(FuzzyDbContext fuzzyDbContext)
-    {
-        this._fuzzyDbContext = fuzzyDbContext;
-    }
+    private readonly FuzzyDbContext _fuzzyDbContext = fuzzyDbContext;
 
     public async Task MigrateFuzzyDatabaseAsync()
     {
@@ -157,8 +152,7 @@ public class FuzzyMigrationService
                 GuildId = x.GuildId,
                 XpHistory = new List<XpHistory>
                     {
-                        new XpHistory
-                        {
+                        new() {
                             UserId = x.UserId,
                             GuildId = x.GuildId,
                             Xp = 0,
@@ -176,8 +170,7 @@ public class FuzzyMigrationService
                 GuildId = x.GuildId,
                 XpHistory = new List<XpHistory>
                     {
-                        new XpHistory
-                        {
+                        new() {
                             UserId = x.ModeratorId,
                             GuildId = x.GuildId,
                             Xp = 0,
@@ -194,8 +187,7 @@ public class FuzzyMigrationService
                 GuildId = x.Infraction.GuildId,
                 XpHistory = new List<XpHistory>
                     {
-                        new XpHistory
-                        {
+                        new() {
                             UserId = x.ModeratorId,
                             GuildId = x.Infraction.GuildId,
                             Xp = 0,
@@ -212,8 +204,7 @@ public class FuzzyMigrationService
                 GuildId = x.GuildId,
                 XpHistory = new List<XpHistory>
                     {
-                        new XpHistory
-                        {
+                        new() {
                             UserId = x.ModeratorId,
                             GuildId = x.GuildId,
                             Xp = 0,
@@ -230,8 +221,7 @@ public class FuzzyMigrationService
                 GuildId = x.GuildId,
                 XpHistory = new List<XpHistory>
                     {
-                        new XpHistory
-                        {
+                        new() {
                             UserId = x.ModeratorId,
                             GuildId = x.GuildId,
                             Xp = 0,

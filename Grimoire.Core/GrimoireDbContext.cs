@@ -7,17 +7,12 @@
 
 namespace Grimoire.Core;
 
-public class GrimoireDbContext : DbContext, IGrimoireDbContext
+/// <summary>
+/// Initializes a new instance of the <see cref="GrimoireDbContext"/> class.
+/// </summary>
+/// <param name="options"></param>
+public class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : DbContext(options), IGrimoireDbContext
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GrimoireDbContext"/> class.
-    /// </summary>
-    /// <param name="options"></param>
-    public GrimoireDbContext(DbContextOptions<GrimoireDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<Attachment> Attachments
         => this.Set<Attachment>();
 

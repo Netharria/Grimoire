@@ -7,8 +7,8 @@
 
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
-using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
-using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
+using Grimoire.Core.Features.Leveling.Commands;
+using Grimoire.Core.Features.Leveling.Queries;
 
 namespace Grimoire.Discord.LevelingModule;
 
@@ -16,14 +16,9 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
-public class IgnoreCommands : ApplicationCommandModule
+public class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public IgnoreCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("View", "View all currently ignored users, channels and roles for the server.")]
     public async Task ShowIgnoredAsync(InteractionContext ctx)
@@ -52,7 +47,7 @@ public class IgnoreCommands : ApplicationCommandModule
     {
         await ctx.DeferAsync();
         var matchedIds = await DiscordSnowflakeParser.ParseStringIntoIdsAndGroupByTypeAsync(ctx, value);
-        if (!matchedIds.Any() || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
+        if (matchedIds.Count == 0 || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
             return;
@@ -97,7 +92,7 @@ public class IgnoreCommands : ApplicationCommandModule
         }
         var response = await this._mediator.Send(command);
 
-        
+
         await ctx.EditReplyAsync(GrimoireColor.Green,
             string.IsNullOrWhiteSpace(response.Message)
             ? "All items in list provided were not ignored"

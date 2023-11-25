@@ -5,31 +5,25 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Shared.Commands.ChannelCommands.AddChannel;
-using Grimoire.Core.Features.Shared.Commands.ChannelCommands.DeleteChannel;
+using Grimoire.Core.Features.Shared.Commands;
 
 namespace Grimoire.Discord.DatabaseManagementModules;
 
+/// <summary>
+/// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
+/// </summary>
+/// <param name="guildService"></param>
 [DiscordChannelCreatedEventSubscriber]
 [DiscordChannelDeletedEventSubscriber]
 [DiscordThreadCreatedEventSubscriber]
 [DiscordThreadDeletedEventSubscriber]
-public class ChannelEventManagementModule :
+public class ChannelEventManagementModule(IMediator mediator) :
     IDiscordChannelCreatedEventSubscriber,
     IDiscordChannelDeletedEventSubscriber,
     IDiscordThreadCreatedEventSubscriber,
     IDiscordThreadDeletedEventSubscriber
 {
-    private readonly IMediator _mediator;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
-    /// </summary>
-    /// <param name="guildService"></param>
-    public ChannelEventManagementModule(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     public async Task DiscordOnChannelCreated(DiscordClient sender, ChannelCreateEventArgs args)
         => await this._mediator.Send(

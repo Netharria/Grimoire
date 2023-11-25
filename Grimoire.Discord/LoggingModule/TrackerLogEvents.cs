@@ -5,28 +5,20 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Queries.GetTracker;
-using Grimoire.Core.Features.Logging.Queries.GetTrackerWithOldMessage;
+using Grimoire.Core.Features.MessageLogging.Queries;
 
 namespace Grimoire.Discord.LoggingModule;
 
 [DiscordMessageCreatedEventSubscriber]
 [DiscordMessageUpdatedEventSubscriber]
 [DiscordVoiceStateUpdatedEventSubscriber]
-public class TrackerLogEvents :
+public class TrackerLogEvents(IMediator mediator, IDiscordImageEmbedService imageEmbedService) :
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageUpdatedEventSubscriber,
     IDiscordVoiceStateUpdatedEventSubscriber
 {
-    private readonly IMediator _mediator;
-    private readonly IDiscordImageEmbedService _imageEmbedService;
-
-    public TrackerLogEvents(IMediator mediator, IDiscordImageEmbedService imageEmbedService)
-    {
-        this._mediator = mediator;
-        this._imageEmbedService = imageEmbedService;
-    }
-
+    private readonly IMediator _mediator = mediator;
+    private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {

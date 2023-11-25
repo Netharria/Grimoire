@@ -18,7 +18,7 @@ public static class IIdentifiableDatabaseQueryHelpers
         => identifiables.Where(x => ids.Contains(x.Id));
 
     public static IQueryable<TSource> WhereIdIs<TSource, T>(this IQueryable<TSource> identifiables, T id)
-        where TSource : IIdentifiable<ulong>
+        where TSource : IIdentifiable<T>
         where T : IBinaryInteger<T>
         => identifiables.Where(x => x.Id.Equals(id));
 }

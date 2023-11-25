@@ -5,8 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging;
 using Grimoire.Core.Features.Shared.PipelineBehaviors;
+using Grimoire.Core.Features.UserLogging;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

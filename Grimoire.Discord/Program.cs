@@ -70,6 +70,9 @@ var host = Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<ModuleCommands>();
                 extension.RegisterCommands<ModLogSettings>();
                 extension.RegisterCommands<PurgeCommands>();
+                extension.RegisterCommands<UserInfoCommands>();
+
+
                 //Leveling
                 extension.RegisterCommands<LevelCommands>();
                 extension.RegisterCommands<LeaderboardCommands>();
@@ -95,7 +98,10 @@ var host = Host.CreateDefaultBuilder(args)
             })
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
-        .AddHostedService<TickerBackgroundService>()
+        .AddHostedService<LogBackgroundTasks>()
+        .AddHostedService<TrackerBackgroundTasks>()
+        .AddHostedService<LockBackgroundTasks>()
+        .AddHostedService<MuteBackgroundTasks>()
         .AddMemoryCache()
         .AddHttpClient("Default", x => x.Timeout = TimeSpan.FromSeconds(30))
         .AddPolicyHandler(

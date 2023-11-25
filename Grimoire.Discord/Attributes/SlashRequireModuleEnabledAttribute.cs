@@ -7,40 +7,31 @@
 
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Grimoire.Core.Features.Shared.Queries.GetModuleStateForGuild;
+using Grimoire.Core.Features.Shared.Queries;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Discord.Attributes;
 
-public class SlashRequireModuleEnabledAttribute : SlashCheckBaseAttribute
+public class SlashRequireModuleEnabledAttribute(Module module) : SlashCheckBaseAttribute
 {
-    public Module Module;
+    public Module Module = module;
 
-    public SlashRequireModuleEnabledAttribute(Module module)
-    {
-        this.Module = module;
-    }
     public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
     {
         using var scope = ctx.Services.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = Module });
+        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = this.Module });
     }
 }
 
-public class RequireModuleEnabledAttribute : CheckBaseAttribute
+public class RequireModuleEnabledAttribute(Module module) : CheckBaseAttribute
 {
-    public Module Module;
-
-    public RequireModuleEnabledAttribute(Module module)
-    {
-        this.Module = module;
-    }
+    public Module Module = module;
 
     public override async Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
     {
         using var scope = ctx.Services.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = Module });
+        return await mediator.Send(new GetModuleStateForGuildQuery { GuildId = ctx.Guild.Id, Module = this.Module });
     }
 }

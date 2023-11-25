@@ -128,7 +128,7 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
             .Select(x => $"**{Path.GetFileName(x)}**")
             .ToArray(); ;
 
-        if (nonImageAttachements.Any())
+        if (nonImageAttachements.Length != 0)
         {
             var imageEmbed = new DiscordEmbedBuilder(embed)
                 .AddMessageTextToFields("Non-Image Attachments", string.Join("\n", nonImageAttachements));
@@ -140,7 +140,7 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
     {
 
         var failedFiles = urls.Where(x => !x.Successful).Select(x => Path.GetFileName(x.Uri.AbsolutePath)).ToArray();
-        if (failedFiles.Any())
+        if (failedFiles.Length != 0)
         {
             var imageEmbed = new DiscordEmbedBuilder(embed)
                 .AddMessageTextToFields("Failed to download these images.", string.Join("\n", failedFiles));

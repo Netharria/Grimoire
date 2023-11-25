@@ -5,21 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Queries.GetTracker;
+using Grimoire.Core.Features.MessageLogging.Queries;
 using Grimoire.Discord.Notifications;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerUsernameEvent : INotificationHandler<UsernameTrackerNotification>
+public class TrackerUsernameEvent(IDiscordClientService clientService, IMediator mediator) : INotificationHandler<UsernameTrackerNotification>
 {
-    private readonly IDiscordClientService _clientService;
-    private readonly IMediator _mediator;
-
-    public TrackerUsernameEvent(IDiscordClientService clientService, IMediator mediator)
-    {
-        this._clientService = clientService;
-        this._mediator = mediator;
-    }
+    private readonly IDiscordClientService _clientService = clientService;
+    private readonly IMediator _mediator = mediator;
 
     public async ValueTask Handle(UsernameTrackerNotification notification, CancellationToken cancellationToken)
     {

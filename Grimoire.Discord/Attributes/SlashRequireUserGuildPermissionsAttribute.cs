@@ -11,22 +11,17 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace Grimoire.Discord.Attributes;
 
+/// <summary>
+/// Defines that usage of this command is restricted to members with specified permissions.
+/// </summary>
+/// <param name="permissions">Permissions required to execute this command.</param>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-internal class SlashRequireUserGuildPermissionsAttribute : SlashCheckBaseAttribute
+internal class SlashRequireUserGuildPermissionsAttribute(Permissions permissions) : SlashCheckBaseAttribute
 {
     /// <summary>
     /// Gets the permissions required by this attribute.
     /// </summary>
-    public Permissions Permissions { get; }
-
-    /// <summary>
-    /// Defines that usage of this command is restricted to members with specified permissions.
-    /// </summary>
-    /// <param name="permissions">Permissions required to execute this command.</param>
-    public SlashRequireUserGuildPermissionsAttribute(Permissions permissions)
-    {
-        this.Permissions = permissions;
-    }
+    public Permissions Permissions { get; } = permissions;
 
     /// <summary>
     /// Runs checks.
@@ -52,22 +47,17 @@ internal class SlashRequireUserGuildPermissionsAttribute : SlashCheckBaseAttribu
     }
 }
 
+/// <summary>
+/// Defines that usage of this command is restricted to members with specified permissions.
+/// </summary>
+/// <param name="permissions">Permissions required to execute this command.</param>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public class RequireUserGuildPermissionsAttribute : CheckBaseAttribute
+public class RequireUserGuildPermissionsAttribute(Permissions permissions) : CheckBaseAttribute
 {
     /// <summary>
     /// Gets the permissions required by this attribute.
     /// </summary>
-    public Permissions Permissions { get; }
-
-    /// <summary>
-    /// Defines that usage of this command is restricted to members with specified permissions.
-    /// </summary>
-    /// <param name="permissions">Permissions required to execute this command.</param>
-    public RequireUserGuildPermissionsAttribute(Permissions permissions)
-    {
-        this.Permissions = permissions;
-    }
+    public Permissions Permissions { get; } = permissions;
 
     /// <summary>
     /// Runs checks.

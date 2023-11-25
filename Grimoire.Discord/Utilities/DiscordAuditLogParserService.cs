@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Exceptions;
-using Grimoire.Core.Features.Logging.Queries.GetMessageAuthor;
+using Grimoire.Core.Features.MessageLogging.Queries;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Discord.Utilities;
@@ -16,18 +16,11 @@ public interface IDiscordAuditLogParserService
     Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong targetId);
 }
 
-public class DiscordAuditLogParserService : IDiscordAuditLogParserService
+public class DiscordAuditLogParserService(IDiscordClientService discordClientService, IMemoryCache memoryCache, IMediator mediator) : IDiscordAuditLogParserService
 {
-    private readonly IDiscordClientService _discordClientService;
-    private readonly IMemoryCache _memoryCache;
-    private readonly IMediator _mediator;
-
-    public DiscordAuditLogParserService(IDiscordClientService discordClientService, IMemoryCache memoryCache, IMediator mediator)
-    {
-        this._discordClientService = discordClientService;
-        this._memoryCache = memoryCache;
-        this._mediator = mediator;
-    }
+    private readonly IDiscordClientService _discordClientService = discordClientService;
+    private readonly IMemoryCache _memoryCache = memoryCache;
+    private readonly IMediator _mediator = mediator;
 
     public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong messageId)
     {
@@ -75,7 +68,7 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
         if (deleteEntry.CreationTimestamp < DateTime.UtcNow.AddMinutes(-10))
             return null;
 
-        if (_memoryCache.TryGetValue(deleteEntry.Id, out DiscordAuditLogMessageEntry? cachedEntry))
+        if (this._memoryCache.TryGetValue(deleteEntry.Id, out DiscordAuditLogMessageEntry? cachedEntry))
         {
             if (cachedEntry is null)
                 return null;
@@ -84,7 +77,7 @@ public class DiscordAuditLogParserService : IDiscordAuditLogParserService
                 return null;
         }
 
-        _memoryCache.Set(deleteEntry.Id, deleteEntry, TimeSpan.FromMinutes(10));
+        this._memoryCache.Set(deleteEntry.Id, deleteEntry, TimeSpan.FromMinutes(10));
         return deleteEntry;
     }
 }
