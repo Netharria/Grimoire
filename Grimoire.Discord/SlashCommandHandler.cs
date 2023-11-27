@@ -134,13 +134,7 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
         }
         else if (args.Exception is not null)
         {
-<<<<<<< HEAD
-            var errorBytes = RandomNumberGenerator.GetBytes(8);
-            var errorByteString = Convert.ToHexString(errorBytes, 0, 5);
-
-=======
             var errorHexString = RandomNumberGenerator.GetHexString(10);
->>>>>>> main
             var commandOptions = args.Context.Interaction.Data.Options;
             var log = new StringBuilder();
             if (commandOptions is not null)

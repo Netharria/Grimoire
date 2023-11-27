@@ -81,12 +81,7 @@ public class DiscordAuditLogParserService(IDiscordClientService discordClientSer
                 return null;
         }
 
-<<<<<<< HEAD
-
-        _memoryCache.Set(deleteEntry.Id, deleteEntry, TimeSpan.FromMinutes(10));
-=======
         this._memoryCache.Set(deleteEntry.Id, deleteEntry, TimeSpan.FromMinutes(10));
->>>>>>> main
         return deleteEntry;
     }
 }

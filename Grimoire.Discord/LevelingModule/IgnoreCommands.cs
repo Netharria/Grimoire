@@ -7,14 +7,8 @@
 
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
-<<<<<<< HEAD
-using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.UpdateIgnoreStateForXpGain;
-using Grimoire.Core.Features.Leveling.Queries.GetIgnoredItems;
-using Grimoire.Domain.Enums;
-=======
 using Grimoire.Core.Features.Leveling.Commands;
 using Grimoire.Core.Features.Leveling.Queries;
->>>>>>> main
 
 namespace Grimoire.Discord.LevelingModule;
 
