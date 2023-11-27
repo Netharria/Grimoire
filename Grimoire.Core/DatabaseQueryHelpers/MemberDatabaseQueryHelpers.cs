@@ -22,8 +22,7 @@ public static class MemberDatabaseQueryHelpers
                     GuildId = x.GuildId,
                     XpHistory = new List<XpHistory>
                     {
-                        new XpHistory
-                        {
+                        new() {
                             UserId = x.UserId,
                             GuildId = x.GuildId,
                             Xp = 0,
@@ -33,8 +32,7 @@ public static class MemberDatabaseQueryHelpers
                     },
                     NicknamesHistory = new List<NicknameHistory>
                     {
-                        new NicknameHistory
-                        {
+                        new() {
                             GuildId = x.GuildId,
                             UserId = x.UserId,
                             Nickname = x.Nickname
@@ -42,8 +40,7 @@ public static class MemberDatabaseQueryHelpers
                     },
                     AvatarHistory = new List<Avatar>
                     {
-                        new Avatar
-                        {
+                        new() {
                             UserId = x.UserId,
                             GuildId = x.GuildId,
                             FileName = x.AvatarUrl
@@ -96,9 +93,6 @@ public static class MemberDatabaseQueryHelpers
             await databaseAvatars.AddRangeAsync(avatarsToAdd, cancellationToken);
         return avatarsToAdd.Any();
     }
-
-    public static IQueryable<Member> WhereLoggingEnabled(this IQueryable<Member> members)
-        => members.Where(x => x.Guild.UserLogSettings.ModuleEnabled);
 
     public static IQueryable<Member> WhereLevelingEnabled(this IQueryable<Member> members)
         => members.Where(x => x.Guild.LevelSettings.ModuleEnabled);

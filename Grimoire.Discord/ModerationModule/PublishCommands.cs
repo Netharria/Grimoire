@@ -7,9 +7,8 @@
 
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.BanCommands.PublishBan;
-using Grimoire.Core.Features.Moderation.Queries.GetBan;
-using Grimoire.Core.Features.Moderation.Queries.GetUnban;
+using Grimoire.Core.Features.Moderation.Commands;
+using Grimoire.Core.Features.Moderation.Queries;
 using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
 
@@ -19,14 +18,9 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashCommandGroup("Publish", "Publishes a ban or unban to the public ban log channel.")]
-public class PublishCommands : ApplicationCommandModule
+public class PublishCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public PublishCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Ban", "Publishes a ban to the public ban log channel.")]
     public async Task PublishBanAsync(

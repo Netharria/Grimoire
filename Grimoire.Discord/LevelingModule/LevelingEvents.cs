@@ -7,22 +7,16 @@
 
 using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
-using Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
-using Serilog;
+using Grimoire.Core.Features.Leveling.Commands;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LevelingModule;
 
 [DiscordMessageCreatedEventSubscriber]
-public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
+public partial class LevelingEvents(IMediator mediator, ILogger<LevelingEvents> logger) : IDiscordMessageCreatedEventSubscriber
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger _logger;
-
-    public LevelingEvents(IMediator mediator, ILogger logger)
-    {
-        this._mediator = mediator;
-        this._logger = logger;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ILogger _logger = logger;
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
@@ -74,11 +68,11 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
                             .WithFooter($"Message from the moderators of {args.Guild.Name}.")
                             .WithDescription(Regex.Unescape(reward!.Message!)));
                     }
-                    
+
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning("Failure to send reward message Reward: {roleId} Message: {message}", reward.RoleId, reward.Message, ex);
+                    LogRewardMessageFailure(_logger, ex, reward.RoleId, reward.Message);
                 }
             }
         }
@@ -97,7 +91,7 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
                 .WithTimestamp(DateTime.UtcNow)
                 .Build());
 
-        if (newRewards.Any())
+        if (newRewards.Length != 0)
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithColor(GrimoireColor.DarkPurple)
                 .WithAuthor($"{member.Username}#{member.Discriminator}")
@@ -107,6 +101,9 @@ public class LevelingEvents : IDiscordMessageCreatedEventSubscriber
                 .WithTimestamp(DateTime.UtcNow)
                 .Build());
     }
+
+    [LoggerMessage(LogLevel.Warning, "Failure to send reward message Reward: {roleId} Message: {message}")]
+    public static partial void LogRewardMessageFailure(ILogger logger, Exception ex, ulong roleId, string? message);
 
     private static async Task SendErrorLogs(
         IReadOnlyDictionary<ulong, DiscordChannel> channels,

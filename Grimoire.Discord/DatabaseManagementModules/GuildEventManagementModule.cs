@@ -5,37 +5,29 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Shared.Commands.GuildCommands.AddGuild;
-using Grimoire.Core.Features.Shared.Commands.GuildCommands.UpdateAllGuilds;
+using Grimoire.Core.Features.Shared.Commands;
 using Grimoire.Domain;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.DatabaseManagementModules;
 
+/// <summary>
+/// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
+/// </summary>
+/// <param name="guildService"></param>
 [DiscordGuildDownloadCompletedEventSubscriber]
 [DiscordGuildCreatedEventSubscriber]
 [DiscordInviteCreatedEventSubscriber]
 [DiscordInviteDeletedEventSubscriber]
-public class GuildEventManagementModule :
+public partial class GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger<GuildEventManagementModule> logger) :
     IDiscordGuildDownloadCompletedEventSubscriber,
     IDiscordGuildCreatedEventSubscriber,
     IDiscordInviteCreatedEventSubscriber,
     IDiscordInviteDeletedEventSubscriber
 {
-    private readonly IMediator _mediator;
-    private readonly IInviteService _inviteService;
-    private readonly ILogger _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
-    /// </summary>
-    /// <param name="guildService"></param>
-    public GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger logger)
-    {
-        this._mediator = mediator;
-        this._inviteService = inviteService;
-        this._logger = logger;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly IInviteService _inviteService = inviteService;
+    private readonly ILogger _logger = logger;
 
     public async Task DiscordOnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
         => await this._mediator.Send(new UpdateAllGuildsCommand
@@ -175,11 +167,14 @@ public class GuildEventManagementModule :
         if (deletedInviteEntry == null)
         {
             if (args.Invite.MaxUses != args.Invite.Uses + 1)
-                this._logger.Warning("Was not able to retrieve audit log entry for deleted invite.");
+                LogAuditError(_logger);
             return;
         }
         if (deletedInviteEntry.Target.Code == args.Invite.Code)
             if (!this._inviteService.DeleteInvite(args.Guild.Id, args.Invite.Code))
                 throw new Exception("Was not able to delete expired invite");
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to retrieve audit log entry for deleted invite.")]
+    public static partial void LogAuditError(ILogger logger);
 }

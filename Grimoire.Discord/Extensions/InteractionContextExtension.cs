@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Responses;
@@ -72,7 +71,7 @@ public static class InteractionContextExtension
 
     public static async ValueTask<(bool, ulong)> TryMatchStringToChannelAsync(this InteractionContext ctx, string s)
     {
-        var parsedvalue = Regex.Match(s, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
+        var parsedvalue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
         if (!ulong.TryParse(parsedvalue, out var parsedId))
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");
@@ -90,7 +89,7 @@ public static class InteractionContextExtension
     public static async ValueTask<(bool, ulong)> TryMatchStringToChannelOrDefaultAsync(this InteractionContext ctx, string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return (true, ctx.Channel.Id);
-        var parsedvalue = Regex.Match(s, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1)).Value;
+        var parsedvalue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
         if (!ulong.TryParse(parsedvalue, out var parsedId))
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");

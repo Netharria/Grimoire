@@ -6,20 +6,15 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Leveling.Queries.GetLeaderboard;
+using Grimoire.Core.Features.Leveling.Queries;
 
 namespace Grimoire.Discord.LevelingModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LeaderboardCommands : ApplicationCommandModule
+public class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public LeaderboardCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Leaderboard", "Posts the leaderboard for the server.")]
     public async Task LeaderboardAsync(InteractionContext ctx,

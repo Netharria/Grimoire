@@ -8,7 +8,7 @@
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.ReclaimUserXp;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 public enum XpOption
 {
@@ -25,14 +25,9 @@ public sealed record ReclaimUserXpCommand : ICommand<ReclaimUserXpCommandRespons
     public ulong? ReclaimerId { get; init; }
 }
 
-public class ReclaimUserXpCommandHandler : ICommandHandler<ReclaimUserXpCommand, ReclaimUserXpCommandResponse>
+public class ReclaimUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<ReclaimUserXpCommand, ReclaimUserXpCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public ReclaimUserXpCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<ReclaimUserXpCommandResponse> Handle(ReclaimUserXpCommand command, CancellationToken cancellationToken)
     {
@@ -52,7 +47,7 @@ public class ReclaimUserXpCommandHandler : ICommandHandler<ReclaimUserXpCommand,
         {
             XpOption.All => member.Xp,
             XpOption.Amount => command.XpToTake,
-            _ => throw new ArgumentOutOfRangeException(nameof(XpOption),"XpOption not implemented in switch statement.")
+            _ => throw new ArgumentOutOfRangeException(nameof(command),"XpOption not implemented in switch statement.")
         };
         if (member.Xp < xpToTake)
             xpToTake = member.Xp;

@@ -6,11 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using Grimoire.Core.Features.Logging.Commands.AddLogMessage;
-using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.AddMessage;
-using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.BulkDeleteMessages;
-using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.DeleteMessage;
-using Grimoire.Core.Features.Logging.Commands.MessageLoggingCommands.UpdateMessage;
+using Grimoire.Core.Features.LogCleanup.Commands;
+using Grimoire.Core.Features.MessageLogging.Commands;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;
@@ -19,24 +16,15 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordMessageDeletedEventSubscriber]
 [DiscordMessagesBulkDeletedEventSubscriber]
 [DiscordMessageUpdatedEventSubscriber]
-public class MessageLogEvents :
+public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService) :
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageDeletedEventSubscriber,
     IDiscordMessagesBulkDeletedEventSubscriber,
     IDiscordMessageUpdatedEventSubscriber
 {
-    private readonly IMediator _mediator;
-    private readonly IDiscordImageEmbedService _attachmentUploadService;
-    private readonly IDiscordAuditLogParserService _logParserService;
-
-    public MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService)
-    {
-        this._mediator = mediator;
-        this._attachmentUploadService = attachmentUploadService;
-        this._logParserService = logParserService;
-    }
-
-
+    private readonly IMediator _mediator = mediator;
+    private readonly IDiscordImageEmbedService _attachmentUploadService = attachmentUploadService;
+    private readonly IDiscordAuditLogParserService _logParserService = logParserService;
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
@@ -149,7 +137,7 @@ public class MessageLogEvents :
                 "Author: {0} ({1})\n" +
                 "Id: {2}\n" +
                 "Content: {3}\n" +
-                (message.Attachments.Any() ? "Attachments: {4}\n" : string.Empty),
+                (message.Attachments.Length != 0 ? "Attachments: {4}\n" : string.Empty),
                 author.GetUsernameWithDiscriminator(),
                 message.UserId,
                 message.MessageId,

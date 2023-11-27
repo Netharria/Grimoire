@@ -6,21 +6,15 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Moderation.Queries.GetModActionsCounts;
-using Grimoire.Core.Features.Moderation.Queries.GetModLogsForUser;
+using Grimoire.Core.Features.Moderation.Queries;
 
 namespace Grimoire.Discord.ModerationModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
-public class SinLogCommands : ApplicationCommandModule
+public class SinLogCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public SinLogCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("SinLog", "Looks up the sin logs for the provided user.")]
     public async Task SinLogAsync(
@@ -59,7 +53,7 @@ public class SinLogCommands : ApplicationCommandModule
             GuildId = ctx.Guild.Id,
             SinQueryType = sinQueryType
         });
-        if (!response.SinList.Any())
+        if (response.SinList.Length == 0)
             await ctx.ReplyAsync(GrimoireColor.Green, message: "That user does not have any logs",
                 title: $"Sin log for {user.GetUsernameWithDiscriminator()}",
                 ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));

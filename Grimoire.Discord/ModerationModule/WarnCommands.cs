@@ -7,21 +7,16 @@
 
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.WarnCommands;
+using Grimoire.Core.Features.Moderation.Commands;
 
 namespace Grimoire.Discord.ModerationModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserPermissions(Permissions.ManageMessages)]
-public class WarnCommands : ApplicationCommandModule
+public class WarnCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public WarnCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Warn", "Issue a warning to the user.")]
     public async Task WarnAsync(InteractionContext ctx,

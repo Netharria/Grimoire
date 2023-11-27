@@ -21,23 +21,17 @@ using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
 
 namespace Grimoire.Discord;
 
+/// <summary>
+/// Initializes a new instance of the <see cref="SlashCommandHandler"/> class.
+/// </summary>
+/// <param name="logger"></param>
 [DiscordSlashCommandsEventsSubscriber]
 [DiscordClientErroredEventSubscriber]
 [DiscordCommandsNextEventsSubscriber]
-public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber, IDiscordCommandsNextEventsSubscriber
+public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration) : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber, IDiscordCommandsNextEventsSubscriber
 {
-    private readonly ILogger<SlashCommandHandler> _logger;
-    private readonly IConfiguration _configuration;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SlashCommandHandler"/> class.
-    /// </summary>
-    /// <param name="logger"></param>
-    public SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration)
-    {
-        this._logger = logger;
-        this._configuration = configuration;
-    }
+    private readonly ILogger<SlashCommandHandler> _logger = logger;
+    private readonly IConfiguration _configuration = configuration;
 
     private static async Task<StringBuilder> BuildSlashCommandLogAsync(StringBuilder builder, IEnumerable<DiscordInteractionDataOption> commandOptions)
     {
@@ -140,26 +134,32 @@ public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDisco
         }
         else if (args.Exception is not null)
         {
+<<<<<<< HEAD
             var errorBytes = RandomNumberGenerator.GetBytes(8);
             var errorByteString = Convert.ToHexString(errorBytes, 0, 5);
 
+=======
+            var errorHexString = RandomNumberGenerator.GetHexString(10);
+>>>>>>> main
             var commandOptions = args.Context.Interaction.Data.Options;
             var log = new StringBuilder();
             if (commandOptions is not null)
                 await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
-            this._logger.LogError("Error on SlashCommand: [ID {ErrorId}] {InteractionName}{InteractionOptions}\n{Message}\n{StackTrace}",
-                errorByteString,
+            LogSlashCommandError(_logger,
+                args.Exception,
+                errorHexString,
                 args.Context.Interaction.Data.Name,
-                log.ToString(),
-                args.Exception.Message,
-                args.Exception.StackTrace);
+                log.ToString());
 
 
             await args.Context.ReplyAsync(color: GrimoireColor.Yellow,
-                message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorByteString}]");
-            await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorByteString);
+                message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorHexString}]");
+            await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorHexString);
         }
     }
+
+    [LoggerMessage(LogLevel.Error, "Error on SlashCommand: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
+    public static partial void LogSlashCommandError(ILogger logger, Exception ex, string ErrorId, string interactionName, string interactionOptions);
 
     public async Task SlashCommandsOnSlashCommandExecuted(SlashCommandsExtension sender, SlashCommandExecutedEventArgs args)
     {
@@ -167,10 +167,13 @@ public class SlashCommandHandler : IDiscordSlashCommandsEventsSubscriber, IDisco
         var log = new StringBuilder();
         if (commandOptions is not null)
             await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
-        this._logger.LogInformation("Slash Command Invoked: {InteractionName}{InteractionOptions}",
+        LogSlashCommandInvoked(_logger,
             args.Context.Interaction.Data.Name,
             log.ToString());
     }
+
+    [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
+    public static partial void LogSlashCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
 
     public Task CommandsOnCommandExecuted(CommandsNextExtension sender, CommandExecutionEventArgs args) => Task.CompletedTask;
     public Task CommandsOnCommandErrored(CommandsNextExtension sender, CommandErrorEventArgs args) => Task.CompletedTask;

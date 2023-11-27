@@ -8,8 +8,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands.AddTracker;
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveTracker;
+using Grimoire.Core.Features.MessageLogging.Commands;
 
 namespace Grimoire.Discord.TextCommands;
 
@@ -17,15 +16,10 @@ namespace Grimoire.Discord.TextCommands;
 [RequireModuleEnabled(Module.Leveling)]
 [RequireUserGuildPermissions(Permissions.ManageMessages)]
 [ModuleLifespan(ModuleLifespan.Transient)]
-public class TrackerTextCommands : BaseCommandModule
+public class TrackerTextCommands(IMediator mediator) : BaseCommandModule
 {
-    private readonly IMediator _mediator;
+    private readonly IMediator _mediator = mediator;
     const ulong GuildId = 539925898128785460;
-
-    public TrackerTextCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
 
     [Command("Track")]
     public async Task TrackAsync(CommandContext ctx,

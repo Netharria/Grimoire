@@ -6,22 +6,16 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands.AddTracker;
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveTracker;
+using Grimoire.Core.Features.MessageLogging.Commands;
 
 namespace Grimoire.Discord.LoggingModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.MessageLog)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
-public class TrackerCommands : ApplicationCommandModule
+public class TrackerCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public TrackerCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Track", "Creates a log of a user's activity into the specificed channel.")]
     public async Task TrackAsync(InteractionContext ctx,

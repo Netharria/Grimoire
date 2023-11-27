@@ -5,29 +5,24 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Commands.TrackerCommands.RemoveExpiredTrackers;
+using Grimoire.Core.Features.MessageLogging.Commands;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerBackgroundTasks : INotificationHandler<TimedNotification>
+public class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger<TrackerBackgroundTasks> logger)
+    : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
-    private readonly IMediator _mediator;
-    private readonly IDiscordClientService _discordClientService;
 
-    public TrackerBackgroundTasks(IMediator mediator, IDiscordClientService discordClientService)
+    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
     {
-        this._mediator = mediator;
-        this._discordClientService = discordClientService;
-    }
-
-    public async ValueTask Handle(TimedNotification notification, CancellationToken cancellationToken)
-    {
-        if (notification.Time.Second % 5 != 0)
-            return;
-        var response = await this._mediator.Send(new RemoveExpiredTrackersCommand(), cancellationToken);
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var discordClientService = serviceProvider.GetRequiredService<IDiscordClientService>();
+        var response = await mediator.Send(new RemoveExpiredTrackersCommand(),stoppingToken);
         foreach (var expiredTracker in response)
         {
-            var guild = this._discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
+            var guild = discordClientService.Client.Guilds.GetValueOrDefault(expiredTracker.GuildId);
             if (guild is null) continue;
 
             var embed = new DiscordEmbedBuilder()
@@ -35,7 +30,7 @@ public class TrackerBackgroundTasks : INotificationHandler<TimedNotification>
 
             var channel = guild.Channels.GetValueOrDefault(expiredTracker.TrackerChannelId);
             if (channel is not null)
-                await channel.SendMessageAsync(embed);
+                await channel.SendMessageAsync(embed).WaitAsync(stoppingToken);
 
             if (expiredTracker.LogChannelId is not null)
             {

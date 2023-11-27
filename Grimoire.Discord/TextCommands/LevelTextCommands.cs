@@ -5,26 +5,20 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Text.RegularExpressions;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Grimoire.Core.Features.Leveling.Queries.GetLeaderboard;
-using Grimoire.Core.Features.Leveling.Queries.GetLevel;
+using Grimoire.Core.Features.Leveling.Queries;
 
 namespace Grimoire.Discord.TextCommands;
 
 [RequireGuild]
 [RequireModuleEnabled(Module.Leveling)]
 [ModuleLifespan(ModuleLifespan.Transient)]
-public class LevelTextCommands : BaseCommandModule
+public class LevelTextCommands(IMediator mediator) : BaseCommandModule
 {
-    private readonly IMediator _mediator;
+    private readonly IMediator _mediator = mediator;
     const ulong GuildId = 539925898128785460;
     const ulong ChannelId = 613131646929207355;
-    public LevelTextCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
 
     [Command("level")]
     public async Task LevelCommandAsync(CommandContext ctx, DiscordMember? member = null)
@@ -84,7 +78,7 @@ public class LevelTextCommands : BaseCommandModule
                 member = ctx.Member;
                 break;
             default:
-                var matchId = Regex.Match(user, @"(\d{17,21})", RegexOptions.None, TimeSpan.FromSeconds(1));
+                var matchId = DiscordSnowflakeParser.MatchSnowflake().Match(user);
                 if (matchId.Success)
                     if (ulong.TryParse(matchId.Value, out var userId))
                         ctx.Guild.Members.TryGetValue(userId, out member);

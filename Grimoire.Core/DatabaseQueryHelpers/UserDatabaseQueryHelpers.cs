@@ -18,7 +18,7 @@ public static class UserDatabaseQueryHelpers
             {
                 Id = x.Id,
                 UsernameHistories = new List<UsernameHistory> {
-                    new UsernameHistory {
+                    new() {
                         Username = x.Username,
                         UserId = x.Id,
                     }

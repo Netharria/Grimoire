@@ -8,7 +8,7 @@
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.AwardUserXp;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 public sealed record AwardUserXpCommand : ICommand<BaseResponse>
 {
@@ -18,14 +18,9 @@ public sealed record AwardUserXpCommand : ICommand<BaseResponse>
     public ulong? AwarderId { get; init; }
 }
 
-public class AwardUserXpCommandHandler : ICommandHandler<AwardUserXpCommand, BaseResponse>
+public class AwardUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AwardUserXpCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public AwardUserXpCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(AwardUserXpCommand command, CancellationToken cancellationToken)
     {

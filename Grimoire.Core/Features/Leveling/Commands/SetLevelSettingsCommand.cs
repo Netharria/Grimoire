@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Core.Features.Leveling.Commands.SetLevelSettings;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 public sealed record SetLevelSettingsCommand : ICommand<BaseResponse>
 {
@@ -23,14 +23,9 @@ public enum LevelSettings
 }
 
 
-public class SetLevelSettingsCommandHandler : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
+public class SetLevelSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public SetLevelSettingsCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetLevelSettingsCommand command, CancellationToken cancellationToken)
     {

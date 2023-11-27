@@ -8,24 +8,19 @@
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageXpCommands.GainUserXp;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 public sealed record GainUserXpCommand : ICommand<GainUserXpCommandResponse>
 {
     public ulong GuildId { get; init; }
     public ulong UserId { get; init; }
     public ulong ChannelId { get; init; }
-    public ulong[] RoleIds { get; init; } = Array.Empty<ulong>();
+    public ulong[] RoleIds { get; init; } = [];
 }
 
-public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainUserXpCommandResponse>
+public class GainUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<GainUserXpCommand, GainUserXpCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public GainUserXpCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GainUserXpCommandResponse> Handle(GainUserXpCommand command, CancellationToken cancellationToken)
     {
@@ -89,7 +84,7 @@ public class GainUserXpCommandHandler : ICommandHandler<GainUserXpCommand, GainU
 
 public sealed record GainUserXpCommandResponse : BaseResponse
 {
-    public RewardDto[] EarnedRewards { get; init; } = Array.Empty<RewardDto>();
+    public RewardDto[] EarnedRewards { get; init; } = [];
     public int PreviousLevel { get; init; }
     public int CurrentLevel { get; init; }
     public ulong? LevelLogChannel { get; init; }

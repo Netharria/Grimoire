@@ -5,22 +5,17 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Shared.Commands.ModuleCommands.EnableModuleCommand;
-using Grimoire.Core.Features.Shared.Queries.GetAllModuleStatesForGuild;
+using Grimoire.Core.Features.Shared.Commands;
+using Grimoire.Core.Features.Shared.Queries;
 
 namespace Grimoire.Discord.SharedModule;
 
 [SlashCommandGroup("Modules", "Enables or Disables the modules")]
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class ModuleCommands : ApplicationCommandModule
+public class ModuleCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public ModuleCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("View", "View the current module states")]
     public async Task ViewAsync(InteractionContext ctx)

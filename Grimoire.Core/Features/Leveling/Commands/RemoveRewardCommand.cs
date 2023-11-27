@@ -7,19 +7,14 @@
 
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
+namespace Grimoire.Core.Features.Leveling.Commands;
 public sealed class RemoveRewardCommand : ICommand<BaseResponse>
 {
     public ulong RoleId { get; init; }
 }
-public class RemoveRewardCommandHandler : ICommandHandler<RemoveRewardCommand, BaseResponse>
+public class RemoveRewardCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveRewardCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public RemoveRewardCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(RemoveRewardCommand command, CancellationToken cancellationToken)
     {

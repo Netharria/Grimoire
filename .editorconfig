@@ -226,7 +226,7 @@ dotnet_naming_rule.types_should_be_pascal_case.severity = error
 dotnet_naming_rule.types_should_be_pascal_case.symbols = types
 dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case
 
-dotnet_naming_rule.async_methods_should_be_async_suffix.severity = error
+dotnet_naming_rule.async_methods_should_be_async_suffix.severity = none
 dotnet_naming_rule.async_methods_should_be_async_suffix.symbols = async_methods
 dotnet_naming_rule.async_methods_should_be_async_suffix.style = async_suffix
 
@@ -306,3 +306,4 @@ csharp_style_allow_blank_line_after_token_in_conditional_expression_experimental
 csharp_style_allow_blank_line_after_colon_in_constructor_initializer_experimental = true:silent
 csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental = true:silent
 csharp_style_prefer_extended_property_pattern = true:suggestion
+csharp_style_prefer_primary_constructors = true:suggestion

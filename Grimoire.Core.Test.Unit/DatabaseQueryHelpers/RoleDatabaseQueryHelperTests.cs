@@ -5,37 +5,54 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Features.Shared.SharedDtos;
-using NUnit.Framework;
+using Grimoire.Domain;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
 
 namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
 
-[TestFixture]
-public class RoleDatabaseQueryHelperTests
+[Collection("Test collection")]
+public class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private readonly GrimoireDbContext _dbContext = new(
+        new DbContextOptionsBuilder<GrimoireDbContext>()
+            .UseNpgsql(factory.ConnectionString)
+            .Options);
+    private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
+    private const long GUILD_ID = 1;
+    private const long ROLE_1 = 1;
+    private const long ROLE_2 = 2;
 
-    [Test]
+    public async Task InitializeAsync()
+    {
+        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
+        await this._dbContext.AddAsync(new Role { Id = ROLE_1, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Role { Id = ROLE_2, GuildId = GUILD_ID });
+        await this._dbContext.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync() => this._resetDatabase();
+
+    [Fact]
     public async Task WhenRolesAreNotInDatabase_AddThemAsync()
     {
-        var databaseFixture = new TestDatabaseFixture();
-        using var context = databaseFixture.CreateContext();
-        context.Database.BeginTransaction();
         var rolesToAdd = new List<RoleDto>
         {
-            new RoleDto() { Id = TestDatabaseFixture.Role1.Id, GuildId = TestDatabaseFixture.Guild1.Id },
-            new RoleDto() { Id = TestDatabaseFixture.Role2.Id, GuildId = TestDatabaseFixture.Guild1.Id },
-            new RoleDto() { Id = 4, GuildId = TestDatabaseFixture.Guild1.Id },
-            new RoleDto() { Id = 5, GuildId = TestDatabaseFixture.Guild1.Id }
+            new() { Id = ROLE_1, GuildId = GUILD_ID },
+            new() { Id = ROLE_2, GuildId = GUILD_ID },
+            new() { Id = 4, GuildId = GUILD_ID },
+            new() { Id = 5, GuildId = GUILD_ID }
         };
-        var result = await context.Roles.AddMissingRolesAsync(rolesToAdd, default);
+        var result = await this._dbContext.Roles.AddMissingRolesAsync(rolesToAdd, default);
 
-        await context.SaveChangesAsync();
-        context.ChangeTracker.Clear();
+        await this._dbContext.SaveChangesAsync();
         result.Should().BeTrue();
-        context.Roles.Should().HaveCount(4);
+        this._dbContext.Roles.Should().HaveCount(4);
     }
 }
