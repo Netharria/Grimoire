@@ -72,5 +72,5 @@ public sealed record BulkDeleteMessageCommandResponse : BaseResponse
 {
     public IEnumerable<MessageDto> Messages { get; init; } = Enumerable.Empty<MessageDto>();
     public ulong? BulkDeleteLogChannelId { get; init; }
-    public bool Success { get; init; } = false;
+    public bool Success { get; init; }
 }

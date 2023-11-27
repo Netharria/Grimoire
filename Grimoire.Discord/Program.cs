@@ -109,7 +109,8 @@ var host = Host.CreateDefaultBuilder(args)
             .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)
             .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
 
-        services.AddHttpClient("Pluralkit", x => {
+        services.AddHttpClient("Pluralkit", x =>
+        {
             var endpoint = context.Configuration["pluralkitApiEndpoint"];
             var userAgent = context.Configuration["pluralkitUserAgent"];
             var token = context.Configuration["pluralkitToken"];
@@ -123,7 +124,7 @@ var host = Host.CreateDefaultBuilder(args)
                 .Add(new System.Net.Http.Headers.ProductInfoHeaderValue(userAgent));
             x.DefaultRequestHeaders.Add("Authorization", token);
 
-            })
+        })
         .AddTransientHttpErrorPolicy(PolicyBuilder => PolicyBuilder
             .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
         .AddPolicyHandler(
