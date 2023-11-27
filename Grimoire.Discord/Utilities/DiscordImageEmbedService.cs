@@ -8,6 +8,7 @@
 
 using System.Collections.Immutable;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.Utilities;
 
@@ -17,19 +18,21 @@ public interface IDiscordImageEmbedService
     Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed, bool displayFileNames = true);
 }
 
-public class DiscordImageEmbedService : IDiscordImageEmbedService
+public partial class DiscordImageEmbedService : IDiscordImageEmbedService
 {
 
     private readonly HttpClient _httpClient;
     private readonly IReadOnlyList<string> _validImageExtensions;
+    private readonly ILogger<DiscordImageEmbedService> _logger;
 
-    public DiscordImageEmbedService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public DiscordImageEmbedService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<DiscordImageEmbedService> logger)
     {
         this._httpClient = httpClientFactory.CreateClient("Default");
         var validExtensions = configuration.GetValue<string>("validImageExtensions");
         if (string.IsNullOrWhiteSpace(validExtensions))
             throw new ArgumentException("Did not find the configuration for valid extensions");
         this._validImageExtensions = validExtensions.Split(',').ToImmutableList();
+        this._logger = logger;
     }
 
     public Task<DiscordMessageBuilder> BuildImageEmbedAsync(AttachmentDto[] attachmentDtos, ulong userId, ulong channelId, DiscordEmbed embed, bool displayFileNames = true)
@@ -96,8 +99,9 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
                 Stream = await this._httpClient.GetStreamAsync(uri)
             };
         }
-        catch (Exception ex) when (ex is TaskCanceledException or HttpRequestException)
+        catch (Exception ex)
         {
+            LogDownloadError(_logger, ex, uri.OriginalString);
             return new ImageDownloadResult
             {
                 Uri = uri,
@@ -105,6 +109,10 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
             };
         }
     }
+
+    [LoggerMessage(LogLevel.Error, "Was not able to download the image at {url}")]
+    public static partial void LogDownloadError(ILogger logger, Exception ex, string url);
+
 
     private static void AddAttachmentFileNames(Uri[] imageUrls, int stride, DiscordEmbedBuilder imageEmbed, bool displayFileNames)
     {
@@ -128,7 +136,7 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
             .Select(x => $"**{Path.GetFileName(x)}**")
             .ToArray(); ;
 
-        if (nonImageAttachements.Any())
+        if (nonImageAttachements.Length != 0)
         {
             var imageEmbed = new DiscordEmbedBuilder(embed)
                 .AddMessageTextToFields("Non-Image Attachments", string.Join("\n", nonImageAttachements));
@@ -140,7 +148,7 @@ public class DiscordImageEmbedService : IDiscordImageEmbedService
     {
 
         var failedFiles = urls.Where(x => !x.Successful).Select(x => Path.GetFileName(x.Uri.AbsolutePath)).ToArray();
-        if (failedFiles.Any())
+        if (failedFiles.Length != 0)
         {
             var imageEmbed = new DiscordEmbedBuilder(embed)
                 .AddMessageTextToFields("Failed to download these images.", string.Join("\n", failedFiles));

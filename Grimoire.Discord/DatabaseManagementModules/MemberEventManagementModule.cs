@@ -5,20 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Shared.Commands.MemberCommands.AddMember;
+using Grimoire.Core.Features.Shared.Commands;
 
 namespace Grimoire.Discord.DatabaseManagementModules;
 
 [DiscordGuildMemberAddedEventSubscriber]
-public sealed class MemberEventManagementModule :
+public sealed class MemberEventManagementModule(IMediator mediator) :
     IDiscordGuildMemberAddedEventSubscriber
 {
-    private readonly IMediator _mediator;
-
-    public MemberEventManagementModule(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
         => await this._mediator.Send(

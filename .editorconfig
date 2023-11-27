@@ -228,7 +228,7 @@ dotnet_naming_rule.types_should_be_pascal_case.severity = error
 dotnet_naming_rule.types_should_be_pascal_case.symbols = types
 dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case
 
-dotnet_naming_rule.async_methods_should_be_async_suffix.severity = error
+dotnet_naming_rule.async_methods_should_be_async_suffix.severity = none
 dotnet_naming_rule.async_methods_should_be_async_suffix.symbols = async_methods
 dotnet_naming_rule.async_methods_should_be_async_suffix.style = pascal_case
 

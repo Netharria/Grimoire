@@ -6,8 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Shared.Commands.SetModLogCommmand;
-using Grimoire.Core.Features.Shared.Queries.GetModerationLog;
+using Grimoire.Core.Features.Shared.Commands;
+using Grimoire.Core.Features.Shared.Queries;
 using Grimoire.Discord.Enums;
 
 namespace Grimoire.Discord.SharedModule;
@@ -15,14 +15,9 @@ namespace Grimoire.Discord.SharedModule;
 [SlashCommandGroup("ModLog", "View or set the moderation log channel.")]
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class ModLogSettings : ApplicationCommandModule
+public class ModLogSettings(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public ModLogSettings(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("View", "View the current moderation log channel.")]
     public async Task ViewAsync(InteractionContext ctx)

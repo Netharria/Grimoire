@@ -5,23 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.ForgetSin;
-using Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.PardonSin;
-using Grimoire.Core.Features.Moderation.Commands.SinAdminCommands.UpdateSinReason;
+using Grimoire.Core.Features.Moderation.Commands;
 
 namespace Grimoire.Discord.ModerationModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
-public class SinAdminCommands : ApplicationCommandModule
+public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public SinAdminCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Pardon", "Pardon a user's sin. This leaves the sin in the logs but marks it as pardoned.")]
     public async Task PardonAsync(InteractionContext ctx,

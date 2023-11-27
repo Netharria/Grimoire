@@ -13,14 +13,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.MigrationTool.MigrationServices;
 
-public class AnubisMigrationService
+public class AnubisMigrationService(AnubisDbContext anubisContext)
 {
-    private readonly AnubisDbContext _anubisContext;
-
-    public AnubisMigrationService(AnubisDbContext anubisContext)
-    {
-        this._anubisContext = anubisContext;
-    }
+    private readonly AnubisDbContext _anubisContext = anubisContext;
 
     public async Task MigrateAnubisDatabaseAsync()
     {
@@ -189,8 +184,7 @@ public class AnubisMigrationService
                 GuildId = x.GuildId,
                 XpHistory = new List<XpHistory>
                     {
-                        new XpHistory
-                        {
+                        new() {
                             UserId = x.UserId,
                             GuildId = x.GuildId,
                             Xp = 0,

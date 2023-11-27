@@ -8,7 +8,7 @@
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
-namespace Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
+namespace Grimoire.Core.Features.Leveling.Commands;
 
 public sealed record AddRewardCommand : ICommand<BaseResponse>
 {
@@ -18,14 +18,9 @@ public sealed record AddRewardCommand : ICommand<BaseResponse>
     public string? Message { get; init; }
 }
 
-public class AddRewardCommandHandler : ICommandHandler<AddRewardCommand, BaseResponse>
+public class AddRewardCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddRewardCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext;
-
-    public AddRewardCommandHandler(IGrimoireDbContext grimoireDbContext)
-    {
-        this._grimoireDbContext = grimoireDbContext;
-    }
+    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(AddRewardCommand command, CancellationToken cancellationToken)
     {

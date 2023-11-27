@@ -30,20 +30,20 @@ public class ExampleContextMenus : ApplicationCommandModule
         await ctx.DeferAsync();
         var rows = new List<DiscordActionRowComponent>()
         {
-            new DiscordActionRowComponent(new List<DiscordComponent>
+            new(new List<DiscordComponent>
             {
                 new DiscordChannelSelectComponent("channel_option", null,
                 new List<ChannelType> { ChannelType.Text })
             }),
-            new DiscordActionRowComponent(new List<DiscordComponent>
+            new(new List<DiscordComponent>
             {
                 new DiscordRoleSelectComponent("role_option", null)
             }),
-            new DiscordActionRowComponent(new List<DiscordComponent>
+            new(new List<DiscordComponent>
             {
                 new DiscordUserSelectComponent("user_option", null)
             }),
-            new DiscordActionRowComponent(new List<DiscordComponent>
+            new(new List<DiscordComponent>
             {
                 new DiscordMentionableSelectComponent("mentionable_option", null)
             })

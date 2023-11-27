@@ -6,9 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.SetAutoPardon;
-using Grimoire.Core.Features.Moderation.Commands.SetBanLogChannel;
-using Grimoire.Core.Features.Moderation.Queries.GetModerationSettings;
+using Grimoire.Core.Features.Moderation.Commands;
+using Grimoire.Core.Features.Moderation.Queries;
 using Grimoire.Discord.Enums;
 
 namespace Grimoire.Discord.ModerationModule;
@@ -17,14 +16,9 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class ModerationSettingsCommands : ApplicationCommandModule
+public class ModerationSettingsCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public ModerationSettingsCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("PublicBanLog", "Set public channel to publish ban and unbans to.")]
     public async Task BanLogAsync(

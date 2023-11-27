@@ -6,11 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Concurrent;
-using Grimoire.Core.Features.Logging.Commands.AddLogMessage;
-using Grimoire.Core.Features.Logging.Commands.UpdateAvatar;
-using Grimoire.Core.Features.Logging.Commands.UpdateNickname;
-using Grimoire.Core.Features.Logging.Commands.UpdateUsername;
-using Grimoire.Core.Features.Logging.Queries.GetUserLogSettings;
+using Grimoire.Core.Features.LogCleanup.Commands;
+using Grimoire.Core.Features.UserLogging.Commands;
+using Grimoire.Core.Features.UserLogging.Queries;
 using Grimoire.Discord.Notifications;
 using Grimoire.Domain;
 
@@ -19,21 +17,14 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordGuildMemberAddedEventSubscriber]
 [DiscordGuildMemberUpdatedEventSubscriber]
 [DiscordGuildMemberRemovedEventSubscriber]
-public sealed class MemberLogEvents :
+public sealed class MemberLogEvents(IMediator mediator, IInviteService inviteService, IDiscordImageEmbedService imageEmbedService) :
     IDiscordGuildMemberAddedEventSubscriber,
     IDiscordGuildMemberUpdatedEventSubscriber,
     IDiscordGuildMemberRemovedEventSubscriber
 {
-    private readonly IMediator _mediator;
-    private readonly IInviteService _inviteService;
-    private readonly IDiscordImageEmbedService _imageEmbedService;
-
-    public MemberLogEvents(IMediator mediator, IInviteService inviteService, IDiscordImageEmbedService imageEmbedService)
-    {
-        this._mediator = mediator;
-        this._inviteService = inviteService;
-        this._imageEmbedService = imageEmbedService;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly IInviteService _inviteService = inviteService;
+    private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
 
     public async Task DiscordOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs args)
     {
@@ -202,7 +193,7 @@ public sealed class MemberLogEvents :
                 .WithColor(GrimoireColor.Purple)
                 .WithTimestamp(DateTimeOffset.UtcNow);
                 var messageBuilder = await this._imageEmbedService
-                    .BuildImageEmbedAsync(new string[]{ avatarResponse.AfterAvatar },
+                    .BuildImageEmbedAsync([avatarResponse.AfterAvatar],
                     args.Member.Id,
                     embed,
                     false);

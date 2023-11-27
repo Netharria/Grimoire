@@ -5,23 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Core.Features.Logging.Queries.GetTracker;
+using Grimoire.Core.Features.MessageLogging.Queries;
 using Grimoire.Discord.Notifications;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerAvatarEvent : INotificationHandler<AvatarTrackerNotification>
+public class TrackerAvatarEvent(IDiscordClientService clientService, IMediator mediator, IDiscordImageEmbedService imageEmbedService) : INotificationHandler<AvatarTrackerNotification>
 {
-    private readonly IDiscordClientService _clientService;
-    private readonly IMediator _mediator;
-    private readonly IDiscordImageEmbedService _imageEmbedService;
-
-    public TrackerAvatarEvent(IDiscordClientService clientService, IMediator mediator, IDiscordImageEmbedService imageEmbedService)
-    {
-        this._clientService = clientService;
-        this._mediator = mediator;
-        this._imageEmbedService = imageEmbedService;
-    }
+    private readonly IDiscordClientService _clientService = clientService;
+    private readonly IMediator _mediator = mediator;
+    private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
 
     public async ValueTask Handle(AvatarTrackerNotification notification, CancellationToken cancellationToken)
     {
@@ -39,7 +32,7 @@ public class TrackerAvatarEvent : INotificationHandler<AvatarTrackerNotification
 
         await logChannel.SendMessageAsync(await this._imageEmbedService
             .BuildImageEmbedAsync(
-            new string[] { notification.AfterAvatar },
+            [notification.AfterAvatar],
             notification.UserId,
             embed,
             false));

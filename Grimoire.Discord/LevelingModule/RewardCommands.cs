@@ -6,9 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Exceptions;
-using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.AddReward;
-using Grimoire.Core.Features.Leveling.Commands.ManageRewardsCommands.RemoveReward;
-using Grimoire.Core.Features.Leveling.Queries.GetRewards;
+using Grimoire.Core.Features.Leveling.Commands;
+using Grimoire.Core.Features.Leveling.Queries;
 
 namespace Grimoire.Discord.LevelingModule;
 
@@ -16,14 +15,9 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class RewardCommands : ApplicationCommandModule
+public class RewardCommands(IMediator mediator) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-
-    public RewardCommands(IMediator mediator)
-    {
-        this._mediator = mediator;
-    }
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Add", "Adds or updates rewards for the server.")]
     public async Task AddAsync(InteractionContext ctx,

@@ -6,10 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Exceptions;
-using Grimoire.Core.Features.Moderation.Commands.SetMuteRole;
-using Grimoire.Core.Features.Moderation.Queries.GetAllActiveMutes;
-using Grimoire.Core.Features.Moderation.Queries.GetMuteRole;
-using Serilog;
+using Grimoire.Core.Features.Moderation.Commands;
+using Grimoire.Core.Features.Moderation.Queries;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
 
@@ -18,16 +17,10 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireBotPermissions(Permissions.ManageRoles)]
 [SlashCommandGroup("Mutes", "Manages the mute role settings.")]
-public partial class MuteAdminCommands : ApplicationCommandModule
+public partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAdminCommands> logger) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger _logger;
-
-    public MuteAdminCommands(IMediator mediator, ILogger logger)
-    {
-        this._mediator = mediator;
-        this._logger = logger;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ILogger _logger = logger;
 
     [SlashCommand("View", "View the current configured mute role and any active mutes.")]
     public async Task ViewMutesAsync(InteractionContext ctx)
@@ -47,7 +40,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
             embed.AddField("Mute Role", role.Mention);
         else
             embed.AddField("Mute Role", "None");
-        if (users is not null && users.Any())
+        if (users is not null && users.Length != 0)
             embed.AddField("Muted Users", string.Join(" ", users.Select(x => x.Mention)));
         else
             embed.AddField("Muted Users", "None");
@@ -91,7 +84,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
                 .Where(x => !x.WasSuccessful)
                 .ToArrayAsync();
 
-        if (!result.Any())
+        if (result.Length == 0)
         {
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Successfully created role {role.Mention} and set permissions for channels");
         }
@@ -125,7 +118,7 @@ public partial class MuteAdminCommands : ApplicationCommandModule
                 .Where(x => !x.WasSuccessful)
                 .ToArrayAsync();
 
-        if (!result.Any())
+        if (result.Length == 0)
         {
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Succussfully refreshed permissions for {role.Mention} role.");
         }
@@ -181,20 +174,17 @@ public partial class MuteAdminCommands : ApplicationCommandModule
             {
                 if (tryAttempt < 3)
                 {
-                    this._logger.Warning("Exception was thrown while trying to overwrite channel mute permissions. " +
-                        "Trying again. Attempt: ({attempt}) Exception Message : ({message})", tryAttempt, ex.Message);
+                    LogRetryAttempt(_logger, tryAttempt, ex.Message);
                     await Task.Delay(1 * tryAttempt);
                 }
                 else
                 {
-                    this._logger.Error(ex, "Was not able to successfully overwrite channel mute permissions after ({attempt})" +
-                        "Exception Message : ({message})", tryAttempt, ex.Message);
+                    LogRetriesExhaustedError(_logger, ex, tryAttempt, ex.Message);
                 }
             }
             catch (Exception ex)
             {
-                this._logger.Error(ex, "A non transient exception was thrown while trying to overwrite channel mute permissions." +
-                        "Exception Message : ({message})", tryAttempt, ex.Message);
+                LogNonTransientError(_logger, ex, ex.Message);
                 break;
             }
 
@@ -205,6 +195,18 @@ public partial class MuteAdminCommands : ApplicationCommandModule
             Channel = channel,
         };
     }
+
+    [LoggerMessage(LogLevel.Warning, "Exception was thrown while trying to overwrite channel mute permissions. " +
+                        "Trying again. Attempt: ({attempt}) Exception Message : ({message})")]
+    public static partial void LogRetryAttempt(ILogger logger, int attempt, string message);
+
+    [LoggerMessage(LogLevel.Error, "Was not able to successfully overwrite channel mute permissions after ({attempt})" +
+                        "Exception Message : ({message})")]
+    public static partial void LogRetriesExhaustedError(ILogger logger, DiscordException ex, int attempt, string message);
+
+    [LoggerMessage(LogLevel.Error, "A non transient exception was thrown while trying to overwrite channel mute permissions." +
+                        "Exception Message : ({message})")]
+    public static partial void LogNonTransientError(ILogger logger, Exception ex, string message);
 
     private async Task<OverwriteChannelResult> OverwriteVoiceChannelAsync(DiscordChannel channel, DiscordRole role)
     {
@@ -231,20 +233,17 @@ public partial class MuteAdminCommands : ApplicationCommandModule
             {
                 if (tryAttempt < 3)
                 {
-                    this._logger.Warning("Exception was thrown while trying to overwrite channel mute permissions. " +
-                        "Trying again. Attempt: ({attempt}) Exception Message : ({message})", tryAttempt, ex.Message);
+                    LogRetryAttempt(_logger, tryAttempt, ex.Message);
                     await Task.Delay(1 * tryAttempt);
                 }
                 else
                 {
-                    this._logger.Error(ex, "Was not able to successfully overwrite channel mute permissions after ({attempt})" +
-                        "Exception Message : ({message})", tryAttempt, ex.Message);
+                    LogRetriesExhaustedError(_logger, ex, tryAttempt, ex.Message);
                 }
             }
             catch (Exception ex)
             {
-                this._logger.Error(ex, "A non transient exception was thrown while trying to  overwrite channel mute permissions." +
-                        "Exception Message : ({message})", tryAttempt, ex.Message);
+                LogNonTransientError(_logger, ex, ex.Message);
                 break;
             }
 

@@ -71,6 +71,9 @@ var host = Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<ModuleCommands>();
                 extension.RegisterCommands<ModLogSettings>();
                 extension.RegisterCommands<PurgeCommands>();
+                extension.RegisterCommands<UserInfoCommands>();
+
+
                 //Leveling
                 extension.RegisterCommands<LevelCommands>();
                 extension.RegisterCommands<LeaderboardCommands>();
@@ -96,7 +99,10 @@ var host = Host.CreateDefaultBuilder(args)
             })
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
-        .AddHostedService<TickerBackgroundService>()
+        .AddHostedService<LogBackgroundTasks>()
+        .AddHostedService<TrackerBackgroundTasks>()
+        .AddHostedService<LockBackgroundTasks>()
+        .AddHostedService<MuteBackgroundTasks>()
         .AddMemoryCache()
         .AddHttpClient("Default", x => x.Timeout = TimeSpan.FromSeconds(30))
         .AddTransientHttpErrorPolicy(PolicyBuilder => PolicyBuilder
@@ -144,4 +150,7 @@ using (var scope = host.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<GrimoireDbContext>();
     db.Database.Migrate();
 }
+
+AppContext.SetSwitch("System.Net.SocketsHttpHandler.Http3Support", false);
+
 host.Run();

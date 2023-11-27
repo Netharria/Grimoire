@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -12,31 +13,54 @@ using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Enums;
 using Grimoire.Domain;
 using Microsoft.EntityFrameworkCore;
-using NUnit.Framework;
+using Xunit;
 
 namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
 
-[TestFixture]
-public class IModuleDatabaseQueryHelperTests
+[Collection("Test collection")]
+public class IModuleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private readonly GrimoireDbContext _dbContext = new(
+        new DbContextOptionsBuilder<GrimoireDbContext>()
+            .UseNpgsql(factory.ConnectionString)
+            .Options);
+    private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
 
-    [Test]
+    public async Task InitializeAsync()
+    {
+        await this._dbContext.AddAsync(new Guild
+        {
+            Id = 1,
+            LevelSettings = new GuildLevelSettings(),
+            UserLogSettings = new GuildUserLogSettings(),
+            MessageLogSettings = new GuildMessageLogSettings(),
+            ModerationSettings = new GuildModerationSettings()
+        });
+        await this._dbContext.SaveChangesAsync();
+    }
+    public Task DisposeAsync() => this._resetDatabase();
+
+
+    [Fact]
     public async Task WhenGetModulesOfTypeCalled_ReturnCorrectTypeofModuleAsync()
     {
-        var databaseFixture = new TestDatabaseFixture();
-        using var context = databaseFixture.CreateContext();
 
-        var levelingModule = await context.Guilds.GetModulesOfType(Module.Leveling)
+        var levelingModule = await this._dbContext.Guilds.GetModulesOfType(Module.Leveling)
             .OfType<GuildLevelSettings>()
             .ToListAsync();
         levelingModule.Should().NotBeEmpty();
 
-        var loggingModule = await context.Guilds.GetModulesOfType(Module.UserLog)
+        var loggingModule = await this._dbContext.Guilds.GetModulesOfType(Module.UserLog)
             .OfType<GuildUserLogSettings>()
             .ToListAsync();
         loggingModule.Should().NotBeEmpty();
 
-        var moderationModule = await context.Guilds.GetModulesOfType(Module.Moderation)
+        var messageLoggingModule = await this._dbContext.Guilds.GetModulesOfType(Module.MessageLog)
+            .OfType<GuildMessageLogSettings>()
+            .ToListAsync();
+        messageLoggingModule.Should().NotBeEmpty();
+
+        var moderationModule = await this._dbContext.Guilds.GetModulesOfType(Module.Moderation)
             .OfType<GuildModerationSettings>()
             .ToListAsync();
         moderationModule.Should().NotBeEmpty();

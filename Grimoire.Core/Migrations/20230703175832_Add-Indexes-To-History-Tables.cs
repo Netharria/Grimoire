@@ -41,14 +41,14 @@ namespace Grimoire.Core.Migrations
                 name: "IX_XpHistory_UserId_GuildId_TimeOut",
                 table: "XpHistory",
                 columns: new[] { "UserId", "GuildId", "TimeOut" },
-                descending: new[] { false, false, true })
+                descending: [false, false, true])
                 .Annotation("Npgsql:IndexInclude", new[] { "Xp" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_UsernameHistory_UserId_Timestamp",
                 table: "UsernameHistory",
                 columns: new[] { "UserId", "Timestamp" },
-                descending: new[] { false, true });
+                descending: [false, true]);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trackers_EndTime",
@@ -75,7 +75,7 @@ namespace Grimoire.Core.Migrations
                 name: "IX_NicknameHistory_UserId_GuildId_Timestamp",
                 table: "NicknameHistory",
                 columns: new[] { "UserId", "GuildId", "Timestamp" },
-                descending: new[] { false, false, true });
+                descending: [false, false, true]);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Mutes_EndTime",
@@ -91,7 +91,7 @@ namespace Grimoire.Core.Migrations
                 name: "IX_MessageHistory_MessageId_TimeStamp_Action",
                 table: "MessageHistory",
                 columns: new[] { "MessageId", "TimeStamp", "Action" },
-                descending: new[] { false, true, false });
+                descending: [false, true, false]);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Members_IsXpIgnored",
@@ -114,7 +114,7 @@ namespace Grimoire.Core.Migrations
                 name: "IX_Avatars_UserId_GuildId_Timestamp",
                 table: "Avatars",
                 columns: new[] { "UserId", "GuildId", "Timestamp" },
-                descending: new[] { false, false, true });
+                descending: [false, false, true]);
         }
 
         /// <inheritdoc />
