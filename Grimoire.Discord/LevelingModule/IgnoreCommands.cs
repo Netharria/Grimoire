@@ -9,6 +9,7 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire.Core.Features.Leveling.Commands;
 using Grimoire.Core.Features.Leveling.Queries;
+using Grimoire.Domain.Enums;
 
 namespace Grimoire.Discord.LevelingModule;
 
