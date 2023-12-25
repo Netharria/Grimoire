@@ -28,6 +28,7 @@ public class LogSettingsCommands : ApplicationCommandModule
         [SlashCommand("View", "View the current settings for the User Log module.")]
         public async Task ViewAsync(InteractionContext ctx)
         {
+            await ctx.DeferAsync(true);
             var response = await this._mediator.Send(new GetUserLogSettingsQuery{ GuildId = ctx.Guild.Id });
             var JoinChannelLog =
                 response.JoinChannelLog is null ?
@@ -49,7 +50,7 @@ public class LogSettingsCommands : ApplicationCommandModule
                 response.AvatarChannelLog is null ?
                 "None" :
                 ctx.Guild.GetChannel(response.AvatarChannelLog.Value).Mention;
-            await ctx.ReplyAsync(
+            await ctx.EditReplyAsync(
                 title: "Current Logging System Settings",
                 message: $"**Module Enabled:** {response.IsLoggingEnabled}\n" +
                 $"**Join Log:** {JoinChannelLog}\n" +
@@ -71,6 +72,7 @@ public class LogSettingsCommands : ApplicationCommandModule
             [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
             [Option("Value", "The channel to change the log to.")] DiscordChannel? channel = null)
         {
+            await ctx.DeferAsync();
             var logSetting = (UserLogSetting)loggingSetting;
             channel = ctx.GetChannelOptionAsync(option, channel);
             if (channel is not null)
@@ -87,10 +89,11 @@ public class LogSettingsCommands : ApplicationCommandModule
             });
             if (option is ChannelOption.Off)
             {
-                await ctx.ReplyAsync(message: $"Disabled {logSetting.GetName()}");
+                await ctx.EditReplyAsync(message: $"Disabled {logSetting.GetName()}");
                 await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} disabled {logSetting.GetName()}.");
+                return;
             }
-            await ctx.ReplyAsync(message: $"Updated {logSetting.GetName()} to {channel?.Mention}", ephemeral: false);
+            await ctx.EditReplyAsync(message: $"Updated {logSetting.GetName()} to {channel?.Mention}");
             await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated {logSetting.GetName()} to {channel?.Mention}.");
         }
     }
@@ -104,6 +107,7 @@ public class LogSettingsCommands : ApplicationCommandModule
         [SlashCommand("View", "View the current settings for the Message Log Module.")]
         public async Task ViewAsync(InteractionContext ctx)
         {
+            await ctx.DeferAsync(true);
             var response = await this._mediator.Send(new GetMessageLogSettingsQuery{ GuildId = ctx.Guild.Id });
             var DeleteChannelLog =
                 response.DeleteChannelLog is null ?
@@ -117,7 +121,7 @@ public class LogSettingsCommands : ApplicationCommandModule
                 response.EditChannelLog is null ?
                 "None" :
                 ctx.Guild.GetChannel(response.EditChannelLog.Value).Mention;
-            await ctx.ReplyAsync(
+            await ctx.EditReplyAsync(
                 title: "Current Logging System Settings",
                 message: $"**Module Enabled:** {response.IsLoggingEnabled}\n" +
                 $"**Delete Log:** {DeleteChannelLog}\n" +
@@ -135,6 +139,7 @@ public class LogSettingsCommands : ApplicationCommandModule
             [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
             [Option("Value", "The channel to change the log setting to.")] DiscordChannel? channel = null)
         {
+            await ctx.DeferAsync();
             var logSetting = (MessageLogSetting)loggingSetting;
             channel = ctx.GetChannelOptionAsync(option, channel);
             if (channel is not null)
@@ -153,10 +158,11 @@ public class LogSettingsCommands : ApplicationCommandModule
 
             if (option is ChannelOption.Off)
             {
-                await ctx.ReplyAsync(message: $"Disabled {logSetting.GetName()}");
+                await ctx.EditReplyAsync(message: $"Disabled {logSetting.GetName()}");
                 await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} disabled {logSetting.GetName()}.");
+                return;
             }
-            await ctx.ReplyAsync(message: $"Updated {logSetting.GetName()} to {channel?.Mention}", ephemeral: false);
+            await ctx.EditReplyAsync(message: $"Updated {logSetting.GetName()} to {channel?.Mention}");
             await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated {logSetting.GetName()} to {channel?.Mention}.");
         }
     }

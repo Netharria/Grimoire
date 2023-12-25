@@ -22,6 +22,7 @@ public class SinLogCommands(IMediator mediator) : ApplicationCommandModule
         [Option("Type", "The Type of logs to lookup.")] SinQueryType sinQueryType,
         [Option("User", "The user to look up the logs for. Leave blank for self.")] DiscordUser? user = null)
     {
+        await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
         user ??= ctx.User;
 
 
@@ -36,10 +37,10 @@ public class SinLogCommands(IMediator mediator) : ApplicationCommandModule
             });
             if (modResponse is null)
             {
-                await ctx.ReplyAsync(GrimoireColor.Red, "Did not find a moderator with that id.");
+                await ctx.EditReplyAsync(GrimoireColor.Red, "Did not find a moderator with that id.");
                 return;
             }
-            await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+            await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
                 .WithAuthor($"Moderation log for {user.GetUsernameWithDiscriminator()}")
                 .AddField("Bans", modResponse.BanCount.ToString(), true)
                 .AddField("Mutes", modResponse.MuteCount.ToString(), true)
@@ -54,13 +55,11 @@ public class SinLogCommands(IMediator mediator) : ApplicationCommandModule
             SinQueryType = sinQueryType
         });
         if (response.SinList.Length == 0)
-            await ctx.ReplyAsync(GrimoireColor.Green, message: "That user does not have any logs",
-                title: $"Sin log for {user.GetUsernameWithDiscriminator()}",
-                ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
+            await ctx.EditReplyAsync(GrimoireColor.Green, message: "That user does not have any logs",
+                title: $"Sin log for {user.GetUsernameWithDiscriminator()}");
         foreach (var message in response.SinList)
-            await ctx.ReplyAsync(GrimoireColor.Green, message: message,
-                title: $"Sin log for {user.GetUsernameWithDiscriminator()}",
-                ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
+            await ctx.EditReplyAsync(GrimoireColor.Green, message: message,
+                title: $"Sin log for {user.GetUsernameWithDiscriminator()}");
 
     }
 }

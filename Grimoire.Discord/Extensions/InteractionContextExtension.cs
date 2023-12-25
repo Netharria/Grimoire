@@ -14,37 +14,6 @@ namespace Grimoire.Discord.Extensions;
 
 public static class InteractionContextExtension
 {
-    public static async Task ReplyAsync(
-        this InteractionContext ctx,
-        DiscordColor? color = null,
-        string message = "",
-        string title = "",
-        string footer = "",
-        DiscordEmbed? embed = null,
-        DateTime? timeStamp = null,
-        bool ephemeral = true)
-    {
-        timeStamp ??= DateTime.UtcNow;
-        embed ??= new DiscordEmbedBuilder()
-            .WithColor(color ?? GrimoireColor.Purple)
-            .WithAuthor(title)
-            .WithDescription(message)
-            .WithFooter(footer)
-            .WithTimestamp(timeStamp)
-            .Build();
-        try
-        {
-            await ctx.CreateResponseAsync(
-            InteractionResponseType.ChannelMessageWithSource,
-            new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
-        }
-        catch (BadRequestException)
-        {
-            await ctx.EditResponseAsync(
-                    new DiscordWebhookBuilder().AddEmbed(embed));
-        }
-
-    }
 
     public static async Task EditReplyAsync(
         this InteractionContext ctx,
@@ -69,35 +38,18 @@ public static class InteractionContextExtension
 
     }
 
-    public static async ValueTask<(bool, ulong)> TryMatchStringToChannelAsync(this InteractionContext ctx, string s)
-    {
-        var parsedvalue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
-        if (!ulong.TryParse(parsedvalue, out var parsedId))
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");
-            return (false, 0);
-        }
-        if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Did not find that channel on this server.");
-            return (false, 0);
-        }
-
-        return (true, parsedId);
-    }
-
     public static async ValueTask<(bool, ulong)> TryMatchStringToChannelOrDefaultAsync(this InteractionContext ctx, string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return (true, ctx.Channel.Id);
         var parsedvalue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
         if (!ulong.TryParse(parsedvalue, out var parsedId))
         {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");
             return (false, 0);
         }
         if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
         {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, message: "Did not find that channel on this server.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, message: "Did not find that channel on this server.");
             return (false, 0);
         }
 
