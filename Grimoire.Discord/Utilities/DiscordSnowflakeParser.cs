@@ -27,7 +27,7 @@ public static partial class DiscordSnowflakeParser
                 if (ctx.Guild.Roles.ContainsKey(id)) return "Role";
                 if (ctx.Guild.Channels.ContainsKey(id)) return "Channel";
                 var user = await ctx.Client.GetUserAsync(id);
-                if (user != null) return "User";
+                if (user is not null) return "User";
                 return "Invalid";
             })
             .ToDictionaryAwaitAsync(k => ValueTask.FromResult(k.Key), async v => await v.ToArrayAsync());

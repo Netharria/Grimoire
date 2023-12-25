@@ -32,20 +32,20 @@ public class ExampleContextMenus : ApplicationCommandModule
         {
             new(new List<DiscordComponent>
             {
-                new DiscordChannelSelectComponent("channel_option", null,
+                new DiscordChannelSelectComponent("channel_option", "",
                 new List<ChannelType> { ChannelType.Text })
             }),
             new(new List<DiscordComponent>
             {
-                new DiscordRoleSelectComponent("role_option", null)
+                new DiscordRoleSelectComponent("role_option", "")
             }),
             new(new List<DiscordComponent>
             {
-                new DiscordUserSelectComponent("user_option", null)
+                new DiscordUserSelectComponent("user_option", "")
             }),
             new(new List<DiscordComponent>
             {
-                new DiscordMentionableSelectComponent("mentionable_option", null)
+                new DiscordMentionableSelectComponent("mentionable_option", "")
             })
         };
         var builder = new DiscordFollowupMessageBuilder()

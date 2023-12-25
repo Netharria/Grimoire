@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Entities.AuditLogs;
 using Grimoire.Core.Features.Shared.Commands;
 using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
@@ -163,7 +164,7 @@ public partial class GuildEventManagementModule(IMediator mediator, IInviteServi
                 throw new Exception("Was not able to delete expired invite");
         }
 
-        var deletedInviteEntry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogInviteEntry>(AuditLogActionType.InviteDelete, 1500);
+        var deletedInviteEntry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogInviteEntry>(DiscordAuditLogActionType.InviteDelete, 1500);
         if (deletedInviteEntry == null)
         {
             if (args.Invite.MaxUses != args.Invite.Uses + 1)

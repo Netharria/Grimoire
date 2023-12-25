@@ -7,7 +7,6 @@
 
 using Grimoire.Core.Features.Shared.PipelineBehaviors;
 using Grimoire.Core.Features.UserLogging;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

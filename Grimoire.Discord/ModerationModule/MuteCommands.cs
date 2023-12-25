@@ -42,7 +42,7 @@ public class MuteCommands(IMediator mediator) : ApplicationCommandModule
         });
         var muteRole = ctx.Guild.Roles.GetValueOrDefault(response.MuteRole);
         if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
-        await member.GrantRoleAsync(muteRole, reason);
+        await member.GrantRoleAsync(muteRole, reason!);
 
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Mute")

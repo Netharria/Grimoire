@@ -7,6 +7,7 @@
 
 
 using System.Collections.Immutable;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -48,7 +49,7 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
 
         var images = await this.GetImages(imageUrls);
 
-        foreach ((var image, var index) in images.Where(x => x.Successful).Select((x, i) => (x, i)))
+        foreach ((var image, var index) in images.Where(x => x.Stream is not null).Select((x, i) => (x, i)))
         {
             var fileName = $"attachment{index}.{Path.GetExtension(image.Uri.AbsolutePath)}";
             var stride = 4 * (index / 4);
@@ -61,8 +62,7 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
 
             messageBuilder.AddEmbed(imageEmbed);
 
-            var stream = images[index];
-            messageBuilder.AddFile(fileName, image.Stream);
+            messageBuilder.AddFile(fileName, image.Stream!);
         }
 
         this.AddNonImageEmbed(urls, embed, messageBuilder);
@@ -95,7 +95,6 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
             return new ImageDownloadResult
             {
                 Uri = uri,
-                Successful = true,
                 Stream = await this._httpClient.GetStreamAsync(uri)
             };
         }
@@ -105,7 +104,6 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
             return new ImageDownloadResult
             {
                 Uri = uri,
-                Successful = false
             };
         }
     }
@@ -147,7 +145,7 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
     private static void AddImagesThatFailedDownload(ImageDownloadResult[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
     {
 
-        var failedFiles = urls.Where(x => !x.Successful).Select(x => Path.GetFileName(x.Uri.AbsolutePath)).ToArray();
+        var failedFiles = urls.Where(x => x.Stream is null).Select(x => Path.GetFileName(x.Uri.AbsolutePath)).ToArray();
         if (failedFiles.Length != 0)
         {
             var imageEmbed = new DiscordEmbedBuilder(embed)
@@ -160,7 +158,6 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
 public class ImageDownloadResult
 {
     public required Uri Uri { get; init; }
-    public required bool Successful { get; init; }
     public Stream? Stream { get; init; }
 
 }

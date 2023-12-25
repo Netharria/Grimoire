@@ -56,7 +56,7 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
             new DeleteMessageCommand
             {
                 Id = args.Message.Id,
-                DeletedByModerator = auditLogEntry?.UserResponsible.Id,
+                DeletedByModerator = auditLogEntry?.UserResponsible?.Id,
                 GuildId = args.Guild.Id
             });
         if (!response.Success || response.LoggingChannel is not ulong loggingChannelId)
@@ -85,7 +85,7 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
             .WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Red)
             .WithThumbnail(avatarUrl);
-        if (auditLogEntry is not null)
+        if (auditLogEntry is not null && auditLogEntry.UserResponsible is not null)
             embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
         if (response.ReferencedMessage is not null)
             embed.WithDescription($"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
