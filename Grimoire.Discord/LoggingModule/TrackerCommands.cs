@@ -25,9 +25,10 @@ public class TrackerCommands(IMediator mediator) : ApplicationCommandModule
         [Option("DurationAmount", "Select the amount of time the logging will last.")] long durationAmount,
         [Option("Channel", "Select the channel to log to. Current channel if left blank.")] DiscordChannel? discordChannel = null)
     {
+        await ctx.DeferAsync();
         if (user.Id == ctx.Client.CurrentUser.Id)
         {
-            await ctx.ReplyAsync(message: "Why would I track myself?");
+            await ctx.EditReplyAsync(message: "Why would I track myself?");
             return;
         }
 
@@ -35,7 +36,7 @@ public class TrackerCommands(IMediator mediator) : ApplicationCommandModule
         {
             if (member.Permissions.HasPermission(Permissions.ManageGuild))
             {
-                await ctx.ReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
+                await ctx.EditReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
                 return;
             }
         }
@@ -45,7 +46,7 @@ public class TrackerCommands(IMediator mediator) : ApplicationCommandModule
 
         if (!ctx.Guild.Channels.ContainsKey(discordChannel.Id))
         {
-            await ctx.ReplyAsync(message: "<_<\n>_>\nThat channel is not on this server.\n Try a different one.");
+            await ctx.EditReplyAsync(message: "<_<\n>_>\nThat channel is not on this server.\n Try a different one.");
             return;
         }
 
@@ -63,7 +64,7 @@ public class TrackerCommands(IMediator mediator) : ApplicationCommandModule
                 ModeratorId = ctx.Member.Id,
             });
 
-        await ctx.ReplyAsync(message: $"Tracker placed on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}", ephemeral: false);
+        await ctx.EditReplyAsync(message: $"Tracker placed on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}");
 
         if (response.ModerationLogId is null) return;
         var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.ModerationLogId.Value);
@@ -78,10 +79,11 @@ public class TrackerCommands(IMediator mediator) : ApplicationCommandModule
     public async Task UnTrackAsync(InteractionContext ctx,
         [Option("User", "User to stop logging.")] DiscordUser member)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new RemoveTrackerCommand{ UserId = member.Id, GuildId = ctx.Guild.Id});
 
 
-        await ctx.ReplyAsync(message: $"Tracker removed from {member.Mention}", ephemeral: false);
+        await ctx.EditReplyAsync(message: $"Tracker removed from {member.Mention}");
 
         if (response.ModerationLogId is null) return;
         var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.ModerationLogId.Value);

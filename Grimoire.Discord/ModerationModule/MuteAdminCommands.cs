@@ -25,6 +25,7 @@ public partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAdminComm
     [SlashCommand("View", "View the current configured mute role and any active mutes.")]
     public async Task ViewMutesAsync(InteractionContext ctx)
     {
+        await ctx.DeferAsync(true);
         var response = await this._mediator.Send(new GetAllActiveMutesQuery{ GuildId = ctx.Guild.Id });
 
         DiscordRole? role = null;
@@ -46,8 +47,7 @@ public partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAdminComm
             embed.AddField("Muted Users", "None");
 
 
-        await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder()
-            .AddEmbed(embed));
+        await ctx.EditReplyAsync(embed: embed);
     }
 
     [SlashCommand("Set", "Sets the role that is used for muting users.")]
@@ -55,20 +55,21 @@ public partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAdminComm
         InteractionContext ctx,
         [Option("Role", "The role to use for muting")] DiscordRole role)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new SetMuteRoleCommand
         {
             Role = role.Id,
             GuildId = ctx.Guild.Id
         });
 
-        await ctx.ReplyAsync(message: $"Will now use role {role.Mention} for muting users.", ephemeral: false);
+        await ctx.EditReplyAsync(message: $"Will now use role {role.Mention} for muting users.");
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.Member.Mention} updated the mute role to {role.Mention}");
     }
 
     [SlashCommand("Create", "Creates a new role to be use for muting users and set permissions in all channels.")]
     public async Task CreateMuteRoleAsync(InteractionContext ctx)
     {
-        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        await ctx.DeferAsync();
         var role = await ctx.Guild.CreateRoleAsync("Muted");
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: $"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration.");
@@ -101,7 +102,7 @@ public partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAdminComm
     [SlashCommand("Refresh", "Refreshes the permissions of the currently configured mute role.")]
     public async Task RefreshMuteRoleAsync(InteractionContext ctx)
     {
-        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        await ctx.DeferAsync();
 
         var response = await this._mediator.Send(new GetMuteRoleQuery
         {

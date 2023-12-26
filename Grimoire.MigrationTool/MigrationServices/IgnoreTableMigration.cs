@@ -9,7 +9,7 @@ using Grimoire.Domain;
 using Grimoire.MigrationTool.Domain;
 
 namespace Grimoire.MigrationTool.MigrationServices;
-internal class IgnoreTableMigration
+internal sealed class IgnoreTableMigration
 {
     public static async Task MigrateIgnoreEntriesAsync()
     {

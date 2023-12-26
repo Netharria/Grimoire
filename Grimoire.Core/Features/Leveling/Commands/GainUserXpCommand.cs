@@ -88,7 +88,7 @@ public sealed record GainUserXpCommandResponse : BaseResponse
     public int PreviousLevel { get; init; }
     public int CurrentLevel { get; init; }
     public ulong? LevelLogChannel { get; init; }
-    public bool Success { get; init; } = false;
+    public bool Success { get; init; }
 }
 
 public sealed record RewardDto

@@ -24,6 +24,7 @@ public class WarnCommands(IMediator mediator) : ApplicationCommandModule
         [MaximumLength(1000)]
         [Option("Reason", "The reason for the warn.")] string reason)
     {
+        await ctx.DeferAsync();
         if (user is not DiscordMember member)
             throw new AnticipatedException("The user supplied is not part of this server.");
         if (ctx.User == user)
@@ -44,7 +45,7 @@ public class WarnCommands(IMediator mediator) : ApplicationCommandModule
             .WithColor(GrimoireColor.Yellow)
             .WithTimestamp(DateTimeOffset.UtcNow);
 
-        await ctx.CreateResponseAsync(embed);
+        await ctx.EditReplyAsync(embed: embed);
 
         try
         {

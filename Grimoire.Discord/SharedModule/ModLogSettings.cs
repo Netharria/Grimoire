@@ -22,24 +22,25 @@ public class ModLogSettings(IMediator mediator) : ApplicationCommandModule
     [SlashCommand("View", "View the current moderation log channel.")]
     public async Task ViewAsync(InteractionContext ctx)
     {
+        await ctx.DeferAsync(true);
         var response = await this._mediator.Send(new GetModLogQuery
         {
             GuildId = ctx.Guild.Id
         });
         if (response.LogChannelId is null)
         {
-            await ctx.ReplyAsync(message: "The moderation log is currently disabled.");
+            await ctx.EditReplyAsync(message: "The moderation log is currently disabled.");
             return;
         }
 
         var channel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
         if (channel is null)
         {
-            await ctx.ReplyAsync(message: $"The current channel({response.LogChannelId}) for the moderation log could not be found. " +
+            await ctx.EditReplyAsync(message: $"The current channel({response.LogChannelId}) for the moderation log could not be found. " +
                 $"The channel might have been deleted.");
             return;
         }
-        await ctx.ReplyAsync(message: $"The current moderation log channel is {channel.Mention}");
+        await ctx.EditReplyAsync(message: $"The current moderation log channel is {channel.Mention}");
     }
 
     [SlashCommand("Set", "Set the moderation log channel.")]
@@ -48,6 +49,7 @@ public class ModLogSettings(IMediator mediator) : ApplicationCommandModule
         [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
         [Option("Channel", "The channel to send to send the logs to.")] DiscordChannel? channel = null)
     {
+        await ctx.DeferAsync();
         channel = ctx.GetChannelOptionAsync(option, channel);
         if (channel is not null)
         {
@@ -62,10 +64,11 @@ public class ModLogSettings(IMediator mediator) : ApplicationCommandModule
         });
         if (option is ChannelOption.Off)
         {
-            await ctx.ReplyAsync(message: $"Disabled the moderation log.", ephemeral: false);
+            await ctx.EditReplyAsync(message: $"Disabled the moderation log.");
             await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the level log.");
+            return;
         }
-        await ctx.ReplyAsync(message: $"Updated the moderation log to {channel?.Mention}", ephemeral: false);
+        await ctx.EditReplyAsync(message: $"Updated the moderation log to {channel?.Mention}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated the moderation log to {channel?.Mention}.");
     }
 }

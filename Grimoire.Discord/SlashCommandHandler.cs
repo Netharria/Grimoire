@@ -81,46 +81,46 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
             foreach (var check in ex.FailedChecks)
             {
                 if (check is SlashRequireGuildAttribute)
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: "You need to be in a server to use this command.");
+                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: "You need to be in a server to use this command.");
 
                 if (check is SlashRequirePermissionsAttribute requirePermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requirePermissions.Permissions).ToString();
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You and {args.Context.Guild.CurrentMember.DisplayName} need {value} permissions to use this command.");
+                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You and {args.Context.Guild.CurrentMember.DisplayName} need {value} permissions to use this command.");
                 }
 
                 if (check is SlashRequireUserPermissionsAttribute requireUserPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireUserPermissions.Permissions).ToString();
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} permissions to use this command.");
+                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} permissions to use this command.");
                 }
                 if (check is SlashRequireUserGuildPermissionsAttribute requireUserGuildPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireUserGuildPermissions.Permissions).ToString();
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} server permissions to use this command.");
+                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} server permissions to use this command.");
                 }
                 if (check is SlashRequireBotPermissionsAttribute requireBotPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireBotPermissions.Permissions).ToString();
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"{args.Context.Guild.CurrentMember.DisplayName} needs {value} permissions to use this command.");
+                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"{args.Context.Guild.CurrentMember.DisplayName} needs {value} permissions to use this command.");
                 }
 
                 if (check is SlashRequireOwnerAttribute)
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need to be {args.Context.Guild.CurrentMember.DisplayName}'s owner to use this command");
+                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need to be {args.Context.Guild.CurrentMember.DisplayName}'s owner to use this command");
 
                 if (check is SlashRequireDirectMessageAttribute)
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need to DM {args.Context.Guild.CurrentMember.DisplayName} to use this command.");
+                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need to DM {args.Context.Guild.CurrentMember.DisplayName} to use this command.");
 
                 if (check is SlashRequireModuleEnabledAttribute requireEnabledPermissions)
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"The {requireEnabledPermissions.Module} module is not enabled.");
+                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"The {requireEnabledPermissions.Module} module is not enabled.");
             }
         else if (args.Exception is AnticipatedException)
         {
-            await args.Context.ReplyAsync(color: GrimoireColor.Yellow, message: args.Exception.Message);
+            await args.Context.EditReplyAsync(color: GrimoireColor.Yellow, message: args.Exception.Message);
         }
         else if (args.Exception is UnauthorizedException)
         {
-            await args.Context.ReplyAsync(color: GrimoireColor.Yellow,
+            await args.Context.EditReplyAsync(color: GrimoireColor.Yellow,
                 message: $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request.");
         }
         else if (args.Exception is not null)
@@ -137,7 +137,7 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
                 log.ToString());
 
 
-            await args.Context.ReplyAsync(color: GrimoireColor.Yellow,
+            await args.Context.EditReplyAsync(color: GrimoireColor.Yellow,
                 message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorHexString}]");
             await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorHexString);
         }

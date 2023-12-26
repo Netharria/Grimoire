@@ -29,6 +29,7 @@ public class MuteCommands(IMediator mediator) : ApplicationCommandModule
         [Option("Reason", "The reason why the user is getting muted.")] string? reason = null
         )
     {
+        await ctx.DeferAsync();
         if (user is not DiscordMember member) throw new AnticipatedException("That user is not on the server.");
         if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
         var response = await this._mediator.Send(new MuteUserCommand
@@ -56,7 +57,7 @@ public class MuteCommands(IMediator mediator) : ApplicationCommandModule
         if (!string.IsNullOrWhiteSpace(reason))
             embed.AddField("Reason", reason);
 
-        await ctx.CreateResponseAsync(embed);
+        await ctx.EditReplyAsync(embed: embed);
 
         try
         {
@@ -85,6 +86,7 @@ public class MuteCommands(IMediator mediator) : ApplicationCommandModule
         InteractionContext ctx,
         [Option("User", "The User to unmute.")] DiscordUser user)
     {
+        await ctx.DeferAsync();
         if (user is not DiscordMember member) throw new AnticipatedException("That user is not on the server.");
         if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
         var response = await this._mediator.Send(new UnmuteUserCommand
@@ -104,7 +106,7 @@ public class MuteCommands(IMediator mediator) : ApplicationCommandModule
             .WithTimestamp(DateTimeOffset.UtcNow);
 
 
-        await ctx.CreateResponseAsync(embed);
+        await ctx.EditReplyAsync(embed: embed);
 
         try
         {

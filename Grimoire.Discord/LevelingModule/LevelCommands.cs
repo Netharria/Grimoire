@@ -26,6 +26,7 @@ public class LevelCommands(IMediator mediator) : ApplicationCommandModule
         InteractionContext ctx,
         [Option("user", "User to get details from. Blank will return your info.")] DiscordUser? user = null)
     {
+        await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
         user ??= ctx.User;
 
         var response = await this._mediator.Send(new GetLevelQuery{ UserId = user.Id, GuildId = ctx.Guild.Id});
@@ -65,8 +66,6 @@ public class LevelCommands(IMediator mediator) : ApplicationCommandModule
             .WithThumbnail(avatarUrl)
             .WithFooter($"{ctx.Guild.Name}", ctx.Guild.IconUrl)
             .Build();
-        await ctx.ReplyAsync(
-            embed: embed,
-            ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
+        await ctx.EditReplyAsync(embed: embed);
     }
 }
