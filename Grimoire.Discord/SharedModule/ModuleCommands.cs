@@ -20,6 +20,7 @@ public class ModuleCommands(IMediator mediator) : ApplicationCommandModule
     [SlashCommand("View", "View the current module states")]
     public async Task ViewAsync(InteractionContext ctx)
     {
+        await ctx.DeferAsync(true);
         var response = await this._mediator.Send(new GetAllModuleStatesForGuildQuery{ GuildId = ctx.Guild.Id});
         await ctx.EditReplyAsync(
             title: "Current states of modules.",
