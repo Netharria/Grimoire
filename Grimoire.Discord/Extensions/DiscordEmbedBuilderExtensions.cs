@@ -20,7 +20,7 @@ public static partial class DiscordEmbedBuilderExtensions
         if (string.IsNullOrWhiteSpace(content) && addBlankField)
             return embedBuilder.AddField(contentType, "`blank`");
         if (!string.IsNullOrWhiteSpace(content))
-        { 
+        {
 
             var splitContent = SplitText().Matches(content).Select(x => x.Value).ToList();
 
@@ -31,7 +31,7 @@ public static partial class DiscordEmbedBuilderExtensions
                 splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
             }
 
-            if(splitContent.TrueForAll(x => x.Length < 1024))
+            if (splitContent.TrueForAll(x => x.Length < 1024))
             {
                 Log.Logger.Warning("Size of element is too large. Trying trim.");
                 splitContent = splitContent.Select(x => x.Trim()).ToList();
