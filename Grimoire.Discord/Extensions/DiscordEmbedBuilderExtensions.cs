@@ -31,12 +31,12 @@ public static partial class DiscordEmbedBuilderExtensions
                 splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
             }
 
-            if (splitContent.TrueForAll(x => x.Length < 1024))
+            if (splitContent.Any(x => x.Length > 1024))
             {
                 Log.Logger.Warning("Size of element is too large. Trying trim.");
                 splitContent = splitContent.Select(x => x.Trim()).ToList();
 
-                if (splitContent.TrueForAll(x => x.Length < 1024))
+                if (splitContent.Any(x => x.Length > 1024))
                 {
                     Log.Logger.Warning("Defaulting to crude embed field splitter because the regex returned a string that was longer than 1024. String lengths {lengths}",
                         string.Join(' ', splitContent.Select(x => $"{x.Length}")));
