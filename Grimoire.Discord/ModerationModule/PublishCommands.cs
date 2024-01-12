@@ -18,7 +18,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashCommandGroup("Publish", "Publishes a ban or unban to the public ban log channel.")]
-public class PublishCommands(IMediator mediator) : ApplicationCommandModule
+public partial class PublishCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -99,7 +99,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
             }
             catch (NotFoundException ex)
             {
-                ctx.Client.Logger.LogWarning(ex, "Could not find published message {id}", response.PublishedMessage);
+                LogPublishedMessageNotFound(ctx.Client.Logger, ex, response.PublishedMessage);
             }
         }
 
@@ -110,4 +110,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
                             $"**Reason:** {response.Reason}")
             .WithColor(GrimoireColor.Purple));
     }
+
+    [LoggerMessage(LogLevel.Warning, "Could not find published message {id}")]
+    private static partial void LogPublishedMessageNotFound(ILogger<BaseDiscordClient> logger, Exception ex, ulong? id);
 }

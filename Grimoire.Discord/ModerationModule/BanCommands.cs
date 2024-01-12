@@ -15,7 +15,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashRequireBotPermissions(Permissions.BanMembers)]
-public class BanCommands(IMediator mediator) : ApplicationCommandModule
+public partial class BanCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -64,7 +64,7 @@ public class BanCommands(IMediator mediator) : ApplicationCommandModule
         catch (Exception ex)
         {
             if (ex is not UnauthorizedException)
-                ctx.Client.Logger.LogWarning(ex, "Was not able to send a direct message to user.");
+                LogFailedDirectMessage(ctx.Client.Logger, ex);
         }
 
         await ctx.Guild.BanMemberAsync(
@@ -83,6 +83,9 @@ public class BanCommands(IMediator mediator) : ApplicationCommandModule
 
         await ctx.EditReplyAsync(embed: embed);
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to send a direct message to user.")]
+    private static partial void LogFailedDirectMessage(ILogger<BaseDiscordClient> logger, Exception ex);
 
     [SlashCommand("Unban", "Bans a user from the server.")]
     public static async Task UnbanAsync(

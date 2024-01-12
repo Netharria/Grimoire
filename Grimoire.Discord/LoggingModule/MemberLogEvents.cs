@@ -17,7 +17,7 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordGuildMemberAddedEventSubscriber]
 [DiscordGuildMemberUpdatedEventSubscriber]
 [DiscordGuildMemberRemovedEventSubscriber]
-internal class MemberLogEvents(IMediator mediator, IInviteService inviteService, IDiscordImageEmbedService imageEmbedService) :
+internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteService, IDiscordImageEmbedService imageEmbedService) :
     IDiscordGuildMemberAddedEventSubscriber,
     IDiscordGuildMemberUpdatedEventSubscriber,
     IDiscordGuildMemberRemovedEventSubscriber

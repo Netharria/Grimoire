@@ -18,7 +18,7 @@ namespace Grimoire.Discord.ModerationModule;
 [DiscordMessageCreatedEventSubscriber]
 [DiscordMessageReactionAddedEventSubscriber]
 [DiscordGuildMemberAddedEventSubscriber]
-public class ModerationEvents(IMediator mediator) :
+public partial class ModerationEvents(IMediator mediator) :
     IDiscordGuildBanAddedEventSubscriber,
     IDiscordGuildBanRemovedEventSubscriber,
     IDiscordMessageCreatedEventSubscriber,
@@ -57,7 +57,7 @@ public class ModerationEvents(IMediator mediator) :
             ex is UnauthorizedException
             || ex is ServerErrorException)
             {
-                sender.Logger.Log(LogLevel.Information, ex, "Got exception when trying to access the audit log. Message: {},", ex.Message);
+                LogAuditException(sender.Logger, ex);
             }
             await this._mediator.Send(addBanCommand);
 
@@ -85,6 +85,9 @@ public class ModerationEvents(IMediator mediator) :
 
         await loggingChannel.SendMessageAsync(embed);
     }
+
+    [LoggerMessage(LogLevel.Information, "Exception while accessing audit log.")]
+    private static partial void LogAuditException(ILogger<BaseDiscordClient> logger, Exception ex);
 
     public async Task DiscordOnGuildBanRemoved(DiscordClient sender, GuildBanRemoveEventArgs args)
     {

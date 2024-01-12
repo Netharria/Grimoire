@@ -16,7 +16,7 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordMessageDeletedEventSubscriber]
 [DiscordMessagesBulkDeletedEventSubscriber]
 [DiscordMessageUpdatedEventSubscriber]
-public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService) :
+public partial class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService) :
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageDeletedEventSubscriber,
     IDiscordMessagesBulkDeletedEventSubscriber,
@@ -105,10 +105,13 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
         }
         catch (Exception ex)
         {
-            sender.Logger.Log(LogLevel.Warning, "Was not able to send delete message log to {ChannelName} : {Exception}", loggingChannel, ex);
+            LogUnableToSendDeleteMessage(sender.Logger, ex, loggingChannel);
             throw;
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to send delete message log to {Channel}")]
+    private static partial void LogUnableToSendDeleteMessage(ILogger<BaseDiscordClient> logger, Exception ex, DiscordChannel channel);
 
     public async Task DiscordOnMessagesBulkDeleted(DiscordClient sender, MessageBulkDeleteEventArgs args)
     {
@@ -161,10 +164,13 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
         }
         catch (Exception ex)
         {
-            sender.Logger.Log(LogLevel.Warning, "Was not able to send bulk delete message log to {ChannelName} : {Exception}", loggingChannel, ex);
+            LogUnableToSendBulkDeleteMessage(sender.Logger, ex, loggingChannel);
             throw;
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to send bulk delete message log to {Channel}")]
+    private static partial void LogUnableToSendBulkDeleteMessage(ILogger<BaseDiscordClient> logger, Exception ex, DiscordChannel channel);
 
     public async Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args)
     {
@@ -238,8 +244,11 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
         }
         catch (Exception ex)
         {
-            sender.Logger.Log(LogLevel.Warning, "Was not able to send edit message log to {ChannelName} : {Exception}", loggingChannel, ex);
+            LogUnableToSendEditMessage(sender.Logger, ex, loggingChannel);
             throw;
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to send edit message log to {Channel}")]
+    private static partial void LogUnableToSendEditMessage(ILogger<BaseDiscordClient> logger, Exception ex, DiscordChannel channel);
 }

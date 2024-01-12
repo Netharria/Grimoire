@@ -12,7 +12,7 @@ namespace Grimoire.Discord.Attributes;
 /// </summary>
 /// <param name="permissions">Permissions required to execute this command.</param>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-internal class SlashRequireUserGuildPermissionsAttribute(Permissions permissions) : SlashCheckBaseAttribute
+internal sealed class SlashRequireUserGuildPermissionsAttribute(Permissions permissions) : SlashCheckBaseAttribute
 {
     /// <summary>
     /// Gets the permissions required by this attribute.

@@ -61,5 +61,5 @@ public sealed record UpdateMessageCommandResponse : BaseResponse
     public ulong? UpdateMessageLogChannelId { get; init; }
     public string MessageContent { get; init; } = string.Empty;
     public ulong UserId { get; init; }
-    public bool Success { get; init; } = false;
+    public bool Success { get; init; }
 }
