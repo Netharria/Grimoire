@@ -14,7 +14,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserPermissions(Permissions.ManageMessages)]
 [SlashRequireBotPermissions(Permissions.ManageChannels)]
-public class LockCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LockCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 

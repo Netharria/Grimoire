@@ -14,7 +14,7 @@ public sealed record SetAutoPardonCommand : ICommand<BaseResponse>
 }
 
 
-public class SetAutoPardonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetAutoPardonCommand, BaseResponse>
+public sealed class SetAutoPardonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetAutoPardonCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

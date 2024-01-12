@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.MigrationTool.MigrationServices;
 
-public class AnubisMigrationService(AnubisDbContext anubisContext)
+internal sealed class AnubisMigrationService(AnubisDbContext anubisContext)
 {
     private readonly AnubisDbContext _anubisContext = anubisContext;
 

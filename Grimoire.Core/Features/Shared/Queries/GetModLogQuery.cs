@@ -9,12 +9,12 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Shared.Queries;
 
-public class GetModLogQuery : IQuery<BaseResponse>
+public sealed record GetModLogQuery : IQuery<BaseResponse>
 {
     public ulong GuildId { get; init; }
 }
 
-public class GetModLogQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetModLogQuery, BaseResponse>
+public sealed class GetModLogQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetModLogQuery, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

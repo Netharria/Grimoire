@@ -22,7 +22,7 @@ public interface IUpdateIgnoreForXpGain : ICommand<BaseResponse>
 }
 
 
-public sealed class AddIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
+public sealed record AddIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
 {
     public ulong GuildId { get; init; }
     public UserDto[] Users { get; set; } = [];
@@ -31,7 +31,7 @@ public sealed class AddIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
     public string[] InvalidIds { get; set; } = [];
 }
 
-public class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddIgnoreForXpGainCommand, BaseResponse>
+public sealed class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddIgnoreForXpGainCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

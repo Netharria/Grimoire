@@ -12,7 +12,7 @@ using Serilog;
 
 namespace Grimoire.MigrationTool.Domain;
 
-public class FuzzyDbContext : DbContext
+internal sealed class FuzzyDbContext : DbContext
 {
     public string? DbPath;
 

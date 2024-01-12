@@ -14,7 +14,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserPermissions(Permissions.ManageMessages)]
-public class WarnCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class WarnCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 

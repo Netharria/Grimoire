@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class OldLogMessageConfiguration : IEntityTypeConfiguration<OldLogMessage>
+internal sealed class OldLogMessageConfiguration : IEntityTypeConfiguration<OldLogMessage>
 {
     public void Configure(EntityTypeBuilder<OldLogMessage> builder)
     {

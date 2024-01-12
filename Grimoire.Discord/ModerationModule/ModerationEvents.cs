@@ -18,7 +18,7 @@ namespace Grimoire.Discord.ModerationModule;
 [DiscordMessageCreatedEventSubscriber]
 [DiscordMessageReactionAddedEventSubscriber]
 [DiscordGuildMemberAddedEventSubscriber]
-public partial class ModerationEvents(IMediator mediator) :
+public sealed partial class ModerationEvents(IMediator mediator) :
     IDiscordGuildBanAddedEventSubscriber,
     IDiscordGuildBanRemovedEventSubscriber,
     IDiscordMessageCreatedEventSubscriber,

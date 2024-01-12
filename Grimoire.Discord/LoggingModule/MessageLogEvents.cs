@@ -16,7 +16,7 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordMessageDeletedEventSubscriber]
 [DiscordMessagesBulkDeletedEventSubscriber]
 [DiscordMessageUpdatedEventSubscriber]
-public partial class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService) :
+public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService) :
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageDeletedEventSubscriber,
     IDiscordMessagesBulkDeletedEventSubscriber,

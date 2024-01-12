@@ -18,7 +18,7 @@ public sealed record AddRewardCommand : ICommand<BaseResponse>
     public string? Message { get; init; }
 }
 
-public class AddRewardCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddRewardCommand, BaseResponse>
+public sealed class AddRewardCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddRewardCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

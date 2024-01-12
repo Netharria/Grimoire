@@ -11,7 +11,7 @@ public sealed record DeleteOldMessagesCommand : ICommand
 {
 }
 
-public class DeleteOldMessagesCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteOldMessagesCommand>
+public sealed class DeleteOldMessagesCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteOldMessagesCommand>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

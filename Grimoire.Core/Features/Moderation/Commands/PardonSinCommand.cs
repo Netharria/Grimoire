@@ -17,7 +17,7 @@ public sealed record PardonSinCommand : ICommand<PardonSinCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public class PardonSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<PardonSinCommand, PardonSinCommandResponse>
+public sealed class PardonSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<PardonSinCommand, PardonSinCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

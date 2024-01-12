@@ -16,7 +16,7 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
-public class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 

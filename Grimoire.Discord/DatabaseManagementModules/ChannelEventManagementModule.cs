@@ -17,7 +17,7 @@ namespace Grimoire.Discord.DatabaseManagementModules;
 [DiscordChannelDeletedEventSubscriber]
 [DiscordThreadCreatedEventSubscriber]
 [DiscordThreadDeletedEventSubscriber]
-public class ChannelEventManagementModule(IMediator mediator) :
+internal sealed class ChannelEventManagementModule(IMediator mediator) :
     IDiscordChannelCreatedEventSubscriber,
     IDiscordChannelDeletedEventSubscriber,
     IDiscordThreadCreatedEventSubscriber,

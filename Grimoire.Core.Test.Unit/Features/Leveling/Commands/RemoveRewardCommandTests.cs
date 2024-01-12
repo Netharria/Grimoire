@@ -17,7 +17,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands;
 
 [Collection("Test collection")]
-public class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()

@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class LogBackgroundTasks(IServiceProvider serviceProvider, ILogger<LogBackgroundTasks> logger)
+internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogger<LogBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromMinutes(1))
 {
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)

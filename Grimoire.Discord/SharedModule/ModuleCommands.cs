@@ -13,7 +13,7 @@ namespace Grimoire.Discord.SharedModule;
 [SlashCommandGroup("Modules", "Enables or Disables the modules")]
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class ModuleCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class ModuleCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 

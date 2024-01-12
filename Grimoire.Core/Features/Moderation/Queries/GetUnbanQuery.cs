@@ -13,7 +13,7 @@ public sealed record GetUnbanQuery : IRequest<GetBanQueryResponse>
     public ulong GuildId { get; init; }
 }
 
-public class GetUnbanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetUnbanQuery, GetBanQueryResponse>
+public sealed class GetUnbanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetUnbanQuery, GetBanQueryResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

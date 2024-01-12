@@ -17,7 +17,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireBotPermissions(Permissions.ManageRoles)]
 [SlashCommandGroup("Mutes", "Manages the mute role settings.")]
-public partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAdminCommands> logger) : ApplicationCommandModule
+public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAdminCommands> logger) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
     private readonly ILogger _logger = logger;

@@ -19,7 +19,7 @@ public interface IDiscordImageEmbedService
     Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed, bool displayFileNames = true);
 }
 
-public partial class DiscordImageEmbedService : IDiscordImageEmbedService
+public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
 {
 
     private readonly HttpClient _httpClient;
@@ -155,7 +155,7 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
     }
 }
 
-public class ImageDownloadResult
+internal sealed class ImageDownloadResult
 {
     public required Uri Uri { get; init; }
     public Stream? Stream { get; init; }

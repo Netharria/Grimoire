@@ -13,7 +13,7 @@ public sealed record RemoveTrackerCommand : ICommand<RemoveTrackerCommandRespons
     public ulong GuildId { get; init; }
 }
 
-public class RemoveTrackerCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveTrackerCommand, RemoveTrackerCommandResponse>
+public sealed class RemoveTrackerCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveTrackerCommand, RemoveTrackerCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -14,7 +14,7 @@ public sealed record GetAllModuleStatesForGuildQuery : IRequest<GetAllModuleStat
     public ulong GuildId { get; init; }
 }
 
-public class GetAllModuleStatesForGuildQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetAllModuleStatesForGuildQuery, GetAllModuleStatesForGuildQueryResponse>
+public sealed class GetAllModuleStatesForGuildQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetAllModuleStatesForGuildQuery, GetAllModuleStatesForGuildQueryResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

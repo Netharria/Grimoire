@@ -18,7 +18,7 @@ public sealed record AwardUserXpCommand : ICommand<BaseResponse>
     public ulong? AwarderId { get; init; }
 }
 
-public class AwardUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AwardUserXpCommand, BaseResponse>
+public sealed class AwardUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AwardUserXpCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

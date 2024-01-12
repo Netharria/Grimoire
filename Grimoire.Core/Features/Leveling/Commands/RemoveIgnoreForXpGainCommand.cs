@@ -11,7 +11,7 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Commands;
 
-public sealed class RemoveIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
+public sealed record RemoveIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
 {
     public ulong GuildId { get; init; }
     public UserDto[] Users { get; set; } = [];
@@ -20,7 +20,7 @@ public sealed class RemoveIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
     public string[] InvalidIds { get; set; } = [];
 }
 
-public class RemoveIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveIgnoreForXpGainCommand, BaseResponse>
+public sealed class RemoveIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveIgnoreForXpGainCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

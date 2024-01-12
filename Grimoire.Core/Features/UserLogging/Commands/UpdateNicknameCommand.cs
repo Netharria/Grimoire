@@ -16,7 +16,7 @@ public sealed record UpdateNicknameCommand : ICommand<UpdateNicknameCommandRespo
     public string? Nickname { get; init; }
 }
 
-public class UpdateNicknameCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateNicknameCommand, UpdateNicknameCommandResponse?>
+public sealed class UpdateNicknameCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateNicknameCommand, UpdateNicknameCommandResponse?>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -14,7 +14,7 @@ public sealed record GetBanQuery : IRequest<GetBanQueryResponse>
 }
 
 
-public class GetBanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetBanQuery, GetBanQueryResponse>
+public sealed class GetBanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetBanQuery, GetBanQueryResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

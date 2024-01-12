@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Fuzzy;
 
 [Table("pardons")]
-public class Pardon
+internal sealed class Pardon
 {
     [Key]
     [Column("infraction_id")]

@@ -16,7 +16,7 @@ public sealed record DeleteMessageCommand : ICommand<DeleteMessageCommandRespons
     public ulong? DeletedByModerator { get; init; }
 }
 
-public class DeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteMessageCommand, DeleteMessageCommandResponse>
+public sealed class DeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteMessageCommand, DeleteMessageCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

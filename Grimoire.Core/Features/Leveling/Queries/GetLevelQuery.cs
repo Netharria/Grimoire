@@ -16,7 +16,7 @@ public sealed record GetLevelQuery : IRequest<GetLevelQueryResponse>
     public ulong GuildId { get; init; }
 }
 
-public class GetLevelQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetLevelQuery, GetLevelQueryResponse>
+public sealed class GetLevelQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetLevelQuery, GetLevelQueryResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

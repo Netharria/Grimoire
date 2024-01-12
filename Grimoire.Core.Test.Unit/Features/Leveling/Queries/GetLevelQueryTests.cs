@@ -17,7 +17,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries;
 
 [Collection("Test collection")]
-public class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()

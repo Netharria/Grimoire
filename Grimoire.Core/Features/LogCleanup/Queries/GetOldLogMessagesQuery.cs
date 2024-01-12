@@ -9,7 +9,7 @@ namespace Grimoire.Core.Features.LogCleanup.Queries;
 
 public sealed record GetOldLogMessagesQuery : IRequest<IEnumerable<GetOldLogMessagesQueryResponse>> { }
 
-public class GetOldLogMessagesQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetOldLogMessagesQuery, IEnumerable<GetOldLogMessagesQueryResponse>>
+public sealed class GetOldLogMessagesQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetOldLogMessagesQuery, IEnumerable<GetOldLogMessagesQueryResponse>>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

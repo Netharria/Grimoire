@@ -9,13 +9,13 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Queries;
 
-public class GetUserMuteQuery : IQuery<ulong?>
+public sealed record GetUserMuteQuery : IQuery<ulong?>
 {
     public ulong UserId { get; set; }
     public ulong GuildId { get; set; }
 }
 
-public class GetUserMuteQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserMuteQuery, ulong?>
+public sealed class GetUserMuteQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserMuteQuery, ulong?>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

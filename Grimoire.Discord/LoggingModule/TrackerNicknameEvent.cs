@@ -10,7 +10,7 @@ using Grimoire.Discord.Notifications;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerNicknameEvent(IDiscordClientService clientService, IMediator mediator) : INotificationHandler<NicknameTrackerNotification>
+internal sealed class TrackerNicknameEvent(IDiscordClientService clientService, IMediator mediator) : INotificationHandler<NicknameTrackerNotification>
 {
     private readonly IDiscordClientService _clientService = clientService;
     private readonly IMediator _mediator = mediator;

@@ -16,7 +16,7 @@ public sealed record GetLeaderboardQuery : IRequest<GetLeaderboardQueryResponse>
     public ulong? UserId { get; init; }
 }
 
-public class GetLeaderboardQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetLeaderboardQuery, GetLeaderboardQueryResponse>
+public sealed class GetLeaderboardQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetLeaderboardQuery, GetLeaderboardQueryResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -20,7 +20,7 @@ public sealed record DeleteMessageResult
     public ulong MessageId { get; init; }
 }
 
-public class DeleteOldLogMessagesCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteOldLogMessagesCommand>
+public sealed class DeleteOldLogMessagesCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteOldLogMessagesCommand>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

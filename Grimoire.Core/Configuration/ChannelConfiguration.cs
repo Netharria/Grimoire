@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class ChannelConfiguration : IEntityTypeConfiguration<Channel>
+internal sealed class ChannelConfiguration : IEntityTypeConfiguration<Channel>
 {
     public void Configure(EntityTypeBuilder<Channel> builder)
     {

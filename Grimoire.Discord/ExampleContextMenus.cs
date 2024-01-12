@@ -8,7 +8,7 @@
 using DSharpPlus.Interactivity.Extensions;
 
 namespace Grimoire.Discord;
-public class ExampleContextMenus : ApplicationCommandModule
+internal sealed class ExampleContextMenus : ApplicationCommandModule
 {
     [ContextMenu(ApplicationCommandType.MessageContextMenu, "Delete")]
     public static async Task DeleteMessageAsync(ContextMenuContext ctx)

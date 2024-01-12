@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands;
 
-public record LockChannelCommand : ICommand<BaseResponse>
+public sealed record LockChannelCommand : ICommand<BaseResponse>
 {
     public ulong ChannelId { get; init; }
     public long PreviouslyAllowed { get; init; }
@@ -19,7 +19,7 @@ public record LockChannelCommand : ICommand<BaseResponse>
     public long DurationAmount { get; init; }
 }
 
-public class LockChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<LockChannelCommand, BaseResponse>
+public sealed class LockChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<LockChannelCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Shared.SharedDtos;
 
-public class MessageDto
+public sealed record MessageDto
 {
     public ulong UserId { get; init; }
     public ulong ChannelId { get; init; }

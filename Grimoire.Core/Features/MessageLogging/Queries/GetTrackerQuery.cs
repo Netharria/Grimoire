@@ -15,7 +15,7 @@ public sealed record GetTrackerQuery : IRequest<GetTrackerQueryResponse?>
     public ulong GuildId { get; init; }
 }
 
-public class GetTrackerQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetTrackerQuery, GetTrackerQueryResponse?>
+public sealed class GetTrackerQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetTrackerQuery, GetTrackerQueryResponse?>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -7,6 +7,6 @@
 
 namespace Grimoire.Core.Exceptions;
 
-public class AnticipatedException(string message) : Exception(message)
+public sealed class AnticipatedException(string message) : Exception(message)
 {
 }

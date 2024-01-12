@@ -16,7 +16,7 @@ public sealed record GetIgnoredItemsQuery : IRequest<BaseResponse>
     public ulong GuildId { get; init; }
 }
 
-public class GetIgnoredItemsQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetIgnoredItemsQuery, BaseResponse>
+public sealed class GetIgnoredItemsQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetIgnoredItemsQuery, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

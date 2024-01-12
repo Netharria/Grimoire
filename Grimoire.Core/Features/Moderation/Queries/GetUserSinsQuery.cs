@@ -18,14 +18,14 @@ public enum SinQueryType
     All,
     Mod
 }
-public record GetUserSinsQuery : IQuery<GetUserSinsQueryResponse>
+public sealed record GetUserSinsQuery : IQuery<GetUserSinsQueryResponse>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
     public SinQueryType SinQueryType { get; init; }
 }
 
-public class GetUserSinsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
+public sealed class GetUserSinsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -82,7 +82,7 @@ public class GetUserSinsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQu
     }
 }
 
-public record GetUserSinsQueryResponse : BaseResponse
+public sealed record GetUserSinsQueryResponse : BaseResponse
 {
     public string[] SinList { get; init; } = [];
 }

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
 
-public class MuteBackgroundTasks(IServiceProvider serviceProvider, ILogger<MuteBackgroundTasks> logger)
+internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILogger<MuteBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)

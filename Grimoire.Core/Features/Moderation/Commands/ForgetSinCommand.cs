@@ -15,7 +15,7 @@ public sealed record ForgetSinCommand : ICommand<ForgetSinCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public class ForgetSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
+public sealed class ForgetSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

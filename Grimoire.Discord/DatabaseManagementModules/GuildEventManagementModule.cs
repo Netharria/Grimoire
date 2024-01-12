@@ -20,7 +20,7 @@ namespace Grimoire.Discord.DatabaseManagementModules;
 [DiscordGuildCreatedEventSubscriber]
 [DiscordInviteCreatedEventSubscriber]
 [DiscordInviteDeletedEventSubscriber]
-public partial class GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger<GuildEventManagementModule> logger) :
+public sealed partial class GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger<GuildEventManagementModule> logger) :
     IDiscordGuildDownloadCompletedEventSubscriber,
     IDiscordGuildCreatedEventSubscriber,
     IDiscordInviteCreatedEventSubscriber,

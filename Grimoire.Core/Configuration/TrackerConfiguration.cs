@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
+internal sealed class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
 {
     public void Configure(EntityTypeBuilder<Tracker> builder)
     {

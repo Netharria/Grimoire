@@ -7,9 +7,9 @@
 
 namespace Grimoire.Discord.ModerationModule;
 
-public partial class MuteAdminCommands
+public sealed partial class MuteAdminCommands
 {
-    public class OverwriteChannelResult
+    internal sealed class OverwriteChannelResult
     {
         public required bool WasSuccessful { get; init; }
         public required DiscordChannel Channel { get; init; }

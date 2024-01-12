@@ -17,11 +17,11 @@ namespace Grimoire.Discord.LoggingModule;
 [SlashCommandGroup("Log", "View or change the settings of the Logging Modules.")]
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class LogSettingsCommands : ApplicationCommandModule
+internal sealed class LogSettingsCommands : ApplicationCommandModule
 {
     [SlashRequireModuleEnabled(Module.UserLog)]
     [SlashCommandGroup("User", "View or change the User Log Module Settings.")]
-    public class UserLogSettingsCommands(IMediator mediator) : ApplicationCommandModule
+    internal sealed class UserLogSettingsCommands(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;
 
@@ -100,7 +100,7 @@ public class LogSettingsCommands : ApplicationCommandModule
 
     [SlashCommandGroup("Message", "View or change the Message Log Module Settings.")]
     [SlashRequireModuleEnabled(Module.MessageLog)]
-    public class MessageLogSettingsCommands(IMediator mediator) : ApplicationCommandModule
+    internal sealed class MessageLogSettingsCommands(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;
 

@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Shared.SharedDtos;
 
-public class GuildDto
+public sealed record GuildDto
 {
     public ulong Id { get; init; }
 }

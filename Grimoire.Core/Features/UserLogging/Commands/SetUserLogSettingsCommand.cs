@@ -23,7 +23,7 @@ public enum UserLogSetting
 }
 
 
-public class SetUserLogSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetUserLogSettingsCommand, BaseResponse>
+public sealed class SetUserLogSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetUserLogSettingsCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

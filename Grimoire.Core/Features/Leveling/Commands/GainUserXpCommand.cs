@@ -18,7 +18,7 @@ public sealed record GainUserXpCommand : ICommand<GainUserXpCommandResponse>
     public ulong[] RoleIds { get; init; } = [];
 }
 
-public class GainUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<GainUserXpCommand, GainUserXpCommandResponse>
+public sealed class GainUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<GainUserXpCommand, GainUserXpCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

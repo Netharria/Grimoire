@@ -15,7 +15,7 @@ public sealed record GetRewardsQuery : IRequest<BaseResponse>
 }
 
 
-public class GetRewardsQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetRewardsQuery, BaseResponse>
+public sealed class GetRewardsQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetRewardsQuery, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

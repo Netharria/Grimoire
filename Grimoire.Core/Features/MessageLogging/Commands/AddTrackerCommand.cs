@@ -18,7 +18,7 @@ public sealed record AddTrackerCommand : ICommand<AddTrackerCommandResponse>
     public ulong ModeratorId { get; init; }
 }
 
-public class AddTrackerCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddTrackerCommand, AddTrackerCommandResponse>
+public sealed class AddTrackerCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddTrackerCommand, AddTrackerCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger<TrackerBackgroundTasks> logger)
+internal sealed class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger<TrackerBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
 

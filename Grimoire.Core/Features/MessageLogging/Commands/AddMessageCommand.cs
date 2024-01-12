@@ -20,7 +20,7 @@ public sealed record AddMessageCommand : ICommand
     public ulong GuildId { get; init; }
 }
 
-public class AddMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddMessageCommand>
+public sealed class AddMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddMessageCommand>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

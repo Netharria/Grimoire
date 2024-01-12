@@ -23,7 +23,7 @@ namespace Grimoire.Discord;
 /// <param name="logger"></param>
 [DiscordSlashCommandsEventsSubscriber]
 [DiscordClientErroredEventSubscriber]
-public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration) : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber
+public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration) : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber
 {
     private readonly ILogger<SlashCommandHandler> _logger = logger;
     private readonly IConfiguration _configuration = configuration;

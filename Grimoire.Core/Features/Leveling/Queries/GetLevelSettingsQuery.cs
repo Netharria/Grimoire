@@ -12,7 +12,7 @@ public sealed record GetLevelSettingsQuery : IRequest<GetLevelSettingsQueryRespo
     public ulong GuildId { get; init; }
 }
 
-public class GetLevelSettingsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetLevelSettingsQuery, GetLevelSettingsQueryResponse>
+public sealed class GetLevelSettingsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetLevelSettingsQuery, GetLevelSettingsQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -20,7 +20,7 @@ public enum MessageLogSetting
     EditLog
 }
 
-public class SetMessageLogSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMessageLogSettingsCommand, BaseResponse>
+public sealed class SetMessageLogSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMessageLogSettingsCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

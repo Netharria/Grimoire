@@ -13,7 +13,7 @@ public sealed record SetMuteRoleCommand : ICommand<BaseResponse>
     public ulong GuildId { get; init; }
 }
 
-public class SetMuteRoleCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMuteRoleCommand, BaseResponse>
+public sealed class SetMuteRoleCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMuteRoleCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

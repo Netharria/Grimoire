@@ -12,7 +12,7 @@ public sealed record DeleteChannelCommand : ICommand
     public ulong ChannelId { get; init; }
 }
 
-public class DeleteChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteChannelCommand>
+public sealed class DeleteChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteChannelCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

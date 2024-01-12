@@ -15,7 +15,7 @@ public sealed record UnmuteUserCommand : ICommand<UnmuteUserCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public class UnmuteUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
+public sealed class UnmuteUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -7,7 +7,7 @@
 
 namespace Grimoire.Core.Features.Shared.SharedDtos;
 
-public class UserDto
+public sealed record UserDto
 {
     public ulong Id { get; init; }
     public string Username { get; init; } = string.Empty;

@@ -25,7 +25,7 @@ public sealed record ReclaimUserXpCommand : ICommand<ReclaimUserXpCommandRespons
     public ulong? ReclaimerId { get; init; }
 }
 
-public class ReclaimUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<ReclaimUserXpCommand, ReclaimUserXpCommandResponse>
+public sealed class ReclaimUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<ReclaimUserXpCommand, ReclaimUserXpCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

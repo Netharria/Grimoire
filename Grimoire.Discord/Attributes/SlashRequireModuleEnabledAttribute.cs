@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Discord.Attributes;
 
-public class SlashRequireModuleEnabledAttribute(Module module) : SlashCheckBaseAttribute
+internal sealed class SlashRequireModuleEnabledAttribute(Module module) : SlashCheckBaseAttribute
 {
     public Module Module = module;
 

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Core.Configuration;
 
-public class NicknameHistoryConfiguration : IEntityTypeConfiguration<NicknameHistory>
+internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<NicknameHistory>
 {
     public void Configure(EntityTypeBuilder<NicknameHistory> builder)
     {

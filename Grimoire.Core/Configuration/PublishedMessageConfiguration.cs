@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class PublishedMessageConfiguration : IEntityTypeConfiguration<PublishedMessage>
+internal sealed class PublishedMessageConfiguration : IEntityTypeConfiguration<PublishedMessage>
 {
     public void Configure(EntityTypeBuilder<PublishedMessage> builder)
     {

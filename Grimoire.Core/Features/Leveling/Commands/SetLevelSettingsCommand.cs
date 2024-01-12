@@ -23,7 +23,7 @@ public enum LevelSettings
 }
 
 
-public class SetLevelSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
+public sealed class SetLevelSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

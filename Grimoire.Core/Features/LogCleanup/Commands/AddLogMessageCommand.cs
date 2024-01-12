@@ -7,14 +7,14 @@
 
 namespace Grimoire.Core.Features.LogCleanup.Commands;
 
-public record AddLogMessageCommand : ICommand
+public sealed record AddLogMessageCommand : ICommand
 {
     public ulong ChannelId { get; init; }
     public ulong MessageId { get; init; }
     public ulong GuildId { get; init; }
 }
 
-public class AddLogMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddLogMessageCommand>
+public sealed class AddLogMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddLogMessageCommand>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Lumberjack;
 
 [Table("log_channels")]
-public record LogChannelSettings
+public sealed record LogChannelSettings
 {
     [Key]
     [Column("guildid")]

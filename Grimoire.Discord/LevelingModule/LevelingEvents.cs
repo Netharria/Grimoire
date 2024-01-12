@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace Grimoire.Discord.LevelingModule;
 
 [DiscordMessageCreatedEventSubscriber]
-public partial class LevelingEvents(IMediator mediator, ILogger<LevelingEvents> logger) : IDiscordMessageCreatedEventSubscriber
+public sealed partial class LevelingEvents(IMediator mediator, ILogger<LevelingEvents> logger) : IDiscordMessageCreatedEventSubscriber
 {
     private readonly IMediator _mediator = mediator;
     private readonly ILogger _logger = logger;

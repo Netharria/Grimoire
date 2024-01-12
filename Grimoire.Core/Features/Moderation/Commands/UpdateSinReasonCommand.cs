@@ -16,7 +16,7 @@ public sealed record UpdateSinReasonCommand : ICommand<UpdateSinReasonCommandRes
     public ulong GuildId { get; init; }
 }
 
-public class UpdateSinReasonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
+public sealed class UpdateSinReasonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

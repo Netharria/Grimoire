@@ -12,7 +12,7 @@ namespace Grimoire.Discord.LevelingModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 

@@ -17,7 +17,7 @@ public sealed record AddMemberCommand : ICommand
 }
 
 
-public class AddMemberCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddMemberCommand>
+public sealed class AddMemberCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddMemberCommand>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

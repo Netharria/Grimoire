@@ -7,13 +7,13 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries;
 
-public record GetLockQuery : IQuery<bool>
+public sealed record GetLockQuery : IQuery<bool>
 {
     public ulong ChannelId { get; init; }
     public ulong GuildId { get; init; }
 }
 
-public class GetLockQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetLockQuery, bool>
+public sealed class GetLockQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetLockQuery, bool>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

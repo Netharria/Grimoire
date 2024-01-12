@@ -10,13 +10,13 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Shared.Commands;
 
-public class SetModLogCommand : ICommand<BaseResponse>
+public sealed record SetModLogCommand : ICommand<BaseResponse>
 {
     public ulong GuildId { get; init; }
     public ulong? ChannelId { get; init; }
 }
 
-public class SetModLogCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetModLogCommand, BaseResponse>
+public sealed class SetModLogCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetModLogCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

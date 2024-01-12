@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.ModerationModule;
 
-public class LockBackgroundTasks(IServiceProvider serviceProvider, ILogger<LockBackgroundTasks> logger)
+internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILogger<LockBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
 

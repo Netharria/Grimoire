@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Anubis;
 
 [Table("level_settings")]
-public record LevelSettings
+public sealed record LevelSettings
 {
     [Key]
     [Column("guild_id")]

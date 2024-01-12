@@ -14,7 +14,7 @@ using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Grimoire.Core.Test.Unit;
-public class GrimoireCoreFactory : IAsyncLifetime
+public sealed class GrimoireCoreFactory : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgreSqlContainer =
         new PostgreSqlBuilder()
