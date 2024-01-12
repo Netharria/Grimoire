@@ -20,8 +20,9 @@ public class ModuleCommands(IMediator mediator) : ApplicationCommandModule
     [SlashCommand("View", "View the current module states")]
     public async Task ViewAsync(InteractionContext ctx)
     {
+        await ctx.DeferAsync(true);
         var response = await this._mediator.Send(new GetAllModuleStatesForGuildQuery{ GuildId = ctx.Guild.Id});
-        await ctx.ReplyAsync(
+        await ctx.EditReplyAsync(
             title: "Current states of modules.",
             message: $"**Leveling Enabled:** {response.LevelingIsEnabled}\n" +
             $"**User Log Enabled:** {response.UserLogIsEnabled}\n" +
@@ -34,6 +35,7 @@ public class ModuleCommands(IMediator mediator) : ApplicationCommandModule
         [Option("Module", "The module to enable or disable")] Module module,
         [Option("Enable", "Whether to enable or disable the module")] bool enable)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new EnableModuleCommand
         {
             GuildId = ctx.Guild.Id,
@@ -42,7 +44,6 @@ public class ModuleCommands(IMediator mediator) : ApplicationCommandModule
         });
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.Member.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module.GetName()}");
-        await ctx.ReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module.GetName()}",
-            ephemeral: false);
+        await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module.GetName()}");
     }
 }

@@ -28,6 +28,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
         [Minimum(0)]
         [Option("SinId", "The id of the sin to be published")] long sinId)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new GetBanQuery
         {
             SinId = sinId,
@@ -45,7 +46,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
             });
         }
 
-        await ctx.ReplyAsync(GrimoireColor.Green, message: $"Successfully published ban : {sinId}", ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.Green, message: $"Successfully published ban : {sinId}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.Member.GetUsernameWithDiscriminator()} published ban reason of sin {sinId}");
     }
 
@@ -55,6 +56,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
         [Minimum(0)]
         [Option("SinId", "The id of the sin to be published")] long sinId)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new GetUnbanQuery
         {
             SinId = sinId,
@@ -72,7 +74,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
             });
         }
 
-        await ctx.ReplyAsync(GrimoireColor.Green, message: $"Successfully published unban : {sinId}", ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.Green, message: $"Successfully published unban : {sinId}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.Member.GetUsernameWithDiscriminator()} published unban reason of sin {sinId}");
     }
 
