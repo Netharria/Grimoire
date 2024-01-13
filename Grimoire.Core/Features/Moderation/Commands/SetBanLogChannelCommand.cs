@@ -25,7 +25,7 @@ public sealed class SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDb
         if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
 
         guildModerationSettings.PublicBanLog = command.ChannelId;
-        this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new BaseResponse

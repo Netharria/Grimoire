@@ -23,7 +23,6 @@ public sealed class GainUserXp
     public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
     {
         private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
         public async ValueTask<Response> Handle(Command command, CancellationToken cancellationToken)
         {
             var result = await this._grimoireDbContext.Members

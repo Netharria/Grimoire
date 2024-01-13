@@ -245,7 +245,6 @@ internal sealed class AnubisMigrationService(AnubisDbContext anubisContext)
 
             grimoireGuild.UpdateGuildLevelSettings(anubisGuild);
 
-            grimoireDbContext.Update(grimoireGuild);
             await grimoireDbContext.SaveChangesAsync();
         }
     }

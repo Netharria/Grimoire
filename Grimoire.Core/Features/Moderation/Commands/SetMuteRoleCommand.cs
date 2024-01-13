@@ -25,7 +25,7 @@ public sealed class SetMuteRoleCommandHandler(IGrimoireDbContext grimoireDbConte
         if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
 
         guildModerationSettings.MuteRole = command.Role;
-        this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new BaseResponse

@@ -28,7 +28,7 @@ public sealed class SetAutoPardonCommandHandler(IGrimoireDbContext grimoireDbCon
             throw new AnticipatedException("Could not find the Servers settings.");
 
         guildModerationSettings.AutoPardonAfter = command.DurationAmount;
-        this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new BaseResponse

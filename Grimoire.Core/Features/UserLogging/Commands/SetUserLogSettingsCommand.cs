@@ -56,7 +56,6 @@ public sealed class SetUserLogSettingsCommandHandler(IGrimoireDbContext grimoire
                 break;
         }
 
-        this._grimoireDbContext.GuildUserLogSettings.Update(userSettings.UserSettings);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse
         {

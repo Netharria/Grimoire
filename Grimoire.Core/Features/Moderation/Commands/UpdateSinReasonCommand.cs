@@ -40,7 +40,6 @@ public sealed class UpdateSinReasonCommandHandler(IGrimoireDbContext grimoireDbC
 
         result.Sin.Reason = command.Reason;
 
-        this._grimoireDbContext.Sins.Update(result.Sin);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new UpdateSinReasonCommandResponse

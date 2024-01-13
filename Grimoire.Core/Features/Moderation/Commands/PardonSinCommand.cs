@@ -51,7 +51,6 @@ public sealed class PardonSinCommandHandler(IGrimoireDbContext grimoireDbContext
                 ModeratorId = command.ModeratorId,
                 Reason = command.Reason,
             };
-        this._grimoireDbContext.Sins.Update(result.Sin);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new PardonSinCommandResponse

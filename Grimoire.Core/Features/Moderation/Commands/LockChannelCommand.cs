@@ -44,7 +44,6 @@ public sealed class LockChannelCommandHandler(IGrimoireDbContext grimoireDbConte
             result.Lock.ModeratorId = command.ModeratorId;
             result.Lock.EndTime = lockEndTime;
             result.Lock.Reason = command.Reason;
-            this._grimoireDbContext.Locks.Update(result.Lock);
         }
         else
         {

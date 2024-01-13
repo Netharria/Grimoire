@@ -28,7 +28,7 @@ public sealed class SetModLogCommandHandler(IGrimoireDbContext grimoireDbContext
         if (guild is null)
             throw new AnticipatedException("Could not find the settings for this server.");
         guild.ModChannelLog = command.ChannelId;
-        this._grimoireDbContext.Guilds.Update(guild);
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse
         {

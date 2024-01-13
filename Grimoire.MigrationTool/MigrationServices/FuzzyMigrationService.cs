@@ -313,7 +313,6 @@ internal sealed class FuzzyMigrationService(FuzzyDbContext fuzzyDbContext)
 
             grimoireGuild.UpdateGuildModerationSettings(fuzzyGuild);
 
-            grimoireDbContext.Update(grimoireGuild);
             await grimoireDbContext.SaveChangesAsync();
         }
     }

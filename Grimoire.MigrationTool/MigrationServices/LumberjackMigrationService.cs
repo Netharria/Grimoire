@@ -313,7 +313,6 @@ internal sealed class LumberjackMigrationService(LumberjackDbContext context)
             }
             grimoireGuild.UpdateGuildLogSettings(lumberjackGuild);
 
-            grimoireDbContext.Update(grimoireGuild);
         }
         await grimoireDbContext.SaveChangesAsync();
     }
