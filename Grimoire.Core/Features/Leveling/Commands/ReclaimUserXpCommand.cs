@@ -20,10 +20,10 @@ public sealed class ReclaimUserXp
 {
     public sealed record Command : ICommand<Response>
     {
-        public XpOption XpOption { get; init; }
-        public long XpToTake { get; init; }
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public required XpOption XpOption { get; init; }
+        public required long XpToTake { get; init; }
+        public required ulong UserId { get; init; }
+        public required ulong GuildId { get; init; }
         public ulong? ReclaimerId { get; init; }
     }
 
@@ -51,8 +51,9 @@ public sealed class ReclaimUserXp
                 XpOption.Amount => command.XpToTake,
                 _ => throw new ArgumentOutOfRangeException(nameof(command),"XpOption not implemented in switch statement.")
             };
-            if (member.Xp < xpToTake)
-                xpToTake = member.Xp;
+
+            xpToTake = Math.Min(member.Xp, xpToTake);
+
             await this._grimoireDbContext.XpHistory.AddAsync(new XpHistory
             {
                 UserId = command.UserId,
@@ -74,7 +75,7 @@ public sealed class ReclaimUserXp
 
     public sealed record Response : BaseResponse
     {
-        public long XpTaken { get; init; }
+        public required long XpTaken { get; init; }
     }
 
 }

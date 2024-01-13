@@ -14,9 +14,9 @@ public sealed class AddReward
 {
     public sealed record Command : ICommand<BaseResponse>
     {
-        public ulong RoleId { get; init; }
-        public ulong GuildId { get; init; }
-        public int RewardLevel { get; init; }
+        public required ulong RoleId { get; init; }
+        public required ulong GuildId { get; init; }
+        public required int RewardLevel { get; init; }
         public string? Message { get; init; }
     }
 

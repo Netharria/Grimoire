@@ -13,7 +13,7 @@ public sealed class RemoveReward
 {
     public sealed record Command : ICommand<BaseResponse>
     {
-        public ulong RoleId { get; init; }
+        public required ulong RoleId { get; init; }
     }
 
     public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
@@ -24,15 +24,21 @@ public sealed class RemoveReward
         {
             var result = await this._grimoireDbContext.Rewards
             .Include(x => x.Guild)
-            .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
-            if (result is not Reward reward)
-                throw new AnticipatedException($"Did not find a saved reward for role <@&{command.RoleId}>");
-            this._grimoireDbContext.Rewards.Remove(reward);
+            .Where(x => x.RoleId == command.RoleId)
+            .Select(x => new
+            {
+                Reward = x,
+                x.Guild.ModChannelLog
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+            if (result is null || result.Reward is null)
+                throw new AnticipatedException($"Did not find a saved reward for role {RoleExtensions.Mention(command.RoleId)}");
+            this._grimoireDbContext.Rewards.Remove(result.Reward);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse
             {
-                Message = $"Removed {reward.Mention()} reward",
-                LogChannelId = result.Guild.ModChannelLog
+                Message = $"Removed {result.Reward.Mention()} reward",
+                LogChannelId = result.ModChannelLog
             };
         }
     }

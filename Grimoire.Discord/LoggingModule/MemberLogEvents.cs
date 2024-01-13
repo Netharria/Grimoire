@@ -116,7 +116,7 @@ internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteS
             {
                 var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Nickname Updated")
-                .AddField("User", $"<@!{args.Member.Id}>")
+                .AddField("User", args.Member.Mention)
                 .AddField("Before", string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname)? "`None`" : nicknameResponse.BeforeNickname, true)
                 .AddField("After", string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)? "`None`" : nicknameResponse.AfterNickname, true)
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
@@ -152,7 +152,7 @@ internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteS
             {
                 var embed = new DiscordEmbedBuilder()
                         .WithAuthor("Username Updated")
-                        .AddField("User", $"<@!{args.MemberAfter.Id}>")
+                        .AddField("User", args.MemberAfter.Mention)
                         .AddField("Before", string.IsNullOrWhiteSpace(usernameResponse.BeforeUsername)? "`Unknown`" : usernameResponse.BeforeUsername, true)
                         .AddField("After", string.IsNullOrWhiteSpace(usernameResponse.AfterUsername)? "`Unknown`" : usernameResponse.AfterUsername, true)
                         .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
@@ -187,7 +187,7 @@ internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteS
             {
                 var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Avatar Updated")
-                .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
+                .WithDescription($"**User:** {args.Member.Mention}\n\n" +
                     $"Old avatar in thumbnail. New avatar down below")
                 .WithThumbnail(avatarResponse.BeforeAvatar)
                 .WithColor(GrimoireColor.Purple)

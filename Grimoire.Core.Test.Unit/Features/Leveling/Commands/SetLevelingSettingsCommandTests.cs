@@ -41,6 +41,12 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         });
         await this._dbContext.AddAsync(new Channel { Id = CHANNEL_ID, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
+
+        var guild = await this._dbContext.Guilds.FirstAsync(x => x.Id == GUILD_ID);
+        guild.ModChannelLog = CHANNEL_ID;
+
+        await this._dbContext.SaveChangesAsync();
+
     }
 
     public Task DisposeAsync() => this._resetDatabase();
@@ -51,7 +57,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var CUT = new SetLevelSettings.Handler(this._dbContext);
         var command = new SetLevelSettings.Command
         {
-            GuildId = 12341234
+            GuildId = 12341234,
+            LevelSettings = LevelSettings.TextTime,
+            Value = "something"
         };
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
@@ -152,6 +160,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 
@@ -170,6 +181,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 
@@ -188,6 +202,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 
@@ -206,6 +223,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings.FirstAsync(x => x.GuildId == GUILD_ID);
 
         guildSettings.Amount.Should().Be(23);
@@ -223,6 +243,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 
@@ -241,6 +264,11 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         };
 
         var response = await CUT.Handle(command, default);
+
+        response.LogChannelId.Should().Be(CHANNEL_ID);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 

@@ -79,7 +79,7 @@ public sealed partial class ModerationEvents(IMediator mediator) :
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Red);
         if (response.LastSin?.ModeratorId is not null)
-            embed.AddField("Mod", $"<@{response.LastSin.ModeratorId}>", true);
+            embed.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
 
         embed.AddField("Reason", !string.IsNullOrWhiteSpace(response.LastSin?.Reason) ? response.LastSin.Reason : "None", true);
 
@@ -115,7 +115,7 @@ public sealed partial class ModerationEvents(IMediator mediator) :
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green);
         if (response.LastSin.ModeratorId is not null)
-            embed.AddField("Mod", $"<@{response.LastSin.ModeratorId}>", true);
+            embed.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
 
         await loggingChannel.SendMessageAsync(embed);
     }

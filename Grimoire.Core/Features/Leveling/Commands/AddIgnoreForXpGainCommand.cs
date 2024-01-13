@@ -26,7 +26,7 @@ public sealed class AddIgnoreForXpGain
 {
     public sealed record Command : IUpdateIgnoreForXpGain
     {
-        public ulong GuildId { get; init; }
+        public required ulong GuildId { get; init; }
         public UserDto[] Users { get; set; } = [];
         public RoleDto[] Roles { get; set; } = [];
         public ChannelDto[] Channels { get; set; } = [];

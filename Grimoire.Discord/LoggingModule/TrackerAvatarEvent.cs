@@ -25,7 +25,7 @@ internal sealed class TrackerAvatarEvent(IDiscordClientService clientService, IM
 
         var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Avatar Updated")
-                .WithDescription($"**User:** <@!{notification.UserId}>")
+                .WithDescription($"**User:** {UserExtensions.Mention(notification.UserId)}")
                 .WithColor(GrimoireColor.Purple)
                 .WithTimestamp(DateTimeOffset.UtcNow);
 

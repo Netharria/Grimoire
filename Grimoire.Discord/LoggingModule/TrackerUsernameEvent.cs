@@ -25,7 +25,7 @@ internal sealed class TrackerUsernameEvent(IDiscordClientService clientService, 
 
         var embed = new DiscordEmbedBuilder()
                         .WithAuthor("Username Updated")
-                        .AddField("User", $"<@!{notification.UserId}>")
+                        .AddField("User", UserExtensions.Mention(notification.UserId))
                         .AddField("Before", string.IsNullOrWhiteSpace(notification.BeforeUsername)? "`Unknown`" : notification.BeforeUsername, true)
                         .AddField("After", string.IsNullOrWhiteSpace(notification.AfterUsername)? "`Unknown`" : notification.AfterUsername, true)
                         .WithTimestamp(DateTimeOffset.UtcNow)

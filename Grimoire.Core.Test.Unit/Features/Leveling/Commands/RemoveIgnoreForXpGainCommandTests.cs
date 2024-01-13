@@ -18,7 +18,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands;
 
 [Collection("Test collection")]
-public sealed class UpdateIgnoreStateForXpGainCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class RemoveIgnoreForXpGainCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
@@ -33,18 +33,52 @@ public sealed class UpdateIgnoreStateForXpGainCommandTests(GrimoireCoreFactory f
     public async Task InitializeAsync()
     {
         await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
+        await this._dbContext.AddAsync(
+            new Role
+            {
+                Id = ROLE_ID,
+                GuildId = GUILD_ID,
+                IsIgnoredRole = new IgnoredRole
+                {
+                    RoleId = ROLE_ID,
+                    GuildId = GUILD_ID
+                }
+            });
+        await this._dbContext.AddAsync(
+            new Channel
+            {
+                Id = CHANNEL_ID,
+                GuildId = GUILD_ID,
+                IsIgnoredChannel = new IgnoredChannel
+                {
+                    ChannelId = CHANNEL_ID,
+                    GuildId = GUILD_ID,
+                }
+            });
+        await this._dbContext.AddAsync(
+            new Member
+            {
+                UserId = USER_ID,
+                GuildId = GUILD_ID,
+                User = new User { Id = USER_ID },
+                IsIgnoredMember = new IgnoredMember
+                {
+                    UserId = USER_ID,
+                    GuildId = GUILD_ID,
+                }
+            });
         await this._dbContext.SaveChangesAsync();
     }
 
     public Task DisposeAsync() => this._resetDatabase();
 
     [Fact]
-    public async Task WhenAddIgnoreForXpGainCommandHandlerCalled_AddIgnoreStatusAsync()
+    public async Task WhenRemoveIgnoreForXpGainCommandHandlerCalled_AddIgnoreStatusAsync()
     {
-        var cut = new AddIgnoreForXpGain.Handler(this._dbContext);
+        var cut = new RemoveIgnoreForXpGain.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new AddIgnoreForXpGain.Command
+            new RemoveIgnoreForXpGain.Command
             {
                 Users = [new UserDto { Id = USER_ID }],
                 GuildId = GUILD_ID,
@@ -66,37 +100,37 @@ public sealed class UpdateIgnoreStateForXpGainCommandTests(GrimoireCoreFactory f
                 ]
             }, default);
 
-        result.Message.Should().Be($"<@!{USER_ID}> <@&{ROLE_ID}> <#{CHANNEL_ID}>  are now ignored for xp gain.");
+        result.Message.Should().Be($"<@!{USER_ID}> <@&{ROLE_ID}> <#{CHANNEL_ID}>  are no longer ignored for xp gain.");
 
         var member = await this._dbContext.Members.Where(x =>
             x.UserId == USER_ID
             && x.GuildId == GUILD_ID
             ).FirstAsync();
 
-        member.IsIgnoredMember.Should().NotBeNull();
+        member.IsIgnoredMember.Should().BeNull();
 
         var role = await this._dbContext.Roles.Where(x =>
             x.Id == ROLE_ID
             && x.GuildId == GUILD_ID
             ).FirstAsync();
 
-        role.IsIgnoredRole.Should().NotBeNull();
+        role.IsIgnoredRole.Should().BeNull();
 
         var channel = await this._dbContext.Channels.Where(x =>
             x.Id == CHANNEL_ID
             && x.GuildId == GUILD_ID
             ).FirstAsync();
 
-        channel.IsIgnoredChannel.Should().NotBeNull();
+        channel.IsIgnoredChannel.Should().BeNull();
     }
 
     [Fact]
     public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
     {
-        var cut = new AddIgnoreForXpGain.Handler(this._dbContext);
+        var cut = new RemoveIgnoreForXpGain.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new AddIgnoreForXpGain.Command
+            new RemoveIgnoreForXpGain.Command
             {
                 GuildId = GUILD_ID,
                 InvalidIds = ["asldfkja"]

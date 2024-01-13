@@ -14,10 +14,10 @@ public sealed class GainUserXp
 {
     public sealed record Command : ICommand<Response>
     {
-        public ulong GuildId { get; init; }
-        public ulong UserId { get; init; }
-        public ulong ChannelId { get; init; }
-        public ulong[] RoleIds { get; init; } = [];
+        public required ulong GuildId { get; init; }
+        public required ulong UserId { get; init; }
+        public required ulong ChannelId { get; init; }
+        public required ulong[] RoleIds { get; init; }
     }
 
     public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
@@ -35,7 +35,8 @@ public sealed class GainUserXp
             {
                 Xp = x.XpHistory.Sum(x => x.Xp),
                 Timeout = x.XpHistory.Select(x => x.TimeOut)
-                    .OrderByDescending(x => x).First(),
+                    .OrderByDescending(x => x)
+                    .FirstOrDefault(),
                 x.Guild.LevelSettings.Base,
                 x.Guild.LevelSettings.Modifier,
                 x.Guild.LevelSettings.Amount,
@@ -45,9 +46,8 @@ public sealed class GainUserXp
                 Rewards = x.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel, reward.RewardMessage })
             }).FirstOrDefaultAsync(cancellationToken);
 
-            if (result is null || result.Timeout > DateTime.UtcNow)
-
-                return new Response();
+            if (result is null || result.Timeout > DateTimeOffset.UtcNow)
+                return new Response { };
 
             var previousLevel = MemberExtensions.GetLevel(result.Xp, result.Base, result.Modifier);
             var currentLevel = MemberExtensions.GetLevel(result.Xp + result.Amount, result.Base, result.Modifier);

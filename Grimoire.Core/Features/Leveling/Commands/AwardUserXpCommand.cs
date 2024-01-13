@@ -14,9 +14,9 @@ public sealed class AwardUserXp
 {
     public sealed record Command : ICommand<BaseResponse>
     {
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
-        public long XpToAward { get; init; }
+        public required ulong UserId { get; init; }
+        public required ulong GuildId { get; init; }
+        public required long XpToAward { get; init; }
         public ulong? AwarderId { get; init; }
     }
 

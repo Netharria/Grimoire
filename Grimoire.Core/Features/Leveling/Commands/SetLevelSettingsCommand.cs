@@ -20,9 +20,9 @@ public sealed class SetLevelSettings
 {
     public sealed record Command : ICommand<BaseResponse>
     {
-        public ulong GuildId { get; init; }
-        public LevelSettings LevelSettings { get; init; }
-        public string Value { get; init; } = string.Empty;
+        public required ulong GuildId { get; init; }
+        public required LevelSettings LevelSettings { get; init; }
+        public required string Value { get; init; }
     }
 
 

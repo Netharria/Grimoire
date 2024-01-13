@@ -56,6 +56,12 @@ public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsy
         var response = await CUT.Handle(command, default);
 
         response.Message.Should().Be($"Removed <@&{ROLE_ID}> reward");
+
+        this._dbContext.ChangeTracker.Clear();
+
+        var reward = await this._dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == ROLE_ID);
+
+        reward.Should().BeNull();
     }
 
     [Fact]

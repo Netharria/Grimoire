@@ -30,7 +30,7 @@ internal sealed class TrackerNicknameEvent(IDiscordClientService clientService, 
         if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
         var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Nickname Updated")
-                .AddField("User", $"<@!{notification.UserId}>")
+                .AddField("User", UserExtensions.Mention(notification.UserId))
                 .AddField("Before", string.IsNullOrWhiteSpace(notification.BeforeNickname)? "None" : notification.BeforeNickname, true)
                 .AddField("After", string.IsNullOrWhiteSpace(notification.AfterNickname)? "None" : notification.AfterNickname, true)
                 .WithTimestamp(DateTimeOffset.UtcNow)

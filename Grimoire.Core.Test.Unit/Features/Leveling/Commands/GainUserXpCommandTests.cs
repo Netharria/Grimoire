@@ -14,7 +14,6 @@ using Grimoire.Core.Features.Leveling.Commands;
 using Grimoire.Domain;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using static Grimoire.Core.Features.Leveling.Commands.GainUserXp;
 
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands;
 
@@ -103,7 +102,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         result.PreviousLevel.Should().Be(2);
         result.CurrentLevel.Should().Be(3);
         result.LevelLogChannel.Should().Be(CHANNEL_ID);
-        result.EarnedRewards.Should().Contain(new RewardDto[] {
+        result.EarnedRewards.Should().Contain(new GainUserXp.RewardDto[] {
             new() { RoleId = ROLE_ID_1, Message = "Test1" },
             new() { RoleId = ROLE_ID_2, Message = "Test2" }
         });
@@ -222,5 +221,30 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
             }, default);
 
         result.Success.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task WhenGainUserXpCommandHandlerCalled_AndMemberNew_GainXp()
+    {
+        await this._dbContext.AddAsync(new Member
+        {
+            UserId = 10,
+            GuildId = GUILD_ID,
+            User = new User { Id = 10 }
+        });
+        await this._dbContext.SaveChangesAsync();
+
+        var cut = new GainUserXp.Handler(this._dbContext);
+
+        var result = await cut.Handle(
+            new GainUserXp.Command
+            {
+                UserId = 10,
+                GuildId = GUILD_ID,
+                ChannelId = CHANNEL_ID,
+                RoleIds = [ ROLE_ID_1 ]
+            }, default);
+        this._dbContext.ChangeTracker.Clear();
+        result.Success.Should().BeTrue();
     }
 }
