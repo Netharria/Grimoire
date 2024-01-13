@@ -14,6 +14,7 @@ using Grimoire.Core.Features.Leveling.Commands;
 using Grimoire.Domain;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using static Grimoire.Core.Features.Leveling.Commands.GainUserXp;
 
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands;
 
@@ -28,7 +29,12 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
     private const ulong GUILD_ID = 1;
     private const ulong USER_ID = 1;
     private const ulong CHANNEL_ID = 1;
-    private const ulong ROLE_ID = 1;
+    private const ulong ROLE_ID_1 = 1;
+    private const int REWARD_LEVEL_1 = 1;
+    private const ulong ROLE_ID_2 = 2;
+    private const int REWARD_LEVEL_2 = 3;
+    private const ulong ROLE_ID_3 = 3;
+    private const int REWARD_LEVEL_3 = 5;
     private const int GAIN_AMOUNT = 15;
 
     public async Task InitializeAsync()
@@ -55,12 +61,25 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
                     UserId = USER_ID,
                     GuildId = GUILD_ID,
                     Type = XpHistoryType.Created,
-                    Xp = 0
+                    Xp = 10
+                },
+                new()
+                {
+                    TimeOut = DateTime.UtcNow.AddMinutes(-5),
+                    UserId = USER_ID,
+                    GuildId = GUILD_ID,
+                    Type = XpHistoryType.Created,
+                    Xp = 10
                 }
             }
         });
         await this._dbContext.AddAsync(new Channel { Id = CHANNEL_ID, GuildId = GUILD_ID });
-        await this._dbContext.AddAsync(new Role { Id = ROLE_ID, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Role { Id = ROLE_ID_1, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Role { Id = ROLE_ID_2, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Role { Id = ROLE_ID_3, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Reward { RoleId = ROLE_ID_1, GuildId = GUILD_ID, RewardLevel = REWARD_LEVEL_1, RewardMessage = "Test1" });
+        await this._dbContext.AddAsync(new Reward { RoleId = ROLE_ID_2, GuildId = GUILD_ID, RewardLevel = REWARD_LEVEL_2, RewardMessage = "Test2" });
+        await this._dbContext.AddAsync(new Reward { RoleId = ROLE_ID_3, GuildId = GUILD_ID, RewardLevel = REWARD_LEVEL_3, RewardMessage = "Test3" });
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -70,28 +89,35 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
     public async Task WhenGainUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
     {
 
-        var cut = new GainUserXpCommandHandler(this._dbContext);
+        var cut = new GainUserXp.Handler(this._dbContext);
         var result = await cut.Handle(
-            new GainUserXpCommand
+            new GainUserXp.Command
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
                 ChannelId = CHANNEL_ID,
-                RoleIds = [ ROLE_ID ]
+                RoleIds = [ ROLE_ID_1 ]
             }, default);
 
         result.Success.Should().BeTrue();
-        result.EarnedRewards.Should().BeEmpty();
-        result.PreviousLevel.Should().Be(1);
-        result.CurrentLevel.Should().Be(2);
+        result.PreviousLevel.Should().Be(2);
+        result.CurrentLevel.Should().Be(3);
         result.LevelLogChannel.Should().Be(CHANNEL_ID);
+        result.EarnedRewards.Should().Contain(new RewardDto[] {
+            new() { RoleId = ROLE_ID_1, Message = "Test1" },
+            new() { RoleId = ROLE_ID_2, Message = "Test2" }
+        });
+
+        this._dbContext.ChangeTracker.Clear();
 
         var member = await this._dbContext.Members.Where(x =>
             x.UserId == USER_ID
             && x.GuildId == GUILD_ID
             ).Include(x => x.XpHistory).FirstAsync();
 
-        member.XpHistory.Sum(x => x.Xp).Should().Be(GAIN_AMOUNT);
+        member.XpHistory.Sum(x => x.Xp).Should().Be(GAIN_AMOUNT + 20);
+        var maxHistory = member.XpHistory.MaxBy(x => x.Id);
+        maxHistory!.TimeOut.Should().BeCloseTo(DateTimeOffset.UtcNow.AddMinutes(3), TimeSpan.FromSeconds(10));
     }
 
     [Fact]
@@ -106,15 +132,15 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         });
         await this._dbContext.SaveChangesAsync();
 
-        var cut = new GainUserXpCommandHandler(this._dbContext);
+        var cut = new GainUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GainUserXpCommand
+            new GainUserXp.Command
             {
                 UserId = 10,
                 GuildId = GUILD_ID,
                 ChannelId = CHANNEL_ID,
-                RoleIds = [ ROLE_ID ]
+                RoleIds = [ ROLE_ID_1 ]
             }, default);
         this._dbContext.ChangeTracker.Clear();
         result.Success.Should().BeFalse();
@@ -131,10 +157,10 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         });
         await this._dbContext.SaveChangesAsync();
 
-        var cut = new GainUserXpCommandHandler(this._dbContext);
+        var cut = new GainUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GainUserXpCommand
+            new GainUserXp.Command
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -156,17 +182,45 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         });
         await this._dbContext.SaveChangesAsync();
 
-        var cut = new GainUserXpCommandHandler(this._dbContext);
+        var cut = new GainUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GainUserXpCommand
+            new GainUserXp.Command
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
                 ChannelId = 10,
-                RoleIds = [ ROLE_ID ]
+                RoleIds = [ ROLE_ID_1 ]
             }, default);
         this._dbContext.ChangeTracker.Clear();
+        result.Success.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task WhenGainuserXpCommandHandlerCalled_AndTimeoutNotExpired_ReturnFalseResponseAsync()
+    {
+        await this._dbContext.XpHistory.AddAsync(new XpHistory
+        {
+
+            TimeOut = DateTime.UtcNow.AddMinutes(5),
+            UserId = USER_ID,
+            GuildId = GUILD_ID,
+            Type = XpHistoryType.Earned,
+            Xp = 0
+        });
+
+        await this._dbContext.SaveChangesAsync();
+
+        var cut = new GainUserXp.Handler(this._dbContext);
+        var result = await cut.Handle(
+            new GainUserXp.Command
+            {
+                UserId = USER_ID,
+                GuildId = GUILD_ID,
+                ChannelId = CHANNEL_ID,
+                RoleIds = [ ROLE_ID_1 ]
+            }, default);
+
         result.Success.Should().BeFalse();
     }
 }

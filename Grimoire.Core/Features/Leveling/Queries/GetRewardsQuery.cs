@@ -9,28 +9,31 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Queries;
 
-public sealed record GetRewardsQuery : IRequest<BaseResponse>
+public sealed class GetRewards
 {
-    public ulong GuildId { get; init; }
-}
-
-
-public sealed class GetRewardsQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetRewardsQuery, BaseResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<BaseResponse> Handle(GetRewardsQuery request, CancellationToken cancellationToken)
+    public sealed record Query : IRequest<BaseResponse>
     {
-        var rewards = await this._grimoireDbContext.Rewards
+        public ulong GuildId { get; init; }
+    }
+
+
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<Query, BaseResponse>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
+        {
+            var rewards = await this._grimoireDbContext.Rewards
             .AsNoTracking()
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => $"Level:{x.RewardLevel} Role:{x.Mention()} {(x.RewardMessage == null ? "" : $"Reward Message: {x.RewardMessage}")}")
             .ToListAsync(cancellationToken: cancellationToken);
-        if (rewards.Count == 0)
-            throw new AnticipatedException("This guild does not have any rewards.");
-        return new BaseResponse
-        {
-            Message = string.Join('\n', rewards)
-        };
+            if (rewards.Count == 0)
+                throw new AnticipatedException("This guild does not have any rewards.");
+            return new BaseResponse
+            {
+                Message = string.Join('\n', rewards)
+            };
+        }
     }
 }

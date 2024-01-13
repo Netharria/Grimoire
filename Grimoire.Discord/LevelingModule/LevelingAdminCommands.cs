@@ -25,7 +25,7 @@ internal sealed class LevelingAdminCommands(IMediator mediator) : ApplicationCom
     {
         await ctx.DeferAsync();
         var response = await this._mediator.Send(
-            new AwardUserXpCommand
+            new AwardUserXp.Command
             {
                 UserId = user.Id,
                 GuildId = ctx.Guild.Id,
@@ -53,7 +53,7 @@ internal sealed class LevelingAdminCommands(IMediator mediator) : ApplicationCom
         if (xpOption == XpOption.Amount && amount == 0)
             throw new AnticipatedException("Specify an amount greater than 0");
         var response = await this._mediator.Send(
-            new ReclaimUserXpCommand
+            new ReclaimUserXp.Command
             {
                 UserId = user.Id,
                 GuildId = ctx.Guild.Id,

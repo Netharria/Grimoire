@@ -29,7 +29,7 @@ internal sealed class LevelCommands(IMediator mediator) : ApplicationCommandModu
         await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
         user ??= ctx.User;
 
-        var response = await this._mediator.Send(new GetLevelQuery{ UserId = user.Id, GuildId = ctx.Guild.Id});
+        var response = await this._mediator.Send(new GetLevel.Query{ UserId = user.Id, GuildId = ctx.Guild.Id});
 
         DiscordColor color;
         string displayName;

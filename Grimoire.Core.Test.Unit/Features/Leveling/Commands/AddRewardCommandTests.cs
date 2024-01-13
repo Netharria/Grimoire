@@ -40,17 +40,26 @@ public sealed class AddRewardCommandTests(GrimoireCoreFactory factory) : IAsyncL
     public async Task WhenAddingReward_IfRewardDoesntExist_AddRoleAsync()
     {
 
-        var CUT = new AddRewardCommandHandler(this._dbContext);
-        var command = new AddRewardCommand
+        var CUT = new AddReward.Handler(this._dbContext);
+        var command = new AddReward.Command
         {
             RoleId = ROLE_ID,
             GuildId = GUILD_ID,
-            RewardLevel = 10
+            RewardLevel = 10,
+            Message = "Test"
         };
 
         var response = await CUT.Handle(command, default);
 
+        this._dbContext.ChangeTracker.Clear();
+
+        var reward = await this._dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == ROLE_ID);
+
         response.Message.Should().Be($"Added <@&{ROLE_ID}> reward at level 10");
+        reward.Should().NotBeNull();
+        reward!.GuildId.Should().Be(GUILD_ID);
+        reward.RewardLevel.Should().Be(10);
+        reward.RewardMessage.Should().Be("Test");
     }
 
     [Fact]
@@ -64,17 +73,26 @@ public sealed class AddRewardCommandTests(GrimoireCoreFactory factory) : IAsyncL
         });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new AddRewardCommandHandler(this._dbContext);
-        var command = new AddRewardCommand
+        var CUT = new AddReward.Handler(this._dbContext);
+        var command = new AddReward.Command
         {
             RoleId = ROLE_ID,
             GuildId = GUILD_ID,
-            RewardLevel = 15
+            RewardLevel = 15,
+            Message = "Test"
         };
 
         var response = await CUT.Handle(command, default);
 
         this._dbContext.ChangeTracker.Clear();
+
+        var reward = await this._dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == ROLE_ID);
+
         response.Message.Should().Be($"Updated <@&{ROLE_ID}> reward to level 15");
+
+        reward.Should().NotBeNull();
+        reward!.GuildId.Should().Be(GUILD_ID);
+        reward.RewardLevel.Should().Be(15);
+        reward.RewardMessage.Should().Be("Test");
     }
 }

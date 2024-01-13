@@ -49,10 +49,10 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     [Fact]
     public async Task WhenReclaimUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
     {
-        var cut = new ReclaimUserXpCommandHandler(this._dbContext);
+        var cut = new ReclaimUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new ReclaimUserXpCommand
+            new ReclaimUserXp.Command
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -71,10 +71,10 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     [Fact]
     public async Task WhenReclaimUserXpCommandHandlerCalled_WithAllArgument_UpdateMemebersXpAsync()
     {
-        var cut = new ReclaimUserXpCommandHandler(this._dbContext);
+        var cut = new ReclaimUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new ReclaimUserXpCommand
+            new ReclaimUserXp.Command
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -94,10 +94,10 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     [Fact]
     public async Task WhenReclaimUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
     {
-        var cut = new ReclaimUserXpCommandHandler(this._dbContext);
+        var cut = new ReclaimUserXp.Handler(this._dbContext);
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new ReclaimUserXpCommand
+            new ReclaimUserXp.Command
             {
                 UserId = 20001,
                 GuildId = GUILD_ID,

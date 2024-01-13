@@ -21,7 +21,7 @@ internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogg
     {
         var mediator = serviceProvider.GetRequiredService<IMediator>();
         var discordClientService = serviceProvider.GetRequiredService<IDiscordClientService>();
-        var oldLogMessages = await mediator.Send(new GetOldLogMessagesQuery(), stoppingToken);
+        var oldLogMessages = await mediator.Send(new GetOldLogMessages.Query(), stoppingToken);
 
         var result = await oldLogMessages
             .ToAsyncEnumerable()
@@ -39,7 +39,7 @@ internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogg
 
         await mediator.Send(new DeleteOldMessagesCommand(), stoppingToken);
         if (result is not null)
-            await mediator.Send(new DeleteOldLogMessagesCommand { DeletedOldLogMessageIds = result }, stoppingToken);
+            await mediator.Send(new DeleteOldLogMessages.Command { DeletedOldLogMessageIds = result }, stoppingToken);
     }
 
     private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, ulong messageId, CancellationToken cancellationToken = default)

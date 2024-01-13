@@ -47,7 +47,6 @@ public sealed class SetMessageLogSettingsCommandHandler(IGrimoireDbContext grimo
                 messageSettings.LogSettings.EditChannelLogId = command.ChannelId;
                 break;
         }
-        this._grimoireDbContext.GuildMessageLogSettings.Update(messageSettings.LogSettings);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse { LogChannelId = messageSettings.ModChannelLog };
     }

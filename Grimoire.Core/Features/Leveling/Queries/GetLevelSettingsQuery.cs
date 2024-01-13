@@ -7,18 +7,20 @@
 
 namespace Grimoire.Core.Features.Leveling.Queries;
 
-public sealed record GetLevelSettingsQuery : IRequest<GetLevelSettingsQueryResponse>
+public sealed class GetLevelSettings
 {
-    public ulong GuildId { get; init; }
-}
-
-public sealed class GetLevelSettingsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetLevelSettingsQuery, GetLevelSettingsQueryResponse>
-{
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<GetLevelSettingsQueryResponse> Handle(GetLevelSettingsQuery request, CancellationToken cancellationToken)
+    public sealed record Query : IRequest<Response>
     {
-        var guildLevelSettings = await this._grimoireDbContext.GuildLevelSettings
+        public ulong GuildId { get; init; }
+    }
+
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
+    {
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Response> Handle(Query request, CancellationToken cancellationToken)
+        {
+            var guildLevelSettings = await this._grimoireDbContext.GuildLevelSettings
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => new
             {
@@ -29,26 +31,29 @@ public sealed class GetLevelSettingsQueryHandler(GrimoireDbContext grimoireDbCon
                 x.Amount,
                 x.LevelChannelLogId
             }).FirstAsync(cancellationToken: cancellationToken);
-        return new GetLevelSettingsQueryResponse
-        {
-            ModuleEnabled = guildLevelSettings.ModuleEnabled,
-            TextTime = guildLevelSettings.TextTime,
-            Base = guildLevelSettings.Base,
-            Modifier = guildLevelSettings.Modifier,
-            Amount = guildLevelSettings.Amount,
-            LevelChannelLog = guildLevelSettings.LevelChannelLogId
-        };
+            return new Response
+            {
+                ModuleEnabled = guildLevelSettings.ModuleEnabled,
+                TextTime = guildLevelSettings.TextTime,
+                Base = guildLevelSettings.Base,
+                Modifier = guildLevelSettings.Modifier,
+                Amount = guildLevelSettings.Amount,
+                LevelChannelLog = guildLevelSettings.LevelChannelLogId
+            };
+        }
+
     }
 
-}
+    public sealed record Response : BaseResponse
+    {
+        public bool ModuleEnabled { get; init; }
+        public TimeSpan TextTime { get; init; }
+        public int Base { get; init; }
+        public int Modifier { get; init; }
+        public int Amount { get; init; }
+        public ulong? LevelChannelLog { get; init; }
+    }
 
-public sealed record GetLevelSettingsQueryResponse : BaseResponse
-{
-    public bool ModuleEnabled { get; init; }
-    public TimeSpan TextTime { get; init; }
-    public int Base { get; init; }
-    public int Modifier { get; init; }
-    public int Amount { get; init; }
-    public ulong? LevelChannelLog { get; init; }
+
 }
 

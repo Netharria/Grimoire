@@ -39,7 +39,7 @@ internal sealed class LeaderboardCommands(IMediator mediator) : ApplicationComma
         }
         await ctx.DeferAsync(!((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
 
-        var getUserCenteredLeaderboardQuery = new GetLeaderboardQuery
+        var getUserCenteredLeaderboardQuery = new GetLeaderboard.Query
         {
             UserId = user?.Id,
             GuildId = ctx.Guild.Id,

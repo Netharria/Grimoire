@@ -10,21 +10,23 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Commands;
 
-public sealed record GainUserXpCommand : ICommand<GainUserXpCommandResponse>
+public sealed class GainUserXp
 {
-    public ulong GuildId { get; init; }
-    public ulong UserId { get; init; }
-    public ulong ChannelId { get; init; }
-    public ulong[] RoleIds { get; init; } = [];
-}
-
-public sealed class GainUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<GainUserXpCommand, GainUserXpCommandResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<GainUserXpCommandResponse> Handle(GainUserXpCommand command, CancellationToken cancellationToken)
+    public sealed record Command : ICommand<Response>
     {
-        var result = await this._grimoireDbContext.Members
+        public ulong GuildId { get; init; }
+        public ulong UserId { get; init; }
+        public ulong ChannelId { get; init; }
+        public ulong[] RoleIds { get; init; } = [];
+    }
+
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Response> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var result = await this._grimoireDbContext.Members
             .AsNoTracking()
             .WhereLevelingEnabled()
             .WhereMemberHasId(command.UserId, command.GuildId)
@@ -43,24 +45,24 @@ public sealed class GainUserXpCommandHandler(IGrimoireDbContext grimoireDbContex
                 Rewards = x.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel, reward.RewardMessage })
             }).FirstOrDefaultAsync(cancellationToken);
 
-        if (result is null || result.Timeout > DateTime.UtcNow)
+            if (result is null || result.Timeout > DateTime.UtcNow)
 
-            return new GainUserXpCommandResponse { Success = false };
+                return new Response();
 
-        var previousLevel = MemberExtensions.GetLevel(result.Xp, result.Base, result.Modifier);
-        var currentLevel = MemberExtensions.GetLevel(result.Xp + result.Amount, result.Base, result.Modifier);
+            var previousLevel = MemberExtensions.GetLevel(result.Xp, result.Base, result.Modifier);
+            var currentLevel = MemberExtensions.GetLevel(result.Xp + result.Amount, result.Base, result.Modifier);
 
-        await this._grimoireDbContext.XpHistory.AddAsync(new XpHistory
-        {
-            Xp = result.Amount,
-            UserId = command.UserId,
-            GuildId = command.GuildId,
-            TimeOut = DateTimeOffset.UtcNow + result.TextTime,
-            Type = XpHistoryType.Earned
-        }, cancellationToken);
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await this._grimoireDbContext.XpHistory.AddAsync(new XpHistory
+            {
+                Xp = result.Amount,
+                UserId = command.UserId,
+                GuildId = command.GuildId,
+                TimeOut = DateTimeOffset.UtcNow + result.TextTime,
+                Type = XpHistoryType.Earned
+            }, cancellationToken);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-        var earnedRewards = result.Rewards
+            var earnedRewards = result.Rewards
             .Where(x => x.RewardLevel <= currentLevel)
             .Select(x => new RewardDto
             {
@@ -69,30 +71,33 @@ public sealed class GainUserXpCommandHandler(IGrimoireDbContext grimoireDbContex
             } )
             .ToArray();
 
-        return new GainUserXpCommandResponse
-        {
-            Success = true,
-            EarnedRewards = earnedRewards,
-            PreviousLevel = previousLevel,
-            CurrentLevel = currentLevel,
-            LevelLogChannel = result.LevelChannelLogId,
-            LogChannelId = result.ModChannelLog,
-        };
+            return new Response
+            {
+                Success = true,
+                EarnedRewards = earnedRewards,
+                PreviousLevel = previousLevel,
+                CurrentLevel = currentLevel,
+                LevelLogChannel = result.LevelChannelLogId,
+                LogChannelId = result.ModChannelLog,
+            };
 
+        }
     }
+
+    public sealed record Response : BaseResponse
+    {
+        public RewardDto[] EarnedRewards { get; init; } = [];
+        public int PreviousLevel { get; init; }
+        public int CurrentLevel { get; init; }
+        public ulong? LevelLogChannel { get; init; }
+        public bool Success { get; init; }
+    }
+
+    public sealed record RewardDto
+    {
+        public ulong RoleId { get; init; }
+        public string? Message { get; init; }
+    }
+
 }
 
-public sealed record GainUserXpCommandResponse : BaseResponse
-{
-    public RewardDto[] EarnedRewards { get; init; } = [];
-    public int PreviousLevel { get; init; }
-    public int CurrentLevel { get; init; }
-    public ulong? LevelLogChannel { get; init; }
-    public bool Success { get; init; }
-}
-
-public sealed record RewardDto
-{
-    public ulong RoleId { get; init; }
-    public string? Message { get; init; }
-}

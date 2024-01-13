@@ -34,7 +34,7 @@ internal sealed class RewardCommands(IMediator mediator) : ApplicationCommandMod
                 $"reward role because the role has a higher rank than it does.");
 
         var response = await this._mediator.Send(
-            new AddRewardCommand
+            new AddReward.Command
             {
                 RoleId = role.Id,
                 GuildId = ctx.Guild.Id,
@@ -51,7 +51,7 @@ internal sealed class RewardCommands(IMediator mediator) : ApplicationCommandMod
     {
         await ctx.DeferAsync();
         var response = await this._mediator.Send(
-            new RemoveRewardCommand
+            new RemoveReward.Command
             {
                 RoleId = role.Id
             });
@@ -64,7 +64,7 @@ internal sealed class RewardCommands(IMediator mediator) : ApplicationCommandMod
     public async Task ViewAsync(InteractionContext ctx)
     {
         await ctx.DeferAsync();
-        var response = await this._mediator.Send(new GetRewardsQuery{ GuildId = ctx.Guild.Id});
+        var response = await this._mediator.Send(new GetRewards.Query{ GuildId = ctx.Guild.Id});
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             title: "Rewards",
             message: response.Message);

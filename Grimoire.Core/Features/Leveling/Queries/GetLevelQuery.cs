@@ -10,19 +10,21 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Queries;
 
-public sealed record GetLevelQuery : IRequest<GetLevelQueryResponse>
+public sealed class GetLevel
 {
-    public ulong UserId { get; init; }
-    public ulong GuildId { get; init; }
-}
-
-public sealed class GetLevelQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetLevelQuery, GetLevelQueryResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<GetLevelQueryResponse> Handle(GetLevelQuery request, CancellationToken cancellationToken)
+    public sealed record Query : IRequest<Response>
     {
-        var member = await this._grimoireDbContext.Members
+        public ulong UserId { get; init; }
+        public ulong GuildId { get; init; }
+    }
+
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Response> Handle(Query request, CancellationToken cancellationToken)
+        {
+            var member = await this._grimoireDbContext.Members
             .AsNoTracking()
             .WhereMemberHasId(request.UserId, request.GuildId)
             .Include(x => x.Guild.LevelSettings)
@@ -35,34 +37,37 @@ public sealed class GetLevelQueryHandler(IGrimoireDbContext grimoireDbContext) :
                 .Select(reward => new { reward.RoleId, reward.RewardLevel })
             }).FirstOrDefaultAsync(cancellationToken);
 
-        if (member is null)
-            throw new AnticipatedException("That user could not be found.");
+            if (member is null)
+                throw new AnticipatedException("That user could not be found.");
 
-        var currentLevel = MemberExtensions.GetLevel(member.Xp, member.Base, member.Modifier);
-        var currentLevelXp = MemberExtensions.GetXpNeeded(currentLevel, member.Base, member.Modifier);
-        var nextLevelXp = MemberExtensions.GetXpNeeded(currentLevel, member.Base, member.Modifier, 1);
+            var currentLevel = MemberExtensions.GetLevel(member.Xp, member.Base, member.Modifier);
+            var currentLevelXp = MemberExtensions.GetXpNeeded(currentLevel, member.Base, member.Modifier);
+            var nextLevelXp = MemberExtensions.GetXpNeeded(currentLevel, member.Base, member.Modifier, 1);
 
-        var nextReward = member.Rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
+            var nextReward = member.Rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 
-        return new GetLevelQueryResponse
-        {
-            UsersXp = member.Xp,
-            UsersLevel = currentLevel,
-            LevelProgress = member.Xp - currentLevelXp,
-            XpForNextLevel = nextLevelXp - currentLevelXp,
-            NextRewardLevel = nextReward?.RewardLevel,
-            NextRoleRewardId = nextReward?.RoleId,
-        };
+            return new Response
+            {
+                UsersXp = member.Xp,
+                UsersLevel = currentLevel,
+                LevelProgress = member.Xp - currentLevelXp,
+                XpForNextLevel = nextLevelXp - currentLevelXp,
+                NextRewardLevel = nextReward?.RewardLevel,
+                NextRoleRewardId = nextReward?.RoleId,
+            };
+        }
     }
-}
 
-public sealed record GetLevelQueryResponse : BaseResponse
-{
-    public long UsersXp { get; init; }
-    public int UsersLevel { get; init; }
-    public long LevelProgress { get; init; }
-    public long XpForNextLevel { get; init; }
-    public ulong? NextRoleRewardId { get; init; }
-    public int? NextRewardLevel { get; init; }
+    public sealed record Response : BaseResponse
+    {
+        public long UsersXp { get; init; }
+        public int UsersLevel { get; init; }
+        public long LevelProgress { get; init; }
+        public long XpForNextLevel { get; init; }
+        public ulong? NextRoleRewardId { get; init; }
+        public int? NextRewardLevel { get; init; }
+    }
+
+
 }
 

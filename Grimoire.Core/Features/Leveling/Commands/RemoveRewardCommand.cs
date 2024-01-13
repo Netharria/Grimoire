@@ -8,27 +8,33 @@
 using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Commands;
-public sealed record RemoveRewardCommand : ICommand<BaseResponse>
-{
-    public ulong RoleId { get; init; }
-}
-public sealed class RemoveRewardCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveRewardCommand, BaseResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<BaseResponse> Handle(RemoveRewardCommand command, CancellationToken cancellationToken)
+public sealed class RemoveReward
+{
+    public sealed record Command : ICommand<BaseResponse>
     {
-        var result = await this._grimoireDbContext.Rewards
+        public ulong RoleId { get; init; }
+    }
+
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var result = await this._grimoireDbContext.Rewards
             .Include(x => x.Guild)
             .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
-        if (result is not Reward reward)
-            throw new AnticipatedException($"Did not find a saved reward for role <@&{command.RoleId}>");
-        this._grimoireDbContext.Rewards.Remove(reward);
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return new BaseResponse
-        {
-            Message = $"Removed {reward.Mention()} reward",
-            LogChannelId = result.Guild.ModChannelLog
-        };
+            if (result is not Reward reward)
+                throw new AnticipatedException($"Did not find a saved reward for role <@&{command.RoleId}>");
+            this._grimoireDbContext.Rewards.Remove(reward);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            return new BaseResponse
+            {
+                Message = $"Removed {reward.Mention()} reward",
+                LogChannelId = result.Guild.ModChannelLog
+            };
+        }
     }
+
 }

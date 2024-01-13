@@ -7,30 +7,34 @@
 
 namespace Grimoire.Core.Features.LogCleanup.Queries;
 
-public sealed record GetOldLogMessagesQuery : IRequest<IEnumerable<GetOldLogMessagesQueryResponse>> { }
-
-public sealed class GetOldLogMessagesQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetOldLogMessagesQuery, IEnumerable<GetOldLogMessagesQueryResponse>>
+public sealed class GetOldLogMessages
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    public sealed record Query : IRequest<IEnumerable<Response>> { }
 
-    public async ValueTask<IEnumerable<GetOldLogMessagesQueryResponse>> Handle(GetOldLogMessagesQuery request, CancellationToken cancellationToken)
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, IEnumerable<Response>>
     {
-        var oldDate = DateTime.UtcNow - TimeSpan.FromDays(30);
-        return await this._grimoireDbContext.OldLogMessages
-            .Where(x => x.CreatedAt < oldDate)
-            .GroupBy(x => new { x.ChannelId, x.GuildId })
-            .Select(x => new GetOldLogMessagesQueryResponse
-            {
-                ChannelId = x.Key.ChannelId,
-                GuildId = x.Key.GuildId,
-                MessageIds = x.Select(x => x.Id).ToArray()
-            }).ToArrayAsync(cancellationToken: cancellationToken);
-    }
-}
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-public sealed record GetOldLogMessagesQueryResponse : BaseResponse
-{
-    public ulong ChannelId { get; init; }
-    public ulong GuildId { get; init; }
-    public ulong[] MessageIds { get; init; } = [];
+        public async ValueTask<IEnumerable<Response>> Handle(Query request, CancellationToken cancellationToken)
+        {
+            var oldDate = DateTime.UtcNow - TimeSpan.FromDays(30);
+            return await this._grimoireDbContext.OldLogMessages
+                .Where(x => x.CreatedAt < oldDate)
+                .GroupBy(x => new { x.ChannelId, x.GuildId })
+                .Select(x => new Response
+                {
+                    ChannelId = x.Key.ChannelId,
+                    GuildId = x.Key.GuildId,
+                    MessageIds = x.Select(x => x.Id).ToArray()
+                }).ToArrayAsync(cancellationToken: cancellationToken);
+        }
+    }
+
+    public sealed record Response : BaseResponse
+    {
+        public ulong ChannelId { get; init; }
+        public ulong GuildId { get; init; }
+        public ulong[] MessageIds { get; init; } = [];
+    }
+
 }

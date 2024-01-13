@@ -9,6 +9,7 @@ using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Queries;
+
 public static class GetUserLevelingInfo
 {
     public sealed record Query : IQuery<Response?>

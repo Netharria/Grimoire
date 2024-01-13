@@ -41,10 +41,10 @@ public sealed class UpdateIgnoreStateForXpGainCommandTests(GrimoireCoreFactory f
     [Fact]
     public async Task WhenAddIgnoreForXpGainCommandHandlerCalled_AddIgnoreStatusAsync()
     {
-        var cut = new AddIgnoreForXpGainCommandHandler(this._dbContext);
+        var cut = new AddIgnoreForXpGain.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new AddIgnoreForXpGainCommand
+            new AddIgnoreForXpGain.Command
             {
                 Users = [new UserDto { Id = USER_ID }],
                 GuildId = GUILD_ID,
@@ -93,10 +93,10 @@ public sealed class UpdateIgnoreStateForXpGainCommandTests(GrimoireCoreFactory f
     [Fact]
     public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
     {
-        var cut = new AddIgnoreForXpGainCommandHandler(this._dbContext);
+        var cut = new AddIgnoreForXpGain.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new AddIgnoreForXpGainCommand
+            new AddIgnoreForXpGain.Command
             {
                 GuildId = GUILD_ID,
                 InvalidIds = ["asldfkja"]

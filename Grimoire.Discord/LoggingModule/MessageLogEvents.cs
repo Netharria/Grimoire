@@ -101,7 +101,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         {
             var message = await loggingChannel.SendMessageAsync(messageBuilder);
             if (message is null) return;
-            await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+            await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
         }
         catch (Exception ex)
         {
@@ -160,7 +160,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
                 .AddEmbed(embed)
                 .AddFile($"{DateTime.UtcNow:r}.txt", memoryStream));
             if (message is null) return;
-            await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+            await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
         }
         catch (Exception ex)
         {
@@ -239,7 +239,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
                     .AddEmbed(embed));
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
         }
         catch (Exception ex)

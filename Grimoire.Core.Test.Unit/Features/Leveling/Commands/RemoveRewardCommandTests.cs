@@ -47,8 +47,8 @@ public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsy
         });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new RemoveRewardCommandHandler(this._dbContext);
-        var command = new RemoveRewardCommand
+        var CUT = new RemoveReward.Handler(this._dbContext);
+        var command = new RemoveReward.Command
         {
             RoleId = ROLE_ID
         };
@@ -61,8 +61,8 @@ public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenAddingReward_IfRewardExist_UpdateRole()
     {
-        var CUT = new RemoveRewardCommandHandler(this._dbContext);
-        var command = new RemoveRewardCommand
+        var CUT = new RemoveReward.Handler(this._dbContext);
+        var command = new RemoveReward.Command
         {
             RoleId = ROLE_ID
         };

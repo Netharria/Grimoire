@@ -23,7 +23,7 @@ public sealed partial class LevelingEvents(IMediator mediator, ILogger<LevelingE
         if (args.Message.MessageType is not MessageType.Default and not MessageType.Reply ||
             args.Author is not DiscordMember member) return;
         if (member.IsBot) return;
-        var response = await this._mediator.Send(new GainUserXpCommand
+        var response = await this._mediator.Send(new GainUserXp.Command
         {
             ChannelId = args.Channel.Id,
             GuildId = args.Guild.Id,

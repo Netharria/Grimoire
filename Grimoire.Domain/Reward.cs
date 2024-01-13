@@ -9,7 +9,7 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class Reward : IMentionable
+public class Reward
 {
     public ulong RoleId { get; set; }
 

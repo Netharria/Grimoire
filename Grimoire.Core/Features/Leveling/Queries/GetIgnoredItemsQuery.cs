@@ -11,19 +11,21 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Queries;
 
-public sealed record GetIgnoredItemsQuery : IRequest<BaseResponse>
+public sealed class GetIgnoredItems
 {
-    public ulong GuildId { get; init; }
-}
-
-public sealed class GetIgnoredItemsQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetIgnoredItemsQuery, BaseResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<BaseResponse> Handle(GetIgnoredItemsQuery request, CancellationToken cancellationToken)
+    public sealed record Query : IRequest<BaseResponse>
     {
+        public ulong GuildId { get; init; }
+    }
 
-        var ignoredItems = await this._grimoireDbContext.Guilds
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<Query, BaseResponse>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
+        {
+
+            var ignoredItems = await this._grimoireDbContext.Guilds
             .AsNoTracking()
             .AsSplitQuery()
             .WhereIdIs(request.GuildId)
@@ -34,24 +36,27 @@ public sealed class GetIgnoredItemsQueryHandler(IGrimoireDbContext grimoireDbCon
                 IgnoredMembers = x.IgnoredMembers.Select(x => x.UserId)
             }).FirstAsync(cancellationToken: cancellationToken);
 
-        if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredMembers.Any())
-            throw new AnticipatedException("This server does not have any ignored channels, roles or users.");
+            if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredMembers.Any())
+                throw new AnticipatedException("This server does not have any ignored channels, roles or users.");
 
-        var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
+            var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
 
-        foreach (var channel in ignoredItems.IgnoredChannels)
-            ignoredMessageBuilder.Append(ChannelExtensions.Mention(channel)).Append('\n');
+            foreach (var channel in ignoredItems.IgnoredChannels)
+                ignoredMessageBuilder.Append(ChannelExtensions.Mention(channel)).Append('\n');
 
-        ignoredMessageBuilder.Append("\n**Roles**\n");
+            ignoredMessageBuilder.Append("\n**Roles**\n");
 
-        foreach (var role in ignoredItems.IgnoredRoles)
-            ignoredMessageBuilder.Append(RoleExtensions.Mention(role)).Append('\n');
+            foreach (var role in ignoredItems.IgnoredRoles)
+                ignoredMessageBuilder.Append(RoleExtensions.Mention(role)).Append('\n');
 
-        ignoredMessageBuilder.Append("\n**Users**\n");
+            ignoredMessageBuilder.Append("\n**Users**\n");
 
-        foreach (var member in ignoredItems.IgnoredMembers)
-            ignoredMessageBuilder.Append(UserExtensions.Mention(member)).Append('\n');
+            foreach (var member in ignoredItems.IgnoredMembers)
+                ignoredMessageBuilder.Append(UserExtensions.Mention(member)).Append('\n');
 
-        return new BaseResponse { Message = ignoredMessageBuilder.ToString() };
+            return new BaseResponse { Message = ignoredMessageBuilder.ToString() };
+        }
     }
+
 }
+

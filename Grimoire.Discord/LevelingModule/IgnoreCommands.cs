@@ -24,7 +24,7 @@ internal sealed class IgnoreCommands(IMediator mediator) : ApplicationCommandMod
     public async Task ShowIgnoredAsync(InteractionContext ctx)
     {
 
-        var response = await this._mediator.Send(new GetIgnoredItemsQuery { GuildId = ctx.Guild.Id });
+        var response = await this._mediator.Send(new GetIgnoredItems.Query { GuildId = ctx.Guild.Id });
 
         var interactivity = ctx.Client.GetInteractivity();
         var embed = new DiscordEmbedBuilder()
@@ -53,8 +53,8 @@ internal sealed class IgnoreCommands(IMediator mediator) : ApplicationCommandMod
             return;
         }
         IUpdateIgnoreForXpGain command = shouldIgnore
-            ? new AddIgnoreForXpGainCommand{ GuildId = ctx.Guild.Id }
-            : new RemoveIgnoreForXpGainCommand { GuildId = ctx.Guild.Id };
+            ? new AddIgnoreForXpGain.Command{ GuildId = ctx.Guild.Id }
+            : new RemoveIgnoreForXpGain.Command { GuildId = ctx.Guild.Id };
 
         if (matchedIds.TryGetValue("User", out var userIds))
         {

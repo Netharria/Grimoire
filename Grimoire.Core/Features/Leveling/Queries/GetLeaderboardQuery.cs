@@ -10,56 +10,61 @@ using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Queries;
 
-public sealed record GetLeaderboardQuery : IRequest<GetLeaderboardQueryResponse>
+public sealed class GetLeaderboard
 {
-    public ulong GuildId { get; init; }
-    public ulong? UserId { get; init; }
-}
 
-public sealed class GetLeaderboardQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetLeaderboardQuery, GetLeaderboardQueryResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<GetLeaderboardQueryResponse> Handle(GetLeaderboardQuery request, CancellationToken cancellationToken)
+    public sealed record Query : IRequest<Response>
     {
-        var RankedMembers = await this._grimoireDbContext.Members
+        public ulong GuildId { get; init; }
+        public ulong? UserId { get; init; }
+    }
+
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Response> Handle(Query request, CancellationToken cancellationToken)
+        {
+            var RankedMembers = await this._grimoireDbContext.Members
         .AsNoTracking()
         .Where(x => x.GuildId == request.GuildId)
         .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
         .OrderByDescending(x => x.Xp)
         .ToListAsync(cancellationToken: cancellationToken);
 
-        var totalMemberCount = RankedMembers.Count;
+            var totalMemberCount = RankedMembers.Count;
 
-        var memberPosition = 0;
+            var memberPosition = 0;
 
-        if (request.UserId is not null)
-            memberPosition = RankedMembers.FindIndex(x => x.UserId == request.UserId);
+            if (request.UserId is not null)
+                memberPosition = RankedMembers.FindIndex(x => x.UserId == request.UserId);
 
-        if (request.UserId is not null && memberPosition == -1)
-            throw new AnticipatedException("Could not find user on leaderboard.");
+            if (request.UserId is not null && memberPosition == -1)
+                throw new AnticipatedException("Could not find user on leaderboard.");
 
-        if (memberPosition == -1)
-            memberPosition++;
+            if (memberPosition == -1)
+                memberPosition++;
 
-        var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
-        if (startIndex + 15 > totalMemberCount)
-            startIndex = totalMemberCount - 15;
-        if (startIndex < 0)
-            startIndex = 0;
-        var leaderboardText = new StringBuilder();
+            var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
+            if (startIndex + 15 > totalMemberCount)
+                startIndex = totalMemberCount - 15;
+            if (startIndex < 0)
+                startIndex = 0;
+            var leaderboardText = new StringBuilder();
 
-        for (var i = 0; i < 15 && startIndex < totalMemberCount; i++)
-        {
-            leaderboardText.Append($"**{startIndex + 1}** {UserExtensions.Mention(RankedMembers[startIndex].UserId)} **XP:** {RankedMembers[startIndex].Xp}\n");
-            startIndex++;
+            for (var i = 0; i < 15 && startIndex < totalMemberCount; i++)
+            {
+                leaderboardText.Append($"**{startIndex + 1}** {UserExtensions.Mention(RankedMembers[startIndex].UserId)} **XP:** {RankedMembers[startIndex].Xp}\n");
+                startIndex++;
+            }
+            return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
         }
-        return new GetLeaderboardQueryResponse { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
+    }
+
+    public sealed record Response : BaseResponse
+    {
+        public string LeaderboardText { get; init; } = string.Empty;
+        public int TotalUserCount { get; init; }
     }
 }
 
-public sealed record GetLeaderboardQueryResponse : BaseResponse
-{
-    public string LeaderboardText { get; init; } = string.Empty;
-    public int TotalUserCount { get; init; }
-}

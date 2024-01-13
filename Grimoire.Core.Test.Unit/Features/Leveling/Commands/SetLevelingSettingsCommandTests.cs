@@ -48,8 +48,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = 12341234
         };
@@ -62,8 +62,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingTextTime_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.TextTime,
@@ -79,8 +79,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingBase_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Base,
@@ -95,8 +95,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingModifier_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Modifier,
@@ -111,8 +111,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingAmount_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Amount,
@@ -127,8 +127,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,
@@ -143,8 +143,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingTextTime_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.TextTime,
@@ -161,8 +161,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingBase_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Base,
@@ -179,8 +179,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingModifier_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Modifier,
@@ -197,8 +197,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingAmount_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Amount,
@@ -214,8 +214,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingLogChannel_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,
@@ -232,8 +232,8 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     [Fact]
     public async Task WhenUpdatingLogChannel_IfNumberIs0_UpdateSettingToNullAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,

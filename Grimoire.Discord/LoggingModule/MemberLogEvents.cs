@@ -124,7 +124,7 @@ internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteS
                 .WithColor(GrimoireColor.Mint);
                 var message = await logChannel.SendMessageAsync(embed);
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
             }
             await this._mediator.Publish(new NicknameTrackerNotification
             {
@@ -160,7 +160,7 @@ internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteS
                         .WithColor(GrimoireColor.Mint);
                 var message = await logChannel.SendMessageAsync(embed);
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
             }
             await this._mediator.Publish(new UsernameTrackerNotification
             {
@@ -199,7 +199,7 @@ internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteS
                     false);
                 var message = await logChannel.SendMessageAsync(messageBuilder);
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
             }
             await this._mediator.Publish(new AvatarTrackerNotification
             {

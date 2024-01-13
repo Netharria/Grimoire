@@ -7,12 +7,6 @@
 
 namespace Grimoire.Core.Features.Leveling.Commands;
 
-public sealed record SetLevelSettingsCommand : ICommand<BaseResponse>
-{
-    public ulong GuildId { get; init; }
-    public LevelSettings LevelSettings { get; init; }
-    public string Value { get; init; } = string.Empty;
-}
 public enum LevelSettings
 {
     TextTime,
@@ -22,14 +16,23 @@ public enum LevelSettings
     LogChannel,
 }
 
-
-public sealed class SetLevelSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetLevelSettingsCommand, BaseResponse>
+public sealed class SetLevelSettings
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<BaseResponse> Handle(SetLevelSettingsCommand command, CancellationToken cancellationToken)
+    public sealed record Command : ICommand<BaseResponse>
     {
-        var levelSettings = await this._grimoireDbContext.GuildLevelSettings
+        public ulong GuildId { get; init; }
+        public LevelSettings LevelSettings { get; init; }
+        public string Value { get; init; } = string.Empty;
+    }
+
+
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var levelSettings = await this._grimoireDbContext.GuildLevelSettings
             .Where(x => x.GuildId == command.GuildId)
             .Select(x => new
             {
@@ -37,40 +40,43 @@ public sealed class SetLevelSettingsCommandHandler(IGrimoireDbContext grimoireDb
                 x.Guild.ModChannelLog
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-        if (levelSettings == null) throw new AnticipatedException("Could not find guild level settings.");
-        switch (command.LevelSettings)
-        {
-            case LevelSettings.TextTime:
-                if (!uint.TryParse(command.Value, out var textTime))
-                    throw new AnticipatedException("Please give a valid number for TextTime.");
-                levelSettings.LevelSettings.TextTime = TimeSpan.FromMinutes(textTime);
-                break;
-            case LevelSettings.Base:
-                if (!int.TryParse(command.Value, out var baseXp))
-                    throw new AnticipatedException("Please give a valid number for base XP.");
-                levelSettings.LevelSettings.Base = baseXp;
-                break;
-            case LevelSettings.Modifier:
-                if (!int.TryParse(command.Value, out var modifier))
-                    throw new AnticipatedException("Please give a valid number for Modifier.");
-                levelSettings.LevelSettings.Modifier = modifier;
-                break;
-            case LevelSettings.Amount:
-                if (!int.TryParse(command.Value, out var amount))
-                    throw new AnticipatedException("Please give a valid number for Amount.");
-                levelSettings.LevelSettings.Amount = amount;
-                break;
-            case LevelSettings.LogChannel:
-                if (!ulong.TryParse(command.Value, out var value))
-                    throw new AnticipatedException("Please give a valid channel for Log Channel.");
-                levelSettings.LevelSettings.LevelChannelLogId = value == 0 ? null : value;
-                break;
+            if (levelSettings == null) throw new AnticipatedException("Could not find guild level settings.");
+            switch (command.LevelSettings)
+            {
+                case LevelSettings.TextTime:
+                    if (!uint.TryParse(command.Value, out var textTime))
+                        throw new AnticipatedException("Please give a valid number for TextTime.");
+                    levelSettings.LevelSettings.TextTime = TimeSpan.FromMinutes(textTime);
+                    break;
+                case LevelSettings.Base:
+                    if (!int.TryParse(command.Value, out var baseXp))
+                        throw new AnticipatedException("Please give a valid number for base XP.");
+                    levelSettings.LevelSettings.Base = baseXp;
+                    break;
+                case LevelSettings.Modifier:
+                    if (!int.TryParse(command.Value, out var modifier))
+                        throw new AnticipatedException("Please give a valid number for Modifier.");
+                    levelSettings.LevelSettings.Modifier = modifier;
+                    break;
+                case LevelSettings.Amount:
+                    if (!int.TryParse(command.Value, out var amount))
+                        throw new AnticipatedException("Please give a valid number for Amount.");
+                    levelSettings.LevelSettings.Amount = amount;
+                    break;
+                case LevelSettings.LogChannel:
+                    if (!ulong.TryParse(command.Value, out var value))
+                        throw new AnticipatedException("Please give a valid channel for Log Channel.");
+                    levelSettings.LevelSettings.LevelChannelLogId = value == 0 ? null : value;
+                    break;
+            }
+
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+
+            return new BaseResponse
+            {
+                LogChannelId = levelSettings.ModChannelLog
+            };
         }
-        this._grimoireDbContext.GuildLevelSettings.Update(levelSettings.LevelSettings);
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return new BaseResponse
-        {
-            LogChannelId = levelSettings.ModChannelLog
-        };
     }
 }
+

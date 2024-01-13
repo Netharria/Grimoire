@@ -56,8 +56,8 @@ public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAs
         this._dbContext.Guilds.Add(new Guild { Id = 34958734 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetIgnoredItemsQueryHandler(this._dbContext);
-        var command = new GetIgnoredItemsQuery
+        var CUT = new GetIgnoredItems.Handler(this._dbContext);
+        var command = new GetIgnoredItems.Query
         {
             GuildId = 34958734
         };
@@ -72,8 +72,8 @@ public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAs
     public async Task WhenCallingGetIgnoredItemsHandler_IfIgnoredItems_ReturnSuccessResponseAsync()
     {
 
-        var CUT = new GetIgnoredItemsQueryHandler(this._dbContext);
-        var command = new GetIgnoredItemsQuery
+        var CUT = new GetIgnoredItems.Handler(this._dbContext);
+        var command = new GetIgnoredItems.Query
         {
             GuildId = GUILD_ID
         };

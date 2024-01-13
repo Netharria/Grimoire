@@ -62,8 +62,8 @@ public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsy
     public async Task WhenCallingGetLeaderboardQueryHandler_IfProvidedUserNotFound_FailResponse()
     {
 
-        var CUT = new GetLeaderboardQueryHandler(this._dbContext);
-        var command = new GetLeaderboardQuery
+        var CUT = new GetLeaderboard.Handler(this._dbContext);
+        var command = new GetLeaderboard.Query
         {
             GuildId = GUILD_ID,
             UserId = 234081234
@@ -79,8 +79,8 @@ public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsy
     public async Task WhenCallingGetLeaderboardQueryHandler_ReturnLeaderboardAsync()
     {
 
-        var CUT = new GetLeaderboardQueryHandler(this._dbContext);
-        var command = new GetLeaderboardQuery
+        var CUT = new GetLeaderboard.Handler(this._dbContext);
+        var command = new GetLeaderboard.Query
         {
             GuildId = GUILD_ID
         };

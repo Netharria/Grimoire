@@ -82,9 +82,10 @@ public sealed class AddTrackerCommandHandler(IGrimoireDbContext grimoireDbContex
             result.Tracker.LogChannelId = command.ChannelId;
             result.Tracker.EndTime = trackerEndTime;
             result.Tracker.ModeratorId = command.ModeratorId;
-            this._grimoireDbContext.Trackers.Update(result.Tracker);
         }
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+
         return new AddTrackerCommandResponse
         {
             ModerationLogId = result?.ModChannelLog

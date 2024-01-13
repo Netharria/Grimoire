@@ -16,22 +16,24 @@ public enum XpOption
     Amount
 }
 
-public sealed record ReclaimUserXpCommand : ICommand<ReclaimUserXpCommandResponse>
+public sealed class ReclaimUserXp
 {
-    public XpOption XpOption { get; init; }
-    public long XpToTake { get; init; }
-    public ulong UserId { get; init; }
-    public ulong GuildId { get; init; }
-    public ulong? ReclaimerId { get; init; }
-}
-
-public sealed class ReclaimUserXpCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<ReclaimUserXpCommand, ReclaimUserXpCommandResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<ReclaimUserXpCommandResponse> Handle(ReclaimUserXpCommand command, CancellationToken cancellationToken)
+    public sealed record Command : ICommand<Response>
     {
-        var member = await this._grimoireDbContext.Members
+        public XpOption XpOption { get; init; }
+        public long XpToTake { get; init; }
+        public ulong UserId { get; init; }
+        public ulong GuildId { get; init; }
+        public ulong? ReclaimerId { get; init; }
+    }
+
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Response> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var member = await this._grimoireDbContext.Members
             .AsNoTracking()
             .WhereMemberHasId(command.UserId, command.GuildId)
             .Select(x => new
@@ -40,37 +42,40 @@ public sealed class ReclaimUserXpCommandHandler(IGrimoireDbContext grimoireDbCon
                 x.Guild.ModChannelLog
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-        if (member is null)
-            throw new AnticipatedException($"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
+            if (member is null)
+                throw new AnticipatedException($"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
 
-        var xpToTake = command.XpOption switch
-        {
-            XpOption.All => member.Xp,
-            XpOption.Amount => command.XpToTake,
-            _ => throw new ArgumentOutOfRangeException(nameof(command),"XpOption not implemented in switch statement.")
-        };
-        if (member.Xp < xpToTake)
-            xpToTake = member.Xp;
-        await this._grimoireDbContext.XpHistory.AddAsync(new XpHistory
-        {
-            UserId = command.UserId,
-            GuildId = command.GuildId,
-            Xp = -xpToTake,
-            Type = XpHistoryType.Reclaimed,
-            AwarderId = command.ReclaimerId,
-            TimeOut = DateTimeOffset.UtcNow
-        }, cancellationToken);
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            var xpToTake = command.XpOption switch
+            {
+                XpOption.All => member.Xp,
+                XpOption.Amount => command.XpToTake,
+                _ => throw new ArgumentOutOfRangeException(nameof(command),"XpOption not implemented in switch statement.")
+            };
+            if (member.Xp < xpToTake)
+                xpToTake = member.Xp;
+            await this._grimoireDbContext.XpHistory.AddAsync(new XpHistory
+            {
+                UserId = command.UserId,
+                GuildId = command.GuildId,
+                Xp = -xpToTake,
+                Type = XpHistoryType.Reclaimed,
+                AwarderId = command.ReclaimerId,
+                TimeOut = DateTimeOffset.UtcNow
+            }, cancellationToken);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-        return new ReclaimUserXpCommandResponse
-        {
-            LogChannelId = member.ModChannelLog,
-            XpTaken = xpToTake
-        };
+            return new Response
+            {
+                LogChannelId = member.ModChannelLog,
+                XpTaken = xpToTake
+            };
+        }
     }
+
+    public sealed record Response : BaseResponse
+    {
+        public long XpTaken { get; init; }
+    }
+
 }
 
-public sealed record ReclaimUserXpCommandResponse : BaseResponse
-{
-    public long XpTaken { get; init; }
-}

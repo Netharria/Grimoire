@@ -63,8 +63,8 @@ public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLife
     public async Task WhenCallingGetLevelQueryHandler_IfUserDoesNotExist_ReturnFailedResponse()
     {
 
-        var CUT = new GetLevelQueryHandler(this._dbContext);
-        var command = new GetLevelQuery
+        var CUT = new GetLevel.Handler(this._dbContext);
+        var command = new GetLevel.Query
         {
             GuildId = GUILD_ID,
             UserId = 234081234
@@ -80,8 +80,8 @@ public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLife
     public async Task WhenCallingGetLevelQueryHandler_IfUserExists_ReturnResponseAsync()
     {
 
-        var CUT = new GetLevelQueryHandler(this._dbContext);
-        var command = new GetLevelQuery
+        var CUT = new GetLevel.Handler(this._dbContext);
+        var command = new GetLevel.Query
         {
             GuildId = GUILD_ID,
             UserId = USER_ID

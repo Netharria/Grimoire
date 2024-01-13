@@ -22,38 +22,40 @@ public interface IUpdateIgnoreForXpGain : ICommand<BaseResponse>
 }
 
 
-public sealed record AddIgnoreForXpGainCommand : IUpdateIgnoreForXpGain
+public sealed class AddIgnoreForXpGain
 {
-    public ulong GuildId { get; init; }
-    public UserDto[] Users { get; set; } = [];
-    public RoleDto[] Roles { get; set; } = [];
-    public ChannelDto[] Channels { get; set; } = [];
-    public string[] InvalidIds { get; set; } = [];
-}
-
-public sealed class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddIgnoreForXpGainCommand, BaseResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<BaseResponse> Handle(AddIgnoreForXpGainCommand command, CancellationToken cancellationToken)
+    public sealed record Command : IUpdateIgnoreForXpGain
     {
-        await this._grimoireDbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
-        await this._grimoireDbContext.Members.AddMissingMembersAsync(
-            command.Users.Select(x =>
-                new MemberDto
-                {
-                    UserId = x.Id,
-                    GuildId = command.GuildId,
-                    Nickname = x.Nickname,
-                    AvatarUrl = x.AvatarUrl
-                }), cancellationToken);
-        await this._grimoireDbContext.Channels.AddMissingChannelsAsync(command.Channels, cancellationToken);
-        await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);
-        var newIgnoredItems = new StringBuilder();
+        public ulong GuildId { get; init; }
+        public UserDto[] Users { get; set; } = [];
+        public RoleDto[] Roles { get; set; } = [];
+        public ChannelDto[] Channels { get; set; } = [];
+        public string[] InvalidIds { get; set; } = [];
+    }
 
-        if (command.Users.Length != 0)
+    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    {
+        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
-            var allUsersToIgnore = command.Users
+            await this._grimoireDbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
+            await this._grimoireDbContext.Members.AddMissingMembersAsync(
+                command.Users.Select(x =>
+                    new MemberDto
+                    {
+                        UserId = x.Id,
+                        GuildId = command.GuildId,
+                        Nickname = x.Nickname,
+                        AvatarUrl = x.AvatarUrl
+                    }), cancellationToken);
+            await this._grimoireDbContext.Channels.AddMissingChannelsAsync(command.Channels, cancellationToken);
+            await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);
+            var newIgnoredItems = new StringBuilder();
+
+            if (command.Users.Length != 0)
+            {
+                var allUsersToIgnore = command.Users
                 .ExceptBy(this._grimoireDbContext.IgnoredMembers
                 .AsNoTracking().Select(x => new { x.UserId, x.GuildId }),
                 x => new { UserId = x.Id, command.GuildId })
@@ -62,15 +64,15 @@ public sealed class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoire
                     UserId = x.Id,
                     GuildId = command.GuildId
                 }).ToArray();
-            foreach (var ignorable in allUsersToIgnore)
-                newIgnoredItems.Append(UserExtensions.Mention(ignorable.UserId)).Append(' ');
-            if (allUsersToIgnore.Length != 0)
-                await this._grimoireDbContext.IgnoredMembers.AddRangeAsync(allUsersToIgnore);
-        }
+                foreach (var ignorable in allUsersToIgnore)
+                    newIgnoredItems.Append(UserExtensions.Mention(ignorable.UserId)).Append(' ');
+                if (allUsersToIgnore.Length != 0)
+                    await this._grimoireDbContext.IgnoredMembers.AddRangeAsync(allUsersToIgnore);
+            }
 
-        if (command.Roles.Length != 0)
-        {
-            var allRolesToIgnore = command.Roles
+            if (command.Roles.Length != 0)
+            {
+                var allRolesToIgnore = command.Roles
                 .ExceptBy(this._grimoireDbContext.IgnoredRoles
                 .AsNoTracking().Select(x => x.RoleId),
                 x => x.Id)
@@ -79,15 +81,15 @@ public sealed class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoire
                     RoleId = x.Id,
                     GuildId = command.GuildId
                 }).ToArray();
-            foreach (var ignorable in allRolesToIgnore)
-                newIgnoredItems.Append(RoleExtensions.Mention(ignorable.RoleId)).Append(' ');
-            if (allRolesToIgnore.Length != 0)
-                await this._grimoireDbContext.IgnoredRoles.AddRangeAsync(allRolesToIgnore);
-        }
+                foreach (var ignorable in allRolesToIgnore)
+                    newIgnoredItems.Append(RoleExtensions.Mention(ignorable.RoleId)).Append(' ');
+                if (allRolesToIgnore.Length != 0)
+                    await this._grimoireDbContext.IgnoredRoles.AddRangeAsync(allRolesToIgnore);
+            }
 
-        if (command.Channels.Length != 0)
-        {
-            var allChannelsToIgnore = command.Channels
+            if (command.Channels.Length != 0)
+            {
+                var allChannelsToIgnore = command.Channels
                 .ExceptBy(this._grimoireDbContext.IgnoredChannels
                 .AsNoTracking().Select(x => x.ChannelId),
                 x => x.Id)
@@ -96,33 +98,32 @@ public sealed class AddIgnoreForXpGainCommandHandler(IGrimoireDbContext grimoire
                     ChannelId = x.Id,
                     GuildId = command.GuildId
                 }).ToArray();
-            foreach (var ignorable in allChannelsToIgnore)
-                newIgnoredItems.Append(ChannelExtensions.Mention(ignorable.ChannelId)).Append(' ');
-            if (allChannelsToIgnore.Length != 0)
-                await this._grimoireDbContext.IgnoredChannels.AddRangeAsync(allChannelsToIgnore);
-        }
+                foreach (var ignorable in allChannelsToIgnore)
+                    newIgnoredItems.Append(ChannelExtensions.Mention(ignorable.ChannelId)).Append(' ');
+                if (allChannelsToIgnore.Length != 0)
+                    await this._grimoireDbContext.IgnoredChannels.AddRangeAsync(allChannelsToIgnore);
+            }
 
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-        var couldNotMatch = new StringBuilder();
-        if (command.InvalidIds.Length != 0)
-            foreach (var id in command.InvalidIds)
-                couldNotMatch.Append(id).Append(' ');
+            var couldNotMatch = new StringBuilder();
+            if (command.InvalidIds.Length != 0)
+                foreach (var id in command.InvalidIds)
+                    couldNotMatch.Append(id).Append(' ');
 
-        var finalString = new StringBuilder();
-        if (couldNotMatch.Length > 0) finalString.Append("Could not match ").Append(couldNotMatch).Append("with a role, channel or user. ");
-        if (newIgnoredItems.Length > 0) finalString.Append(newIgnoredItems).Append(" are now ignored for xp gain.");
-        var modChannelLog = await this._grimoireDbContext.Guilds
+            var finalString = new StringBuilder();
+            if (couldNotMatch.Length > 0) finalString.Append("Could not match ").Append(couldNotMatch).Append("with a role, channel or user. ");
+            if (newIgnoredItems.Length > 0) finalString.Append(newIgnoredItems).Append(" are now ignored for xp gain.");
+            var modChannelLog = await this._grimoireDbContext.Guilds
                 .AsNoTracking()
                 .WhereIdIs(command.GuildId)
                 .Select(x => x.ModChannelLog)
                 .FirstOrDefaultAsync(cancellationToken);
-        return new BaseResponse
-        {
-            Message = finalString.ToString(),
-            LogChannelId = modChannelLog
-        };
+            return new BaseResponse
+            {
+                Message = finalString.ToString(),
+                LogChannelId = modChannelLog
+            };
+        }
     }
-
-
 }

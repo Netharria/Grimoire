@@ -37,4 +37,10 @@ public static class MemberExtensions
         };
     }
 
+    public static string Mention(this Member? member)
+        => member switch
+        {
+            Member => $"<@!{member.UserId}>",
+            null => "Unknown User",
+        };
 }
