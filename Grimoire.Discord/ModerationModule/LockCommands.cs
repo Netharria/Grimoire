@@ -51,7 +51,7 @@ public class LockCommands(IMediator mediator) : ApplicationCommandModule
 
     private async Task<BaseResponse> ChannelLockAsync(InteractionContext ctx, DiscordChannel channel, string? reason, DurationType durationType, long durationAmount)
     {
-        var previousSetting = channel.PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
+        var previousSetting = ctx.Guild.GetChannel(channel.Id).PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
         var response = await this._mediator.Send(new LockChannelCommand
         {
             ChannelId = channel.Id,
