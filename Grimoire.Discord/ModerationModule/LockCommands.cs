@@ -94,7 +94,7 @@ public class LockCommands(IMediator mediator) : ApplicationCommandModule
 
         if (!channel.IsThread)
         {
-            var permissions = channel.PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
+            var permissions = ctx.Guild.GetChannel(channel.Id).PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
             await channel.AddOverwriteAsync(ctx.Guild.EveryoneRole,
                 permissions.Allowed.RevertLockPermissions(response.PreviouslyAllowed)
                 , permissions.Denied.RevertLockPermissions(response.PreviouslyDenied));
