@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.DatabaseQueryHelpers;
+using Grimoire.Discord.Extensions;
 
 namespace Grimoire.Core.Features.MessageLogging.Commands;
 
@@ -87,8 +88,7 @@ public class AddMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : IC
             MessageHistory = new List<MessageHistory>{
                 new() {
                     MessageId = command.MessageId,
-                    MessageContent = command.MessageContent
-                        .Replace("\x00", ""),
+                    MessageContent = command.MessageContent.UnicodeToUTF8(),
                     GuildId = command.GuildId,
                     Action = MessageAction.Created
                 }
