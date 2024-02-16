@@ -62,8 +62,15 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
                     .Where(x => x.StartsWith("   at Grimoire"))
                     .Select(x => x[(x.IndexOf(" in ") + 4)..])
                     .Select(x => '\"' + x.Replace(":line", "\" line")));
+            var innerException = exception.InnerException;
+            var exceptionMessage = new StringBuilder().AppendLine(exception.Message);
+            while(innerException is not null)
+            {
+                exceptionMessage.AppendLine(innerException.Message);
+                innerException = innerException.InnerException;
+            }
             await channel.SendMessageAsync($"Encountered exception while executing {action} {errorIdString}\n" +
-                $"```csharp\n{exception.Message}\n{shortStackTrace}\n```");
+                $"```csharp\n{exceptionMessage}\n{shortStackTrace}\n```");
         }
 
     }
