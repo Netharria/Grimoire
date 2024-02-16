@@ -95,8 +95,8 @@ public partial class DiscordImageEmbedService : IDiscordImageEmbedService
             return new ImageDownloadResult
             {
                 Uri = uri,
-                Successful = true,
-                Stream = await this._httpClient.GetStreamAsync(uri)
+                Successful = false,
+                //Stream = await this._httpClient.GetStreamAsync(uri)
             };
         }
         catch (Exception ex)
