@@ -47,6 +47,8 @@ public class Guild : IIdentifiable<ulong>
 
     public virtual ICollection<IgnoredRole> IgnoredRoles { get; set; } = new List<IgnoredRole>();
 
+    public virtual ICollection<MessageLogChannelOverride> MessageLogChannelOverrides { get; set; } = new List<MessageLogChannelOverride>();
+
     public virtual GuildUserLogSettings UserLogSettings { get; set; } = null!;
 
     public virtual GuildLevelSettings LevelSettings { get; set; } = null!;

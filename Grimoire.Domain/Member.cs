@@ -19,9 +19,6 @@ public class Member : IMember
 
     public virtual User User { get; set; } = null!;
 
-    [Obsolete("This property has moved to the IgnoredMember Table.")]
-    public bool IsXpIgnored { get; set; }
-
     public virtual IgnoredMember? IsIgnoredMember { get; set; }
 
     public virtual Mute? ActiveMute { get; set; }

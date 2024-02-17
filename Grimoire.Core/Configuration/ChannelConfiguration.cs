@@ -22,11 +22,5 @@ internal sealed class ChannelConfiguration : IEntityTypeConfiguration<Channel>
         builder.HasOne(e => e.Lock)
             .WithOne(e => e.Channel)
             .IsRequired(false);
-#pragma warning disable CS0618 // Type or member is obsolete
-        builder.Property(e => e.IsXpIgnored)
-            .HasDefaultValue(value: false);
-        builder.HasIndex(e => e.IsXpIgnored)
-            .HasFilter("\"IsXpIgnored\" = TRUE");
-#pragma warning restore CS0618 // Type or member is obsolete
     }
 }

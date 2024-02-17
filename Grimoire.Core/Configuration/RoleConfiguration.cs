@@ -26,11 +26,5 @@ internal sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.HasOne(e => e.Reward)
             .WithOne(e => e.Role)
             .IsRequired(false);
-#pragma warning disable CS0618 // Type or member is obsolete
-        builder.Property(e => e.IsXpIgnored)
-            .HasDefaultValue(value: false);
-        builder.HasIndex(e => e.IsXpIgnored)
-            .HasFilter("\"IsXpIgnored\" = TRUE");
-#pragma warning restore CS0618 // Type or member is obsolete
     }
 }

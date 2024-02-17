@@ -55,6 +55,9 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<Message> Messages
         => this.Set<Message>();
 
+    public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides
+        => this.Set<MessageLogChannelOverride>();
+
     public DbSet<MessageHistory> MessageHistory
         => this.Set<MessageHistory>();
 

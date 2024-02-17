@@ -5,19 +5,21 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class Role : IIdentifiable<ulong>
+public enum MessageLogChannelOverrideOption
 {
-    public ulong Id { get; set; }
+    AlwaysLog,
+    NeverLog
+}
 
+public class MessageLogChannelOverride
+{
+    public ulong ChannelId { get; set; }
+    public virtual Channel Channel { get; set; } = null!;
     public ulong GuildId { get; set; }
-
     public virtual Guild Guild { get; set; } = null!;
+    public MessageLogChannelOverrideOption ChannelOption { get; set; }
 
-    public virtual Reward? Reward { get; set; }
-
-    public virtual IgnoredRole? IsIgnoredRole { get; set; }
 }

@@ -94,14 +94,8 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         {
             return new ImageDownloadResult
             {
-<<<<<<< HEAD
                 Url = uri.AbsolutePath,
-                Stream = await this._httpClient.GetStreamAsync(uri)
-=======
-                Uri = uri,
-                Successful = false,
                 //Stream = await this._httpClient.GetStreamAsync(uri)
->>>>>>> main
             };
         }
         catch (Exception ex)
