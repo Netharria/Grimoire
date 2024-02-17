@@ -8,9 +8,9 @@
 using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.MessageLogging.Commands;
-public sealed class UpdateMessageLogChannelOverride
+public sealed class UpdateMessageLogOverride
 {
-    public enum MessageLogChannelOverrideSetting
+    public enum MessageLogOverrideSetting
     {
         Always,
         Inherit,
@@ -20,7 +20,7 @@ public sealed class UpdateMessageLogChannelOverride
     {
         public required ulong ChannelId { get; init; }
         public required ulong GuildId { get; init; }
-        public required MessageLogChannelOverrideSetting ChannelOverrideSetting { get; set; }
+        public required MessageLogOverrideSetting ChannelOverrideSetting { get; set; }
     }
 
     public sealed class Handler(IGrimoireDbContext dbContext) : ICommandHandler<Command, BaseResponse>
@@ -29,7 +29,7 @@ public sealed class UpdateMessageLogChannelOverride
 
         public ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
-            if (command.ChannelOverrideSetting == MessageLogChannelOverrideSetting.Inherit)
+            if (command.ChannelOverrideSetting == MessageLogOverrideSetting.Inherit)
                 return this.DeleteOverride(command, cancellationToken);
             return this.AddOrUpdateOverride(command, cancellationToken);
         }
@@ -81,33 +81,33 @@ public sealed class UpdateMessageLogChannelOverride
                     GuildId = command.GuildId,
                     ChannelOption = command.ChannelOverrideSetting switch
                     {
-                        MessageLogChannelOverrideSetting.Always => MessageLogChannelOverrideOption.AlwaysLog,
-                        MessageLogChannelOverrideSetting.Never => MessageLogChannelOverrideOption.NeverLog,
-                        _ => throw new ArgumentOutOfRangeException(nameof(command.ChannelOverrideSetting)),
+                        MessageLogOverrideSetting.Always => MessageLogOverrideOption.AlwaysLog,
+                        MessageLogOverrideSetting.Never => MessageLogOverrideOption.NeverLog,
+                        _ => throw new NotImplementedException("A Message log Override option was selected that has not been implemented."),
                     }
-                });
+                }, cancellationToken);
             }
             else
             {
                 result.Override.ChannelOption = command.ChannelOverrideSetting switch
                 {
-                    MessageLogChannelOverrideSetting.Always => MessageLogChannelOverrideOption.AlwaysLog,
-                    MessageLogChannelOverrideSetting.Never => MessageLogChannelOverrideOption.NeverLog,
-                    _ => throw new ArgumentOutOfRangeException(nameof(command.ChannelOverrideSetting)),
+                    MessageLogOverrideSetting.Always => MessageLogOverrideOption.AlwaysLog,
+                    MessageLogOverrideSetting.Never => MessageLogOverrideOption.NeverLog,
+                    _ => throw new NotImplementedException("A Message log Override option was selected that has not been implemented."),
                 };
             }
 
-            await this._dbContext.SaveChangesAsync();
+            await this._dbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse
             {
                 LogChannelId = result.ModChannelLog,
                 Message = command.ChannelOverrideSetting switch
                 {
-                    MessageLogChannelOverrideSetting.Always => $"Will now always log messages from {ChannelExtensions.Mention(command.ChannelId)} and its sub channels/threads.",
-                    MessageLogChannelOverrideSetting.Never => $"Will now never log messages from {ChannelExtensions.Mention(command.ChannelId)} and its sub channels/threads.",
-                    _ => throw new ArgumentOutOfRangeException(nameof(command.ChannelOverrideSetting)),
-                };
-        }
+                    MessageLogOverrideSetting.Always => $"Will now always log messages from {ChannelExtensions.Mention(command.ChannelId)} and its sub channels/threads.",
+                    MessageLogOverrideSetting.Never => $"Will now never log messages from {ChannelExtensions.Mention(command.ChannelId)} and its sub channels/threads.",
+                    _ => throw new NotImplementedException("A Message log Override option was selected that has not been implemented."),
+                }
+            };
         }
     }
 }

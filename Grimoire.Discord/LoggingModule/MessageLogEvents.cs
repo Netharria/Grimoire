@@ -31,21 +31,30 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         if (args.Guild is null
             || args.Message.MessageType is not MessageType.Default and not MessageType.Reply)
             return;
-        await this._mediator.Send(new AddMessageCommand
+        List<ulong> parentChannelTree = [ args.Channel.Id ];
+        var channelParent = args.Channel.Parent;
+        while(channelParent is not null)
+        {
+            parentChannelTree.Add(channelParent.Id);
+            channelParent = channelParent.Parent;
+        }
+
+        await this._mediator.Send(new AddMessage.Command
         {
             Attachments = args.Message.Attachments
                 .Select(x =>
                     new AttachmentDto
                     {
                         Id = x.Id,
-                        FileName = x.FileName,
+                        FileName = x.Url,
                     }).ToArray(),
             UserId = args.Author.Id,
             ChannelId = args.Channel.Id,
             MessageContent = args.Message.Content,
             MessageId = args.Message.Id,
             ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
-            GuildId = args.Guild.Id
+            GuildId = args.Guild.Id,
+            ParentChannelTree = parentChannelTree
         });
     }
 
@@ -76,7 +85,6 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
             if (user is null || user.IsBot) return;
             avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
         }
-
         var embed = new DiscordEmbedBuilder()
             .WithAuthor($"Message deleted in #{args.Channel.Name}")
             .AddField("Author", UserExtensions.Mention(response.UserId), true)
@@ -93,9 +101,8 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
             .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
         var messageBuilder = await this._attachmentUploadService.BuildImageEmbedAsync(
-                response.Attachments,
+                response.Attachments.Select(x => x.FileName).ToArray(),
                 response.UserId,
-                args.Channel.Id,
                 embed);
         try
         {

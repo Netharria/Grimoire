@@ -8,7 +8,7 @@
 
 namespace Grimoire.Domain;
 
-public enum MessageLogChannelOverrideOption
+public enum MessageLogOverrideOption
 {
     AlwaysLog,
     NeverLog
@@ -20,6 +20,6 @@ public class MessageLogChannelOverride
     public virtual Channel Channel { get; set; } = null!;
     public ulong GuildId { get; set; }
     public virtual Guild Guild { get; set; } = null!;
-    public MessageLogChannelOverrideOption ChannelOption { get; set; }
+    public MessageLogOverrideOption ChannelOption { get; set; }
 
 }

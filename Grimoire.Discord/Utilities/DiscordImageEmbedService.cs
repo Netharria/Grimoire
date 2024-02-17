@@ -15,7 +15,6 @@ namespace Grimoire.Discord.Utilities;
 
 public interface IDiscordImageEmbedService
 {
-    Task<DiscordMessageBuilder> BuildImageEmbedAsync(AttachmentDto[] attachmentDtos, ulong userId, ulong channelId, DiscordEmbed embed, bool displayFileNames = true);
     Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed, bool displayFileNames = true);
 }
 
@@ -35,11 +34,6 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         this._validImageExtensions = validExtensions.Split(',').ToImmutableList();
         this._logger = logger;
     }
-
-    public Task<DiscordMessageBuilder> BuildImageEmbedAsync(AttachmentDto[] attachmentDtos, ulong userId, ulong channelId, DiscordEmbed embed, bool displayFileNames = true)
-        => this.BuildImageEmbedAsync(attachmentDtos.Select(attachment
-            => Path.Combine("https://cdn.discordapp.com/attachments/", channelId.ToString(), attachment.Id.ToString(), attachment.FileName)).ToArray(),
-                userId, embed);
 
     public async Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed, bool displayFileNames = true)
     {
@@ -95,7 +89,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
             return new ImageDownloadResult
             {
                 Url = uri.AbsolutePath,
-                //Stream = await this._httpClient.GetStreamAsync(uri)
+                Stream = await this._httpClient.GetStreamAsync(uri)
             };
         }
         catch (Exception ex)

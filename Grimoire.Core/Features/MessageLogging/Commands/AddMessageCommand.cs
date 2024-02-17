@@ -22,7 +22,7 @@ public sealed class AddMessage
         public required AttachmentDto[] Attachments { get; init; }
         public ulong? ReferencedMessageId { get; init; }
         public required ulong GuildId { get; init; }
-        public required ulong[] ParentChannelTree { get; init; }
+        public required List<ulong> ParentChannelTree { get; init; }
     }
 
     public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
@@ -41,7 +41,8 @@ public sealed class AddMessage
                 MemberExists = guild.Members.Any(x => x.UserId == command.UserId),
                 ChannelLogOverride = guild.MessageLogChannelOverrides
                     .Where(x => command.ParentChannelTree.Contains(x.ChannelId))
-                    .ToDictionary(k => k.ChannelId, v => v.ChannelOption),
+                    .Select(x => new { x.ChannelId, x.ChannelOption })
+                    .ToArray()
             }).FirstOrDefaultAsync(cancellationToken);
             if (result is null)
                 throw new KeyNotFoundException("Guild was not found in database.");
@@ -61,7 +62,7 @@ public sealed class AddMessage
                 await this.AddMissingMember(command, cancellationToken);
             }
 
-            if(!ShouldLogMessage(command, result.ChannelLogOverride))
+            if(!ShouldLogMessage(command, result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
                 return Unit.Value;
 
             var message = new Message
@@ -115,7 +116,7 @@ public sealed class AddMessage
             }, cancellationToken);
         }
 
-        private static bool ShouldLogMessage(Command command, Dictionary<ulong, MessageLogChannelOverrideOption> overrides)
+        private static bool ShouldLogMessage(Command command, Dictionary<ulong, MessageLogOverrideOption> overrides)
         {
             if (overrides.Count == 0)
                 return true;
@@ -125,8 +126,8 @@ public sealed class AddMessage
                     continue;
                 return channelOverride switch
                 {
-                    MessageLogChannelOverrideOption.NeverLog => false,
-                    MessageLogChannelOverrideOption.AlwaysLog => true,
+                    MessageLogOverrideOption.NeverLog => false,
+                    MessageLogOverrideOption.AlwaysLog => true,
                     _ => true
                 };
             }
