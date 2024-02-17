@@ -58,8 +58,15 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
                     .Where(x => x.StartsWith("   at Grimoire"))
                     .Select(x => x[(x.IndexOf(" in ") + 4)..])
                     .Select(x => '\"' + x.Replace(":line", "\" line")));
+            var innerException = exception.InnerException;
+            var exceptionMessage = new StringBuilder().AppendLine(exception.Message);
+            while(innerException is not null)
+            {
+                exceptionMessage.AppendLine(innerException.Message);
+                innerException = innerException.InnerException;
+            }
             await channel.SendMessageAsync($"Encountered exception while executing {action} {errorIdString}\n" +
-                $"```csharp\n{exception.Message}\n{shortStackTrace}\n```");
+                $"```csharp\n{exceptionMessage}\n{shortStackTrace}\n```");
         }
 
     }
@@ -77,38 +84,54 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
             foreach (var check in ex.FailedChecks)
             {
                 if (check is SlashRequireGuildAttribute)
-                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: "You need to be in a server to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription("You need to be in a server to use this command."), true);
 
                 if (check is SlashRequirePermissionsAttribute requirePermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requirePermissions.Permissions).ToString();
-                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You and {args.Context.Guild.CurrentMember.DisplayName} need {value} permissions to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You and {args.Context.Guild.CurrentMember.DisplayName} need {value} permissions to use this command."), true);
                 }
 
                 if (check is SlashRequireUserPermissionsAttribute requireUserPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireUserPermissions.Permissions).ToString();
-                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} permissions to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You need {value} permissions to use this command."), true);
                 }
                 if (check is SlashRequireUserGuildPermissionsAttribute requireUserGuildPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireUserGuildPermissions.Permissions).ToString();
-                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} server permissions to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You need {value} server permissions to use this command."), true);
                 }
                 if (check is SlashRequireBotPermissionsAttribute requireBotPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireBotPermissions.Permissions).ToString();
-                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"{args.Context.Guild.CurrentMember.DisplayName} needs {value} permissions to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"{args.Context.Guild.CurrentMember.DisplayName} needs {value} permissions to use this command."), true);
                 }
 
                 if (check is SlashRequireOwnerAttribute)
-                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need to be {args.Context.Guild.CurrentMember.DisplayName}'s owner to use this command");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You need to be {args.Context.Guild.CurrentMember.DisplayName}'s owner to use this command"), true);
 
                 if (check is SlashRequireDirectMessageAttribute)
-                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need to DM {args.Context.Guild.CurrentMember.DisplayName} to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You need to DM {args.Context.Guild.CurrentMember.DisplayName} to use this command."), true);
 
                 if (check is SlashRequireModuleEnabledAttribute requireEnabledPermissions)
-                    await args.Context.EditReplyAsync(color: GrimoireColor.DarkPurple, message: $"The {requireEnabledPermissions.Module} module is not enabled.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"The {requireEnabledPermissions.Module} module is not enabled."), true);
             }
         else if (args.Exception is AnticipatedException)
         {
