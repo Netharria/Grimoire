@@ -75,7 +75,9 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
             Invites = args.Guilds.Values
                 .ToAsyncEnumerable()
                 .Where(x => x.CurrentMember.Permissions.HasPermission(Permissions.ManageGuild))
-                .SelectManyAwait(async x => (await x.GetInvitesAsync()).ToAsyncEnumerable())
+                .SelectManyAwait(async x =>
+                    (await DiscordRetryPolicy.RetryDiscordCall(x.GetInvitesAsync))
+                    .ToAsyncEnumerable())
                 .Select(x =>
                 new Invite
                 {
@@ -123,8 +125,9 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
                     GuildId = args.Guild.Id
                 }),
             Invites = args.Guild.CurrentMember.Permissions.HasPermission(Permissions.ManageGuild)
-            ? await args.Guild
-                .GetInvitesAsync()
+            ? await DiscordRetryPolicy.RetryDiscordCall(args.Guild
+                .GetInvitesAsync)
+                .AsTask()
                 .ContinueWith(x => x.Result
                     .Select(x =>
                     new Invite

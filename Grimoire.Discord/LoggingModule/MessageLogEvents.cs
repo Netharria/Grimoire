@@ -33,7 +33,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
             return;
         List<ulong> parentChannelTree = [ args.Channel.Id ];
         var channelParent = args.Channel.Parent;
-        while(channelParent is not null)
+        while (channelParent is not null)
         {
             parentChannelTree.Add(channelParent.Id);
             channelParent = channelParent.Parent;

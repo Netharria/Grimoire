@@ -60,7 +60,7 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
                     .Select(x => '\"' + x.Replace(":line", "\" line")));
             var innerException = exception.InnerException;
             var exceptionMessage = new StringBuilder().AppendLine(exception.Message);
-            while(innerException is not null)
+            while (innerException is not null)
             {
                 exceptionMessage.AppendLine(innerException.Message);
                 innerException = innerException.InnerException;

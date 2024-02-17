@@ -70,11 +70,6 @@ public sealed class UpdateMessageLogOverride
                 throw new AnticipatedException("Could not find guild settings.");
             if (result.Override is null)
             {
-                var local = this._dbContext.MessagesLogChannelOverrides.Local
-                .FirstOrDefault(x => x.ChannelId == command.ChannelId
-                    && x.GuildId == command.GuildId);
-                if (local is not null)
-                    this._dbContext.Entry(local).State = EntityState.Detached;
                 await this._dbContext.MessagesLogChannelOverrides.AddAsync(new MessageLogChannelOverride
                 {
                     ChannelId = command.ChannelId,
