@@ -26,11 +26,11 @@ public sealed class GetLeaderboard
         public async ValueTask<Response> Handle(Query request, CancellationToken cancellationToken)
         {
             var RankedMembers = await this._grimoireDbContext.Members
-        .AsNoTracking()
-        .Where(x => x.GuildId == request.GuildId)
-        .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
-        .OrderByDescending(x => x.Xp)
-        .ToListAsync(cancellationToken: cancellationToken);
+                .AsNoTracking()
+                .Where(x => x.GuildId == request.GuildId)
+                .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
+                .OrderByDescending(x => x.Xp)
+                .ToListAsync(cancellationToken: cancellationToken);
 
             var totalMemberCount = RankedMembers.Count;
 

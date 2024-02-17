@@ -11,14 +11,17 @@ public static class RoleDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles, IEnumerable<RoleDto> roles, CancellationToken cancellationToken = default)
     {
-        var rolesToAdd = roles
-            .ExceptBy(databaseRoles.AsNoTracking().Select(x => x.Id),
-            x => x.Id)
+        var incomingRoles = roles
             .Select(x => new Role
             {
                 Id = x.Id,
                 GuildId = x.GuildId
             });
+
+        var rolesToAdd = incomingRoles.ExceptBy(databaseRoles
+            .AsNoTracking()
+            .Where(x => incomingRoles.Contains(x))
+            .Select(x => x.Id), x => x.Id);
 
         if (rolesToAdd.Any())
             await databaseRoles.AddRangeAsync(rolesToAdd, cancellationToken);

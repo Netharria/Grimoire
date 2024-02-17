@@ -51,7 +51,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
 
         foreach ((var image, var index) in images.Where(x => x.Stream is not null).Select((x, i) => (x, i)))
         {
-            var fileName = $"attachment{index}.{Path.GetExtension(image.Uri.AbsolutePath)}";
+            var fileName = $"attachment{index}.{Path.GetExtension(image.Url)}";
             var stride = 4 * (index / 4);
 
             var imageEmbed = new DiscordEmbedBuilder(embed)
@@ -94,7 +94,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         {
             return new ImageDownloadResult
             {
-                Uri = uri,
+                Url = uri.AbsolutePath,
                 Stream = await this._httpClient.GetStreamAsync(uri)
             };
         }
@@ -103,7 +103,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
             LogDownloadError(_logger, ex, uri.OriginalString);
             return new ImageDownloadResult
             {
-                Uri = uri,
+                Url = uri.AbsolutePath,
             };
         }
     }
@@ -145,7 +145,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
     private static void AddImagesThatFailedDownload(ImageDownloadResult[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
     {
 
-        var failedFiles = urls.Where(x => x.Stream is null).Select(x => Path.GetFileName(x.Uri.AbsolutePath)).ToArray();
+        var failedFiles = urls.Where(x => x.Stream is null).Select(x => Path.GetFileName(x.Url)).ToArray();
         if (failedFiles.Length != 0)
         {
             var imageEmbed = new DiscordEmbedBuilder(embed)
@@ -155,9 +155,9 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
     }
 }
 
-internal sealed class ImageDownloadResult
+internal readonly struct ImageDownloadResult
 {
-    public required Uri Uri { get; init; }
-    public Stream? Stream { get; init; }
+    public readonly string Url { get; init; }
+    public readonly Stream? Stream { get; init; }
 
 }

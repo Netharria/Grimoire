@@ -16,13 +16,13 @@ public static class DiscordChannelExtensions
         Func<DiscordMessage, bool>? filter = null)
     {
         filter ??= message => true;
-        var messages = await channel.GetMessagesAsync(Math.Min(count, 100)).ToListAsync();
+        var messages = await channel.GetMessagesAsync(Math.Min(count, 100));
         var messagesToDelete = messages.Where(filter);
         while (messagesToDelete.Count() < count
             && messages.Count != 0
             && messages[^1].Timestamp > DateTimeOffset.UtcNow.AddDays(-14))
         {
-            messages = await channel.GetMessagesBeforeAsync(messages[^1].Id).ToListAsync();
+            messages = await channel.GetMessagesBeforeAsync(messages[^1].Id);
             messagesToDelete = messagesToDelete.Concat(messages.Where(filter));
         }
         messagesToDelete = messagesToDelete.Where(x => x.Timestamp > DateTimeOffset.UtcNow.AddDays(-14));

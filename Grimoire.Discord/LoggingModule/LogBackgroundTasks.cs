@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.LogCleanup.Commands;
 using Grimoire.Core.Features.LogCleanup.Queries;
 using Grimoire.Core.Features.MessageLogging.Commands;
@@ -57,14 +56,6 @@ internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogg
             return new DeleteMessageResult
             {
                 WasSuccessful = true,
-                MessageId = messageId
-            };
-        }
-        catch (NotFoundException)
-        {
-            return new DeleteMessageResult
-            {
-                WasSuccessful = false,
                 MessageId = messageId
             };
         }

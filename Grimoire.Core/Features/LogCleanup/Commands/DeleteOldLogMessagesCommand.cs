@@ -9,7 +9,7 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.LogCleanup.Commands;
 
-public sealed record DeleteMessageResult
+public readonly struct DeleteMessageResult
 {
     public bool WasSuccessful { get; init; }
     public ulong MessageId { get; init; }

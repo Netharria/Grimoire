@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using DSharpPlus.Entities.AuditLogs;
 using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.Moderation.Commands;
 using Grimoire.Core.Features.Moderation.Queries;
@@ -46,7 +45,7 @@ public sealed partial class ModerationEvents(IMediator mediator) :
             };
             try
             {
-                var banAuditLog = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(DiscordAuditLogActionType.Ban, 1500);
+                var banAuditLog = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(AuditLogActionType.Ban, 1500);
                 if (banAuditLog is not null && banAuditLog.Target.Id == args.Member.Id)
                 {
                     addBanCommand.ModeratorId = banAuditLog?.UserResponsible?.Id;

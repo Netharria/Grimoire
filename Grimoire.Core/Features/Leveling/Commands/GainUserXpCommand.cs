@@ -27,6 +27,7 @@ public sealed class GainUserXp
         {
             var result = await this._grimoireDbContext.Members
             .AsNoTracking()
+            .AsSplitQuery()
             .WhereLevelingEnabled()
             .WhereMemberHasId(command.UserId, command.GuildId)
             .WhereMemberNotIgnored(command.ChannelId, command.RoleIds)
