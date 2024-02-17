@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Anubis;
 
 [Table("rewards")]
-public record Rewards
+public sealed record Rewards
 {
     [Key]
     [Column("reward_role")]

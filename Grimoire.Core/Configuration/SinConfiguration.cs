@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class SinConfiguration : IEntityTypeConfiguration<Sin>
+internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
 {
     public void Configure(EntityTypeBuilder<Sin> builder)
     {

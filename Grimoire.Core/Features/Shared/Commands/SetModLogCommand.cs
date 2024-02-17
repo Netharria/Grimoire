@@ -10,13 +10,13 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Shared.Commands;
 
-public class SetModLogCommand : ICommand<BaseResponse>
+public sealed record SetModLogCommand : ICommand<BaseResponse>
 {
     public ulong GuildId { get; init; }
     public ulong? ChannelId { get; init; }
 }
 
-public class SetModLogCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetModLogCommand, BaseResponse>
+public sealed class SetModLogCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetModLogCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -28,7 +28,7 @@ public class SetModLogCommandHandler(IGrimoireDbContext grimoireDbContext) : ICo
         if (guild is null)
             throw new AnticipatedException("Could not find the settings for this server.");
         guild.ModChannelLog = command.ChannelId;
-        this._grimoireDbContext.Guilds.Update(guild);
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse
         {

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Core.Configuration;
 
-public class ReactionConfiguration : IEntityTypeConfiguration<Reaction>
+internal sealed class ReactionConfiguration : IEntityTypeConfiguration<Reaction>
 {
     public void Configure(EntityTypeBuilder<Reaction> builder)
     {

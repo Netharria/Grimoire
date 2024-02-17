@@ -11,7 +11,7 @@ public sealed record RemoveExpiredTrackersCommand : ICommand<IEnumerable<RemoveE
 {
 }
 
-public class RemoveExpiredTrackersCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
+public sealed class RemoveExpiredTrackersCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -40,7 +40,7 @@ public class RemoveExpiredTrackersCommandHandler(IGrimoireDbContext grimoireDbCo
     }
 }
 
-public record RemoveExpiredTrackersCommandResponse : BaseResponse
+public sealed record RemoveExpiredTrackersCommandResponse : BaseResponse
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }

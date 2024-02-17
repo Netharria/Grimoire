@@ -13,7 +13,7 @@ public sealed record AddChannelCommand : ICommand
     public ulong ChannelId { get; init; }
 }
 
-public class AddChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<AddChannelCommand>
+public sealed class AddChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<AddChannelCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

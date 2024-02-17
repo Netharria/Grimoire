@@ -39,6 +39,8 @@ public interface IGrimoireDbContext
 
     public DbSet<Message> Messages { get; }
 
+    public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; }
+
     public DbSet<MessageHistory> MessageHistory { get; }
 
     public DbSet<Mute> Mutes { get; }

@@ -15,7 +15,7 @@ using Serilog;
 
 namespace Grimoire.MigrationTool.MigrationServices;
 
-public class LumberjackMigrationService(LumberjackDbContext context)
+internal sealed class LumberjackMigrationService(LumberjackDbContext context)
 {
     private readonly LumberjackDbContext _lumberjackContext = context;
 
@@ -313,7 +313,6 @@ public class LumberjackMigrationService(LumberjackDbContext context)
             }
             grimoireGuild.UpdateGuildLogSettings(lumberjackGuild);
 
-            grimoireDbContext.Update(grimoireGuild);
         }
         await grimoireDbContext.SaveChangesAsync();
     }

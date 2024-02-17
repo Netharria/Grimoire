@@ -13,7 +13,7 @@ namespace Grimoire.Discord.LoggingModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.MessageLog)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
-public class TrackerCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class TrackerCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 

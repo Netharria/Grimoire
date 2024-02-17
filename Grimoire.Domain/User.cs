@@ -9,7 +9,7 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class User : IIdentifiable<ulong>, IMentionable
+public class User : IIdentifiable<ulong>
 {
     public ulong Id { get; set; }
     public virtual ICollection<Member> MemberProfiles { get; set; } = new List<Member>();

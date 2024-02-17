@@ -17,7 +17,7 @@ public sealed record WarnUserCommand : ICommand<WarnUserCommandResponse>
     public ulong ModeratorId { get; set; }
 }
 
-public class WarnUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<WarnUserCommand, WarnUserCommandResponse>
+public sealed class WarnUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<WarnUserCommand, WarnUserCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

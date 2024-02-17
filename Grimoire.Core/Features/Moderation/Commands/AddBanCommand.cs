@@ -17,7 +17,7 @@ public sealed record AddBanCommand : ICommand<AddBanCommandResponse>
     public ulong? ModeratorId { get; set; }
 }
 
-public class AddBanCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddBanCommand, AddBanCommandResponse>
+public sealed class AddBanCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddBanCommand, AddBanCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

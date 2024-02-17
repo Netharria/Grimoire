@@ -17,7 +17,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries;
 
 [Collection("Test collection")]
-public class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
@@ -62,8 +62,8 @@ public class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsyncLifet
     public async Task WhenCallingGetLeaderboardQueryHandler_IfProvidedUserNotFound_FailResponse()
     {
 
-        var CUT = new GetLeaderboardQueryHandler(this._dbContext);
-        var command = new GetLeaderboardQuery
+        var CUT = new GetLeaderboard.Handler(this._dbContext);
+        var command = new GetLeaderboard.Query
         {
             GuildId = GUILD_ID,
             UserId = 234081234
@@ -79,8 +79,8 @@ public class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsyncLifet
     public async Task WhenCallingGetLeaderboardQueryHandler_ReturnLeaderboardAsync()
     {
 
-        var CUT = new GetLeaderboardQueryHandler(this._dbContext);
-        var command = new GetLeaderboardQuery
+        var CUT = new GetLeaderboard.Handler(this._dbContext);
+        var command = new GetLeaderboard.Query
         {
             GuildId = GUILD_ID
         };

@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -7,9 +7,9 @@
 
 namespace Grimoire.Discord.ModerationModule;
 
-public partial class MuteAdminCommands
+public sealed partial class MuteAdminCommands
 {
-    public class OverwriteChannelResult
+    internal sealed class OverwriteChannelResult
     {
         public required bool WasSuccessful { get; init; }
         public required DiscordChannel Channel { get; init; }

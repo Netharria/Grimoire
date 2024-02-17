@@ -11,9 +11,7 @@ public static class UserDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingUsersAsync(this DbSet<User> databaseUsers, IEnumerable<UserDto> users, CancellationToken cancellationToken = default)
     {
-        var usersToAdd = users
-            .ExceptBy(databaseUsers.AsNoTracking().Select(x => x.Id),
-            x => x.Id)
+        var incomingUsers = users
             .Select(x => new User
             {
                 Id = x.Id,
@@ -24,6 +22,11 @@ public static class UserDatabaseQueryHelpers
                     }
                 }
             });
+
+        var usersToAdd = incomingUsers.ExceptBy(databaseUsers
+            .AsNoTracking()
+            .Where(x => incomingUsers.Contains(x))
+            .Select(x => x.Id), x => x.Id);
 
         if (usersToAdd.Any())
             await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);

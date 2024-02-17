@@ -17,7 +17,7 @@ namespace Grimoire.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -82,17 +82,9 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<bool>("IsXpIgnored")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
                     b.HasKey("Id");
 
                     b.HasIndex("GuildId");
-
-                    b.HasIndex("IsXpIgnored")
-                        .HasFilter("\"IsXpIgnored\" = TRUE");
 
                     b.ToTable("Channels");
                 });
@@ -351,15 +343,7 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<bool>("IsXpIgnored")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
                     b.HasKey("UserId", "GuildId");
-
-                    b.HasIndex("IsXpIgnored")
-                        .HasFilter("\"IsXpIgnored\" = TRUE");
 
                     b.ToTable("Members");
                 });
@@ -437,6 +421,24 @@ namespace Grimoire.Core.Migrations
                         .IsDescending(false, true, false);
 
                     b.ToTable("MessageHistory");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.MessageLogChannelOverride", b =>
+                {
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<int>("ChannelOption")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("ChannelId");
+
+                    b.HasIndex("GuildId");
+
+                    b.ToTable("MessagesLogChannelOverrides");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Mute", b =>
@@ -639,17 +641,9 @@ namespace Grimoire.Core.Migrations
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<bool>("IsXpIgnored")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
                     b.HasKey("Id");
 
                     b.HasIndex("GuildId");
-
-                    b.HasIndex("IsXpIgnored")
-                        .HasFilter("\"IsXpIgnored\" = TRUE");
 
                     b.ToTable("Roles");
                 });
@@ -1109,6 +1103,25 @@ namespace Grimoire.Core.Migrations
                     b.Navigation("Message");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.MessageLogChannelOverride", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Channel", "Channel")
+                        .WithOne("MessageLogChannelOverride")
+                        .HasForeignKey("Grimoire.Domain.MessageLogChannelOverride", "ChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Grimoire.Domain.Guild", "Guild")
+                        .WithMany("MessageLogChannelOverrides")
+                        .HasForeignKey("GuildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Channel");
+
+                    b.Navigation("Guild");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.Mute", b =>
                 {
                     b.HasOne("Grimoire.Domain.Guild", "Guild")
@@ -1368,6 +1381,8 @@ namespace Grimoire.Core.Migrations
 
                     b.Navigation("Lock");
 
+                    b.Navigation("MessageLogChannelOverride");
+
                     b.Navigation("Messages");
 
                     b.Navigation("OldMessages");
@@ -1395,6 +1410,8 @@ namespace Grimoire.Core.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("MessageHistory");
+
+                    b.Navigation("MessageLogChannelOverrides");
 
                     b.Navigation("MessageLogSettings")
                         .IsRequired();

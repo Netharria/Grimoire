@@ -9,7 +9,7 @@ namespace Grimoire.Core.Features.Moderation.Queries;
 
 public sealed record GetExpiredMutesQuery : IQuery<IList<GetExpiredMutesQueryResponse>> { }
 
-public class GetExpiredMutesQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetExpiredMutesQuery, IList<GetExpiredMutesQueryResponse>>
+public sealed class GetExpiredMutesQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetExpiredMutesQuery, IList<GetExpiredMutesQueryResponse>>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class GuildConfiguration : IEntityTypeConfiguration<Guild>
+internal sealed class GuildConfiguration : IEntityTypeConfiguration<Guild>
 {
     public void Configure(EntityTypeBuilder<Guild> builder)
     {

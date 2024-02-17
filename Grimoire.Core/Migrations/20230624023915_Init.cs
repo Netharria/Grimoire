@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public sealed partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Anubis;
 
 [Table("ignored_channels")]
-public record IgnoredChannels
+public sealed record IgnoredChannels
 {
     [Key]
     [Column("channel_id")]

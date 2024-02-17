@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Lumberjack;
 
 [Table("tracking")]
-public record Tracker
+public sealed record Tracker
 {
     [Key]
     [Column("userid")]

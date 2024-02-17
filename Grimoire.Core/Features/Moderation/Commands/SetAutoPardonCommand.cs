@@ -14,7 +14,7 @@ public sealed record SetAutoPardonCommand : ICommand<BaseResponse>
 }
 
 
-public class SetAutoPardonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetAutoPardonCommand, BaseResponse>
+public sealed class SetAutoPardonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetAutoPardonCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -28,7 +28,7 @@ public class SetAutoPardonCommandHandler(IGrimoireDbContext grimoireDbContext) :
             throw new AnticipatedException("Could not find the Servers settings.");
 
         guildModerationSettings.AutoPardonAfter = command.DurationAmount;
-        this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new BaseResponse

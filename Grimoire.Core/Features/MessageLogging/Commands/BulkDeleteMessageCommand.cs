@@ -15,7 +15,7 @@ public sealed record BulkDeleteMessageCommand : ICommand<BulkDeleteMessageComman
     public ulong GuildId { get; init; }
 }
 
-public class BulkDeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<BulkDeleteMessageCommand, BulkDeleteMessageCommandResponse>
+public sealed class BulkDeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<BulkDeleteMessageCommand, BulkDeleteMessageCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -72,5 +72,5 @@ public sealed record BulkDeleteMessageCommandResponse : BaseResponse
 {
     public IEnumerable<MessageDto> Messages { get; init; } = Enumerable.Empty<MessageDto>();
     public ulong? BulkDeleteLogChannelId { get; init; }
-    public bool Success { get; init; } = false;
+    public bool Success { get; init; }
 }

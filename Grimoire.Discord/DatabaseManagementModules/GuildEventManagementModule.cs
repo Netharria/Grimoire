@@ -19,7 +19,7 @@ namespace Grimoire.Discord.DatabaseManagementModules;
 [DiscordGuildCreatedEventSubscriber]
 [DiscordInviteCreatedEventSubscriber]
 [DiscordInviteDeletedEventSubscriber]
-public partial class GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger<GuildEventManagementModule> logger) :
+public sealed partial class GuildEventManagementModule(IMediator mediator, IInviteService inviteService, ILogger<GuildEventManagementModule> logger) :
     IDiscordGuildDownloadCompletedEventSubscriber,
     IDiscordGuildCreatedEventSubscriber,
     IDiscordInviteCreatedEventSubscriber,
@@ -75,7 +75,9 @@ public partial class GuildEventManagementModule(IMediator mediator, IInviteServi
             Invites = args.Guilds.Values
                 .ToAsyncEnumerable()
                 .Where(x => x.CurrentMember.Permissions.HasPermission(Permissions.ManageGuild))
-                .SelectManyAwait(async x => (await x.GetInvitesAsync()).ToAsyncEnumerable())
+                .SelectManyAwait(async x =>
+                    (await DiscordRetryPolicy.RetryDiscordCall(x.GetInvitesAsync))
+                    .ToAsyncEnumerable())
                 .Select(x =>
                 new Invite
                 {
@@ -123,8 +125,9 @@ public partial class GuildEventManagementModule(IMediator mediator, IInviteServi
                     GuildId = args.Guild.Id
                 }),
             Invites = args.Guild.CurrentMember.Permissions.HasPermission(Permissions.ManageGuild)
-            ? await args.Guild
-                .GetInvitesAsync()
+            ? await DiscordRetryPolicy.RetryDiscordCall(args.Guild
+                .GetInvitesAsync)
+                .AsTask()
                 .ContinueWith(x => x.Result
                     .Select(x =>
                     new Invite

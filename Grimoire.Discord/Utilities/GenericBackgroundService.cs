@@ -11,13 +11,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.Utilities;
 
-public abstract class GenericBackgroundService(IServiceProvider serviceProvider, ILogger<GenericBackgroundService> logger, TimeSpan timeSpan) : BackgroundService
+public abstract partial class GenericBackgroundService(IServiceProvider serviceProvider, ILogger<GenericBackgroundService> logger, TimeSpan timeSpan) : BackgroundService
 {
     private readonly PeriodicTimer _timer = new(timeSpan);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Starting Background task {Type}", this.GetType().Name);
+        LogBackgroundTaskStart(logger, this.GetType().Name);
+
+        await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(5000)), stoppingToken);
 
         while (await this._timer.WaitForNextTickAsync(stoppingToken))
         {
@@ -28,10 +30,16 @@ public abstract class GenericBackgroundService(IServiceProvider serviceProvider,
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception was thrown when running a background task. Message: ({message})", ex.Message);
+                LogBackgroundTaskError(logger, ex, ex.Message);
             }
         }
     }
+
+    [LoggerMessage(LogLevel.Information, "Starting Background task {type}")]
+    public static partial void LogBackgroundTaskStart(ILogger logger, string type);
+
+    [LoggerMessage(LogLevel.Error, "Exception was thrown when running a background task. Message: ({message})")]
+    public static partial void LogBackgroundTaskError(ILogger logger, Exception ex, string message);
 
     protected abstract Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken);
 }

@@ -13,7 +13,7 @@ public sealed record SetBanLogChannelCommand : ICommand<BaseResponse>
     public ulong? ChannelId { get; init; }
 }
 
-public class SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
+public sealed class SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -25,7 +25,7 @@ public class SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDbContext
         if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
 
         guildModerationSettings.PublicBanLog = command.ChannelId;
-        this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new BaseResponse

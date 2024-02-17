@@ -12,7 +12,7 @@ namespace Grimoire.Discord.ModerationModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
-public class SinLogCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class SinLogCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 

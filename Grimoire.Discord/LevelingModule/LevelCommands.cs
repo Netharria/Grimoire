@@ -11,7 +11,7 @@ namespace Grimoire.Discord.LevelingModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LevelCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LevelCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -29,7 +29,7 @@ public class LevelCommands(IMediator mediator) : ApplicationCommandModule
         await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
         user ??= ctx.User;
 
-        var response = await this._mediator.Send(new GetLevelQuery{ UserId = user.Id, GuildId = ctx.Guild.Id});
+        var response = await this._mediator.Send(new GetLevel.Query{ UserId = user.Id, GuildId = ctx.Guild.Id});
 
         DiscordColor color;
         string displayName;

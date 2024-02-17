@@ -12,7 +12,7 @@ public sealed record GetMessageAuthorQuery : IQuery<ulong?>
     public ulong MessageId { get; init; }
 }
 
-public class GetMessageAuthorQueryHandler(IGrimoireDbContext grimoire) : IQueryHandler<GetMessageAuthorQuery, ulong?>
+public sealed class GetMessageAuthorQueryHandler(IGrimoireDbContext grimoire) : IQueryHandler<GetMessageAuthorQuery, ulong?>
 {
     private readonly IGrimoireDbContext _grimoire = grimoire;
 

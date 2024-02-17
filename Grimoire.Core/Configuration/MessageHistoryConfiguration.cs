@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Core.Configuration;
 
-public class MessageHistoryConfiguration : IEntityTypeConfiguration<MessageHistory>
+internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<MessageHistory>
 {
     public void Configure(EntityTypeBuilder<MessageHistory> builder)
     {

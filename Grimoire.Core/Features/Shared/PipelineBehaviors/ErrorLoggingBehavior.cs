@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Core.Features.Shared.PipelineBehaviors;
 
-public partial class ErrorLoggingBehavior<TMessage, TResponse>(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
+public sealed partial class ErrorLoggingBehavior<TMessage, TResponse>(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : IMessage
 {
     private readonly ILogger<ErrorLoggingBehavior<TMessage, TResponse>> _logger = logger;

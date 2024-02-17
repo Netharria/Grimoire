@@ -11,16 +11,17 @@ public static class MemberDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingMembersAsync(this DbSet<Member> databaseMembers, IEnumerable<MemberDto> members, CancellationToken cancellationToken = default)
     {
-        var membersToAdd = members
-            .ExceptBy(databaseMembers.AsNoTracking().Select(x => new { x.UserId, x.GuildId }),
-            x => new { x.UserId, x.GuildId })
-            .Select(x =>
+
+        var membersToAdd = members.ExceptBy(databaseMembers
+            .AsNoTracking()
+            .Where(x => members.Select(x => x.UserId).Contains(x.UserId))
+            .Where(x => members.Select(x => x.GuildId).Contains(x.GuildId))
+            .Select(x => new { x.UserId, x.GuildId }), x => new { x.UserId, x.GuildId })
+            .Select(x => new Member
             {
-                var member = new Member
-                {
-                    UserId = x.UserId,
-                    GuildId = x.GuildId,
-                    XpHistory = new List<XpHistory>
+                UserId = x.UserId,
+                GuildId = x.GuildId,
+                XpHistory = new List<XpHistory>
                     {
                         new() {
                             UserId = x.UserId,
@@ -30,7 +31,7 @@ public static class MemberDatabaseQueryHelpers
                             TimeOut = DateTime.UtcNow
                         }
                     },
-                    NicknamesHistory = new List<NicknameHistory>
+                NicknamesHistory = new List<NicknameHistory>
                     {
                         new() {
                             GuildId = x.GuildId,
@@ -38,7 +39,7 @@ public static class MemberDatabaseQueryHelpers
                             Nickname = x.Nickname
                         }
                     },
-                    AvatarHistory = new List<Avatar>
+                AvatarHistory = new List<Avatar>
                     {
                         new() {
                             UserId = x.UserId,
@@ -46,8 +47,6 @@ public static class MemberDatabaseQueryHelpers
                             FileName = x.AvatarUrl
                         }
                     }
-                };
-                return member;
             });
 
         if (membersToAdd.Any())

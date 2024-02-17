@@ -11,11 +11,8 @@ public static class GuildDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingGuildsAsync(this DbSet<Guild> databaseGuilds, IEnumerable<GuildDto> guilds, CancellationToken cancellationToken = default)
     {
-        var guildsToAdd = guilds
-            .ExceptBy(
-            databaseGuilds
-            .AsNoTracking().Select(x => x.Id),
-            x => x.Id)
+
+        var incomingGuilds = guilds
             .Select(x => new Guild
             {
                 Id = x.Id,
@@ -24,6 +21,11 @@ public static class GuildDatabaseQueryHelpers
                 UserLogSettings = new GuildUserLogSettings(),
                 MessageLogSettings = new GuildMessageLogSettings(),
             });
+
+        var guildsToAdd = incomingGuilds.ExceptBy(databaseGuilds
+            .AsNoTracking()
+            .Where(x => incomingGuilds.Contains(x))
+            .Select(x => x.Id), x => x.Id);
 
         if (guildsToAdd.Any())
             await databaseGuilds.AddRangeAsync(guildsToAdd, cancellationToken);

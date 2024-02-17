@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Anubis;
 
 [Table("ignored_roles")]
-public record IgnoredRoles
+public sealed record IgnoredRoles
 {
     [Key]
     [Column("role_id")]

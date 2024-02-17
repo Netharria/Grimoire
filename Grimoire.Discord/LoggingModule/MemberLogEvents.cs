@@ -17,7 +17,7 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordGuildMemberAddedEventSubscriber]
 [DiscordGuildMemberUpdatedEventSubscriber]
 [DiscordGuildMemberRemovedEventSubscriber]
-internal class MemberLogEvents(IMediator mediator, IInviteService inviteService, IDiscordImageEmbedService imageEmbedService) :
+internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteService, IDiscordImageEmbedService imageEmbedService) :
     IDiscordGuildMemberAddedEventSubscriber,
     IDiscordGuildMemberUpdatedEventSubscriber,
     IDiscordGuildMemberRemovedEventSubscriber
@@ -116,7 +116,7 @@ internal class MemberLogEvents(IMediator mediator, IInviteService inviteService,
             {
                 var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Nickname Updated")
-                .AddField("User", $"<@!{args.Member.Id}>")
+                .AddField("User", args.Member.Mention)
                 .AddField("Before", string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname)? "`None`" : nicknameResponse.BeforeNickname, true)
                 .AddField("After", string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)? "`None`" : nicknameResponse.AfterNickname, true)
                 .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
@@ -124,7 +124,7 @@ internal class MemberLogEvents(IMediator mediator, IInviteService inviteService,
                 .WithColor(GrimoireColor.Mint);
                 var message = await logChannel.SendMessageAsync(embed);
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
             }
             await this._mediator.Publish(new NicknameTrackerNotification
             {
@@ -152,7 +152,7 @@ internal class MemberLogEvents(IMediator mediator, IInviteService inviteService,
             {
                 var embed = new DiscordEmbedBuilder()
                         .WithAuthor("Username Updated")
-                        .AddField("User", $"<@!{args.MemberAfter.Id}>")
+                        .AddField("User", args.MemberAfter.Mention)
                         .AddField("Before", string.IsNullOrWhiteSpace(usernameResponse.BeforeUsername)? "`Unknown`" : usernameResponse.BeforeUsername, true)
                         .AddField("After", string.IsNullOrWhiteSpace(usernameResponse.AfterUsername)? "`Unknown`" : usernameResponse.AfterUsername, true)
                         .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
@@ -160,7 +160,7 @@ internal class MemberLogEvents(IMediator mediator, IInviteService inviteService,
                         .WithColor(GrimoireColor.Mint);
                 var message = await logChannel.SendMessageAsync(embed);
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
             }
             await this._mediator.Publish(new UsernameTrackerNotification
             {
@@ -187,7 +187,7 @@ internal class MemberLogEvents(IMediator mediator, IInviteService inviteService,
             {
                 var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Avatar Updated")
-                .WithDescription($"**User:** <@!{args.Member.Id}>\n\n" +
+                .WithDescription($"**User:** {args.Member.Mention}\n\n" +
                     $"Old avatar in thumbnail. New avatar down below")
                 .WithThumbnail(avatarResponse.BeforeAvatar)
                 .WithColor(GrimoireColor.Purple)
@@ -199,7 +199,7 @@ internal class MemberLogEvents(IMediator mediator, IInviteService inviteService,
                     false);
                 var message = await logChannel.SendMessageAsync(messageBuilder);
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
             }
             await this._mediator.Publish(new AvatarTrackerNotification
             {

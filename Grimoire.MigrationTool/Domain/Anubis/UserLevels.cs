@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Anubis;
 
 [Table("user_levels")]
-public record UserLevels
+public sealed record UserLevels
 {
     [Key]
     [Column("rowid")]

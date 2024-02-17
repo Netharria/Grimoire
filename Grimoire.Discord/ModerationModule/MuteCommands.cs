@@ -14,7 +14,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashRequireBotPermissions(Permissions.ManageRoles)]
-public class MuteCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -43,7 +43,7 @@ public class MuteCommands(IMediator mediator) : ApplicationCommandModule
         });
         var muteRole = ctx.Guild.Roles.GetValueOrDefault(response.MuteRole);
         if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
-        await member.GrantRoleAsync(muteRole, reason);
+        await member.GrantRoleAsync(muteRole, reason!);
 
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Mute")

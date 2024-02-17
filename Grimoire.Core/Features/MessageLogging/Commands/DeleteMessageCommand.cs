@@ -17,7 +17,7 @@ public sealed record DeleteMessageCommand : ICommand<DeleteMessageCommandRespons
     public ulong? DeletedByModerator { get; init; }
 }
 
-public class DeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteMessageCommand, DeleteMessageCommandResponse>
+public sealed class DeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteMessageCommand, DeleteMessageCommandResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -68,5 +68,5 @@ public sealed record DeleteMessageCommandResponse : BaseResponse
     public string? MessageContent { get; init; }
     public ulong? ReferencedMessage { get; init; }
     public AttachmentDto[] Attachments { get; init; } = [];
-    public bool Success { get; init; } = false;
+    public bool Success { get; init; }
 }

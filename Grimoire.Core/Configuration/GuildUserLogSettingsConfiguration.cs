@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class GuildUserLogSettingsConfiguration : IEntityTypeConfiguration<GuildUserLogSettings>
+internal sealed class GuildUserLogSettingsConfiguration : IEntityTypeConfiguration<GuildUserLogSettings>
 {
     public void Configure(EntityTypeBuilder<GuildUserLogSettings> builder)
     {

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class UsernameHistoryConfiguration : IEntityTypeConfiguration<UsernameHistory>
+internal sealed class UsernameHistoryConfiguration : IEntityTypeConfiguration<UsernameHistory>
 {
     public void Configure(EntityTypeBuilder<UsernameHistory> builder)
     {

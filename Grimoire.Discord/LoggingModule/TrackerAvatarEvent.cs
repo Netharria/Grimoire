@@ -10,7 +10,7 @@ using Grimoire.Discord.Notifications;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerAvatarEvent(IDiscordClientService clientService, IMediator mediator, IDiscordImageEmbedService imageEmbedService) : INotificationHandler<AvatarTrackerNotification>
+internal sealed class TrackerAvatarEvent(IDiscordClientService clientService, IMediator mediator, IDiscordImageEmbedService imageEmbedService) : INotificationHandler<AvatarTrackerNotification>
 {
     private readonly IDiscordClientService _clientService = clientService;
     private readonly IMediator _mediator = mediator;
@@ -25,7 +25,7 @@ public class TrackerAvatarEvent(IDiscordClientService clientService, IMediator m
 
         var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Avatar Updated")
-                .WithDescription($"**User:** <@!{notification.UserId}>")
+                .WithDescription($"**User:** {UserExtensions.Mention(notification.UserId)}")
                 .WithColor(GrimoireColor.Purple)
                 .WithTimestamp(DateTimeOffset.UtcNow);
 

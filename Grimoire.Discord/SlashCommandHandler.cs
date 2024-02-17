@@ -7,14 +7,11 @@
 
 using System.Security.Cryptography;
 using System.Text;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands.EventArgs;
 using Grimoire.Core.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting.Attributes;
-using Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting.Events;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
 
@@ -26,8 +23,7 @@ namespace Grimoire.Discord;
 /// <param name="logger"></param>
 [DiscordSlashCommandsEventsSubscriber]
 [DiscordClientErroredEventSubscriber]
-[DiscordCommandsNextEventsSubscriber]
-public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration) : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber, IDiscordCommandsNextEventsSubscriber
+public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration) : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber
 {
     private readonly ILogger<SlashCommandHandler> _logger = logger;
     private readonly IConfiguration _configuration = configuration;
@@ -64,7 +60,7 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
                     .Select(x => '\"' + x.Replace(":line", "\" line")));
             var innerException = exception.InnerException;
             var exceptionMessage = new StringBuilder().AppendLine(exception.Message);
-            while(innerException is not null)
+            while (innerException is not null)
             {
                 exceptionMessage.AppendLine(innerException.Message);
                 innerException = innerException.InnerException;
@@ -182,7 +178,4 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
 
     [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
     public static partial void LogSlashCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
-
-    public Task CommandsOnCommandExecuted(CommandsNextExtension sender, CommandExecutionEventArgs args) => Task.CompletedTask;
-    public Task CommandsOnCommandErrored(CommandsNextExtension sender, CommandErrorEventArgs args) => Task.CompletedTask;
 }

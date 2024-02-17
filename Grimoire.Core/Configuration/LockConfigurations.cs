@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class LockConfigurations : IEntityTypeConfiguration<Lock>
+internal sealed class LockConfigurations : IEntityTypeConfiguration<Lock>
 {
     public void Configure(EntityTypeBuilder<Lock> builder)
     {

@@ -9,7 +9,7 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class Role : IIdentifiable<ulong>, IMentionable
+public class Role : IIdentifiable<ulong>
 {
     public ulong Id { get; set; }
 
@@ -18,9 +18,6 @@ public class Role : IIdentifiable<ulong>, IMentionable
     public virtual Guild Guild { get; set; } = null!;
 
     public virtual Reward? Reward { get; set; }
-
-    [Obsolete("This property has moved to the IgnoredRole Table.")]
-    public bool IsXpIgnored { get; set; }
 
     public virtual IgnoredRole? IsIgnoredRole { get; set; }
 }

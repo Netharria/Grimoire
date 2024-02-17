@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Grimoire.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class FixDeleteBehaviorAndAddIgnoredTables : Migration
+    public sealed partial class FixDeleteBehaviorAndAddIgnoredTables : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

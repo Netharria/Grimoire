@@ -11,7 +11,7 @@ namespace Grimoire.Core;
 /// Initializes a new instance of the <see cref="GrimoireDbContext"/> class.
 /// </summary>
 /// <param name="options"></param>
-public class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : DbContext(options), IGrimoireDbContext
+public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : DbContext(options), IGrimoireDbContext
 {
     public DbSet<Attachment> Attachments
         => this.Set<Attachment>();
@@ -54,6 +54,9 @@ public class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : Db
 
     public DbSet<Message> Messages
         => this.Set<Message>();
+
+    public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides
+        => this.Set<MessageLogChannelOverride>();
 
     public DbSet<MessageHistory> MessageHistory
         => this.Set<MessageHistory>();

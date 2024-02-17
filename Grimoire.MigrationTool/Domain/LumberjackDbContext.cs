@@ -12,7 +12,7 @@ using Serilog;
 
 namespace Grimoire.MigrationTool.Domain;
 
-public class LumberjackDbContext : DbContext
+internal sealed class LumberjackDbContext : DbContext
 {
     public string? DbPath;
 

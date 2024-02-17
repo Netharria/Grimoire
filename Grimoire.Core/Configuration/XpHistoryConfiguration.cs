@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Core.Configuration;
 
-public class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistory>
+internal sealed class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistory>
 {
     public void Configure(EntityTypeBuilder<XpHistory> builder)
     {

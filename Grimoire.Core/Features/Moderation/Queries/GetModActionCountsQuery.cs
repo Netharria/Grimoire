@@ -9,14 +9,14 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Queries;
 
-public record GetModActionCountsQuery : IQuery<GetModActionCountsQueryResponse?>
+public sealed record GetModActionCountsQuery : IQuery<GetModActionCountsQueryResponse?>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
 
 }
 
-public class GetModActionCountsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
+public sealed class GetModActionCountsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -12,7 +12,7 @@ namespace Grimoire.Discord.LevelingModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -39,7 +39,7 @@ public class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
         }
         await ctx.DeferAsync(!((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
 
-        var getUserCenteredLeaderboardQuery = new GetLeaderboardQuery
+        var getUserCenteredLeaderboardQuery = new GetLeaderboard.Query
         {
             UserId = user?.Id,
             GuildId = ctx.Guild.Id,

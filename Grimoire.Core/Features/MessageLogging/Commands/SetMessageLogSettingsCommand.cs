@@ -20,7 +20,7 @@ public enum MessageLogSetting
     EditLog
 }
 
-public class SetMessageLogSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMessageLogSettingsCommand, BaseResponse>
+public sealed class SetMessageLogSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMessageLogSettingsCommand, BaseResponse>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -47,7 +47,6 @@ public class SetMessageLogSettingsCommandHandler(IGrimoireDbContext grimoireDbCo
                 messageSettings.LogSettings.EditChannelLogId = command.ChannelId;
                 break;
         }
-        this._grimoireDbContext.GuildMessageLogSettings.Update(messageSettings.LogSettings);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse { LogChannelId = messageSettings.ModChannelLog };
     }

@@ -10,7 +10,7 @@ using Grimoire.Discord.Notifications;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerUsernameEvent(IDiscordClientService clientService, IMediator mediator) : INotificationHandler<UsernameTrackerNotification>
+internal sealed class TrackerUsernameEvent(IDiscordClientService clientService, IMediator mediator) : INotificationHandler<UsernameTrackerNotification>
 {
     private readonly IDiscordClientService _clientService = clientService;
     private readonly IMediator _mediator = mediator;
@@ -25,7 +25,7 @@ public class TrackerUsernameEvent(IDiscordClientService clientService, IMediator
 
         var embed = new DiscordEmbedBuilder()
                         .WithAuthor("Username Updated")
-                        .AddField("User", $"<@!{notification.UserId}>")
+                        .AddField("User", UserExtensions.Mention(notification.UserId))
                         .AddField("Before", string.IsNullOrWhiteSpace(notification.BeforeUsername)? "`Unknown`" : notification.BeforeUsername, true)
                         .AddField("After", string.IsNullOrWhiteSpace(notification.AfterUsername)? "`Unknown`" : notification.AfterUsername, true)
                         .WithTimestamp(DateTimeOffset.UtcNow)

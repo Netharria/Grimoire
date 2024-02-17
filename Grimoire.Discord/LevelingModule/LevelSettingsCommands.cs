@@ -18,7 +18,7 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -26,7 +26,7 @@ public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModul
     public async Task ViewAsync(InteractionContext ctx)
     {
         await ctx.DeferAsync();
-        var response = await this._mediator.Send(new GetLevelSettingsQuery{ GuildId = ctx.Guild.Id });
+        var response = await this._mediator.Send(new GetLevelSettings.Query{ GuildId = ctx.Guild.Id });
         var levelLogMention =
                 response.LevelChannelLog is null ?
                 "None" :
@@ -55,7 +55,7 @@ public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModul
     {
         await ctx.DeferAsync();
         var levelSetting = (LevelSettings)levelSettings;
-        var response = await this._mediator.Send(new SetLevelSettingsCommand
+        var response = await this._mediator.Send(new SetLevelSettings.Command
         {
             GuildId = ctx.Guild.Id,
             LevelSettings = levelSetting,
@@ -81,7 +81,7 @@ public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModul
             if (!permissions.HasPermission(Permissions.SendMessages))
                 throw new AnticipatedException($"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
         }
-        var response = await this._mediator.Send(new SetLevelSettingsCommand
+        var response = await this._mediator.Send(new SetLevelSettings.Command
         {
             GuildId = ctx.Guild.Id,
             LevelSettings = LevelSettings.LogChannel,

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class PardonConfiguration : IEntityTypeConfiguration<Pardon>
+internal sealed class PardonConfiguration : IEntityTypeConfiguration<Pardon>
 {
     public void Configure(EntityTypeBuilder<Pardon> builder)
     {

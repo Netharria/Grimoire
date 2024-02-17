@@ -16,7 +16,7 @@ public sealed record GetTrackerWithOldMessageQuery : IRequest<GetTrackerWithOldM
     public ulong MessageId { get; init; }
 }
 
-public class GetTrackerWithOldMessageQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetTrackerWithOldMessageQuery, GetTrackerWithOldMessageQueryResponse?>
+public sealed class GetTrackerWithOldMessageQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetTrackerWithOldMessageQuery, GetTrackerWithOldMessageQueryResponse?>
 {
     private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

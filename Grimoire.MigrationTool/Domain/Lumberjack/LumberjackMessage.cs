@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Lumberjack;
 
 [Table("lumberjack_messages")]
-public record LumberjackMessage
+public sealed record LumberjackMessage
 {
     [Key]
     [Column("message_id")]

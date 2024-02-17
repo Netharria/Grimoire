@@ -13,7 +13,7 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -25,7 +25,7 @@ public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModul
     {
         await ctx.DeferAsync();
         var response = await this._mediator.Send(
-            new AwardUserXpCommand
+            new AwardUserXp.Command
             {
                 UserId = user.Id,
                 GuildId = ctx.Guild.Id,
@@ -53,7 +53,7 @@ public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModul
         if (xpOption == XpOption.Amount && amount == 0)
             throw new AnticipatedException("Specify an amount greater than 0");
         var response = await this._mediator.Send(
-            new ReclaimUserXpCommand
+            new ReclaimUserXp.Command
             {
                 UserId = user.Id,
                 GuildId = ctx.Guild.Id,

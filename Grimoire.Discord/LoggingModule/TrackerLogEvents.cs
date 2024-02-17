@@ -12,7 +12,7 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordMessageCreatedEventSubscriber]
 [DiscordMessageUpdatedEventSubscriber]
 [DiscordVoiceStateUpdatedEventSubscriber]
-public class TrackerLogEvents(IMediator mediator, IDiscordImageEmbedService imageEmbedService) :
+internal sealed class TrackerLogEvents(IMediator mediator, IDiscordImageEmbedService imageEmbedService) :
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageUpdatedEventSubscriber,
     IDiscordVoiceStateUpdatedEventSubscriber

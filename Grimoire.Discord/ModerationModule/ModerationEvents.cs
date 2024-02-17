@@ -17,7 +17,7 @@ namespace Grimoire.Discord.ModerationModule;
 [DiscordMessageCreatedEventSubscriber]
 [DiscordMessageReactionAddedEventSubscriber]
 [DiscordGuildMemberAddedEventSubscriber]
-public class ModerationEvents(IMediator mediator) :
+public sealed partial class ModerationEvents(IMediator mediator) :
     IDiscordGuildBanAddedEventSubscriber,
     IDiscordGuildBanRemovedEventSubscriber,
     IDiscordMessageCreatedEventSubscriber,
@@ -48,15 +48,15 @@ public class ModerationEvents(IMediator mediator) :
                 var banAuditLog = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(AuditLogActionType.Ban, 1500);
                 if (banAuditLog is not null && banAuditLog.Target.Id == args.Member.Id)
                 {
-                    addBanCommand.ModeratorId = banAuditLog.UserResponsible.Id;
-                    addBanCommand.Reason = banAuditLog.Reason ?? "";
+                    addBanCommand.ModeratorId = banAuditLog?.UserResponsible?.Id;
+                    addBanCommand.Reason = banAuditLog?.Reason ?? "";
                 }
             }
             catch (Exception ex) when (
             ex is UnauthorizedException
             || ex is ServerErrorException)
             {
-                sender.Logger.Log(LogLevel.Information, ex, "Got exception when trying to access the audit log. Message: {},", ex.Message);
+                LogAuditException(sender.Logger, ex);
             }
             await this._mediator.Send(addBanCommand);
 
@@ -78,12 +78,15 @@ public class ModerationEvents(IMediator mediator) :
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Red);
         if (response.LastSin?.ModeratorId is not null)
-            embed.AddField("Mod", $"<@{response.LastSin.ModeratorId}>", true);
+            embed.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
 
-        embed.AddField("Reason", !string.IsNullOrWhiteSpace(response.LastSin?.Reason) ? response.LastSin?.Reason : "None", true);
+        embed.AddField("Reason", !string.IsNullOrWhiteSpace(response.LastSin?.Reason) ? response.LastSin.Reason : "None", true);
 
         await loggingChannel.SendMessageAsync(embed);
     }
+
+    [LoggerMessage(LogLevel.Information, "Exception while accessing audit log.")]
+    private static partial void LogAuditException(ILogger<BaseDiscordClient> logger, Exception ex);
 
     public async Task DiscordOnGuildBanRemoved(DiscordClient sender, GuildBanRemoveEventArgs args)
     {
@@ -111,7 +114,7 @@ public class ModerationEvents(IMediator mediator) :
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green);
         if (response.LastSin.ModeratorId is not null)
-            embed.AddField("Mod", $"<@{response.LastSin.ModeratorId}>", true);
+            embed.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
 
         await loggingChannel.SendMessageAsync(embed);
     }

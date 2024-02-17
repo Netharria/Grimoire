@@ -15,7 +15,7 @@ namespace Grimoire.Discord.SharedModule;
 [SlashCommandGroup("ModLog", "View or set the moderation log channel.")]
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class ModLogSettings(IMediator mediator) : ApplicationCommandModule
+internal sealed class ModLogSettings(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 

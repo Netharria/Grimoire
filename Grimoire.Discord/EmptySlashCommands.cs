@@ -10,6 +10,6 @@ namespace Grimoire.Discord;
 /// <summary>
 /// Example commands used as simple versions of using the DSharpPlus slash commands in different ways.
 /// </summary>
-public class EmptySlashCommands : ApplicationCommandModule
+internal sealed class EmptySlashCommands : ApplicationCommandModule
 {
 }
