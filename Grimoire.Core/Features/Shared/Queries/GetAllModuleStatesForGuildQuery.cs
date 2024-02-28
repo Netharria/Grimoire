@@ -14,9 +14,9 @@ public sealed record GetAllModuleStatesForGuildQuery : IRequest<GetAllModuleStat
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetAllModuleStatesForGuildQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetAllModuleStatesForGuildQuery, GetAllModuleStatesForGuildQueryResponse>
+public sealed class GetAllModuleStatesForGuildQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetAllModuleStatesForGuildQuery, GetAllModuleStatesForGuildQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetAllModuleStatesForGuildQueryResponse> Handle(GetAllModuleStatesForGuildQuery request, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Guilds

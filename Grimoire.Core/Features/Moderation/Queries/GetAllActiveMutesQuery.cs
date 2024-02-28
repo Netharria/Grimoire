@@ -12,9 +12,9 @@ public sealed record GetAllActiveMutesQuery : IQuery<GetAllActiveMutesQueryRespo
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetAllActiveMutesQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
+public sealed class GetAllActiveMutesQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request, CancellationToken cancellationToken)
     {

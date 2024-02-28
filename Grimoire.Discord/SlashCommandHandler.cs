@@ -81,6 +81,8 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
     public async Task SlashCommandsOnSlashCommandErrored(SlashCommandsExtension sender, SlashCommandErrorEventArgs args)
     {
         if (args.Exception is SlashExecutionChecksFailedException ex)
+        {
+
             foreach (var check in ex.FailedChecks)
             {
                 if (check is SlashRequireGuildAttribute)
@@ -133,14 +135,18 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
                         .WithColor(GrimoireColor.DarkPurple)
                         .WithDescription($"The {requireEnabledPermissions.Module} module is not enabled."), true);
             }
+        }
         else if (args.Exception is AnticipatedException)
         {
-            await args.Context.EditReplyAsync(color: GrimoireColor.Yellow, message: args.Exception.Message);
+            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                .WithColor(GrimoireColor.Yellow)
+                .WithDescription(args.Exception.Message));
         }
         else if (args.Exception is UnauthorizedException)
         {
-            await args.Context.EditReplyAsync(color: GrimoireColor.Yellow,
-                message: $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request.");
+            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                .WithColor(GrimoireColor.Yellow)
+                .WithDescription($"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
         }
         else if (args.Exception is not null)
         {
@@ -155,10 +161,22 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
                 args.Context.Interaction.Data.Name,
                 log.ToString());
 
-
-            await args.Context.EditReplyAsync(color: GrimoireColor.Yellow,
-                message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorHexString}]");
+            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                .WithColor(GrimoireColor.Yellow)
+                .WithDescription($"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorHexString}]"));
             await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorHexString);
+        }
+    }
+
+    public async static Task SendOrEditMessageAsync(SlashCommandErrorEventArgs args, DiscordEmbedBuilder embed)
+    {
+        try
+        {
+            await args.Context.CreateResponseAsync(embed, true);
+        }
+        catch (Exception)
+        {
+            await args.Context.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
         }
     }
 

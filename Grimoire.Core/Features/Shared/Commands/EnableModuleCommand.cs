@@ -17,9 +17,9 @@ public sealed record EnableModuleCommand : ICommand<EnableModuleCommandResponse>
     public bool Enable { get; init; }
 }
 
-public sealed class EnableModuleCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<EnableModuleCommand, EnableModuleCommandResponse>
+public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<EnableModuleCommand, EnableModuleCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<EnableModuleCommandResponse> Handle(EnableModuleCommand command, CancellationToken cancellationToken)
     {

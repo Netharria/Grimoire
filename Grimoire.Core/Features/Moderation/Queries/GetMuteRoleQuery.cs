@@ -12,9 +12,9 @@ public sealed record GetMuteRoleQuery : IRequest<GetMuteRoleQueryResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetMuteRoleQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
+public sealed class GetMuteRoleQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetMuteRoleQueryResponse> Handle(GetMuteRoleQuery request, CancellationToken cancellationToken)
     {

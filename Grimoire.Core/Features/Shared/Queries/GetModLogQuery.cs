@@ -9,25 +9,39 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Shared.Queries;
 
-public sealed record GetModLogQuery : IQuery<BaseResponse>
+public sealed class GetGeneralSettings
 {
-    public ulong GuildId { get; init; }
-}
-
-public sealed class GetModLogQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetModLogQuery, BaseResponse>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<BaseResponse> Handle(GetModLogQuery query, CancellationToken cancellationToken)
+    public sealed record Query : IQuery<Response>
     {
-        var modChannelLog = await this._grimoireDbContext.Guilds
+        public ulong GuildId { get; init; }
+    }
+
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IQueryHandler<Query, Response>
+    {
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Response> Handle(Query query, CancellationToken cancellationToken)
+        {
+            var result = await this._grimoireDbContext.Guilds
             .AsNoTracking()
             .WhereIdIs(query.GuildId)
-            .Select(x => x.ModChannelLog)
+            .Select(x => new
+            {
+                x.ModChannelLog,
+                x.UserCommandChannelId
+            })
             .FirstOrDefaultAsync(cancellationToken);
-        return new BaseResponse
-        {
-            LogChannelId = modChannelLog
-        };
+            return new Response
+            {
+                ModLogChannel = result?.ModChannelLog,
+                UserCommandChannel = result?.UserCommandChannelId
+            };
+        }
+    }
+
+    public sealed record Response
+    {
+        public ulong? ModLogChannel { get; init; }
+        public ulong? UserCommandChannel { get; init; }
     }
 }

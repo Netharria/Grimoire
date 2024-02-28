@@ -16,9 +16,9 @@ public sealed class AddLogMessage
         public ulong GuildId { get; init; }
     }
 
-    public sealed class AddLogMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
+    public sealed class AddLogMessageCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
     {
-        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
         {

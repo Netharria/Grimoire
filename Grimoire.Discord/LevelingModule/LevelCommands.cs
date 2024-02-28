@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Features.Leveling.Queries;
+using Grimoire.Core.Features.Shared.Queries;
 
 namespace Grimoire.Discord.LevelingModule;
 
@@ -26,7 +27,10 @@ internal sealed class LevelCommands(IMediator mediator) : ApplicationCommandModu
         InteractionContext ctx,
         [Option("user", "User to get details from. Blank will return your info.")] DiscordUser? user = null)
     {
-        await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
+        var userCommandChannel = await _mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
+
+        await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages)
+           && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
         user ??= ctx.User;
 
         var response = await this._mediator.Send(new GetLevel.Query{ UserId = user.Id, GuildId = ctx.Guild.Id});
