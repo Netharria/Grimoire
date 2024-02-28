@@ -19,9 +19,9 @@ public sealed class GetLeaderboard
         public ulong? UserId { get; init; }
     }
 
-    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
     {
-        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async ValueTask<Response> Handle(Query request, CancellationToken cancellationToken)
         {

@@ -166,11 +166,11 @@ internal sealed class LogSettingsCommands : ApplicationCommandModule
             await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated {logSetting.GetName()} to {channel?.Mention}.");
         }
 
-        [SlashCommand("Override", "Overrides the default message logging settings. Use this to enable or disable message logging in specific channels.")]
+        [SlashCommand("Override", "Overrides the message logging settings. Use this to disable message logging in specific channels.")]
         public async Task Override(
             InteractionContext ctx,
             [Option("Option", "Override option to set the channel to.")] UpdateMessageLogOverride.MessageLogOverrideSetting overrideSetting,
-            [Option("Channel", "The channel to override the message log settings of. Leave empty for current channel.")] DiscordChannel? channel = null)
+            [Option("Channel", "The channel to overrid the message log. Leave empty for current channel.")] DiscordChannel? channel = null)
         {
             await ctx.DeferAsync();
             channel ??= ctx.Channel;

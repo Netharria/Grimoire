@@ -13,9 +13,9 @@ public sealed record GetLockQuery : IQuery<bool>
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetLockQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetLockQuery, bool>
+public sealed class GetLockQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetLockQuery, bool>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<bool> Handle(GetLockQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Locks

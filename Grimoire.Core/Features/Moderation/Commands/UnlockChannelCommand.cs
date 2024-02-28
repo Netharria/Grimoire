@@ -14,9 +14,9 @@ public sealed record UnlockChannelCommand : ICommand<UnlockChannelCommandRespons
     public ulong GuildId { get; init; }
 }
 
-public sealed class UnlockChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
+public sealed class UnlockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UnlockChannelCommandResponse> Handle(UnlockChannelCommand command, CancellationToken cancellationToken)
     {

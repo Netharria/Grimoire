@@ -21,9 +21,9 @@ public sealed record AddGuildCommand : ICommand
     public IEnumerable<Invite> Invites { get; set; } = Enumerable.Empty<Invite>();
 }
 
-public sealed class AddGuildCommandHandler(IGrimoireDbContext grimoireDbContext, IInviteService inviteService) : ICommandHandler<AddGuildCommand>
+public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, IInviteService inviteService) : ICommandHandler<AddGuildCommand>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
     private readonly IInviteService _inviteService = inviteService;
 
     public async ValueTask<Unit> Handle(AddGuildCommand command, CancellationToken cancellationToken)

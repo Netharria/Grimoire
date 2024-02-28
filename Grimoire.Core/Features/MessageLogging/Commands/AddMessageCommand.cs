@@ -25,9 +25,9 @@ public sealed class AddMessage
         public required List<ulong> ParentChannelTree { get; init; }
     }
 
-    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
     {
-        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
         {

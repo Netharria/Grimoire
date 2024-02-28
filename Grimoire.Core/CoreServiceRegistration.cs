@@ -33,7 +33,6 @@ public static class CoreServiceRegistration
             options.UseNpgsql(connectionString,
             npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure()))
             .AddSingleton<IInviteService, InviteService>()
-            .AddScoped<IGrimoireDbContext, GrimoireDbContext>()
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>));
         return services;

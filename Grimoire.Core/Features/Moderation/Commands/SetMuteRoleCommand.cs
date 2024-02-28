@@ -13,9 +13,9 @@ public sealed record SetMuteRoleCommand : ICommand<BaseResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class SetMuteRoleCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMuteRoleCommand, BaseResponse>
+public sealed class SetMuteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetMuteRoleCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetMuteRoleCommand command, CancellationToken cancellationToken)
     {

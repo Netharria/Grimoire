@@ -31,6 +31,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         if (args.Guild is null
             || args.Message.MessageType is not MessageType.Default and not MessageType.Reply)
             return;
+
         List<ulong> parentChannelTree = [ args.Channel.Id ];
         var channelParent = args.Channel.Parent;
         while(channelParent is not null)

@@ -27,9 +27,9 @@ public sealed class ReclaimUserXp
         public ulong? ReclaimerId { get; init; }
     }
 
-    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
     {
-        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async ValueTask<Response> Handle(Command command, CancellationToken cancellationToken)
         {

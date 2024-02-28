@@ -16,9 +16,9 @@ public sealed record UpdateSinReasonCommand : ICommand<UpdateSinReasonCommandRes
     public ulong GuildId { get; init; }
 }
 
-public sealed class UpdateSinReasonCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
+public sealed class UpdateSinReasonCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UpdateSinReasonCommandResponse> Handle(UpdateSinReasonCommand command, CancellationToken cancellationToken)
     {

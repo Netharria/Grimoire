@@ -11,9 +11,9 @@ public sealed record RemoveExpiredTrackersCommand : ICommand<IEnumerable<RemoveE
 {
 }
 
-public sealed class RemoveExpiredTrackersCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
+public sealed class RemoveExpiredTrackersCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<IEnumerable<RemoveExpiredTrackersCommandResponse>> Handle(RemoveExpiredTrackersCommand command, CancellationToken cancellationToken)
     {

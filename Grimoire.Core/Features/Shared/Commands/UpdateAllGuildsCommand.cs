@@ -21,9 +21,9 @@ public sealed record UpdateAllGuildsCommand : ICommand
     public IEnumerable<Invite> Invites { get; init; } = Enumerable.Empty<Invite>();
 }
 
-public sealed class UpdateAllGuildsCommandHandler(IGrimoireDbContext grimoireDbContext, IInviteService inviteService) : ICommandHandler<UpdateAllGuildsCommand>
+public sealed class UpdateAllGuildsCommandHandler(GrimoireDbContext grimoireDbContext, IInviteService inviteService) : ICommandHandler<UpdateAllGuildsCommand>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     private readonly IInviteService _inviteService = inviteService;
 
