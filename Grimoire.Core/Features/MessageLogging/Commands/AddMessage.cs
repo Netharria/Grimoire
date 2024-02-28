@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Threading;
 using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Discord.Extensions;
 
@@ -62,7 +61,7 @@ public sealed class AddMessage
                 await this.AddMissingMember(command, cancellationToken);
             }
 
-            if(!ShouldLogMessage(command, result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
+            if (!ShouldLogMessage(command, result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
                 return Unit.Value;
 
             var message = new Message
@@ -120,7 +119,7 @@ public sealed class AddMessage
         {
             if (overrides.Count == 0)
                 return true;
-            foreach(var channel in command.ParentChannelTree)
+            foreach (var channel in command.ParentChannelTree)
             {
                 if (!overrides.TryGetValue(channel, out var channelOverride))
                     continue;

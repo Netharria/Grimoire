@@ -5,12 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Linq;
+using System.Text;
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.MessageLogging.Commands;
 using Grimoire.Core.Features.MessageLogging.Queries;
 using Grimoire.Core.Features.UserLogging.Commands;
 using Grimoire.Core.Features.UserLogging.Queries;
 using Grimoire.Discord.Enums;
+using Grimoire.Domain;
 
 namespace Grimoire.Discord.LoggingModule;
 
@@ -166,7 +169,7 @@ internal sealed class LogSettingsCommands : ApplicationCommandModule
             await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated {logSetting.GetName()} to {channel?.Mention}.");
         }
 
-        [SlashCommand("Override", "Overrides the message logging settings. Use this to disable message logging in specific channels.")]
+        [SlashCommand("Override", "Overrides the default message logging settings. Use this to control which channels are logged.")]
         public async Task Override(
             InteractionContext ctx,
             [Option("Option", "Override option to set the channel to.")] UpdateMessageLogOverride.MessageLogOverrideSetting overrideSetting,
@@ -183,7 +186,39 @@ internal sealed class LogSettingsCommands : ApplicationCommandModule
             });
 
             await ctx.EditReplyAsync(GrimoireColor.Purple, response.Message);
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} updated the channel overrides", response.Message);
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.GetUsernameWithDiscriminator()} updated the channel overrides", response.Message);
+        }
+
+        [SlashCommand("ViewOverrides", "View the currently Configured log overrides")]
+        public async Task ViewOverrides(InteractionContext ctx)
+        {
+            await ctx.DeferAsync();
+
+            var response = await this._mediator.Send(new GetMessageLogOverrides.Query{ GuildId = ctx.Guild.Id });
+
+            var overrideOptions = response
+               .Select(x => new
+                {
+                    Channel = ctx.Guild.Channels.GetValueOrDefault(x.ChannelId) ?? ctx.Guild.Threads.GetValueOrDefault(x.ChannelId),
+                    x.ChannelOption
+                }).OrderBy(x => x.Channel?.Position)
+                .ToList();
+
+            var channelOverrideString = new StringBuilder();
+            foreach(var overrideOption in overrideOptions)
+            {
+                if (overrideOption.Channel is null)
+                    continue;
+
+                channelOverrideString.Append(overrideOption.Channel.Mention)
+                    .Append(overrideOption.ChannelOption switch
+                    {
+                        MessageLogOverrideOption.AlwaysLog => " - Always Log",
+                        MessageLogOverrideOption.NeverLog => " - Never Log",
+                        _ => " - Inherit/Default"
+                    }).AppendLine();
+            }
+            await ctx.EditReplyAsync(GrimoireColor.Purple, title: "Channel Override Settings", message: channelOverrideString.ToString());
         }
     }
 }

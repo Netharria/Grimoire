@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.MessageLogging.Queries;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -31,24 +30,14 @@ internal sealed class DiscordAuditLogParserService(IDiscordClientService discord
 
         IReadOnlyList<DiscordAuditLogEntry> auditLogEntries = new List<DiscordAuditLogEntry>();
 
-        for (var i = 1; i <= 3; i++)
+        try
         {
-            try
-            {
-                auditLogEntries = await guild.GetAuditLogsAsync(10, action_type: AuditLogActionType.MessageDelete);
-                break;
-            }
-            catch (ServerErrorException ex) when (Equals(ex.WebResponse.ResponseCode, 502))
-            {
-                if (i < 3)
-                    await Task.Delay(500 * i);
-                else
-                    return null;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            auditLogEntries = await DiscordRetryPolicy.RetryDiscordCall(
+                async () => await guild.GetAuditLogsAsync(10, action_type: AuditLogActionType.MessageDelete));
+        }
+        catch (Exception)
+        {
+            return null;
         }
 
         if (!auditLogEntries.Any()) return null;
