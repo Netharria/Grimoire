@@ -80,6 +80,8 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
 
     public async Task SlashCommandsOnSlashCommandErrored(SlashCommandsExtension sender, SlashCommandErrorEventArgs args)
     {
+        LogSlashCommandError(_logger, args.Exception);
+
         if (args.Exception is SlashExecutionChecksFailedException ex)
             foreach (var check in ex.FailedChecks)
             {
@@ -155,7 +157,7 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
                 args.Context.Interaction.Data.Name,
                 log.ToString());
 
-
+            
             await args.Context.EditReplyAsync(color: GrimoireColor.Yellow,
                 message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorHexString}]");
             await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorHexString);
@@ -164,6 +166,9 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
 
     [LoggerMessage(LogLevel.Error, "Error on SlashCommand: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
     public static partial void LogSlashCommandError(ILogger logger, Exception ex, string ErrorId, string interactionName, string interactionOptions);
+
+    [LoggerMessage(LogLevel.Error, "In OnSlashCommand Errored")]
+    public static partial void LogSlashCommandError(ILogger logger, Exception ex);
 
     public async Task SlashCommandsOnSlashCommandExecuted(SlashCommandsExtension sender, SlashCommandExecutedEventArgs args)
     {

@@ -28,4 +28,5 @@ public static class DiscordRetryPolicy
 
     public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, Task<T>> function, CancellationToken cancellationToken = default)
         => _resiliencePipeline.ExecuteAsync(async token => await function(token), cancellationToken);
+
 }
