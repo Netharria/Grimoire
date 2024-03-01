@@ -28,7 +28,6 @@
   </ItemGroup>
     
   <ItemGroup>
-    <Using Include="Grimoire.Core.Contracts.Persistance" />
     <Using Include="Grimoire.Core.Exceptions" />
     <Using Include="Mediator" />
     <Using Include="Microsoft.EntityFrameworkCore" />

@@ -15,9 +15,9 @@ public sealed record GetLastBanQuery : IRequest<GetLastBanQueryResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetLastBanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
+public sealed class GetLastBanQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetLastBanQueryResponse> Handle(GetLastBanQuery request, CancellationToken cancellationToken)
     {

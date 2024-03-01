@@ -17,9 +17,9 @@ public sealed record AddMemberCommand : ICommand
 }
 
 
-public sealed class AddMemberCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddMemberCommand>
+public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<AddMemberCommand>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<Unit> Handle(AddMemberCommand command, CancellationToken cancellationToken)
     {

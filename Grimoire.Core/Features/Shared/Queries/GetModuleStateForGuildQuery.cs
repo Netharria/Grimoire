@@ -16,9 +16,9 @@ public sealed record GetModuleStateForGuildQuery : IRequest<bool>
     public Module Module { get; init; }
 }
 
-public sealed class GetModuleStateForGuildQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetModuleStateForGuildQuery, bool>
+public sealed class GetModuleStateForGuildQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetModuleStateForGuildQuery, bool>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
     {

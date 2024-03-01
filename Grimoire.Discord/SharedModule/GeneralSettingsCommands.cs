@@ -12,39 +12,28 @@ using Grimoire.Discord.Enums;
 
 namespace Grimoire.Discord.SharedModule;
 
-[SlashCommandGroup("ModLog", "View or set the moderation log channel.")]
+[SlashCommandGroup("GeneralSettings", "View or set general settings.")]
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-internal sealed class ModLogSettings(IMediator mediator) : ApplicationCommandModule
+internal sealed class GeneralSettingsCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
-    [SlashCommand("View", "View the current moderation log channel.")]
+    [SlashCommand("View", "View the current general settings.")]
     public async Task ViewAsync(InteractionContext ctx)
     {
         await ctx.DeferAsync(true);
-        var response = await this._mediator.Send(new GetModLogQuery
+        var response = await this._mediator.Send(new GetGeneralSettings.Query
         {
             GuildId = ctx.Guild.Id
         });
-        if (response.LogChannelId is null)
-        {
-            await ctx.EditReplyAsync(message: "The moderation log is currently disabled.");
-            return;
-        }
-
-        var channel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
-        if (channel is null)
-        {
-            await ctx.EditReplyAsync(message: $"The current channel({response.LogChannelId}) for the moderation log could not be found. " +
-                $"The channel might have been deleted.");
-            return;
-        }
-        await ctx.EditReplyAsync(message: $"The current moderation log channel is {channel.Mention}");
+        var moderationLogText = response.ModLogChannel is null ? "None" : ChannelExtensions.Mention(response.ModLogChannel.Value);
+        var userCommandChannelText = response.UserCommandChannel is null ? "None" : ChannelExtensions.Mention(response.UserCommandChannel.Value);
+        await ctx.EditReplyAsync(title: "General Settings", message: $"**Moderation Log:** {moderationLogText}\n**User Command Channel:** {userCommandChannelText}");
     }
 
-    [SlashCommand("Set", "Set the moderation log channel.")]
-    public async Task BanLogAsync(
+    [SlashCommand("ModLogChannel", "Set the moderation log channel.")]
+    public async Task SetAsync(
         InteractionContext ctx,
         [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
         [Option("Channel", "The channel to send to send the logs to.")] DiscordChannel? channel = null)
@@ -70,5 +59,28 @@ internal sealed class ModLogSettings(IMediator mediator) : ApplicationCommandMod
         }
         await ctx.EditReplyAsync(message: $"Updated the moderation log to {channel?.Mention}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated the moderation log to {channel?.Mention}.");
+    }
+
+    [SlashCommand("UserCommands", "Set the channel where some commands are visible for non moderators.")]
+    public async Task SetUserCommandChannelAsync(
+        InteractionContext ctx,
+        [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
+        [Option("Channel", "The channel to send to send the logs to.")] DiscordChannel? channel = null)
+    {
+        await ctx.DeferAsync();
+        channel = ctx.GetChannelOptionAsync(option, channel);
+        var response = await this._mediator.Send(new SetUserCommandChannel.Command
+        {
+            GuildId = ctx.Guild.Id,
+            ChannelId = channel?.Id
+        });
+        if (option is ChannelOption.Off)
+        {
+            await ctx.EditReplyAsync(message: $"Disabled the User Command Channel.");
+            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the User Command Channel.");
+            return;
+        }
+        await ctx.EditReplyAsync(message: $"Updated the User Command Channel to {channel?.Mention}");
+        await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.User.Mention} updated the User Command Channel to {channel?.Mention}.");
     }
 }

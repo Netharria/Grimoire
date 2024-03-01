@@ -23,9 +23,9 @@ public sealed class UpdateMessageLogOverride
         public required MessageLogOverrideSetting ChannelOverrideSetting { get; set; }
     }
 
-    public sealed class Handler(IGrimoireDbContext dbContext) : ICommandHandler<Command, BaseResponse>
+    public sealed class Handler(GrimoireDbContext dbContext) : ICommandHandler<Command, BaseResponse>
     {
-        private readonly IGrimoireDbContext _dbContext = dbContext;
+        private readonly GrimoireDbContext _dbContext = dbContext;
 
         public ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {

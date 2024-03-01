@@ -15,9 +15,9 @@ public sealed record GetUserMuteQuery : IQuery<ulong?>
     public ulong GuildId { get; set; }
 }
 
-public sealed class GetUserMuteQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserMuteQuery, ulong?>
+public sealed class GetUserMuteQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserMuteQuery, ulong?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<ulong?> Handle(GetUserMuteQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Mutes

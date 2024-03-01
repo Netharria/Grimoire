@@ -16,7 +16,7 @@ public sealed class GetLevelSettings
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
     {
-        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async ValueTask<Response> Handle(Query request, CancellationToken cancellationToken)
         {

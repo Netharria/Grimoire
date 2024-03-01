@@ -17,9 +17,9 @@ public sealed record DeleteMessageCommand : ICommand<DeleteMessageCommandRespons
     public ulong? DeletedByModerator { get; init; }
 }
 
-public sealed class DeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteMessageCommand, DeleteMessageCommandResponse>
+public sealed class DeleteMessageCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteMessageCommand, DeleteMessageCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<DeleteMessageCommandResponse> Handle(DeleteMessageCommand command, CancellationToken cancellationToken)
     {

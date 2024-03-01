@@ -20,9 +20,9 @@ public enum MessageLogSetting
     EditLog
 }
 
-public sealed class SetMessageLogSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMessageLogSettingsCommand, BaseResponse>
+public sealed class SetMessageLogSettingsCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetMessageLogSettingsCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetMessageLogSettingsCommand command, CancellationToken cancellationToken)
     {

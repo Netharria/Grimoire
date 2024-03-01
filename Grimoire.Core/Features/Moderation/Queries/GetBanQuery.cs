@@ -14,9 +14,9 @@ public sealed record GetBanQuery : IRequest<GetBanQueryResponse>
 }
 
 
-public sealed class GetBanQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetBanQuery, GetBanQueryResponse>
+public sealed class GetBanQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetBanQuery, GetBanQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetBanQueryResponse> Handle(GetBanQuery request, CancellationToken cancellationToken)
     {

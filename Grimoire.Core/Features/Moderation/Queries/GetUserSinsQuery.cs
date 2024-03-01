@@ -25,9 +25,9 @@ public sealed record GetUserSinsQuery : IQuery<GetUserSinsQueryResponse>
     public SinQueryType SinQueryType { get; init; }
 }
 
-public sealed class GetUserSinsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
+public sealed class GetUserSinsQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
     {

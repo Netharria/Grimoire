@@ -19,9 +19,9 @@ public sealed record LockChannelCommand : ICommand<BaseResponse>
     public long DurationAmount { get; init; }
 }
 
-public sealed class LockChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<LockChannelCommand, BaseResponse>
+public sealed class LockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<LockChannelCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(LockChannelCommand command, CancellationToken cancellationToken)
     {

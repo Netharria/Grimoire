@@ -23,7 +23,6 @@ using Polly;
 using Polly.Extensions.Http;
 using Serilog;
 
-#pragma warning disable CA1861 // Avoid constant arrays as arguments
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration(x =>
     {
@@ -65,7 +64,7 @@ var host = Host.CreateDefaultBuilder(args)
                 }
                 //Shared
                 extension.RegisterCommands<ModuleCommands>();
-                extension.RegisterCommands<ModLogSettings>();
+                extension.RegisterCommands<GeneralSettingsCommands>();
                 extension.RegisterCommands<PurgeCommands>();
                 extension.RegisterCommands<UserInfoCommands>();
 
@@ -109,7 +108,6 @@ var host = Host.CreateDefaultBuilder(args)
     )
     .UseConsoleLifetime()
     .Build();
-#pragma warning restore CA1861 // Avoid constant arrays as arguments
 using (var scope = host.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<GrimoireDbContext>();

@@ -18,9 +18,9 @@ public sealed class GetMessageLogOverrides
         public required MessageLogOverrideOption ChannelOption { get; init; }
     }
 
-    public sealed class Handler(IGrimoireDbContext dbContext) : IQueryHandler<Query, List<Response>>
+    public sealed class Handler(GrimoireDbContext dbContext) : IQueryHandler<Query, List<Response>>
     {
-        private readonly IGrimoireDbContext _dbContext = dbContext;
+        private readonly GrimoireDbContext _dbContext = dbContext;
 
         public async ValueTask<List<Response>> Handle(Query query, CancellationToken cancellationToken)
             => await this._dbContext.MessagesLogChannelOverrides

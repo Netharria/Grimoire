@@ -13,9 +13,9 @@ public sealed record RemoveTrackerCommand : ICommand<RemoveTrackerCommandRespons
     public ulong GuildId { get; init; }
 }
 
-public sealed class RemoveTrackerCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveTrackerCommand, RemoveTrackerCommandResponse>
+public sealed class RemoveTrackerCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveTrackerCommand, RemoveTrackerCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<RemoveTrackerCommandResponse> Handle(RemoveTrackerCommand command, CancellationToken cancellationToken)
     {

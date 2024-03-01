@@ -35,5 +35,9 @@ internal sealed class GuildConfiguration : IEntityTypeConfiguration<Guild>
             .WithOne(e => e.Guild)
             .HasForeignKey<GuildModerationSettings>(e => e.GuildId)
             .IsRequired(false);
+        builder.HasOne(e => e.UserCommandChannel)
+            .WithMany()
+            .HasForeignKey(e => e.UserCommandChannelId)
+            .IsRequired(false);
     }
 }

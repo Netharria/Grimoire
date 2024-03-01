@@ -20,9 +20,9 @@ public sealed class AddReward
         public string? Message { get; init; }
     }
 
-    public sealed class Handler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
     {
-        private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {

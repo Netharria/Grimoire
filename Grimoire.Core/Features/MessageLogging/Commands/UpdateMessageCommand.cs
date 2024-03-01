@@ -17,9 +17,9 @@ public sealed record UpdateMessageCommand : ICommand<UpdateMessageCommandRespons
     public string MessageContent { get; init; } = string.Empty;
 }
 
-public sealed class UpdateMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateMessageCommand, UpdateMessageCommandResponse>
+public sealed class UpdateMessageCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateMessageCommand, UpdateMessageCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand command, CancellationToken cancellationToken)
     {

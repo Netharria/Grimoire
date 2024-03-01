@@ -13,9 +13,9 @@ public sealed record SetBanLogChannelCommand : ICommand<BaseResponse>
     public ulong? ChannelId { get; init; }
 }
 
-public sealed class SetBanLogChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
+public sealed class SetBanLogChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetBanLogChannelCommand command, CancellationToken cancellationToken)
     {
