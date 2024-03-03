@@ -14,8 +14,8 @@ public sealed class GetLevel
 {
     public sealed record Query : IRequest<Response>
     {
-        public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public required ulong UserId { get; init; }
+        public required ulong GuildId { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
@@ -60,10 +60,10 @@ public sealed class GetLevel
 
     public sealed record Response : BaseResponse
     {
-        public long UsersXp { get; init; }
-        public int UsersLevel { get; init; }
-        public long LevelProgress { get; init; }
-        public long XpForNextLevel { get; init; }
+        public required long UsersXp { get; init; }
+        public required  int UsersLevel { get; init; }
+        public required long LevelProgress { get; init; }
+        public required long XpForNextLevel { get; init; }
         public ulong? NextRoleRewardId { get; init; }
         public int? NextRewardLevel { get; init; }
     }

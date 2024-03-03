@@ -15,7 +15,7 @@ public sealed class GetIgnoredItems
 {
     public sealed record Query : IRequest<BaseResponse>
     {
-        public ulong GuildId { get; init; }
+        public required ulong GuildId { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, BaseResponse>

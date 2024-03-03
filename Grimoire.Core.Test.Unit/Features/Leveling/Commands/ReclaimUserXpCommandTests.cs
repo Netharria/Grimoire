@@ -111,17 +111,16 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     {
         var cut = new ReclaimUserXp.Handler(this._dbContext);
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
+        await cut.Invoking(async x => await x.Handle(
             new ReclaimUserXp.Command
             {
                 UserId = 20001,
                 GuildId = GUILD_ID,
                 XpToTake = 20,
                 XpOption = XpOption.Amount
-            }, default));
-        this._dbContext.ChangeTracker.Clear();
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
+            }, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("<@!20001> was not found. Have they been on the server before?");
     }
 
     [Fact]
@@ -129,17 +128,16 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     {
         var cut = new ReclaimUserXp.Handler(this._dbContext);
 
-        var response = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await cut.Handle(
+        var response = await cut.Invoking(async x => await x.Handle(
             new ReclaimUserXp.Command
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
                 XpToTake = 20,
                 XpOption = (XpOption)2
-            }, default));
-        this._dbContext.ChangeTracker.Clear();
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("XpOption not implemented in switch statement. (Parameter 'command')");
-        response?.ParamName.Should().Be("command");
+            }, default))
+            .Should().ThrowAsync<ArgumentOutOfRangeException>()
+            .WithMessage("XpOption not implemented in switch statement. (Parameter 'command')")
+            .WithParameterName("command");
     }
 }

@@ -76,15 +76,15 @@ public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyn
     {
 
         var cut = new AwardUserXp.Handler(this._dbContext);
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
+
+        await cut.Invoking(async x => await x.Handle(
             new AwardUserXp.Command
             {
                 UserId = 20001,
                 GuildId = GUILD_ID,
                 XpToAward = 20
-            }, default));
-
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
+            }, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("<@!20001> was not found. Have they been on the server before?");
     }
 }

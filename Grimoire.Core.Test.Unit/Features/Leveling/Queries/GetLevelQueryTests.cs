@@ -26,8 +26,12 @@ public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLife
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
     private const ulong GUILD_ID = 1;
     private const ulong USER_ID = 1;
-    private const ulong ROLE_ID = 1;
-    private const int REWARD_LEVEL = 100;
+    private const ulong ROLE_ID_1 = 1;
+    private const ulong ROLE_ID_2 = 2;
+    private const ulong ROLE_ID_3 = 3;
+    private const int REWARD_LEVEL_1 = 100;
+    private const int REWARD_LEVEL_2 = 10;
+    private const int REWARD_LEVEL_3 = 110;
 
     public async Task InitializeAsync()
     {
@@ -46,12 +50,36 @@ public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLife
             Type = XpHistoryType.Awarded,
             TimeOut = DateTime.UtcNow.AddMinutes(-5),
         });
-        await this._dbContext.AddAsync(new Role { Id = ROLE_ID, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new XpHistory
+        {
+            UserId = USER_ID,
+            GuildId = GUILD_ID,
+            Xp = 300,
+            Type = XpHistoryType.Awarded,
+            TimeOut = DateTime.UtcNow.AddMinutes(-5),
+        });
+        await this._dbContext.AddAsync(new Role { Id = ROLE_ID_1, GuildId = GUILD_ID });
         await this._dbContext.AddAsync(new Reward
         {
-            RoleId = ROLE_ID,
+            RoleId = ROLE_ID_1,
             GuildId = GUILD_ID,
-            RewardLevel = REWARD_LEVEL
+            RewardLevel = REWARD_LEVEL_1
+        });
+
+        await this._dbContext.AddAsync(new Role { Id = ROLE_ID_2, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Reward
+        {
+            RoleId = ROLE_ID_2,
+            GuildId = GUILD_ID,
+            RewardLevel = REWARD_LEVEL_2
+        });
+
+        await this._dbContext.AddAsync(new Role { Id = ROLE_ID_3, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Reward
+        {
+            RoleId = ROLE_ID_3,
+            GuildId = GUILD_ID,
+            RewardLevel = REWARD_LEVEL_3
         });
 
         await this._dbContext.SaveChangesAsync();
@@ -70,10 +98,10 @@ public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLife
             UserId = 234081234
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("That user could not be found.");
+        var response = await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("That user could not be found.");
     }
 
     [Fact]
@@ -89,11 +117,41 @@ public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLife
 
         var response = await CUT.Handle(command, default);
 
-        response.UsersXp.Should().Be(300);
-        response.UsersLevel.Should().Be(8);
-        response.LevelProgress.Should().Be(15);
-        response.XpForNextLevel.Should().Be(94);
-        response.NextRoleRewardId.Should().Be(ROLE_ID);
-        response.NextRewardLevel.Should().Be(REWARD_LEVEL);
+        response.UsersXp.Should().Be(600);
+        response.UsersLevel.Should().Be(10);
+        response.LevelProgress.Should().Be(105);
+        response.XpForNextLevel.Should().Be(132);
+        response.NextRoleRewardId.Should().Be(ROLE_ID_1);
+        response.NextRewardLevel.Should().Be(REWARD_LEVEL_1);
+    }
+
+    [Fact]
+    public async Task WhenCallingGetLevelQueryHandler_IfUserHasAHigherLevelThanTheMaxReward_ReturnResponseWithNoNextRewardAsync()
+    {
+        await this._dbContext.AddAsync(new XpHistory
+        {
+            UserId = USER_ID,
+            GuildId = GUILD_ID,
+            Xp = 312231654654659L,
+            Type = XpHistoryType.Awarded,
+            TimeOut = DateTime.UtcNow.AddMinutes(-5),
+        });
+        await this._dbContext.SaveChangesAsync();
+
+        var CUT = new GetLevel.Handler(this._dbContext);
+        var command = new GetLevel.Query
+        {
+            GuildId = GUILD_ID,
+            UserId = USER_ID
+        };
+
+        var response = await CUT.Handle(command, default);
+
+        response.UsersXp.Should().Be(312231654655259);
+        response.UsersLevel.Should().Be(6452202);
+        response.LevelProgress.Should().Be(18355244);
+        response.XpForNextLevel.Should().Be(100009108);
+        response.NextRoleRewardId.Should().BeNull();
+        response.NextRewardLevel.Should().BeNull();
     }
 }

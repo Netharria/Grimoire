@@ -15,7 +15,7 @@ public sealed class GetLeaderboard
 
     public sealed record Query : IRequest<Response>
     {
-        public ulong GuildId { get; init; }
+        public required ulong GuildId { get; init; }
         public ulong? UserId { get; init; }
     }
 
@@ -42,10 +42,7 @@ public sealed class GetLeaderboard
             if (request.UserId is not null && memberPosition == -1)
                 throw new AnticipatedException("Could not find user on leaderboard.");
 
-            if (memberPosition == -1)
-                memberPosition++;
-
-            var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
+            var startIndex = memberPosition - 5;
             if (startIndex + 15 > totalMemberCount)
                 startIndex = totalMemberCount - 15;
             if (startIndex < 0)
@@ -63,8 +60,8 @@ public sealed class GetLeaderboard
 
     public sealed record Response : BaseResponse
     {
-        public string LeaderboardText { get; init; } = string.Empty;
-        public int TotalUserCount { get; init; }
+        public required string LeaderboardText { get; init; }
+        public required int TotalUserCount { get; init; }
     }
 }
 

@@ -61,10 +61,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             LevelSettings = LevelSettings.TextTime,
             Value = "something"
         };
-
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("Could not find guild level settings.");
+        await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("Could not find guild level settings.");
     }
 
     [Fact]
@@ -77,11 +76,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             LevelSettings = LevelSettings.TextTime,
             Value = "adsfas"
         };
-
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-        this._dbContext.ChangeTracker.Clear();
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("Please give a valid number for TextTime.");
+        await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("Please give a valid number for TextTime.");
     }
 
     [Fact]
@@ -95,9 +92,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             Value = "adsfas"
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("Please give a valid number for base XP.");
+        await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("Please give a valid number for base XP.");
     }
 
     [Fact]
@@ -110,10 +107,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             LevelSettings = LevelSettings.Modifier,
             Value = "adsfas"
         };
-
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("Please give a valid number for Modifier.");
+        await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("Please give a valid number for Modifier.");
     }
 
     [Fact]
@@ -127,9 +123,9 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             Value = "adsfas"
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("Please give a valid number for Amount.");
+        await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("Please give a valid number for Amount.");
     }
 
     [Fact]
@@ -142,10 +138,10 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             LevelSettings = LevelSettings.LogChannel,
             Value = "Something"
         };
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
 
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("Please give a valid channel for Log Channel.");
+        await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("Please give a valid channel for Log Channel.");
     }
 
     [Fact]

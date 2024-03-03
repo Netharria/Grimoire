@@ -73,9 +73,8 @@ public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsy
             RoleId = ROLE_ID
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async() => await CUT.Handle(command, default));
-
-        response.Should().NotBeNull();
-        response?.Message.Should().Be($"Did not find a saved reward for role <@&{ROLE_ID}>");
+        await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage($"Did not find a saved reward for role <@&{ROLE_ID}>");
     }
 }

@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Core.Exceptions;
@@ -25,7 +26,11 @@ public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAs
             .Options);
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
     private const ulong GUILD_ID = 1;
+    private const ulong GUILD_ID_2 = 2;
+    private const ulong GUILD_ID_3 = 3;
     private const ulong ROLE_ID = 1;
+    private const ulong ROLE_ID_2 = 2;
+    private const ulong USER_ID = 1;
     private const ulong CHANNEL_ID = 1;
 
     public async Task InitializeAsync()
@@ -42,6 +47,31 @@ public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAs
             Id = CHANNEL_ID,
             GuildId = GUILD_ID,
             IsIgnoredChannel = new IgnoredChannel { ChannelId = CHANNEL_ID, GuildId = GUILD_ID }
+        });
+        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID_2 });
+        await this._dbContext.AddAsync(new Role
+        {
+            Id = ROLE_ID_2,
+            GuildId = GUILD_ID_2,
+            IsIgnoredRole = new IgnoredRole { RoleId = ROLE_ID_2, GuildId = GUILD_ID_2 }
+        });
+        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID_3 });
+        await this._dbContext.AddAsync(new User
+        {
+            Id = USER_ID,
+            MemberProfiles = new List<Member>
+            {
+                new()
+                {
+                    UserId = USER_ID,
+                    GuildId = GUILD_ID_3,
+                    IsIgnoredMember = new IgnoredMember
+                    {
+                        UserId = USER_ID,
+                        GuildId = GUILD_ID_3,
+                    }
+                }
+            }
         });
         await this._dbContext.SaveChangesAsync();
     }
@@ -61,11 +91,9 @@ public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAs
         {
             GuildId = 34958734
         };
-
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
-
-        response.Should().NotBeNull();
-        response?.Message.Should().Be("This server does not have any ignored channels, roles or users.");
+        await CUT.Invoking(async x => await x.Handle(command, default))
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("This server does not have any ignored channels, roles or users.");
     }
 
     [Fact]
@@ -81,5 +109,35 @@ public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAs
         var response = await CUT.Handle(command, default);
 
         response.Message.Should().Be($"**Channels**\n<#{CHANNEL_ID}>\n\n**Roles**\n<@&{ROLE_ID}>\n\n**Users**\n");
+    }
+
+    [Fact]
+    public async Task WhenCallingGetIgnoredItemsHandler_IfIgnoredRole_ReturnSuccessResponseAsync()
+    {
+
+        var CUT = new GetIgnoredItems.Handler(this._dbContext);
+        var command = new GetIgnoredItems.Query
+        {
+            GuildId = GUILD_ID_2
+        };
+
+        var response = await CUT.Handle(command, default);
+
+        response.Message.Should().Be($"**Channels**\n\n**Roles**\n<@&{ROLE_ID_2}>\n\n**Users**\n");
+    }
+
+    [Fact]
+    public async Task WhenCallingGetIgnoredItemsHandler_IfIgnoredMember_ReturnSuccessResponseAsync()
+    {
+
+        var CUT = new GetIgnoredItems.Handler(this._dbContext);
+        var command = new GetIgnoredItems.Query
+        {
+            GuildId = GUILD_ID_3
+        };
+
+        var response = await CUT.Handle(command, default);
+
+        response.Message.Should().Be($"**Channels**\n\n**Roles**\n\n**Users**\n<@!{USER_ID}>\n");
     }
 }

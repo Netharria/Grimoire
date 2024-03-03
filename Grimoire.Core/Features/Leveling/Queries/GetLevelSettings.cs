@@ -11,7 +11,7 @@ public sealed class GetLevelSettings
 {
     public sealed record Query : IRequest<Response>
     {
-        public ulong GuildId { get; init; }
+        public required ulong GuildId { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
@@ -30,7 +30,11 @@ public sealed class GetLevelSettings
                 x.Modifier,
                 x.Amount,
                 x.LevelChannelLogId
-            }).FirstAsync(cancellationToken: cancellationToken);
+            }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+            if (guildLevelSettings is null)
+                throw new AnticipatedException("Could not find that level settings for that server.");
+
             return new Response
             {
                 ModuleEnabled = guildLevelSettings.ModuleEnabled,
@@ -46,11 +50,11 @@ public sealed class GetLevelSettings
 
     public sealed record Response : BaseResponse
     {
-        public bool ModuleEnabled { get; init; }
-        public TimeSpan TextTime { get; init; }
-        public int Base { get; init; }
-        public int Modifier { get; init; }
-        public int Amount { get; init; }
+        public required bool ModuleEnabled { get; init; }
+        public required TimeSpan TextTime { get; init; }
+        public required int Base { get; init; }
+        public required int Modifier { get; init; }
+        public required int Amount { get; init; }
         public ulong? LevelChannelLog { get; init; }
     }
 

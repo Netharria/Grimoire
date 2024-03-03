@@ -35,13 +35,19 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         await this._dbContext.AddAsync(new UsernameHistory
         {
             UserId = USER_1,
-            Username = "User1"
+            Username = "User1",
         });
         await this._dbContext.AddAsync(new User { Id = USER_2 });
         await this._dbContext.AddAsync(new UsernameHistory
         {
             UserId = USER_2,
-            Username = "User2"
+            Username = "User2",
+            Timestamp = DateTimeOffset.UtcNow.AddMinutes(-5)
+        });
+        await this._dbContext.AddAsync(new UsernameHistory
+        {
+            UserId = USER_2,
+            Username = "User2-2"
         });
         await this._dbContext.SaveChangesAsync();
     }
@@ -66,6 +72,8 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         users.Should().NotBeNull();
         users!.UsernameHistories.Should().HaveCount(1)
             .And.AllSatisfy(x => x.Username.Should().Be("User3"));
+
+        
     }
 
     [Fact]
@@ -73,18 +81,28 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     {
         var usersToAdd = new List<UserDto>
         {
-            new() { Id = USER_1, Username = "Username2" }
+            new() { Id = USER_1, Username = "Username2" },
+            new() { Id = USER_2, Username = "User2-2"}
         };
         var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd, default);
 
         await this._dbContext.SaveChangesAsync();
 
         result.Should().BeTrue();
-        var users = await this._dbContext.UsernameHistory
+
+        var user1 = await this._dbContext.UsernameHistory
             .Where(x => x.UserId == USER_1)
             .ToListAsync();
-        users.Should().NotBeNull();
-        users.Should().HaveCount(2)
+
+        user1.Should().NotBeNull()
+            .And.HaveCount(2)
             .And.AllSatisfy(x => x.Username.Should().BeOneOf("Username2", "User1"));
+
+        var user2 = await this._dbContext.UsernameHistory
+            .Where(x => x.UserId == USER_2)
+            .ToListAsync();
+        user2.Should().NotBeNull()
+            .And.HaveCount(2)
+            .And.AllSatisfy(x => x.Username.Should().BeOneOf("User2", "User2-2"));
     }
 }

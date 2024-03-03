@@ -55,11 +55,10 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         };
 
         //Act
-        var result = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(query, default));
-
+        await CUT.Invoking(async x => await x.Handle(query, default))
         //Assert
-        result.Should().NotBeNull();
-        result.Message.Should().Be("Could not find that user. Have they been on the server before?");
+            .Should().ThrowAsync<AnticipatedException>()
+            .WithMessage("Could not find that user. Have they been on the server before?");
     }
 
     [Fact]
@@ -153,9 +152,11 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
 
         //Assert
         result.Should().NotBeNull();
+
         result!.Usernames.Should().NotBeNull()
             .And.HaveCount(1)
             .And.Contain("User1");
+
         result!.Nicknames.Should().NotBeNull()
             .And.HaveCount(1)
             .And.Contain("Nick1");
