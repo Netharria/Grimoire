@@ -30,9 +30,9 @@ public static class CoreServiceRegistration
             connectionString = $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Require; Trust Server Certificate=true; Include Error Detail=true";
         }
         services.AddDbContextFactory<GrimoireDbContext>(options =>
-            options.UseNpgsql(connectionString))
+            options.UseNpgsql(connectionString,
+            npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure()))
             .AddSingleton<IInviteService, InviteService>()
-            .AddScoped<IGrimoireDbContext, GrimoireDbContext>()
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>));
         return services;

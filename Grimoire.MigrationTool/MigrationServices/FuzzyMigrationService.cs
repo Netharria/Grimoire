@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.MigrationTool.MigrationServices;
 
-public class FuzzyMigrationService(FuzzyDbContext fuzzyDbContext)
+internal sealed class FuzzyMigrationService(FuzzyDbContext fuzzyDbContext)
 {
     private readonly FuzzyDbContext _fuzzyDbContext = fuzzyDbContext;
 
@@ -313,7 +313,6 @@ public class FuzzyMigrationService(FuzzyDbContext fuzzyDbContext)
 
             grimoireGuild.UpdateGuildModerationSettings(fuzzyGuild);
 
-            grimoireDbContext.Update(grimoireGuild);
             await grimoireDbContext.SaveChangesAsync();
         }
     }

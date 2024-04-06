@@ -18,19 +18,20 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
     [SlashCommand("View", "View the current settings for the leveling module.")]
     public async Task ViewAsync(InteractionContext ctx)
     {
-        var response = await this._mediator.Send(new GetLevelSettingsQuery{ GuildId = ctx.Guild.Id });
+        await ctx.DeferAsync();
+        var response = await this._mediator.Send(new GetLevelSettings.Query{ GuildId = ctx.Guild.Id });
         var levelLogMention =
                 response.LevelChannelLog is null ?
                 "None" :
                 ctx.Guild.GetChannel(response.LevelChannelLog.Value).Mention;
-        await ctx.ReplyAsync(
+        await ctx.EditReplyAsync(
             title: "Current Level System Settings",
             message: $"**Module Enabled:** {response.ModuleEnabled}\n" +
             $"**Texttime:** {response.TextTime.TotalMinutes} minutes.\n" +
@@ -52,15 +53,16 @@ public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModul
         [Minimum(1)]
         [Option("Value", "The value to change the setting to.")] long value)
     {
+        await ctx.DeferAsync();
         var levelSetting = (LevelSettings)levelSettings;
-        var response = await this._mediator.Send(new SetLevelSettingsCommand
+        var response = await this._mediator.Send(new SetLevelSettings.Command
         {
             GuildId = ctx.Guild.Id,
             LevelSettings = levelSetting,
             Value = value.ToString()
         });
 
-        await ctx.ReplyAsync(message: $"Updated {levelSetting.GetName()} level setting to {value}", ephemeral: false);
+        await ctx.EditReplyAsync(message: $"Updated {levelSetting.GetName()} level setting to {value}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.Member.Mention} updated {levelSetting.GetName()} level setting to {value}");
     }
@@ -71,6 +73,7 @@ public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModul
         [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
         [Option("Channel", "The channel to change the log to.")] DiscordChannel? channel = null)
     {
+        await ctx.DeferAsync();
         channel = ctx.GetChannelOptionAsync(option, channel);
         if (channel is not null)
         {
@@ -78,7 +81,7 @@ public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModul
             if (!permissions.HasPermission(Permissions.SendMessages))
                 throw new AnticipatedException($"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
         }
-        var response = await this._mediator.Send(new SetLevelSettingsCommand
+        var response = await this._mediator.Send(new SetLevelSettings.Command
         {
             GuildId = ctx.Guild.Id,
             LevelSettings = LevelSettings.LogChannel,
@@ -86,10 +89,11 @@ public class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModul
         });
         if (option is ChannelOption.Off)
         {
-            await ctx.ReplyAsync(message: $"Disabled the level log.", ephemeral: false);
+            await ctx.EditReplyAsync(message: $"Disabled the level log.");
             await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the level log.");
+            return;
         }
-        await ctx.ReplyAsync(message: $"Updated the level log to {channel?.Mention}", ephemeral: false);
+        await ctx.EditReplyAsync(message: $"Updated the level log to {channel?.Mention}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.User.Mention} updated the level log to {channel?.Mention}.");
     }

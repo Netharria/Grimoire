@@ -7,15 +7,15 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries;
 
-public record GetLockQuery : IQuery<bool>
+public sealed record GetLockQuery : IQuery<bool>
 {
     public ulong ChannelId { get; init; }
     public ulong GuildId { get; init; }
 }
 
-public class GetLockQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetLockQuery, bool>
+public sealed class GetLockQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetLockQuery, bool>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<bool> Handle(GetLockQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Locks

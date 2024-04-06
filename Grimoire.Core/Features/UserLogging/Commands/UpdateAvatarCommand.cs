@@ -14,9 +14,9 @@ public sealed record UpdateAvatarCommand : ICommand<UpdateAvatarCommandResponse?
     public string AvatarUrl { get; init; } = string.Empty;
 }
 
-public class UpdateAvatarCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateAvatarCommand, UpdateAvatarCommandResponse?>
+public sealed class UpdateAvatarCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateAvatarCommand, UpdateAvatarCommandResponse?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UpdateAvatarCommandResponse?> Handle(UpdateAvatarCommand command, CancellationToken cancellationToken)
     {

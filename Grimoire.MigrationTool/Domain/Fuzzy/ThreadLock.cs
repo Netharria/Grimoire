@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Fuzzy;
 
 [Table("thread_locks")]
-public class ThreadLock
+internal sealed class ThreadLock
 {
     [Key]
     [Column("channel_id")]

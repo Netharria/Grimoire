@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class MuteConfiguration : IEntityTypeConfiguration<Mute>
+internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>
 {
     public void Configure(EntityTypeBuilder<Mute> builder)
     {

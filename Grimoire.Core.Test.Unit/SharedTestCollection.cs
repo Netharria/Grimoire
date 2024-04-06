@@ -10,6 +10,6 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit;
 
 [CollectionDefinition("Test collection")]
-public class SharedTestCollection : ICollectionFixture<GrimoireCoreFactory>
+public sealed class SharedTestCollection : ICollectionFixture<GrimoireCoreFactory>
 {
 }

@@ -7,14 +7,11 @@
 
 using System.Security.Cryptography;
 using System.Text;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands.EventArgs;
 using Grimoire.Core.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting.Attributes;
-using Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting.Events;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Attributes;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Events;
 
@@ -26,8 +23,7 @@ namespace Grimoire.Discord;
 /// <param name="logger"></param>
 [DiscordSlashCommandsEventsSubscriber]
 [DiscordClientErroredEventSubscriber]
-[DiscordCommandsNextEventsSubscriber]
-public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration) : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber, IDiscordCommandsNextEventsSubscriber
+public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration) : IDiscordSlashCommandsEventsSubscriber, IDiscordClientErroredEventSubscriber
 {
     private readonly ILogger<SlashCommandHandler> _logger = logger;
     private readonly IConfiguration _configuration = configuration;
@@ -62,8 +58,15 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
                     .Where(x => x.StartsWith("   at Grimoire", StringComparison.OrdinalIgnoreCase))
                     .Select(x => x[(x.IndexOf(" in ", StringComparison.OrdinalIgnoreCase) + 4)..])
                     .Select(x => '\"' + x.Replace(":line", "\" line")));
+            var innerException = exception.InnerException;
+            var exceptionMessage = new StringBuilder().AppendLine(exception.Message);
+            while (innerException is not null)
+            {
+                exceptionMessage.AppendLine(innerException.Message);
+                innerException = innerException.InnerException;
+            }
             await channel.SendMessageAsync($"Encountered exception while executing {action} {errorIdString}\n" +
-                $"```csharp\n{exception.Message}\n{shortStackTrace}\n```");
+                $"```csharp\n{exceptionMessage}\n{shortStackTrace}\n```");
         }
 
     }
@@ -78,50 +81,72 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
     public async Task SlashCommandsOnSlashCommandErrored(SlashCommandsExtension sender, SlashCommandErrorEventArgs args)
     {
         if (args.Exception is SlashExecutionChecksFailedException ex)
+        {
+
             foreach (var check in ex.FailedChecks)
             {
                 if (check is SlashRequireGuildAttribute)
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: "You need to be in a server to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription("You need to be in a server to use this command."), true);
 
                 if (check is SlashRequirePermissionsAttribute requirePermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requirePermissions.Permissions).ToString();
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You and {args.Context.Guild.CurrentMember.DisplayName} need {value} permissions to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You and {args.Context.Guild.CurrentMember.DisplayName} need {value} permissions to use this command."), true);
                 }
 
                 if (check is SlashRequireUserPermissionsAttribute requireUserPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireUserPermissions.Permissions).ToString();
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} permissions to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You need {value} permissions to use this command."), true);
                 }
                 if (check is SlashRequireUserGuildPermissionsAttribute requireUserGuildPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireUserGuildPermissions.Permissions).ToString();
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need {value} server permissions to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You need {value} server permissions to use this command."), true);
                 }
                 if (check is SlashRequireBotPermissionsAttribute requireBotPermissions)
                 {
                     var value = Enum.ToObject(typeof(Permissions), requireBotPermissions.Permissions).ToString();
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"{args.Context.Guild.CurrentMember.DisplayName} needs {value} permissions to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"{args.Context.Guild.CurrentMember.DisplayName} needs {value} permissions to use this command."), true);
                 }
 
                 if (check is SlashRequireOwnerAttribute)
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need to be {args.Context.Guild.CurrentMember.DisplayName}'s owner to use this command");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You need to be {args.Context.Guild.CurrentMember.DisplayName}'s owner to use this command"), true);
 
                 if (check is SlashRequireDirectMessageAttribute)
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"You need to DM {args.Context.Guild.CurrentMember.DisplayName} to use this command.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"You need to DM {args.Context.Guild.CurrentMember.DisplayName} to use this command."), true);
 
                 if (check is SlashRequireModuleEnabledAttribute requireEnabledPermissions)
-                    await args.Context.ReplyAsync(color: GrimoireColor.DarkPurple, message: $"The {requireEnabledPermissions.Module} module is not enabled.");
+                    await args.Context.CreateResponseAsync(new DiscordEmbedBuilder()
+                        .WithColor(GrimoireColor.DarkPurple)
+                        .WithDescription($"The {requireEnabledPermissions.Module} module is not enabled."), true);
             }
+        }
         else if (args.Exception is AnticipatedException)
         {
-            await args.Context.ReplyAsync(color: GrimoireColor.Yellow, message: args.Exception.Message);
+            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                .WithColor(GrimoireColor.Yellow)
+                .WithDescription(args.Exception.Message));
         }
         else if (args.Exception is UnauthorizedException)
         {
-            await args.Context.ReplyAsync(color: GrimoireColor.Yellow,
-                message: $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request.");
+            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                .WithColor(GrimoireColor.Yellow)
+                .WithDescription($"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
         }
         else if (args.Exception is not null)
         {
@@ -136,10 +161,22 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
                 args.Context.Interaction.Data.Name,
                 log.ToString());
 
-
-            await args.Context.ReplyAsync(color: GrimoireColor.Yellow,
-                message: $"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorHexString}]");
+            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                .WithColor(GrimoireColor.Yellow)
+                .WithDescription($"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorHexString}]"));
             await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorHexString);
+        }
+    }
+
+    public async static Task SendOrEditMessageAsync(SlashCommandErrorEventArgs args, DiscordEmbedBuilder embed)
+    {
+        try
+        {
+            await args.Context.CreateResponseAsync(embed, true);
+        }
+        catch (Exception)
+        {
+            await args.Context.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
         }
     }
 
@@ -159,7 +196,4 @@ public partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IC
 
     [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
     public static partial void LogSlashCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
-
-    public Task CommandsOnCommandExecuted(CommandsNextExtension sender, CommandExecutionEventArgs args) => Task.CompletedTask;
-    public Task CommandsOnCommandErrored(CommandsNextExtension sender, CommandErrorEventArgs args) => Task.CompletedTask;
 }

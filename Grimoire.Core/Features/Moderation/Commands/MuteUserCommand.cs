@@ -20,9 +20,9 @@ public sealed record MuteUserCommand : ICommand<MuteUserCommandResponse>
 }
 
 
-public class MuteUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<MuteUserCommand, MuteUserCommandResponse>
+public sealed class MuteUserCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<MuteUserCommand, MuteUserCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<MuteUserCommandResponse> Handle(MuteUserCommand command, CancellationToken cancellationToken)
     {

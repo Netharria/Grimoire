@@ -11,86 +11,64 @@ namespace Grimoire.Core;
 /// Initializes a new instance of the <see cref="GrimoireDbContext"/> class.
 /// </summary>
 /// <param name="options"></param>
-public class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : DbContext(options), IGrimoireDbContext
+public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : DbContext(options)
 {
-    public DbSet<Attachment> Attachments
-        => this.Set<Attachment>();
+    public DbSet<Attachment> Attachments { get; set; } = null!;
 
-    public DbSet<Avatar> Avatars
-        => this.Set<Avatar>();
+    public DbSet<Avatar> Avatars { get; set; } = null!;
 
-    public DbSet<Channel> Channels
-        => this.Set<Channel>();
+    public DbSet<Channel> Channels { get; set; } = null!;
 
-    public DbSet<Guild> Guilds
-        => this.Set<Guild>();
+    public DbSet<Guild> Guilds { get; set; } = null!;
 
-    public DbSet<GuildLevelSettings> GuildLevelSettings
-        => this.Set<GuildLevelSettings>();
+    public DbSet<GuildLevelSettings> GuildLevelSettings { get; set; } = null!;
 
-    public DbSet<GuildUserLogSettings> GuildUserLogSettings
-        => this.Set<GuildUserLogSettings>();
+    public DbSet<GuildUserLogSettings> GuildUserLogSettings { get; set; } = null!;
 
-    public DbSet<GuildMessageLogSettings> GuildMessageLogSettings
-        => this.Set<GuildMessageLogSettings>();
+    public DbSet<GuildMessageLogSettings> GuildMessageLogSettings { get; set; } = null!;
 
-    public DbSet<GuildModerationSettings> GuildModerationSettings
-        => this.Set<GuildModerationSettings>();
+    public DbSet<GuildModerationSettings> GuildModerationSettings { get; set; } = null!;
 
-    public DbSet<IgnoredChannel> IgnoredChannels
-        => this.Set<IgnoredChannel>();
+    public DbSet<IgnoredChannel> IgnoredChannels { get; set; } = null!;
 
-    public DbSet<IgnoredMember> IgnoredMembers
-        => this.Set<IgnoredMember>();
+    public DbSet<IgnoredMember> IgnoredMembers { get; set; } = null!;
 
-    public DbSet<IgnoredRole> IgnoredRoles
-        => this.Set<IgnoredRole>();
+    public DbSet<IgnoredRole> IgnoredRoles { get; set; } = null!;
 
-    public DbSet<Lock> Locks
-        => this.Set<Lock>();
+    public DbSet<Lock> Locks { get; set; } = null!;
 
-    public DbSet<Member> Members
-        => this.Set<Member>();
+    public DbSet<Member> Members { get; set; } = null!;
 
-    public DbSet<Message> Messages
-        => this.Set<Message>();
+    public DbSet<Message> Messages { get; set; } = null!;
 
-    public DbSet<MessageHistory> MessageHistory
-        => this.Set<MessageHistory>();
+    public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; set; } = null!;
 
-    public DbSet<Mute> Mutes
-        => this.Set<Mute>();
+    public DbSet<MessageHistory> MessageHistory { get; set; } = null!;
 
-    public DbSet<OldLogMessage> OldLogMessages
-        => this.Set<OldLogMessage>();
+    public DbSet<Mute> Mutes { get; set; } = null!;
 
-    public DbSet<NicknameHistory> NicknameHistory
-        => this.Set<NicknameHistory>();
+    public DbSet<OldLogMessage> OldLogMessages { get; set; } = null!;
 
-    public DbSet<Pardon> Pardons
-        => this.Set<Pardon>();
+    public DbSet<NicknameHistory> NicknameHistory { get; set; } = null!;
 
-    public DbSet<PublishedMessage> PublishedMessages
-        => this.Set<PublishedMessage>();
+    public DbSet<Pardon> Pardons { get; set; } = null!;
 
-    public DbSet<Reward> Rewards
-        => this.Set<Reward>();
+    public DbSet<PublishedMessage> PublishedMessages { get; set; } = null!;
 
-    public DbSet<Role> Roles
-        => this.Set<Role>();
+    public DbSet<Reward> Rewards { get; set; } = null!;
 
-    public DbSet<Sin> Sins
-        => this.Set<Sin>();
+    public DbSet<Role> Roles { get; set; } = null!;
 
-    public DbSet<Tracker> Trackers
-        => this.Set<Tracker>();
+    public DbSet<Sin> Sins { get; set; } = null!;
 
-    public DbSet<User> Users
-        => this.Set<User>();
-    public DbSet<UsernameHistory> UsernameHistory
-        => this.Set<UsernameHistory>();
-    public DbSet<XpHistory> XpHistory
-        => this.Set<XpHistory>();
+    public DbSet<Tracker> Trackers { get; set; } = null!;
+
+    public DbSet<User> Users { get; set; } = null!;
+
+    public DbSet<UsernameHistory> UsernameHistory { get; set; } = null!;
+
+    public DbSet<XpHistory> XpHistory { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(GrimoireDbContext).Assembly);
 }

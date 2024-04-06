@@ -12,7 +12,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
-public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -23,6 +23,7 @@ public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
         [MaximumLength(1000)]
         [Option("Reason", "The reason the sin is getting pardoned.")] string reason = "")
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new PardonSinCommand
         {
             SinId = sinId,
@@ -33,7 +34,7 @@ public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
 
         var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
 
-        await ctx.ReplyAsync(GrimoireColor.Green, message, "Pardoned", ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.Green, message, "Pardoned");
 
         if (response.LogChannelId is null) return;
 
@@ -56,6 +57,7 @@ public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
         [MaximumLength(1000)]
         [Option("Reason", "The reason the sin will be updated to.")] string reason)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new UpdateSinReasonCommand
         {
             SinId = sinId,
@@ -65,7 +67,7 @@ public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
 
         var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
 
-        await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+        await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
             .WithAuthor("Reason Updated")
             .AddField("Id", response.SinId.ToString(), true)
             .AddField("User", response.SinnerName, true)
@@ -88,6 +90,7 @@ public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
         [Minimum(0)]
         [Option("SinId", "The sin id that will be forgotten.")] long sinId)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new ForgetSinCommand
         {
             SinId = sinId,
@@ -96,7 +99,7 @@ public class SinAdminCommands(IMediator mediator) : ApplicationCommandModule
 
         var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
 
-        await ctx.ReplyAsync(GrimoireColor.Green, message, "Forgot", ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.Green, message, "Forgot");
 
         if (response.LogChannelId is null) return;
 

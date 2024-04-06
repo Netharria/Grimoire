@@ -17,9 +17,9 @@ public sealed record WarnUserCommand : ICommand<WarnUserCommandResponse>
     public ulong ModeratorId { get; set; }
 }
 
-public class WarnUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<WarnUserCommand, WarnUserCommandResponse>
+public sealed class WarnUserCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<WarnUserCommand, WarnUserCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<WarnUserCommandResponse> Handle(WarnUserCommand command, CancellationToken cancellationToken)
     {

@@ -9,5 +9,8 @@ namespace Grimoire.Core.Extensions;
 
 public static class UserExtensions
 {
-    public static string Mention(ulong id) => $"<@!{id}>";
+    public static string Mention(ulong? id)
+        => id is not null
+        ? $"<@!{id}>"
+        : "Unknown User";
 }

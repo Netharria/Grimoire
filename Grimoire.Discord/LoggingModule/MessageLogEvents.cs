@@ -16,7 +16,7 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordMessageDeletedEventSubscriber]
 [DiscordMessagesBulkDeletedEventSubscriber]
 [DiscordMessageUpdatedEventSubscriber]
-public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService) :
+public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService) :
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageDeletedEventSubscriber,
     IDiscordMessagesBulkDeletedEventSubscriber,
@@ -31,21 +31,31 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
         if (args.Guild is null
             || args.Message.MessageType is not MessageType.Default and not MessageType.Reply)
             return;
-        await this._mediator.Send(new AddMessageCommand
+
+        List<ulong> parentChannelTree = [ args.Channel.Id ];
+        var channelParent = args.Channel.Parent;
+        while (channelParent is not null)
+        {
+            parentChannelTree.Add(channelParent.Id);
+            channelParent = channelParent.Parent;
+        }
+
+        await this._mediator.Send(new AddMessage.Command
         {
             Attachments = args.Message.Attachments
                 .Select(x =>
                     new AttachmentDto
                     {
                         Id = x.Id,
-                        FileName = x.FileName,
+                        FileName = x.Url,
                     }).ToArray(),
             UserId = args.Author.Id,
             ChannelId = args.Channel.Id,
             MessageContent = args.Message.Content,
             MessageId = args.Message.Id,
             ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
-            GuildId = args.Guild.Id
+            GuildId = args.Guild.Id,
+            ParentChannelTree = parentChannelTree
         });
     }
 
@@ -56,7 +66,7 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
             new DeleteMessageCommand
             {
                 Id = args.Message.Id,
-                DeletedByModerator = auditLogEntry?.UserResponsible.Id,
+                DeletedByModerator = auditLogEntry?.UserResponsible?.Id,
                 GuildId = args.Guild.Id
             });
         if (!response.Success || response.LoggingChannel is not ulong loggingChannelId)
@@ -76,7 +86,6 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
             if (user is null || user.IsBot) return;
             avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
         }
-
         var embed = new DiscordEmbedBuilder()
             .WithAuthor($"Message deleted in #{args.Channel.Name}")
             .AddField("Author", UserExtensions.Mention(response.UserId), true)
@@ -85,7 +94,7 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
             .WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Red)
             .WithThumbnail(avatarUrl);
-        if (auditLogEntry is not null)
+        if (auditLogEntry is not null && auditLogEntry.UserResponsible is not null)
             embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
         if (response.ReferencedMessage is not null)
             embed.WithDescription($"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
@@ -93,22 +102,24 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
             .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
         var messageBuilder = await this._attachmentUploadService.BuildImageEmbedAsync(
-                response.Attachments,
+                response.Attachments.Select(x => x.FileName).ToArray(),
                 response.UserId,
-                args.Channel.Id,
                 embed);
         try
         {
             var message = await loggingChannel.SendMessageAsync(messageBuilder);
             if (message is null) return;
-            await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+            await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
         }
         catch (Exception ex)
         {
-            sender.Logger.Log(LogLevel.Warning, "Was not able to send delete message log to {ChannelName} : {Exception}", loggingChannel, ex);
+            LogUnableToSendDeleteMessage(sender.Logger, ex, loggingChannel);
             throw;
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to send delete message log to {Channel}")]
+    private static partial void LogUnableToSendDeleteMessage(ILogger<BaseDiscordClient> logger, Exception ex, DiscordChannel channel);
 
     public async Task DiscordOnMessagesBulkDeleted(DiscordClient sender, MessageBulkDeleteEventArgs args)
     {
@@ -157,14 +168,17 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
                 .AddEmbed(embed)
                 .AddFile($"{DateTime.UtcNow:r}.txt", memoryStream));
             if (message is null) return;
-            await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+            await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
         }
         catch (Exception ex)
         {
-            sender.Logger.Log(LogLevel.Warning, "Was not able to send bulk delete message log to {ChannelName} : {Exception}", loggingChannel, ex);
+            LogUnableToSendBulkDeleteMessage(sender.Logger, ex, loggingChannel);
             throw;
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to send bulk delete message log to {Channel}")]
+    private static partial void LogUnableToSendBulkDeleteMessage(ILogger<BaseDiscordClient> logger, Exception ex, DiscordChannel channel);
 
     public async Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args)
     {
@@ -233,13 +247,16 @@ public class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService atta
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
                     .AddEmbed(embed));
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessageCommand { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
         }
         catch (Exception ex)
         {
-            sender.Logger.Log(LogLevel.Warning, "Was not able to send edit message log to {ChannelName} : {Exception}", loggingChannel, ex);
+            LogUnableToSendEditMessage(sender.Logger, ex, loggingChannel);
             throw;
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to send edit message log to {Channel}")]
+    private static partial void LogUnableToSendEditMessage(ILogger<BaseDiscordClient> logger, Exception ex, DiscordChannel channel);
 }

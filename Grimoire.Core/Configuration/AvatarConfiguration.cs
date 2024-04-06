@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Core.Configuration;
 
-public class AvatarConfiguration : IEntityTypeConfiguration<Avatar>
+internal sealed class AvatarConfiguration : IEntityTypeConfiguration<Avatar>
 {
     public void Configure(EntityTypeBuilder<Avatar> builder)
     {

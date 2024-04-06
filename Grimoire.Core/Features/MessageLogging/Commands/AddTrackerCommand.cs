@@ -18,9 +18,9 @@ public sealed record AddTrackerCommand : ICommand<AddTrackerCommandResponse>
     public ulong ModeratorId { get; init; }
 }
 
-public class AddTrackerCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddTrackerCommand, AddTrackerCommandResponse>
+public sealed class AddTrackerCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<AddTrackerCommand, AddTrackerCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<AddTrackerCommandResponse> Handle(AddTrackerCommand command, CancellationToken cancellationToken)
     {
@@ -82,9 +82,10 @@ public class AddTrackerCommandHandler(IGrimoireDbContext grimoireDbContext) : IC
             result.Tracker.LogChannelId = command.ChannelId;
             result.Tracker.EndTime = trackerEndTime;
             result.Tracker.ModeratorId = command.ModeratorId;
-            this._grimoireDbContext.Trackers.Update(result.Tracker);
         }
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+
         return new AddTrackerCommandResponse
         {
             ModerationLogId = result?.ModChannelLog

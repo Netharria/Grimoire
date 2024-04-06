@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Lumberjack;
 
 [Table("attachment_urls")]
-public record AttachmentUrl
+public sealed record AttachmentUrl
 {
     [Key]
     [Column("message_id")]

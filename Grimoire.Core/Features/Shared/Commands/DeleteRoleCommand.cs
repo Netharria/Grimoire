@@ -12,9 +12,9 @@ public sealed record DeleteRoleCommand : ICommand
     public ulong RoleId { get; init; }
 }
 
-public class DeleteRoleCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteRoleCommand>
+public sealed class DeleteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteRoleCommand>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<Unit> Handle(DeleteRoleCommand command, CancellationToken cancellationToken)
     {

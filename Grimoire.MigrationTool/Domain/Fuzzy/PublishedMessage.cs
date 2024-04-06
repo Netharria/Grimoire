@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Fuzzy;
 
 [Table("published_messages")]
-public class PublishedMessage
+internal sealed class PublishedMessage
 {
     [Key]
     [Column("rowid")]

@@ -16,9 +16,9 @@ public sealed record UpdateNicknameCommand : ICommand<UpdateNicknameCommandRespo
     public string? Nickname { get; init; }
 }
 
-public class UpdateNicknameCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateNicknameCommand, UpdateNicknameCommandResponse?>
+public sealed class UpdateNicknameCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateNicknameCommand, UpdateNicknameCommandResponse?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UpdateNicknameCommandResponse?> Handle(UpdateNicknameCommand command, CancellationToken cancellationToken)
     {

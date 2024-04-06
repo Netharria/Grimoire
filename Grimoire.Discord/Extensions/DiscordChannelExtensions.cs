@@ -19,10 +19,10 @@ public static class DiscordChannelExtensions
         var messages = await channel.GetMessagesAsync(Math.Min(count, 100));
         var messagesToDelete = messages.Where(filter);
         while (messagesToDelete.Count() < count
-            && messages.Any()
+            && messages.Count != 0
             && messages[^1].Timestamp > DateTimeOffset.UtcNow.AddDays(-14))
         {
-            messages = await channel.GetMessagesBeforeAsync(messages[messages.Count - 1].Id);
+            messages = await channel.GetMessagesBeforeAsync(messages[^1].Id);
             messagesToDelete = messagesToDelete.Concat(messages.Where(filter));
         }
         messagesToDelete = messagesToDelete.Where(x => x.Timestamp > DateTimeOffset.UtcNow.AddDays(-14));

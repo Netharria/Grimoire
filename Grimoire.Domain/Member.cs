@@ -9,7 +9,7 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class Member : IMember, IMentionable
+public class Member : IMember
 {
     public ulong GuildId { get; set; }
 
@@ -18,9 +18,6 @@ public class Member : IMember, IMentionable
     public ulong UserId { get; set; }
 
     public virtual User User { get; set; } = null!;
-
-    [Obsolete("This property has moved to the IgnoredMember Table.")]
-    public bool IsXpIgnored { get; set; }
 
     public virtual IgnoredMember? IsIgnoredMember { get; set; }
 

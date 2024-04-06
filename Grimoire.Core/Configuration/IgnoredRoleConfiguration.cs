@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Core.Configuration;
 
-internal class IgnoredRoleConfiguration : IEntityTypeConfiguration<IgnoredRole>
+internal sealed class IgnoredRoleConfiguration : IEntityTypeConfiguration<IgnoredRole>
 {
     public void Configure(EntityTypeBuilder<IgnoredRole> builder)
     {

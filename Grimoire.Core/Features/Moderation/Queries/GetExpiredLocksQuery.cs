@@ -7,11 +7,11 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries;
 
-public record GetExpiredLocksQuery : IQuery<IEnumerable<GetExpiredLocksQueryResponse>> { }
+public sealed record GetExpiredLocksQuery : IQuery<IEnumerable<GetExpiredLocksQueryResponse>> { }
 
-public class GetExpiredLocksQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetExpiredLocksQuery, IEnumerable<GetExpiredLocksQueryResponse>>
+public sealed class GetExpiredLocksQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetExpiredLocksQuery, IEnumerable<GetExpiredLocksQueryResponse>>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<IEnumerable<GetExpiredLocksQueryResponse>> Handle(GetExpiredLocksQuery query, CancellationToken cancellationToken)
      => await this._grimoireDbContext.Locks
@@ -27,7 +27,7 @@ public class GetExpiredLocksQueryHandler(IGrimoireDbContext grimoireDbContext) :
             }).ToArrayAsync(cancellationToken);
 }
 
-public record GetExpiredLocksQueryResponse : BaseResponse
+public sealed record GetExpiredLocksQueryResponse : BaseResponse
 {
     public ulong ChannelId { get; init; }
     public ulong GuildId { get; init; }

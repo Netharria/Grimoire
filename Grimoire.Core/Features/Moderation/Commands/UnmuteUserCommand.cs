@@ -15,9 +15,9 @@ public sealed record UnmuteUserCommand : ICommand<UnmuteUserCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public class UnmuteUserCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
+public sealed class UnmuteUserCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UnmuteUserCommandResponse> Handle(UnmuteUserCommand command, CancellationToken cancellationToken)
     {

@@ -17,7 +17,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Queries;
 
 [Collection("Test collection")]
-public class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
@@ -56,8 +56,8 @@ public class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAsyncLife
         this._dbContext.Guilds.Add(new Guild { Id = 34958734 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetIgnoredItemsQueryHandler(this._dbContext);
-        var command = new GetIgnoredItemsQuery
+        var CUT = new GetIgnoredItems.Handler(this._dbContext);
+        var command = new GetIgnoredItems.Query
         {
             GuildId = 34958734
         };
@@ -72,8 +72,8 @@ public class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAsyncLife
     public async Task WhenCallingGetIgnoredItemsHandler_IfIgnoredItems_ReturnSuccessResponseAsync()
     {
 
-        var CUT = new GetIgnoredItemsQueryHandler(this._dbContext);
-        var command = new GetIgnoredItemsQuery
+        var CUT = new GetIgnoredItems.Handler(this._dbContext);
+        var command = new GetIgnoredItems.Query
         {
             GuildId = GUILD_ID
         };

@@ -18,7 +18,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands;
 
 [Collection("Test collection")]
-public class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
@@ -27,12 +27,19 @@ public class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyncLifeti
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
     private const ulong GUILD_ID = 1;
     private const ulong USER_ID = 1;
+    private const ulong CHANNEL_ID = 1;
 
     public async Task InitializeAsync()
     {
         await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
-        await this._dbContext.AddAsync(new User { Id = USER_ID });
+        await this._dbContext.AddAsync(new Channel { Id = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new User { Id = CHANNEL_ID });
         await this._dbContext.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.SaveChangesAsync();
+
+        var guild = await this._dbContext.Guilds.FirstAsync(x => x.Id == GUILD_ID);
+        guild.ModChannelLog = CHANNEL_ID;
+
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -41,30 +48,36 @@ public class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyncLifeti
     [Fact]
     public async Task WhenAwardUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
     {
-        var cut = new AwardUserXpCommandHandler(this._dbContext);
+        var cut = new AwardUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new AwardUserXpCommand
+            new AwardUserXp.Command
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
                 XpToAward = 20
             }, default);
 
+        this._dbContext.ChangeTracker.Clear();
+
         var member = await this._dbContext.Members.Where(x =>
             x.UserId == USER_ID
             && x.GuildId == GUILD_ID
             ).Include(x => x.XpHistory).FirstAsync();
         member.XpHistory.Sum(x => x.Xp).Should().Be(20);
+
+        result.Should().NotBeNull();
+        result.LogChannelId.Should().NotBeNull();
+        result.LogChannelId.Should().Be(CHANNEL_ID);
     }
 
     [Fact]
     public async Task WhenAwardUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
     {
 
-        var cut = new AwardUserXpCommandHandler(this._dbContext);
+        var cut = new AwardUserXp.Handler(this._dbContext);
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new AwardUserXpCommand
+            new AwardUserXp.Command
             {
                 UserId = 20001,
                 GuildId = GUILD_ID,

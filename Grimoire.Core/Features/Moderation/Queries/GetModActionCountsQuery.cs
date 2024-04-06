@@ -9,16 +9,16 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Queries;
 
-public record GetModActionCountsQuery : IQuery<GetModActionCountsQueryResponse?>
+public sealed record GetModActionCountsQuery : IQuery<GetModActionCountsQueryResponse?>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
 
 }
 
-public class GetModActionCountsQueryHandler(IGrimoireDbContext grimoireDbContext) : IQueryHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
+public sealed class GetModActionCountsQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetModActionCountsQueryResponse?> Handle(GetModActionCountsQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Members

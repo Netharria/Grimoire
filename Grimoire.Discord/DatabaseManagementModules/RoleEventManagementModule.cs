@@ -11,7 +11,7 @@ namespace Grimoire.Discord.DatabaseManagementModules;
 
 [DiscordGuildRoleCreatedEventSubscriber]
 [DiscordGuildRoleDeletedEventSubscriber]
-public class RoleEventManagementModule(IMediator mediator) :
+internal sealed class RoleEventManagementModule(IMediator mediator) :
     IDiscordGuildRoleCreatedEventSubscriber,
     IDiscordGuildRoleDeletedEventSubscriber
 {

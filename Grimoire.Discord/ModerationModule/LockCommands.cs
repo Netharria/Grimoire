@@ -14,7 +14,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserPermissions(Permissions.ManageMessages)]
 [SlashRequireBotPermissions(Permissions.ManageChannels)]
-public class LockCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LockCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -29,6 +29,7 @@ public class LockCommands(IMediator mediator) : ApplicationCommandModule
         [MaximumLength(1000)]
         [Option("Reason", "The reason why the channel is getting locked")] string? reason = null)
     {
+        await ctx.DeferAsync();
         channel ??= ctx.Channel;
         BaseResponse? response;
 
@@ -40,17 +41,17 @@ public class LockCommands(IMediator mediator) : ApplicationCommandModule
             response = await this.ChannelLockAsync(ctx, channel, reason, durationType, durationAmount);
         else
         {
-            await ctx.ReplyAsync(message: "Channel not of valid type.");
+            await ctx.EditReplyAsync(message: "Channel not of valid type.");
             return;
         }
-        await ctx.ReplyAsync(message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()}", ephemeral: false); ;
+        await ctx.EditReplyAsync(message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()}"); ;
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()} by {ctx.User.Mention}"
             + (string.IsNullOrWhiteSpace(reason) ? "" : $"for {reason}"));
     }
 
     private async Task<BaseResponse> ChannelLockAsync(InteractionContext ctx, DiscordChannel channel, string? reason, DurationType durationType, long durationAmount)
     {
-        var previousSetting = channel.PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
+        var previousSetting = ctx.Guild.GetChannel(channel.Id).PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
         var response = await this._mediator.Send(new LockChannelCommand
         {
             ChannelId = channel.Id,
@@ -87,18 +88,19 @@ public class LockCommands(IMediator mediator) : ApplicationCommandModule
         InteractionContext ctx,
         [Option("Channel", "The Channel to unlock. Current channel if not specified.")] DiscordChannel? channel = null)
     {
+        await ctx.DeferAsync();
         channel ??= ctx.Channel;
         var response = await this._mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = ctx.Guild.Id });
 
         if (!channel.IsThread)
         {
-            var permissions = channel.PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
+            var permissions = ctx.Guild.GetChannel(channel.Id).PermissionOverwrites.First(x => x.Id == ctx.Guild.EveryoneRole.Id);
             await channel.AddOverwriteAsync(ctx.Guild.EveryoneRole,
                 permissions.Allowed.RevertLockPermissions(response.PreviouslyAllowed)
                 , permissions.Denied.RevertLockPermissions(response.PreviouslyDenied));
         }
 
-        await ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked", ephemeral: false); ;
+        await ctx.EditReplyAsync(message: $"{channel.Mention} has been unlocked"); ;
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{channel.Mention} has been unlocked by {ctx.User.Mention}");
     }
 }

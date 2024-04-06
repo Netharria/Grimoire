@@ -16,9 +16,9 @@ public sealed record GetTrackerWithOldMessageQuery : IRequest<GetTrackerWithOldM
     public ulong MessageId { get; init; }
 }
 
-public class GetTrackerWithOldMessageQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetTrackerWithOldMessageQuery, GetTrackerWithOldMessageQueryResponse?>
+public sealed class GetTrackerWithOldMessageQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetTrackerWithOldMessageQuery, GetTrackerWithOldMessageQueryResponse?>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetTrackerWithOldMessageQueryResponse?> Handle(GetTrackerWithOldMessageQuery request, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Trackers

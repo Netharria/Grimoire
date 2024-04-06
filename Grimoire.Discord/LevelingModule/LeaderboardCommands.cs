@@ -7,12 +7,13 @@
 
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.Leveling.Queries;
+using Grimoire.Core.Features.Shared.Queries;
 
 namespace Grimoire.Discord.LevelingModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -37,9 +38,12 @@ public class LeaderboardCommands(IMediator mediator) : ApplicationCommandModule
                     throw new AnticipatedException("Must provide a user for this option.");
                 break;
         }
-        await ctx.DeferAsync(!((DiscordMember)ctx.User).Permissions.HasPermission(Permissions.ManageMessages));
+        var userCommandChannel = await _mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
 
-        var getUserCenteredLeaderboardQuery = new GetLeaderboardQuery
+        await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages)
+           && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
+
+        var getUserCenteredLeaderboardQuery = new GetLeaderboard.Query
         {
             UserId = user?.Id,
             GuildId = ctx.Guild.Id,

@@ -7,7 +7,7 @@
 
 namespace Grimoire.Domain;
 
-public record Invite
+public sealed record Invite
 {
     public string Code { get; set; } = string.Empty;
     public string Inviter { get; set; } = string.Empty;

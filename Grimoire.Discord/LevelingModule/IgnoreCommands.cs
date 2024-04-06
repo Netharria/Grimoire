@@ -16,7 +16,7 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
-public class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -24,7 +24,7 @@ public class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
     public async Task ShowIgnoredAsync(InteractionContext ctx)
     {
 
-        var response = await this._mediator.Send(new GetIgnoredItemsQuery { GuildId = ctx.Guild.Id });
+        var response = await this._mediator.Send(new GetIgnoredItems.Query { GuildId = ctx.Guild.Id });
 
         var interactivity = ctx.Client.GetInteractivity();
         var embed = new DiscordEmbedBuilder()
@@ -49,12 +49,12 @@ public class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
         var matchedIds = await DiscordSnowflakeParser.ParseStringIntoIdsAndGroupByTypeAsync(ctx, value);
         if (matchedIds.Count == 0 || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
             return;
         }
         IUpdateIgnoreForXpGain command = shouldIgnore
-            ? new AddIgnoreForXpGainCommand{ GuildId = ctx.Guild.Id }
-            : new RemoveIgnoreForXpGainCommand { GuildId = ctx.Guild.Id };
+            ? new AddIgnoreForXpGain.Command{ GuildId = ctx.Guild.Id }
+            : new RemoveIgnoreForXpGain.Command { GuildId = ctx.Guild.Id };
 
         if (matchedIds.TryGetValue("User", out var userIds))
         {

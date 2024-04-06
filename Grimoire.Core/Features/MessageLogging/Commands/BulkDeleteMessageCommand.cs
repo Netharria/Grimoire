@@ -15,9 +15,9 @@ public sealed record BulkDeleteMessageCommand : ICommand<BulkDeleteMessageComman
     public ulong GuildId { get; init; }
 }
 
-public class BulkDeleteMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<BulkDeleteMessageCommand, BulkDeleteMessageCommandResponse>
+public sealed class BulkDeleteMessageCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<BulkDeleteMessageCommand, BulkDeleteMessageCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BulkDeleteMessageCommandResponse> Handle(BulkDeleteMessageCommand command, CancellationToken cancellationToken)
     {

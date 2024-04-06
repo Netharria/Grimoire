@@ -19,7 +19,7 @@ namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands;
 
 
 [Collection("Test collection")]
-public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
@@ -41,6 +41,12 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         });
         await this._dbContext.AddAsync(new Channel { Id = CHANNEL_ID, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
+
+        var guild = await this._dbContext.Guilds.FirstAsync(x => x.Id == GUILD_ID);
+        guild.ModChannelLog = CHANNEL_ID;
+
+        await this._dbContext.SaveChangesAsync();
+
     }
 
     public Task DisposeAsync() => this._resetDatabase();
@@ -48,10 +54,12 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
-            GuildId = 12341234
+            GuildId = 12341234,
+            LevelSettings = LevelSettings.TextTime,
+            Value = "something"
         };
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
@@ -62,8 +70,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingTextTime_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.TextTime,
@@ -79,8 +87,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingBase_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Base,
@@ -95,8 +103,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingModifier_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Modifier,
@@ -111,8 +119,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingAmount_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Amount,
@@ -127,8 +135,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponse()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,
@@ -143,8 +151,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingTextTime_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.TextTime,
@@ -152,6 +160,9 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 
@@ -161,8 +172,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingBase_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Base,
@@ -170,6 +181,9 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 
@@ -179,8 +193,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingModifier_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Modifier,
@@ -188,6 +202,9 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 
@@ -197,8 +214,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingAmount_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Amount,
@@ -206,6 +223,9 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings.FirstAsync(x => x.GuildId == GUILD_ID);
 
         guildSettings.Amount.Should().Be(23);
@@ -214,8 +234,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingLogChannel_IfNumberIsValid_UpdateSettingAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,
@@ -223,6 +243,9 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         };
 
         var response = await CUT.Handle(command, default);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 
@@ -232,8 +255,8 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenUpdatingLogChannel_IfNumberIs0_UpdateSettingToNullAsync()
     {
-        var CUT = new SetLevelSettingsCommandHandler(this._dbContext);
-        var command = new SetLevelSettingsCommand
+        var CUT = new SetLevelSettings.Handler(this._dbContext);
+        var command = new SetLevelSettings.Command
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,
@@ -241,6 +264,11 @@ public class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         };
 
         var response = await CUT.Handle(command, default);
+
+        response.LogChannelId.Should().Be(CHANNEL_ID);
+
+        this._dbContext.ChangeTracker.Clear();
+
         var guildSettings = await this._dbContext.GuildLevelSettings
             .FirstAsync(x => x.GuildId == GUILD_ID);
 

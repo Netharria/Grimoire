@@ -7,14 +7,14 @@
 
 namespace Grimoire.Core.Features.Moderation.Queries;
 
-public class GetMuteRoleQuery : IRequest<GetMuteRoleQueryResponse>
+public sealed record GetMuteRoleQuery : IRequest<GetMuteRoleQueryResponse>
 {
     public ulong GuildId { get; init; }
 }
 
-public class GetMuteRoleQueryHandler(IGrimoireDbContext grimoireDbContext) : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
+public sealed class GetMuteRoleQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<GetMuteRoleQueryResponse> Handle(GetMuteRoleQuery request, CancellationToken cancellationToken)
     {

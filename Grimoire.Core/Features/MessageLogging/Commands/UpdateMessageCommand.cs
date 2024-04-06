@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.DatabaseQueryHelpers;
+using Grimoire.Discord.Extensions;
 
 namespace Grimoire.Core.Features.MessageLogging.Commands;
 
@@ -16,9 +17,9 @@ public sealed record UpdateMessageCommand : ICommand<UpdateMessageCommandRespons
     public string MessageContent { get; init; } = string.Empty;
 }
 
-public class UpdateMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateMessageCommand, UpdateMessageCommandResponse>
+public sealed class UpdateMessageCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateMessageCommand, UpdateMessageCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UpdateMessageCommandResponse> Handle(UpdateMessageCommand command, CancellationToken cancellationToken)
     {
@@ -34,7 +35,7 @@ public class UpdateMessageCommandHandler(IGrimoireDbContext grimoireDbContext) :
                 MessageContent = x.MessageHistory
                     .OrderByDescending(x => x.TimeStamp)
                     .Where(x => x.Action != MessageAction.Deleted)
-                    .First().MessageContent,
+                    .First().MessageContent.UTF8toUnicode(),
                 Success = true
             }
             ).FirstOrDefaultAsync(cancellationToken: cancellationToken);
@@ -48,7 +49,7 @@ public class UpdateMessageCommandHandler(IGrimoireDbContext grimoireDbContext) :
                 MessageId = message.MessageId,
                 Action = MessageAction.Updated,
                 GuildId = command.GuildId,
-                MessageContent = command.MessageContent
+                MessageContent = command.MessageContent.UnicodeToUTF8()
             }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return message;

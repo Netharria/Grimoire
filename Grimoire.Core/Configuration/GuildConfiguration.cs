@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Core.Configuration;
 
 [ExcludeFromCodeCoverage]
-public class GuildConfiguration : IEntityTypeConfiguration<Guild>
+internal sealed class GuildConfiguration : IEntityTypeConfiguration<Guild>
 {
     public void Configure(EntityTypeBuilder<Guild> builder)
     {
@@ -34,6 +34,10 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
         builder.HasOne(e => e.ModerationSettings)
             .WithOne(e => e.Guild)
             .HasForeignKey<GuildModerationSettings>(e => e.GuildId)
+            .IsRequired(false);
+        builder.HasOne(e => e.UserCommandChannel)
+            .WithMany()
+            .HasForeignKey(e => e.UserCommandChannelId)
             .IsRequired(false);
     }
 }

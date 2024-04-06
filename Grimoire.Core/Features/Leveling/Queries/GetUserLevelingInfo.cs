@@ -9,6 +9,7 @@ using Grimoire.Core.DatabaseQueryHelpers;
 using Grimoire.Core.Extensions;
 
 namespace Grimoire.Core.Features.Leveling.Queries;
+
 public static class GetUserLevelingInfo
 {
     public sealed record Query : IQuery<Response?>
@@ -18,9 +19,9 @@ public static class GetUserLevelingInfo
         public required ulong[] RoleIds { get; init; }
     }
 
-    public sealed class Handler(IGrimoireDbContext dbContext) : IQueryHandler<Query, Response?>
+    public sealed class Handler(GrimoireDbContext dbContext) : IQueryHandler<Query, Response?>
     {
-        private readonly IGrimoireDbContext _dbContext = dbContext;
+        private readonly GrimoireDbContext _dbContext = dbContext;
 
         public async ValueTask<Response?> Handle(Query query, CancellationToken cancellationToken)
         {

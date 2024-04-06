@@ -14,7 +14,7 @@ namespace Grimoire.Discord;
 /// <summary>
 /// Example commands used as simple versions of using the DSharpPlus slash commands in different ways.
 /// </summary>
-public class ExampleSlashCommand : ApplicationCommandModule
+internal sealed class ExampleSlashCommand : ApplicationCommandModule
 {
     /// <summary>
     /// Gets the current ping for the bot.

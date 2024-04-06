@@ -15,9 +15,9 @@ public sealed record PublishBanCommand : ICommand
     public PublishType PublishType { get; init; }
 }
 
-public class PublishBanCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<PublishBanCommand>
+public sealed class PublishBanCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<PublishBanCommand>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<Unit> Handle(PublishBanCommand command, CancellationToken cancellationToken)
     {

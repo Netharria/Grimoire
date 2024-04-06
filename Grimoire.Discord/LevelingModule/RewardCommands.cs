@@ -15,7 +15,7 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
-public class RewardCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class RewardCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -28,19 +28,20 @@ public class RewardCommands(IMediator mediator) : ApplicationCommandModule
         [MaximumLength(4096)]
         [Option("Message", "The message to send to users when they earn a reward. Discord Markdown applies.")] string message = "")
     {
+        await ctx.DeferAsync();
         if (ctx.Guild.CurrentMember.Hierarchy < role.Position)
             throw new AnticipatedException($"{ctx.Guild.CurrentMember.DisplayName} will not be able to apply this " +
                 $"reward role because the role has a higher rank than it does.");
 
         var response = await this._mediator.Send(
-            new AddRewardCommand
+            new AddReward.Command
             {
                 RoleId = role.Id,
                 GuildId = ctx.Guild.Id,
                 RewardLevel = (int)level,
                 Message = string.IsNullOrWhiteSpace(message) ? null : message
             });
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: response.Message, ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: response.Message);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 
@@ -48,23 +49,24 @@ public class RewardCommands(IMediator mediator) : ApplicationCommandModule
     public async Task RemoveAsync(InteractionContext ctx,
         [Option("Role", "The role to be awarded")] DiscordRole role)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(
-            new RemoveRewardCommand
+            new RemoveReward.Command
             {
                 RoleId = role.Id
             });
 
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: response.Message, ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: response.Message);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 
     [SlashCommand("View", "Displays all rewards on this server.")]
     public async Task ViewAsync(InteractionContext ctx)
     {
-        var response = await this._mediator.Send(new GetRewardsQuery{ GuildId = ctx.Guild.Id});
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple,
+        await ctx.DeferAsync();
+        var response = await this._mediator.Send(new GetRewards.Query{ GuildId = ctx.Guild.Id});
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             title: "Rewards",
-            message: response.Message,
-            ephemeral: false);
+            message: response.Message);
     }
 }

@@ -15,9 +15,9 @@ public sealed record ForgetSinCommand : ICommand<ForgetSinCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public class ForgetSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
+public sealed class ForgetSinCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<ForgetSinCommandResponse> Handle(ForgetSinCommand command, CancellationToken cancellationToken)
     {

@@ -13,7 +13,7 @@ public sealed record GetUserLogSettingsQuery : IRequest<GetUserLogSettingsQueryR
 }
 
 
-public class GetUserLogSettingsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUserLogSettingsQuery, GetUserLogSettingsQueryResponse>
+public sealed class GetUserLogSettingsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUserLogSettingsQuery, GetUserLogSettingsQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

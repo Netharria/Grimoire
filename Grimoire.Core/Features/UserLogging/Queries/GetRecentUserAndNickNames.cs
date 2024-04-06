@@ -16,10 +16,10 @@ public static class GetRecentUserAndNickNames
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(IGrimoireDbContext dbContext)
+    public sealed class Handler(GrimoireDbContext dbContext)
     : IQueryHandler<Query, Response?>
     {
-        private readonly IGrimoireDbContext _dbContext = dbContext;
+        private readonly GrimoireDbContext _dbContext = dbContext;
 
         public async ValueTask<Response?> Handle
             (Query query, CancellationToken cancellationToken)

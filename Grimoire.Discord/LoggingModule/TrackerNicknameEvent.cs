@@ -10,7 +10,7 @@ using Grimoire.Discord.Notifications;
 
 namespace Grimoire.Discord.LoggingModule;
 
-public class TrackerNicknameEvent(IDiscordClientService clientService, IMediator mediator) : INotificationHandler<NicknameTrackerNotification>
+internal sealed class TrackerNicknameEvent(IDiscordClientService clientService, IMediator mediator) : INotificationHandler<NicknameTrackerNotification>
 {
     private readonly IDiscordClientService _clientService = clientService;
     private readonly IMediator _mediator = mediator;
@@ -30,7 +30,7 @@ public class TrackerNicknameEvent(IDiscordClientService clientService, IMediator
         if (!guild.Channels.TryGetValue(response.TrackerChannelId, out var logChannel)) return;
         var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Nickname Updated")
-                .AddField("User", $"<@!{notification.UserId}>")
+                .AddField("User", UserExtensions.Mention(notification.UserId))
                 .AddField("Before", string.IsNullOrWhiteSpace(notification.BeforeNickname)? "None" : notification.BeforeNickname, true)
                 .AddField("After", string.IsNullOrWhiteSpace(notification.AfterNickname)? "None" : notification.AfterNickname, true)
                 .WithTimestamp(DateTimeOffset.UtcNow)

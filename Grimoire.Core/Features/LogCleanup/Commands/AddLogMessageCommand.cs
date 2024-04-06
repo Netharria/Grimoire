@@ -7,27 +7,32 @@
 
 namespace Grimoire.Core.Features.LogCleanup.Commands;
 
-public record AddLogMessageCommand : ICommand
+public sealed class AddLogMessage
 {
-    public ulong ChannelId { get; init; }
-    public ulong MessageId { get; init; }
-    public ulong GuildId { get; init; }
-}
-
-public class AddLogMessageCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<AddLogMessageCommand>
-{
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<Unit> Handle(AddLogMessageCommand command, CancellationToken cancellationToken)
+    public sealed record Command : ICommand
     {
-        var logMessage = new OldLogMessage
-        {
-            ChannelId = command.ChannelId,
-            GuildId = command.GuildId,
-            Id = command.MessageId
-        };
-        await this._grimoireDbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return Unit.Value;
+        public ulong ChannelId { get; init; }
+        public ulong MessageId { get; init; }
+        public ulong GuildId { get; init; }
     }
+
+    public sealed class AddLogMessageCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
+    {
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var logMessage = new OldLogMessage
+            {
+                ChannelId = command.ChannelId,
+                GuildId = command.GuildId,
+                Id = command.MessageId
+            };
+            await this._grimoireDbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            return Unit.Value;
+        }
+    }
+
 }
+

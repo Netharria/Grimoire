@@ -18,7 +18,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.DatabaseQueryHelpers;
 
 [Collection("Test collection")]
-public class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()

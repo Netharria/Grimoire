@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Fuzzy;
 
 [Table("guilds")]
-public class ModerationSettings
+public sealed class ModerationSettings
 {
     [Key]
     [Column("id")]

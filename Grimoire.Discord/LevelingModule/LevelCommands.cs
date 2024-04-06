@@ -6,12 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Features.Leveling.Queries;
+using Grimoire.Core.Features.Shared.Queries;
 
 namespace Grimoire.Discord.LevelingModule;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LevelCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LevelCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -26,9 +27,13 @@ public class LevelCommands(IMediator mediator) : ApplicationCommandModule
         InteractionContext ctx,
         [Option("user", "User to get details from. Blank will return your info.")] DiscordUser? user = null)
     {
+        var userCommandChannel = await _mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
+
+        await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(Permissions.ManageMessages)
+           && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
         user ??= ctx.User;
 
-        var response = await this._mediator.Send(new GetLevelQuery{ UserId = user.Id, GuildId = ctx.Guild.Id});
+        var response = await this._mediator.Send(new GetLevel.Query{ UserId = user.Id, GuildId = ctx.Guild.Id});
 
         DiscordColor color;
         string displayName;
@@ -65,8 +70,6 @@ public class LevelCommands(IMediator mediator) : ApplicationCommandModule
             .WithThumbnail(avatarUrl)
             .WithFooter($"{ctx.Guild.Name}", ctx.Guild.IconUrl)
             .Build();
-        await ctx.ReplyAsync(
-            embed: embed,
-            ephemeral: !ctx.Member.Permissions.HasPermission(Permissions.ManageMessages));
+        await ctx.EditReplyAsync(embed: embed);
     }
 }

@@ -12,9 +12,9 @@ public sealed record GetModerationSettingsQuery : IQuery<GetModerationSettingsQu
     public ulong GuildId { get; init; }
 }
 
-public class GetModerationSettingsQueryHandler(IGrimoireDbContext context) : IQueryHandler<GetModerationSettingsQuery, GetModerationSettingsQueryResponse>
+public sealed class GetModerationSettingsQueryHandler(GrimoireDbContext context) : IQueryHandler<GetModerationSettingsQuery, GetModerationSettingsQueryResponse>
 {
-    private readonly IGrimoireDbContext _context = context;
+    private readonly GrimoireDbContext _context = context;
 
     public async ValueTask<GetModerationSettingsQueryResponse> Handle(GetModerationSettingsQuery query, CancellationToken cancellationToken)
     {
@@ -34,7 +34,7 @@ public class GetModerationSettingsQueryHandler(IGrimoireDbContext context) : IQu
     }
 }
 
-public class GetModerationSettingsQueryResponse
+public sealed record GetModerationSettingsQueryResponse
 {
     public TimeSpan AutoPardonAfter { get; internal set; }
     public bool ModuleEnabled { get; internal set; }

@@ -12,7 +12,7 @@ using Serilog;
 
 namespace Grimoire.MigrationTool.Domain;
 
-public class AnubisDbContext : DbContext
+internal sealed class AnubisDbContext : DbContext
 {
 
     public string? DbPath;

@@ -18,7 +18,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashCommandGroup("Publish", "Publishes a ban or unban to the public ban log channel.")]
-public class PublishCommands(IMediator mediator) : ApplicationCommandModule
+public sealed partial class PublishCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -28,6 +28,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
         [Minimum(0)]
         [Option("SinId", "The id of the sin to be published")] long sinId)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new GetBanQuery
         {
             SinId = sinId,
@@ -45,7 +46,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
             });
         }
 
-        await ctx.ReplyAsync(GrimoireColor.Green, message: $"Successfully published ban : {sinId}", ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.Green, message: $"Successfully published ban : {sinId}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.Member.GetUsernameWithDiscriminator()} published ban reason of sin {sinId}");
     }
 
@@ -55,6 +56,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
         [Minimum(0)]
         [Option("SinId", "The id of the sin to be published")] long sinId)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(new GetUnbanQuery
         {
             SinId = sinId,
@@ -72,7 +74,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
             });
         }
 
-        await ctx.ReplyAsync(GrimoireColor.Green, message: $"Successfully published unban : {sinId}", ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.Green, message: $"Successfully published unban : {sinId}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple, message: $"{ctx.Member.GetUsernameWithDiscriminator()} published unban reason of sin {sinId}");
     }
 
@@ -97,7 +99,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
             }
             catch (NotFoundException ex)
             {
-                ctx.Client.Logger.LogWarning(ex, "Could not find published message {id}", response.PublishedMessage);
+                LogPublishedMessageNotFound(ctx.Client.Logger, ex, response.PublishedMessage);
             }
         }
 
@@ -108,4 +110,7 @@ public class PublishCommands(IMediator mediator) : ApplicationCommandModule
                             $"**Reason:** {response.Reason}")
             .WithColor(GrimoireColor.Purple));
     }
+
+    [LoggerMessage(LogLevel.Warning, "Could not find published message {id}")]
+    private static partial void LogPublishedMessageNotFound(ILogger<BaseDiscordClient> logger, Exception ex, ulong? id);
 }

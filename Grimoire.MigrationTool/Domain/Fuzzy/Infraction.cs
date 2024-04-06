@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Fuzzy;
 
 [Table("infractions")]
-public class Infraction
+internal sealed class Infraction
 {
     [Key]
     [Column("oid")]

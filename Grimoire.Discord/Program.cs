@@ -19,7 +19,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
 using Polly;
@@ -45,7 +44,7 @@ var host = Host.CreateDefaultBuilder(args)
         .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
         .AddDiscord(options =>
         {
-            options.Token = context.Configuration["token"];
+            options.Token = context.Configuration["token"]!;
             options.LoggerFactory = new LoggerFactory().AddSerilog();
             options.Intents = DiscordIntents.All;
             options.LogUnknownEvents = false;
@@ -57,8 +56,6 @@ var host = Host.CreateDefaultBuilder(args)
             options.Timeout = TimeSpan.FromMinutes(2);
             options.PaginationDeletion = PaginationDeletion.DeleteMessage;
         })
-        .AddDiscordCommandsNext(x => x.StringPrefixes = new [] { ">" },
-        x => x?.RegisterCommands(Assembly.GetExecutingAssembly()))
         .AddDiscordSlashCommands(extension:
             x =>
             {
@@ -69,7 +66,7 @@ var host = Host.CreateDefaultBuilder(args)
                 }
                 //Shared
                 extension.RegisterCommands<ModuleCommands>();
-                extension.RegisterCommands<ModLogSettings>();
+                extension.RegisterCommands<GeneralSettingsCommands>();
                 extension.RegisterCommands<PurgeCommands>();
                 extension.RegisterCommands<UserInfoCommands>();
 

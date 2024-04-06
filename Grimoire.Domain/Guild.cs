@@ -17,6 +17,10 @@ public class Guild : IIdentifiable<ulong>
 
     public virtual Channel? ModLogChannel { get; set; }
 
+    public ulong? UserCommandChannelId { get; set; }
+
+    public virtual Channel? UserCommandChannel { get; set; }
+
     public virtual ICollection<Channel> Channels { get; set; } = new List<Channel>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
@@ -46,6 +50,8 @@ public class Guild : IIdentifiable<ulong>
     public virtual ICollection<IgnoredMember> IgnoredMembers { get; set; } = new List<IgnoredMember>();
 
     public virtual ICollection<IgnoredRole> IgnoredRoles { get; set; } = new List<IgnoredRole>();
+
+    public virtual ICollection<MessageLogChannelOverride> MessageLogChannelOverrides { get; set; } = new List<MessageLogChannelOverride>();
 
     public virtual GuildUserLogSettings UserLogSettings { get; set; } = null!;
 

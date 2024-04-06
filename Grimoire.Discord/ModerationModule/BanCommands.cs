@@ -15,7 +15,7 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashRequireBotPermissions(Permissions.BanMembers)]
-public class BanCommands(IMediator mediator) : ApplicationCommandModule
+public sealed partial class BanCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -30,14 +30,15 @@ public class BanCommands(IMediator mediator) : ApplicationCommandModule
         [Minimum(0)]
         [Option("DeleteDays", "Number of days of messages to delete. Default is 7")] long deleteDays = 7)
     {
+        await ctx.DeferAsync();
         if (!CheckIfCanBan(ctx, user))
         {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
             return;
         }
         if (ctx.User.Id == user.Id)
         {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "You can't ban yourself.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "You can't ban yourself.");
             return;
         }
 
@@ -63,7 +64,7 @@ public class BanCommands(IMediator mediator) : ApplicationCommandModule
         catch (Exception ex)
         {
             if (ex is not UnauthorizedException)
-                ctx.Client.Logger.LogWarning(ex, "Was not able to send a direct message to user.");
+                LogFailedDirectMessage(ctx.Client.Logger, ex);
         }
 
         await ctx.Guild.BanMemberAsync(
@@ -80,18 +81,22 @@ public class BanCommands(IMediator mediator) : ApplicationCommandModule
             .WithColor(GrimoireColor.Red)
             .WithTimestamp(DateTimeOffset.UtcNow);
 
-        await ctx.CreateResponseAsync(embed);
+        await ctx.EditReplyAsync(embed: embed);
     }
+
+    [LoggerMessage(LogLevel.Warning, "Was not able to send a direct message to user.")]
+    private static partial void LogFailedDirectMessage(ILogger<BaseDiscordClient> logger, Exception ex);
 
     [SlashCommand("Unban", "Bans a user from the server.")]
     public static async Task UnbanAsync(
         InteractionContext ctx,
         [Option("User", "The user to unban")] DiscordUser user)
     {
+        await ctx.DeferAsync();
         try
         {
             await ctx.Guild.UnbanMemberAsync(user.Id);
-            await ctx.CreateResponseAsync(new DiscordEmbedBuilder()
+            await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
             .WithAuthor("Unbanned")
             .AddField("User", user.Mention, true)
             .AddField("Moderator", ctx.User.Mention, true)
@@ -102,7 +107,7 @@ public class BanCommands(IMediator mediator) : ApplicationCommandModule
             var errorMessage = ex is NotFoundException
                                 ? "user could not be found."
                                 : "error when communicating with discord. Try again before asking for help.";
-            await ctx.ReplyAsync(
+            await ctx.EditReplyAsync(
             GrimoireColor.Yellow,
             title: "Error",
             message: $"{user.GetUsernameWithDiscriminator()} was not unbanned because {errorMessage}");

@@ -17,7 +17,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.Features.Leveling.Commands;
 
 [Collection("Test collection")]
-public class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
@@ -47,8 +47,8 @@ public class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
         });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new RemoveRewardCommandHandler(this._dbContext);
-        var command = new RemoveRewardCommand
+        var CUT = new RemoveReward.Handler(this._dbContext);
+        var command = new RemoveReward.Command
         {
             RoleId = ROLE_ID
         };
@@ -56,13 +56,19 @@ public class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
         var response = await CUT.Handle(command, default);
 
         response.Message.Should().Be($"Removed <@&{ROLE_ID}> reward");
+
+        this._dbContext.ChangeTracker.Clear();
+
+        var reward = await this._dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == ROLE_ID);
+
+        reward.Should().BeNull();
     }
 
     [Fact]
     public async Task WhenAddingReward_IfRewardExist_UpdateRole()
     {
-        var CUT = new RemoveRewardCommandHandler(this._dbContext);
-        var command = new RemoveRewardCommand
+        var CUT = new RemoveReward.Handler(this._dbContext);
+        var command = new RemoveReward.Command
         {
             RoleId = ROLE_ID
         };

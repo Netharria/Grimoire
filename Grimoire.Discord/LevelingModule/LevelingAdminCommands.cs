@@ -13,7 +13,7 @@ namespace Grimoire.Discord.LevelingModule;
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(Permissions.ManageMessages)]
 [SlashRequireModuleEnabled(Module.Leveling)]
-public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -23,8 +23,9 @@ public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModul
         [Minimum(0)]
         [Option("XP", "The amount of xp to grant.")] long xpToAward)
     {
+        await ctx.DeferAsync();
         var response = await this._mediator.Send(
-            new AwardUserXpCommand
+            new AwardUserXp.Command
             {
                 UserId = user.Id,
                 GuildId = ctx.Guild.Id,
@@ -32,7 +33,7 @@ public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModul
                 AwarderId = ctx.User.Id
             });
 
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: $"{user.Mention} has been awarded {xpToAward} xp.", ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: $"{user.Mention} has been awarded {xpToAward} xp.");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{user.Mention} has been awarded {xpToAward} xp by {ctx.Member.Mention}.");
     }
@@ -47,11 +48,12 @@ public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModul
         [Minimum(0)]
         [Option("Amount", "The amount of xp to Take.")] long amount = 0)
     {
+        await ctx.DeferAsync();
         var xpOption = (XpOption)option;
         if (xpOption == XpOption.Amount && amount == 0)
             throw new AnticipatedException("Specify an amount greater than 0");
         var response = await this._mediator.Send(
-            new ReclaimUserXpCommand
+            new ReclaimUserXp.Command
             {
                 UserId = user.Id,
                 GuildId = ctx.Guild.Id,
@@ -60,7 +62,7 @@ public class LevelingAdminCommands(IMediator mediator) : ApplicationCommandModul
                 ReclaimerId = ctx.User.Id
             });
 
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple, message: $"{response.XpTaken} xp has been taken from {user.Mention}.", ephemeral: false);
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: $"{response.XpTaken} xp has been taken from {user.Mention}.");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{response.XpTaken} xp has been taken from {user.Mention} by {ctx.Member.Mention}.");
     }

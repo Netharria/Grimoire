@@ -17,7 +17,7 @@ using Xunit;
 namespace Grimoire.Core.Test.Unit.Features.UserLogging.Queries;
 
 [Collection("Test collection")]
-public class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()

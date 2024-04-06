@@ -9,48 +9,52 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.LogCleanup.Commands;
 
-public sealed record DeleteOldLogMessagesCommand : ICommand
-{
-    public DeleteMessageResult[] DeletedOldLogMessageIds { get; init; } = [];
-}
-
-public sealed record DeleteMessageResult
+public readonly struct DeleteMessageResult
 {
     public bool WasSuccessful { get; init; }
     public ulong MessageId { get; init; }
 }
 
-public class DeleteOldLogMessagesCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteOldLogMessagesCommand>
+public sealed class DeleteOldLogMessages
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<Unit> Handle(DeleteOldLogMessagesCommand command, CancellationToken cancellationToken)
+    public sealed record Command : ICommand
     {
-        var successMessages = command.DeletedOldLogMessageIds
+        public DeleteMessageResult[] DeletedOldLogMessageIds { get; init; } = [];
+    }
+
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
+    {
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var successMessages = command.DeletedOldLogMessageIds
             .Where(x => x.WasSuccessful == true)
             .Select(x => x.MessageId)
             .ToArray();
 
-        await this._grimoireDbContext.OldLogMessages
-            .WhereIdsAre(successMessages)
-            .ExecuteDeleteAsync(cancellationToken);
+            await this._grimoireDbContext.OldLogMessages
+                .WhereIdsAre(successMessages)
+                .ExecuteDeleteAsync(cancellationToken);
 
-        var erroredMessages = command.DeletedOldLogMessageIds
+            var erroredMessages = command.DeletedOldLogMessageIds
             .Where(x => x.WasSuccessful == false)
             .Select(x => x.MessageId)
             .ToArray();
 
-        if (erroredMessages.Length != 0)
-        {
-            await this._grimoireDbContext.OldLogMessages
-            .WhereIdsAre(erroredMessages)
-            .ExecuteUpdateAsync(x => x.SetProperty(p => p.TimesTried, p => p.TimesTried + 1), cancellationToken);
+            if (erroredMessages.Length != 0)
+            {
+                await this._grimoireDbContext.OldLogMessages
+                .WhereIdsAre(erroredMessages)
+                .ExecuteUpdateAsync(x => x.SetProperty(p => p.TimesTried, p => p.TimesTried + 1), cancellationToken);
 
-            await this._grimoireDbContext.OldLogMessages
-                .Where(x => x.TimesTried >= 3)
-                .ExecuteDeleteAsync(cancellationToken);
+                await this._grimoireDbContext.OldLogMessages
+                    .Where(x => x.TimesTried >= 3)
+                    .ExecuteDeleteAsync(cancellationToken);
+            }
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            return Unit.Value;
         }
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return Unit.Value;
     }
+
 }

@@ -17,9 +17,9 @@ public sealed record PardonSinCommand : ICommand<PardonSinCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public class PardonSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<PardonSinCommand, PardonSinCommandResponse>
+public sealed class PardonSinCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<PardonSinCommand, PardonSinCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<PardonSinCommandResponse> Handle(PardonSinCommand command, CancellationToken cancellationToken)
     {
@@ -51,7 +51,6 @@ public class PardonSinCommandHandler(IGrimoireDbContext grimoireDbContext) : ICo
                 ModeratorId = command.ModeratorId,
                 Reason = command.Reason,
             };
-        this._grimoireDbContext.Sins.Update(result.Sin);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new PardonSinCommandResponse

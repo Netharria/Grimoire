@@ -7,16 +7,16 @@
 
 namespace Grimoire.Core.Features.Moderation.Commands;
 
-public record UnlockChannelCommand : ICommand<UnlockChannelCommandResponse>
+public sealed record UnlockChannelCommand : ICommand<UnlockChannelCommandResponse>
 {
     public ulong ChannelId { get; init; }
 
     public ulong GuildId { get; init; }
 }
 
-public class UnlockChannelCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
+public sealed class UnlockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<UnlockChannelCommandResponse> Handle(UnlockChannelCommand command, CancellationToken cancellationToken)
     {
@@ -42,7 +42,7 @@ public class UnlockChannelCommandHandler(IGrimoireDbContext grimoireDbContext) :
     }
 }
 
-public record UnlockChannelCommandResponse : BaseResponse
+public sealed record UnlockChannelCommandResponse : BaseResponse
 {
     public long PreviouslyAllowed { get; init; }
     public long PreviouslyDenied { get; init; }

@@ -13,9 +13,9 @@ public sealed record SetMuteRoleCommand : ICommand<BaseResponse>
     public ulong GuildId { get; init; }
 }
 
-public class SetMuteRoleCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetMuteRoleCommand, BaseResponse>
+public sealed class SetMuteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetMuteRoleCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetMuteRoleCommand command, CancellationToken cancellationToken)
     {
@@ -25,7 +25,7 @@ public class SetMuteRoleCommandHandler(IGrimoireDbContext grimoireDbContext) : I
         if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
 
         guildModerationSettings.MuteRole = command.Role;
-        this._grimoireDbContext.GuildModerationSettings.Update(guildModerationSettings);
+
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
         return new BaseResponse

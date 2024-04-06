@@ -23,9 +23,9 @@ public enum UserLogSetting
 }
 
 
-public class SetUserLogSettingsCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<SetUserLogSettingsCommand, BaseResponse>
+public sealed class SetUserLogSettingsCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetUserLogSettingsCommand, BaseResponse>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<BaseResponse> Handle(SetUserLogSettingsCommand command, CancellationToken cancellationToken)
     {
@@ -56,7 +56,6 @@ public class SetUserLogSettingsCommandHandler(IGrimoireDbContext grimoireDbConte
                 break;
         }
 
-        this._grimoireDbContext.GuildUserLogSettings.Update(userSettings.UserSettings);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new BaseResponse
         {

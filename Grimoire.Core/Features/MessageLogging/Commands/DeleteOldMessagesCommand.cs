@@ -11,9 +11,9 @@ public sealed record DeleteOldMessagesCommand : ICommand
 {
 }
 
-public class DeleteOldMessagesCommandHandler(IGrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteOldMessagesCommand>
+public sealed class DeleteOldMessagesCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteOldMessagesCommand>
 {
-    private readonly IGrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async ValueTask<Unit> Handle(DeleteOldMessagesCommand command, CancellationToken cancellationToken)
     {

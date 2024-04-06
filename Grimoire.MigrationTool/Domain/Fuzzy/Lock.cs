@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Grimoire.MigrationTool.Domain.Fuzzy;
 
 [Table("locks")]
-public class Lock
+internal sealed class Lock
 {
     [Key]
     [Column("channel_id")]

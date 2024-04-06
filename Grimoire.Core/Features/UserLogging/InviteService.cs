@@ -18,7 +18,7 @@ public interface IInviteService
     bool DeleteInvite(ulong guildId, string inviteCode);
 }
 
-public class InviteService : IInviteService
+internal sealed class InviteService : IInviteService
 {
     private readonly ConcurrentDictionary<ulong, GuildInviteDto> _guilds = new();
 
@@ -81,7 +81,7 @@ public class InviteService : IInviteService
 
 }
 
-public class GuildInviteDto
+public sealed record GuildInviteDto
 {
     public ulong GuildId { get; init; }
     public ConcurrentDictionary<string, Invite> Invites { get; init; } = new();

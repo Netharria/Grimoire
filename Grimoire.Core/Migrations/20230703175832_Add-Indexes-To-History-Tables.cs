@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Grimoire.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class AddIndexesToHistoryTables : Migration
+    public sealed partial class AddIndexesToHistoryTables : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
