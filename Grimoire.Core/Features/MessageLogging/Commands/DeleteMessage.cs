@@ -10,7 +10,7 @@ using Grimoire.Discord.Extensions;
 
 namespace Grimoire.Core.Features.MessageLogging.Commands;
 
-public sealed record DeleteMessage
+public sealed class DeleteMessage
 {
     public sealed record Command : ICommand<Response>
     {

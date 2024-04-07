@@ -10,7 +10,7 @@ using Grimoire.Discord.Extensions;
 
 namespace Grimoire.Core.Features.MessageLogging.Commands;
 
-public sealed record UpdateMessage
+public sealed class UpdateMessage
 {
     public sealed record Command : ICommand<Response>
     {

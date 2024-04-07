@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -64,7 +64,4 @@
     <Using Include="Nefarius.DSharpPlus.Extensions.Hosting" />
     <Using Include="Nefarius.DSharpPlus.Extensions.Hosting.Events" />
   </ItemGroup>
-
-  <ProjectExtensions><VisualStudio><UserProperties properties_4launchsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
-
 </Project>
