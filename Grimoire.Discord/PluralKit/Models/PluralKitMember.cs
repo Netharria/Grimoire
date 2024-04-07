@@ -5,12 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Grimoire.Discord.PluralKit.Models;
 public sealed record PluralKitMember
@@ -58,7 +53,7 @@ public sealed record PluralKitMember
     public required bool KeepProxy { get; set; }
 
     [JsonPropertyName("tts")]
-    public required bool TTS {  get; set; }
+    public required bool TTS { get; set; }
 
     [JsonPropertyName("autoproxy_enabled")]
     public bool? AutoproxyEnabled { get; set; }

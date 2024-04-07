@@ -9,7 +9,6 @@ using System.Text;
 using Grimoire.Core.Features.LogCleanup.Commands;
 using Grimoire.Core.Features.MessageLogging.Commands;
 using Grimoire.Discord.PluralKit;
-using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;
@@ -66,7 +65,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
     {
         var pluralkitMessage = await _pluralKitService.GetProxiedMessageInformation(args.Message.Id, args.Message.CreationTimestamp);
 
-        if(pluralkitMessage is not null
+        if (pluralkitMessage is not null
             && ulong.TryParse(pluralkitMessage.Id, out var proxyMessageId)
             && ulong.TryParse(pluralkitMessage.OriginalId, out var originalMessageId)
             && proxyMessageId != args.Message.Id)

@@ -28,7 +28,7 @@ public sealed class AddBan
             var memberExists = await this._grimoireDbContext.Members
                 .AnyAsync(x => x.UserId == command.UserId
                  && x.GuildId == command.GuildId, cancellationToken);
-            if(!memberExists)
+            if (!memberExists)
                 await this.AddMissingMember(command, cancellationToken);
             var sin = await this._grimoireDbContext.Sins.AddAsync(new Sin
             {
