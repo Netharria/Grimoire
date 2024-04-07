@@ -28,6 +28,10 @@ public class Message : IIdentifiable<ulong>, IMember
 
     public ulong? ReferencedMessageId { get; set; }
 
+    public virtual ProxiedMessageLink ProxiedMessageLink { get; set; } = null!;
+
+    public virtual ProxiedMessageLink OriginalMessageLink { get; set; } = null!;
+
     public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
 
     public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();

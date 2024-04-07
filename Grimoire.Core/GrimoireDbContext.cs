@@ -47,11 +47,13 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<Mute> Mutes { get; set; } = null!;
 
-    public DbSet<OldLogMessage> OldLogMessages { get; set; } = null!;
-
     public DbSet<NicknameHistory> NicknameHistory { get; set; } = null!;
 
+    public DbSet<OldLogMessage> OldLogMessages { get; set; } = null!;
+
     public DbSet<Pardon> Pardons { get; set; } = null!;
+
+    public DbSet<ProxiedMessageLink> ProxiedMessages { get; set; }
 
     public DbSet<PublishedMessage> PublishedMessages { get; set; } = null!;
 

@@ -8,6 +8,8 @@
 using System.Text;
 using Grimoire.Core.Features.LogCleanup.Commands;
 using Grimoire.Core.Features.MessageLogging.Commands;
+using Grimoire.Discord.PluralKit;
+using Grimoire.Domain;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.LoggingModule;
@@ -16,7 +18,7 @@ namespace Grimoire.Discord.LoggingModule;
 [DiscordMessageDeletedEventSubscriber]
 [DiscordMessagesBulkDeletedEventSubscriber]
 [DiscordMessageUpdatedEventSubscriber]
-public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService) :
+public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEmbedService attachmentUploadService, IDiscordAuditLogParserService logParserService, IPluralkitService pluralKitService) :
     IDiscordMessageCreatedEventSubscriber,
     IDiscordMessageDeletedEventSubscriber,
     IDiscordMessagesBulkDeletedEventSubscriber,
@@ -25,6 +27,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
     private readonly IMediator _mediator = mediator;
     private readonly IDiscordImageEmbedService _attachmentUploadService = attachmentUploadService;
     private readonly IDiscordAuditLogParserService _logParserService = logParserService;
+    private readonly IPluralkitService _pluralKitService = pluralKitService;
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
@@ -61,9 +64,27 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
 
     public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
     {
+        var pluralkitMessage = await _pluralKitService.GetProxiedMessageInformation(args.Message.Id, args.Message.CreationTimestamp);
+
+        if(pluralkitMessage is not null
+            && ulong.TryParse(pluralkitMessage.Id, out var proxyMessageId)
+            && ulong.TryParse(pluralkitMessage.OriginalId, out var originalMessageId)
+            && proxyMessageId != args.Message.Id)
+        {
+            await this._mediator.Send(new LinkProxyMessage.Command
+            {
+                ProxyMessageId = proxyMessageId,
+                OriginalMessageId = originalMessageId,
+                GuildId = args.Guild.Id,
+                SystemId = pluralkitMessage.PluralKitSystem?.Id,
+                MemberId = pluralkitMessage.Member?.Id
+            });
+            return;
+        }
+
         var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Channel.Id, args.Message.Id);
         var response = await this._mediator.Send(
-            new DeleteMessageCommand
+            new DeleteMessage.Command
             {
                 Id = args.Message.Id,
                 DeletedByModerator = auditLogEntry?.UserResponsible?.Id,
@@ -83,7 +104,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         else
         {
             var user = await sender.GetUserAsync(response.UserId);
-            if (user is null || user.IsBot) return;
+            if (user is null) return;
             avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
         }
         var embed = new DiscordEmbedBuilder()
@@ -98,6 +119,10 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
             embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
         if (response.ReferencedMessage is not null)
             embed.WithDescription($"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
+        if (response.OriginalUserId is not null)
+            embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
+            .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId, true)
+            .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId, true);
         embed
             .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
@@ -184,7 +209,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
     {
         if (string.IsNullOrWhiteSpace(args.Message.Content)) return;
         var response = await this._mediator.Send(
-            new UpdateMessageCommand
+            new UpdateMessage.Command
             {
                 MessageId = args.Message.Id,
                 GuildId = args.Guild.Id,
@@ -206,12 +231,11 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         else
         {
             var user = await sender.GetUserAsync(response.UserId);
-            if (user is null || user.IsBot) return;
+            if (user is null) return;
             avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
         }
-        var embeds = new List<DiscordEmbedBuilder>
-        {
-            new DiscordEmbedBuilder()
+        var embeds = new List<DiscordEmbedBuilder>();
+        var embed = new DiscordEmbedBuilder()
             .WithDescription($"**[Jump Url]({args.Message.JumpLink})**")
             .AddField("Author", UserExtensions.Mention(response.UserId), true)
             .AddField("Channel", args.Channel.Mention, true)
@@ -219,10 +243,14 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
             .WithAuthor($"Message edited in #{args.Channel.Name}")
             .WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Yellow)
-            .WithThumbnail(avatarUrl)
-            .AddMessageTextToFields("Before", response.MessageContent)
-        };
+            .WithThumbnail(avatarUrl);
 
+        if (response.OriginalUserId is not null)
+            embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
+            .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId, true)
+            .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId, true);
+        embed.AddMessageTextToFields("Before", response.MessageContent);
+        embeds.Add(embed);
         if (response.MessageContent.Length + args.Message.Content.Length >= 5000)
         {
             embeds.Add(new DiscordEmbedBuilder()
@@ -242,10 +270,10 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         }
         try
         {
-            foreach (var embed in embeds)
+            foreach (var embedToSend in embeds)
             {
                 var message = await loggingChannel.SendMessageAsync(new DiscordMessageBuilder()
-                    .AddEmbed(embed));
+                    .AddEmbed(embedToSend));
                 if (message is null) return;
                 await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }

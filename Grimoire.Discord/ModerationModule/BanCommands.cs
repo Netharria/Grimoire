@@ -42,7 +42,7 @@ public sealed partial class BanCommands(IMediator mediator) : ApplicationCommand
             return;
         }
 
-        var response = await this._mediator.Send(new AddBanCommand
+        var response = await this._mediator.Send(new AddBan.Command
         {
             GuildId = ctx.Guild.Id,
             UserId = user.Id,

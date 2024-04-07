@@ -6,13 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Net;
-using System.Reflection;
 using DSharpPlus.Interactivity.Enums;
 using Grimoire.Core;
 using Grimoire.Discord;
 using Grimoire.Discord.LevelingModule;
 using Grimoire.Discord.LoggingModule;
 using Grimoire.Discord.ModerationModule;
+using Grimoire.Discord.PluralKit;
 using Grimoire.Discord.SharedModule;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +22,7 @@ using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
 using Polly;
+using Polly.RateLimit;
 using Serilog;
 
 var host = Host.CreateDefaultBuilder(args)
@@ -42,6 +43,7 @@ var host = Host.CreateDefaultBuilder(args)
         .AddCoreServices(context.Configuration)
         .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
+        .AddScoped<IPluralkitService, PluralkitService>()
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"]!;
@@ -106,6 +108,7 @@ var host = Host.CreateDefaultBuilder(args)
             .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)
             .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
 
+#pragma warning disable IDE0053 // Use expression body for lambda expression
         services.AddHttpClient("Pluralkit", x =>
         {
             var endpoint = context.Configuration["pluralkitApiEndpoint"];
@@ -117,29 +120,25 @@ var host = Host.CreateDefaultBuilder(args)
             ArgumentException.ThrowIfNullOrEmpty(token, nameof(token));
 
             x.BaseAddress = new Uri(endpoint);
-            x.DefaultRequestHeaders.UserAgent
-                .Add(new System.Net.Http.Headers.ProductInfoHeaderValue(userAgent));
+            x.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
             x.DefaultRequestHeaders.Add("Authorization", token);
 
         })
         .AddTransientHttpErrorPolicy(PolicyBuilder => PolicyBuilder
             .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
         .AddPolicyHandler(
-            Policy.HandleResult<HttpResponseMessage>(x => x.StatusCode == HttpStatusCode.TooManyRequests)
-            .WaitAndRetryForeverAsync((_, response, _) =>
-            {
-                if(response.Result == default)
+            Policy.Handle<RateLimitRejectedException>()
+            .WaitAndRetryForeverAsync(
+                (_,ex,_) => (ex as RateLimitRejectedException)?.RetryAfter.Add(TimeSpan.FromMilliseconds(100)) ?? TimeSpan.FromSeconds(1),
+                (_,i,time,_) =>
                 {
-                    return TimeSpan.FromSeconds(1);
-                }
-                return response.Result.Headers.RetryAfter is null or { Delta: null }
-                ? TimeSpan.FromSeconds(1)
-                : response.Result.Headers.RetryAfter.Delta.Value;
-            },
-            (_,_,_,_) => Task.CompletedTask)
+                    Log.Logger.Warning("Pluralkit Ratelimit Hit retrying in {} | Attempt {}", time, i);
+                    return Task.CompletedTask;
+                })
             .WrapAsync(
                 Policy.RateLimitAsync(2, TimeSpan.FromSeconds(1))
                 .AsAsyncPolicy<HttpResponseMessage>()));
+#pragma warning restore IDE0053 // Use expression body for lambda expression
     })
     .UseConsoleLifetime()
     .Build();
