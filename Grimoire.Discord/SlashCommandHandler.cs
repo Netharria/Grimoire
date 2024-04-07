@@ -55,8 +55,8 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
             var shortStackTrace = string.Empty;
             if (exception.StackTrace is not null)
                 shortStackTrace = string.Join('\n', exception.StackTrace.Split('\n')
-                    .Where(x => x.StartsWith("   at Grimoire"))
-                    .Select(x => x[(x.IndexOf(" in ") + 4)..])
+                    .Where(x => x.StartsWith("   at Grimoire", StringComparison.OrdinalIgnoreCase))
+                    .Select(x => x[(x.IndexOf(" in ", StringComparison.OrdinalIgnoreCase) + 4)..])
                     .Select(x => '\"' + x.Replace(":line", "\" line")));
             var innerException = exception.InnerException;
             var exceptionMessage = new StringBuilder().AppendLine(exception.Message);

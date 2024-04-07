@@ -9,39 +9,70 @@ using Grimoire.Core.DatabaseQueryHelpers;
 
 namespace Grimoire.Core.Features.Moderation.Commands;
 
-public sealed record AddBanCommand : ICommand<AddBanCommandResponse>
+public sealed class AddBan
 {
-    public ulong UserId { get; init; }
-    public ulong GuildId { get; init; }
-    public string Reason { get; set; } = string.Empty;
-    public ulong? ModeratorId { get; set; }
-}
-
-public sealed class AddBanCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<AddBanCommand, AddBanCommandResponse>
-{
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
-
-    public async ValueTask<AddBanCommandResponse> Handle(AddBanCommand command, CancellationToken cancellationToken)
+    public sealed record Command : ICommand<Response>
     {
-        var sin = await this._grimoireDbContext.Sins.AddAsync(new Sin
-        {
-            GuildId = command.GuildId,
-            UserId = command.UserId,
-            Reason = command.Reason,
-            SinType = SinType.Ban,
-            ModeratorId = command.ModeratorId
-        }, cancellationToken);
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        public required ulong UserId { get; init; }
+        public required ulong GuildId { get; init; }
+        public string Reason { get; set; } = string.Empty;
+        public ulong? ModeratorId { get; set; }
+    }
 
-        var loggingChannel = await this._grimoireDbContext.Guilds
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
+    {
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Response> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var memberExists = await this._grimoireDbContext.Members
+                .AnyAsync(x => x.UserId == command.UserId
+                 && x.GuildId == command.GuildId, cancellationToken);
+            if (!memberExists)
+                await this.AddMissingMember(command, cancellationToken);
+            var sin = await this._grimoireDbContext.Sins.AddAsync(new Sin
+            {
+                GuildId = command.GuildId,
+                UserId = command.UserId,
+                Reason = command.Reason,
+                SinType = SinType.Ban,
+                ModeratorId = command.ModeratorId
+            }, cancellationToken);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+
+            var loggingChannel = await this._grimoireDbContext.Guilds
             .WhereIdIs(command.GuildId)
             .Select(x => x.ModChannelLog)
             .FirstOrDefaultAsync(cancellationToken);
-        return new AddBanCommandResponse { SinId = sin.Entity.Id, LogChannelId = loggingChannel };
+            return new Response { SinId = sin.Entity.Id, LogChannelId = loggingChannel };
+        }
+
+        private async Task AddMissingMember(Command command, CancellationToken cancellationToken)
+        {
+            if (!await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
+                await this._grimoireDbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
+            await this._grimoireDbContext.Members.AddAsync(new Member
+            {
+                UserId = command.UserId,
+                GuildId = command.GuildId,
+                XpHistory = new List<XpHistory>
+                    {
+                        new() {
+                            UserId = command.UserId,
+                            GuildId = command.GuildId,
+                            Xp = 0,
+                            Type = XpHistoryType.Created,
+                            TimeOut = DateTime.UtcNow
+                        }
+                    },
+            }, cancellationToken);
+        }
     }
+
+    public sealed record Response : BaseResponse
+    {
+        public long SinId { get; init; }
+    }
+
 }
 
-public sealed record AddBanCommandResponse : BaseResponse
-{
-    public long SinId { get; init; }
-}

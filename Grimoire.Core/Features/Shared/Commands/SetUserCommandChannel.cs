@@ -11,7 +11,7 @@ using Grimoire.Core.DatabaseQueryHelpers;
 namespace Grimoire.Core.Features.Shared.Commands;
 public sealed class SetUserCommandChannel
 {
-    public sealed record Command: ICommand<BaseResponse>
+    public sealed record Command : ICommand<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public ulong? ChannelId { get; init; }

@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Linq;
 using System.Text;
 using Grimoire.Core.Exceptions;
 using Grimoire.Core.Features.MessageLogging.Commands;
@@ -198,14 +197,14 @@ internal sealed class LogSettingsCommands : ApplicationCommandModule
 
             var overrideOptions = response
                .Select(x => new
-                {
-                    Channel = ctx.Guild.Channels.GetValueOrDefault(x.ChannelId) ?? ctx.Guild.Threads.GetValueOrDefault(x.ChannelId),
-                    x.ChannelOption
-                }).OrderBy(x => x.Channel?.Position)
+               {
+                   Channel = ctx.Guild.Channels.GetValueOrDefault(x.ChannelId) ?? ctx.Guild.Threads.GetValueOrDefault(x.ChannelId),
+                   x.ChannelOption
+               }).OrderBy(x => x.Channel?.Position)
                 .ToList();
 
             var channelOverrideString = new StringBuilder();
-            foreach(var overrideOption in overrideOptions)
+            foreach (var overrideOption in overrideOptions)
             {
                 if (overrideOption.Channel is null)
                     continue;

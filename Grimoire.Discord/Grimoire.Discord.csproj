@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -64,5 +64,4 @@
     <Using Include="Nefarius.DSharpPlus.Extensions.Hosting" />
     <Using Include="Nefarius.DSharpPlus.Extensions.Hosting.Events" />
   </ItemGroup>
-
 </Project>

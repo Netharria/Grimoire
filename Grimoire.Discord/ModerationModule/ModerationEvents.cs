@@ -38,7 +38,7 @@ public sealed partial class ModerationEvents(IMediator mediator) :
             return;
         if (response.LastSin is null || response.LastSin.SinOn < DateTimeOffset.UtcNow.AddSeconds(-5))
         {
-            var addBanCommand = new AddBanCommand
+            var addBanCommand = new AddBan.Command
             {
                 GuildId = args.Guild.Id,
                 UserId = args.Member.Id
