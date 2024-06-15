@@ -108,7 +108,6 @@ var host = Host.CreateDefaultBuilder(args)
             .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)
             .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
 
-#pragma warning disable IDE0053 // Use expression body for lambda expression
         services.AddHttpClient("Pluralkit", x =>
         {
             var endpoint = context.Configuration["pluralkitApiEndpoint"];
@@ -116,8 +115,6 @@ var host = Host.CreateDefaultBuilder(args)
             var token = context.Configuration["pluralkitToken"];
 
             ArgumentException.ThrowIfNullOrEmpty(endpoint, nameof(endpoint));
-            ArgumentException.ThrowIfNullOrEmpty(userAgent, nameof(userAgent));
-            ArgumentException.ThrowIfNullOrEmpty(token, nameof(token));
 
             x.BaseAddress = new Uri(endpoint);
             x.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
@@ -138,7 +135,6 @@ var host = Host.CreateDefaultBuilder(args)
             .WrapAsync(
                 Policy.RateLimitAsync(2, TimeSpan.FromSeconds(1))
                 .AsAsyncPolicy<HttpResponseMessage>()));
-#pragma warning restore IDE0053 // Use expression body for lambda expression
     })
     .UseConsoleLifetime()
     .Build();

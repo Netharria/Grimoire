@@ -7,6 +7,8 @@
 
 using System.Net.Http.Json;
 using Grimoire.Discord.PluralKit.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Discord.PluralKit;
 
@@ -15,15 +17,31 @@ public interface IPluralkitService
     ValueTask<PluralKitMessage?> GetProxiedMessageInformation(ulong messageId, DateTimeOffset messageTimestamp);
 }
 
-public sealed class PluralkitService(IHttpClientFactory httpClientFactory) : IPluralkitService
+public sealed partial class PluralkitService : IPluralkitService
 {
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     private const string MESSAGE_ENDPOINT = "messages/";
+
+    private readonly bool _isConfigured;
+
+    public PluralkitService(IHttpClientFactory httpClientFactory,
+    IConfiguration configuration,
+    ILogger<PluralkitService> logger)
+    {
+        _httpClientFactory = httpClientFactory;
+        _isConfigured = string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitUserAgent", ""))
+            || string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitToken", ""));
+        PluralkitNotConfiguredLog(logger);
+    }
 
 
     public async ValueTask<PluralKitMessage?> GetProxiedMessageInformation(ulong messageId, DateTimeOffset messageTimestamp)
     {
+        if(!_isConfigured)
+        {
+            return null;
+        }
         if (messageTimestamp.AddSeconds(60) < DateTimeOffset.UtcNow)
         {
             return null;
@@ -38,4 +56,7 @@ public sealed class PluralkitService(IHttpClientFactory httpClientFactory) : IPl
             return null;
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "UserAgent or Pluralkit Token Not Present. Pluralkit integration disabled.")]
+    public static partial void PluralkitNotConfiguredLog(ILogger<PluralkitService> logger);
 }

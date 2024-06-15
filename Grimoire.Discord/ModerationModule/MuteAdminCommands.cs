@@ -154,47 +154,25 @@ public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAd
     private async Task<OverwriteChannelResult> OverwriteChannelAsync(DiscordChannel channel, DiscordRole role)
     {
         var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
-        foreach (var tryAttempt in Enumerable.Range(1, 3))
+        return await DiscordRetryPolicy.RetryDiscordCall(async () =>
         {
-            try
+            if (permissions is not null)
+                await channel.AddOverwriteAsync(role,
+                        permissions.Allowed.RevokeLockPermissions(),
+                        permissions.Denied.SetLockPermissions());
+            else
+                await channel.AddOverwriteAsync(role,
+                        deny: PermissionValues.LockPermissions);
+            return new OverwriteChannelResult
             {
-                if (permissions is not null)
-                    await channel.AddOverwriteAsync(role,
-                            permissions.Allowed.RevokeLockPermissions(),
-                            permissions.Denied.SetLockPermissions());
-                else
-                    await channel.AddOverwriteAsync(role,
-                            deny: PermissionValues.LockPermissions);
-                return new OverwriteChannelResult
-                {
-                    WasSuccessful = true,
-                    Channel = channel,
-                };
-            }
-            catch (DiscordException ex) when (ex is BadRequestException or ServerErrorException)
-            {
-                if (tryAttempt < 3)
-                {
-                    LogRetryAttempt(_logger, tryAttempt, ex.Message);
-                    await Task.Delay(1 * tryAttempt);
-                }
-                else
-                {
-                    LogRetriesExhaustedError(_logger, ex, tryAttempt, ex.Message);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogNonTransientError(_logger, ex, ex.Message);
-                break;
-            }
-
-        }
-        return new OverwriteChannelResult
+                WasSuccessful = true,
+                Channel = channel,
+            };
+        }, new OverwriteChannelResult
         {
             WasSuccessful = false,
             Channel = channel,
-        };
+        });
     }
 
     [LoggerMessage(LogLevel.Warning, "Exception was thrown while trying to overwrite channel mute permissions. " +
@@ -213,47 +191,25 @@ public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAd
     {
         var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
 
-        foreach (var tryAttempt in Enumerable.Range(1, 3))
+        return await DiscordRetryPolicy.RetryDiscordCall(async () =>
         {
-            try
+            if (permissions is not null)
+                await channel.AddOverwriteAsync(role,
+                        permissions.Allowed.RevokeVoiceLockPermissions(),
+                        permissions.Denied.SetVoiceLockPermissions());
+            else
+                await channel.AddOverwriteAsync(role,
+                        deny: PermissionValues.VoiceLockPermissions);
+            return new OverwriteChannelResult
             {
-                if (permissions is not null)
-                    await channel.AddOverwriteAsync(role,
-                            permissions.Allowed.RevokeVoiceLockPermissions(),
-                            permissions.Denied.SetVoiceLockPermissions());
-                else
-                    await channel.AddOverwriteAsync(role,
-                            deny: PermissionValues.VoiceLockPermissions);
-                return new OverwriteChannelResult
-                {
-                    WasSuccessful = true,
-                    Channel = channel,
-                };
-            }
-            catch (DiscordException ex) when (ex is BadRequestException or ServerErrorException)
-            {
-                if (tryAttempt < 3)
-                {
-                    LogRetryAttempt(_logger, tryAttempt, ex.Message);
-                    await Task.Delay(1 * tryAttempt);
-                }
-                else
-                {
-                    LogRetriesExhaustedError(_logger, ex, tryAttempt, ex.Message);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogNonTransientError(_logger, ex, ex.Message);
-                break;
-            }
-
-        }
-        return new OverwriteChannelResult
+                WasSuccessful = true,
+                Channel = channel,
+            };
+        }, new OverwriteChannelResult
         {
             WasSuccessful = false,
             Channel = channel,
-        };
+        });
     }
 }
 

@@ -19,13 +19,37 @@ public static class DiscordRetryPolicy
             BackoffType = DelayBackoffType.Exponential,
             UseJitter = true,
             MaxRetryAttempts = 4,
-            Delay = TimeSpan.FromSeconds(3),
+            Delay = TimeSpan.FromSeconds(3)
         };
     private static readonly ResiliencePipeline _resiliencePipeline = new ResiliencePipelineBuilder().AddRetry(_retryStrategyOptions).Build();
 
     public static ValueTask<T> RetryDiscordCall<T>(Func<Task<T>> function, CancellationToken cancellationToken = default)
         => _resiliencePipeline.ExecuteAsync(async token => await function(), cancellationToken);
 
+    public static async ValueTask<T> RetryDiscordCall<T>(Func<Task<T>> function, T defaultValue, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _resiliencePipeline.ExecuteAsync(async token => await function(), cancellationToken);
+        }
+        catch (ServerErrorException)
+        {
+            return defaultValue;
+        }
+    }
+
     public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, Task<T>> function, CancellationToken cancellationToken = default)
         => _resiliencePipeline.ExecuteAsync(async token => await function(token), cancellationToken);
+
+    public static async ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, Task<T>> function, T defaultValue, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _resiliencePipeline.ExecuteAsync(async token => await function(token), cancellationToken);
+        }
+        catch (ServerErrorException)
+        {
+            return defaultValue;
+        }
+    }
 }
