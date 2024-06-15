@@ -23,12 +23,11 @@ internal sealed class DiscordAuditLogParserService(IDiscordClientService discord
 
     public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong messageId)
     {
-        if (!this._discordClientService.Client.Guilds.TryGetValue(guildId, out var guild))
-            return null;
-        if (!guild.CurrentMember.Permissions.HasPermission(Permissions.ViewAuditLog))
+        if (!this._discordClientService.Client.Guilds.TryGetValue(guildId, out var guild)
+            || !guild.CurrentMember.Permissions.HasPermission(Permissions.ViewAuditLog))
             return null;
 
-        IReadOnlyList<DiscordAuditLogEntry> auditLogEntries = new List<DiscordAuditLogEntry>();
+        IReadOnlyList<DiscordAuditLogEntry> auditLogEntries = [];
 
         try
         {
@@ -52,17 +51,14 @@ internal sealed class DiscordAuditLogParserService(IDiscordClientService discord
             .Where(x => x.Target.Id == result && x.Channel.Id == channelId)
             .FirstOrDefault();
 
-        if (deleteEntry is null) return null;
-
-        if (deleteEntry.CreationTimestamp < DateTime.UtcNow.AddMinutes(-10))
+        if (deleteEntry is null
+            || deleteEntry.CreationTimestamp < DateTime.UtcNow.AddMinutes(-10))
             return null;
 
         if (this._memoryCache.TryGetValue(deleteEntry.Id, out DiscordAuditLogMessageEntry? cachedEntry))
         {
-            if (cachedEntry is null)
-                return null;
-
-            if (deleteEntry.MessageCount <= cachedEntry.MessageCount)
+            if (cachedEntry is null
+                || deleteEntry.MessageCount <= cachedEntry.MessageCount)
                 return null;
         }
 
