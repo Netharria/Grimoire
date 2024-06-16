@@ -33,8 +33,7 @@ internal sealed partial class ManageCustomCommands(IMediator mediator) : Applica
         [MaximumLength(6)]
         [Option("EmbedColor", "Hexadecimal color of the embed")] string? embedColor = null,
         [Option("RestricedUse", "Only explictly allowed roles can use this command")] bool restrictedUse = false,
-        [Option("AllowRoles", "Explicitly allow roles to use this command")] string allowedRolesText = "",
-        [Option("DeniedRoles", "Deny roles the ability to use this command")] string deniedRolesText = "")
+        [Option("PermissionRoles", "Deny roles the ability to use this command or allow roles if command is restricted use")] string allowedRolesText = "")
     {
         await ctx.DeferAsync();
 
@@ -50,10 +49,9 @@ internal sealed partial class ManageCustomCommands(IMediator mediator) : Applica
             return;
         }
 
-        var allowedRoles = await ParseStringAndGetRoles(ctx, allowedRolesText);
-        var deniedRoles = await ParseStringAndGetRoles(ctx, deniedRolesText);
+        var permissionRoles = await ParseStringAndGetRoles(ctx, allowedRolesText);
 
-        if (allowedRoles.Length == 0 && restrictedUse)
+        if (permissionRoles.Length == 0 && restrictedUse)
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, message: $"Command set as restricted but no roles allowed to use it.");
             return;
@@ -67,8 +65,7 @@ internal sealed partial class ManageCustomCommands(IMediator mediator) : Applica
             IsEmbedded = embed,
             EmbedColor = embedColor,
             RestrictedUse = restrictedUse,
-            AllowedRoles = allowedRoles,
-            DeniedRoles = deniedRoles,
+            PermissionRoles = permissionRoles,
         });
 
         await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);

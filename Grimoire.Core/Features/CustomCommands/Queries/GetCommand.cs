@@ -14,11 +14,11 @@ public sealed class GetCommand
         public required ulong GuildId { get; set; }
     }
 
-    public sealed class Handler(GrimoireDbContext GrimoireDbContext) : IQueryHandler<Query, Response>
+    public sealed class Handler(GrimoireDbContext GrimoireDbContext) : IQueryHandler<Query, Response?>
     {
         private readonly GrimoireDbContext _grimoireDbContext = GrimoireDbContext;
 
-        public async ValueTask<Response> Handle(Query query, CancellationToken cancellationToken)
+        public async ValueTask<Response?> Handle(Query query, CancellationToken cancellationToken)
             => await this._grimoireDbContext.CustomCommands
             .AsSplitQuery()
             .Where(x => x.GuildId == query.GuildId && x.Name == query.Name)
@@ -30,10 +30,9 @@ public sealed class GetCommand
                 IsEmbedded = x.IsEmbedded,
                 EmbedColor = x.EmbedColor,
                 RestrictedUse = x.RestrictedUse,
-                AllowedRoles = x.CustomCommandRoles.Where(x => x.CommandAllowed).Select(x => x.RoleId).ToArray(),
-                DeniedRoles = x.CustomCommandRoles.Where(x => !x.CommandAllowed).Select(x => x.RoleId).ToArray(),
+                PermissionRoles = x.CustomCommandRoles.Select(x => x.RoleId).ToArray(),
 
-            }).FirstAsync(cancellationToken);
+            }).FirstOrDefaultAsync(cancellationToken);
     }
 
     public sealed record Response
@@ -44,7 +43,6 @@ public sealed class GetCommand
         public required bool IsEmbedded { get; set; }
         public required string? EmbedColor { get; set; }
         public required bool RestrictedUse { get; set; }
-        public required ulong[] AllowedRoles { get; set; }
-        public required ulong[] DeniedRoles { get; set; }
+        public required ulong[] PermissionRoles { get; set; }
     }
 }

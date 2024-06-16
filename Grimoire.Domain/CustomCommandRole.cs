@@ -14,5 +14,4 @@ public class CustomCommandRole
     public CustomCommand CustomCommand { get; set; } = null!;
     public ulong GuildId { get; set; }
     public Guild Guild { get; set; } = null!;
-    public bool CommandAllowed { get; set; }
 }
