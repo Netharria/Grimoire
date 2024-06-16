@@ -46,7 +46,7 @@ internal sealed class IgnoreCommands(IMediator mediator) : ApplicationCommandMod
     private async Task UpdateIgnoreState(InteractionContext ctx, string value, bool shouldIgnore)
     {
         await ctx.DeferAsync();
-        var matchedIds = await DiscordSnowflakeParser.ParseStringIntoIdsAndGroupByTypeAsync(ctx, value);
+        var matchedIds = await ctx.ParseStringIntoIdsAndGroupByTypeAsync(value);
         if (matchedIds.Count == 0 || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");

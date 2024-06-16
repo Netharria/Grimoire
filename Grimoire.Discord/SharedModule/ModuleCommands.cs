@@ -27,7 +27,8 @@ internal sealed class ModuleCommands(IMediator mediator) : ApplicationCommandMod
             message: $"**Leveling Enabled:** {response.LevelingIsEnabled}\n" +
             $"**User Log Enabled:** {response.UserLogIsEnabled}\n" +
             $"**Message Log Enabled:** {response.MessageLogIsEnabled}\n" +
-            $"**Moderation Enabled:** {response.ModerationIsEnabled}\n");
+            $"**Moderation Enabled:** {response.ModerationIsEnabled}\n" +
+            $"**Commands Enabled:** {response.CommandsIsEnabled}\n");
     }
 
     [SlashCommand("Set", "Enable or Disable a module")]

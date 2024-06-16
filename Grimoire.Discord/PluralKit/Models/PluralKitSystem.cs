@@ -41,5 +41,5 @@ public record PluralKitSystem
     public DateTime? Created { get; set; }
 
     [JsonPropertyName("privacy")]
-    public Dictionary<string, string> PrivacySettings { get; set; } = new Dictionary<string, string>();
+    public Dictionary<string, string> PrivacySettings { get; set; } = [];
 }

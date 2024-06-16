@@ -20,4 +20,5 @@ public class Role : IIdentifiable<ulong>
     public virtual Reward? Reward { get; set; }
 
     public virtual IgnoredRole? IsIgnoredRole { get; set; }
+    public virtual ICollection<CustomCommandRole> CustomCommandRoles { get; set; } = [];
 }

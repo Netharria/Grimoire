@@ -138,7 +138,7 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
                         Uses = x.Uses,
                         MaxUses = x.MaxUses
                     }))
-            : Enumerable.Empty<Invite>()
+            : []
         });
 
 

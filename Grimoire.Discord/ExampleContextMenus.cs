@@ -30,23 +30,23 @@ internal sealed class ExampleContextMenus : ApplicationCommandModule
         await ctx.DeferAsync();
         var rows = new List<DiscordActionRowComponent>()
         {
-            new(new List<DiscordComponent>
-            {
+            new(
+            [
                 new DiscordChannelSelectComponent("channel_option", "",
-                new List<ChannelType> { ChannelType.Text })
-            }),
-            new(new List<DiscordComponent>
-            {
+                [ChannelType.Text])
+            ]),
+            new(
+            [
                 new DiscordRoleSelectComponent("role_option", "")
-            }),
-            new(new List<DiscordComponent>
-            {
+            ]),
+            new(
+            [
                 new DiscordUserSelectComponent("user_option", "")
-            }),
-            new(new List<DiscordComponent>
-            {
+            ]),
+            new(
+            [
                 new DiscordMentionableSelectComponent("mentionable_option", "")
-            })
+            ])
         };
         var builder = new DiscordFollowupMessageBuilder()
             .WithContent("Select an option")

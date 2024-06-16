@@ -55,8 +55,8 @@ public sealed class AddTrackerCommandHandler(GrimoireDbContext grimoireDbContext
 
                     UserId = command.UserId,
                     GuildId = command.GuildId,
-                    XpHistory = new List<XpHistory>
-                    {
+                    XpHistory =
+                    [
                         new() {
                             UserId = command.UserId,
                             GuildId = command.GuildId,
@@ -64,7 +64,7 @@ public sealed class AddTrackerCommandHandler(GrimoireDbContext grimoireDbContext
                             Type = XpHistoryType.Created,
                             TimeOut = DateTime.UtcNow
                         }
-                    },
+                    ],
                 }, cancellationToken);
             }
 

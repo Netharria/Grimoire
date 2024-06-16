@@ -21,37 +21,41 @@ public class Guild : IIdentifiable<ulong>
 
     public virtual Channel? UserCommandChannel { get; set; }
 
-    public virtual ICollection<Channel> Channels { get; set; } = new List<Channel>();
+    public virtual ICollection<Channel> Channels { get; set; } = [];
 
-    public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+    public virtual ICollection<Role> Roles { get; set; } = [];
 
-    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+    public virtual ICollection<Message> Messages { get; set; } = [];
 
-    public virtual ICollection<MessageHistory> MessageHistory { get; set; } = new List<MessageHistory>();
+    public virtual ICollection<MessageHistory> MessageHistory { get; set; } = [];
 
-    public virtual ICollection<OldLogMessage> OldLogMessages { get; set; } = new List<OldLogMessage>();
+    public virtual ICollection<OldLogMessage> OldLogMessages { get; set; } = [];
 
-    public virtual ICollection<Tracker> Trackers { get; set; } = new List<Tracker>();
+    public virtual ICollection<Tracker> Trackers { get; set; } = [];
 
-    public virtual ICollection<Reward> Rewards { get; set; } = new List<Reward>();
+    public virtual ICollection<Reward> Rewards { get; set; } = [];
 
-    public virtual ICollection<Member> Members { get; set; } = new List<Member>();
+    public virtual ICollection<Member> Members { get; set; } = [];
 
-    public virtual ICollection<Sin> Sins { get; set; } = new List<Sin>();
+    public virtual ICollection<Sin> Sins { get; set; } = [];
 
-    public virtual ICollection<Mute> ActiveMutes { get; set; } = new List<Mute>();
+    public virtual ICollection<Mute> ActiveMutes { get; set; } = [];
 
-    public virtual ICollection<Lock> LockedChannels { get; set; } = new List<Lock>();
+    public virtual ICollection<Lock> LockedChannels { get; set; } = [];
 
-    public virtual ICollection<XpHistory> XpHistory { get; set; } = new List<XpHistory>();
+    public virtual ICollection<XpHistory> XpHistory { get; set; } = [];
 
-    public virtual ICollection<IgnoredChannel> IgnoredChannels { get; set; } = new List<IgnoredChannel>();
+    public virtual ICollection<IgnoredChannel> IgnoredChannels { get; set; } = [];
 
-    public virtual ICollection<IgnoredMember> IgnoredMembers { get; set; } = new List<IgnoredMember>();
+    public virtual ICollection<IgnoredMember> IgnoredMembers { get; set; } = [];
 
-    public virtual ICollection<IgnoredRole> IgnoredRoles { get; set; } = new List<IgnoredRole>();
+    public virtual ICollection<IgnoredRole> IgnoredRoles { get; set; } = [];
 
-    public virtual ICollection<MessageLogChannelOverride> MessageLogChannelOverrides { get; set; } = new List<MessageLogChannelOverride>();
+    public virtual ICollection<MessageLogChannelOverride> MessageLogChannelOverrides { get; set; } = [];
+
+    public virtual ICollection<CustomCommand> CustomCommands { get; set; } = [];
+
+    public virtual ICollection<CustomCommandRole> CustomCommandRoles { get; set; } = [];
 
     public virtual GuildUserLogSettings UserLogSettings { get; set; } = null!;
 
@@ -60,4 +64,6 @@ public class Guild : IIdentifiable<ulong>
     public virtual GuildModerationSettings ModerationSettings { get; set; } = null!;
 
     public virtual GuildMessageLogSettings MessageLogSettings { get; set; } = null!;
+
+    public virtual GuildCommandsSettings CommandsSettings { get; set; } = null!;
 }

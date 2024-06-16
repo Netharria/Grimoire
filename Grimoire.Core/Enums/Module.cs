@@ -12,5 +12,6 @@ public enum Module
     Leveling,
     UserLog,
     Moderation,
-    MessageLog
+    MessageLog,
+    Commands
 }

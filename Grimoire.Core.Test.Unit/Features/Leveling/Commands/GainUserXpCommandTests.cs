@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -53,8 +52,8 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         {
             UserId = USER_ID,
             GuildId = GUILD_ID,
-            XpHistory = new List<XpHistory>
-            {
+            XpHistory =
+            [
                 new() {
                     TimeOut = DateTime.UtcNow.AddMinutes(-5),
                     UserId = USER_ID,
@@ -70,7 +69,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
                     Type = XpHistoryType.Created,
                     Xp = 10
                 }
-            }
+            ]
         });
         await this._dbContext.AddAsync(new Channel { Id = CHANNEL_ID, GuildId = GUILD_ID });
         await this._dbContext.AddAsync(new Role { Id = ROLE_ID_1, GuildId = GUILD_ID });

@@ -55,8 +55,8 @@ public sealed class AddBan
             {
                 UserId = command.UserId,
                 GuildId = command.GuildId,
-                XpHistory = new List<XpHistory>
-                    {
+                XpHistory =
+                    [
                         new() {
                             UserId = command.UserId,
                             GuildId = command.GuildId,
@@ -64,7 +64,7 @@ public sealed class AddBan
                             Type = XpHistoryType.Created,
                             TimeOut = DateTime.UtcNow
                         }
-                    },
+                    ],
             }, cancellationToken);
         }
     }

@@ -5,13 +5,14 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+
 using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
-
-public class User : IIdentifiable<ulong>
+public class GuildCommandsSettings : IModule
 {
-    public ulong Id { get; set; }
-    public virtual ICollection<Member> MemberProfiles { get; set; } = [];
-    public virtual ICollection<UsernameHistory> UsernameHistories { get; set; } = [];
+    public ulong GuildId { get; set; }
+
+    public virtual Guild Guild { get; set; } = null!;
+    public bool ModuleEnabled { get; set; }
 }

@@ -23,20 +23,32 @@ public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbConte
 
     public async ValueTask<EnableModuleCommandResponse> Handle(EnableModuleCommand command, CancellationToken cancellationToken)
     {
-        var guildModule = await this._grimoireDbContext.Guilds
+        var result = await this._grimoireDbContext.Guilds
             .WhereIdIs(command.GuildId)
-            .GetModulesOfType(command.Module, cancellationToken)
+            .GetModulesOfType(command.Module)
             .Select(x => new
             {
                 Module = x,
                 x.Guild.ModChannelLog,
             })
             .FirstAsync(cancellationToken);
-        guildModule.Module.ModuleEnabled = command.Enable;
+        var ModChannelLog = result.ModChannelLog;
+        var guildModule = result.Module ?? command.Module switch
+        {
+            Module.Leveling => new GuildLevelSettings { GuildId = command.GuildId },
+            Module.UserLog => new GuildUserLogSettings { GuildId = command.GuildId },
+            Module.Moderation => new GuildModerationSettings { GuildId = command.GuildId },
+            Module.MessageLog => new GuildMessageLogSettings { GuildId = command.GuildId },
+            Module.Commands => new GuildCommandsSettings { GuildId = command.GuildId },
+            _ => throw new NotImplementedException(),
+        };
+        guildModule.ModuleEnabled = command.Enable;
+        if (result.Module is null)
+            await this._grimoireDbContext.AddAsync(guildModule, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new EnableModuleCommandResponse
         {
-            ModerationLog = guildModule.ModChannelLog
+            ModerationLog = ModChannelLog
         };
     }
 }

@@ -13,12 +13,12 @@ namespace Grimoire.Core.Features.Shared.Commands;
 
 public sealed record UpdateAllGuildsCommand : ICommand
 {
-    public IEnumerable<GuildDto> Guilds { get; init; } = Enumerable.Empty<GuildDto>();
-    public IEnumerable<UserDto> Users { get; init; } = Enumerable.Empty<UserDto>();
-    public IEnumerable<MemberDto> Members { get; init; } = Enumerable.Empty<MemberDto>();
-    public IEnumerable<RoleDto> Roles { get; init; } = Enumerable.Empty<RoleDto>();
-    public IEnumerable<ChannelDto> Channels { get; init; } = Enumerable.Empty<ChannelDto>();
-    public IEnumerable<Invite> Invites { get; init; } = Enumerable.Empty<Invite>();
+    public IEnumerable<GuildDto> Guilds { get; init; } = [];
+    public IEnumerable<UserDto> Users { get; init; } = [];
+    public IEnumerable<MemberDto> Members { get; init; } = [];
+    public IEnumerable<RoleDto> Roles { get; init; } = [];
+    public IEnumerable<ChannelDto> Channels { get; init; } = [];
+    public IEnumerable<Invite> Invites { get; init; } = [];
 }
 
 public sealed class UpdateAllGuildsCommandHandler(GrimoireDbContext grimoireDbContext, IInviteService inviteService) : ICommandHandler<UpdateAllGuildsCommand>
