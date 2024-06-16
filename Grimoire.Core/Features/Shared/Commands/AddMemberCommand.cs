@@ -43,12 +43,12 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
             await this._grimoireDbContext.Users.AddAsync(new User
             {
                 Id = command.UserId,
-                UsernameHistories = new List<UsernameHistory> {
+                UsernameHistories = [
                         new() {
                             Username = command.UserName,
                             UserId = command.UserId
                         }
-                    }
+                    ]
             }, cancellationToken);
 
         if (userResult is not null)
@@ -65,8 +65,8 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
             {
                 UserId = command.UserId,
                 GuildId = command.GuildId,
-                XpHistory = new List<XpHistory>
-                {
+                XpHistory =
+                [
                     new() {
                         UserId = command.UserId,
                         GuildId = command.GuildId,
@@ -74,23 +74,23 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
                         Xp = 0,
                         TimeOut = DateTimeOffset.UtcNow
                     }
-                },
-                AvatarHistory = new List<Avatar>
-                {
+                ],
+                AvatarHistory =
+                [
                     new() {
                         UserId = command.UserId,
                         GuildId = command.GuildId,
                         FileName = command.AvatarUrl
                     }
-                },
-                NicknamesHistory = new List<NicknameHistory>
-                {
+                ],
+                NicknamesHistory =
+                [
                     new() {
                         UserId = command.UserId,
                         GuildId = command.GuildId,
                         Nickname = command.Nickname
                     }
-                }
+                ]
             };
 
             await this._grimoireDbContext.Members.AddAsync(member, cancellationToken);

@@ -15,12 +15,12 @@ public static class UserDatabaseQueryHelpers
             .Select(x => new User
             {
                 Id = x.Id,
-                UsernameHistories = new List<UsernameHistory> {
+                UsernameHistories = [
                     new() {
                         Username = x.Username,
                         UserId = x.Id,
                     }
-                }
+                ]
             });
 
         var usersToAdd = incomingUsers.ExceptBy(databaseUsers

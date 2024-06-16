@@ -14,11 +14,11 @@ namespace Grimoire.Core.Features.Shared.Commands;
 public sealed record AddGuildCommand : ICommand
 {
     public ulong GuildId { get; init; }
-    public IEnumerable<UserDto> Users { get; init; } = Enumerable.Empty<UserDto>();
-    public IEnumerable<MemberDto> Members { get; init; } = Enumerable.Empty<MemberDto>();
-    public IEnumerable<RoleDto> Roles { get; init; } = Enumerable.Empty<RoleDto>();
-    public IEnumerable<ChannelDto> Channels { get; init; } = Enumerable.Empty<ChannelDto>();
-    public IEnumerable<Invite> Invites { get; set; } = Enumerable.Empty<Invite>();
+    public IEnumerable<UserDto> Users { get; init; } = [];
+    public IEnumerable<MemberDto> Members { get; init; } = [];
+    public IEnumerable<RoleDto> Roles { get; init; } = [];
+    public IEnumerable<ChannelDto> Channels { get; init; } = [];
+    public IEnumerable<Invite> Invites { get; set; } = [];
 }
 
 public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, IInviteService inviteService) : ICommandHandler<AddGuildCommand>
@@ -43,6 +43,7 @@ public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, 
                     ModerationSettings = new GuildModerationSettings(),
                     UserLogSettings = new GuildUserLogSettings(),
                     MessageLogSettings = new GuildMessageLogSettings(),
+                    CommandsSettings = new GuildCommandsSettings(),
                 }, cancellationToken);
 
         var rolesAdded = await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);

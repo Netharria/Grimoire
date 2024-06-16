@@ -21,11 +21,11 @@ public class Channel : IIdentifiable<ulong>
 
     public virtual MessageLogChannelOverride? MessageLogChannelOverride { get; set; }
 
-    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+    public virtual ICollection<Message> Messages { get; set; } = [];
 
-    public virtual ICollection<OldLogMessage> OldMessages { get; set; } = new HashSet<OldLogMessage>();
+    public virtual ICollection<OldLogMessage> OldMessages { get; set; } = [];
 
-    public virtual ICollection<Tracker> Trackers { get; set; } = new List<Tracker>();
+    public virtual ICollection<Tracker> Trackers { get; set; } = [];
 
     public virtual Lock? Lock { get; set; }
 }

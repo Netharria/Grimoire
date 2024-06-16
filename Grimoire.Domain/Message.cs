@@ -32,9 +32,9 @@ public class Message : IIdentifiable<ulong>, IMember
 
     public virtual ProxiedMessageLink OriginalMessageLink { get; set; } = null!;
 
-    public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+    public virtual ICollection<Attachment> Attachments { get; set; } = [];
 
-    public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
-    public virtual ICollection<MessageHistory> MessageHistory { get; set; } = new List<MessageHistory>();
+    public virtual ICollection<Reaction> Reactions { get; set; } = [];
+    public virtual ICollection<MessageHistory> MessageHistory { get; set; } = [];
 
 }

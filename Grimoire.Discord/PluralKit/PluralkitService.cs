@@ -32,13 +32,14 @@ public sealed partial class PluralkitService : IPluralkitService
         _httpClientFactory = httpClientFactory;
         _isConfigured = string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitUserAgent", ""))
             || string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitToken", ""));
-        PluralkitNotConfiguredLog(logger);
+        if (!_isConfigured)
+            PluralkitNotConfiguredLog(logger);
     }
 
 
     public async ValueTask<PluralKitMessage?> GetProxiedMessageInformation(ulong messageId, DateTimeOffset messageTimestamp)
     {
-        if(!_isConfigured)
+        if (!_isConfigured)
         {
             return null;
         }

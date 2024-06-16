@@ -21,8 +21,8 @@ public static class MemberDatabaseQueryHelpers
             {
                 UserId = x.UserId,
                 GuildId = x.GuildId,
-                XpHistory = new List<XpHistory>
-                    {
+                XpHistory =
+                    [
                         new() {
                             UserId = x.UserId,
                             GuildId = x.GuildId,
@@ -30,23 +30,23 @@ public static class MemberDatabaseQueryHelpers
                             Type = XpHistoryType.Created,
                             TimeOut = DateTime.UtcNow
                         }
-                    },
-                NicknamesHistory = new List<NicknameHistory>
-                    {
+                    ],
+                NicknamesHistory =
+                    [
                         new() {
                             GuildId = x.GuildId,
                             UserId = x.UserId,
                             Nickname = x.Nickname
                         }
-                    },
-                AvatarHistory = new List<Avatar>
-                    {
+                    ],
+                AvatarHistory =
+                    [
                         new() {
                             UserId = x.UserId,
                             GuildId = x.GuildId,
                             FileName = x.AvatarUrl
                         }
-                    }
+                    ]
             });
 
         if (membersToAdd.Any())

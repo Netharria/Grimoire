@@ -20,6 +20,7 @@ public static class GuildDatabaseQueryHelpers
                 ModerationSettings = new GuildModerationSettings(),
                 UserLogSettings = new GuildUserLogSettings(),
                 MessageLogSettings = new GuildMessageLogSettings(),
+                CommandsSettings = new GuildCommandsSettings(),
             });
 
         var guildsToAdd = incomingGuilds.ExceptBy(databaseGuilds

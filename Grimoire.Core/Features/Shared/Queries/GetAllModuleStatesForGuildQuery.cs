@@ -24,10 +24,11 @@ public sealed class GetAllModuleStatesForGuildQueryHandler(GrimoireDbContext gri
             .WhereIdIs(request.GuildId)
             .Select(x => new GetAllModuleStatesForGuildQueryResponse
             {
-                LevelingIsEnabled = x.LevelSettings.ModuleEnabled,
-                UserLogIsEnabled = x.UserLogSettings.ModuleEnabled,
-                ModerationIsEnabled = x.ModerationSettings.ModuleEnabled,
-                MessageLogIsEnabled = x.MessageLogSettings.ModuleEnabled,
+                LevelingIsEnabled = x.LevelSettings != null && x.LevelSettings.ModuleEnabled,
+                UserLogIsEnabled = x.UserLogSettings != null && x.UserLogSettings.ModuleEnabled,
+                ModerationIsEnabled = x.ModerationSettings != null && x.ModerationSettings.ModuleEnabled,
+                MessageLogIsEnabled = x.MessageLogSettings != null && x.MessageLogSettings.ModuleEnabled,
+                CommandsIsEnabled = x.CommandsSettings != null && x.CommandsSettings.ModuleEnabled
             }).FirstAsync(cancellationToken: cancellationToken);
 }
 
@@ -37,4 +38,5 @@ public sealed record GetAllModuleStatesForGuildQueryResponse : BaseResponse
     public bool UserLogIsEnabled { get; init; }
     public bool ModerationIsEnabled { get; init; }
     public bool MessageLogIsEnabled { get; init; }
+    public bool CommandsIsEnabled { get; init; }
 }

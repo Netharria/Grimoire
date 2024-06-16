@@ -15,7 +15,7 @@ public static partial class DiscordSnowflakeParser
     [GeneratedRegex(@"(\d{17,21})", RegexOptions.Compiled, 1000)]
     public static partial Regex MatchSnowflake();
 
-    public static async ValueTask<Dictionary<string, string[]>> ParseStringIntoIdsAndGroupByTypeAsync(InteractionContext ctx, string value) =>
+    public static async ValueTask<Dictionary<string, string[]>> ParseStringIntoIdsAndGroupByTypeAsync(this InteractionContext ctx, string value) =>
         await MatchSnowflake().Matches(value)
             .Where(x => x.Success)
             .Select(x => x.Value)

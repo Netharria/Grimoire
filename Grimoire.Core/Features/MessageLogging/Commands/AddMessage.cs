@@ -80,14 +80,14 @@ public sealed class AddMessage
                 ChannelId = command.ChannelId,
                 ReferencedMessageId = command.ReferencedMessageId,
                 GuildId = command.GuildId,
-                MessageHistory = new List<MessageHistory>{
+                MessageHistory = [
                 new() {
                     MessageId = command.MessageId,
                     MessageContent = command.MessageContent.UnicodeToUTF8(),
                     GuildId = command.GuildId,
                     Action = MessageAction.Created
                 }
-            }
+            ]
             };
             await this._grimoireDbContext.Messages.AddAsync(message, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
@@ -102,8 +102,8 @@ public sealed class AddMessage
             {
                 UserId = command.UserId,
                 GuildId = command.GuildId,
-                XpHistory = new List<XpHistory>
-                    {
+                XpHistory =
+                    [
                         new() {
                             UserId = command.UserId,
                             GuildId = command.GuildId,
@@ -111,7 +111,7 @@ public sealed class AddMessage
                             Type = XpHistoryType.Created,
                             TimeOut = DateTime.UtcNow
                         }
-                    },
+                    ],
             }, cancellationToken);
         }
 

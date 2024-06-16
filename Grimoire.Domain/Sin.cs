@@ -42,5 +42,5 @@ public class Sin : IIdentifiable<long>, IMember
 
     public virtual Pardon? Pardon { get; set; }
 
-    public virtual ICollection<PublishedMessage> PublishMessages { get; set; } = new List<PublishedMessage>();
+    public virtual ICollection<PublishedMessage> PublishMessages { get; set; } = [];
 }

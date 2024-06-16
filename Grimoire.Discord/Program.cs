@@ -9,6 +9,7 @@ using System.Net;
 using DSharpPlus.Interactivity.Enums;
 using Grimoire.Core;
 using Grimoire.Discord;
+using Grimoire.Discord.CustomCommandsModule;
 using Grimoire.Discord.LevelingModule;
 using Grimoire.Discord.LoggingModule;
 using Grimoire.Discord.ModerationModule;
@@ -95,6 +96,10 @@ var host = Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<SinLogCommands>();
                 extension.RegisterCommands<MuteCommands>();
                 extension.RegisterCommands<WarnCommands>();
+
+                //Custom Commands
+                extension.RegisterCommands<ManageCustomCommands>();
+                extension.RegisterCommands<CustomCommands>();
             })
         .AddDiscordHostedService()
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)

@@ -19,7 +19,13 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<Channel> Channels { get; set; } = null!;
 
+    public DbSet<CustomCommand> CustomCommands { get; set; } = null!;
+
+    public DbSet<CustomCommandRole> CustomCommandsRole { get; set; } = null!;
+
     public DbSet<Guild> Guilds { get; set; } = null!;
+
+    public DbSet<GuildCommandsSettings> GuildCommandsSettings { get; set; } = null!;
 
     public DbSet<GuildLevelSettings> GuildLevelSettings { get; set; } = null!;
 
@@ -72,5 +78,6 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<XpHistory> XpHistory { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-        => modelBuilder.ApplyConfigurationsFromAssembly(typeof(GrimoireDbContext).Assembly);
+        => modelBuilder.ApplyConfigurationsFromAssembly(typeof(GrimoireDbContext).Assembly)
+                .HasPostgresExtension("fuzzystrmatch");
 }
