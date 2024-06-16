@@ -66,7 +66,6 @@ var host = Host.CreateDefaultBuilder(args)
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
                     extension.RegisterCommands<EmptySlashCommands>(guildId);
-                    extension.RegisterCommands<ManageCustomCommands>(guildId);
                 }
                 //Shared
                 extension.RegisterCommands<ModuleCommands>();
