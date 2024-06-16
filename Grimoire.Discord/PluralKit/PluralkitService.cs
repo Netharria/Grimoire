@@ -30,8 +30,8 @@ public sealed partial class PluralkitService : IPluralkitService
     ILogger<PluralkitService> logger)
     {
         _httpClientFactory = httpClientFactory;
-        _isConfigured = string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitUserAgent", ""))
-            || string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitToken", ""));
+        _isConfigured = !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitUserAgent", ""))
+            && !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitToken", ""));
         if (!_isConfigured)
             PluralkitNotConfiguredLog(logger);
     }
