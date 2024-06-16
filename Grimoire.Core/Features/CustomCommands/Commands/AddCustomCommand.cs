@@ -20,8 +20,7 @@ public sealed class AddCustomCommand
         public required bool IsEmbedded { get; init; }
         public required string? EmbedColor { get; init; }
         public required bool RestrictedUse { get; init; }
-        public required RoleDto[] AllowedRoles { get; init; }
-        public required RoleDto[] DeniedRoles { get; init; }
+        public required RoleDto[] PermissionRoles { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
@@ -30,30 +29,19 @@ public sealed class AddCustomCommand
 
         public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
-            await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.AllowedRoles, cancellationToken);
-
-            await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.DeniedRoles, cancellationToken);
+            await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.PermissionRoles, cancellationToken);
 
             var result = await this._grimoireDbContext.CustomCommands
                 .Include(x => x.CustomCommandRoles)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Name == command.CommandName && x.GuildId == command.GuildId, cancellationToken);
-            var commandRoles = command.AllowedRoles.Select(x =>
+            var commandRoles = command.PermissionRoles.Select(x =>
                 new CustomCommandRole
                 {
                     CustomCommandName = command.CommandName,
                     GuildId = command.GuildId,
                     RoleId = x.Id,
-                    CommandAllowed = true
                 }).ToList();
-            commandRoles.AddRange(command.DeniedRoles.Select(x =>
-                new CustomCommandRole
-                {
-                    CustomCommandName = command.CommandName,
-                    GuildId = command.GuildId,
-                    RoleId = x.Id,
-                    CommandAllowed = false
-                }));
             if (result is null)
             {
                 result = new CustomCommand
@@ -80,7 +68,9 @@ public sealed class AddCustomCommand
                 result.IsEmbedded = command.IsEmbedded;
                 result.EmbedColor = command.EmbedColor;
                 result.RestrictedUse = command.RestrictedUse;
-                result.CustomCommandRoles = commandRoles;
+                result.CustomCommandRoles.Clear();
+                foreach (var role in commandRoles)
+                    result.CustomCommandRoles.Add(role);
             }
 
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);

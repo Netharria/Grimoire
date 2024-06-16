@@ -30,8 +30,13 @@ internal sealed class CustomCommands(IMediator mediator) : ApplicationCommandMod
             Name = name,
             GuildId = ctx.Guild.Id
         });
-        if ((response.RestrictedUse && ctx.Member.Roles.All(x => !response.AllowedRoles.Contains(x.Id)))
-            || ctx.Member.Roles.Any(x => response.DeniedRoles.Contains(x.Id)))
+        if(response is null)
+        {
+            await ctx.Interaction.DeleteOriginalResponseAsync();
+            return;
+        }
+        if ((response.RestrictedUse && ctx.Member.Roles.All(x => !response.PermissionRoles.Contains(x.Id)))
+            || (!response.RestrictedUse && ctx.Member.Roles.Any(x => response.PermissionRoles.Contains(x.Id))))
         {
             await ctx.Interaction.DeleteOriginalResponseAsync();
             return;
