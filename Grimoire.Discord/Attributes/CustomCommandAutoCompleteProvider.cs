@@ -6,15 +6,22 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.Features.CustomCommands.Queries;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Discord.Attributes;
-internal class CustomCommandAutoCompleteAttribute(IMediator mediator) : IAutocompleteProvider
+internal class CustomCommandAutoCompleteProvider(IServiceProvider serviceProvider) : IAutocompleteProvider
 {
-    private readonly IMediator _mediator = mediator;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
 
     public async Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
     {
-        var results = await this._mediator.Send(new GetCustomCommandOptions.Query
+        await using var scope = this._serviceProvider.CreateAsyncScope();
+        var mediator = scope.ServiceProvider.GetService<IMediator>();
+
+        if(mediator is null)
+            return [];
+
+        var results = await mediator.Send(new GetCustomCommandOptions.Query
         {
             EnteredText = (string) ctx.FocusedOption.Value,
             GuildId = ctx.Guild.Id

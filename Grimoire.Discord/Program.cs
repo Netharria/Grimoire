@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Net;
+using System.Threading.RateLimiting;
 using DSharpPlus.Interactivity.Enums;
 using Grimoire.Core;
 using Grimoire.Discord;
@@ -22,8 +22,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
-using Polly;
-using Polly.RateLimit;
 using Serilog;
 
 var host = Host.CreateDefaultBuilder(args)
@@ -108,10 +106,8 @@ var host = Host.CreateDefaultBuilder(args)
         .AddHostedService<LockBackgroundTasks>()
         .AddHostedService<MuteBackgroundTasks>()
         .AddMemoryCache()
-        .AddHttpClient("Default", x => x.Timeout = TimeSpan.FromSeconds(30))
-        .AddTransientHttpErrorPolicy(PolicyBuilder => PolicyBuilder
-            .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)
-            .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+        .AddHttpClient("Default")
+        .AddStandardResilienceHandler();
 
         services.AddHttpClient("Pluralkit", x =>
         {
@@ -124,22 +120,18 @@ var host = Host.CreateDefaultBuilder(args)
             x.BaseAddress = new Uri(endpoint);
             x.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
             x.DefaultRequestHeaders.Add("Authorization", token);
-
-        })
-        .AddTransientHttpErrorPolicy(PolicyBuilder => PolicyBuilder
-            .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
-        .AddPolicyHandler(
-            Policy.Handle<RateLimitRejectedException>()
-            .WaitAndRetryForeverAsync(
-                (_,ex,_) => (ex as RateLimitRejectedException)?.RetryAfter.Add(TimeSpan.FromMilliseconds(100)) ?? TimeSpan.FromSeconds(1),
-                (_,i,time,_) =>
-                {
-                    Log.Logger.Warning("Pluralkit Ratelimit Hit retrying in {} | Attempt {}", time, i);
-                    return Task.CompletedTask;
-                })
-            .WrapAsync(
-                Policy.RateLimitAsync(2, TimeSpan.FromSeconds(1))
-                .AsAsyncPolicy<HttpResponseMessage>()));
+        }).AddStandardResilienceHandler(builder
+            => builder.RateLimiter.RateLimiter = static args =>
+                new SlidingWindowRateLimiter(
+                    new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = 2,
+                        Window = TimeSpan.FromSeconds(1),
+                        AutoReplenishment = true,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        SegmentsPerWindow = 1,
+                        QueueLimit = 0
+                    }).AcquireAsync(cancellationToken: args.Context.CancellationToken));
     })
     .UseConsoleLifetime()
     .Build();

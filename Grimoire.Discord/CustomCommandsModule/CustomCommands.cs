@@ -18,7 +18,7 @@ internal sealed class CustomCommands(IMediator mediator) : ApplicationCommandMod
     [SlashCommand("Command", "Call a custom command.")]
     internal async Task Command(
         InteractionContext ctx,
-        [Autocomplete(typeof(CustomCommandAutoCompleteAttribute))]
+        [Autocomplete(typeof(CustomCommandAutoCompleteProvider))]
         [Option("CommandName", "Enter the name of the command.", autocomplete: true)]string name,
         [Option("Mention", "The person to mention if the command has one.")] SnowflakeObject? snowflakeObject = null,
         [Option("Message", "The custom message to add if the command has one.")] string message = "")
