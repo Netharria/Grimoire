@@ -93,7 +93,7 @@ internal sealed partial class ManageCustomCommands(IMediator mediator) : Applica
     [SlashCommand("Forget", "Forget a command")]
     internal async Task Forget(
         InteractionContext ctx,
-        [Autocomplete(typeof(CustomCommandAutoCompleteAttribute))]
+        [Autocomplete(typeof(CustomCommandAutoCompleteProvider))]
         [Option("Name", "The name that the command is called.", true)] string name)
     {
         await ctx.DeferAsync();

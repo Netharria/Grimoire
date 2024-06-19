@@ -56,6 +56,10 @@ public sealed partial class PluralkitService : IPluralkitService
         {
             return null;
         }
+        catch (TimeoutException)
+        {
+            return null;
+        }
     }
 
     [LoggerMessage(LogLevel.Warning, "UserAgent or Pluralkit Token Not Present. Pluralkit integration disabled.")]
