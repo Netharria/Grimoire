@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.DatabaseQueryHelpers;
-using Grimoire.Discord.Extensions;
 
 namespace Grimoire.Core.Features.MessageLogging.Commands;
 
@@ -36,7 +35,7 @@ public sealed class UpdateMessage
                 MessageContent = x.MessageHistory
                     .OrderByDescending(x => x.TimeStamp)
                     .Where(x => x.Action != MessageAction.Deleted)
-                    .First().MessageContent.UTF8toUnicode(),
+                    .First().MessageContent,
                 Success = true,
                 OriginalUserId = x.ProxiedMessageLink.OriginalMessage.UserId,
                 SystemId = x.ProxiedMessageLink.SystemId,
@@ -53,7 +52,7 @@ public sealed class UpdateMessage
                     MessageId = message.MessageId,
                     Action = MessageAction.Updated,
                     GuildId = command.GuildId,
-                    MessageContent = command.MessageContent.UnicodeToUTF8()
+                    MessageContent = command.MessageContent
                 }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return message;

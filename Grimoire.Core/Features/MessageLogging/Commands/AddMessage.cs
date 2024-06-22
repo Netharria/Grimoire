@@ -6,11 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.DatabaseQueryHelpers;
-using Grimoire.Discord.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Core.Features.MessageLogging.Commands;
 
-public sealed class AddMessage
+public sealed partial class AddMessage
 {
     public sealed record Command : ICommand
     {
@@ -24,13 +24,16 @@ public sealed class AddMessage
         public required List<ulong> ParentChannelTree { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
+    public sealed partial class Handler(GrimoireDbContext grimoireDbContext, ILogger<Handler> logger) : ICommandHandler<Command>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly ILogger<Handler> _logger = logger;
 
         public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Guilds
+            try
+            {
+                var result = await this._grimoireDbContext.Guilds
             .AsNoTracking()
             .WhereIdIs(command.GuildId)
             .Select(guild => new
@@ -43,32 +46,32 @@ public sealed class AddMessage
                     .Select(x => new { x.ChannelId, x.ChannelOption })
                     .ToArray()
             }).FirstOrDefaultAsync(cancellationToken);
-            if (result is null)
-                throw new KeyNotFoundException("Guild was not found in database.");
-            if (!result.ModuleEnabled)
-                return Unit.Value;
-            if (!result.ChannelExists)
-            {
-                var channel = new Channel
+                if (result is null)
+                    throw new KeyNotFoundException("Guild was not found in database.");
+                if (!result.ModuleEnabled)
+                    return Unit.Value;
+                if (!result.ChannelExists)
                 {
-                    GuildId = command.GuildId,
-                    Id = command.ChannelId
-                };
-                await this._grimoireDbContext.Channels.AddAsync(channel, cancellationToken);
-            }
-            if (!result.MemberExists)
-            {
-                await this.AddMissingMember(command, cancellationToken);
-            }
+                    var channel = new Channel
+                    {
+                        GuildId = command.GuildId,
+                        Id = command.ChannelId
+                    };
+                    await this._grimoireDbContext.Channels.AddAsync(channel, cancellationToken);
+                }
+                if (!result.MemberExists)
+                {
+                    await this.AddMissingMember(command, cancellationToken);
+                }
 
-            if (!ShouldLogMessage(command, result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
-                return Unit.Value;
+                if (!ShouldLogMessage(command, result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
+                    return Unit.Value;
 
-            var message = new Message
-            {
-                Id = command.MessageId,
-                UserId = command.UserId,
-                Attachments = command.Attachments
+                var message = new Message
+                {
+                    Id = command.MessageId,
+                    UserId = command.UserId,
+                    Attachments = command.Attachments
                 .Select(x =>
                     new Attachment
                     {
@@ -77,22 +80,31 @@ public sealed class AddMessage
                         FileName = x.FileName,
                     })
                 .ToArray(),
-                ChannelId = command.ChannelId,
-                ReferencedMessageId = command.ReferencedMessageId,
-                GuildId = command.GuildId,
-                MessageHistory = [
+                    ChannelId = command.ChannelId,
+                    ReferencedMessageId = command.ReferencedMessageId,
+                    GuildId = command.GuildId,
+                    MessageHistory = [
                 new() {
                     MessageId = command.MessageId,
-                    MessageContent = command.MessageContent.UnicodeToUTF8(),
+                    MessageContent = command.MessageContent,
                     GuildId = command.GuildId,
                     Action = MessageAction.Created
                 }
             ]
-            };
-            await this._grimoireDbContext.Messages.AddAsync(message, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return Unit.Value;
+                };
+                await this._grimoireDbContext.Messages.AddAsync(message, cancellationToken);
+                await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+                return Unit.Value;
+            }
+            catch (DbUpdateException)
+            {
+                LogOriginalMessageForDebugging(_logger, command.MessageContent);
+                throw;
+            }
         }
+
+        [LoggerMessage(LogLevel.Error, "Database through exception on message creation. This was the original message {message}")]
+        private static partial void LogOriginalMessageForDebugging(ILogger logger, string message);
 
         private async Task AddMissingMember(Command command, CancellationToken cancellationToken)
         {

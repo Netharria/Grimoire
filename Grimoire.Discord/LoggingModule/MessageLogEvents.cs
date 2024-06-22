@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
+using DSharpPlus.Exceptions;
 using Grimoire.Core.Features.LogCleanup.Commands;
 using Grimoire.Core.Features.MessageLogging.Commands;
 using Grimoire.Discord.PluralKit;
@@ -277,13 +278,13 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
                 await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = loggingChannel.Id, GuildId = args.Guild.Id });
             }
         }
-        catch (Exception ex)
+        catch (BadRequestException ex)
         {
-            LogUnableToSendEditMessage(sender.Logger, ex, loggingChannel);
+            LogUnableToSendEditMessage(sender.Logger, ex, loggingChannel, ex.Errors);
             throw;
         }
     }
 
-    [LoggerMessage(LogLevel.Warning, "Was not able to send edit message log to {Channel}")]
-    private static partial void LogUnableToSendEditMessage(ILogger<BaseDiscordClient> logger, Exception ex, DiscordChannel channel);
+    [LoggerMessage(LogLevel.Warning, "Was not able to send edit message log to {Channel}. Errors: {errors}")]
+    private static partial void LogUnableToSendEditMessage(ILogger<BaseDiscordClient> logger, BadRequestException ex, DiscordChannel channel, string errors);
 }

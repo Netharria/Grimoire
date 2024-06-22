@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Core.DatabaseQueryHelpers;
-using Grimoire.Discord.Extensions;
 
 namespace Grimoire.Core.Features.MessageLogging.Commands;
 
@@ -37,7 +36,7 @@ public sealed class DeleteMessage
                 MessageContent = x.MessageHistory
                     .OrderByDescending(x => x.TimeStamp)
                     .First(y => y.Action != MessageAction.Deleted)
-                    .MessageContent.UTF8toUnicode(),
+                    .MessageContent,
                 ReferencedMessage = x.ReferencedMessageId,
                 Attachments = x.Attachments
                     .Select(x => new AttachmentDto
