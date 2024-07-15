@@ -96,21 +96,24 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         if (channel is not DiscordChannel loggingChannel)
             return;
         string avatarUrl;
-        if (args.Guild.Members.TryGetValue(response.UserId, out var member))
+        if (args.Guild.Members.TryGetValue(response.OriginalUserId is null ? response.UserId : response.OriginalUserId.Value, out var member))
         {
             if (member.IsBot) return;
             avatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto);
         }
         else
         {
-            var user = await sender.GetUserAsync(response.UserId);
+            var user = await sender.GetUserAsync(response.OriginalUserId is null ? response.UserId : response.OriginalUserId.Value);
             if (user is null) return;
             avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
         }
         var embed = new DiscordEmbedBuilder()
-            .WithAuthor($"Message deleted in #{args.Channel.Name}")
-            .AddField("Author", UserExtensions.Mention(response.UserId), true)
-            .AddField("Channel", ChannelExtensions.Mention(args.Channel.Id), true)
+            .WithAuthor($"Message deleted in #{args.Channel.Name}");
+
+        if (response.OriginalUserId is null)
+            embed.AddField("Author", UserExtensions.Mention(response.UserId), true);
+
+        embed.AddField("Channel", ChannelExtensions.Mention(args.Channel.Id), true)
             .AddField("Message Id", args.Message.Id.ToString(), true)
             .WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Red)
@@ -122,7 +125,8 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         if (response.OriginalUserId is not null)
             embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
             .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId, true)
-            .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId, true);
+            .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId, true)
+            .WithThumbnail(avatarUrl);
         embed
             .AddMessageTextToFields("**Content**", response.MessageContent, false);
 
