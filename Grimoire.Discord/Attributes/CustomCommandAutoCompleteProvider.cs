@@ -9,7 +9,7 @@ using Grimoire.Core.Features.CustomCommands.Queries;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Discord.Attributes;
-internal class CustomCommandAutoCompleteProvider(IServiceProvider serviceProvider) : IAutocompleteProvider
+internal sealed class CustomCommandAutoCompleteProvider(IServiceProvider serviceProvider) : IAutocompleteProvider
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
 
