@@ -30,7 +30,9 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
     private readonly ILogger _logger = logger;
 
     public async Task DiscordOnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
-        => await this._mediator.Send(new UpdateAllGuildsCommand
+    {
+        await sender.UpdateStatusAsync(new DiscordActivity($"{sender.Guilds.Count} servers.", ActivityType.Watching));
+        await this._mediator.Send(new UpdateAllGuildsCommand
         {
             Guilds = args.Guilds.Keys.Select(x => new GuildDto { Id = x }),
             Users = args.Guilds.Values.SelectMany(x => x.Members)
@@ -88,58 +90,62 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
                     MaxUses = x.MaxUses
                 }).ToEnumerable()
         });
+    }
 
 
     public async Task DiscordOnGuildCreated(DiscordClient sender, GuildCreateEventArgs args)
-        => await this._mediator.Send(new AddGuildCommand
+    {
+        await sender.UpdateStatusAsync(new DiscordActivity($"{sender.Guilds.Count} servers.", ActivityType.Watching));
+        await this._mediator.Send(new AddGuildCommand
         {
             GuildId = args.Guild.Id,
             Users = args.Guild.Members
-                .Select(x =>
-                new UserDto
-                {
-                    Id = x.Key,
-                    Username = x.Value.GetUsernameWithDiscriminator()
-                }),
+            .Select(x =>
+            new UserDto
+            {
+                Id = x.Key,
+                Username = x.Value.GetUsernameWithDiscriminator()
+            }),
             Members = args.Guild.Members
-                .Select(x =>
-                    new MemberDto
-                    {
-                        GuildId = x.Value.Guild.Id,
-                        UserId = x.Key,
-                        Nickname = x.Value.Nickname,
-                        AvatarUrl = x.Value.GetGuildAvatarUrl(ImageFormat.Auto)
-                    }),
+            .Select(x =>
+                new MemberDto
+                {
+                    GuildId = x.Value.Guild.Id,
+                    UserId = x.Key,
+                    Nickname = x.Value.Nickname,
+                    AvatarUrl = x.Value.GetGuildAvatarUrl(ImageFormat.Auto)
+                }),
             Roles = args.Guild.Roles
-                .Select(x =>
-                new RoleDto
-                {
-                    GuildId = args.Guild.Id,
-                    Id = x.Value.Id
-                }),
+            .Select(x =>
+            new RoleDto
+            {
+                GuildId = args.Guild.Id,
+                Id = x.Value.Id
+            }),
             Channels = args.Guild.Channels
-                .Select(x =>
-                new ChannelDto
-                {
-                    Id = x.Value.Id,
-                    GuildId = args.Guild.Id
-                }),
+            .Select(x =>
+            new ChannelDto
+            {
+                Id = x.Value.Id,
+                GuildId = args.Guild.Id
+            }),
             Invites = args.Guild.CurrentMember.Permissions.HasPermission(Permissions.ManageGuild)
-            ? await DiscordRetryPolicy.RetryDiscordCall(args.Guild
-                .GetInvitesAsync)
-                .AsTask()
-                .ContinueWith(x => x.Result
-                    .Select(x =>
-                    new Invite
-                    {
-                        Code = x.Code,
-                        Inviter = x.Inviter.GetUsernameWithDiscriminator(),
-                        Url = x.ToString(),
-                        Uses = x.Uses,
-                        MaxUses = x.MaxUses
-                    }))
-            : []
+        ? await DiscordRetryPolicy.RetryDiscordCall(args.Guild
+            .GetInvitesAsync)
+            .AsTask()
+            .ContinueWith(x => x.Result
+                .Select(x =>
+                new Invite
+                {
+                    Code = x.Code,
+                    Inviter = x.Inviter.GetUsernameWithDiscriminator(),
+                    Url = x.ToString(),
+                    Uses = x.Uses,
+                    MaxUses = x.MaxUses
+                }))
+        : []
         });
+    }
 
 
 
