@@ -26,15 +26,15 @@ using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
 using Serilog;
 
 var rateLimiter = new SlidingWindowRateLimiter(
-                    new SlidingWindowRateLimiterOptions
-                    {
-                        PermitLimit = 2,
-                        Window = TimeSpan.FromSeconds(1),
-                        AutoReplenishment = true,
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        SegmentsPerWindow = 1,
-                        QueueLimit = 0
-                    });
+    new SlidingWindowRateLimiterOptions
+    {
+        PermitLimit = 2,
+        Window = TimeSpan.FromSeconds(1),
+        AutoReplenishment = true,
+        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+        SegmentsPerWindow = 1,
+        QueueLimit = 0
+    });
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration(x =>
