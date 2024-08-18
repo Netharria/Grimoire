@@ -19,10 +19,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.Interactivity.Extensions.Hosting;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting;
 using Serilog;
+
+var rateLimiter = new SlidingWindowRateLimiter(
+                    new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = 2,
+                        Window = TimeSpan.FromSeconds(1),
+                        AutoReplenishment = true,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        SegmentsPerWindow = 1,
+                        QueueLimit = 0
+                    });
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration(x =>
@@ -121,17 +133,12 @@ var host = Host.CreateDefaultBuilder(args)
             x.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
             x.DefaultRequestHeaders.Add("Authorization", token);
         }).AddStandardResilienceHandler(builder
-            => builder.RateLimiter.RateLimiter = static args =>
-                new SlidingWindowRateLimiter(
-                    new SlidingWindowRateLimiterOptions
-                    {
-                        PermitLimit = 2,
-                        Window = TimeSpan.FromSeconds(1),
-                        AutoReplenishment = true,
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        SegmentsPerWindow = 1,
-                        QueueLimit = 0
-                    }).AcquireAsync(cancellationToken: args.Context.CancellationToken));
+            => builder.RateLimiter = new HttpRateLimiterStrategyOptions
+            {
+                Name = $"{nameof(RateLimiter)}",
+                RateLimiter = args => rateLimiter
+                .AcquireAsync(cancellationToken: args.Context.CancellationToken)
+            });
     })
     .UseConsoleLifetime()
     .Build();
