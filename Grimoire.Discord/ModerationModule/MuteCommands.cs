@@ -63,7 +63,7 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
         {
             await member.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithAuthor($"Mute Id {response.SinId}")
-            .WithDescription($"You have been mute for {durationAmount} {durationType.GetName()} by {ctx.User.Mention} for {reason}")
+            .WithDescription($"You have been muted for {durationAmount} {durationType.GetName()} by {ctx.User.Mention} for {reason}")
             .WithColor(GrimoireColor.Red));
         }
         catch (Exception)

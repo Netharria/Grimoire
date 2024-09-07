@@ -8,6 +8,7 @@
 using System.Threading.RateLimiting;
 using DSharpPlus.Interactivity.Enums;
 using Grimoire.Core;
+using Grimoire.Core.Features.SpamModule;
 using Grimoire.Discord;
 using Grimoire.Discord.CustomCommandsModule;
 using Grimoire.Discord.LevelingModule;
@@ -55,6 +56,7 @@ var host = Host.CreateDefaultBuilder(args)
         .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
         .AddScoped<IPluralkitService, PluralkitService>()
+        .AddSingleton<SpamTrackerModule>()
         .AddDiscord(options =>
         {
             options.Token = context.Configuration["token"]!;
