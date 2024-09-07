@@ -19,15 +19,16 @@ internal class SpamEvents(IMediator mediator, SpamTrackerModule spamModule) : ID
 
     public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreateEventArgs args)
     {
+        if(args.Author.IsBot)
+            return;
+
         var checkSpamResult = _spamModule.CheckSpam(args.Message);
 
         if(checkSpamResult.IsSpam == false)
             return;
 
         if (args.Author is not DiscordMember member)
-        {
             return;
-        }
 
         var response = await this._mediator.Send(new AutoMuteUser.Command
         {

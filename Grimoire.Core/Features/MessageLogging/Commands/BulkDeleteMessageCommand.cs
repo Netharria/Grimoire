@@ -63,7 +63,8 @@ public sealed class BulkDeleteMessageCommandHandler(GrimoireDbContext grimoireDb
         return new BulkDeleteMessageCommandResponse
         {
             BulkDeleteLogChannelId = messages.First()?.BulkDeleteLogId,
-            Messages = messages.Select(x => x.Message).ToArray()
+            Messages = messages.Select(x => x.Message).ToArray(),
+            Success = true
         };
     }
 }
