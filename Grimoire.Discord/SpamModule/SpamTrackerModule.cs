@@ -15,6 +15,7 @@ public class SpamTrackerModule
     {
         public double PointTotal { get; set; }
         public string MessageCache { get; set; } = string.Empty;
+        public ulong LastMesssageId { get; set; }
         public DateTimeOffset DateTimeOffset { get; set; }
     }
 
@@ -43,6 +44,10 @@ public class SpamTrackerModule
             if(!this.SpamUsers.TryAdd(member, spamTracker))
                 throw new ArgumentException("Tried to add spam tracker but it already existed");
         }
+        if(message.Id == spamTracker.LastMesssageId)
+            return new CheckSpamResult { IsSpam = false };
+
+        spamTracker.LastMesssageId = message.Id;
 
         spamTracker.PointTotal -= (message.Timestamp - spamTracker.DateTimeOffset).TotalSeconds * 2;
 
