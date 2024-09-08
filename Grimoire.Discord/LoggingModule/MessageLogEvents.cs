@@ -182,7 +182,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
                 message.UserId,
                 message.MessageId,
                 message.MessageContent,
-                message.Attachments)
+                string.Join("\n", message.Attachments.Select(x => x.FileName)))
                 .AppendLine();
         }
         using var memoryStream = new MemoryStream();
