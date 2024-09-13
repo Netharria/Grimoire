@@ -37,7 +37,12 @@ internal class SpamEvents(IMediator mediator, SpamTrackerModule spamModule) : ID
             ModeratorId = sender.CurrentUser.Id,
             Reason = checkSpamResult.Reason,
         });
+
+        if(response is null)
+            return;
+
         var muteRole = args.Guild.Roles.GetValueOrDefault(response.MuteRole);
+
         if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
         await member.GrantRoleAsync(muteRole, checkSpamResult.Reason);
 
