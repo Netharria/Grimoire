@@ -31,7 +31,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         var validExtensions = configuration.GetValue<string>("validImageExtensions");
         if (string.IsNullOrWhiteSpace(validExtensions))
             throw new ArgumentException("Did not find the configuration for valid extensions");
-        this._validImageExtensions = validExtensions.Split(',').ToImmutableList();
+        this._validImageExtensions = [.. validExtensions.Split(',')];
         this._logger = logger;
     }
 

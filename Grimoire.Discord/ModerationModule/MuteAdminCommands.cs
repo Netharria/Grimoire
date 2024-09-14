@@ -17,10 +17,9 @@ namespace Grimoire.Discord.ModerationModule;
 [SlashRequireUserGuildPermissions(Permissions.ManageGuild)]
 [SlashRequireBotPermissions(Permissions.ManageRoles)]
 [SlashCommandGroup("Mutes", "Manages the mute role settings.")]
-public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAdminCommands> logger) : ApplicationCommandModule
+public sealed partial class MuteAdminCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
-    private readonly ILogger _logger = logger;
 
     [SlashCommand("View", "View the current configured mute role and any active mutes.")]
     public async Task ViewMutesAsync(InteractionContext ctx)
@@ -81,7 +80,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAd
         });
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions");
-        var result = await this.SetMuteRolePermissionsAsync(ctx.Guild, role)
+        var result = await SetMuteRolePermissionsAsync(ctx.Guild, role)
                 .Where(x => !x.WasSuccessful)
                 .ToArrayAsync();
 
@@ -115,7 +114,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAd
             return;
         }
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Refreshing permissions for {role.Mention} role.");
-        var result = await this.SetMuteRolePermissionsAsync(ctx.Guild, role)
+        var result = await SetMuteRolePermissionsAsync(ctx.Guild, role)
                 .Where(x => !x.WasSuccessful)
                 .ToArrayAsync();
 
@@ -133,7 +132,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAd
             message: $"{ctx.Member.Mention} asked {ctx.Guild.CurrentMember} to refresh the permissions of mute role {role.Mention}");
     }
 
-    private async IAsyncEnumerable<OverwriteChannelResult> SetMuteRolePermissionsAsync(DiscordGuild guild, DiscordRole role)
+    private static async IAsyncEnumerable<OverwriteChannelResult> SetMuteRolePermissionsAsync(DiscordGuild guild, DiscordRole role)
     {
         foreach (var (_, channel) in guild.Channels)
         {
@@ -141,17 +140,17 @@ public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAd
                 || channel.Type == ChannelType.Category
                 || channel.Type == ChannelType.GuildForum)
             {
-                yield return await this.OverwriteChannelAsync(channel, role);
+                yield return await OverwriteChannelAsync(channel, role);
 
             }
             else if (channel.Type == ChannelType.Voice)
             {
-                yield return await this.OverwriteVoiceChannelAsync(channel, role);
+                yield return await OverwriteVoiceChannelAsync(channel, role);
             }
         }
     }
 
-    private async Task<OverwriteChannelResult> OverwriteChannelAsync(DiscordChannel channel, DiscordRole role)
+    private static async Task<OverwriteChannelResult> OverwriteChannelAsync(DiscordChannel channel, DiscordRole role)
     {
         var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
         return await DiscordRetryPolicy.RetryDiscordCall(async () =>
@@ -187,7 +186,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator, ILogger<MuteAd
                         "Exception Message : ({message})")]
     public static partial void LogNonTransientError(ILogger logger, Exception ex, string message);
 
-    private async Task<OverwriteChannelResult> OverwriteVoiceChannelAsync(DiscordChannel channel, DiscordRole role)
+    private static async Task<OverwriteChannelResult> OverwriteVoiceChannelAsync(DiscordChannel channel, DiscordRole role)
     {
         var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
 
