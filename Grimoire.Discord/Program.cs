@@ -61,7 +61,7 @@ var host = Host.CreateDefaultBuilder(args)
         {
             options.Token = context.Configuration["token"]!;
             options.LoggerFactory = new LoggerFactory().AddSerilog();
-            options.Intents = DiscordIntents.All;
+            options.Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents;
             options.LogUnknownEvents = false;
         })
         .AddDiscordInteractivity(options =>

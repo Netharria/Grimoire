@@ -36,7 +36,7 @@ internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogg
                 .SelectAwait(async messageId => await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, stoppingToken))
                 ).ToArrayAsync(stoppingToken);
 
-        await mediator.Send(new DeleteOldMessagesCommand(), stoppingToken);
+        await mediator.Send(new DeleteOldLogsCommand(), stoppingToken);
         if (result is not null)
             await mediator.Send(new DeleteOldLogMessages.Command { DeletedOldLogMessageIds = result }, stoppingToken);
     }
