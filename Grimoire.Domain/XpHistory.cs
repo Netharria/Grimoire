@@ -19,7 +19,6 @@ public enum XpHistoryType
 }
 public class XpHistory : IMember
 {
-    public long Id { get; set; }
     public ulong UserId { get; set; }
     public virtual Member Member { get; set; } = null!;
     public ulong GuildId { get; set; }

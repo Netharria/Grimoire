@@ -13,9 +13,7 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
 {
     public void Configure(EntityTypeBuilder<MessageHistory> builder)
     {
-        builder.HasKey(x => x.Id);
-        builder.Property(e => e.Id)
-            .UseIdentityAlwaysColumn();
+        builder.HasKey(x => new { x.MessageId, x.TimeStamp });
         builder.HasOne(x => x.Message)
             .WithMany(x => x.MessageHistory)
             .HasForeignKey(x => x.MessageId)
@@ -33,7 +31,5 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
             .IsRequired(false);
         builder.Property(e => e.TimeStamp)
             .HasDefaultValueSql("now()");
-        builder.HasIndex(x => new { x.MessageId, x.TimeStamp, x.Action })
-            .IsDescending(false, true, false);
     }
 }

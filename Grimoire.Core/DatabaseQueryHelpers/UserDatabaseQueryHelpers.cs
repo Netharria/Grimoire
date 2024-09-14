@@ -14,13 +14,7 @@ public static class UserDatabaseQueryHelpers
         var incomingUsers = users
             .Select(x => new User
             {
-                Id = x.Id,
-                UsernameHistories = [
-                    new() {
-                        Username = x.Username,
-                        UserId = x.Id,
-                    }
-                ]
+                Id = x.Id
             });
 
         var usersToAdd = incomingUsers.ExceptBy(databaseUsers

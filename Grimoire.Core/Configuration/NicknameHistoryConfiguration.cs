@@ -13,9 +13,7 @@ internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<Ni
 {
     public void Configure(EntityTypeBuilder<NicknameHistory> builder)
     {
-        builder.HasKey(x => x.Id);
-        builder.Property(e => e.Id)
-            .UseIdentityAlwaysColumn();
+        builder.HasKey(x => new { x.UserId, x.GuildId, x.Timestamp });
         builder.HasOne(x => x.Member)
             .WithMany(x => x.NicknamesHistory)
             .HasForeignKey(x => new { x.UserId, x.GuildId })
@@ -26,7 +24,5 @@ internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<Ni
             .IsRequired(false); ;
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
-        builder.HasIndex(x => new { x.UserId, x.GuildId, x.Timestamp })
-            .IsDescending(false, false, true);
     }
 }
