@@ -108,7 +108,6 @@ var host = Host.CreateDefaultBuilder(args)
                 extension.RegisterCommands<SinLogCommands>();
                 extension.RegisterCommands<MuteCommands>();
                 extension.RegisterCommands<WarnCommands>();
-
                 //Custom Commands
                 extension.RegisterCommands<ManageCustomCommands>();
                 extension.RegisterCommands<CustomCommands>();

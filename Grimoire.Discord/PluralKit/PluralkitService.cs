@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Net;
 using System.Net.Http.Json;
 using Grimoire.Discord.PluralKit.Models;
 using Microsoft.Extensions.Configuration;
@@ -52,7 +53,7 @@ public sealed partial class PluralkitService : IPluralkitService
         {
             return await httpClient.GetFromJsonAsync<PluralKitMessage>(MESSAGE_ENDPOINT + messageId);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound || ex.StatusCode == HttpStatusCode.BadGateway)
         {
             return null;
         }
