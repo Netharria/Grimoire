@@ -114,7 +114,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
             ).Include(x => x.XpHistory).FirstAsync();
 
         member.XpHistory.Sum(x => x.Xp).Should().Be(GAIN_AMOUNT + 20);
-        var maxHistory = member.XpHistory.MaxBy(x => x.Id);
+        var maxHistory = member.XpHistory.MaxBy(x => x.TimeOut);
         maxHistory!.TimeOut.Should().BeCloseTo(DateTimeOffset.UtcNow.AddMinutes(3), TimeSpan.FromSeconds(10));
     }
 

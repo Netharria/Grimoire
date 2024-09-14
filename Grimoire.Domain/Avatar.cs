@@ -9,9 +9,8 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.Domain;
 
-public class Avatar : IIdentifiable<long>
+public class Avatar : IMember
 {
-    public long Id { get; set; }
     public ulong UserId { get; set; }
     public ulong GuildId { get; set; }
     public virtual Member Member { get; set; } = null!;

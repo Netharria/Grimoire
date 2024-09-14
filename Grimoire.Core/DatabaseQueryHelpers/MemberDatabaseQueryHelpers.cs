@@ -30,22 +30,6 @@ public static class MemberDatabaseQueryHelpers
                             Type = XpHistoryType.Created,
                             TimeOut = DateTime.UtcNow
                         }
-                    ],
-                NicknamesHistory =
-                    [
-                        new() {
-                            GuildId = x.GuildId,
-                            UserId = x.UserId,
-                            Nickname = x.Nickname
-                        }
-                    ],
-                AvatarHistory =
-                    [
-                        new() {
-                            UserId = x.UserId,
-                            GuildId = x.GuildId,
-                            FileName = x.AvatarUrl
-                        }
                     ]
             });
 

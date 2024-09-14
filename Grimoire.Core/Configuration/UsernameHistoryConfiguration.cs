@@ -15,10 +15,7 @@ internal sealed class UsernameHistoryConfiguration : IEntityTypeConfiguration<Us
 {
     public void Configure(EntityTypeBuilder<UsernameHistory> builder)
     {
-        builder.HasKey(x => x.Id);
-        builder.Property(e => e.Id)
-            .UseIdentityAlwaysColumn();
-        builder.HasIndex(x => x.UserId);
+        builder.HasKey(x => new { x.UserId, x.Timestamp });
         builder.HasOne(x => x.User)
             .WithMany(x => x.UsernameHistories)
             .HasForeignKey(x => x.UserId)
@@ -29,7 +26,5 @@ internal sealed class UsernameHistoryConfiguration : IEntityTypeConfiguration<Us
             .IsRequired();
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
-        builder.HasIndex(x => new { x.UserId, x.Timestamp })
-            .IsDescending(false, true);
     }
 }

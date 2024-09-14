@@ -13,10 +13,7 @@ internal sealed class IgnoredMemberConfiguration : IEntityTypeConfiguration<Igno
 {
     public void Configure(EntityTypeBuilder<IgnoredMember> builder)
     {
-        builder.HasKey(e => e.UserId);
-        builder.Property(e => e.UserId)
-            .ValueGeneratedNever()
-            .IsRequired();
+        builder.HasKey(e => new { e.UserId, e.GuildId });
         builder.HasOne(e => e.Member)
             .WithOne(e => e.IsIgnoredMember)
             .HasForeignKey<IgnoredMember>(e => new { e.UserId, e.GuildId })

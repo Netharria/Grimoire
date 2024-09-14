@@ -29,7 +29,7 @@ public sealed class UpdateSinReasonCommandHandler(GrimoireDbContext grimoireDbCo
             {
                 Sin = x,
                 UserName = x.Member.User.UsernameHistories
-                .OrderByDescending(x => x.Id)
+                .OrderByDescending(x => x.Timestamp)
                 .Select(x => x.Username)
                 .FirstOrDefault(),
                 x.Guild.ModChannelLog

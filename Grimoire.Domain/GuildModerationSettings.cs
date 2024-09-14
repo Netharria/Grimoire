@@ -22,4 +22,5 @@ public class GuildModerationSettings : IModule
     public ulong? MuteRole { get; set; }
     public virtual Role? MuteRoleNav { get; set; }
     public bool ModuleEnabled { get; set; }
+    public bool AntiSpamEnabled { get; set; }
 }
