@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using EntityFramework.Exceptions.PostgreSQL;
 using Grimoire.Core.Features.Shared.PipelineBehaviors;
 using Grimoire.Core.Features.UserLogging;
 using Microsoft.Extensions.Configuration;
@@ -31,10 +32,12 @@ public static class CoreServiceRegistration
         }
         services.AddDbContextFactory<GrimoireDbContext>(options =>
             options.UseNpgsql(connectionString,
-            npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure()))
+            npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
+            .UseExceptionProcessor())
             .AddSingleton<IInviteService, InviteService>()
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>));
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>))
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(IgnoreDuplicateKeyError<,>));
         return services;
     }
 }

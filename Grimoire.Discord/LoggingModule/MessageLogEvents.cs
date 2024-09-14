@@ -64,6 +64,9 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
 
     public async Task DiscordOnMessageDeleted(DiscordClient sender, MessageDeleteEventArgs args)
     {
+        if (args.Guild is null)
+            return;
+
         var pluralkitMessage = await _pluralKitService.GetProxiedMessageInformation(args.Message.Id, args.Message.CreationTimestamp);
 
         if (pluralkitMessage is not null
@@ -152,6 +155,8 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
 
     public async Task DiscordOnMessagesBulkDeleted(DiscordClient sender, MessageBulkDeleteEventArgs args)
     {
+        if (args.Guild is null)
+            return;
         var response = await this._mediator.Send(
             new BulkDeleteMessageCommand
             {
@@ -211,6 +216,8 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
 
     public async Task DiscordOnMessageUpdated(DiscordClient sender, MessageUpdateEventArgs args)
     {
+        if (args.Guild is null)
+            return;
         if (string.IsNullOrWhiteSpace(args.Message.Content)) return;
         var response = await this._mediator.Send(
             new UpdateMessage.Command

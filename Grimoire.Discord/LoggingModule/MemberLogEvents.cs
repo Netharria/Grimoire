@@ -197,7 +197,8 @@ internal sealed class MemberLogEvents(IMediator mediator, IInviteService inviteS
                     args.Member.Id,
                     embed,
                     false);
-                var message = await logChannel.SendMessageAsync(messageBuilder);
+                
+                var message = await DiscordRetryPolicy.RetryDiscordCall(async () => await logChannel.SendMessageAsync(messageBuilder));
                 if (message is null) return;
                 await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
             }

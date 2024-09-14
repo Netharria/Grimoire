@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands.EventArgs;
+using EntityFramework.Exceptions.Common;
 using Grimoire.Core.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -45,6 +46,8 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
     private async Task SendErrorLogToLogChannel(DiscordClient client, string action, Exception exception, string? errorId = "")
     {
         if (action.Equals("COMMAND_ERRORED") && exception is NullReferenceException)
+            return;
+        if (exception is UniqueConstraintException)
             return;
         if (!ulong.TryParse(this._configuration.GetSection("channelId").Value, out var channelId))
             return;

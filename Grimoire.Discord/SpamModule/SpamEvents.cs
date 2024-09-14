@@ -43,7 +43,8 @@ internal class SpamEvents(IMediator mediator, SpamTrackerModule spamModule) : ID
 
         var muteRole = args.Guild.Roles.GetValueOrDefault(response.MuteRole);
 
-        if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
+        if (muteRole is null) return;
+
         await member.GrantRoleAsync(muteRole, checkSpamResult.Reason);
 
         var embed = new DiscordEmbedBuilder()
