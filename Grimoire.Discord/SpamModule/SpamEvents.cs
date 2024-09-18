@@ -57,7 +57,7 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
             .AddField("Reason", checkSpamResult.Reason);
 
 
-        await args.Channel.PurgeMessagesAsync(5, "Automod: Spam", x => x.Author.Id == args.Author.Id);
+        await args.Message.DeleteAsync();
 
         var sentMessageToUser = true;
         try
