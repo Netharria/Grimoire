@@ -57,10 +57,10 @@ public class SpamTrackerModule
         if(AddPresure(spamTracker, message, 10))
             return new CheckSpamResult { IsSpam = true, Reason = "Automod: User Sent several messsages in a row." };
 
-        if(AddPresure(spamTracker, message,  message.Attachments.Count * 8.3))
+        if(AddPresure(spamTracker, message,  message.Attachments.Count * 4.15))
             return new CheckSpamResult { IsSpam = true, Reason = "Automod: User Sent messages with several attachments" };
 
-        if(AddPresure(spamTracker, message, message.Embeds.Count * 8.3))
+        if(AddPresure(spamTracker, message, message.Embeds.Count * 4.15))
             return new CheckSpamResult { IsSpam = true, Reason = "Automod: User Sent messages with several Embeds." };
 
         if(AddPresure(spamTracker, message, message.Content.Length * 0.00625))
