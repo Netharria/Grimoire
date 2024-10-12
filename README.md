@@ -30,7 +30,7 @@ You will also need a [Discord Bot Account and Token](https://discord.com/develop
 
 # Configuration
 
-There is a few parameters that need to be set for Grimoire to work. Under Grimoire.Discord folder there is an `appsettings.json` file where you can set the configuration. The following properties are available to be set.
+There is a few parameters that need to be set for Grimoire to work. Under Grimoire folder there is an `appsettings.json` file where you can set the configuration. The following properties are available to be set.
 
 * `token` The Discord Bot token to connect with.
 * `ConnectionStrings.Grimoire` The connection string for the database in the [Npgsql format](https://www.npgsql.org/doc/connection-string-parameters.html)
@@ -67,12 +67,12 @@ A database admin console has been included which can be reached at `http://local
 * Install the [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 * Clone this repository: `git clone https://github.com/Netharria/Grimoire`
 * Set the [configuration](#configuration) in the `appsettings.json`
-* Change director to Grimoire.Discord
+* Change director to Grimoire
 * Run the bot: dotnet run
 
 ```
 $ git clone https://github.com/Netharria/Grimoire
-$ cd Grimoire.Discord
+$ cd Grimoire
 $ nano appsettings.json
 $ dotnet run
 ```
