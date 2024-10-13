@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
 using Grimoire.Exceptions;
-using Grimoire.Features.Leveling.Commands;
+using Grimoire.Features.Leveling.Awards;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -60,7 +60,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
         var cut = new ReclaimUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new ReclaimUserXp.Command
+            new ReclaimUserXp.Request
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -89,7 +89,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
         var cut = new ReclaimUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new ReclaimUserXp.Command
+            new ReclaimUserXp.Request
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -112,7 +112,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
         var cut = new ReclaimUserXp.Handler(this._dbContext);
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new ReclaimUserXp.Command
+            new ReclaimUserXp.Request
             {
                 UserId = 20001,
                 GuildId = GUILD_ID,
@@ -130,7 +130,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
         var cut = new ReclaimUserXp.Handler(this._dbContext);
 
         var response = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await cut.Handle(
-            new ReclaimUserXp.Command
+            new ReclaimUserXp.Request
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,

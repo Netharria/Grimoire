@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
 using Grimoire.Exceptions;
-using Grimoire.Features.Leveling.Commands;
+using Grimoire.Features.Leveling.Awards;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -51,7 +51,7 @@ public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyn
         var cut = new AwardUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new AwardUserXp.Command
+            new AwardUserXp.Request
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -77,7 +77,7 @@ public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyn
 
         var cut = new AwardUserXp.Handler(this._dbContext);
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new AwardUserXp.Command
+            new AwardUserXp.Request
             {
                 UserId = 20001,
                 GuildId = GUILD_ID,

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
 using Grimoire.Exceptions;
-using Grimoire.Features.Leveling.Commands;
+using Grimoire.Features.Leveling.Rewards;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -48,7 +48,7 @@ public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsy
         await this._dbContext.SaveChangesAsync();
 
         var CUT = new RemoveReward.Handler(this._dbContext);
-        var command = new RemoveReward.Command
+        var command = new RemoveReward.Request
         {
             RoleId = ROLE_ID
         };
@@ -68,7 +68,7 @@ public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsy
     public async Task WhenAddingReward_IfRewardExist_UpdateRole()
     {
         var CUT = new RemoveReward.Handler(this._dbContext);
-        var command = new RemoveReward.Command
+        var command = new RemoveReward.Request
         {
             RoleId = ROLE_ID
         };

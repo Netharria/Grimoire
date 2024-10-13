@@ -89,7 +89,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
 
         var cut = new GainUserXp.Handler(this._dbContext);
         var result = await cut.Handle(
-            new GainUserXp.Command
+            new GainUserXp.Request
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -97,7 +97,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
                 RoleIds = [ ROLE_ID_1 ]
             }, default);
 
-        result.Success.Should().BeTrue();
+        result.EarnedXp.Should().BeTrue();
         result.PreviousLevel.Should().Be(2);
         result.CurrentLevel.Should().Be(3);
         result.LevelLogChannel.Should().Be(CHANNEL_ID);
@@ -133,7 +133,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         var cut = new GainUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GainUserXp.Command
+            new GainUserXp.Request
             {
                 UserId = 10,
                 GuildId = GUILD_ID,
@@ -141,7 +141,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
                 RoleIds = [ ROLE_ID_1 ]
             }, default);
         this._dbContext.ChangeTracker.Clear();
-        result.Success.Should().BeFalse();
+        result.EarnedXp.Should().BeFalse();
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         var cut = new GainUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GainUserXp.Command
+            new GainUserXp.Request
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -166,7 +166,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
                 RoleIds = [ 10 ]
             }, default);
         this._dbContext.ChangeTracker.Clear();
-        result.Success.Should().BeFalse();
+        result.EarnedXp.Should().BeFalse();
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         var cut = new GainUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GainUserXp.Command
+            new GainUserXp.Request
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -191,7 +191,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
                 RoleIds = [ ROLE_ID_1 ]
             }, default);
         this._dbContext.ChangeTracker.Clear();
-        result.Success.Should().BeFalse();
+        result.EarnedXp.Should().BeFalse();
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
 
         var cut = new GainUserXp.Handler(this._dbContext);
         var result = await cut.Handle(
-            new GainUserXp.Command
+            new GainUserXp.Request
             {
                 UserId = USER_ID,
                 GuildId = GUILD_ID,
@@ -219,7 +219,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
                 RoleIds = [ ROLE_ID_1 ]
             }, default);
 
-        result.Success.Should().BeFalse();
+        result.EarnedXp.Should().BeFalse();
     }
 
     [Fact]
@@ -236,7 +236,7 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         var cut = new GainUserXp.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GainUserXp.Command
+            new GainUserXp.Request
             {
                 UserId = 10,
                 GuildId = GUILD_ID,
@@ -244,6 +244,6 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
                 RoleIds = [ ROLE_ID_1 ]
             }, default);
         this._dbContext.ChangeTracker.Clear();
-        result.Success.Should().BeTrue();
+        result.EarnedXp.Should().BeTrue();
     }
 }

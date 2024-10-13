@@ -16,7 +16,7 @@ public interface IDiscordAuditLogParserService
     Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId, ulong targetId);
 }
 
-internal sealed class DiscordAuditLogParserService(DiscordClient discordClient, IMemoryCache memoryCache, IMediator mediator) : IDiscordAuditLogParserService
+public sealed class DiscordAuditLogParserService(DiscordClient discordClient, IMemoryCache memoryCache, IMediator mediator) : IDiscordAuditLogParserService
 {
     private readonly DiscordClient _discordClient = discordClient;
     private readonly IMemoryCache _memoryCache = memoryCache;

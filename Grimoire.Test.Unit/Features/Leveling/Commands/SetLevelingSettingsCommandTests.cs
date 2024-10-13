@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
 using Grimoire.Exceptions;
-using Grimoire.Features.Leveling.Commands;
+using Grimoire.Features.Leveling.Settings;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -54,7 +54,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingGuildLevelSettings_IfGuildDoesNotExist_FailResponse()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = 12341234,
             LevelSettings = LevelSettings.TextTime,
@@ -70,7 +70,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingTextTime_IfNumberIsInvalid_FailResponse()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.TextTime,
@@ -87,7 +87,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingBase_IfNumberIsInvalid_FailResponse()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Base,
@@ -103,7 +103,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingModifier_IfNumberIsInvalid_FailResponse()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Modifier,
@@ -119,7 +119,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingAmount_IfNumberIsInvalid_FailResponse()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Amount,
@@ -135,7 +135,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingLogChannel_IfNumberIsInvalid_FailResponse()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,
@@ -151,7 +151,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingTextTime_IfNumberIsValid_UpdateSettingAsync()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.TextTime,
@@ -172,7 +172,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingBase_IfNumberIsValid_UpdateSettingAsync()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Base,
@@ -193,7 +193,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingModifier_IfNumberIsValid_UpdateSettingAsync()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Modifier,
@@ -214,7 +214,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingAmount_IfNumberIsValid_UpdateSettingAsync()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.Amount,
@@ -234,7 +234,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingLogChannel_IfNumberIsValid_UpdateSettingAsync()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,
@@ -255,7 +255,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
     public async Task WhenUpdatingLogChannel_IfNumberIs0_UpdateSettingToNullAsync()
     {
         var CUT = new SetLevelSettings.Handler(this._dbContext);
-        var command = new SetLevelSettings.Command
+        var command = new SetLevelSettings.Request
         {
             GuildId = GUILD_ID,
             LevelSettings = LevelSettings.LogChannel,

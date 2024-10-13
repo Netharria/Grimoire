@@ -9,7 +9,7 @@ using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
-using Grimoire.Features.Leveling.Commands;
+using Grimoire.Features.Leveling.Rewards;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -41,7 +41,7 @@ public sealed class AddRewardCommandTests(GrimoireCoreFactory factory) : IAsyncL
     {
 
         var CUT = new AddReward.Handler(this._dbContext);
-        var command = new AddReward.Command
+        var command = new AddReward.Request
         {
             RoleId = ROLE_ID,
             GuildId = GUILD_ID,
@@ -74,7 +74,7 @@ public sealed class AddRewardCommandTests(GrimoireCoreFactory factory) : IAsyncL
         await this._dbContext.SaveChangesAsync();
 
         var CUT = new AddReward.Handler(this._dbContext);
-        var command = new AddReward.Command
+        var command = new AddReward.Request
         {
             RoleId = ROLE_ID,
             GuildId = GUILD_ID,

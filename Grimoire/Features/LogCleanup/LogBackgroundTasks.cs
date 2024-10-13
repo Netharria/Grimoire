@@ -18,7 +18,7 @@ internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogg
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
     {
         var mediator = serviceProvider.GetRequiredService<IMediator>();
-        var discordClientService = serviceProvider.GetRequiredService<DiscordClient>();
+        var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
         var oldLogMessages = await mediator.Send(new GetOldLogMessages.Query(), stoppingToken);
 
         var result = await oldLogMessages
@@ -26,7 +26,7 @@ internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogg
             .Select(channel =>
                 new
                 {
-                    DiscordChannel = GetChannel(discordClientService, channel.GuildId, channel.ChannelId),
+                    DiscordChannel = GetChannel(discordClient, channel.GuildId, channel.ChannelId),
                     DatabaseChannel = channel
                 })
             .SelectMany(channelInfo =>

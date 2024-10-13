@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
 using Grimoire.Exceptions;
-using Grimoire.Features.Leveling.Queries;
+using Grimoire.Features.Leveling.UserCommands;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -63,7 +63,7 @@ public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsy
     {
 
         var CUT = new GetLeaderboard.Handler(this._dbContext);
-        var command = new GetLeaderboard.Query
+        var command = new GetLeaderboard.Request
         {
             GuildId = GUILD_ID,
             UserId = 234081234
@@ -80,7 +80,7 @@ public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsy
     {
 
         var CUT = new GetLeaderboard.Handler(this._dbContext);
-        var command = new GetLeaderboard.Query
+        var command = new GetLeaderboard.Request
         {
             GuildId = GUILD_ID
         };
