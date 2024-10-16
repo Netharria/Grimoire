@@ -9,28 +9,26 @@ using System.Threading.RateLimiting;
 using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.Net;
+using DSharpPlus.Net.Gateway;
 using Grimoire;
-using Grimoire.ModerationModule;
-using Grimoire.PluralKit;
+using Grimoire.Features.Leveling.Awards;
+using Grimoire.Features.Leveling.Events;
+using Grimoire.Features.Leveling.Rewards;
+using Grimoire.Features.Leveling.Settings;
+using Grimoire.Features.Leveling.UserCommands;
 using Grimoire.Features.LogCleanup;
 using Grimoire.Features.MessageLogging;
 using Grimoire.Features.Moderation;
+using Grimoire.Features.Shared;
+using Grimoire.Features.Shared.SharedModule;
+using Grimoire.Features.Shared.SpamModule;
+using Grimoire.PluralKit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Serilog;
-using Grimoire.Features.Shared.SpamModule;
-using Grimoire.Features.Shared.SharedModule;
-using Grimoire.Features.Shared;
-using Grimoire.Features.CustomCommands;
-using Grimoire.Features.Leveling.Settings;
-using Grimoire.Features.Leveling.Awards;
-using Grimoire.Features.Leveling.Rewards;
-using Grimoire.Features.Leveling.UserCommands;
-using DSharpPlus.Net;
-using DSharpPlus.Net.Gateway;
-using Grimoire.Features.Leveling.Commands;
 
 var rateLimiter = new SlidingWindowRateLimiter(
     new SlidingWindowRateLimiterOptions
@@ -63,8 +61,8 @@ await Host.CreateDefaultBuilder(args)
         .AddDiscordClient(
             token: token,
             intents: DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents)
-            .Configure<RestClientOptions>(x => {})
-            .Configure<GatewayClientOptions>(x => {})
+            .Configure<RestClientOptions>(x => { })
+            .Configure<GatewayClientOptions>(x => { })
         .AddCoreServices(context.Configuration)
         .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
@@ -80,30 +78,25 @@ await Host.CreateDefaultBuilder(args)
             PaginationDeletion = PaginationDeletion.DeleteMessage
         }).AddSlashCommandsExtension(options =>
         {
-            if (options is not SlashCommandsExtension extension) return;
             if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
             {
-                extension.RegisterCommands<EmptySlashCommands>(guildId);
+                options.RegisterCommands<EmptySlashCommands>(guildId);
             }
             //Shared
-            extension.RegisterCommands<ModuleCommands>();
-            //extension.RegisterCommands<GeneralSettingsCommands>();
-            //extension.RegisterCommands<PurgeCommands>();
-            //extension.RegisterCommands<UserInfoCommands>();
+            options.RegisterCommands<ModuleCommands>();
+            options.RegisterCommands<GeneralSettingsCommands>();
+            options.RegisterCommands<PurgeCommands>();
+            options.RegisterCommands<UserInfoCommands>();
 
 
             ////Leveling
-            //extension.RegisterCommands<AwardUserXp.Command>();
-            //extension.RegisterCommands<ReclaimUserXp.Command>();
-            //extension.RegisterCommands<AddReward.Command>();
-            //extension.RegisterCommands<RemoveReward.Command>();
-            //extension.RegisterCommands<GetRewards.Command>();
-            //extension.RegisterCommands<IgnoreCommands>();
-            //extension.RegisterCommands<GetIgnoredItems.IgnoreCommands>();
-            //extension.RegisterCommands<GetLevelSettings.LevelSettingsCommands>();
-            //extension.RegisterCommands<SetLevelSettings.Command>();
-            //extension.RegisterCommands<GetLeaderboard.Command>();
-            //extension.RegisterCommands<GetLevel.Command>();
+            options.RegisterCommands<AwardUserXp.Command>();
+            options.RegisterCommands<ReclaimUserXp.Command>();
+            options.RegisterCommands<RewardCommandGroup>();
+            options.RegisterCommands<IgnoreCommandGroup>();
+            options.RegisterCommands<LevelSettingsCommandGroup>();
+            options.RegisterCommands<GetLeaderboard.Command>();
+            options.RegisterCommands<GetLevel.Command>();
 
             ////Logging
             //extension.RegisterCommands<LogSettingsCommands>();

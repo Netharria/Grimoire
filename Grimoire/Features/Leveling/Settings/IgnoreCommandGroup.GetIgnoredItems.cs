@@ -6,37 +6,33 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
+using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.Interactivity;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Leveling.Settings;
 
-public sealed class GetIgnoredItems
+public sealed partial class IgnoreCommandGroup
 {
-    [SlashRequireGuild]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
-    [SlashRequireModuleEnabled(Module.Leveling)]
-    [SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
-    internal sealed class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
+
+    [SlashCommand("View", "View all currently ignored users, channels and roles for the server.")]
+    public async Task ShowIgnoredAsync(InteractionContext ctx)
     {
-        private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("View", "View all currently ignored users, channels and roles for the server.")]
-        public async Task ShowIgnoredAsync(InteractionContext ctx)
-        {
+        var response = await this._mediator.Send(new GetIgnoredItems.Query { GuildId = ctx.Guild.Id });
 
-            var response = await this._mediator.Send(new Query { GuildId = ctx.Guild.Id });
-
-            var embed = new DiscordEmbedBuilder()
+        var embed = new DiscordEmbedBuilder()
             .WithTitle("Ignored Channels Roles and Users.")
             .WithTimestamp(DateTime.UtcNow);
-            var embedPages = InteractivityExtension.GeneratePagesInEmbed(input: response.Message, splittype: SplitType.Line, embed);
-            await ctx.Interaction.SendPaginatedResponseAsync(ephemeral: false, user: ctx.User, pages: embedPages);
+        var embedPages = InteractivityExtension.GeneratePagesInEmbed(input: response.Message, splittype: SplitType.Line, embed);
+        await ctx.Interaction.SendPaginatedResponseAsync(ephemeral: false, user: ctx.User, pages: embedPages);
 
-        }
     }
+}
+public sealed class GetIgnoredItems
+{
+
     public sealed record Query : IRequest<BaseResponse>
     {
         public ulong GuildId { get; init; }

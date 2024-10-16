@@ -8,7 +8,7 @@
 using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Logging;
-using static Grimoire.Features.Leveling.Commands.GainUserXp;
+using static Grimoire.Features.Leveling.Events.GainUserXp;
 
 namespace Grimoire.Features.Leveling.Events;
 
@@ -22,14 +22,14 @@ public partial class CheckIfUserEarnedReward
 
         public async ValueTask Handle(UserGainedXpEvent notification, CancellationToken cancellationToken)
         {
-            var guild = await _client.GetGuildAsync(notification.GuildId);
+            var guild = await this._client.GetGuildAsync(notification.GuildId);
             var member = await guild.GetMemberAsync(notification.UserId);
 
-            var response = await _mediator.Send(new Request
+            var response = await this._mediator.Send(new Request
             {
                 GuildId = notification.GuildId,
                 UserLevel = notification.UserLevel
-            });
+            }, cancellationToken);
 
             if (response is null)
                 return;
@@ -74,7 +74,7 @@ public partial class CheckIfUserEarnedReward
                     }
                     catch (Exception ex)
                     {
-                        LogRewardMessageFailure(_logger, ex, reward.RoleId, reward.Message);
+                        LogRewardMessageFailure(this._logger, ex, reward.RoleId, reward.Message);
                     }
                 }
                 if (response.LevelLogChannel is null)
@@ -93,7 +93,7 @@ public partial class CheckIfUserEarnedReward
                     .Build());
             }
 
-            
+
         }
 
         [LoggerMessage(LogLevel.Warning, "Failure to send reward message Reward: {roleId} Message: {message}")]
@@ -152,7 +152,7 @@ public partial class CheckIfUserEarnedReward
                 }).FirstOrDefaultAsync(cancellationToken);
     }
 
-    public sealed record Response: BaseResponse
+    public sealed record Response : BaseResponse
     {
         public required IEnumerable<RewardDto> EarnedRewards { get; init; }
         public required ulong? LevelLogChannel { get; init; }

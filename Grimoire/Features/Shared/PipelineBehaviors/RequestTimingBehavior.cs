@@ -27,7 +27,7 @@ public sealed partial class RequestTimingBehavior<TMessage, TResponse>(ILogger<R
         {
             var delta = Stopwatch.GetElapsedTime(stopwatch);
             if (delta.TotalMilliseconds > 1000)
-                LogHandlerDurationWarning(_logger, message.GetType(), delta.TotalMilliseconds);
+                LogHandlerDurationWarning(this._logger, message.GetType(), delta.TotalMilliseconds);
         }
     }
 

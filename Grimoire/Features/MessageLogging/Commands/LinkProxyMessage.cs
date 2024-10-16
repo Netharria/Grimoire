@@ -47,7 +47,7 @@ public partial class LinkProxyMessage
             }
             catch (Exception ex)
             {
-                LogProxiedMessageFailure(_logger, ex.Message, ex);
+                LogProxiedMessageFailure(this._logger, ex.Message, ex);
             }
             return Unit.Value;
         }

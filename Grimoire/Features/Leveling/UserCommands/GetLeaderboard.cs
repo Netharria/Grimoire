@@ -40,7 +40,7 @@ public sealed class GetLeaderboard
                         throw new AnticipatedException("Must provide a user for this option.");
                     break;
             }
-            var userCommandChannel = await _mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
+            var userCommandChannel = await this._mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
 
             await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermissions.ManageMessages)
                && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);

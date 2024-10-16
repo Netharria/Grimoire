@@ -66,7 +66,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
     public async Task GivenAUserHasNotzBeenOnTheServer_WhenGetUserLevelingInfoIsCalled_ThrowAnticipatedException()
     {
         //Arrange
-        var CUT = new GetUserLevelingInfo.Handler(_dbContext);
+        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
         var query = new GetUserLevelingInfo.Query
         {
             UserId = USER_ID,
@@ -98,7 +98,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
         await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = 1234 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(_dbContext);
+        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
         var query = new GetUserLevelingInfo.Query
         {
             UserId = USER_ID,
@@ -122,7 +122,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
         await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(_dbContext);
+        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
         var query = new GetUserLevelingInfo.Query
         {
             UserId = USER_ID,
@@ -177,7 +177,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
             });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(_dbContext);
+        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
         var query = new GetUserLevelingInfo.Query
         {
             UserId = USER_ID,
@@ -207,7 +207,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
         await this._dbContext.IgnoredMembers.AddAsync(new IgnoredMember { UserId = USER_ID, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(_dbContext);
+        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
         var query = new GetUserLevelingInfo.Query
         {
             UserId = USER_ID,
@@ -236,7 +236,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
         await this._dbContext.IgnoredRoles.AddAsync(new IgnoredRole { RoleId = ROLE_1, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(_dbContext);
+        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
         var query = new GetUserLevelingInfo.Query
         {
             UserId = USER_ID,
@@ -264,7 +264,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
         await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(_dbContext);
+        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
         var query = new GetUserLevelingInfo.Query
         {
             UserId = USER_ID,
@@ -293,7 +293,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
         await this._dbContext.IgnoredRoles.AddAsync(new IgnoredRole { RoleId = ROLE_1, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(_dbContext);
+        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
         var query = new GetUserLevelingInfo.Query
         {
             UserId = USER_ID,

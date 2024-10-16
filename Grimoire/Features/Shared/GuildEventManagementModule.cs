@@ -176,7 +176,7 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
         if (deletedInviteEntry == null)
         {
             if (args.Invite.MaxUses != args.Invite.Uses + 1)
-                LogAuditError(_logger);
+                LogAuditError(this._logger);
             return;
         }
         if (deletedInviteEntry.Target.Code == args.Invite.Code)

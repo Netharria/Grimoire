@@ -27,7 +27,7 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
         if (args.Author.IsBot)
             return;
 
-        var checkSpamResult = _spamModule.CheckSpam(args.Message);
+        var checkSpamResult = this._spamModule.CheckSpam(args.Message);
 
         if (checkSpamResult.IsSpam == false)
             return;

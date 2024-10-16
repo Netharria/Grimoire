@@ -9,9 +9,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
 using Grimoire.Enums;
-using Grimoire.DatabaseQueryHelpers;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 

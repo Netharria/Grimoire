@@ -98,7 +98,7 @@ public sealed partial class AddMessage
             }
             catch (DbUpdateException)
             {
-                LogOriginalMessageForDebugging(_logger, command.MessageContent);
+                LogOriginalMessageForDebugging(this._logger, command.MessageContent);
                 throw;
             }
         }

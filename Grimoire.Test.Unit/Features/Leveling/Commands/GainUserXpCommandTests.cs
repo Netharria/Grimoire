@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
-using Grimoire.Features.Leveling.Commands;
+using Grimoire.Features.Leveling.Events;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 

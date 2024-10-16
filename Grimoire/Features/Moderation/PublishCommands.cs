@@ -34,7 +34,7 @@ public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishC
             GuildId = ctx.Guild.Id
         });
 
-        var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Ban, _logger);
+        var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Ban, this._logger);
         if (response.PublishedMessage is null)
         {
             await this._mediator.Send(new PublishBanCommand
@@ -62,7 +62,7 @@ public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishC
             GuildId = ctx.Guild.Id
         });
 
-        var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Unban, _logger);
+        var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Unban, this._logger);
         if (response.PublishedMessage is null)
         {
             await this._mediator.Send(new PublishBanCommand

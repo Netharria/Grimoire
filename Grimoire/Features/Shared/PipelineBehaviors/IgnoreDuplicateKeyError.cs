@@ -23,7 +23,7 @@ public sealed partial class IgnoreDuplicateKeyError<TMessage, TResponse>(ILogger
         }
         catch (UniqueConstraintException e)
         {
-            LogFirstAttemptWarning(_logger, e.ConstraintName);
+            LogFirstAttemptWarning(this._logger, e.ConstraintName);
         }
         try
         {
@@ -31,7 +31,7 @@ public sealed partial class IgnoreDuplicateKeyError<TMessage, TResponse>(ILogger
         }
         catch (UniqueConstraintException e)
         {
-            LogSecondAttemptError(_logger, e,  e.ConstraintName);
+            LogSecondAttemptError(this._logger, e, e.ConstraintName);
             throw;
         }
     }

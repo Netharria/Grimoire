@@ -19,7 +19,7 @@ public sealed class GetUserCommandChannel
 
         public async ValueTask<Response> Handle(Query query, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.Guilds
+            var result = await this._dbContext.Guilds
                 .Where(x => x.Id == query.GuildId)
                 .Select(x => x.UserCommandChannelId
                 ).FirstOrDefaultAsync(cancellationToken);

@@ -16,31 +16,28 @@
 
 namespace Grimoire.Features.Leveling.Rewards;
 
-public sealed class RemoveReward
+public sealed partial class RewardCommandGroup
 {
-    [SlashCommandGroup("Rewards", "Commands for updating and viewing the server rewards")]
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Leveling)]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
-    {
-        private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Remove", "Removes a reward from the server.")]
-        public async Task RemoveAsync(InteractionContext ctx,
-            [Option("Role", "The role to be awarded")] DiscordRole role)
-        {
-            await ctx.DeferAsync();
-            var response = await this._mediator.Send(
-            new Request
+    [SlashCommand("Remove", "Removes a reward from the server.")]
+    public async Task RemoveAsync(InteractionContext ctx,
+        [Option("Role", "The role to be awarded")] DiscordRole role)
+    {
+        await ctx.DeferAsync();
+        var response = await this._mediator.Send(
+            new RemoveReward.Request
             {
                 RoleId = role.Id
             });
 
-            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: response.Message);
-            await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
-        }
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: response.Message);
+        await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
+}
+
+public sealed class RemoveReward
+{
+
     public sealed record Request : ICommand<BaseResponse>
     {
         public required ulong RoleId { get; init; }

@@ -93,7 +93,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         }
         catch (Exception ex)
         {
-            LogDownloadError(_logger, ex, uri.OriginalString);
+            LogDownloadError(this._logger, ex, uri.OriginalString);
             return new ImageDownloadResult
             {
                 Url = uri.AbsolutePath,

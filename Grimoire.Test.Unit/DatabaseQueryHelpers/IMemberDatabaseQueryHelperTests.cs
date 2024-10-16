@@ -8,8 +8,8 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Grimoire.Domain;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Domain;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 

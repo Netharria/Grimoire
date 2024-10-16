@@ -29,7 +29,7 @@ public sealed class GetLevel
             InteractionContext ctx,
             [Option("user", "User to get details from. Blank will return your info.")] DiscordUser? user = null)
         {
-            var userCommandChannel = await _mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
+            var userCommandChannel = await this._mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
 
             await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermissions.ManageMessages)
                && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);

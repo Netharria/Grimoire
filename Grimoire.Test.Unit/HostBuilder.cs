@@ -6,23 +6,23 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.IO;
+using Grimoire.Features.Shared.PipelineBehaviors;
 using Grimoire.Features.Shared.SpamModule;
+using Grimoire.Features.UserLogging;
 using Grimoire.PluralKit;
 using Grimoire.Utilities;
+using Mediator;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Serilog;
-using Grimoire.Features.Shared.PipelineBehaviors;
-using Grimoire.Features.UserLogging;
-using Mediator;
-using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.Test.Unit;
-public class HostBuilder<T> (GrimoireCoreFactory grimoireCoreFactory) : WebApplicationFactory<Program>
+public class HostBuilder<T>(GrimoireCoreFactory grimoireCoreFactory) : WebApplicationFactory<Program>
 {
     private readonly GrimoireCoreFactory _grimoireCoreFactory = grimoireCoreFactory;
 
@@ -46,7 +46,7 @@ public class HostBuilder<T> (GrimoireCoreFactory grimoireCoreFactory) : WebAppli
             .AddScoped<IPluralkitService, PluralkitService>()
             .AddSingleton<SpamTrackerModule>()
             .AddDbContextFactory<GrimoireDbContext>(options =>
-                options.UseNpgsql(_grimoireCoreFactory.ConnectionString))
+                options.UseNpgsql(this._grimoireCoreFactory.ConnectionString))
             .AddSingleton<IInviteService, InviteService>()
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>))

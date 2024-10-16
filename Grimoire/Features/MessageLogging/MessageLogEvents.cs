@@ -60,7 +60,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         if (args.Guild is null)
             return;
 
-        var pluralkitMessage = await _pluralKitService.GetProxiedMessageInformation(args.Message.Id, args.Message.CreationTimestamp);
+        var pluralkitMessage = await this._pluralKitService.GetProxiedMessageInformation(args.Message.Id, args.Message.CreationTimestamp);
 
         if (pluralkitMessage is not null
             && ulong.TryParse(pluralkitMessage.Id, out var proxyMessageId)
@@ -138,7 +138,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         }
         catch (Exception ex)
         {
-            LogUnableToSendDeleteMessage(_logger, ex, loggingChannel);
+            LogUnableToSendDeleteMessage(this._logger, ex, loggingChannel);
             throw;
         }
     }
@@ -199,7 +199,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         }
         catch (Exception ex)
         {
-            LogUnableToSendBulkDeleteMessage(_logger, ex, loggingChannel);
+            LogUnableToSendBulkDeleteMessage(this._logger, ex, loggingChannel);
             throw;
         }
     }
@@ -284,7 +284,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         }
         catch (BadRequestException ex)
         {
-            LogUnableToSendEditMessage(_logger, ex, loggingChannel, ex.Errors ?? "None Listed");
+            LogUnableToSendEditMessage(this._logger, ex, loggingChannel, ex.Errors ?? "None Listed");
             throw;
         }
     }

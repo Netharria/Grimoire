@@ -48,7 +48,7 @@ public sealed partial class ModerationEvents(IMediator mediator, ILogger<Moderat
             ex is UnauthorizedException
             || ex is ServerErrorException)
             {
-                LogAuditException(_logger, ex);
+                LogAuditException(this._logger, ex);
             }
             await this._mediator.Send(addBanCommand);
 

@@ -48,7 +48,7 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     public async Task GivenAUserHasNotBeenOnTheServer_WhenGetUserSinCountIsCalled_ThrowAnticipatedException()
     {
         //Arrange
-        var CUT = new GetUserSinCounts.Handler(_dbContext);
+        var CUT = new GetUserSinCounts.Handler(this._dbContext);
         var query = new GetUserSinCounts.Query
         {
             UserId = USER_ID,
@@ -78,7 +78,7 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
         await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = 1234 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(_dbContext);
+        var CUT = new GetUserSinCounts.Handler(this._dbContext);
         var query = new GetUserSinCounts.Query
         {
             UserId = USER_ID,
@@ -101,7 +101,7 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
         await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(_dbContext);
+        var CUT = new GetUserSinCounts.Handler(this._dbContext);
         var query = new GetUserSinCounts.Query
         {
             UserId = USER_ID,
@@ -150,7 +150,7 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
             });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(_dbContext);
+        var CUT = new GetUserSinCounts.Handler(this._dbContext);
         var query = new GetUserSinCounts.Query
         {
             UserId = USER_ID,
@@ -199,7 +199,7 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
             });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(_dbContext);
+        var CUT = new GetUserSinCounts.Handler(this._dbContext);
         var query = new GetUserSinCounts.Query
         {
             UserId = USER_ID,
@@ -248,7 +248,7 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
             });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(_dbContext);
+        var CUT = new GetUserSinCounts.Handler(this._dbContext);
         var query = new GetUserSinCounts.Query
         {
             UserId = USER_ID,

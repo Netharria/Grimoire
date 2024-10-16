@@ -15,26 +15,23 @@
 
 namespace Grimoire.Features.Leveling.Rewards;
 
+
+public sealed partial class RewardCommandGroup
+{
+    [SlashCommand("View", "Displays all rewards on this server.")]
+    public async Task ViewAsync(InteractionContext ctx)
+    {
+        await ctx.DeferAsync();
+        var response = await this._mediator.Send(new GetRewards.Request{ GuildId = ctx.Guild.Id});
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
+            title: "Rewards",
+            message: response.Message);
+    }
+}
+
 public sealed class GetRewards
 {
-    [SlashCommandGroup("Rewards", "Commands for updating and viewing the server rewards")]
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Leveling)]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
-    {
-        private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("View", "Displays all rewards on this server.")]
-        public async Task ViewAsync(InteractionContext ctx)
-        {
-            await ctx.DeferAsync();
-            var response = await this._mediator.Send(new Request{ GuildId = ctx.Guild.Id});
-            await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
-                title: "Rewards",
-                message: response.Message);
-        }
-    }
     public sealed record Request : IRequest<BaseResponse>
     {
         public ulong GuildId { get; init; }

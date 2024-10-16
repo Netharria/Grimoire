@@ -15,35 +15,30 @@
 
 namespace Grimoire.Features.Leveling.Settings;
 
-public sealed class GetLevelSettings
+public sealed partial class LevelSettingsCommandGroup
 {
-    [SlashCommandGroup("LevelSettings", "Changes the settings of the Leveling Module.")]
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Leveling)]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
-    internal sealed class LevelSettingsCommands(IMediator mediator) : ApplicationCommandModule
+    [SlashCommand("View", "View the current settings for the leveling module.")]
+    public async Task ViewAsync(InteractionContext ctx)
     {
-        private readonly IMediator _mediator = mediator;
-
-        [SlashCommand("View", "View the current settings for the leveling module.")]
-        public async Task ViewAsync(InteractionContext ctx)
-        {
-            await ctx.DeferAsync();
-            var response = await this._mediator.Send(new Request{ GuildId = ctx.Guild.Id });
-            var levelLogMention =
+        await ctx.DeferAsync();
+        var response = await this._mediator.Send(new GetLevelSettings.Request{ GuildId = ctx.Guild.Id });
+        var levelLogMention =
                 response.LevelChannelLog is null ?
                 "None" :
                 ctx.Guild.Channels.GetValueOrDefault(response.LevelChannelLog.Value)?.Mention;
-            await ctx.EditReplyAsync(
-                title: "Current Level System Settings",
-                message: $"**Module Enabled:** {response.ModuleEnabled}\n" +
-                $"**Texttime:** {response.TextTime.TotalMinutes} minutes.\n" +
-                $"**Base:** {response.Base}\n" +
-                $"**Modifier:** {response.Modifier}\n" +
-                $"**Reward Amount:** {response.Amount}\n" +
-                $"**Log-Channel:** {levelLogMention}\n");
-        }
+        await ctx.EditReplyAsync(
+            title: "Current Level System Settings",
+            message: $"**Module Enabled:** {response.ModuleEnabled}\n" +
+            $"**Texttime:** {response.TextTime.TotalMinutes} minutes.\n" +
+            $"**Base:** {response.Base}\n" +
+            $"**Modifier:** {response.Modifier}\n" +
+            $"**Reward Amount:** {response.Amount}\n" +
+            $"**Log-Channel:** {levelLogMention}\n");
     }
+}
+
+public sealed class GetLevelSettings
+{
     public sealed record Request : IRequest<Response>
     {
         public ulong GuildId { get; init; }

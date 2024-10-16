@@ -11,7 +11,7 @@ namespace Grimoire.Features.Leveling.Settings;
 [SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
-internal sealed class IgnoreCommands(IMediator mediator) : ApplicationCommandModule
+public sealed partial class IgnoreCommandGroup(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;
 
@@ -27,7 +27,7 @@ internal sealed class IgnoreCommands(IMediator mediator) : ApplicationCommandMod
     {
         await ctx.DeferAsync();
         var matchedIds = await ctx.ParseStringIntoIdsAndGroupByTypeAsync(value);
-        if (matchedIds.Count == 0 || matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1)
+        if (matchedIds.Count == 0 || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
             return;

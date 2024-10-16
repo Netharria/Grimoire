@@ -65,7 +65,7 @@ public sealed partial class BanCommands(IMediator mediator, ILogger<BanCommands>
         catch (Exception ex)
         {
             if (ex is not UnauthorizedException)
-                LogFailedDirectMessage(_logger, ex);
+                LogFailedDirectMessage(this._logger, ex);
         }
 
         await ctx.Guild.BanMemberAsync(

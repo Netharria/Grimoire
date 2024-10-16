@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Utilities;
-internal class DiscordStartService (
+internal class DiscordStartService(
     DiscordClient discordClient,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     ILogger<DiscordStartService> logger) : IHostedService
@@ -21,7 +21,7 @@ internal class DiscordStartService (
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await using var context = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
         if (pendingMigrations.Any())
         {
@@ -33,8 +33,8 @@ internal class DiscordStartService (
         }
 
         //connect client
-        await _discordClient.ConnectAsync();
+        await this._discordClient.ConnectAsync();
     }
     public Task StopAsync(CancellationToken cancellationToken)
-        => _discordClient.DisconnectAsync();
+        => this._discordClient.DisconnectAsync();
 }

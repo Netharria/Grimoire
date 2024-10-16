@@ -7,7 +7,7 @@
 
 using Grimoire.DatabaseQueryHelpers;
 
-namespace Grimoire.Features.Leveling.Commands;
+namespace Grimoire.Features.Leveling.Events;
 
 public sealed partial class GainUserXp
 {
@@ -32,7 +32,7 @@ public sealed partial class GainUserXp
             if (!response.EarnedXp)
                 return;
 
-            await _mediator.Publish(new UserGainedXpEvent
+            await this._mediator.Publish(new UserGainedXpEvent
             {
                 GuildId = args.Guild.Id,
                 UserId = member.Id,
@@ -55,7 +55,7 @@ public sealed partial class GainUserXp
                     .WithTimestamp(DateTime.UtcNow)
                     .Build());
 
-            
+
         }
     }
 

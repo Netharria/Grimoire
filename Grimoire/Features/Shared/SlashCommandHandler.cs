@@ -19,6 +19,9 @@ namespace Grimoire;
 /// Initializes a new instance of the <see cref="SlashCommandHandler"/> class.
 /// </summary>
 /// <param name="logger"></param>
+///
+
+//must implement new command framework before this will work.
 public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration)
 {
     private readonly ILogger<SlashCommandHandler> _logger = logger;
@@ -72,11 +75,7 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
     public async Task DiscordOnClientErrored(DiscordClient sender, ClientErrorEventArgs args)
         => await this.SendErrorLogToLogChannel(sender, args.EventName, args.Exception);
 
-    public Task SlashCommandsOnContextMenuErrored(SlashCommandsExtension sender, ContextMenuErrorEventArgs args) => Task.CompletedTask;
-
-    public Task SlashCommandsOnContextMenuExecuted(SlashCommandsExtension sender, ContextMenuExecutedEventArgs args) => Task.CompletedTask;
-
-    public async Task SlashCommandsOnSlashCommandErrored(SlashCommandsExtension sender, SlashCommandErrorEventArgs args)
+    public async Task HandleEventAsync(DiscordClient sender, SlashCommandErrorEventArgs args)
     {
         if (args.Exception is SlashExecutionChecksFailedException ex)
         {
@@ -153,7 +152,7 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
             var log = new StringBuilder();
             if (commandOptions is not null)
                 await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
-            LogSlashCommandError(_logger,
+            LogSlashCommandError(this._logger,
                 args.Exception,
                 errorHexString,
                 args.Context.Interaction.Data.Name,
@@ -162,7 +161,7 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
             await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
                 .WithColor(GrimoireColor.Yellow)
                 .WithDescription($"Encountered exception while executing {args.Context.Interaction.Data.Name} [ID {errorHexString}]"));
-            await this.SendErrorLogToLogChannel(sender.Client, args.Context.Interaction.Data.Name, args.Exception, errorHexString);
+            await this.SendErrorLogToLogChannel(sender, args.Context.Interaction.Data.Name, args.Exception, errorHexString);
         }
     }
 
@@ -181,17 +180,18 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
     [LoggerMessage(LogLevel.Error, "Error on SlashCommand: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
     public static partial void LogSlashCommandError(ILogger logger, Exception ex, string ErrorId, string interactionName, string interactionOptions);
 
-    public async Task SlashCommandsOnSlashCommandExecuted(SlashCommandsExtension sender, SlashCommandExecutedEventArgs args)
+    public async Task HandleEventAsync(DiscordClient sender, SlashCommandExecutedEventArgs args)
     {
         var commandOptions = args.Context.Interaction.Data.Options;
         var log = new StringBuilder();
         if (commandOptions is not null)
             await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
-        LogSlashCommandInvoked(_logger,
+        LogSlashCommandInvoked(this._logger,
             args.Context.Interaction.Data.Name,
             log.ToString());
     }
 
     [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
     public static partial void LogSlashCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
+
 }

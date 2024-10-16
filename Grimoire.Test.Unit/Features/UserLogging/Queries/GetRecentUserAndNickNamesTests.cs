@@ -47,7 +47,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
     public async Task GivenAUserHasNotBeenOnTheServer_WhenGetNamesIsCalled_ThrowAnticipatedException()
     {
         //Arrange
-        var CUT = new GetRecentUserAndNickNames.Handler(_dbContext);
+        var CUT = new GetRecentUserAndNickNames.Handler(this._dbContext);
         var query = new GetRecentUserAndNickNames.Query
         {
             UserId = USER_ID,
@@ -77,7 +77,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = 1234 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetRecentUserAndNickNames.Handler(_dbContext);
+        var CUT = new GetRecentUserAndNickNames.Handler(this._dbContext);
         var query = new GetRecentUserAndNickNames.Query
         {
             UserId = USER_ID,
@@ -100,7 +100,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetRecentUserAndNickNames.Handler(_dbContext);
+        var CUT = new GetRecentUserAndNickNames.Handler(this._dbContext);
         var query = new GetRecentUserAndNickNames.Query
         {
             UserId = USER_ID,
@@ -140,7 +140,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetRecentUserAndNickNames.Handler(_dbContext);
+        var CUT = new GetRecentUserAndNickNames.Handler(this._dbContext);
         var query = new GetRecentUserAndNickNames.Query
         {
             UserId = USER_ID,
@@ -221,7 +221,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetRecentUserAndNickNames.Handler(_dbContext);
+        var CUT = new GetRecentUserAndNickNames.Handler(this._dbContext);
         var query = new GetRecentUserAndNickNames.Query
         {
             UserId = USER_ID,

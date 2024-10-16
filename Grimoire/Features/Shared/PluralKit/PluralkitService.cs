@@ -30,17 +30,17 @@ public sealed partial class PluralkitService : IPluralkitService
     IConfiguration configuration,
     ILogger<PluralkitService> logger)
     {
-        _httpClientFactory = httpClientFactory;
-        _isConfigured = !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitUserAgent", ""))
+        this._httpClientFactory = httpClientFactory;
+        this._isConfigured = !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitUserAgent", ""))
             && !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitToken", ""));
-        if (!_isConfigured)
+        if (!this._isConfigured)
             PluralkitNotConfiguredLog(logger);
     }
 
 
     public async ValueTask<PluralKitMessage?> GetProxiedMessageInformation(ulong messageId, DateTimeOffset messageTimestamp)
     {
-        if (!_isConfigured)
+        if (!this._isConfigured)
         {
             return null;
         }
@@ -48,7 +48,7 @@ public sealed partial class PluralkitService : IPluralkitService
         {
             return null;
         }
-        var httpClient = _httpClientFactory.CreateClient("Pluralkit");
+        var httpClient = this._httpClientFactory.CreateClient("Pluralkit");
         try
         {
             return await httpClient.GetFromJsonAsync<PluralKitMessage>(MESSAGE_ENDPOINT + messageId);

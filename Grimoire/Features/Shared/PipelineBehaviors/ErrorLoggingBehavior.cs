@@ -22,7 +22,7 @@ public sealed partial class ErrorLoggingBehavior<TMessage, TResponse>(ILogger<Er
         }
         catch (Exception e) when (e is not AnticipatedException)
         {
-            LogHandlerError(_logger, e, typeof(TMessage).Name);
+            LogHandlerError(this._logger, e, typeof(TMessage).Name);
             throw;
         }
     }
