@@ -82,7 +82,7 @@ public sealed partial class MessageLogEvents(IMediator mediator, IDiscordImageEm
         var response = await this._mediator.Send(
             new DeleteMessage.Command
             {
-                Id = args.Message.Id,
+                MessageId = args.Message.Id,
                 DeletedByModerator = auditLogEntry?.UserResponsible?.Id,
                 GuildId = args.Guild.Id
             });

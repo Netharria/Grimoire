@@ -18,10 +18,10 @@ public sealed partial class GainUserXp
         public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
         {
             if (args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply
-                || args.Author is not DiscordMember member)
+                || args.Author is not DiscordMember member
+                || member.IsBot)
                 return;
-            if (member.IsBot)
-                return;
+
             var response = await this._mediator.Send(new Request
             {
                 ChannelId = args.Channel.Id,

@@ -13,6 +13,7 @@ public static class DiscordGuildExtensions
 {
     public static async ValueTask<T?> GetRecentAuditLogAsync<T>(this DiscordGuild guild, DiscordAuditLogActionType? actionType = null, int allowedTimeSpan = 500)
         where T : DiscordAuditLogEntry
-        => await guild.GetAuditLogsAsync(1, actionType: actionType).OfType<T>()
+        => await guild.GetAuditLogsAsync(1, actionType: actionType)
+            .OfType<T>()
             .FirstOrDefaultAsync(x => x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
 }

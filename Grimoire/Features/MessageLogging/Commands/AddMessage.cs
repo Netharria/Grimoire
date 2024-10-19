@@ -5,13 +5,61 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
+using System.Text;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.LogCleanup.Commands;
+using Grimoire.PluralKit;
 using Microsoft.Extensions.Logging;
+using Polly.CircuitBreaker;
 
 namespace Grimoire.Features.MessageLogging.Commands;
 
 public sealed partial class AddMessage
 {
+    public sealed partial class MessageLogEvents(IMediator mediator) : IEventHandler<MessageCreatedEventArgs>
+    {
+        private readonly IMediator _mediator = mediator;
+
+        public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
+        {
+            if (args.Guild is null
+                || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
+                return;
+
+
+            var parentChannelTree = BuildChannelTree(args.Channel);
+
+            await this._mediator.Send(new Command
+            {
+                Attachments = args.Message.Attachments
+                    .Select(x =>
+                        new AttachmentDto
+                        {
+                            Id = x.Id,
+                            FileName = string.IsNullOrEmpty(x.Url) ? "" : x.Url,
+                        }).ToArray(),
+                UserId = args.Author.Id,
+                ChannelId = args.Channel.Id,
+                MessageContent = args.Message.Content,
+                MessageId = args.Message.Id,
+                ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
+                GuildId = args.Guild.Id,
+                ParentChannelTree = parentChannelTree
+            });
+        }
+
+        private static IEnumerable<ulong> BuildChannelTree(DiscordChannel channel)
+        {
+            while (channel is not null)
+            {
+                yield return channel.Id;
+                channel = channel.Parent;
+            }
+        }
+    }
+
+
     public sealed record Command : ICommand
     {
         public required ulong MessageId { get; init; }
@@ -21,7 +69,7 @@ public sealed partial class AddMessage
         public required AttachmentDto[] Attachments { get; init; }
         public ulong? ReferencedMessageId { get; init; }
         public required ulong GuildId { get; init; }
-        public required List<ulong> ParentChannelTree { get; init; }
+        public required IEnumerable<ulong> ParentChannelTree { get; init; }
     }
 
     public sealed partial class Handler(GrimoireDbContext grimoireDbContext, ILogger<Handler> logger) : ICommandHandler<Command>

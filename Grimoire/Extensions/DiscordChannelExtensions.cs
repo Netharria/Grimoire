@@ -17,10 +17,14 @@ public static class DiscordChannelExtensions
     {
         filter ??= message => true;
         var oldTimestamp = DateTimeOffset.UtcNow.AddDays(-14);
-        var messages = await channel.GetMessagesAsync().Where(filter).TakeWhile(x => x.Timestamp > oldTimestamp).Take(count).ToArrayAsync();
-        if (messages.Count() == 1)
+        var messages = await channel.GetMessagesAsync()
+            .Where(filter)
+            .TakeWhile(x => x.Timestamp > oldTimestamp)
+            .Take(count)
+            .ToArrayAsync();
+        if (messages.Length == 1)
             await messages.First().DeleteAsync(reason);
-        if (messages.Count() > 1)
+        if (messages.Length > 1)
             await messages.Chunk(100).ToAsyncEnumerable()
                 .ForEachAsync(async messages => await channel.DeleteMessagesAsync(messages, reason));
         return messages.Count();

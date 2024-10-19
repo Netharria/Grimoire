@@ -39,7 +39,7 @@ public static partial class DiscordEmbedBuilderExtensions
                 if (splitContent.Any(x => x.Length > 1024))
                 {
                     Log.Logger.Warning("Defaulting to crude embed field splitter because the regex returned a string that was longer than 1024. String lengths {lengths}",
-                        string.Join(' ', splitContent.Select(x => $"{x.Length}")));
+                        string.Join(' ', splitContent.Select(x => x.Length)));
                     splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
                 }
             }
