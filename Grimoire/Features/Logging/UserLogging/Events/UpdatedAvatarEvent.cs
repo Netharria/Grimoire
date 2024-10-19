@@ -1,0 +1,122 @@
+// This file is part of the Grimoire Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+
+using Grimoire.Features.LogCleanup.Commands;
+using Grimoire.Notifications;
+
+namespace Grimoire.Features.Logging.UserLogging.Events;
+
+
+public sealed class UpdatedAvatarEvent
+{
+
+    public sealed class EventHandler(IMediator mediator, IDiscordImageEmbedService imageEmbedService) : IEventHandler<GuildMemberUpdatedEventArgs>
+    {
+
+        private readonly IMediator _mediator = mediator;
+
+        private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
+        public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
+        {
+            var avatarResponse = await this._mediator.Send(new Command
+            {
+                GuildId = args.Guild.Id,
+                UserId = args.Member.Id,
+                AvatarUrl = args.MemberAfter.GetGuildAvatarUrl(ImageFormat.Auto, 128)
+            });
+            if (avatarResponse is null
+                || string.Equals(
+                    avatarResponse.BeforeAvatar,
+                    avatarResponse.AfterAvatar,
+                    StringComparison.Ordinal))
+                return;
+
+            var embed = new DiscordEmbedBuilder()
+                .WithAuthor("Avatar Updated")
+                .WithDescription($"**User:** {args.Member.Mention}\n\n" +
+                    $"Old avatar in thumbnail. New avatar down below")
+                .WithThumbnail(avatarResponse.BeforeAvatar)
+                .WithColor(GrimoireColor.Purple)
+                .WithTimestamp(DateTimeOffset.UtcNow);
+            var messageBuilder = await this._imageEmbedService
+                    .BuildImageEmbedAsync([avatarResponse.AfterAvatar],
+                    args.Member.Id,
+                    embed,
+                    false);
+
+            var message = await sender.SendMessageToLoggingChannel(avatarResponse.AvatarChannelLogId, messageBuilder);
+
+            if (message is null)
+                return;
+
+            await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+
+            await this._mediator.Publish(new AvatarUpdatedNotification
+            {
+                UserId = args.Member.Id,
+                GuildId = args.Guild.Id,
+                Username = args.Member.GetUsernameWithDiscriminator(),
+                BeforeAvatar = avatarResponse.BeforeAvatar,
+                AfterAvatar = avatarResponse.AfterAvatar
+            });
+        }
+    }
+
+    public sealed record Command : ICommand<Response?>
+    {
+        public ulong UserId { get; init; }
+        public ulong GuildId { get; init; }
+        public string AvatarUrl { get; init; } = string.Empty;
+    }
+
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response?>
+    {
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        public async ValueTask<Response?> Handle(Command command, CancellationToken cancellationToken)
+        {
+            var currentAvatar = await this._grimoireDbContext.Avatars
+            .AsNoTracking()
+            .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
+            .Where(x => x.Member.Guild.UserLogSettings.ModuleEnabled)
+            .OrderByDescending(x => x.Timestamp)
+            .Select(x => new
+            {
+                x.FileName,
+                x.Member.Guild.UserLogSettings.AvatarChannelLogId
+            })
+            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            if (currentAvatar is null
+                || string.Equals(currentAvatar.FileName, command.AvatarUrl, StringComparison.Ordinal))
+                return null;
+
+            await this._grimoireDbContext.Avatars.AddAsync(
+                new Avatar
+                {
+                    GuildId = command.GuildId,
+                    UserId = command.UserId,
+                    FileName = command.AvatarUrl
+                }, cancellationToken);
+            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            return new Response
+            {
+                BeforeAvatar = currentAvatar.FileName,
+                AfterAvatar = command.AvatarUrl,
+                AvatarChannelLogId = currentAvatar.AvatarChannelLogId
+            };
+        }
+    }
+
+    public sealed record Response : BaseResponse
+    {
+        public string BeforeAvatar { get; init; } = string.Empty;
+        public string AfterAvatar { get; init; } = string.Empty;
+        public ulong? AvatarChannelLogId { get; init; }
+    }
+}
+
+

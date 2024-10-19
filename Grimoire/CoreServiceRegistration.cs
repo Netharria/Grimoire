@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using EntityFramework.Exceptions.PostgreSQL;
+using Grimoire.Features.Logging.UserLogging;
 using Grimoire.Features.Shared.PipelineBehaviors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

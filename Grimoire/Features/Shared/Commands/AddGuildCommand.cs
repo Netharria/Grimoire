@@ -7,6 +7,7 @@
 
 using System.Collections.Concurrent;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Logging.UserLogging;
 
 namespace Grimoire.Features.Shared.Commands;
 

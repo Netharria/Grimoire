@@ -67,7 +67,6 @@
 
   <ItemGroup>
     <Using Include="Grimoire.Enums" />
-    <Using Include="Grimoire.Features.UserLogging" />
     <Using Include="Grimoire.Features.Shared.SharedDtos" />
     <Using Include="Grimoire.Features.Shared.Attributes" />
     <Using Include="Grimoire.Extensions" />

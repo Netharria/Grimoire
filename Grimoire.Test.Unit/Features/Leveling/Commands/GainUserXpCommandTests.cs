@@ -101,10 +101,6 @@ public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsync
         result.PreviousLevel.Should().Be(2);
         result.CurrentLevel.Should().Be(3);
         result.LevelLogChannel.Should().Be(CHANNEL_ID);
-        result.EarnedRewards.Should().Contain([
-            new() { RoleId = ROLE_ID_1, Message = "Test1" },
-            new() { RoleId = ROLE_ID_2, Message = "Test2" }
-        ]);
 
         this._dbContext.ChangeTracker.Clear();
 

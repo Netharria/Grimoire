@@ -9,7 +9,7 @@ using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
-using Grimoire.Features.MessageLogging.Queries;
+using Grimoire.Features.Logging.Settings;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 

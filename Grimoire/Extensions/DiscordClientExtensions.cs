@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Features.LogCleanup.Commands;
-
 namespace Grimoire.Extensions;
 
 public static class DiscordClientExtensions
@@ -23,6 +21,9 @@ public static class DiscordClientExtensions
         }
     }
 
+    public static Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId, DiscordEmbedBuilder discordEmbedBuilder)
+        => SendMessageToLoggingChannel(client, logChannelId, new DiscordMessageBuilder().AddEmbed(discordEmbedBuilder));
+
     public async static Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId, DiscordMessageBuilder discordMessageBuilder)
     {
         if (logChannelId is not ulong loggingChannelId)
@@ -30,7 +31,25 @@ public static class DiscordClientExtensions
         var channel = await client.GetChannelOrDefaultAsync(loggingChannelId);
         if (channel is not DiscordChannel loggingChannel)
             return null;
-        return await loggingChannel.SendMessageAsync(discordMessageBuilder);
+        return await DiscordRetryPolicy.RetryDiscordCall(async () => await loggingChannel.SendMessageAsync(discordMessageBuilder));
 
+    }
+
+    public async static Task<string?> GetUserAvatar(this DiscordClient client, ulong userId, DiscordGuild? guild = null)
+    {
+        if (guild is not null
+            && guild.Members.TryGetValue(userId, out var member))
+        {
+            if (member.IsBot)
+                return null;
+            return member.GetGuildAvatarUrl(ImageFormat.Auto);
+        }
+        else
+        {
+            var user = await client.GetUserAsync(userId);
+            if (user is null)
+                return null;
+            return user.GetAvatarUrl(ImageFormat.Auto);
+        }
     }
 }

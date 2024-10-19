@@ -7,6 +7,7 @@
 
 using System.Threading.RateLimiting;
 using DSharpPlus.Extensions;
+using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Net;
@@ -18,7 +19,13 @@ using Grimoire.Features.Leveling.Rewards;
 using Grimoire.Features.Leveling.Settings;
 using Grimoire.Features.Leveling.UserCommands;
 using Grimoire.Features.LogCleanup;
-using Grimoire.Features.MessageLogging;
+using Grimoire.Features.Logging.MessageLogging.Events;
+using Grimoire.Features.Logging.Settings;
+using Grimoire.Features.Logging.Trackers;
+using Grimoire.Features.Logging.Trackers.Commands;
+using Grimoire.Features.Logging.Trackers.Events;
+using Grimoire.Features.Logging.UserLogging.Events;
+using Grimoire.Features.MessageLogging.Commands;
 using Grimoire.Features.Moderation;
 using Grimoire.Features.Shared;
 using Grimoire.Features.Shared.SharedModule;
@@ -68,9 +75,27 @@ await Host.CreateDefaultBuilder(args)
         .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
         .AddScoped<IPluralkitService, PluralkitService>()
         .AddSingleton<SpamTrackerModule>()
-        .ConfigureEventHandlers(x =>
-            x.AddEventHandlers<GainUserXp.EventHandler>())
-        .AddInteractivityExtension(new DSharpPlus.Interactivity.InteractivityConfiguration
+        .ConfigureEventHandlers(eventHandlerBuilder =>
+            eventHandlerBuilder
+            //Leveling
+                .AddEventHandlers<GainUserXp.EventHandler>()
+
+            //Message Log
+                .AddEventHandlers<AddMessageEvent.EventHandler>()
+                .AddEventHandlers<DeleteMessageEvent.EventHandler>()
+                .AddEventHandlers<BulkMessageDeletedEvent.EventHandler>()
+                .AddEventHandlers<UpdateMessageEvent.EventHandler>()
+            //Trackers
+                .AddEventHandlers<TrackerMessageCreatedEvent>()
+                .AddEventHandlers<TrackerMessageUpdateEvent.EventHandler>()
+                .AddEventHandlers<TrackerJoinedVoiceChannelEvent>()
+            //User Log
+                .AddEventHandlers<GuildMemberAddedEvent>()
+                .AddEventHandlers<GuildMemberRemovedEvent>()
+                .AddEventHandlers<UpdatedAvatarEvent.EventHandler>()
+                .AddEventHandlers<UpdatedNicknameEvent.EventHandler>()
+                .AddEventHandlers<UpdatedUsernameEvent.EventHandler>())
+        .AddInteractivityExtension(new InteractivityConfiguration
         {
             ResponseBehavior = InteractionResponseBehavior.Ack,
             ResponseMessage = "That's not a valid button",
@@ -99,8 +124,9 @@ await Host.CreateDefaultBuilder(args)
             options.RegisterCommands<GetLevel.Command>();
 
             ////Logging
-            //extension.RegisterCommands<LogSettingsCommands>();
-            //extension.RegisterCommands<TrackerCommands>();
+            options.RegisterCommands<LogSettingsCommands>();
+            options.RegisterCommands<AddTracker.Command>();
+            options.RegisterCommands<RemoveTracker.Command>();
 
             ////Moderation
             //extension.RegisterCommands<ModerationSettingsCommands>();

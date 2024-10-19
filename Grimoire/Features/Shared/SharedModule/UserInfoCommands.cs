@@ -5,9 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Features.Leveling.UserCommands;
+using Grimoire.Features.Leveling.Queries;
+using Grimoire.Features.Logging.UserLogging.Queries;
 using Grimoire.Features.Moderation.Queries;
-using Grimoire.Features.UserLogging.Queries;
 
 namespace Grimoire.Features.Shared.SharedModule;
 

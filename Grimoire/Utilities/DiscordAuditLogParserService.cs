@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Entities.AuditLogs;
-using Grimoire.Features.MessageLogging.Queries;
+using Grimoire.Features.Logging.MessageLogging;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Utilities;
@@ -28,7 +28,7 @@ public sealed class DiscordAuditLogParserService(DiscordClient discordClient, IM
             || !guild.CurrentMember.Permissions.HasPermission(DiscordPermissions.ViewAuditLog))
             return null;
 
-        var result = await this._mediator.Send(new GetMessageAuthorQuery{ MessageId = messageId });
+        var result = await this._mediator.Send(new GetMessageAuthor.Query{ MessageId = messageId });
 
         if (result is null)
             return null;

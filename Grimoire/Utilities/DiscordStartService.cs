@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Utilities;
-internal class DiscordStartService(
+internal sealed partial class DiscordStartService(
     DiscordClient discordClient,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     ILogger<DiscordStartService> logger) : IHostedService
@@ -21,20 +21,26 @@ internal class DiscordStartService(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
-        if (pendingMigrations.Any())
-        {
-            Stopwatch sw = new();
-            sw.Start();
-            await context.Database.MigrateAsync(cancellationToken);
-            sw.Stop();
-            this._logger.LogWarning("Applied pending migrations in {Time} ms", sw.ElapsedMilliseconds);
-        }
 
+        await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        {
+            var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
+            if (pendingMigrations.Any())
+            {
+                Stopwatch sw = new();
+                sw.Start();
+                await context.Database.MigrateAsync(cancellationToken);
+                sw.Stop();
+                LogMigrationDuration(_logger, sw.ElapsedMilliseconds);
+            }
+        }
         //connect client
         await this._discordClient.ConnectAsync();
     }
     public Task StopAsync(CancellationToken cancellationToken)
         => this._discordClient.DisconnectAsync();
+
+    [LoggerMessage(LogLevel.Warning, "Applied pending migrattings in {time} ms")]
+    static partial void LogMigrationDuration(ILogger<DiscordStartService> logger, long time);
+
 }

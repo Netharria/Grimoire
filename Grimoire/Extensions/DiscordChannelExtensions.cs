@@ -27,6 +27,15 @@ public static class DiscordChannelExtensions
         if (messages.Length > 1)
             await messages.Chunk(100).ToAsyncEnumerable()
                 .ForEachAsync(async messages => await channel.DeleteMessagesAsync(messages, reason));
-        return messages.Count();
+        return messages.Length;
+    }
+
+    public static IEnumerable<ulong> BuildChannelTree(this DiscordChannel channel)
+    {
+        while (channel is not null)
+        {
+            yield return channel.Id;
+            channel = channel.Parent;
+        }
     }
 }

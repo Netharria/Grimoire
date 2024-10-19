@@ -18,8 +18,8 @@ public static class MemberExtensions
         while (true)
         {
             var xpNeeded = @base +
-                (long)Math.Round(@base *
-                                (modifier / 100.0) * i) * i;
+                ((long)Math.Round(@base *
+                                (modifier / 100.0) * i) * i);
             if (xp < xpNeeded)
                 return i + 1;
 
@@ -33,7 +33,7 @@ public static class MemberExtensions
         {
             < 0 => 0,
             0 => @base,
-            _ => @base + (long)Math.Round(@base * (modifier / 100.0) * level) * level
+            _ => @base + ((long)Math.Round(@base * (modifier / 100.0) * level) * level)
         };
     }
 
