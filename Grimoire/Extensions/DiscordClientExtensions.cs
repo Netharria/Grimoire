@@ -37,19 +37,11 @@ public static class DiscordClientExtensions
 
     public async static Task<string?> GetUserAvatar(this DiscordClient client, ulong userId, DiscordGuild? guild = null)
     {
-        if (guild is not null
-            && guild.Members.TryGetValue(userId, out var member))
+        if (guild?.Members.TryGetValue(userId, out var member) is true)
         {
-            if (member.IsBot)
-                return null;
             return member.GetGuildAvatarUrl(ImageFormat.Auto);
         }
-        else
-        {
-            var user = await client.GetUserAsync(userId);
-            if (user is null)
-                return null;
-            return user.GetAvatarUrl(ImageFormat.Auto);
-        }
+        var user = await client.GetUserAsync(userId);
+        return user?.GetAvatarUrl(ImageFormat.Auto); 
     }
 }

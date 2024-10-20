@@ -8,34 +8,33 @@
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.CustomCommands;
+
+
+public sealed partial class CustomCommandSettings
+{
+
+    [SlashCommand("Forget", "Forget a command")]
+    internal async Task Forget(
+        InteractionContext ctx,
+        [Autocomplete(typeof(GetCustomCommandOptions.AutocompleteProvider))]
+        [Option("Name", "The name that the command is called.", true)] string name)
+    {
+        await ctx.DeferAsync();
+
+        var response = await this._mediator.Send(new RemoveCustomCommand.Request
+        {
+            CommandName = name,
+            GuildId = ctx.Guild.Id,
+        });
+
+        await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);
+        await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
+    }
+}
+
 public sealed class RemoveCustomCommand
 {
-    [SlashCommandGroup("Commands", "Manage custom commands.")]
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Commands)]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
-    internal sealed partial class Command(IMediator mediator) : ApplicationCommandModule
-    {
-        private readonly IMediator _mediator = mediator;
-
-        [SlashCommand("Forget", "Forget a command")]
-        internal async Task Forget(
-            InteractionContext ctx,
-            [Autocomplete(typeof(GetCustomCommandOptions.AutocomepleteProvider))]
-        [Option("Name", "The name that the command is called.", true)] string name)
-        {
-            await ctx.DeferAsync();
-
-            var response = await this._mediator.Send(new Request
-            {
-                CommandName = name,
-                GuildId = ctx.Guild.Id,
-            });
-
-            await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);
-            await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
-        }
-    }
+    
 
     public sealed record Request : IRequest<BaseResponse>
     {

@@ -17,15 +17,14 @@ public static class MemberExtensions
                 (@base * modifier)));
         while (true)
         {
-            var xpNeeded = @base +
-                ((long)Math.Round(@base *
-                                (modifier / 100.0) * i) * i);
+            var xpNeeded = GetXpNeeded(i, @base, modifier);
             if (xp < xpNeeded)
                 return i + 1;
 
             i += 1;
         }
     }
+
     public static long GetXpNeeded(int level, int @base, int modifier, int levelModifier = 0)
     {
         level = level - 2 + levelModifier;

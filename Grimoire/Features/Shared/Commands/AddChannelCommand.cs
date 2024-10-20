@@ -19,7 +19,9 @@ public sealed class AddChannelCommandHandler(GrimoireDbContext grimoireDbContext
 
     public async ValueTask<Unit> Handle(AddChannelCommand command, CancellationToken cancellationToken)
     {
-        if (await this._grimoireDbContext.Channels.AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
+        if (await this._grimoireDbContext.Channels
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
             return Unit.Value;
         await this._grimoireDbContext.Channels.AddAsync(new Channel
         {

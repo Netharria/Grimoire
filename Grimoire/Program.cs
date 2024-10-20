@@ -30,6 +30,7 @@ using Grimoire.Features.Moderation;
 using Grimoire.Features.Shared;
 using Grimoire.Features.Shared.SharedModule;
 using Grimoire.Features.Shared.SpamModule;
+using Grimoire.Features.CustomCommands;
 using Grimoire.PluralKit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -105,7 +106,9 @@ await Host.CreateDefaultBuilder(args)
         {
             if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
             {
-                options.RegisterCommands<EmptySlashCommands>(guildId);
+                //options.RegisterCommands<EmptySlashCommands>(guildId);
+                options.RegisterCommands<CustomCommandSettings>(guildId);
+                options.RegisterCommands<GetCustomCommand.Command>(guildId);
             }
             //Shared
             options.RegisterCommands<ModuleCommands>();
@@ -139,9 +142,8 @@ await Host.CreateDefaultBuilder(args)
             //extension.RegisterCommands<MuteCommands>();
             //extension.RegisterCommands<WarnCommands>();
             ////Custom Commands
-            //extension.RegisterCommands<AddCustomCommand.Command>();
-            //extension.RegisterCommands<GetCustomCommand.Command>();
-            //extension.RegisterCommands<RemoveCustomCommand.Command>();
+            options.RegisterCommands<CustomCommandSettings>();
+            options.RegisterCommands<GetCustomCommand.Command>();
         })
         .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
         .AddHostedService<LogBackgroundTasks>()

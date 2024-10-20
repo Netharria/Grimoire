@@ -77,25 +77,36 @@ public sealed partial class GainUserXp
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+
+        private static readonly Func<GrimoireDbContext, ulong, ulong, ulong, ulong[], IAsyncEnumerable<QueryResult>>
+            _getUserXpInfoQuery = EF.CompileAsyncQuery((GrimoireDbContext context, ulong userId, ulong guildId, ulong channelId, ulong[] roleIds) =>
+                context.Members
+                .AsNoTracking()
+                .WhereLevelingEnabled()
+                .WhereMemberHasId(userId, guildId)
+                .WhereMemberNotIgnored(channelId, roleIds)
+                .Select(x => new QueryResult
+                {
+                    Xp = x.XpHistory.Sum(x => x.Xp),
+                    Timeout = x.XpHistory.Select(x => x.TimeOut)
+                        .OrderByDescending(x => x)
+                        .FirstOrDefault(),
+                    Base = x.Guild.LevelSettings.Base,
+                    Modifier = x.Guild.LevelSettings.Modifier,
+                    Amount = x.Guild.LevelSettings.Amount,
+                    LevelChannelLogId = x.Guild.LevelSettings.LevelChannelLogId,
+                    TextTime = x.Guild.LevelSettings.TextTime
+                }));
+
         public async ValueTask<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Members
-            .AsNoTracking()
-            .WhereLevelingEnabled()
-            .WhereMemberHasId(command.UserId, command.GuildId)
-            .WhereMemberNotIgnored(command.ChannelId, command.RoleIds)
-            .Select(x => new
-            {
-                Xp = x.XpHistory.Sum(x => x.Xp),
-                Timeout = x.XpHistory.Select(x => x.TimeOut)
-                    .OrderByDescending(x => x)
-                    .FirstOrDefault(),
-                x.Guild.LevelSettings.Base,
-                x.Guild.LevelSettings.Modifier,
-                x.Guild.LevelSettings.Amount,
-                x.Guild.LevelSettings.LevelChannelLogId,
-                x.Guild.LevelSettings.TextTime
-            }).FirstOrDefaultAsync(cancellationToken);
+            var result = await _getUserXpInfoQuery(
+                    _grimoireDbContext,
+                    command.UserId,
+                    command.GuildId,
+                    command.ChannelId,
+                    command.RoleIds)
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (result is null || result.Timeout > DateTimeOffset.UtcNow)
                 return new Response { };
@@ -128,5 +139,14 @@ public sealed partial class GainUserXp
         public ulong? LevelLogChannel { get; init; }
         public bool EarnedXp { get; init; }
     }
+    public sealed record QueryResult
+    {
+        public long Xp { get; init; }
+        public DateTimeOffset Timeout { get; init; }
+        public int Base { get; init; }
+        public int Modifier {  get; init; }
+        public int Amount { get; init; }
+        public ulong? LevelChannelLogId { get; init; }
+        public TimeSpan TextTime { get; init; }
+    }
 }
-

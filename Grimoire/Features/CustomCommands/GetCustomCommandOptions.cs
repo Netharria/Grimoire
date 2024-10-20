@@ -11,7 +11,7 @@ namespace Grimoire.Features.CustomCommands;
 public sealed class GetCustomCommandOptions
 {
 
-    internal sealed class AutocomepleteProvider(IServiceProvider serviceProvider) : IAutocompleteProvider
+    internal sealed class AutocompleteProvider(IServiceProvider serviceProvider) : IAutocompleteProvider
     {
         private readonly IServiceProvider _serviceProvider = serviceProvider;
 
@@ -25,12 +25,14 @@ public sealed class GetCustomCommandOptions
 
             var results = await mediator.Send(new Request
             {
-                EnteredText =  (string) (ctx.FocusedOption.Value ?? ""),
+                EnteredText =  (string) (ctx.FocusedOption.Value ?? string.Empty),
                 GuildId = ctx.Guild.Id
             });
             return results
                 .Select(x => new DiscordAutoCompleteChoice(
-                    x.Name + " " + (x.HasMention ? "<Mention> " : "") + (x.HasMessage ? "<Message>" : ""),
+                    x.Name + " " +
+                    (x.HasMention ? "<Mention> " : string.Empty) +
+                    (x.HasMessage ? "<Message>" : string.Empty),
                     x.Name));
         }
     }
@@ -43,20 +45,25 @@ public sealed class GetCustomCommandOptions
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, IEnumerable<Response>>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private static readonly Func<GrimoireDbContext, ulong, string, IAsyncEnumerable<Response>> _getCommandsAsync =
+            EF.CompileAsyncQuery((GrimoireDbContext context, ulong guildId, string cleanedText) =>
+                context.CustomCommands
+                    .AsNoTracking()
+                    .Where(x => x.GuildId == guildId)
+                    .OrderBy(x => EF.Functions.FuzzyStringMatchLevenshtein(x.Name, cleanedText))
+                    .Take(5)
+                    .Select(x => new Response
+                    {
+                        Name = x.Name,
+                        HasMention = x.HasMention,
+                        HasMessage = x.HasMessage,
+                    })
+            );
 
         public async ValueTask<IEnumerable<Response>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var cleanedText = request.EnteredText.Split(" ").FirstOrDefault("");
-            return await this._grimoireDbContext.CustomCommands
-                .Where(x => x.GuildId == request.GuildId)
-                .OrderBy(x => EF.Functions.FuzzyStringMatchLevenshtein(x.Name, cleanedText))
-                .Take(5)
-                .Select(x => new Response
-                {
-                    Name = x.Name,
-                    HasMention = x.HasMention,
-                    HasMessage = x.HasMessage,
-                })
+            var cleanedText = request.EnteredText.Split(' ').FirstOrDefault(string.Empty);
+            return await _getCommandsAsync(this._grimoireDbContext, request.GuildId, cleanedText)
                 .ToListAsync(cancellationToken);
         }
     }

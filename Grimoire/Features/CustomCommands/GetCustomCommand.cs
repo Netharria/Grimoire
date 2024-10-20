@@ -17,7 +17,7 @@ public sealed class GetCustomCommand
         [SlashCommand("Command", "Call a custom command.")]
         internal async Task CallCommand(
             InteractionContext ctx,
-            [Autocomplete(typeof(GetCustomCommandOptions.AutocomepleteProvider))]
+            [Autocomplete(typeof(GetCustomCommandOptions.AutocompleteProvider))]
         [Option("CommandName", "Enter the name of the command.", autocomplete: true)]string name,
             [Option("Mention", "The person to mention if the command has one.")] SnowflakeObject? snowflakeObject = null,
             [Option("Message", "The custom message to add if the command has one.")] string message = "")
@@ -29,13 +29,8 @@ public sealed class GetCustomCommand
                 Name = name,
                 GuildId = ctx.Guild.Id
             });
-            if (response is null)
-            {
-                await ctx.Interaction.DeleteOriginalResponseAsync();
-                return;
-            }
-            if ((response.RestrictedUse && ctx.Member.Roles.All(x => !response.PermissionRoles.Contains(x.Id)))
-                || (!response.RestrictedUse && ctx.Member.Roles.Any(x => response.PermissionRoles.Contains(x.Id))))
+
+            if (response is null || !IsUserAuthorized(ctx, response))
             {
                 await ctx.Interaction.DeleteOriginalResponseAsync();
                 return;
@@ -44,12 +39,12 @@ public sealed class GetCustomCommand
             if (response.HasMention)
                 response.Content = response.Content.Replace(
                     "%Mention",
-                    snowflakeObject is null
-                    ? ""
-                    : snowflakeObject is DiscordUser user
-                    ? user.Mention
-                    : snowflakeObject is DiscordRole role
-                    ? role.Mention : "", StringComparison.OrdinalIgnoreCase);
+                    snowflakeObject switch
+                    {
+                        DiscordUser user => user.Mention,
+                        DiscordRole role => role.Mention,
+                        _ => string.Empty
+                    }, StringComparison.OrdinalIgnoreCase);
             if (response.HasMessage)
                 response.Content = response.Content.Replace("%Message", message, StringComparison.OrdinalIgnoreCase);
 
@@ -68,6 +63,11 @@ public sealed class GetCustomCommand
             await ctx.EditResponseAsync(discordResponse);
         }
     }
+
+    private static bool IsUserAuthorized(InteractionContext ctx, Response response) =>
+            response.RestrictedUse
+                ? ctx.Member.Roles.Any(x => response.PermissionRoles.Contains(x.Id))
+                : ctx.Member.Roles.All(x => !response.PermissionRoles.Contains(x.Id));
 
     public sealed record Request : IRequest<Response>
     {
