@@ -17,7 +17,9 @@ public static class MemberExtensions
                 (@base * modifier)));
         while (true)
         {
-            var xpNeeded = GetXpNeeded(i, @base, modifier);
+            var xpNeeded = @base + (
+                (long)Math.Round(@base *
+                                (modifier / 100.0) * i) * i);
             if (xp < xpNeeded)
                 return i + 1;
 

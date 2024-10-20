@@ -91,7 +91,7 @@ public sealed class GetCustomCommand
                 IsEmbedded = x.IsEmbedded,
                 EmbedColor = x.EmbedColor,
                 RestrictedUse = x.RestrictedUse,
-                PermissionRoles = x.CustomCommandRoles.Select(x => x.RoleId).ToArray(),
+                PermissionRoles = x.CustomCommandRoles.Select(x => x.RoleId),
 
             }).FirstOrDefaultAsync(cancellationToken);
     }
@@ -104,6 +104,6 @@ public sealed class GetCustomCommand
         public required bool IsEmbedded { get; set; }
         public required string? EmbedColor { get; set; }
         public required bool RestrictedUse { get; set; }
-        public required ulong[] PermissionRoles { get; set; }
+        public required IEnumerable<ulong> PermissionRoles { get; set; }
     }
 }

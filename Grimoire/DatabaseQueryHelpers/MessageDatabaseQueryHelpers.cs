@@ -11,6 +11,4 @@ public static class MessageDatabaseQueryHelpers
 {
     public static IQueryable<Message> WhereMessageLoggingIsEnabled(this IQueryable<Message> messages)
         => messages.Where(x => x.Guild.MessageLogSettings.ModuleEnabled);
-    public static IQueryable<Message> WhereUserLoggingIsEnabled(this IQueryable<Message> messages)
-        => messages.Where(x => x.Guild.UserLogSettings.ModuleEnabled);
 }

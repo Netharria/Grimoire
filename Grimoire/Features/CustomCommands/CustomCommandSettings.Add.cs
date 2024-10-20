@@ -34,7 +34,7 @@ public sealed partial class CustomCommandSettings
     {
         await ctx.DeferAsync();
 
-        if (name.Split(' ').Length > 1)
+        if (name.Contains(' '))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, message: $"No spaces are allowed in command name.");
             return;
@@ -46,9 +46,10 @@ public sealed partial class CustomCommandSettings
             return;
         }
 
-        var permissionRoles = await ParseStringAndGetRoles(ctx, allowedRolesText);
+        var permissionRoles = await ParseStringAndGetRoles(ctx, allowedRolesText)
+            .ToListAsync();
 
-        if (permissionRoles.Length == 0 && restrictedUse)
+        if (restrictedUse && permissionRoles.Count != 0)
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, message: $"Command set as restricted but no roles allowed to use it.");
             return;
@@ -69,23 +70,23 @@ public sealed partial class CustomCommandSettings
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 
-    internal async static ValueTask<RoleDto[]> ParseStringAndGetRoles(InteractionContext ctx, string rolesText)
+    internal async static IAsyncEnumerable<RoleDto> ParseStringAndGetRoles(InteractionContext ctx, string rolesText)
     {
         if (string.IsNullOrWhiteSpace(rolesText))
-            return [];
+            yield break;
 
-        var matchedIds = await ctx.ParseStringIntoIdsAndGroupByTypeAsync(rolesText);
-
-        if (!matchedIds.TryGetValue("Role", out var matchedRoles))
-            return [];
-
-        return matchedRoles
-            .Select(x =>
-                new RoleDto
-                {
-                    Id = ulong.Parse(x),
-                    GuildId = ctx.Guild.Id
-                }).ToArray();
+        await foreach (var role in ctx.ParseStringIntoIdsAndGroupByTypeAsync(rolesText)
+            .Where(x => x.Key == "Role")
+            .SelectMany(roleList =>
+                roleList.Select(role =>
+                    new RoleDto
+                    {
+                        Id = ulong.Parse(role),
+                        GuildId = ctx.Guild.Id
+                    })))
+        {
+            yield return role;
+        }
     }
 }
 public sealed partial class AddCustomCommand
@@ -100,7 +101,7 @@ public sealed partial class AddCustomCommand
         public required bool IsEmbedded { get; init; }
         public required string? EmbedColor { get; init; }
         public required bool RestrictedUse { get; init; }
-        public required RoleDto[] PermissionRoles { get; init; }
+        public required IEnumerable<RoleDto> PermissionRoles { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>

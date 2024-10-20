@@ -26,7 +26,10 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
     private async Task UpdateIgnoreState(InteractionContext ctx, string value, bool shouldIgnore)
     {
         await ctx.DeferAsync();
-        var matchedIds = await ctx.ParseStringIntoIdsAndGroupByTypeAsync(value);
+        var matchedIds = await ctx.ParseStringIntoIdsAndGroupByTypeAsync(value)
+            .ToDictionaryAsync(
+            x => x.Key,
+            v=> v);
         if (matchedIds.Count == 0 || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
@@ -38,30 +41,29 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
 
         if (matchedIds.TryGetValue("User", out var userIds))
             command.Users = await userIds
-            .ToAsyncEnumerable()
             .SelectAwait(async x => await BuildUserDto(ctx.Client, x, ctx.Guild.Id))
             .OfType<UserDto>()
             .ToArrayAsync();
 
         if (matchedIds.TryGetValue("Role", out var roleIds))
-            command.Roles = roleIds
+            command.Roles = await roleIds
                 .Select(x =>
                     new RoleDto
                     {
                         Id = ulong.Parse(x),
                         GuildId = ctx.Guild.Id
-                    }).ToArray();
+                    }).ToArrayAsync();
 
         if (matchedIds.TryGetValue("Channel", out var channelIds))
-            command.Channels = channelIds
+            command.Channels = await channelIds
                 .Select(x =>
                     new ChannelDto
                     {
                         Id = ulong.Parse(x),
                         GuildId = ctx.Guild.Id
-                    }).ToArray();
+                    }).ToArrayAsync();
         if (matchedIds.TryGetValue("Invalid", out var invalidIds))
-            command.InvalidIds = invalidIds;
+            command.InvalidIds = await invalidIds.ToArrayAsync();
         var response = await this._mediator.Send(command);
 
 

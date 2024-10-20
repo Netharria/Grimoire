@@ -13,7 +13,4 @@ public static class IMemberDatabaseQueryHelpers
 {
     public static IQueryable<TSource> WhereMemberHasId<TSource>(this IQueryable<TSource> members, ulong userId, ulong guildId) where TSource : IMember
         => members.Where(x => x.UserId == userId && x.GuildId == guildId);
-
-    public static IQueryable<TSource> WhereMembersHaveIds<TSource>(this IQueryable<TSource> members, ulong[] userIds, ulong guildId) where TSource : IMember
-        => members.Where(x => x.GuildId == guildId && userIds.Contains(x.UserId));
 }

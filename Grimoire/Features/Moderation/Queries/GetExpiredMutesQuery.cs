@@ -5,39 +5,33 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
+
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetExpiredMutesQuery : IQuery<IList<GetExpiredMutesQueryResponse>> { }
+public sealed record GetExpiredMutesQuery : IStreamQuery<GetExpiredMutesQueryResponse> { }
 
-public sealed class GetExpiredMutesQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetExpiredMutesQuery, IList<GetExpiredMutesQueryResponse>>
+public sealed class GetExpiredMutesQueryHandler(GrimoireDbContext grimoireDbContext) : IStreamQueryHandler<GetExpiredMutesQuery, GetExpiredMutesQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<IList<GetExpiredMutesQueryResponse>> Handle(GetExpiredMutesQuery query, CancellationToken cancellationToken)
+    public async IAsyncEnumerable<GetExpiredMutesQueryResponse> Handle(GetExpiredMutesQuery query,[EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var response = await this._grimoireDbContext.Mutes
+        await foreach (var mute in this._grimoireDbContext.Mutes
             .AsNoTracking()
             .Where(x => x.EndTime < DateTimeOffset.UtcNow)
             .Where(x => x.Guild.ModerationSettings.MuteRole != null)
-            .Select(x => new
-            {
-                x.UserId,
-                x.GuildId,
-                x.Guild.ModerationSettings.MuteRole,
-                x.Guild.ModChannelLog
-            }).ToArrayAsync(cancellationToken);
-
-        return response
-            .Where(x => x.MuteRole is not null)
             .Select(x => new GetExpiredMutesQueryResponse
             {
                 UserId = x.UserId,
                 GuildId = x.GuildId,
-                MuteRole = x.MuteRole!.Value,
-                LogChannelId = x.ModChannelLog
-            }).ToArray();
+                MuteRole = x.Guild.ModerationSettings.MuteRole!.Value,
+                LogChannelId = x.Guild.ModChannelLog
+            }).AsAsyncEnumerable().WithCancellation(cancellationToken))
+        {
+            yield return mute;
+        }
     }
-
 }
 
 public sealed record GetExpiredMutesQueryResponse : BaseResponse

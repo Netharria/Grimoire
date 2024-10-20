@@ -11,16 +11,22 @@ public static class UserDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingUsersAsync(this DbSet<User> databaseUsers, IEnumerable<UserDto> users, CancellationToken cancellationToken = default)
     {
-        var incomingUsers = users
+        var incomingUserIds = users
+            .Select(x => x.Id);
+
+        var existingUserIds = await databaseUsers
+            .AsNoTracking()
+            .Where(x => incomingUserIds.Contains(x.Id))
+            .Select(x => x.Id)
+            .AsAsyncEnumerable()
+            .ToHashSetAsync(cancellationToken);
+
+        var usersToAdd = users
+            .Where(x => !existingUserIds.Contains(x.Id))
             .Select(x => new User
             {
                 Id = x.Id
             });
-
-        var usersToAdd = incomingUsers.ExceptBy(databaseUsers
-            .AsNoTracking()
-            .Where(x => incomingUsers.Contains(x))
-            .Select(x => x.Id), x => x.Id);
 
         if (usersToAdd.Any())
             await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);
@@ -29,19 +35,26 @@ public static class UserDatabaseQueryHelpers
 
     public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames, IEnumerable<UserDto> users, CancellationToken cancellationToken = default)
     {
-        var usernamesToAdd = users
-            .ExceptBy(databaseUsernames
+        var existingUsernames = await databaseUsernames
             .AsNoTracking()
             .GroupBy(x => x.UserId)
             .Select(x => new { UserId = x.Key, x.OrderByDescending(x => x.Timestamp).First().Username })
-            , x => new { UserId = x.Id, x.Username })
+            .AsAsyncEnumerable()
+            .Select(x => (x.UserId, x.Username))
+            .ToHashSetAsync(cancellationToken);
+
+        var usernamesToAdd = users
+            .Where(x => !existingUsernames.Contains((x.Id, x.Username)))
             .Select(x => new UsernameHistory
             {
                 UserId = x.Id,
                 Username = x.Username
             });
         if (usernamesToAdd.Any())
+        {
             await databaseUsernames.AddRangeAsync(usernamesToAdd, cancellationToken);
-        return usernamesToAdd.Any();
+            return true;
+        }
+        return false;
     }
 }

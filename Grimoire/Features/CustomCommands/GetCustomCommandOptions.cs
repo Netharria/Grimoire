@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Features.CustomCommands;
@@ -23,26 +24,27 @@ public sealed class GetCustomCommandOptions
             if (mediator is null)
                 return [];
 
-            var results = await mediator.Send(new Request
-            {
-                EnteredText =  (string) (ctx.FocusedOption.Value ?? string.Empty),
-                GuildId = ctx.Guild.Id
-            });
-            return results
-                .Select(x => new DiscordAutoCompleteChoice(
-                    x.Name + " " +
-                    (x.HasMention ? "<Mention> " : string.Empty) +
-                    (x.HasMessage ? "<Message>" : string.Empty),
-                    x.Name));
+            return await mediator.CreateStream(
+                new Request
+                {
+                    EnteredText = (string)(ctx.FocusedOption.Value ?? string.Empty),
+                    GuildId = ctx.Guild.Id
+                }).Select(x =>
+                new DiscordAutoCompleteChoice(
+                        x.Name + " " +
+                        (x.HasMention ? "<Mention> " : string.Empty) +
+                        (x.HasMessage ? "<Message>" : string.Empty),
+                        x.Name))
+                .ToListAsync();
         }
     }
-    public sealed record Request : IRequest<IEnumerable<Response>>
+    public sealed record Request : IStreamRequest<Response>
     {
         public required string EnteredText { get; set; }
         public required ulong GuildId { get; set; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, IEnumerable<Response>>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IStreamRequestHandler<Request, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
         private static readonly Func<GrimoireDbContext, ulong, string, IAsyncEnumerable<Response>> _getCommandsAsync =
@@ -60,11 +62,13 @@ public sealed class GetCustomCommandOptions
                     })
             );
 
-        public async ValueTask<IEnumerable<Response>> Handle(Request request, CancellationToken cancellationToken)
+        public async IAsyncEnumerable<Response> Handle(Request request,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var cleanedText = request.EnteredText.Split(' ').FirstOrDefault(string.Empty);
-            return await _getCommandsAsync(this._grimoireDbContext, request.GuildId, cleanedText)
-                .ToListAsync(cancellationToken);
+            await foreach (var response in _getCommandsAsync(this._grimoireDbContext, request.GuildId, cleanedText)
+                    .WithCancellation(cancellationToken))
+                yield return response;
         }
     }
 

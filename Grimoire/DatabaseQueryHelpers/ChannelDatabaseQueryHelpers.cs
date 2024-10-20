@@ -11,20 +11,29 @@ public static class ChannelDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingChannelsAsync(this DbSet<Channel> databaseChannels, IEnumerable<ChannelDto> channels, CancellationToken cancellationToken = default)
     {
-        var incomingChannels = channels
+        var incomingChannelIds = channels.Select(x => x.Id);
+
+        var existingChannelIds = await databaseChannels
+            .AsNoTracking()
+            .Where(x => incomingChannelIds.Contains(x.Id))
+            .Select(x => x.Id)
+            .AsAsyncEnumerable()
+            .ToHashSetAsync(cancellationToken);
+
+        var channelsToAdd = channels
+            .Where(x => !existingChannelIds.Contains(x.Id))
             .Select(x => new Channel
             {
                 Id = x.Id,
                 GuildId = x.GuildId
             });
 
-        var channelsToAdd = incomingChannels.ExceptBy(databaseChannels
-            .AsNoTracking()
-            .Where(x => incomingChannels.Contains(x))
-            .Select(x => x.Id), x => x.Id);
-
         if (channelsToAdd.Any())
+        {
             await databaseChannels.AddRangeAsync(channelsToAdd, cancellationToken);
-        return channelsToAdd.Any();
+            return true;
+        }
+            
+        return false;
     }
 }

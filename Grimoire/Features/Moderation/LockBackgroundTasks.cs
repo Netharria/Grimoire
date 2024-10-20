@@ -21,8 +21,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
         var mediator = serviceProvider.GetRequiredService<IMediator>();
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
 
-        var response = await mediator.Send(new GetExpiredLocksQuery(), stoppingToken);
-        foreach (var expiredLock in response)
+        await foreach (var expiredLock in mediator.CreateStream(new GetExpiredLocksQuery(), stoppingToken))
         {
             var guild = discordClient.Guilds.GetValueOrDefault(expiredLock.GuildId);
             if (guild is null) continue;

@@ -82,9 +82,12 @@ public sealed partial class GainUserXp
             _getUserXpInfoQuery = EF.CompileAsyncQuery((GrimoireDbContext context, ulong userId, ulong guildId, ulong channelId, ulong[] roleIds) =>
                 context.Members
                 .AsNoTracking()
-                .WhereLevelingEnabled()
-                .WhereMemberHasId(userId, guildId)
-                .WhereMemberNotIgnored(channelId, roleIds)
+                .Where(x => x.Guild.LevelSettings.ModuleEnabled)
+                .Where(x => x.UserId == userId)
+                .Where(x => x.GuildId == guildId)
+                .Where(x => x.IsIgnoredMember == null)
+                .Where(x => !x.Guild.IgnoredChannels.Any(x => x.ChannelId == channelId))
+                .Where(x => !x.Guild.IgnoredRoles.Any(x => roleIds.Contains(x.RoleId)))
                 .Select(x => new QueryResult
                 {
                     Xp = x.XpHistory.Sum(x => x.Xp),
@@ -96,7 +99,7 @@ public sealed partial class GainUserXp
                     Amount = x.Guild.LevelSettings.Amount,
                     LevelChannelLogId = x.Guild.LevelSettings.LevelChannelLogId,
                     TextTime = x.Guild.LevelSettings.TextTime
-                }));
+                }).Take(1));
 
         public async ValueTask<Response> Handle(Request command, CancellationToken cancellationToken)
         {

@@ -32,7 +32,8 @@ public sealed class RemoveIgnoreForXpGain
             if (command.Users.Length != 0)
             {
                 var allUsersToIgnore = await this._grimoireDbContext.IgnoredMembers
-                .WhereMembersHaveIds(command.Users.Select(x => x.Id).ToArray(), command.GuildId)
+                    .Where(x => x.GuildId == command.GuildId)
+                    .Where(x => command.Users.Select(x => x.Id).Contains(x.UserId))
                 .ToArrayAsync(cancellationToken);
                 foreach (var ignorable in allUsersToIgnore)
                     newIgnoredItems.Append(UserExtensions.Mention(ignorable.UserId)).Append(' ');

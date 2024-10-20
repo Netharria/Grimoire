@@ -38,19 +38,6 @@ public sealed class IMemberDatabaseQueryHelperTests(GrimoireCoreFactory factory)
     }
     public Task DisposeAsync() => this._resetDatabase();
 
-
-    [Fact]
-    public async Task WhereMembersHaveIds_WhenProvidedValidIds_ReturnsResultAsync()
-    {
-
-        var result = await this._dbContext.Members.WhereMembersHaveIds(
-            [ MEMBER_1 ], GUILD_ID).ToArrayAsync();
-
-        result.Should().HaveCount(1);
-        result.Should().AllSatisfy(x => x.UserId.Should().Be(MEMBER_1))
-            .And.AllSatisfy(x => x.GuildId.Should().Be(GUILD_ID));
-    }
-
     [Fact]
     public async Task WWhereMemberHasId_WhenProvidedValidId_ReturnsResultAsync()
     {

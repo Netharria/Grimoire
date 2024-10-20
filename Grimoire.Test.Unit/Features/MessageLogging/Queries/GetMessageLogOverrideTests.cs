@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
@@ -58,7 +59,7 @@ public sealed class GetMessageLogOverrideTests(GrimoireCoreFactory factory) : IA
             new GetMessageLogOverrides.Query
             {
                 GuildId = GUILD_ID
-            }, default);
+            }, default).ToListAsync();
 
         this._dbContext.ChangeTracker.Clear();
 
@@ -86,7 +87,7 @@ public sealed class GetMessageLogOverrideTests(GrimoireCoreFactory factory) : IA
             new GetMessageLogOverrides.Query
             {
                 GuildId = 1321654
-            }, default);
+            }, default).ToListAsync();
 
         this._dbContext.ChangeTracker.Clear();
 

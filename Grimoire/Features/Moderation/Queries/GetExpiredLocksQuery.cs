@@ -7,14 +7,14 @@
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetExpiredLocksQuery : IQuery<IEnumerable<GetExpiredLocksQueryResponse>> { }
+public sealed record GetExpiredLocksQuery : IStreamQuery<GetExpiredLocksQueryResponse> { }
 
-public sealed class GetExpiredLocksQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetExpiredLocksQuery, IEnumerable<GetExpiredLocksQueryResponse>>
+public sealed class GetExpiredLocksQueryHandler(GrimoireDbContext grimoireDbContext) : IStreamQueryHandler<GetExpiredLocksQuery, GetExpiredLocksQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<IEnumerable<GetExpiredLocksQueryResponse>> Handle(GetExpiredLocksQuery query, CancellationToken cancellationToken)
-     => await this._grimoireDbContext.Locks
+    public IAsyncEnumerable<GetExpiredLocksQueryResponse> Handle(GetExpiredLocksQuery query, CancellationToken cancellationToken)
+     => this._grimoireDbContext.Locks
             .AsNoTracking()
             .Where(x => x.EndTime < DateTimeOffset.UtcNow)
             .Select(x => new GetExpiredLocksQueryResponse
@@ -24,7 +24,7 @@ public sealed class GetExpiredLocksQueryHandler(GrimoireDbContext grimoireDbCont
                 PreviouslyAllowed = x.PreviouslyAllowed,
                 PreviouslyDenied = x.PreviouslyDenied,
                 LogChannelId = x.Guild.ModChannelLog
-            }).ToArrayAsync(cancellationToken);
+            }).AsAsyncEnumerable();
 }
 
 public sealed record GetExpiredLocksQueryResponse : BaseResponse

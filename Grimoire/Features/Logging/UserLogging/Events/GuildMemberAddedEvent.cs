@@ -9,7 +9,7 @@ using System.Collections.Concurrent;
 using Grimoire.Features.Logging.Settings;
 
 namespace Grimoire.Features.Logging.UserLogging.Events;
-internal class GuildMemberAddedEvent(IMediator mediator, IInviteService inviteService) : IEventHandler<GuildMemberAddedEventArgs>
+internal sealed class GuildMemberAddedEvent(IMediator mediator, IInviteService inviteService) : IEventHandler<GuildMemberAddedEventArgs>
 {
     private readonly IMediator _mediator = mediator;
     private readonly IInviteService _inviteService = inviteService;

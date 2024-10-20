@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
 namespace Grimoire.Utilities;
@@ -15,8 +16,9 @@ public static partial class DiscordSnowflakeParser
     [GeneratedRegex(@"(\d{17,21})", RegexOptions.Compiled, 1000)]
     public static partial Regex MatchSnowflake();
 
-    public static async ValueTask<Dictionary<string, string[]>> ParseStringIntoIdsAndGroupByTypeAsync(this InteractionContext ctx, string value) =>
-        await MatchSnowflake().Matches(value)
+    public static async IAsyncEnumerable<IAsyncGrouping<string, string>> ParseStringIntoIdsAndGroupByTypeAsync(this InteractionContext ctx, string value)
+    {
+        await foreach (var group in MatchSnowflake().Matches(value)
             .Where(x => x.Success)
             .Select(x => x.Value)
             .ToAsyncEnumerable()
@@ -29,6 +31,10 @@ public static partial class DiscordSnowflakeParser
                 var user = await ctx.Client.GetUserAsync(id);
                 if (user is not null) return "User";
                 return "Invalid";
-            })
-            .ToDictionaryAwaitAsync(k => ValueTask.FromResult(k.Key), async v => await v.ToArrayAsync());
+            }))
+        {
+            yield return group;
+        }
+    }
+        
 }

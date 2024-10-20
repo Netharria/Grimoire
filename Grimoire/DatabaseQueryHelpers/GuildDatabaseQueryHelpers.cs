@@ -13,6 +13,17 @@ public static class GuildDatabaseQueryHelpers
     {
 
         var incomingGuilds = guilds
+            .Select(x => x.Id);
+
+        var existingGuildIds = await databaseGuilds
+            .AsNoTracking()
+            .Where(x => incomingGuilds.Contains(x.Id))
+            .Select(x => x.Id)
+            .AsAsyncEnumerable()
+            .ToHashSetAsync(cancellationToken);
+
+        var guildsToAdd = guilds
+            .Where(x => !existingGuildIds.Contains(x.Id))
             .Select(x => new Guild
             {
                 Id = x.Id,
@@ -23,14 +34,11 @@ public static class GuildDatabaseQueryHelpers
                 CommandsSettings = new GuildCommandsSettings(),
             });
 
-        var guildsToAdd = incomingGuilds.ExceptBy(databaseGuilds
-            .AsNoTracking()
-            .Where(x => incomingGuilds.Contains(x))
-            .Select(x => x.Id), x => x.Id);
-
         if (guildsToAdd.Any())
+        {
             await databaseGuilds.AddRangeAsync(guildsToAdd, cancellationToken);
-
-        return guildsToAdd.Any();
+            return true;
+        }
+        return false;
     }
 }

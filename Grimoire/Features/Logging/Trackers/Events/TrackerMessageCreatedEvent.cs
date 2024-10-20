@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 namespace Grimoire.Features.Logging.Trackers.Events;
-internal class TrackerMessageCreatedEvent(IMediator mediator, IDiscordImageEmbedService imageEmbedService) : IEventHandler<MessageCreatedEventArgs>
+internal sealed class TrackerMessageCreatedEvent(IMediator mediator, IDiscordImageEmbedService imageEmbedService) : IEventHandler<MessageCreatedEventArgs>
 {
     private readonly IMediator _mediator = mediator;
     private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;

@@ -75,21 +75,21 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
                         GuildId = x.Value.GuildId.GetValueOrDefault()
                     })
                 ),
-            Invites = args.Guilds.Values
+            Invites = await args.Guilds.Values
                 .ToAsyncEnumerable()
                 .Where(x => x.CurrentMember.Permissions.HasPermission(DiscordPermissions.ManageGuild))
                 .SelectManyAwait(async x =>
                     (await DiscordRetryPolicy.RetryDiscordCall(x.GetInvitesAsync))
                     .ToAsyncEnumerable())
-                .Select(x =>
-                new Invite
-                {
-                    Code = x.Code,
-                    Inviter = x.Inviter.GetUsernameWithDiscriminator(),
-                    Url = x.ToString(),
-                    Uses = x.Uses,
-                    MaxUses = x.MaxUses
-                }).ToEnumerable()
+                    .Select(x =>
+                    new Invite
+                    {
+                        Code = x.Code,
+                        Inviter = x.Inviter.GetUsernameWithDiscriminator(),
+                        Url = x.ToString(),
+                        Uses = x.Uses,
+                        MaxUses = x.MaxUses
+                    }).ToListAsync()
         });
     }
 

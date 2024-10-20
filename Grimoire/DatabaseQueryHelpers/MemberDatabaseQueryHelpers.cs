@@ -13,15 +13,22 @@ public static class MemberDatabaseQueryHelpers
     {
         var userIds = members.Select(x => x.UserId);
         var guildIds = members.Select(x => x.GuildId);
-        var membersToAdd = members.ExceptBy(databaseMembers
+
+        var existingMemberIds = await databaseMembers
             .AsNoTracking()
             .Where(x => userIds.Contains(x.UserId) && guildIds.Contains(x.GuildId))
             .Select(x => new { x.UserId, x.GuildId })
-            , x => new { x.UserId, x.GuildId })
+            .AsAsyncEnumerable()
+            .ToHashSetAsync(cancellationToken);
+
+
+        var membersToAdd = members
+            .Where(x => !existingMemberIds.Contains(new { x.UserId, x.GuildId }))
             .Select(x => new Member
             {
                 UserId = x.UserId,
                 GuildId = x.GuildId,
+                IsIgnoredMember = null,
                 XpHistory =
                     [
                         new() {
@@ -35,18 +42,26 @@ public static class MemberDatabaseQueryHelpers
             });
 
         if (membersToAdd.Any())
+        {
             await databaseMembers.AddRangeAsync(membersToAdd, cancellationToken);
-        return membersToAdd.Any();
+            return true;
+        }
+        return false;
     }
 
     public static async Task<bool> AddMissingNickNameHistoryAsync(this DbSet<NicknameHistory> databaseNicknames, IEnumerable<MemberDto> users, CancellationToken cancellationToken = default)
     {
-        var nicknamesToAdd = users
-            .ExceptBy(databaseNicknames
+        var existingNicknames = await databaseNicknames
             .AsNoTracking()
             .GroupBy(x => new { x.UserId, x.GuildId })
             .Select(x => new { x.Key.UserId, x.Key.GuildId, x.OrderByDescending(x => x.Timestamp).First().Nickname })
-            , x => new { x.UserId, x.GuildId, x.Nickname })
+            .AsAsyncEnumerable()
+            .Select(x => (x.UserId, x.GuildId, x.Nickname))
+            .ToHashSetAsync(cancellationToken);
+
+
+        var nicknamesToAdd = users
+            .Where(x => !existingNicknames.Contains((x.UserId, x.GuildId, x.Nickname)))
             .Select(x =>  new NicknameHistory
             {
                 GuildId = x.GuildId,
@@ -54,19 +69,25 @@ public static class MemberDatabaseQueryHelpers
                 Nickname = x.Nickname
             });
         if (nicknamesToAdd.Any())
+        {
             await databaseNicknames.AddRangeAsync(nicknamesToAdd, cancellationToken);
-        return nicknamesToAdd.Any();
+            return true;
+        }
+        return false;
     }
 
     public static async Task<bool> AddMissingAvatarsHistoryAsync(this DbSet<Avatar> databaseAvatars, IEnumerable<MemberDto> users, CancellationToken cancellationToken = default)
     {
-
-        var avatarsToAdd = users
-            .ExceptBy(databaseAvatars
+        var existingAvatars = await databaseAvatars
             .AsNoTracking()
             .GroupBy(x => new { x.UserId, x.GuildId })
             .Select(x => new { x.Key.UserId, x.Key.GuildId, x.OrderByDescending(x => x.Timestamp).First().FileName })
-            , x => new { x.UserId, x.GuildId, FileName = x.AvatarUrl })
+            .AsAsyncEnumerable()
+            .Select(x => (x.UserId, x.GuildId, x.FileName))
+            .ToHashSetAsync(cancellationToken);
+
+        var avatarsToAdd = users
+            .Where(x => !existingAvatars.Contains((x.UserId, x.GuildId, x.AvatarUrl)))
             .Select(x =>  new Avatar
             {
                 UserId = x.UserId,
@@ -74,16 +95,10 @@ public static class MemberDatabaseQueryHelpers
                 FileName = x.AvatarUrl
             });
         if (avatarsToAdd.Any())
+        {
             await databaseAvatars.AddRangeAsync(avatarsToAdd, cancellationToken);
-        return avatarsToAdd.Any();
+            return true;
+        }
+        return false;
     }
-
-    public static IQueryable<Member> WhereLevelingEnabled(this IQueryable<Member> members)
-        => members.Where(x => x.Guild.LevelSettings.ModuleEnabled);
-
-    public static IQueryable<Member> WhereMemberNotIgnored(this IQueryable<Member> members, ulong channelId, ulong[] roleIds)
-            => members
-            .Where(x => x.IsIgnoredMember == null)
-            .Where(x => !x.Guild.IgnoredChannels.Any(y => y.ChannelId == channelId))
-            .Where(x => !x.Guild.IgnoredRoles.Any(y => roleIds.Any(z => z == y.RoleId)));
 }
