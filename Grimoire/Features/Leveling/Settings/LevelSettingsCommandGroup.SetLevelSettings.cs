@@ -8,33 +8,43 @@
 
 namespace Grimoire.Features.Leveling.Settings;
 
+public enum LevelSettings
+{
+    [ChoiceName("Timeout between xp gains in minutes")]
+    TextTime,
+    [ChoiceName("Base - linear xp per level modifier")]
+    Base,
+    [ChoiceName("Modifier - exponential xp per level modifier")]
+    Modifier,
+    [ChoiceName("Amount per xp gain.")]
+    Amount,
+    [ChoiceName("Log Channel")]
+    LogChannel,
+}
+
 public sealed partial class LevelSettingsCommandGroup
 {
 
     [SlashCommand("Set", "Set a leveling setting.")]
     public async Task SetAsync(
         InteractionContext ctx,
-        [Choice("Timeout between xp gains in minutes", 0)]
-        [Choice("Base - linear xp per level modifier", 1)]
-        [Choice("Modifier - exponential xp per level modifier", 2)]
-        [Choice("Amount per xp gain.", 3)]
-        [Option("Setting", "The Setting to change.")] long levelSettings,
+        [Option("Setting", "The Setting to change.")] LevelSettings levelSettings,
         [Maximum(int.MaxValue)]
         [Minimum(1)]
         [Option("Value", "The value to change the setting to.")] long value)
     {
         await ctx.DeferAsync();
-        var levelSetting = (LevelSettings)levelSettings;
+
         var response = await this._mediator.Send(new SetLevelSettings.Request
         {
             GuildId = ctx.Guild.Id,
-            LevelSettings = levelSetting,
+            LevelSettings = levelSettings,
             Value = value.ToString()
         });
 
-        await ctx.EditReplyAsync(message: $"Updated {levelSetting.GetName()} level setting to {value}");
+        await ctx.EditReplyAsync(message: $"Updated {levelSettings.GetName()} level setting to {value}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.Member.Mention} updated {levelSetting.GetName()} level setting to {value}");
+            message: $"{ctx.Member.Mention} updated {levelSettings.GetName()} level setting to {value}");
     }
 
     [SlashCommand("LogSet", "Set the leveling log channel.")]
@@ -69,14 +79,7 @@ public sealed partial class LevelSettingsCommandGroup
     }
 }
 
-public enum LevelSettings
-{
-    TextTime,
-    Base,
-    Modifier,
-    Amount,
-    LogChannel,
-}
+
 public sealed class SetLevelSettings
 {
     public sealed record Request : ICommand<BaseResponse>

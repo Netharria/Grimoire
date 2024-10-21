@@ -15,7 +15,7 @@ public static class GetUserLevelingInfo
     {
         public required ulong UserId { get; init; }
         public required ulong GuildId { get; init; }
-        public required ulong[] RoleIds { get; init; }
+        public required IEnumerable<ulong> RoleIds { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext dbContext) : IQueryHandler<Query, Response?>
@@ -47,8 +47,7 @@ public static class GetUserLevelingInfo
             result.Response.Level = MemberExtensions.GetLevel(result.Xp, result.Base, result.Modifier);
             result.Response.EarnedRewards = result.Rewards
                 .Where(x => x.RewardLevel <= result.Response.Level)
-                .Select(x => x.RoleId)
-                .ToArray();
+                .Select(x => x.RoleId);
             return result.Response;
         }
     }
@@ -57,6 +56,6 @@ public static class GetUserLevelingInfo
     {
         public int Level { get; internal set; }
         public required bool IsXpIgnored { get; init; }
-        public ulong[] EarnedRewards { get; internal set; } = [];
+        public IEnumerable<ulong> EarnedRewards { get; internal set; } = [];
     }
 }

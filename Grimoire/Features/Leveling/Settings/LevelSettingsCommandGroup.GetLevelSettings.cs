@@ -33,7 +33,7 @@ public sealed class GetLevelSettings
 {
     public sealed record Request : IRequest<Response>
     {
-        public ulong GuildId { get; init; }
+        public required ulong GuildId { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
@@ -41,38 +41,27 @@ public sealed class GetLevelSettings
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async ValueTask<Response> Handle(Request request, CancellationToken cancellationToken)
-        {
-            var guildLevelSettings = await this._grimoireDbContext.GuildLevelSettings
+         => await this._grimoireDbContext.GuildLevelSettings
             .Where(x => x.GuildId == request.GuildId)
-            .Select(x => new
+            .Select(x => new Response
             {
-                x.ModuleEnabled,
-                x.TextTime,
-                x.Base,
-                x.Modifier,
-                x.Amount,
-                x.LevelChannelLogId
+                ModuleEnabled = x.ModuleEnabled,
+                TextTime = x.TextTime,
+                Base = x.Base,
+                Modifier = x.Modifier,
+                Amount = x.Amount,
+                LevelChannelLog = x.LevelChannelLogId
             }).FirstAsync(cancellationToken: cancellationToken);
-            return new Response
-            {
-                ModuleEnabled = guildLevelSettings.ModuleEnabled,
-                TextTime = guildLevelSettings.TextTime,
-                Base = guildLevelSettings.Base,
-                Modifier = guildLevelSettings.Modifier,
-                Amount = guildLevelSettings.Amount,
-                LevelChannelLog = guildLevelSettings.LevelChannelLogId
-            };
-        }
 
     }
 
     public sealed record Response : BaseResponse
     {
-        public bool ModuleEnabled { get; init; }
-        public TimeSpan TextTime { get; init; }
-        public int Base { get; init; }
-        public int Modifier { get; init; }
-        public int Amount { get; init; }
+        public required bool ModuleEnabled { get; init; }
+        public required TimeSpan TextTime { get; init; }
+        public required int Base { get; init; }
+        public required int Modifier { get; init; }
+        public required int Amount { get; init; }
         public ulong? LevelChannelLog { get; init; }
     }
 

@@ -57,7 +57,7 @@ public sealed class DeleteMessageEvent
                     GuildId = args.Guild.Id
                 });
 
-            if (!response.Success)
+            if (!response.Success || response.LoggingChannel is null)
                 return;
 
             var avatarUrl = await sender.GetUserAvatar(

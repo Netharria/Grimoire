@@ -39,21 +39,13 @@ public sealed partial class GainUserXp
                 UserLevel = response.CurrentLevel
             });
 
-            if (response.LevelLogChannel is null)
-                return;
-
-            if (!args.Guild.Channels
-                .TryGetValue(response.LevelLogChannel.Value, out var loggingChannel))
-                return;
-
             if (response.PreviousLevel < response.CurrentLevel)
-                await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
+                await sender.SendMessageToLoggingChannel(response.LevelLogChannel, new DiscordEmbedBuilder()
                     .WithColor(GrimoireColor.Purple)
                     .WithAuthor(member.GetUsernameWithDiscriminator())
                     .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
                     .WithFooter($"{member.Id}")
-                    .WithTimestamp(DateTime.UtcNow)
-                    .Build());
+                    .WithTimestamp(DateTime.UtcNow));
 
 
         }

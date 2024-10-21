@@ -11,9 +11,9 @@ public sealed class AddLogMessage
 {
     public sealed record Command : ICommand
     {
-        public ulong ChannelId { get; init; }
-        public ulong MessageId { get; init; }
-        public ulong GuildId { get; init; }
+        public required ulong ChannelId { get; init; }
+        public required ulong MessageId { get; init; }
+        public required ulong GuildId { get; init; }
     }
 
     public sealed class AddLogMessageCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command>

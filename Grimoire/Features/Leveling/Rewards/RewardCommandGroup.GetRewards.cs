@@ -26,7 +26,7 @@ public sealed class GetRewards
 
     public sealed record Request : IRequest<BaseResponse>
     {
-        public ulong GuildId { get; init; }
+        public required ulong GuildId { get; init; }
     }
 
 

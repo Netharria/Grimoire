@@ -11,7 +11,9 @@ namespace Grimoire.Features.Leveling.Awards;
 
 public enum XpOption
 {
+    [ChoiceName("Take all their xp.")]
     All,
+    [ChoiceName("Take a specific amount.")]
     Amount
 }
 
@@ -28,14 +30,12 @@ public sealed class ReclaimUserXp
         public async Task ReclaimAsync(InteractionContext ctx,
             [Option("User", "User to take xp away from.")] DiscordUser user,
             [Option("Option", "Select either to take all of their xp or a specific amount.")]
-        [Choice("Take all their xp.", 0)]
-        [Choice("Take a specific amount.", 1)] long option,
+            XpOption option,
             [Minimum(0)]
         [Option("Amount", "The amount of xp to Take.")] long amount = 0)
         {
             await ctx.DeferAsync();
-            var xpOption = (XpOption)option;
-            if (xpOption == XpOption.Amount && amount == 0)
+            if (option == XpOption.Amount && amount == 0)
                 throw new AnticipatedException("Specify an amount greater than 0");
             var response = await this._mediator.Send(
             new Request
@@ -43,7 +43,7 @@ public sealed class ReclaimUserXp
                 UserId = user.Id,
                 GuildId = ctx.Guild.Id,
                 XpToTake = amount,
-                XpOption = xpOption,
+                XpOption = option,
                 ReclaimerId = ctx.User.Id
             });
 

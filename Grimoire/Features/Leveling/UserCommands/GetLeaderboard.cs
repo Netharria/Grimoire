@@ -22,9 +22,9 @@ public sealed class GetLeaderboard
         [SlashCommand("Leaderboard", "Posts the leaderboard for the server.")]
         public async Task LeaderboardAsync(InteractionContext ctx,
             [Choice("Top", 0)]
-        [Choice("Me", 1)]
-        [Choice("User", 2)]
-        [Option("Option", "The leaderboard search type.")] long option,
+            [Choice("Me", 1)]
+            [Choice("User", 2)]
+            [Option("Option", "The leaderboard search type.")] long option,
             [Option("User", "User to find on the leaderboard.")] DiscordUser? user = null)
         {
             switch (option)
@@ -62,7 +62,7 @@ public sealed class GetLeaderboard
 
     public sealed record Request : IRequest<Response>
     {
-        public ulong GuildId { get; init; }
+        public required ulong GuildId { get; init; }
         public ulong? UserId { get; init; }
     }
 
@@ -72,53 +72,47 @@ public sealed class GetLeaderboard
 
         public async ValueTask<Response> Handle(Request request, CancellationToken cancellationToken)
         {
+            var query = this._grimoireDbContext.Members
+                    .AsNoTracking()
+                    .Where(x => x.GuildId == request.GuildId)
+                    .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
+                    .OrderByDescending(x => x.Xp);
+
             if (request.UserId is null)
             {
-                var RankedMembers = await this._grimoireDbContext.Members
-                .AsNoTracking()
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
-                .OrderByDescending(x => x.Xp)
-                .Take(15)
-                .ToListAsync(cancellationToken: cancellationToken);
+                var rankedMembers = await query
+                    .Take(15)
+                    .ToListAsync(cancellationToken);
 
                 var totalMemberCount = await this._grimoireDbContext.Members
                     .AsNoTracking()
                     .Where(x => x.GuildId == request.GuildId)
-                    .CountAsync(cancellationToken: cancellationToken);
+                    .CountAsync(cancellationToken);
 
                 var leaderboardText = new StringBuilder();
                 for (var i = 0; i < 15 && i < totalMemberCount; i++)
-                    leaderboardText.Append($"**{i + 1}** {UserExtensions.Mention(RankedMembers[i].UserId)} **XP:** {RankedMembers[i].Xp}\n");
+                    leaderboardText.Append($"**{i + 1}** {UserExtensions.Mention(rankedMembers[i].UserId)} **XP:** {rankedMembers[i].Xp}\n");
                 return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
             }
             else
             {
-                var RankedMembers = await this._grimoireDbContext.Members
-                .AsNoTracking()
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
-                .OrderByDescending(x => x.Xp)
-                .ToListAsync(cancellationToken: cancellationToken);
+                var rankedMembers = await query.ToListAsync(cancellationToken);
 
-                var totalMemberCount = RankedMembers.Count;
+                var totalMemberCount = rankedMembers.Count;
 
-                var memberPosition = RankedMembers.FindIndex(x => x.UserId == request.UserId); ;
+                var memberPosition = rankedMembers.FindIndex(x => x.UserId == request.UserId); ;
 
                 if (memberPosition == -1)
                     throw new AnticipatedException("Could not find user on leaderboard.");
 
-                var startIndex = memberPosition - 5 < 0 ? 0 : memberPosition - 5;
-                if (startIndex + 15 > totalMemberCount)
-                    startIndex = totalMemberCount - 15;
-                if (startIndex < 0)
-                    startIndex = 0;
+                var startIndex = Math.Max(0, memberPosition - 5);
+                startIndex = Math.Min(startIndex, totalMemberCount - 15);
+                startIndex = Math.Max(0, startIndex);
+
                 var leaderboardText = new StringBuilder();
-                for (var i = 0; i < 15 && startIndex < totalMemberCount; i++)
-                {
-                    leaderboardText.Append($"**{startIndex + 1}** {UserExtensions.Mention(RankedMembers[startIndex].UserId)} **XP:** {RankedMembers[startIndex].Xp}\n");
-                    startIndex++;
-                }
+                for (var i = 0; i < 15 && startIndex < totalMemberCount; i++, startIndex++)
+                    leaderboardText.Append($"**{startIndex + 1}** {UserExtensions.Mention(rankedMembers[startIndex].UserId)} **XP:** {rankedMembers[startIndex].Xp}\n");
+
                 return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
             }
         }
@@ -126,8 +120,8 @@ public sealed class GetLeaderboard
 
     public sealed record Response : BaseResponse
     {
-        public string LeaderboardText { get; init; } = string.Empty;
-        public int TotalUserCount { get; init; }
+        public required string LeaderboardText { get; init; }
+        public required int TotalUserCount { get; init; }
     }
 }
 
