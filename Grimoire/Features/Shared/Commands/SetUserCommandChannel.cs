@@ -11,17 +11,17 @@ using Grimoire.DatabaseQueryHelpers;
 namespace Grimoire.Features.Shared.Commands;
 public sealed class SetUserCommandChannel
 {
-    public sealed record Command : ICommand<BaseResponse>
+    public sealed record Command : IRequest<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public ulong? ChannelId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, BaseResponse>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
             var guild = await this._grimoireDbContext.Guilds
             .WhereIdIs(command.GuildId)

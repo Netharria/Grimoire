@@ -86,7 +86,7 @@ public sealed class GetLevel
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Query request, CancellationToken cancellationToken)
         {
             var member = await this._grimoireDbContext.Members
                 .AsNoTracking()

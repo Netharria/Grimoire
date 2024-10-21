@@ -35,13 +35,15 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         await this._dbContext.AddAsync(new UsernameHistory
         {
             UserId = USER_1,
-            Username = "User1"
+            Username = "User1",
+            Timestamp = DateTime.UtcNow.AddMinutes(-2)
         });
         await this._dbContext.AddAsync(new User { Id = USER_2 });
         await this._dbContext.AddAsync(new UsernameHistory
         {
             UserId = USER_2,
-            Username = "User2"
+            Username = "User2",
+            Timestamp = DateTime.UtcNow.AddMinutes(-2)
         });
         await this._dbContext.SaveChangesAsync();
     }
@@ -67,6 +69,19 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     }
 
     [Fact]
+    public async Task WhenNoUsersAreAdded_ReturnsFalse()
+    {
+        // Arrange
+        var usersToAdd = new List<UserDto>(); // No members to add
+
+        // Act
+        var result = await this._dbContext.Users.AddMissingUsersAsync(usersToAdd, default);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task WhenUserNamesAreNotInDatabase_AddThemAsync()
     {
         var usersToAdd = new List<UserDto>
@@ -85,4 +100,54 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         users.Should().HaveCount(2)
             .And.AllSatisfy(x => x.Username.Should().BeOneOf("Username2", "User1"));
     }
+
+    [Fact]
+    public async Task WhenNoUsersnamesAreAdded_ReturnsFalse()
+    {
+        // Arrange
+        var usersToAdd = new List<UserDto>(); // No members to add
+
+        // Act
+        var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd, default);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AddMissingUsernameHistoryAsync_SavesNewUsernameOnlyWhenDifferent()
+    {
+        // Arrange
+        var initialUsername = new UsernameHistory
+        {
+            UserId = USER_1,
+            Username = "ChangedUsername"
+        };
+        await this._dbContext.UsernameHistory.AddAsync(initialUsername);
+        await this._dbContext.SaveChangesAsync();
+        this._dbContext.ChangeTracker.Clear();
+
+        var usersToAdd = new List<UserDto>
+        {
+            new() { Id = USER_1, Username = "User1" }
+        };
+
+        // Act
+        var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd, default);
+        await this._dbContext.SaveChangesAsync();
+        this._dbContext.ChangeTracker.Clear();
+
+        // Assert
+        result.Should().BeTrue();
+
+        var usernames = await this._dbContext.UsernameHistory
+            .Where(x => x.UserId == USER_1)
+            .OrderByDescending(x => x.Timestamp)
+            .ToListAsync();
+
+        usernames.Should().HaveCount(3);
+        usernames.First().Username.Should().Be("User1");
+        usernames.Last().Username.Should().Be("User1");
+    }
+
 }

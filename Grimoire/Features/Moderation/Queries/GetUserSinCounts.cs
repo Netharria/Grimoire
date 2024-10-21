@@ -10,17 +10,17 @@ using Grimoire.DatabaseQueryHelpers;
 namespace Grimoire.Features.Moderation.Queries;
 public static class GetUserSinCounts
 {
-    public sealed record Query : IQuery<Response?>
+    public sealed record Query : IRequest<Response?>
     {
         public required ulong UserId { get; init; }
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext dbContext) : IQueryHandler<Query, Response?>
+    public sealed class Handler(GrimoireDbContext dbContext) : IRequestHandler<Query, Response?>
     {
         private readonly GrimoireDbContext _dbContext = dbContext;
 
-        public async ValueTask<Response?> Handle(Query query, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Query query, CancellationToken cancellationToken)
         {
             var result = await this._dbContext.Members
                 .AsNoTracking()

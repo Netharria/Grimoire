@@ -82,7 +82,7 @@ public sealed partial class LevelSettingsCommandGroup
 
 public sealed class SetLevelSettings
 {
-    public sealed record Request : ICommand<BaseResponse>
+    public sealed record Request : IRequest<BaseResponse>
     {
         public required ulong GuildId { get; init; }
         public required LevelSettings LevelSettings { get; init; }
@@ -90,11 +90,11 @@ public sealed class SetLevelSettings
     }
 
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Request, BaseResponse>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
             var levelSettings = await this._grimoireDbContext.GuildLevelSettings
             .Where(x => x.GuildId == command.GuildId)

@@ -10,18 +10,18 @@ using Grimoire.DatabaseQueryHelpers;
 namespace Grimoire.Features.Logging.UserLogging.Queries;
 public static class GetRecentUserAndNickNames
 {
-    public sealed record Query : IQuery<Response?>
+    public sealed record Query : IRequest<Response?>
     {
         public required ulong UserId { get; init; }
         public required ulong GuildId { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext dbContext)
-    : IQueryHandler<Query, Response?>
+    : IRequestHandler<Query, Response?>
     {
         private readonly GrimoireDbContext _dbContext = dbContext;
 
-        public async ValueTask<Response?> Handle
+        public async Task<Response?> Handle
             (Query query, CancellationToken cancellationToken)
         {
             var result = await this._dbContext.Members

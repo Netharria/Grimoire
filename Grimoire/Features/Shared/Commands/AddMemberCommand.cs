@@ -7,7 +7,7 @@
 
 namespace Grimoire.Features.Shared.Commands;
 
-public sealed record AddMemberCommand : ICommand
+public sealed record AddMemberCommand : IRequest
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
@@ -17,11 +17,11 @@ public sealed record AddMemberCommand : ICommand
 }
 
 
-public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<AddMemberCommand>
+public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<AddMemberCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<Unit> Handle(AddMemberCommand command, CancellationToken cancellationToken)
+    public async Task Handle(AddMemberCommand command, CancellationToken cancellationToken)
     {
         var userResult = await this._grimoireDbContext.Users
             .AsNoTracking()
@@ -120,6 +120,5 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
             || !string.Equals(memberResult.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase)
             || !string.Equals(memberResult.FileName, command.AvatarUrl, StringComparison.Ordinal))
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return Unit.Value;
     }
 }

@@ -30,7 +30,7 @@ internal sealed class LockCommands(IMediator mediator) : ApplicationCommandModul
     {
         await ctx.DeferAsync();
         channel ??= ctx.Channel;
-        BaseResponse? response;
+        BaseResponse? response = null;
 
         if (channel.IsThread)
             response = await this.ThreadLockAsync(ctx, channel, reason, durationType, durationAmount);

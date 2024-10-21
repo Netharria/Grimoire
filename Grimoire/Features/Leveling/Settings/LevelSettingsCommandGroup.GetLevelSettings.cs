@@ -40,7 +40,7 @@ public sealed class GetLevelSettings
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Request request, CancellationToken cancellationToken)
          => await this._grimoireDbContext.GuildLevelSettings
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => new Response

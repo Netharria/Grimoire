@@ -7,18 +7,18 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record UnlockChannelCommand : ICommand<UnlockChannelCommandResponse>
+public sealed record UnlockChannelCommand : IRequest<UnlockChannelCommandResponse>
 {
     public ulong ChannelId { get; init; }
 
     public ulong GuildId { get; init; }
 }
 
-public sealed class UnlockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
+public sealed class UnlockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<UnlockChannelCommandResponse> Handle(UnlockChannelCommand command, CancellationToken cancellationToken)
+    public async Task<UnlockChannelCommandResponse> Handle(UnlockChannelCommand command, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Locks
             .Where(x => x.ChannelId == command.ChannelId && x.GuildId == command.GuildId)

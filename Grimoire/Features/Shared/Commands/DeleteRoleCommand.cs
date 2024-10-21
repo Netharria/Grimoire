@@ -7,20 +7,19 @@
 
 namespace Grimoire.Features.Shared.Commands;
 
-public sealed record DeleteRoleCommand : ICommand
+public sealed record DeleteRoleCommand : IRequest
 {
     public ulong RoleId { get; init; }
 }
 
-public sealed class DeleteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteRoleCommand>
+public sealed class DeleteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<DeleteRoleCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<Unit> Handle(DeleteRoleCommand command, CancellationToken cancellationToken)
+    public async Task Handle(DeleteRoleCommand command, CancellationToken cancellationToken)
     {
 
         this._grimoireDbContext.Roles.Remove(this._grimoireDbContext.Roles.First(x => x.Id == command.RoleId));
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return Unit.Value;
     }
 }

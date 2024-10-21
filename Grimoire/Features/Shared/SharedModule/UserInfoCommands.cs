@@ -115,7 +115,7 @@ internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandM
             embed.AddField("Level", response.Level.ToString(), true)
                 .AddField("Can Gain Xp", response.IsXpIgnored ? "No" : "Yes", true)
                 .AddField("Earned Rewards",
-                response.EarnedRewards.Length == 0
+                !response.EarnedRewards.Any()
                 ? "None"
                 : string.Join('\n', response.EarnedRewards
                 .Select(x => guild.Roles.GetValueOrDefault(x))

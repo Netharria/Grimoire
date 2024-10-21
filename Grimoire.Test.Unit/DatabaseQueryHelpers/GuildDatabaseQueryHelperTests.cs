@@ -80,4 +80,17 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
                 x.Id.Should().BeOneOf(GUILD_1, GUILD_2, 3);
             });
     }
+
+    [Fact]
+    public async Task WhenNoGuildsAreAdded_ReturnsFalse()
+    {
+        // Arrange
+        var guildsToAdd = new List<GuildDto>(); // No members to add
+
+        // Act
+        var result = await this._dbContext.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
+
+        // Assert
+        result.Should().BeFalse();
+    }
 }

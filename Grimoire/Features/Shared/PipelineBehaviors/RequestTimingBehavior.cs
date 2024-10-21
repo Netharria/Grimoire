@@ -11,17 +11,17 @@ using Microsoft.Extensions.Logging;
 namespace Grimoire.Features.Shared.PipelineBehaviors;
 
 public sealed partial class RequestTimingBehavior<TMessage, TResponse>(ILogger<RequestTimingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
-    where TMessage : IMessage
+    where TMessage : IRequest
 {
     private readonly ILogger<RequestTimingBehavior<TMessage, TResponse>> _logger = logger;
 
-    public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
+    public async Task<TResponse> Handle(TMessage message, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.GetTimestamp();
 
         try
         {
-            return await next(message, cancellationToken);
+            return await next();
         }
         finally
         {

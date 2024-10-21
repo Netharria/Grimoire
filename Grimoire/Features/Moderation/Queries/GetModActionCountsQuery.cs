@@ -9,18 +9,18 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetModActionCountsQuery : IQuery<GetModActionCountsQueryResponse?>
+public sealed record GetModActionCountsQuery : IRequest<GetModActionCountsQueryResponse?>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
 
 }
 
-public sealed class GetModActionCountsQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
+public sealed class GetModActionCountsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<GetModActionCountsQueryResponse?> Handle(GetModActionCountsQuery query, CancellationToken cancellationToken)
+    public async Task<GetModActionCountsQueryResponse?> Handle(GetModActionCountsQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Members
             .AsNoTracking()
             .WhereMemberHasId(query.UserId, query.GuildId)

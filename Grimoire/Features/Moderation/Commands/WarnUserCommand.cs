@@ -9,7 +9,7 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record WarnUserCommand : ICommand<WarnUserCommandResponse>
+public sealed record WarnUserCommand : IRequest<WarnUserCommandResponse>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
@@ -17,11 +17,11 @@ public sealed record WarnUserCommand : ICommand<WarnUserCommandResponse>
     public ulong ModeratorId { get; set; }
 }
 
-public sealed class WarnUserCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<WarnUserCommand, WarnUserCommandResponse>
+public sealed class WarnUserCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<WarnUserCommand, WarnUserCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<WarnUserCommandResponse> Handle(WarnUserCommand command, CancellationToken cancellationToken)
+    public async Task<WarnUserCommandResponse> Handle(WarnUserCommand command, CancellationToken cancellationToken)
     {
         var sin = new Sin
         {

@@ -56,18 +56,18 @@ public sealed class UpdatedUsernameEvent
         }
     }
 
-    public sealed record Command : ICommand<Response?>
+    public sealed record Command : IRequest<Response?>
     {
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
         public string Username { get; init; } = string.Empty;
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response?>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response?>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response?> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Command command, CancellationToken cancellationToken)
         {
             var currentUsername = await this._grimoireDbContext.Members
             .AsNoTracking()

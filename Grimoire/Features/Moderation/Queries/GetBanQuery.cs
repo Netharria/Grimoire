@@ -18,7 +18,7 @@ public sealed class GetBanQueryHandler(GrimoireDbContext grimoireDbContext) : IR
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<GetBanQueryResponse> Handle(GetBanQuery request, CancellationToken cancellationToken)
+    public async Task<GetBanQueryResponse> Handle(GetBanQuery request, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Sins
             .AsNoTracking()

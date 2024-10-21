@@ -19,7 +19,7 @@ public sealed class GetLastBanQueryHandler(GrimoireDbContext grimoireDbContext) 
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<GetLastBanQueryResponse> Handle(GetLastBanQuery request, CancellationToken cancellationToken)
+    public async Task<GetLastBanQueryResponse> Handle(GetLastBanQuery request, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Members
             .AsNoTracking()

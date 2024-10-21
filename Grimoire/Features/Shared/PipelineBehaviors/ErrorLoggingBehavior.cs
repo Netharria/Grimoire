@@ -5,28 +5,23 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using MediatR.Pipeline;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Shared.PipelineBehaviors;
 
-public sealed partial class ErrorLoggingBehavior<TMessage, TResponse>(ILogger<ErrorLoggingBehavior<TMessage, TResponse>> logger) : IPipelineBehavior<TMessage, TResponse>
-    where TMessage : IMessage
+public sealed partial class ErrorLoggingBehavior<TRequest, TException>(ILogger<ErrorLoggingBehavior<TRequest, TException>> logger) : IRequestExceptionAction<TRequest, TException>
+    where TRequest : notnull, IRequest
+    where TException : Exception
 {
-    private readonly ILogger<ErrorLoggingBehavior<TMessage, TResponse>> _logger = logger;
-
-    public async ValueTask<TResponse> Handle(TMessage message, CancellationToken cancellationToken, MessageHandlerDelegate<TMessage, TResponse> next)
-    {
-        try
-        {
-            return await next(message, cancellationToken);
-        }
-        catch (Exception e) when (e is not AnticipatedException)
-        {
-            LogHandlerError(this._logger, e, typeof(TMessage).Name);
-            throw;
-        }
-    }
+    private readonly ILogger<ErrorLoggingBehavior<TRequest, TException>> _logger = logger;
 
     [LoggerMessage(LogLevel.Error, "Exception Thrown on {RequestType}")]
-    public static partial void LogHandlerError(ILogger logger, Exception ex, string requestType);
+    static partial void LogHandlerError(ILogger logger, Exception ex, string requestType);
+
+    public Task Execute(TRequest request, TException exception, CancellationToken cancellationToken)
+    {
+        LogHandlerError(this._logger, exception, typeof(TRequest).Name);
+        return Task.CompletedTask;
+    }
 }

@@ -7,17 +7,17 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record SetMuteRoleCommand : ICommand<BaseResponse>
+public sealed record SetMuteRoleCommand : IRequest<BaseResponse>
 {
     public ulong Role { get; init; }
     public ulong GuildId { get; init; }
 }
 
-public sealed class SetMuteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetMuteRoleCommand, BaseResponse>
+public sealed class SetMuteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<SetMuteRoleCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<BaseResponse> Handle(SetMuteRoleCommand command, CancellationToken cancellationToken)
+    public async Task<BaseResponse> Handle(SetMuteRoleCommand command, CancellationToken cancellationToken)
     {
         var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
             .Include(x => x.Guild)

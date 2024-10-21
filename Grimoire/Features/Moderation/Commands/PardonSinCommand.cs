@@ -7,7 +7,7 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record PardonSinCommand : ICommand<PardonSinCommandResponse>
+public sealed record PardonSinCommand : IRequest<PardonSinCommandResponse>
 {
     public long SinId { get; init; }
     public string Reason { get; init; } = string.Empty;
@@ -15,11 +15,11 @@ public sealed record PardonSinCommand : ICommand<PardonSinCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class PardonSinCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<PardonSinCommand, PardonSinCommandResponse>
+public sealed class PardonSinCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<PardonSinCommand, PardonSinCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<PardonSinCommandResponse> Handle(PardonSinCommand command, CancellationToken cancellationToken)
+    public async Task<PardonSinCommandResponse> Handle(PardonSinCommand command, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Sins
             .Where(x => x.Id == command.SinId)

@@ -108,7 +108,7 @@ public sealed partial class AddCustomCommand
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
             await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.PermissionRoles, cancellationToken);
 

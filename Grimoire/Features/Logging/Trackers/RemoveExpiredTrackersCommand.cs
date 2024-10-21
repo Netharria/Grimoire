@@ -7,15 +7,15 @@
 
 namespace Grimoire.Features.Logging.Trackers;
 
-public sealed record RemoveExpiredTrackersCommand : ICommand<IEnumerable<RemoveExpiredTrackersCommandResponse>>
+public sealed record RemoveExpiredTrackersCommand : IRequest<IEnumerable<RemoveExpiredTrackersCommandResponse>>
 {
 }
 
-public sealed class RemoveExpiredTrackersCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
+public sealed class RemoveExpiredTrackersCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<IEnumerable<RemoveExpiredTrackersCommandResponse>> Handle(RemoveExpiredTrackersCommand command, CancellationToken cancellationToken)
+    public async Task<IEnumerable<RemoveExpiredTrackersCommandResponse>> Handle(RemoveExpiredTrackersCommand command, CancellationToken cancellationToken)
     {
         var results = await this._grimoireDbContext.Trackers
             .Where(x => x.EndTime < DateTimeOffset.UtcNow)

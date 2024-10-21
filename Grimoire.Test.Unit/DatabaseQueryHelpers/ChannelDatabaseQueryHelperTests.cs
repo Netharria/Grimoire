@@ -63,4 +63,17 @@ public sealed class ChannelDatabaseQueryHelperTests(GrimoireCoreFactory factory)
         result.Should().BeTrue();
         this._dbContext.Channels.Should().HaveCount(5);
     }
+
+    [Fact]
+    public async Task WhenNoChannelsAreAdded_ReturnsFalse()
+    {
+        // Arrange
+        var channelsToAdd = new List<ChannelDto>(); // No members to add
+
+        // Act
+        var result = await this._dbContext.Channels.AddMissingChannelsAsync(channelsToAdd, default);
+
+        // Assert
+        result.Should().BeFalse();
+    }
 }

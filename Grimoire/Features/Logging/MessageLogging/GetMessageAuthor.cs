@@ -9,19 +9,19 @@ namespace Grimoire.Features.Logging.MessageLogging;
 
 public sealed class GetMessageAuthor
 {
-    public sealed record Query : IQuery<ulong?>
+    public sealed record Query : IRequest<ulong?>
     {
         public ulong MessageId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoire) : IQueryHandler<Query, ulong?>
+    public sealed class Handler(GrimoireDbContext grimoire) : IRequestHandler<Query, ulong?>
     {
         private readonly GrimoireDbContext _grimoire = grimoire;
 
-        public async ValueTask<ulong?> Handle(Query query, CancellationToken cancellationToken)
+        public async Task<ulong?> Handle(Query query, CancellationToken cancellationToken)
         {
             var message = await this._grimoire.Messages
-            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.MessageId, cancellationToken);
+                .AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.MessageId, cancellationToken);
             return message?.UserId;
         }
     }

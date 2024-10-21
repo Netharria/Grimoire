@@ -79,7 +79,7 @@ public sealed class GetCustomCommand
     {
         private readonly GrimoireDbContext _grimoireDbContext = GrimoireDbContext;
 
-        public async ValueTask<Response?> Handle(Request query, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Request query, CancellationToken cancellationToken)
             => await this._grimoireDbContext.CustomCommands
             .AsSplitQuery()
             .Where(x => x.GuildId == query.GuildId && x.Name == query.Name)

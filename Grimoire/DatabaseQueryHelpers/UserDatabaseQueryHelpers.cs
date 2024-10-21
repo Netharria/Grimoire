@@ -29,8 +29,12 @@ public static class UserDatabaseQueryHelpers
             });
 
         if (usersToAdd.Any())
+        {
             await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);
-        return usersToAdd.Any();
+            return true;
+        }
+            
+        return false;
     }
 
     public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames, IEnumerable<UserDto> users, CancellationToken cancellationToken = default)

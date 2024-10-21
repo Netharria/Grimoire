@@ -7,17 +7,17 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record SetBanLogChannelCommand : ICommand<BaseResponse>
+public sealed record SetBanLogChannelCommand : IRequest<BaseResponse>
 {
     public ulong GuildId { get; init; }
     public ulong? ChannelId { get; init; }
 }
 
-public sealed class SetBanLogChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetBanLogChannelCommand, BaseResponse>
+public sealed class SetBanLogChannelCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<SetBanLogChannelCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<BaseResponse> Handle(SetBanLogChannelCommand command, CancellationToken cancellationToken)
+    public async Task<BaseResponse> Handle(SetBanLogChannelCommand command, CancellationToken cancellationToken)
     {
         var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
             .Include(x => x.Guild)

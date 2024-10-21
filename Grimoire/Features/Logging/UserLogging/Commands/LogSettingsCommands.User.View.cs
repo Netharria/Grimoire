@@ -59,7 +59,7 @@ public sealed class GetUserLogSettings
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Query request, CancellationToken cancellationToken)
         {
             return await this._grimoireDbContext.GuildUserLogSettings
                 .Where(x => x.GuildId == request.GuildId)

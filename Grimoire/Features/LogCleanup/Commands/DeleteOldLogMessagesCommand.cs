@@ -17,16 +17,16 @@ public readonly struct DeleteMessageResult
 
 public sealed class DeleteOldLogMessages
 {
-    public sealed record Command : ICommand
+    public sealed record Command : IRequest
     {
-        public required IEnumerable<DeleteMessageResult> DeletedOldLogMessageIds { get; init; };
+        public required IEnumerable<DeleteMessageResult> DeletedOldLogMessageIds { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
+        public async Task Handle(Command command, CancellationToken cancellationToken)
         {
             var successMessages = command.DeletedOldLogMessageIds
                 .Where(x => x.WasSuccessful)
@@ -56,7 +56,6 @@ public sealed class DeleteOldLogMessages
             }
 
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return Unit.Value;
         }
     }
 

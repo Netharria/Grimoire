@@ -9,17 +9,17 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetUserMuteQuery : IQuery<ulong?>
+public sealed record GetUserMuteQuery : IRequest<ulong?>
 {
     public ulong UserId { get; set; }
     public ulong GuildId { get; set; }
 }
 
-public sealed class GetUserMuteQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserMuteQuery, ulong?>
+public sealed class GetUserMuteQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUserMuteQuery, ulong?>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<ulong?> Handle(GetUserMuteQuery query, CancellationToken cancellationToken)
+    public async Task<ulong?> Handle(GetUserMuteQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Mutes
             .AsNoTracking()
             .WhereMemberHasId(query.UserId, query.GuildId)

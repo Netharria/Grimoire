@@ -103,18 +103,18 @@ public sealed class DeleteMessageEvent
 
     }
 
-    public sealed record Command : ICommand<Response>
+    public sealed record Command : IRequest<Response>
     {
         public ulong MessageId { get; init; }
         public ulong GuildId { get; init; }
         public ulong? DeletedByModerator { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
             var message = await this._grimoireDbContext.Messages
             .AsNoTracking()

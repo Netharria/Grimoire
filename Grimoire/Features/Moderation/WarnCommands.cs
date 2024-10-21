@@ -24,7 +24,8 @@ internal sealed class WarnCommands(IMediator mediator) : ApplicationCommandModul
         [Option("Reason", "The reason for the warn.")] string reason)
     {
         await ctx.DeferAsync();
-        if (user is not DiscordMember member)
+        var member = user as DiscordMember;
+        if (member is null)
             throw new AnticipatedException("The user supplied is not part of this server.");
         if (ctx.User == user)
             throw new AnticipatedException("You cannot warn yourself.");

@@ -7,18 +7,18 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record SetAutoPardonCommand : ICommand<BaseResponse>
+public sealed record SetAutoPardonCommand : IRequest<BaseResponse>
 {
     public ulong GuildId { get; init; }
     public TimeSpan DurationAmount { get; init; }
 }
 
 
-public sealed class SetAutoPardonCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetAutoPardonCommand, BaseResponse>
+public sealed class SetAutoPardonCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<SetAutoPardonCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<BaseResponse> Handle(SetAutoPardonCommand command, CancellationToken cancellationToken)
+    public async Task<BaseResponse> Handle(SetAutoPardonCommand command, CancellationToken cancellationToken)
     {
         var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
             .Include(x => x.Guild)

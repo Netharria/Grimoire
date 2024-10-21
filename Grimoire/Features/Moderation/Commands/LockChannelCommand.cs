@@ -7,7 +7,7 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record LockChannelCommand : ICommand<BaseResponse>
+public sealed record LockChannelCommand : IRequest<BaseResponse>
 {
     public ulong ChannelId { get; init; }
     public long PreviouslyAllowed { get; init; }
@@ -19,11 +19,11 @@ public sealed record LockChannelCommand : ICommand<BaseResponse>
     public long DurationAmount { get; init; }
 }
 
-public sealed class LockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<LockChannelCommand, BaseResponse>
+public sealed class LockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<LockChannelCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<BaseResponse> Handle(LockChannelCommand command, CancellationToken cancellationToken)
+    public async Task<BaseResponse> Handle(LockChannelCommand command, CancellationToken cancellationToken)
     {
         var lockEndTime = command.DurationType.GetDateTimeOffset(command.DurationAmount);
 

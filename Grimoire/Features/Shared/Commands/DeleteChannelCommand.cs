@@ -7,19 +7,18 @@
 
 namespace Grimoire.Features.Shared.Commands;
 
-public sealed record DeleteChannelCommand : ICommand
+public sealed record DeleteChannelCommand : IRequest
 {
     public ulong ChannelId { get; init; }
 }
 
-public sealed class DeleteChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteChannelCommand>
+public sealed class DeleteChannelCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<DeleteChannelCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<Unit> Handle(DeleteChannelCommand command, CancellationToken cancellationToken)
+    public async Task Handle(DeleteChannelCommand command, CancellationToken cancellationToken)
     {
         this._grimoireDbContext.Channels.Remove(new Channel { Id = command.ChannelId });
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return Unit.Value;
     }
 }

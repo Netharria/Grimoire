@@ -54,7 +54,7 @@ public class TrackerMessageUpdateEvent
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response?> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
             => await this._grimoireDbContext.Trackers
             .AsNoTracking()
             .WhereMemberHasId(request.UserId, request.GuildId)

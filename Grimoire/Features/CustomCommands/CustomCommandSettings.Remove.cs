@@ -46,7 +46,7 @@ public sealed class RemoveCustomCommand
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Request request, CancellationToken cancellationToken)
         {
             var result = await this._grimoireDbContext.CustomCommands
                 .Include(x => x.CustomCommandRoles)

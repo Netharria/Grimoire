@@ -7,18 +7,18 @@
 
 namespace Grimoire.Features.Shared.Commands;
 
-public sealed record AddRoleCommand : ICommand
+public sealed record AddRoleCommand : IRequest
 {
     public ulong RoleId { get; init; }
     public ulong GuildId { get; init; }
 }
 
 
-public sealed class AddRoleCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<AddRoleCommand>
+public sealed class AddRoleCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<AddRoleCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<Unit> Handle(AddRoleCommand command, CancellationToken cancellationToken)
+    public async Task Handle(AddRoleCommand command, CancellationToken cancellationToken)
     {
         await this._grimoireDbContext.Roles.AddAsync(new Role
         {
@@ -26,6 +26,5 @@ public sealed class AddRoleCommandHandler(GrimoireDbContext grimoireDbContext) :
             GuildId = command.GuildId
         }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return Unit.Value;
     }
 }

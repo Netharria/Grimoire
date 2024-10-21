@@ -9,17 +9,17 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record UnmuteUserCommand : ICommand<UnmuteUserCommandResponse>
+public sealed record UnmuteUserCommand : IRequest<UnmuteUserCommandResponse>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
 }
 
-public sealed class UnmuteUserCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
+public sealed class UnmuteUserCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<UnmuteUserCommandResponse> Handle(UnmuteUserCommand command, CancellationToken cancellationToken)
+    public async Task<UnmuteUserCommandResponse> Handle(UnmuteUserCommand command, CancellationToken cancellationToken)
     {
         var response = await this._grimoireDbContext.Mutes
             .WhereMemberHasId(command.UserId, command.GuildId)

@@ -9,9 +9,9 @@ using System.Runtime.CompilerServices;
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetExpiredMutesQuery : IStreamQuery<GetExpiredMutesQueryResponse> { }
+public sealed record GetExpiredMutesQuery : IStreamRequest<GetExpiredMutesQueryResponse> { }
 
-public sealed class GetExpiredMutesQueryHandler(GrimoireDbContext grimoireDbContext) : IStreamQueryHandler<GetExpiredMutesQuery, GetExpiredMutesQueryResponse>
+public sealed class GetExpiredMutesQueryHandler(GrimoireDbContext grimoireDbContext) : IStreamRequestHandler<GetExpiredMutesQuery, GetExpiredMutesQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

@@ -11,7 +11,7 @@ namespace Grimoire.Features.Moderation.Commands;
 
 public sealed class AddBan
 {
-    public sealed record Command : ICommand<Response>
+    public sealed record Command : IRequest<Response>
     {
         public required ulong UserId { get; init; }
         public required ulong GuildId { get; init; }
@@ -19,11 +19,11 @@ public sealed class AddBan
         public ulong? ModeratorId { get; set; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
             var memberExists = await this._grimoireDbContext.Members
                 .AnyAsync(x => x.UserId == command.UserId

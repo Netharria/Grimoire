@@ -7,17 +7,17 @@
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetLockQuery : IQuery<bool>
+public sealed record GetLockQuery : IRequest<bool>
 {
     public ulong ChannelId { get; init; }
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetLockQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetLockQuery, bool>
+public sealed class GetLockQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetLockQuery, bool>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<bool> Handle(GetLockQuery query, CancellationToken cancellationToken)
+    public async Task<bool> Handle(GetLockQuery query, CancellationToken cancellationToken)
         => await this._grimoireDbContext.Locks
             .AsNoTracking()
             .AnyAsync(x => x.ChannelId == query.ChannelId && x.GuildId == query.GuildId, cancellationToken);

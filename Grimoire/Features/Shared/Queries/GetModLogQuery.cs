@@ -11,16 +11,16 @@ namespace Grimoire.Features.Shared.Queries;
 
 public sealed class GetGeneralSettings
 {
-    public sealed record Query : IQuery<Response>
+    public sealed record Query : IRequest<Response>
     {
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IQueryHandler<Query, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Query query, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Query query, CancellationToken cancellationToken)
         {
             var result = await this._grimoireDbContext.Guilds
             .AsNoTracking()

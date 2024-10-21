@@ -42,7 +42,7 @@ public partial class LogSettingsCommands
 
 public sealed class GetMessageLogOverrides
 {
-    public sealed record Query : IStreamQuery<Response>
+    public sealed record Query : IStreamRequest<Response>
     {
         public required ulong GuildId { get; init; }
     }
@@ -52,7 +52,7 @@ public sealed class GetMessageLogOverrides
         public required MessageLogOverrideOption ChannelOption { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext dbContext) : IStreamQueryHandler<Query, Response>
+    public sealed class Handler(GrimoireDbContext dbContext) : IStreamRequestHandler<Query, Response>
     {
         private readonly GrimoireDbContext _dbContext = dbContext;
 

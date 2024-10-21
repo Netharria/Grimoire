@@ -7,16 +7,16 @@
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetAllActiveMutesQuery : IQuery<GetAllActiveMutesQueryResponse>
+public sealed record GetAllActiveMutesQuery : IRequest<GetAllActiveMutesQueryResponse>
 {
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetAllActiveMutesQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
+public sealed class GetAllActiveMutesQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request, CancellationToken cancellationToken)
+    public async Task<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.GuildModerationSettings
             .AsNoTracking()

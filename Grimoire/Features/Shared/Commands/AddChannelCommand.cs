@@ -7,28 +7,27 @@
 
 namespace Grimoire.Features.Shared.Commands;
 
-public sealed record AddChannelCommand : ICommand
+public sealed record AddChannelCommand : IRequest
 {
     public ulong GuildId { get; init; }
     public ulong ChannelId { get; init; }
 }
 
-public sealed class AddChannelCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<AddChannelCommand>
+public sealed class AddChannelCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<AddChannelCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<Unit> Handle(AddChannelCommand command, CancellationToken cancellationToken)
+    public async Task Handle(AddChannelCommand command, CancellationToken cancellationToken)
     {
         if (await this._grimoireDbContext.Channels
             .AsNoTracking()
             .AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
-            return Unit.Value;
+            return;
         await this._grimoireDbContext.Channels.AddAsync(new Channel
         {
             Id = command.ChannelId,
             GuildId = command.GuildId
         }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return Unit.Value;
     }
 }

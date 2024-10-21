@@ -21,11 +21,11 @@ public sealed class RemoveIgnoreForXpGain
         public IEnumerable<string> InvalidIds { get; set; } = [];
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, BaseResponse>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
             var newIgnoredItems = new StringBuilder();
 

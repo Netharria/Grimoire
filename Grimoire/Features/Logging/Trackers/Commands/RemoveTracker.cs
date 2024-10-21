@@ -32,17 +32,17 @@ public sealed class RemoveTracker
                 .WithColor(GrimoireColor.Purple));
         }
     }
-    public sealed record Request : ICommand<Response>
+    public sealed record Request : IRequest<Response>
     {
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
     }
 
-    public sealed class RemoveTrackerCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Request, Response>
+    public sealed class RemoveTrackerCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
             var result = await this._grimoireDbContext.Trackers
                 .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)

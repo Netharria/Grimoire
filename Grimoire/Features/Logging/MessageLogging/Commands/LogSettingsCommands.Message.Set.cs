@@ -51,7 +51,7 @@ public partial class LogSettingsCommands
 
 public sealed class SetMessageLogSettings
 {
-    public sealed record Command : ICommand<BaseResponse>
+    public sealed record Command : IRequest<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public MessageLogSetting MessageLogSetting { get; init; }
@@ -64,11 +64,11 @@ public sealed class SetMessageLogSettings
         EditLog
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, BaseResponse>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
 
             var messageSettings = await this._grimoireDbContext.GuildMessageLogSettings

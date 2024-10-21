@@ -73,7 +73,7 @@ public sealed class AddTracker
     }
 
 
-    public sealed record Request : ICommand<Response>
+    public sealed record Request : IRequest<Response>
     {
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
@@ -82,11 +82,11 @@ public sealed class AddTracker
         public ulong ModeratorId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Request, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
             var trackerEndTime = DateTimeOffset.UtcNow + command.Duration;
 

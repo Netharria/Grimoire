@@ -16,7 +16,7 @@ public sealed class GetMuteRoleQueryHandler(GrimoireDbContext grimoireDbContext)
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<GetMuteRoleQueryResponse> Handle(GetMuteRoleQuery request, CancellationToken cancellationToken)
+    public async Task<GetMuteRoleQueryResponse> Handle(GetMuteRoleQuery request, CancellationToken cancellationToken)
     {
         var muteRoleId = await this._grimoireDbContext.GuildModerationSettings
             .AsNoTracking()

@@ -74,17 +74,17 @@ public sealed class BulkMessageDeletedEvent
         }
     }
 
-    public sealed record Request : ICommand<Response>
+    public sealed record Request : IRequest<Response>
     {
         public ulong[] Ids { get; init; } = [];
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Request, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
             var messages = await this._grimoireDbContext.Messages
             .AsNoTracking()

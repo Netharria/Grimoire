@@ -7,15 +7,15 @@
 
 namespace Grimoire.Features.LogCleanup.Commands;
 
-public sealed record DeleteOldLogsCommand : ICommand
+public sealed record DeleteOldLogsCommand : IRequest
 {
 }
 
-public sealed class DeleteOldLogsCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<DeleteOldLogsCommand>
+public sealed class DeleteOldLogsCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<DeleteOldLogsCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<Unit> Handle(DeleteOldLogsCommand command, CancellationToken cancellationToken)
+    public async Task Handle(DeleteOldLogsCommand command, CancellationToken cancellationToken)
     {
         var oldDate = DateTimeOffset.UtcNow - TimeSpan.FromDays(31);
         await this._grimoireDbContext.Messages
@@ -48,7 +48,5 @@ public sealed class DeleteOldLogsCommandHandler(GrimoireDbContext grimoireDbCont
                 .OrderByDescending(x => x.Timestamp)
                 .Skip(3).ToList())
             .ExecuteDeleteAsync(cancellationToken);
-
-        return Unit.Value;
     }
 }

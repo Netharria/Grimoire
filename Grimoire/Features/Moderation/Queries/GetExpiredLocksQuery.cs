@@ -7,9 +7,9 @@
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetExpiredLocksQuery : IStreamQuery<GetExpiredLocksQueryResponse> { }
+public sealed record GetExpiredLocksQuery : IStreamRequest<GetExpiredLocksQueryResponse> { }
 
-public sealed class GetExpiredLocksQueryHandler(GrimoireDbContext grimoireDbContext) : IStreamQueryHandler<GetExpiredLocksQuery, GetExpiredLocksQueryResponse>
+public sealed class GetExpiredLocksQueryHandler(GrimoireDbContext grimoireDbContext) : IStreamRequestHandler<GetExpiredLocksQuery, GetExpiredLocksQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

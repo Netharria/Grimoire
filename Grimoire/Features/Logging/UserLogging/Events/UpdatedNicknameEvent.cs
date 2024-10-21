@@ -58,18 +58,18 @@ public sealed class UpdatedNicknameEvent
     }
 
 
-    public sealed record Command : ICommand<UpdateNicknameCommandResponse?>
+    public sealed record Command : IRequest<UpdateNicknameCommandResponse?>
     {
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
         public string? Nickname { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, UpdateNicknameCommandResponse?>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, UpdateNicknameCommandResponse?>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<UpdateNicknameCommandResponse?> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<UpdateNicknameCommandResponse?> Handle(Command command, CancellationToken cancellationToken)
         {
             var currentNickname = await this._grimoireDbContext.NicknameHistory
             .AsNoTracking()

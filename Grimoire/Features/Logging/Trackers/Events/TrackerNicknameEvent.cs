@@ -14,7 +14,7 @@ internal sealed class TrackerNicknameEvent(DiscordClient discordClient, IMediato
     private readonly DiscordClient _discordClient = discordClient;
     private readonly IMediator _mediator = mediator;
 
-    public async ValueTask Handle(NicknameUpdatedNotification notification, CancellationToken cancellationToken)
+    public async Task Handle(NicknameUpdatedNotification notification, CancellationToken cancellationToken)
     {
         var response = await this._mediator.Send(
             new GetTracker.Query

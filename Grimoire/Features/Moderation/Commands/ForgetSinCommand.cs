@@ -7,17 +7,17 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record ForgetSinCommand : ICommand<ForgetSinCommandResponse>
+public sealed record ForgetSinCommand : IRequest<ForgetSinCommandResponse>
 {
     public long SinId { get; init; }
     public ulong GuildId { get; init; }
 }
 
-public sealed class ForgetSinCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<ForgetSinCommand, ForgetSinCommandResponse>
+public sealed class ForgetSinCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<ForgetSinCommand, ForgetSinCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<ForgetSinCommandResponse> Handle(ForgetSinCommand command, CancellationToken cancellationToken)
+    public async Task<ForgetSinCommandResponse> Handle(ForgetSinCommand command, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Sins
             .Where(x => x.Id == command.SinId)

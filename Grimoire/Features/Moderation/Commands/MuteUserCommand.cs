@@ -9,7 +9,7 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record MuteUserCommand : ICommand<MuteUserCommandResponse>
+public sealed record MuteUserCommand : IRequest<MuteUserCommandResponse>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
@@ -20,11 +20,11 @@ public sealed record MuteUserCommand : ICommand<MuteUserCommandResponse>
 }
 
 
-public sealed class MuteUserCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<MuteUserCommand, MuteUserCommandResponse>
+public sealed class MuteUserCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<MuteUserCommand, MuteUserCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<MuteUserCommandResponse> Handle(MuteUserCommand command, CancellationToken cancellationToken)
+    public async Task<MuteUserCommandResponse> Handle(MuteUserCommand command, CancellationToken cancellationToken)
     {
         var response = await this._grimoireDbContext.Members
             .WhereMemberHasId(command.UserId, command.GuildId)

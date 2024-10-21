@@ -7,16 +7,16 @@
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetModerationSettingsQuery : IQuery<GetModerationSettingsQueryResponse>
+public sealed record GetModerationSettingsQuery : IRequest<GetModerationSettingsQueryResponse>
 {
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetModerationSettingsQueryHandler(GrimoireDbContext context) : IQueryHandler<GetModerationSettingsQuery, GetModerationSettingsQueryResponse>
+public sealed class GetModerationSettingsQueryHandler(GrimoireDbContext context) : IRequestHandler<GetModerationSettingsQuery, GetModerationSettingsQueryResponse>
 {
     private readonly GrimoireDbContext _context = context;
 
-    public async ValueTask<GetModerationSettingsQueryResponse> Handle(GetModerationSettingsQuery query, CancellationToken cancellationToken)
+    public async Task<GetModerationSettingsQueryResponse> Handle(GetModerationSettingsQuery query, CancellationToken cancellationToken)
     {
         var result =  await this._context.GuildModerationSettings
             .AsNoTracking()

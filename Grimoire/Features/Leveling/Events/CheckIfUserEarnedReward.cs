@@ -20,7 +20,7 @@ public partial class CheckIfUserEarnedReward
         private readonly DiscordClient _client = client;
         private readonly ILogger<NotificationHandler> _logger = logger;
 
-        public async ValueTask Handle(UserGainedXpEvent notification, CancellationToken cancellationToken)
+        public async Task Handle(UserGainedXpEvent notification, CancellationToken cancellationToken)
         {
             var guild = await this._client.GetGuildAsync(notification.GuildId);
             var member = await guild.GetMemberAsync(notification.UserId);
@@ -125,7 +125,7 @@ public partial class CheckIfUserEarnedReward
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response?> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
             => await this._grimoireDbContext.Guilds
                 .Where(guild => guild.Id == request.GuildId)
                 .Select(guild => new Response

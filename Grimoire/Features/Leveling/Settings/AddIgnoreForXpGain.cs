@@ -11,7 +11,7 @@ using Grimoire.DatabaseQueryHelpers;
 namespace Grimoire.Features.Leveling.Settings;
 
 
-public interface IUpdateIgnoreForXpGain : ICommand<BaseResponse>
+public interface IUpdateIgnoreForXpGain : IRequest<BaseResponse>
 {
     public ulong GuildId { get; init; }
     public IEnumerable<UserDto> Users { get; set; }
@@ -32,11 +32,11 @@ public sealed class AddIgnoreForXpGain
         public IEnumerable<string> InvalidIds { get; set; } = [];
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, BaseResponse>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
             await this._grimoireDbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
             await this._grimoireDbContext.Members.AddMissingMembersAsync(

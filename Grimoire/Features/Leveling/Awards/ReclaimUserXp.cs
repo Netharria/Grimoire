@@ -52,7 +52,7 @@ public sealed class ReclaimUserXp
                 message: $"{response.XpTaken} xp has been taken from {user.Mention} by {ctx.Member.Mention}.");
         }
     }
-    public sealed record Request : ICommand<Response>
+    public sealed record Request : IRequest<Response>
     {
         public required XpOption XpOption { get; init; }
         public required long XpToTake { get; init; }
@@ -61,11 +61,11 @@ public sealed class ReclaimUserXp
         public ulong? ReclaimerId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Request, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
             var member = await this._grimoireDbContext.Members
             .AsNoTracking()

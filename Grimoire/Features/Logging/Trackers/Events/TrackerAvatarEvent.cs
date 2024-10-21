@@ -15,7 +15,7 @@ internal sealed class TrackerAvatarEvent(DiscordClient clientService, IMediator 
     private readonly IMediator _mediator = mediator;
     private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
 
-    public async ValueTask Handle(AvatarUpdatedNotification notification, CancellationToken cancellationToken)
+    public async Task Handle(AvatarUpdatedNotification notification, CancellationToken cancellationToken)
     {
         var response = await this._mediator.Send(new GetTracker.Query{ UserId = notification.UserId, GuildId = notification.GuildId }, cancellationToken);
         if (response is null)

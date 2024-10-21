@@ -53,7 +53,7 @@ public partial class LogSettingsCommands
 
 public sealed class SetUserLogSettings
 {
-    public sealed record Command : ICommand<BaseResponse>
+    public sealed record Command : IRequest<BaseResponse>
     {
         public ulong GuildId { get; init; }
         public UserLogSetting UserLogSetting { get; init; }
@@ -69,11 +69,11 @@ public sealed class SetUserLogSettings
     }
 
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, BaseResponse>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, BaseResponse>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
             var userSettings = await this._grimoireDbContext.GuildUserLogSettings
             .Where(x => x.GuildId == command.GuildId)

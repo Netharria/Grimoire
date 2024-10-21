@@ -43,7 +43,7 @@ public sealed partial class AddMessageEvent
     }
 
 
-    public sealed record Command : ICommand
+    public sealed record Command : IRequest
     {
         public required ulong MessageId { get; init; }
         public required ulong ChannelId { get; init; }
@@ -55,12 +55,12 @@ public sealed partial class AddMessageEvent
         public required IEnumerable<ulong> ParentChannelTree { get; init; }
     }
 
-    public sealed partial class Handler(GrimoireDbContext grimoireDbContext, ILogger<Handler> logger) : ICommandHandler<Command>
+    public sealed partial class Handler(GrimoireDbContext grimoireDbContext, ILogger<Handler> logger) : IRequestHandler<Command>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
         private readonly ILogger<Handler> _logger = logger;
 
-        public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
+        public async Task Handle(Command command, CancellationToken cancellationToken)
         {
             try
             {
@@ -80,7 +80,7 @@ public sealed partial class AddMessageEvent
                 if (result is null)
                     throw new KeyNotFoundException("Guild was not found in database.");
                 if (!result.ModuleEnabled)
-                    return Unit.Value;
+                    return;
                 if (!result.ChannelExists)
                 {
                     var channel = new Channel
@@ -96,7 +96,7 @@ public sealed partial class AddMessageEvent
                 }
 
                 if (!ShouldLogMessage(command, result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
-                    return Unit.Value;
+                    return;
 
                 var message = new Message
                 {
@@ -125,7 +125,6 @@ public sealed partial class AddMessageEvent
                 };
                 await this._grimoireDbContext.Messages.AddAsync(message, cancellationToken);
                 await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-                return Unit.Value;
             }
             catch (DbUpdateException)
             {

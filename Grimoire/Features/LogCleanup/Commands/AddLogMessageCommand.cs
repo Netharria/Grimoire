@@ -9,18 +9,18 @@ namespace Grimoire.Features.LogCleanup.Commands;
 
 public sealed class AddLogMessage
 {
-    public sealed record Command : ICommand
+    public sealed record Command : IRequest
     {
         public required ulong ChannelId { get; init; }
         public required ulong MessageId { get; init; }
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class AddLogMessageCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command>
+    public sealed class AddLogMessageCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
+        public async Task Handle(Command command, CancellationToken cancellationToken)
         {
             var logMessage = new OldLogMessage
             {
@@ -30,7 +30,7 @@ public sealed class AddLogMessage
             };
             await this._grimoireDbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return Unit.Value;
+            return;
         }
     }
 

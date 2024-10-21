@@ -40,25 +40,25 @@ public sealed class UpdateMessageLogOverride
         Inherit,
         Never
     }
-    public sealed record Command : ICommand<BaseResponse>
+    public sealed record Command : IRequest<BaseResponse>
     {
         public required ulong ChannelId { get; init; }
         public required ulong GuildId { get; init; }
         public required MessageLogOverrideSetting ChannelOverrideSetting { get; set; }
     }
 
-    public sealed class Handler(GrimoireDbContext dbContext) : ICommandHandler<Command, BaseResponse>
+    public sealed class Handler(GrimoireDbContext dbContext) : IRequestHandler<Command, BaseResponse>
     {
         private readonly GrimoireDbContext _dbContext = dbContext;
 
-        public ValueTask<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        public Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
             if (command.ChannelOverrideSetting == MessageLogOverrideSetting.Inherit)
                 return this.DeleteOverride(command, cancellationToken);
             return this.AddOrUpdateOverride(command, cancellationToken);
         }
 
-        private async ValueTask<BaseResponse> DeleteOverride(Command command, CancellationToken cancellationToken)
+        private async Task<BaseResponse> DeleteOverride(Command command, CancellationToken cancellationToken)
         {
             var result = await this._dbContext.MessagesLogChannelOverrides
                 .Where(x => x.ChannelId == command.ChannelId)
@@ -80,7 +80,7 @@ public sealed class UpdateMessageLogOverride
             };
         }
 
-        private async ValueTask<BaseResponse> AddOrUpdateOverride(Command command, CancellationToken cancellationToken)
+        private async Task<BaseResponse> AddOrUpdateOverride(Command command, CancellationToken cancellationToken)
         {
             var result = await this._dbContext.Guilds
                 .Where(x => x.Id == command.GuildId)

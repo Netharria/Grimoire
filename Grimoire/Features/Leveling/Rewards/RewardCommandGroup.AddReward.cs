@@ -45,7 +45,7 @@ public sealed partial class RewardCommandGroup
 public sealed class AddReward
 {
 
-    public sealed record Request : ICommand<BaseResponse>
+    public sealed record Request : IRequest<BaseResponse>
     {
         public required ulong RoleId { get; init; }
         public required ulong GuildId { get; init; }
@@ -53,11 +53,11 @@ public sealed class AddReward
         public string? Message { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Request, BaseResponse>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
             var reward = await this._grimoireDbContext.Rewards
                 .Include(x => x.Guild)

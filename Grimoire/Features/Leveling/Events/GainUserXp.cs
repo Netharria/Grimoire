@@ -93,7 +93,7 @@ public sealed partial class GainUserXp
                     TextTime = x.Guild.LevelSettings.TextTime
                 }).Take(1));
 
-        public async ValueTask<Response> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
             var result = await _getUserXpInfoQuery(
                     _grimoireDbContext,

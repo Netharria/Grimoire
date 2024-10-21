@@ -9,18 +9,18 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Shared.Commands;
 
-public sealed record EnableModuleCommand : ICommand<EnableModuleCommandResponse>
+public sealed record EnableModuleCommand : IRequest<EnableModuleCommandResponse>
 {
     public ulong GuildId { get; init; }
     public Module Module { get; init; }
     public bool Enable { get; init; }
 }
 
-public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<EnableModuleCommand, EnableModuleCommandResponse>
+public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<EnableModuleCommand, EnableModuleCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<EnableModuleCommandResponse> Handle(EnableModuleCommand command, CancellationToken cancellationToken)
+    public async Task<EnableModuleCommandResponse> Handle(EnableModuleCommand command, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Guilds
             .WhereIdIs(command.GuildId)

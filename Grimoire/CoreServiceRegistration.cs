@@ -36,8 +36,7 @@ public static class CoreServiceRegistration
             .UseExceptionProcessor())
             .AddSingleton<IInviteService, InviteService>()
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>))
-            .AddScoped(typeof(IPipelineBehavior<,>), typeof(IgnoreDuplicateKeyError<,>));
+            .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>));
         return services;
     }
 }

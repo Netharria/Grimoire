@@ -51,7 +51,7 @@ public sealed class AwardUserXp
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
 
             var member = await this._grimoireDbContext.Members

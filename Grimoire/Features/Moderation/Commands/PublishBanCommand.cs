@@ -7,7 +7,7 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record PublishBanCommand : ICommand
+public sealed record PublishBanCommand : IRequest
 {
     public long SinId { get; init; }
     public ulong GuildId { get; init; }
@@ -15,11 +15,11 @@ public sealed record PublishBanCommand : ICommand
     public PublishType PublishType { get; init; }
 }
 
-public sealed class PublishBanCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<PublishBanCommand>
+public sealed class PublishBanCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<PublishBanCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<Unit> Handle(PublishBanCommand command, CancellationToken cancellationToken)
+    public async Task Handle(PublishBanCommand command, CancellationToken cancellationToken)
     {
         await this._grimoireDbContext.PublishedMessages.AddAsync(new PublishedMessage
         {
@@ -29,6 +29,5 @@ public sealed class PublishBanCommandHandler(GrimoireDbContext grimoireDbContext
         }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-        return new Unit();
     }
 }

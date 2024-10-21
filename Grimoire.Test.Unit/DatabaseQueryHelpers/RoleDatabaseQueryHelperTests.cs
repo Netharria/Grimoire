@@ -55,4 +55,17 @@ public sealed class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         result.Should().BeTrue();
         this._dbContext.Roles.Should().HaveCount(4);
     }
+
+    [Fact]
+    public async Task WhenNoRolesAreAdded_ReturnsFalse()
+    {
+        // Arrange
+        var rolesToAdd = new List<RoleDto>(); // No members to add
+
+        // Act
+        var result = await this._dbContext.Roles.AddMissingRolesAsync(rolesToAdd, default);
+
+        // Assert
+        result.Should().BeFalse();
+    }
 }

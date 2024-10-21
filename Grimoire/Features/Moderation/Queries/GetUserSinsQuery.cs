@@ -17,18 +17,18 @@ public enum SinQueryType
     All,
     Mod
 }
-public sealed record GetUserSinsQuery : IQuery<GetUserSinsQueryResponse>
+public sealed record GetUserSinsQuery : IRequest<GetUserSinsQueryResponse>
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
     public SinQueryType SinQueryType { get; init; }
 }
 
-public sealed class GetUserSinsQueryHandler(GrimoireDbContext grimoireDbContext) : IQueryHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
+public sealed class GetUserSinsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
+    public async Task<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
     {
         var queryable = this._grimoireDbContext.Sins
             .AsNoTracking().Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);

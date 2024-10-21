@@ -21,7 +21,7 @@ public sealed class GetTracker
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response?> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Query request, CancellationToken cancellationToken)
             => await this._grimoireDbContext.Trackers
             .AsNoTracking()
             .WhereMemberHasId(request.UserId, request.GuildId)

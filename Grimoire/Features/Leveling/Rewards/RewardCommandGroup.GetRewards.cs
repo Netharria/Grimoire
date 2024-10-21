@@ -34,7 +34,7 @@ public sealed class GetRewards
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Request request, CancellationToken cancellationToken)
         {
             var rewards = await this._grimoireDbContext.Rewards
             .AsNoTracking()

@@ -29,8 +29,13 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
         )
     {
         await ctx.DeferAsync();
-        if (user is not DiscordMember member) throw new AnticipatedException("That user is not on the server.");
-        if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
+            
+        var member = user as DiscordMember;
+
+        if (member is null)
+            throw new AnticipatedException("That user is not on the server.");
+
+        if (ctx.Guild.Id == member.Guild.Id) throw new AnticipatedException("That user is not on the server.");
         var response = await this._mediator.Send(new MuteUserCommand
         {
             UserId = member.Id,
@@ -86,7 +91,10 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
         [Option("User", "The User to unmute.")] DiscordUser user)
     {
         await ctx.DeferAsync();
-        if (user is not DiscordMember member) throw new AnticipatedException("That user is not on the server.");
+        var member = user as DiscordMember;
+
+        if (member is null)
+            throw new AnticipatedException("That user is not on the server.");
         if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
         var response = await this._mediator.Send(new UnmuteUserCommand
         {

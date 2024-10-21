@@ -42,7 +42,7 @@ public sealed class GetIgnoredItems
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
         {
 
             var ignoredItems = await this._grimoireDbContext.Guilds

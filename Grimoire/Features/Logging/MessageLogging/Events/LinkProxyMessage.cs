@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace Grimoire.Features.MessageLogging.Commands;
 public partial class LinkProxyMessage
 {
-    public record Command : ICommand
+    public record Command : IRequest
     {
         public required ulong ProxyMessageId { get; init; }
         public required ulong OriginalMessageId { get; init; }
@@ -20,19 +20,19 @@ public partial class LinkProxyMessage
         public string? MemberId { get; init; }
     }
 
-    public partial class Handler(GrimoireDbContext dbContext, ILogger<Handler> logger) : ICommandHandler<Command>
+    public partial class Handler(GrimoireDbContext dbContext, ILogger<Handler> logger) : IRequestHandler<Command>
     {
         private readonly GrimoireDbContext _dbContext = dbContext;
         private readonly ILogger<Handler> _logger = logger;
 
-        public async ValueTask<Unit> Handle(Command command, CancellationToken cancellationToken)
+        public async Task Handle(Command command, CancellationToken cancellationToken)
         {
             var moduleEnabled = await this._dbContext.GuildMessageLogSettings
                 .Where(x => x.GuildId == command.GuildId)
                 .Select(x => x.ModuleEnabled)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (!moduleEnabled) return Unit.Value;
+            if (!moduleEnabled) return;
 
             try
             {
@@ -49,7 +49,7 @@ public partial class LinkProxyMessage
             {
                 LogProxiedMessageFailure(this._logger, ex.Message, ex);
             }
-            return Unit.Value;
+            return;
         }
 
         [LoggerMessage(LogLevel.Error, "Was not able to save Proxied Message for the following reason. {message}")]

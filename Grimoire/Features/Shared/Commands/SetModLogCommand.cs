@@ -10,17 +10,17 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Shared.Commands;
 
-public sealed record SetModLogCommand : ICommand<BaseResponse>
+public sealed record SetModLogCommand : IRequest<BaseResponse>
 {
     public ulong GuildId { get; init; }
     public ulong? ChannelId { get; init; }
 }
 
-public sealed class SetModLogCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<SetModLogCommand, BaseResponse>
+public sealed class SetModLogCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<SetModLogCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<BaseResponse> Handle(SetModLogCommand command, CancellationToken cancellationToken)
+    public async Task<BaseResponse> Handle(SetModLogCommand command, CancellationToken cancellationToken)
     {
         var guild = await this._grimoireDbContext.Guilds
             .WhereIdIs(command.GuildId)

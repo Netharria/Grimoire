@@ -145,7 +145,7 @@ await Host.CreateDefaultBuilder(args)
             options.RegisterCommands<CustomCommandSettings>();
             options.RegisterCommands<GetCustomCommand.Command>();
         })
-        .AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)
+        .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<Program>())
         .AddHostedService<LogBackgroundTasks>()
         .AddHostedService<TrackerBackgroundTasks>()
         .AddHostedService<LockBackgroundTasks>()

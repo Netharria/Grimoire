@@ -66,18 +66,18 @@ public sealed class UpdatedAvatarEvent
         }
     }
 
-    public sealed record Command : ICommand<Response?>
+    public sealed record Command : IRequest<Response?>
     {
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
         public string AvatarUrl { get; init; } = string.Empty;
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : ICommandHandler<Command, Response?>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response?>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async ValueTask<Response?> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Command command, CancellationToken cancellationToken)
         {
             var currentAvatar = await this._grimoireDbContext.Avatars
             .AsNoTracking()

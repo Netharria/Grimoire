@@ -7,18 +7,18 @@
 
 namespace Grimoire.Features.Moderation.Commands;
 
-public sealed record UpdateSinReasonCommand : ICommand<UpdateSinReasonCommandResponse>
+public sealed record UpdateSinReasonCommand : IRequest<UpdateSinReasonCommandResponse>
 {
     public long SinId { get; init; }
     public string Reason { get; init; } = string.Empty;
     public ulong GuildId { get; init; }
 }
 
-public sealed class UpdateSinReasonCommandHandler(GrimoireDbContext grimoireDbContext) : ICommandHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
+public sealed class UpdateSinReasonCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<UpdateSinReasonCommandResponse> Handle(UpdateSinReasonCommand command, CancellationToken cancellationToken)
+    public async Task<UpdateSinReasonCommandResponse> Handle(UpdateSinReasonCommand command, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Sins
             .Where(x => x.Id == command.SinId)

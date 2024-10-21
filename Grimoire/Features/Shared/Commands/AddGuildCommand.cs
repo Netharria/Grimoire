@@ -11,7 +11,7 @@ using Grimoire.Features.Logging.UserLogging;
 
 namespace Grimoire.Features.Shared.Commands;
 
-public sealed record AddGuildCommand : ICommand
+public sealed record AddGuildCommand : IRequest
 {
     public ulong GuildId { get; init; }
     public IEnumerable<UserDto> Users { get; init; } = [];
@@ -21,12 +21,12 @@ public sealed record AddGuildCommand : ICommand
     public IEnumerable<Invite> Invites { get; set; } = [];
 }
 
-public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, IInviteService inviteService) : ICommandHandler<AddGuildCommand>
+public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, IInviteService inviteService) : IRequestHandler<AddGuildCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
     private readonly IInviteService _inviteService = inviteService;
 
-    public async ValueTask<Unit> Handle(AddGuildCommand command, CancellationToken cancellationToken)
+    public async Task Handle(AddGuildCommand command, CancellationToken cancellationToken)
     {
         var usersAdded = await this._grimoireDbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
 
@@ -67,7 +67,5 @@ public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, 
 
         if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded || usernamesUpdated || nicknamesUpdated || avatarsUpdated)
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-
-        return Unit.Value;
     }
 }

@@ -19,7 +19,7 @@ public sealed class GetModuleStateForGuildQueryHandler(GrimoireDbContext grimoir
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async ValueTask<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Guilds.AsNoTracking().WhereIdIs(request.GuildId)
             .GetModulesOfType(request.Module)
