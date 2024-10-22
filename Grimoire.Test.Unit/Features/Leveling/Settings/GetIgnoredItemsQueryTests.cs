@@ -14,7 +14,7 @@ using Grimoire.Features.Leveling.Settings;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Grimoire.Test.Unit.Features.Leveling.Queries;
+namespace Grimoire.Test.Unit.Features.Leveling.Settings;
 
 [Collection("Test collection")]
 public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime

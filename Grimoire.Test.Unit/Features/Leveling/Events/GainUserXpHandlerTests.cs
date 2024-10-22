@@ -14,10 +14,10 @@ using Grimoire.Features.Leveling.Events;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Grimoire.Test.Unit.Features.Leveling.Commands;
+namespace Grimoire.Test.Unit.Features.Leveling.Events;
 
 [Collection("Test collection")]
-public sealed class GainUserXpCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()

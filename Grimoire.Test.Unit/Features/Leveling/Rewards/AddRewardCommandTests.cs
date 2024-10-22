@@ -13,7 +13,7 @@ using Grimoire.Features.Leveling.Rewards;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Grimoire.Test.Unit.Features.Leveling.Commands;
+namespace Grimoire.Test.Unit.Features.Leveling.Rewards;
 
 [Collection("Test collection")]
 public sealed class AddRewardCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime

@@ -1,59 +1,63 @@
-// This file is part of the Grimoire Project.
-//
+//This file is part of the Grimoire Project.
+
 // Copyright (c) Netharia 2021-Present.
-//
+
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-//using System;
-//using System.Threading.Tasks;
-//using DSharpPlus.Entities;
-//using DSharpPlus.SlashCommands;
-//using FakeItEasy;
-//using Grimoire.Extensions;
-//using Grimoire.Features.CustomCommands;
-//using Grimoire.Structs;
-//using Mediator;
-//using Microsoft.Extensions.DependencyInjection;
-//using Microsoft.Extensions.Hosting;
-//using Xunit;
+using System;
+using System.Threading.Tasks;
+using Grimoire.Features.CustomCommands;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Xunit;
 
-//namespace Grimoire.Test.Unit.Features.CustomCommands;
+namespace Grimoire.Test.Unit.Features.CustomCommands;
 
-//[Collection("Test collection")]
-//public class AddCustomCommandTest(GrimoireCoreFactory factory) : IAsyncLifetime
-//{
-//    private readonly GrimoireCoreFactory _factory = factory;
-//    private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
+[Collection("Test collection")]
+public class AddCustomCommandTest : IAsyncLifetime
+{
+    private readonly DbContext _dbContext;
+    private readonly Func<Task> _resetDatabase;
+    private readonly IHost _host;
 
-//    public async Task InitializeAsync()
-//    {
-//        //await this._dbContext.SaveChangesAsync();
-//    }
+    public AddCustomCommandTest(GrimoireCoreFactory factory)
+    {
+        _host = Host.CreateDefaultBuilder()
+            .ConfigureServices((context, services)
+                => services.AddDbContext<GrimoireDbContext>(options =>
+                    options.UseNpgsql(factory.ConnectionString))
+                .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<AddCustomCommand.Handler>())).Build();
 
-//    public Task DisposeAsync() => this._resetDatabase();
+        _dbContext = _host.Services.GetRequiredService<GrimoireDbContext>();
+        _resetDatabase = factory.ResetDatabase;
+    }
 
-//    [Fact]
-//    public async Task GivenThereIsASpaceInTheCommandName_WhenLearnCommandIsCalled_ThenShouldReplyWithErrorResponse()
-//    {
-//        using var webApplication = new HostBuilder<Program>(_factory);
+    public async Task InitializeAsync()
+    {
+        await _host.StartAsync();
+        return;
+        //await this._dbContext.SaveChangesAsync();
+    }
 
-//        var host = webApplication.Services.GetRequiredService<IHost>();
-//        await host.StartAsync();
-//        var scope = webApplication.Server.Services.CreateScope();
-//        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+    public async Task DisposeAsync()
+    {
+        await this._resetDatabase();
+        await _host.StopAsync();
+    }
 
+    //[Fact]
+    //public async Task GivenThereIsASpaceInTheCommandName_WhenLearnCommandIsCalled_ThenShouldReplyWithErrorResponse()
+    //{
 
-//        var CUT = new AddCustomCommand.Command(mediator);
-//        var context = A.Fake<InteractionContext>();
-//        A.CallTo(() => context.DeferAsync(A<bool>.That.Equals(false)))
-//            .Returns(Task.CompletedTask);
-//        A.CallTo(() => context.EditReplyAsync(A<DiscordColor>.Ignored,
-//            A<string>.Ignored, A<string>.Ignored, A<string>.Ignored, A<DiscordEmbed>.Ignored, A<DateTime>.Ignored)).Returns(Task.CompletedTask);
+    //    var mediator = _host.Services.GetRequiredService<IMediator>();
 
-//        await CUT.Learn(context, "something else", "");
+    //    var CUT = new CustomCommandSettings(mediator);
 
-//        await host.StopAsync();
-//    }
+    //    await CUT.Learn(context, "something else", "");
 
-//}
+        
+    //}
+
+}

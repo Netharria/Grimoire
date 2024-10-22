@@ -15,7 +15,7 @@ using Grimoire.Features.Shared.SharedDtos;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Grimoire.Test.Unit.Features.Leveling.Commands;
+namespace Grimoire.Test.Unit.Features.Leveling.Settings;
 
 [Collection("Test collection")]
 public sealed class RemoveIgnoreForXpGainCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime

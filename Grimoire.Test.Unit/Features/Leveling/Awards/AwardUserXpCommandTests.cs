@@ -15,7 +15,7 @@ using Grimoire.Features.Leveling.Awards;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Grimoire.Test.Unit.Features.Leveling.Commands;
+namespace Grimoire.Test.Unit.Features.Leveling.Awards;
 
 [Collection("Test collection")]
 public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
