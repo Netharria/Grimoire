@@ -28,11 +28,8 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
     private const ulong USER_ID = 1;
     private const ulong CHANNEL_ID = 1;
     private const ulong ROLE_ID_1 = 1;
-    private const int REWARD_LEVEL_1 = 1;
     private const ulong ROLE_ID_2 = 2;
-    private const int REWARD_LEVEL_2 = 3;
     private const ulong ROLE_ID_3 = 3;
-    private const int REWARD_LEVEL_3 = 5;
     private const int GAIN_AMOUNT = 15;
 
     public async Task InitializeAsync()
@@ -75,9 +72,6 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
         await this._dbContext.AddAsync(new Role { Id = ROLE_ID_1, GuildId = GUILD_ID });
         await this._dbContext.AddAsync(new Role { Id = ROLE_ID_2, GuildId = GUILD_ID });
         await this._dbContext.AddAsync(new Role { Id = ROLE_ID_3, GuildId = GUILD_ID });
-        await this._dbContext.AddAsync(new Reward { RoleId = ROLE_ID_1, GuildId = GUILD_ID, RewardLevel = REWARD_LEVEL_1, RewardMessage = "Test1" });
-        await this._dbContext.AddAsync(new Reward { RoleId = ROLE_ID_2, GuildId = GUILD_ID, RewardLevel = REWARD_LEVEL_2, RewardMessage = "Test2" });
-        await this._dbContext.AddAsync(new Reward { RoleId = ROLE_ID_3, GuildId = GUILD_ID, RewardLevel = REWARD_LEVEL_3, RewardMessage = "Test3" });
         await this._dbContext.SaveChangesAsync();
     }
 

@@ -136,12 +136,12 @@ public sealed partial class GainUserXp
     }
     public sealed record QueryResult
     {
-        public long Xp { get; init; }
-        public DateTimeOffset Timeout { get; init; }
-        public int Base { get; init; }
-        public int Modifier {  get; init; }
-        public int Amount { get; init; }
+        public required long Xp { get; init; }
+        public required DateTimeOffset Timeout { get; init; }
+        public required int Base { get; init; }
+        public required int Modifier {  get; init; }
+        public required int Amount { get; init; }
         public ulong? LevelChannelLogId { get; init; }
-        public TimeSpan TextTime { get; init; }
+        public required TimeSpan TextTime { get; init; }
     }
 }
