@@ -16,6 +16,7 @@ public sealed class GuildMemberRemovedEvent(IMediator mediator) : IEventHandler<
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberRemovedEventArgs args)
     {
         var settings = await this._mediator.Send(new GetUserLogSettings.Query{ GuildId = args.Guild.Id });
+        if (settings is null) return;
         if (!settings.IsLoggingEnabled) return;
         if (settings.LeaveChannelLog is null) return;
         var logChannel = args.Guild.Channels.GetValueOrDefault(settings.LeaveChannelLog.Value);

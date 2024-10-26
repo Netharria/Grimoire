@@ -22,6 +22,11 @@ internal sealed class ModuleCommands(IMediator mediator) : ApplicationCommandMod
     {
         await ctx.DeferAsync(true);
         var response = await this._mediator.Send(new GetAllModuleStatesForGuildQuery{ GuildId = ctx.Guild.Id});
+        if (response is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Red, "Settings could not be found for this server.");
+            return;
+        }
         await ctx.EditReplyAsync(
             title: "Current states of modules.",
             message: $"**Leveling Enabled:** {response.LevelingIsEnabled}\n" +

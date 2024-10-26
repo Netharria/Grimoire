@@ -15,6 +15,11 @@ public partial class LogSettingsCommands
         {
             await ctx.DeferAsync(true);
             var response = await this._mediator.Send(new GetUserLogSettings.Query{ GuildId = ctx.Guild.Id });
+            if (response is null)
+            {
+                await ctx.EditReplyAsync(GrimoireColor.Red, "User Logging settings could not be found for this server.");
+                return;
+            }
             var JoinChannelLog =
                 response.JoinChannelLog is null ?
                 "None" :

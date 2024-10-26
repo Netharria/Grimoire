@@ -14,6 +14,11 @@ public sealed partial class LevelSettingsCommandGroup
     {
         await ctx.DeferAsync();
         var response = await this._mediator.Send(new GetLevelSettings.Request{ GuildId = ctx.Guild.Id });
+        if (response is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Red, "Leveling settings could not be found for this server.");
+            return;
+        }
         var levelLogMention =
                 response.LevelChannelLog is null ?
                 "None" :

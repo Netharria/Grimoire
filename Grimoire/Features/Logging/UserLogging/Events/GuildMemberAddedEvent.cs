@@ -17,6 +17,7 @@ internal sealed class GuildMemberAddedEvent(IMediator mediator, IInviteService i
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
         var settings = await this._mediator.Send(new GetUserLogSettings.Query{ GuildId = args.Guild.Id });
+        if (settings is null) return;
         if (!settings.IsLoggingEnabled) return;
         if (settings.JoinChannelLog is null) return;
         var logChannel = args.Guild.Channels.GetValueOrDefault(settings.JoinChannelLog.Value);
