@@ -49,19 +49,18 @@ public partial class LogSettingsCommands
 
 public sealed class GetUserLogSettings
 {
-    public sealed record Query : IRequest<Response>
+    public sealed record Query : IRequest<Response?>
     {
         public ulong GuildId { get; init; }
     }
 
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response?>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async Task<Response> Handle(Query request, CancellationToken cancellationToken)
-        {
-            return await this._grimoireDbContext.GuildUserLogSettings
+        public Task<Response?> Handle(Query request, CancellationToken cancellationToken)
+            => this._grimoireDbContext.GuildUserLogSettings
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => new Response
                 {
@@ -71,8 +70,7 @@ public sealed class GetUserLogSettings
                     NicknameChannelLog = x.NicknameChannelLogId,
                     AvatarChannelLog = x.AvatarChannelLogId,
                     IsLoggingEnabled = x.ModuleEnabled
-                }).FirstAsync(cancellationToken: cancellationToken);
-        }
+                }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
     }
 
     public sealed record Response : BaseResponse
@@ -82,6 +80,6 @@ public sealed class GetUserLogSettings
         public ulong? UsernameChannelLog { get; init; }
         public ulong? NicknameChannelLog { get; init; }
         public ulong? AvatarChannelLog { get; init; }
-        public bool IsLoggingEnabled { get; init; }
+        public required bool IsLoggingEnabled { get; init; }
     }
 }

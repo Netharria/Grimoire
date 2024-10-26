@@ -9,17 +9,17 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Shared.Queries;
 
-public sealed record GetAllModuleStatesForGuildQuery : IRequest<GetAllModuleStatesForGuildQueryResponse>
+public sealed record GetAllModuleStatesForGuildQuery : IRequest<GetAllModuleStatesForGuildQueryResponse?>
 {
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetAllModuleStatesForGuildQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetAllModuleStatesForGuildQuery, GetAllModuleStatesForGuildQueryResponse>
+public sealed class GetAllModuleStatesForGuildQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetAllModuleStatesForGuildQuery, GetAllModuleStatesForGuildQueryResponse?>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<GetAllModuleStatesForGuildQueryResponse> Handle(GetAllModuleStatesForGuildQuery request, CancellationToken cancellationToken)
-        => await this._grimoireDbContext.Guilds
+    public Task<GetAllModuleStatesForGuildQueryResponse?> Handle(GetAllModuleStatesForGuildQuery request, CancellationToken cancellationToken)
+        => this._grimoireDbContext.Guilds
             .AsNoTracking()
             .WhereIdIs(request.GuildId)
             .Select(x => new GetAllModuleStatesForGuildQueryResponse
@@ -29,7 +29,7 @@ public sealed class GetAllModuleStatesForGuildQueryHandler(GrimoireDbContext gri
                 ModerationIsEnabled = x.ModerationSettings != null && x.ModerationSettings.ModuleEnabled,
                 MessageLogIsEnabled = x.MessageLogSettings != null && x.MessageLogSettings.ModuleEnabled,
                 CommandsIsEnabled = x.CommandsSettings != null && x.CommandsSettings.ModuleEnabled
-            }).FirstAsync(cancellationToken: cancellationToken);
+            }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 }
 
 public sealed record GetAllModuleStatesForGuildQueryResponse : BaseResponse

@@ -39,18 +39,17 @@ public partial class LogSettingsCommands
 
 public sealed class GetMessageLogSettings
 {
-    public sealed record Query : IRequest<Response>
+    public sealed record Query : IRequest<Response?>
     {
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response?>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async Task<Response> Handle(Query request, CancellationToken cancellationToken)
-        {
-            return await this._grimoireDbContext.GuildMessageLogSettings
+        public Task<Response?> Handle(Query request, CancellationToken cancellationToken)
+            => this._grimoireDbContext.GuildMessageLogSettings
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => new Response
                 {
@@ -58,8 +57,7 @@ public sealed class GetMessageLogSettings
                     DeleteChannelLog = x.DeleteChannelLogId,
                     BulkDeleteChannelLog = x.BulkDeleteChannelLogId,
                     IsLoggingEnabled = x.ModuleEnabled
-                }).FirstAsync(cancellationToken: cancellationToken);
-        }
+                }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
     }
 
     public sealed record Response : BaseResponse
@@ -67,7 +65,7 @@ public sealed class GetMessageLogSettings
         public ulong? EditChannelLog { get; init; }
         public ulong? DeleteChannelLog { get; init; }
         public ulong? BulkDeleteChannelLog { get; init; }
-        public bool IsLoggingEnabled { get; init; }
+        public required bool IsLoggingEnabled { get; init; }
     }
 }
 

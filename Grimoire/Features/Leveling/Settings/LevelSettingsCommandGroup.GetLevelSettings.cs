@@ -31,16 +31,16 @@ public sealed partial class LevelSettingsCommandGroup
 
 public sealed class GetLevelSettings
 {
-    public sealed record Request : IRequest<Response>
+    public sealed record Request : IRequest<Response?>
     {
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response?>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-        public async Task<Response> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
          => await this._grimoireDbContext.GuildLevelSettings
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => new Response
@@ -51,7 +51,7 @@ public sealed class GetLevelSettings
                 Modifier = x.Modifier,
                 Amount = x.Amount,
                 LevelChannelLog = x.LevelChannelLogId
-            }).FirstAsync(cancellationToken: cancellationToken);
+            }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
     }
 

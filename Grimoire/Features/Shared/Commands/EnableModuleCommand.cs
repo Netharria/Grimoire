@@ -30,7 +30,10 @@ public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbConte
                 Module = x,
                 x.Guild.ModChannelLog,
             })
-            .FirstAsync(cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
+        if (result is null)
+            throw new AnticipatedException("Could not find the settings for this server.");
+
         var ModChannelLog = result.ModChannelLog;
         var guildModule = result.Module ?? command.Module switch
         {

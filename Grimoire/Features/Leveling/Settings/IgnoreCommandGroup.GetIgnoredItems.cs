@@ -54,7 +54,11 @@ public sealed class GetIgnoredItems
                     IgnoredRoles = x.IgnoredRoles.Select(x => x.RoleId),
                     IgnoredChannels = x.IgnoredChannels.Select(x => x.ChannelId),
                     IgnoredMembers = x.IgnoredMembers.Select(x => x.UserId)
-                }).FirstAsync(cancellationToken: cancellationToken);
+                }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+
+            if(ignoredItems is null)
+                throw new AnticipatedException("Could not find the settings for this server.");
 
             if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() && !ignoredItems.IgnoredMembers.Any())
                 throw new AnticipatedException("This server does not have any ignored channels, roles or users.");
