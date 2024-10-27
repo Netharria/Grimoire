@@ -13,8 +13,8 @@ public sealed record SetAutoPardonCommand : IRequest<BaseResponse>
     public TimeSpan DurationAmount { get; init; }
 }
 
-
-public sealed class SetAutoPardonCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<SetAutoPardonCommand, BaseResponse>
+public sealed class SetAutoPardonCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<SetAutoPardonCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -23,7 +23,7 @@ public sealed class SetAutoPardonCommandHandler(GrimoireDbContext grimoireDbCont
         var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
             .Include(x => x.Guild)
             .FirstOrDefaultAsync(guildModerationSettings => guildModerationSettings.GuildId.Equals(command.GuildId),
-            cancellationToken);
+                cancellationToken);
         if (guildModerationSettings is null)
             throw new AnticipatedException("Could not find the Servers settings.");
 
@@ -31,9 +31,6 @@ public sealed class SetAutoPardonCommandHandler(GrimoireDbContext grimoireDbCont
 
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-        return new BaseResponse
-        {
-            LogChannelId = guildModerationSettings.Guild.ModChannelLog
-        };
+        return new BaseResponse { LogChannelId = guildModerationSettings.Guild.ModChannelLog };
     }
 }

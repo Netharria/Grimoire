@@ -9,9 +9,9 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Features.CustomCommands;
+
 public sealed class GetCustomCommandOptions
 {
-
     internal sealed class AutocompleteProvider(IServiceProvider serviceProvider) : IAutocompleteProvider
     {
         private readonly IServiceProvider _serviceProvider = serviceProvider;
@@ -25,12 +25,11 @@ public sealed class GetCustomCommandOptions
                 return [];
 
             return await mediator.CreateStream(
-                new Request
-                {
-                    EnteredText = (string)(ctx.FocusedOption.Value ?? string.Empty),
-                    GuildId = ctx.Guild.Id
-                }).Select(x =>
-                new DiscordAutoCompleteChoice(
+                    new Request
+                    {
+                        EnteredText = (string)(ctx.FocusedOption.Value ?? string.Empty), GuildId = ctx.Guild.Id
+                    }).Select(x =>
+                    new DiscordAutoCompleteChoice(
                         x.Name + " " +
                         (x.HasMention ? "<Mention> " : string.Empty) +
                         (x.HasMessage ? "<Message>" : string.Empty),
@@ -38,6 +37,7 @@ public sealed class GetCustomCommandOptions
                 .ToListAsync();
         }
     }
+
     public sealed record Request : IStreamRequest<Response>
     {
         public required string EnteredText { get; init; }
@@ -46,7 +46,6 @@ public sealed class GetCustomCommandOptions
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IStreamRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
         private static readonly Func<GrimoireDbContext, ulong, string, IAsyncEnumerable<Response>> _getCommandsAsync =
             EF.CompileAsyncQuery((GrimoireDbContext context, ulong guildId, string cleanedText) =>
                 context.CustomCommands
@@ -54,20 +53,17 @@ public sealed class GetCustomCommandOptions
                     .Where(x => x.GuildId == guildId)
                     .OrderBy(x => EF.Functions.FuzzyStringMatchLevenshtein(x.Name, cleanedText))
                     .Take(5)
-                    .Select(x => new Response
-                    {
-                        Name = x.Name,
-                        HasMention = x.HasMention,
-                        HasMessage = x.HasMessage,
-                    })
+                    .Select(x => new Response { Name = x.Name, HasMention = x.HasMention, HasMessage = x.HasMessage })
             );
+
+        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async IAsyncEnumerable<Response> Handle(Request request,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var cleanedText = request.EnteredText.Split(' ').FirstOrDefault(string.Empty);
             await foreach (var response in _getCommandsAsync(this._grimoireDbContext, request.GuildId, cleanedText)
-                    .WithCancellation(cancellationToken))
+                               .WithCancellation(cancellationToken))
                 yield return response;
         }
     }

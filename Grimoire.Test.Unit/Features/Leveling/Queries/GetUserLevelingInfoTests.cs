@@ -19,44 +19,30 @@ namespace Grimoire.Test.Unit.Features.Leveling.Queries;
 [Collection("Test collection")]
 public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong GuildId = 1;
+    private const ulong UserId = 1;
+    private const ulong Role1 = 1;
+    private const ulong Role2 = 2;
+    private const ulong Role3 = 3;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
-    .UseNpgsql(factory.ConnectionString)
+            .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_ID = 1;
-    private const ulong USER_ID = 1;
-    private const ulong ROLE_1 = 1;
-    private const ulong ROLE_2 = 2;
-    private const ulong ROLE_3 = 3;
 
     public async Task InitializeAsync()
     {
         await this._dbContext.AddAsync(new Guild
         {
-            Id = GUILD_ID,
-            LevelSettings = new GuildLevelSettings
-            {
-                ModuleEnabled = true
-            }
+            Id = GuildId, LevelSettings = new GuildLevelSettings { ModuleEnabled = true }
         });
-        await this._dbContext.AddAsync(new User { Id = USER_ID });
+        await this._dbContext.AddAsync(new User { Id = UserId });
         await this._dbContext.AddRangeAsync(
-            new Role
-            {
-                Id = ROLE_1,
-                GuildId = GUILD_ID
-            },
-            new Role
-            {
-                Id = ROLE_2,
-                GuildId = GUILD_ID
-            },
-            new Role
-            {
-                Id = ROLE_3,
-                GuildId = GUILD_ID
-            });
+            new Role { Id = Role1, GuildId = GuildId },
+            new Role { Id = Role2, GuildId = GuildId },
+            new Role { Id = Role3, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -66,21 +52,15 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
     public async Task GivenAUserHasNotzBeenOnTheServer_WhenGetUserLevelingInfoIsCalled_ThrowAnticipatedException()
     {
         //Arrange
-        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
-        var query = new GetUserLevelingInfo.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID,
-            RoleIds = []
-        };
+        var cut = new GetUserLevelingInfo.Handler(this._dbContext);
+        var query = new GetUserLevelingInfo.Query { UserId = UserId, GuildId = GuildId, RoleIds = [] };
 
         //Act
-        var result = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(query, default));
+        var result = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(query, default));
 
         //Assert
         result.Should().NotBeNull();
         result.Message.Should().Be("Could not find that user. Have they been on the server before?");
-
     }
 
     [Fact]
@@ -89,26 +69,17 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
         //Arrange
         await this._dbContext.Guilds.AddAsync(new Guild
         {
-            Id = 1234,
-            LevelSettings = new GuildLevelSettings
-            {
-                ModuleEnabled = false
-            }
+            Id = 1234, LevelSettings = new GuildLevelSettings { ModuleEnabled = false }
         });
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = 1234 });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = 1234 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
-        var query = new GetUserLevelingInfo.Query
-        {
-            UserId = USER_ID,
-            GuildId = 1234,
-            RoleIds = []
-        };
+        var cut = new GetUserLevelingInfo.Handler(this._dbContext);
+        var query = new GetUserLevelingInfo.Query { UserId = UserId, GuildId = 1234, RoleIds = [] };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().BeNull();
@@ -119,20 +90,15 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
-        var query = new GetUserLevelingInfo.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID,
-            RoleIds = []
-        };
+        var cut = new GetUserLevelingInfo.Handler(this._dbContext);
+        var query = new GetUserLevelingInfo.Query { UserId = UserId, GuildId = GuildId, RoleIds = [] };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();
@@ -147,47 +113,27 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
         await this._dbContext.XpHistory.AddAsync(new XpHistory
         {
-            UserId = USER_ID,
-            GuildId = GUILD_ID,
+            UserId = UserId,
+            GuildId = GuildId,
             TimeOut = DateTime.UtcNow.AddMinutes(-1),
             Type = XpHistoryType.Earned,
             Xp = 300
         });
         await this._dbContext.Rewards.AddRangeAsync(
-            new Reward
-            {
-                GuildId = GUILD_ID,
-                RoleId = ROLE_1,
-                RewardLevel = 5,
-            },
-            new Reward
-            {
-                GuildId = GUILD_ID,
-                RoleId = ROLE_2,
-                RewardLevel = 10,
-            },
-            new Reward
-            {
-                GuildId = GUILD_ID,
-                RoleId = ROLE_3,
-                RewardLevel = 8
-            });
+            new Reward { GuildId = GuildId, RoleId = Role1, RewardLevel = 5 },
+            new Reward { GuildId = GuildId, RoleId = Role2, RewardLevel = 10 },
+            new Reward { GuildId = GuildId, RoleId = Role3, RewardLevel = 8 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
-        var query = new GetUserLevelingInfo.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID,
-            RoleIds = []
-        };
+        var cut = new GetUserLevelingInfo.Handler(this._dbContext);
+        var query = new GetUserLevelingInfo.Query { UserId = UserId, GuildId = GuildId, RoleIds = [] };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();
@@ -195,7 +141,7 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
         result!.IsXpIgnored.Should().BeFalse();
         result!.EarnedRewards.Should().NotBeNull()
             .And.HaveCount(2)
-            .And.ContainInOrder(ROLE_1, ROLE_3);
+            .And.ContainInOrder(Role1, Role3);
     }
 
     [Fact]
@@ -203,21 +149,16 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
-        await this._dbContext.IgnoredMembers.AddAsync(new IgnoredMember { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await this._dbContext.IgnoredMembers.AddAsync(new IgnoredMember { UserId = UserId, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
-        var query = new GetUserLevelingInfo.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID,
-            RoleIds = []
-        };
+        var cut = new GetUserLevelingInfo.Handler(this._dbContext);
+        var query = new GetUserLevelingInfo.Query { UserId = UserId, GuildId = GuildId, RoleIds = [] };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();
@@ -232,21 +173,16 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
-        await this._dbContext.IgnoredRoles.AddAsync(new IgnoredRole { RoleId = ROLE_1, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await this._dbContext.IgnoredRoles.AddAsync(new IgnoredRole { RoleId = Role1, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
-        var query = new GetUserLevelingInfo.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID,
-            RoleIds = [ ROLE_1 ]
-        };
+        var cut = new GetUserLevelingInfo.Handler(this._dbContext);
+        var query = new GetUserLevelingInfo.Query { UserId = UserId, GuildId = GuildId, RoleIds = [Role1] };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();
@@ -261,20 +197,15 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
-        var query = new GetUserLevelingInfo.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID,
-            RoleIds = [ ROLE_1, ROLE_2 ]
-        };
+        var cut = new GetUserLevelingInfo.Handler(this._dbContext);
+        var query = new GetUserLevelingInfo.Query { UserId = UserId, GuildId = GuildId, RoleIds = [Role1, Role2] };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();
@@ -285,25 +216,21 @@ public sealed class GetUserLevelingInfoTests(GrimoireCoreFactory factory) : IAsy
     }
 
     [Fact]
-    public async Task GivenAUserHasOneRoleThatIsIgnoredAndOneThatIsNot_WhenGetUserLevelingInfoIsCalled_ReturnIsIgnoredValue()
+    public async Task
+        GivenAUserHasOneRoleThatIsIgnoredAndOneThatIsNot_WhenGetUserLevelingInfoIsCalled_ReturnIsIgnoredValue()
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
-        await this._dbContext.IgnoredRoles.AddAsync(new IgnoredRole { RoleId = ROLE_1, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await this._dbContext.IgnoredRoles.AddAsync(new IgnoredRole { RoleId = Role1, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserLevelingInfo.Handler(this._dbContext);
-        var query = new GetUserLevelingInfo.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID,
-            RoleIds = [ ROLE_1, ROLE_2 ]
-        };
+        var cut = new GetUserLevelingInfo.Handler(this._dbContext);
+        var query = new GetUserLevelingInfo.Query { UserId = UserId, GuildId = GuildId, RoleIds = [Role1, Role2] };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();

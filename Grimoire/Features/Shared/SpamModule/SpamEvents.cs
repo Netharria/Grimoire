@@ -32,7 +32,7 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
             UserId = member.Id,
             GuildId = args.Guild.Id,
             ModeratorId = sender.CurrentUser.Id,
-            Reason = checkSpamResult.Reason,
+            Reason = checkSpamResult.Reason
         });
 
         if (response is null)
@@ -62,8 +62,9 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
         {
             await member.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithAuthor($"Mute Id {response.SinId}")
-            .WithDescription($"You have been muted for {response.Duration.TotalMinutes} minute(s) by {sender.CurrentUser.Mention} for spamming.")
-            .WithColor(GrimoireColor.Red));
+                .WithDescription(
+                    $"You have been muted for {response.Duration.TotalMinutes} minute(s) by {sender.CurrentUser.Mention} for spamming.")
+                .WithColor(GrimoireColor.Red));
         }
         catch (Exception)
         {
@@ -80,9 +81,7 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
 
         if (sentMessageToUser == false)
             await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-            .WithDescription($"Was not able to send a direct message with the mute details to {member.Mention}")
-            .WithColor(GrimoireColor.Red));
-
-
+                .WithDescription($"Was not able to send a direct message with the mute details to {member.Mention}")
+                .WithColor(GrimoireColor.Red));
     }
 }

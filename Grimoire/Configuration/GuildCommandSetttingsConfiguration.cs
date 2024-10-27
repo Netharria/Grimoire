@@ -8,6 +8,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
+
 internal sealed class GuildCommandSetttingsConfiguration : IEntityTypeConfiguration<GuildCommandsSettings>
 {
     public void Configure(EntityTypeBuilder<GuildCommandsSettings> builder)
@@ -18,6 +19,6 @@ internal sealed class GuildCommandSetttingsConfiguration : IEntityTypeConfigurat
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.Property(x => x.ModuleEnabled)
-            .HasDefaultValue(value: false);
+            .HasDefaultValue(false);
     }
 }

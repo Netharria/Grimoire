@@ -6,12 +6,10 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
-using Grimoire.Features.Shared.SharedDtos;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -20,19 +18,22 @@ namespace Grimoire.Test.Unit.DatabaseQueryHelpers;
 [Collection("Test collection")]
 public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong Guild1 = 1;
+    private const ulong Guild2 = 2;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_1 = 1;
-    private const ulong GUILD_2 = 2;
+
     public async Task InitializeAsync()
     {
         await this._dbContext.AddAsync(
             new Guild
             {
-                Id = GUILD_1,
+                Id = Guild1,
                 LevelSettings = new GuildLevelSettings(),
                 MessageLogSettings = new GuildMessageLogSettings(),
                 ModerationSettings = new GuildModerationSettings(),
@@ -41,7 +42,7 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
         await this._dbContext.AddAsync(
             new Guild
             {
-                Id = GUILD_2,
+                Id = Guild2,
                 LevelSettings = new GuildLevelSettings(),
                 MessageLogSettings = new GuildMessageLogSettings(),
                 ModerationSettings = new GuildModerationSettings(),
@@ -49,18 +50,14 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
             });
         await this._dbContext.SaveChangesAsync();
     }
+
     public Task DisposeAsync() => this._resetDatabase();
 
     [Fact]
     public async Task WhenGuildsAreNotInDatabase_AddThemAsync()
     {
-        var guildsToAdd = new List<GuildDto>
-        {
-            new() { Id = GUILD_1 },
-            new() { Id = GUILD_2 },
-            new() { Id = 3 }
-        };
-        var result = await this._dbContext.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
+        ulong[] guildsToAdd = [Guild1, Guild2];
+        var result = await this._dbContext.Guilds.AddMissingGuildsAsync(guildsToAdd);
 
         await this._dbContext.SaveChangesAsync();
         result.Should().BeTrue();
@@ -77,7 +74,7 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
                 x.MessageLogSettings.Should().NotBeNull();
                 x.ModerationSettings.Should().NotBeNull();
                 x.UserLogSettings.Should().NotBeNull();
-                x.Id.Should().BeOneOf(GUILD_1, GUILD_2, 3);
+                x.Id.Should().BeOneOf(Guild1, Guild2, 3);
             });
     }
 
@@ -85,10 +82,10 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
     public async Task WhenNoGuildsAreAdded_ReturnsFalse()
     {
         // Arrange
-        var guildsToAdd = new List<GuildDto>(); // No members to add
+        ulong[] guildsToAdd = []; // No members to add
 
         // Act
-        var result = await this._dbContext.Guilds.AddMissingGuildsAsync(guildsToAdd, default);
+        var result = await this._dbContext.Guilds.AddMissingGuildsAsync(guildsToAdd);
 
         // Assert
         result.Should().BeFalse();

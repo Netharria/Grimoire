@@ -21,35 +21,37 @@ internal sealed class ModuleCommands(IMediator mediator) : ApplicationCommandMod
     public async Task ViewAsync(InteractionContext ctx)
     {
         await ctx.DeferAsync(true);
-        var response = await this._mediator.Send(new GetAllModuleStatesForGuildQuery{ GuildId = ctx.Guild.Id});
+        var response = await this._mediator.Send(new GetAllModuleStatesForGuildQuery { GuildId = ctx.Guild.Id });
         if (response is null)
         {
             await ctx.EditReplyAsync(GrimoireColor.Red, "Settings could not be found for this server.");
             return;
         }
+
         await ctx.EditReplyAsync(
             title: "Current states of modules.",
             message: $"**Leveling Enabled:** {response.LevelingIsEnabled}\n" +
-            $"**User Log Enabled:** {response.UserLogIsEnabled}\n" +
-            $"**Message Log Enabled:** {response.MessageLogIsEnabled}\n" +
-            $"**Moderation Enabled:** {response.ModerationIsEnabled}\n" +
-            $"**Commands Enabled:** {response.CommandsIsEnabled}\n");
+                     $"**User Log Enabled:** {response.UserLogIsEnabled}\n" +
+                     $"**Message Log Enabled:** {response.MessageLogIsEnabled}\n" +
+                     $"**Moderation Enabled:** {response.ModerationIsEnabled}\n" +
+                     $"**Commands Enabled:** {response.CommandsIsEnabled}\n");
     }
 
     [SlashCommand("Set", "Enable or Disable a module")]
     public async Task SetAsync(InteractionContext ctx,
-        [Option("Module", "The module to enable or disable")] Module module,
-        [Option("Enable", "Whether to enable or disable the module")] bool enable)
+        [Option("Module", "The module to enable or disable")]
+        Module module,
+        [Option("Enable", "Whether to enable or disable the module")]
+        bool enable)
     {
         await ctx.DeferAsync();
         var response = await this._mediator.Send(new EnableModuleCommand
         {
-            GuildId = ctx.Guild.Id,
-            Module = module,
-            Enable = enable
+            GuildId = ctx.Guild.Id, Module = module, Enable = enable
         });
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.Member.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module.GetName()}");
+            message:
+            $"{ctx.Member.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module.GetName()}");
         await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module.GetName()}");
     }
 }

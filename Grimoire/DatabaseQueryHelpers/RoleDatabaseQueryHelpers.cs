@@ -9,7 +9,8 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class RoleDatabaseQueryHelpers
 {
-    public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles, IEnumerable<RoleDto> roles, CancellationToken cancellationToken = default)
+    public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles, IReadOnlyCollection<RoleDto> roles,
+        CancellationToken cancellationToken = default)
     {
         var incomingRoles = roles
             .Select(x => x.Id);
@@ -23,17 +24,14 @@ public static class RoleDatabaseQueryHelpers
 
         var rolesToAdd = roles
             .Where(x => !existingRoleIds.Contains(x.Id))
-            .Select(x => new Role
-            {
-                Id = x.Id,
-                GuildId = x.GuildId
-            });
+            .Select(x => new Role { Id = x.Id, GuildId = x.GuildId })
+            .ToArray().AsReadOnly();
 
-        if (rolesToAdd.Any())
-        {
-            await databaseRoles.AddRangeAsync(rolesToAdd, cancellationToken);
-            return true;
-        }
-        return false;
+        if (rolesToAdd.Count == 0)
+            return false;
+
+        await databaseRoles.AddRangeAsync(rolesToAdd, cancellationToken);
+        return true;
+
     }
 }

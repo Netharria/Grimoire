@@ -8,11 +8,10 @@
 using System.Text.Json.Serialization;
 
 namespace Grimoire.Features.Shared.PluralKit.Models;
+
 public sealed record PluralKitProxyTag
 {
-    [JsonPropertyName("prefix")]
-    public string? Prefix { get; set; }
+    [JsonPropertyName("prefix")] public string? Prefix { get; set; }
 
-    [JsonPropertyName("suffix")]
-    public string? Suffix { get; set; }
+    [JsonPropertyName("suffix")] public string? Suffix { get; set; }
 }

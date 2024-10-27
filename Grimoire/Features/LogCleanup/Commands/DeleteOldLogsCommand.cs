@@ -11,7 +11,8 @@ public sealed record DeleteOldLogsCommand : IRequest
 {
 }
 
-public sealed class DeleteOldLogsCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<DeleteOldLogsCommand>
+public sealed class DeleteOldLogsCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<DeleteOldLogsCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

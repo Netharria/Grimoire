@@ -27,24 +27,32 @@ public sealed class UpdatedUsernameEvent
             });
             if (usernameResponse is null
                 || string.Equals(usernameResponse.BeforeUsername,
-                usernameResponse.AfterUsername,
-                StringComparison.CurrentCultureIgnoreCase))
+                    usernameResponse.AfterUsername,
+                    StringComparison.CurrentCultureIgnoreCase))
                 return;
 
-            var embed = new DiscordEmbedBuilder()
-                        .WithAuthor("Username Updated")
-                        .AddField("User", args.MemberAfter.Mention)
-                        .AddField("Before", string.IsNullOrWhiteSpace(usernameResponse.BeforeUsername)? "`Unknown`" : usernameResponse.BeforeUsername, true)
-                        .AddField("After", string.IsNullOrWhiteSpace(usernameResponse.AfterUsername)? "`Unknown`" : usernameResponse.AfterUsername, true)
-                        .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
-                        .WithTimestamp(DateTimeOffset.UtcNow)
-                        .WithColor(GrimoireColor.Mint);
-
-            var message = await sender.SendMessageToLoggingChannel(usernameResponse.UsernameChannelLogId, embed);
+            var message = await sender.SendMessageToLoggingChannel(usernameResponse.UsernameChannelLogId,
+                embed => embed
+                    .WithAuthor("Username Updated")
+                    .AddField("User", args.MemberAfter.Mention)
+                    .AddField("Before",
+                        string.IsNullOrWhiteSpace(usernameResponse.BeforeUsername)
+                            ? "`Unknown`"
+                            : usernameResponse.BeforeUsername, true)
+                    .AddField("After",
+                        string.IsNullOrWhiteSpace(usernameResponse.AfterUsername)
+                            ? "`Unknown`"
+                            : usernameResponse.AfterUsername, true)
+                    .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
+                    .WithTimestamp(DateTimeOffset.UtcNow)
+                    .WithColor(GrimoireColor.Mint));
 
             if (message is null)
                 return;
-            await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+            await this._mediator.Send(new AddLogMessage.Command
+            {
+                MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
+            });
 
             await this._mediator.Publish(new UsernameTrackerNotification
             {
@@ -70,24 +78,21 @@ public sealed class UpdatedUsernameEvent
         public async Task<Response?> Handle(Command command, CancellationToken cancellationToken)
         {
             var currentUsername = await this._grimoireDbContext.Members
-            .AsNoTracking()
-            .WhereMemberHasId(command.UserId, command.GuildId)
-            .Where(x => x.Guild.UserLogSettings.ModuleEnabled)
-            .Select(x => new
-            {
-                x.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(x => x.Timestamp < DateTime.UtcNow.AddSeconds(-2)).Username,
-                x.Guild.UserLogSettings.UsernameChannelLogId
-            }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .AsNoTracking()
+                .WhereMemberHasId(command.UserId, command.GuildId)
+                .Where(member => member.Guild.UserLogSettings.ModuleEnabled)
+                .Select(member => new
+                {
+                    member.User.UsernameHistories.OrderByDescending(x => x.Timestamp)
+                        .First(usernameHistory => usernameHistory.Timestamp < DateTime.UtcNow.AddSeconds(-2)).Username,
+                    member.Guild.UserLogSettings.UsernameChannelLogId
+                }).FirstOrDefaultAsync(cancellationToken);
             if (currentUsername is null
                 || string.Equals(currentUsername.Username, command.Username, StringComparison.CurrentCultureIgnoreCase))
                 return null;
 
             await this._grimoireDbContext.UsernameHistory.AddAsync(
-                new UsernameHistory
-                {
-                    UserId = command.UserId,
-                    Username = command.Username
-                }, cancellationToken);
+                new UsernameHistory { UserId = command.UserId, Username = command.Username }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return new Response
             {
@@ -105,5 +110,3 @@ public sealed class UpdatedUsernameEvent
         public ulong? UsernameChannelLogId { get; init; }
     }
 }
-
-

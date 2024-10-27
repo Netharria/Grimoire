@@ -15,7 +15,8 @@ public sealed record PardonSinCommand : IRequest<PardonSinCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class PardonSinCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<PardonSinCommand, PardonSinCommandResponse>
+public sealed class PardonSinCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<PardonSinCommand, PardonSinCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -29,9 +30,9 @@ public sealed class PardonSinCommandHandler(GrimoireDbContext grimoireDbContext)
             {
                 Sin = x,
                 UserName = x.Member.User.UsernameHistories
-                .OrderByDescending(x => x.Timestamp)
-                .Select(x => x.Username)
-                .FirstOrDefault(),
+                    .OrderByDescending(x => x.Timestamp)
+                    .Select(x => x.Username)
+                    .FirstOrDefault(),
                 x.Guild.ModChannelLog
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -47,7 +48,7 @@ public sealed class PardonSinCommandHandler(GrimoireDbContext grimoireDbContext)
                 SinId = command.SinId,
                 GuildId = command.GuildId,
                 ModeratorId = command.ModeratorId,
-                Reason = command.Reason,
+                Reason = command.Reason
             };
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 

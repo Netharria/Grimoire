@@ -21,32 +21,31 @@ namespace Grimoire.Test.Unit.DatabaseQueryHelpers;
 [Collection("Test collection")]
 public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const long User1 = 1;
+    private const long User2 = 2;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const long USER_1 = 1;
-    private const long USER_2 = 2;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new User { Id = USER_1 });
+        await this._dbContext.AddAsync(new User { Id = User1 });
         await this._dbContext.AddAsync(new UsernameHistory
         {
-            UserId = USER_1,
-            Username = "User1",
-            Timestamp = DateTime.UtcNow.AddMinutes(-2)
+            UserId = User1, Username = "User1", Timestamp = DateTime.UtcNow.AddMinutes(-2)
         });
-        await this._dbContext.AddAsync(new User { Id = USER_2 });
+        await this._dbContext.AddAsync(new User { Id = User2 });
         await this._dbContext.AddAsync(new UsernameHistory
         {
-            UserId = USER_2,
-            Username = "User2",
-            Timestamp = DateTime.UtcNow.AddMinutes(-2)
+            UserId = User2, Username = "User2", Timestamp = DateTime.UtcNow.AddMinutes(-2)
         });
         await this._dbContext.SaveChangesAsync();
     }
+
     public Task DisposeAsync() => this._resetDatabase();
 
     [Fact]
@@ -54,11 +53,9 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     {
         var usersToAdd = new List<UserDto>
         {
-            new() { Id = USER_1 },
-            new() { Id = USER_2 },
-            new() { Id = 45, Username = "User3" }
+            new() { Id = User1 }, new() { Id = User2 }, new() { Id = 45, Username = "User3" }
         };
-        var result = await this._dbContext.Users.AddMissingUsersAsync(usersToAdd, default);
+        var result = await this._dbContext.Users.AddMissingUsersAsync(usersToAdd);
 
         await this._dbContext.SaveChangesAsync();
         result.Should().BeTrue();
@@ -75,7 +72,7 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         var usersToAdd = new List<UserDto>(); // No members to add
 
         // Act
-        var result = await this._dbContext.Users.AddMissingUsersAsync(usersToAdd, default);
+        var result = await this._dbContext.Users.AddMissingUsersAsync(usersToAdd);
 
         // Assert
         result.Should().BeFalse();
@@ -84,17 +81,14 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     [Fact]
     public async Task WhenUserNamesAreNotInDatabase_AddThemAsync()
     {
-        var usersToAdd = new List<UserDto>
-        {
-            new() { Id = USER_1, Username = "Username2" }
-        };
-        var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd, default);
+        var usersToAdd = new List<UserDto> { new() { Id = User1, Username = "Username2" } };
+        var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd);
 
         await this._dbContext.SaveChangesAsync();
 
         result.Should().BeTrue();
         var users = await this._dbContext.UsernameHistory
-            .Where(x => x.UserId == USER_1)
+            .Where(x => x.UserId == User1)
             .ToListAsync();
         users.Should().NotBeNull();
         users.Should().HaveCount(2)
@@ -108,7 +102,7 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         var usersToAdd = new List<UserDto>(); // No members to add
 
         // Act
-        var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd, default);
+        var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd);
 
         // Assert
         result.Should().BeFalse();
@@ -118,22 +112,15 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     public async Task AddMissingUsernameHistoryAsync_SavesNewUsernameOnlyWhenDifferent()
     {
         // Arrange
-        var initialUsername = new UsernameHistory
-        {
-            UserId = USER_1,
-            Username = "ChangedUsername"
-        };
+        var initialUsername = new UsernameHistory { UserId = User1, Username = "ChangedUsername" };
         await this._dbContext.UsernameHistory.AddAsync(initialUsername);
         await this._dbContext.SaveChangesAsync();
         this._dbContext.ChangeTracker.Clear();
 
-        var usersToAdd = new List<UserDto>
-        {
-            new() { Id = USER_1, Username = "User1" }
-        };
+        var usersToAdd = new List<UserDto> { new() { Id = User1, Username = "User1" } };
 
         // Act
-        var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd, default);
+        var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd);
         await this._dbContext.SaveChangesAsync();
         this._dbContext.ChangeTracker.Clear();
 
@@ -141,7 +128,7 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         result.Should().BeTrue();
 
         var usernames = await this._dbContext.UsernameHistory
-            .Where(x => x.UserId == USER_1)
+            .Where(x => x.UserId == User1)
             .OrderByDescending(x => x.Timestamp)
             .ToListAsync();
 
@@ -149,5 +136,4 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         usernames.First().Username.Should().Be("User1");
         usernames.Last().Username.Should().Be("User1");
     }
-
 }

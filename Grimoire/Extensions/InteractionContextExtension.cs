@@ -9,7 +9,6 @@ namespace Grimoire.Extensions;
 
 public static class InteractionContextExtension
 {
-
     public static async Task EditReplyAsync(
         this InteractionContext ctx,
         DiscordColor? color = null,
@@ -30,21 +29,22 @@ public static class InteractionContextExtension
 
         await ctx.EditResponseAsync(
             new DiscordWebhookBuilder().AddEmbed(embed));
-
     }
 
-    public static async ValueTask<(bool, ulong)> TryMatchStringToChannelOrDefaultAsync(this InteractionContext ctx, string? s)
+    public static async ValueTask<(bool, ulong)> TryMatchStringToChannelOrDefaultAsync(this InteractionContext ctx,
+        string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return (true, ctx.Channel.Id);
-        var parsedvalue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
-        if (!ulong.TryParse(parsedvalue, out var parsedId))
+        var parsedValue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
+        if (!ulong.TryParse(parsedValue, out var parsedId))
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, message: "Please give a valid channel.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Please give a valid channel.");
             return (false, 0);
         }
+
         if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, message: "Did not find that channel on this server.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Did not find that channel on this server.");
             return (false, 0);
         }
 
@@ -69,11 +69,12 @@ public static class InteractionContextExtension
             .WithTimestamp(DateTime.UtcNow)
             .Build();
 
-        await DiscordRetryPolicy.RetryDiscordCall(async token => await logChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed)));
-
+        await DiscordRetryPolicy.RetryDiscordCall(async _ =>
+            await logChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed)));
     }
 
-    public static DiscordChannel? GetChannelOptionAsync(this InteractionContext ctx, ChannelOption channelOption, DiscordChannel? selectedChannel)
+    public static DiscordChannel? GetChannelOptionAsync(this InteractionContext ctx, ChannelOption channelOption,
+        DiscordChannel? selectedChannel)
     {
         switch (channelOption)
         {

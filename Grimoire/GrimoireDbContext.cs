@@ -8,7 +8,7 @@
 namespace Grimoire;
 
 /// <summary>
-/// Initializes a new instance of the <see cref="GrimoireDbContext"/> class.
+///     Initializes a new instance of the <see cref="GrimoireDbContext" /> class.
 /// </summary>
 /// <param name="options"></param>
 public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : DbContext(options)
@@ -79,5 +79,5 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(GrimoireDbContext).Assembly)
-                .HasPostgresExtension("fuzzystrmatch");
+            .HasPostgresExtension("fuzzystrmatch");
 }

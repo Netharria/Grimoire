@@ -39,12 +39,14 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             {
                 if (expiredLock.LogChannelId is not null)
                 {
-                    var ModerationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
-                    if (ModerationLogChannel is not null)
-                        await ModerationLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                            .WithDescription($"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually."));
+                    var moderationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
+                    if (moderationLogChannel is not null)
+                        await moderationLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
+                            .WithDescription(
+                                $"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually."));
                 }
             }
+
             _ = await mediator.Send(new UnmuteUserCommand { UserId = user.Id, GuildId = guild.Id }, stoppingToken);
 
             var embed = new DiscordEmbedBuilder()
@@ -54,11 +56,10 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
 
             if (expiredLock.LogChannelId is not null)
             {
-                var ModerationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
-                if (ModerationLogChannel is not null)
-                    await ModerationLogChannel.SendMessageAsync(embed);
+                var moderationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
+                if (moderationLogChannel is not null)
+                    await moderationLogChannel.SendMessageAsync(embed);
             }
         }
     }
 }
-

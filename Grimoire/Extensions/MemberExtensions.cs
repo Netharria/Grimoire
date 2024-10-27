@@ -13,13 +13,14 @@ public static class MemberExtensions
     {
         var i = 0;
         if (xp > 1000)
+            // ReSharper disable once PossibleLossOfFraction
             i = (int)Math.Floor(Math.Sqrt((xp - @base) * 100 /
-                (@base * modifier)));
+                                          (@base * modifier)));
         while (true)
         {
             var xpNeeded = @base + (
                 (long)Math.Round(@base *
-                                (modifier / 100.0) * i) * i);
+                                 (modifier / 100.0) * i) * i);
             if (xp < xpNeeded)
                 return i + 1;
 
@@ -41,7 +42,7 @@ public static class MemberExtensions
     public static string Mention(this Member? member)
         => member switch
         {
-            Member => $"<@!{member.UserId}>",
-            null => "Unknown User",
+            not null => $"<@!{member.UserId}>",
+            null => "Unknown User"
         };
 }

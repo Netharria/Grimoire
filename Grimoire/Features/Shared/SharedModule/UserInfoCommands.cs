@@ -19,16 +19,12 @@ internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandM
 
     [SlashCommand("UserInfo", "Gets details about a user including recent Usernames and Nicknames")]
     public async Task GetUserInfo(InteractionContext ctx,
-        [Option("user", "User to get the info of")] DiscordUser user)
+        [Option("user", "User to get the info of")]
+        DiscordUser user)
     {
         await ctx.DeferAsync();
 
-        (var color,
-            var displayName,
-            var avatarUrl,
-            var joinDate,
-            var roles) = GetUserInfo(user);
-
+        var (color, displayName, avatarUrl, joinDate, roles) = GetUserInfo(user);
 
 
         var embed = new DiscordEmbedBuilder()
@@ -37,24 +33,15 @@ internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandM
             .AddField("Joined On", joinDate, true)
             .WithThumbnail(avatarUrl);
 
-        await this.GetAndAddUsernames(new GetRecentUserAndNickNames.Query
-        {
-            UserId = user.Id,
-            GuildId = ctx.Guild.Id
-        }, embed);
+        await this.GetAndAddUsernames(new GetRecentUserAndNickNames.Query { UserId = user.Id, GuildId = ctx.Guild.Id },
+            embed);
 
-        await this.GetAndAddLevelInfo(new GetUserLevelingInfo.Query
-        {
-            UserId = user.Id,
-            GuildId = ctx.Guild.Id,
-            RoleIds = roles
-        }, embed, ctx.Guild);
+        await this.GetAndAddLevelInfo(
+            new GetUserLevelingInfo.Query { UserId = user.Id, GuildId = ctx.Guild.Id, RoleIds = roles }, embed,
+            ctx.Guild);
 
-        await this.GetAndAddModerationInfo(new GetUserSinCounts.Query
-        {
-            UserId = user.Id,
-            GuildId = ctx.Guild.Id
-        }, embed);
+        await this.GetAndAddModerationInfo(new GetUserSinCounts.Query { UserId = user.Id, GuildId = ctx.Guild.Id },
+            embed);
 
         await ctx.EditReplyAsync(embed: embed);
     }
@@ -97,17 +84,18 @@ internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandM
         if (response is not null)
             embed.AddField("Usernames",
                     response.Usernames.Length == 0
-                    ? "Unknown Usernames"
-                    : string.Join('\n', response.Usernames),
+                        ? "Unknown Usernames"
+                        : string.Join('\n', response.Usernames),
                     true)
                 .AddField("Nicknames",
                     response.Nicknames.Length == 0
-                    ? "Unknown Nicknames"
-                    : string.Join('\n', response.Nicknames),
+                        ? "Unknown Nicknames"
+                        : string.Join('\n', response.Nicknames),
                     true);
     }
 
-    private async Task GetAndAddLevelInfo(GetUserLevelingInfo.Query query, DiscordEmbedBuilder embed, DiscordGuild guild)
+    private async Task GetAndAddLevelInfo(GetUserLevelingInfo.Query query, DiscordEmbedBuilder embed,
+        DiscordGuild guild)
     {
         var response = await this._mediator.Send(query);
 
@@ -115,13 +103,13 @@ internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandM
             embed.AddField("Level", response.Level.ToString(), true)
                 .AddField("Can Gain Xp", response.IsXpIgnored ? "No" : "Yes", true)
                 .AddField("Earned Rewards",
-                !response.EarnedRewards.Any()
-                ? "None"
-                : string.Join('\n', response.EarnedRewards
-                .Select(x => guild.Roles.GetValueOrDefault(x))
-                .OfType<DiscordRole>()
-                .Select(x => x.Mention)),
-                true);
+                    !response.EarnedRewards.Any()
+                        ? "None"
+                        : string.Join('\n', response.EarnedRewards
+                            .Select(x => guild.Roles.GetValueOrDefault(x))
+                            .OfType<DiscordRole>()
+                            .Select(x => x.Mention)),
+                    true);
     }
 
     private async Task GetAndAddModerationInfo(GetUserSinCounts.Query query, DiscordEmbedBuilder embed)

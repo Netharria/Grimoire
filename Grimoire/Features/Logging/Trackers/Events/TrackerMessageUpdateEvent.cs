@@ -8,6 +8,7 @@
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Logging.Trackers.Events;
+
 public class TrackerMessageUpdateEvent
 {
     public class EventHandler(IMediator mediator) : IEventHandler<MessageUpdatedEventArgs>
@@ -20,26 +21,20 @@ public class TrackerMessageUpdateEvent
                 return;
 
             var response = await this._mediator.Send(
-            new Request
-            {
-                UserId = args.Author.Id,
-                GuildId = args.Guild.Id,
-                MessageId = args.Message.Id
-            });
+                new Request { UserId = args.Author.Id, GuildId = args.Guild.Id, MessageId = args.Message.Id });
 
             if (response is null)
                 return;
 
-            var embed = new DiscordEmbedBuilder()
-            .AddField("User", args.Author.Mention, true)
-            .AddField("Channel", args.Channel.Mention, true)
-            .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
-            .WithFooter("Message Sent", args.Author.GetAvatarUrl(ImageFormat.Auto))
-            .WithTimestamp(DateTime.UtcNow)
-            .AddMessageTextToFields("Before", response.OldMessageContent)
-            .AddMessageTextToFields("After", args.Message.Content);
-
-            await sender.SendMessageToLoggingChannel(response.TrackerChannelId, embed);
+            await sender.SendMessageToLoggingChannel(response.TrackerChannelId,
+                embed => embed
+                    .AddField("User", args.Author.Mention, true)
+                    .AddField("Channel", args.Channel.Mention, true)
+                    .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
+                    .WithFooter("Message Sent", args.Author.GetAvatarUrl(ImageFormat.Auto))
+                    .WithTimestamp(DateTime.UtcNow)
+                    .AddMessageTextToFields("Before", response.OldMessageContent)
+                    .AddMessageTextToFields("After", args.Message.Content));
         }
     }
 
@@ -56,20 +51,20 @@ public class TrackerMessageUpdateEvent
 
         public async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
             => await this._grimoireDbContext.Trackers
-            .AsNoTracking()
-            .WhereMemberHasId(request.UserId, request.GuildId)
-            .Select(x => new Response
-            {
-                TrackerChannelId = x.LogChannelId,
-                OldMessageContent = x.Member.Messages
-                    .Where(x => x.Id == request.MessageId)
-                    .Select(x => x.MessageHistory
-                        .Where(x => x.Action != MessageAction.Deleted
-                            && x.TimeStamp < DateTime.UtcNow.AddSeconds(-1))
-                        .OrderByDescending(x => x.TimeStamp)
-                        .First().MessageContent)
-                    .First()
-            }).FirstOrDefaultAsync(cancellationToken);
+                .AsNoTracking()
+                .WhereMemberHasId(request.UserId, request.GuildId)
+                .Select(tracker => new Response
+                {
+                    TrackerChannelId = tracker.LogChannelId,
+                    OldMessageContent = tracker.Member.Messages
+                        .Where(message => message.Id == request.MessageId)
+                        .Select(message => message.MessageHistory
+                            .Where(messageHistory => messageHistory.Action != MessageAction.Deleted
+                                        && messageHistory.TimeStamp < DateTime.UtcNow.AddSeconds(-1))
+                            .OrderByDescending(x => x.TimeStamp)
+                            .First().MessageContent)
+                        .First()
+                }).FirstOrDefaultAsync(cancellationToken);
     }
 
     public sealed record Response : BaseResponse

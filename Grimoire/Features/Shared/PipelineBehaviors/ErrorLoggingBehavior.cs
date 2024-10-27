@@ -10,18 +10,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Shared.PipelineBehaviors;
 
-public sealed partial class ErrorLoggingBehavior<TRequest, TException>(ILogger<ErrorLoggingBehavior<TRequest, TException>> logger) : IRequestExceptionAction<TRequest, TException>
+public sealed partial class ErrorLoggingBehavior<TRequest, TException>(
+    ILogger<ErrorLoggingBehavior<TRequest, TException>> logger) : IRequestExceptionAction<TRequest, TException>
     where TRequest : IRequest
     where TException : Exception
 {
     private readonly ILogger<ErrorLoggingBehavior<TRequest, TException>> _logger = logger;
-
-    [LoggerMessage(LogLevel.Error, "Exception Thrown on {RequestType}")]
-    static partial void LogHandlerError(ILogger logger, Exception ex, string requestType);
 
     public Task Execute(TRequest request, TException exception, CancellationToken cancellationToken)
     {
         LogHandlerError(this._logger, exception, typeof(TRequest).Name);
         return Task.CompletedTask;
     }
+
+    [LoggerMessage(LogLevel.Error, "Exception Thrown on {RequestType}")]
+    static partial void LogHandlerError(ILogger logger, Exception ex, string requestType);
 }

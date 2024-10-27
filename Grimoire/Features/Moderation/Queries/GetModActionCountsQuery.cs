@@ -13,14 +13,15 @@ public sealed record GetModActionCountsQuery : IRequest<GetModActionCountsQueryR
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
-
 }
 
-public sealed class GetModActionCountsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
+public sealed class GetModActionCountsQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<GetModActionCountsQueryResponse?> Handle(GetModActionCountsQuery query, CancellationToken cancellationToken)
+    public async Task<GetModActionCountsQueryResponse?> Handle(GetModActionCountsQuery query,
+        CancellationToken cancellationToken)
         => await this._grimoireDbContext.Members
             .AsNoTracking()
             .WhereMemberHasId(query.UserId, query.GuildId)

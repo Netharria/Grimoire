@@ -15,7 +15,8 @@ public sealed record GetUserMuteQuery : IRequest<ulong?>
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetUserMuteQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUserMuteQuery, ulong?>
+public sealed class GetUserMuteQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetUserMuteQuery, ulong?>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 

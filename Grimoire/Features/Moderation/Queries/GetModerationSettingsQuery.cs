@@ -12,20 +12,20 @@ public sealed record GetModerationSettingsQuery : IRequest<GetModerationSettings
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetModerationSettingsQueryHandler(GrimoireDbContext context) : IRequestHandler<GetModerationSettingsQuery, GetModerationSettingsQueryResponse>
+public sealed class GetModerationSettingsQueryHandler(GrimoireDbContext context)
+    : IRequestHandler<GetModerationSettingsQuery, GetModerationSettingsQueryResponse>
 {
     private readonly GrimoireDbContext _context = context;
 
-    public async Task<GetModerationSettingsQueryResponse> Handle(GetModerationSettingsQuery query, CancellationToken cancellationToken)
+    public async Task<GetModerationSettingsQueryResponse> Handle(GetModerationSettingsQuery query,
+        CancellationToken cancellationToken)
     {
-        var result =  await this._context.GuildModerationSettings
+        var result = await this._context.GuildModerationSettings
             .AsNoTracking()
             .Where(x => x.GuildId == query.GuildId)
             .Select(x => new GetModerationSettingsQueryResponse
             {
-                AutoPardonAfter = x.AutoPardonAfter,
-                PublicBanLog = x.PublicBanLog,
-                ModuleEnabled = x.ModuleEnabled
+                AutoPardonAfter = x.AutoPardonAfter, PublicBanLog = x.PublicBanLog, ModuleEnabled = x.ModuleEnabled
             }).FirstOrDefaultAsync(cancellationToken);
 
         if (result is null) throw new AnticipatedException("No settings were found for this server.");

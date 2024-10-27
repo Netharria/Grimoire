@@ -19,7 +19,8 @@ public sealed record LockChannelCommand : IRequest<BaseResponse>
     public long DurationAmount { get; init; }
 }
 
-public sealed class LockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<LockChannelCommand, BaseResponse>
+public sealed class LockChannelCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<LockChannelCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -30,11 +31,7 @@ public sealed class LockChannelCommandHandler(GrimoireDbContext grimoireDbContex
         var result = await this._grimoireDbContext.Channels
             .Where(x => x.GuildId == command.GuildId)
             .Where(x => x.Id == command.ChannelId)
-            .Select(x => new
-            {
-                x.Lock,
-                x.Guild.ModChannelLog
-            })
+            .Select(x => new { x.Lock, x.Guild.ModChannelLog })
             .FirstOrDefaultAsync(cancellationToken);
         if (result is null)
             throw new AnticipatedException("Could not find that channel");
@@ -62,11 +59,8 @@ public sealed class LockChannelCommandHandler(GrimoireDbContext grimoireDbContex
             };
             await this._grimoireDbContext.Locks.AddAsync(lockToAdd, cancellationToken);
         }
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return new BaseResponse
-        {
-            LogChannelId = result.ModChannelLog
-        };
-    }
 
+        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        return new BaseResponse { LogChannelId = result.ModChannelLog };
+    }
 }

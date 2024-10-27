@@ -18,7 +18,6 @@ public sealed class DeleteRoleCommandHandler(GrimoireDbContext grimoireDbContext
 
     public async Task Handle(DeleteRoleCommand command, CancellationToken cancellationToken)
     {
-
         this._grimoireDbContext.Roles.Remove(this._grimoireDbContext.Roles.First(x => x.Id == command.RoleId));
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
     }

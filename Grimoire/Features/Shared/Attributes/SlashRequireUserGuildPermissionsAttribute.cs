@@ -8,19 +8,20 @@
 namespace Grimoire.Features.Shared.Attributes;
 
 /// <summary>
-/// Defines that usage of this command is restricted to members with specified permissions.
+///     Defines that usage of this command is restricted to members with specified permissions.
 /// </summary>
 /// <param name="permissions">Permissions required to execute this command.</param>
-[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-internal sealed class SlashRequireUserGuildPermissionsAttribute(DiscordPermissions permissions) : SlashCheckBaseAttribute
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, Inherited = false)]
+internal sealed class SlashRequireUserGuildPermissionsAttribute(DiscordPermissions permissions)
+    : SlashCheckBaseAttribute
 {
     /// <summary>
-    /// Gets the permissions required by this attribute.
+    ///     Gets the permissions required by this attribute.
     /// </summary>
     public DiscordPermissions Permissions { get; } = permissions;
 
     /// <summary>
-    /// Runs checks.
+    ///     Runs checks.
     /// </summary>
     public override Task<bool> ExecuteChecksAsync(InteractionContext ctx)
     {

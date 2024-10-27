@@ -8,6 +8,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
+
 internal sealed class MessageLogChannelOverrideConfiguration : IEntityTypeConfiguration<MessageLogChannelOverride>
 {
     public void Configure(EntityTypeBuilder<MessageLogChannelOverride> builder)

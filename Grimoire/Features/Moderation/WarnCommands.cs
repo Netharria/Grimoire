@@ -20,8 +20,8 @@ internal sealed class WarnCommands(IMediator mediator) : ApplicationCommandModul
     [SlashCommand("Warn", "Issue a warning to the user.")]
     public async Task WarnAsync(InteractionContext ctx,
         [Option("User", "The user to warn.")] DiscordUser user,
-        [MaximumLength(1000)]
-        [Option("Reason", "The reason for the warn.")] string reason)
+        [MaximumLength(1000)] [Option("Reason", "The reason for the warn.")]
+        string reason)
     {
         await ctx.DeferAsync();
         var member = user as DiscordMember;
@@ -31,10 +31,7 @@ internal sealed class WarnCommands(IMediator mediator) : ApplicationCommandModul
             throw new AnticipatedException("You cannot warn yourself.");
         var response = await this._mediator.Send(new WarnUserCommand
         {
-            UserId = user.Id,
-            GuildId = ctx.Guild.Id,
-            ModeratorId = ctx.User.Id,
-            Reason = reason
+            UserId = user.Id, GuildId = ctx.Guild.Id, ModeratorId = ctx.User.Id, Reason = reason
         });
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Warn")
@@ -51,8 +48,8 @@ internal sealed class WarnCommands(IMediator mediator) : ApplicationCommandModul
         {
             await member.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithAuthor($"Warning Id {response.SinId}")
-            .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
-            .WithColor(GrimoireColor.Yellow));
+                .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
+                .WithColor(GrimoireColor.Yellow));
         }
         catch (Exception ex) when (ex is BadRequestException or UnauthorizedException)
         {

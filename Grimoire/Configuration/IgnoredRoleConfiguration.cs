@@ -20,10 +20,10 @@ internal sealed class IgnoredRoleConfiguration : IEntityTypeConfiguration<Ignore
         builder.HasOne(e => e.Role)
             .WithOne(e => e.IsIgnoredRole)
             .HasForeignKey<IgnoredRole>(e => e.RoleId)
-            .IsRequired(true);
+            .IsRequired();
         builder.HasOne(e => e.Guild)
             .WithMany(e => e.IgnoredRoles)
             .HasForeignKey(e => e.GuildId)
-            .IsRequired(true);
+            .IsRequired();
     }
 }

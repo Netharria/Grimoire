@@ -20,19 +20,21 @@ namespace Grimoire.Test.Unit.Features.Leveling.Settings;
 [Collection("Test collection")]
 public sealed class AddIgnoreForXpGainCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong GuildId = 1;
+    private const ulong RoleId = 1;
+    private const ulong ChannelId = 1;
+    private const ulong UserId = 1;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_ID = 1;
-    private const ulong ROLE_ID = 1;
-    private const ulong CHANNEL_ID = 1;
-    private const ulong USER_ID = 1;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
+        await this._dbContext.AddAsync(new Guild { Id = GuildId });
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -46,61 +48,50 @@ public sealed class AddIgnoreForXpGainCommandTests(GrimoireCoreFactory factory) 
         var result = await cut.Handle(
             new AddIgnoreForXpGain.Command
             {
-                Users = [new UserDto { Id = USER_ID }],
-                GuildId = GUILD_ID,
+                Users = [new UserDto { Id = UserId }],
+                GuildId = GuildId,
                 Channels =
                 [
-                    new ChannelDto
-                    {
-                        Id = CHANNEL_ID,
-                        GuildId = GUILD_ID
-                    }
+                    new ChannelDto { Id = ChannelId, GuildId = GuildId }
                 ],
                 Roles =
                 [
-                    new RoleDto
-                    {
-                        Id = ROLE_ID,
-                        GuildId = GUILD_ID
-                    }
+                    new RoleDto { Id = RoleId, GuildId = GuildId }
                 ]
             }, default);
 
-        result.Message.Should().Be($"<@!{USER_ID}> <@&{ROLE_ID}> <#{CHANNEL_ID}>  are now ignored for xp gain.");
+        result.Message.Should().Be($"<@!{UserId}> <@&{RoleId}> <#{ChannelId}>  are now ignored for xp gain.");
 
         var member = await this._dbContext.Members.Where(x =>
-            x.UserId == USER_ID
-            && x.GuildId == GUILD_ID
-            ).FirstAsync();
+            x.UserId == UserId
+            && x.GuildId == GuildId
+        ).FirstAsync();
 
         member.IsIgnoredMember.Should().NotBeNull();
 
         var role = await this._dbContext.Roles.Where(x =>
-            x.Id == ROLE_ID
-            && x.GuildId == GUILD_ID
-            ).FirstAsync();
+            x.Id == RoleId
+            && x.GuildId == GuildId
+        ).FirstAsync();
 
         role.IsIgnoredRole.Should().NotBeNull();
 
         var channel = await this._dbContext.Channels.Where(x =>
-            x.Id == CHANNEL_ID
-            && x.GuildId == GUILD_ID
-            ).FirstAsync();
+            x.Id == ChannelId
+            && x.GuildId == GuildId
+        ).FirstAsync();
 
         channel.IsIgnoredChannel.Should().NotBeNull();
     }
 
     [Fact]
-    public async Task WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
+    public async Task
+        WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
     {
         var cut = new AddIgnoreForXpGain.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new AddIgnoreForXpGain.Command
-            {
-                GuildId = GUILD_ID,
-                InvalidIds = ["asldfkja"]
-            }, default);
+            new AddIgnoreForXpGain.Command { GuildId = GuildId, InvalidIds = ["asldfkja"] }, default);
         this._dbContext.ChangeTracker.Clear();
         result.Message.Should().Be("Could not match asldfkja with a role, channel or user. ");
     }

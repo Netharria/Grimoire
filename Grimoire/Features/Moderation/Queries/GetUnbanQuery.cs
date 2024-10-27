@@ -13,7 +13,8 @@ public sealed record GetUnbanQuery : IRequest<GetBanQueryResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetUnbanQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUnbanQuery, GetBanQueryResponse>
+public sealed class GetUnbanQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetUnbanQuery, GetBanQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -31,9 +32,9 @@ public sealed class GetUnbanQueryHandler(GrimoireDbContext grimoireDbContext) : 
                 x.Guild.ModerationSettings.PublicBanLog,
                 x.Guild.ModChannelLog,
                 x.Pardon,
-                PublishedUnban = x.PublishMessages.Where(x => x.PublishType  == PublishType.Unban).FirstOrDefault()
+                PublishedUnban = x.PublishMessages.Where(x => x.PublishType == PublishType.Unban).FirstOrDefault()
             })
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (result is null)
             throw new AnticipatedException("Could not find a ban with that Sin Id");

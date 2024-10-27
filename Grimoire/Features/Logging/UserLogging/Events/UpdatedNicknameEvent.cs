@@ -13,38 +13,45 @@ namespace Grimoire.Features.Logging.UserLogging.Events;
 
 public sealed class UpdatedNicknameEvent
 {
-
     public sealed class EventHandler(IMediator mediator) : IEventHandler<GuildMemberUpdatedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
+
         public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
         {
             var nicknameResponse = await this._mediator.Send(new Command
             {
-                GuildId = args.Guild.Id,
-                UserId = args.Member.Id,
-                Nickname = args.NicknameAfter
+                GuildId = args.Guild.Id, UserId = args.Member.Id, Nickname = args.NicknameAfter
             });
             if (nicknameResponse is null
                 || string.Equals(nicknameResponse.BeforeNickname,
-                nicknameResponse.AfterNickname,
-                StringComparison.CurrentCultureIgnoreCase))
+                    nicknameResponse.AfterNickname,
+                    StringComparison.CurrentCultureIgnoreCase))
                 return;
 
             var message = await sender.SendMessageToLoggingChannel(nicknameResponse.NicknameChannelLogId,
-                new DiscordEmbedBuilder()
-                .WithAuthor("Nickname Updated")
-                .AddField("User", args.Member.Mention)
-                .AddField("Before", string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname) ? "`None`" : nicknameResponse.BeforeNickname, true)
-                .AddField("After", string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname) ? "`None`" : nicknameResponse.AfterNickname, true)
-                .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
-                .WithTimestamp(DateTimeOffset.UtcNow)
-                .WithColor(GrimoireColor.Mint));
+                embed => embed
+                    .WithAuthor("Nickname Updated")
+                    .AddField("User", args.Member.Mention)
+                    .AddField("Before",
+                        string.IsNullOrWhiteSpace(nicknameResponse.BeforeNickname)
+                            ? "`None`"
+                            : nicknameResponse.BeforeNickname, true)
+                    .AddField("After",
+                        string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)
+                            ? "`None`"
+                            : nicknameResponse.AfterNickname, true)
+                    .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
+                    .WithTimestamp(DateTimeOffset.UtcNow)
+                    .WithColor(GrimoireColor.Mint));
 
             if (message is null)
                 return;
 
-            await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+            await this._mediator.Send(new AddLogMessage.Command
+            {
+                MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
+            });
 
             await this._mediator.Publish(new NicknameUpdatedNotification
             {
@@ -65,34 +72,27 @@ public sealed class UpdatedNicknameEvent
         public string? Nickname { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, UpdateNicknameCommandResponse?>
+    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+        : IRequestHandler<Command, UpdateNicknameCommandResponse?>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async Task<UpdateNicknameCommandResponse?> Handle(Command command, CancellationToken cancellationToken)
         {
             var currentNickname = await this._grimoireDbContext.NicknameHistory
-            .AsNoTracking()
-            .WhereMemberHasId(command.UserId, command.GuildId)
-            .Where(x => x.Guild.UserLogSettings.ModuleEnabled)
-            .OrderByDescending(x => x.Timestamp)
-            .Select(x => new
-            {
-                x.Nickname,
-                x.Guild.UserLogSettings.NicknameChannelLogId
-            })
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .AsNoTracking()
+                .WhereMemberHasId(command.UserId, command.GuildId)
+                .Where(x => x.Guild.UserLogSettings.ModuleEnabled)
+                .OrderByDescending(x => x.Timestamp)
+                .Select(x => new { x.Nickname, x.Guild.UserLogSettings.NicknameChannelLogId })
+                .FirstOrDefaultAsync(cancellationToken);
             if (currentNickname is null
                 || string.Equals(currentNickname.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase))
                 return null;
 
             await this._grimoireDbContext.NicknameHistory.AddAsync(
-                new NicknameHistory
-                {
-                    GuildId = command.GuildId,
-                    UserId = command.UserId,
-                    Nickname = command.Nickname
-                }, cancellationToken);
+                new NicknameHistory { GuildId = command.GuildId, UserId = command.UserId, Nickname = command.Nickname },
+                cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return new UpdateNicknameCommandResponse
             {

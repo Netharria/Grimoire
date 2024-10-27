@@ -8,6 +8,7 @@
 using DSharpPlus.Interactivity.Extensions;
 
 namespace Grimoire.Features.Shared;
+
 internal sealed class ExampleContextMenus : ApplicationCommandModule
 {
     [ContextMenu(DiscordApplicationCommandType.MessageContextMenu, "Delete")]
@@ -28,12 +29,12 @@ internal sealed class ExampleContextMenus : ApplicationCommandModule
     public static async Task MessageSettingsAsync(ContextMenuContext ctx)
     {
         await ctx.DeferAsync();
-        var rows = new List<DiscordActionRowComponent>()
+        var rows = new List<DiscordActionRowComponent>
         {
             new(
             [
                 new DiscordChannelSelectComponent("channel_option", "",
-                [DiscordChannelType.Text])
+                    [DiscordChannelType.Text])
             ]),
             new(
             [

@@ -10,26 +10,22 @@ namespace Grimoire.Features.Leveling.Rewards;
 
 public sealed partial class RewardCommandGroup
 {
-
     [SlashCommand("Remove", "Removes a reward from the server.")]
     public async Task RemoveAsync(InteractionContext ctx,
-        [Option("Role", "The role to be awarded")] DiscordRole role)
+        [Option("Role", "The role to be awarded")]
+        DiscordRole role)
     {
         await ctx.DeferAsync();
         var response = await this._mediator.Send(
-            new RemoveReward.Request
-            {
-                RoleId = role.Id
-            });
+            new RemoveReward.Request { RoleId = role.Id });
 
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: response.Message);
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, response.Message);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 }
 
 public sealed class RemoveReward
 {
-
     public sealed record Request : IRequest<BaseResponse>
     {
         public required ulong RoleId { get; init; }
@@ -42,24 +38,19 @@ public sealed class RemoveReward
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
             var result = await this._grimoireDbContext.Rewards
-            .Include(x => x.Guild)
-            .Where(x => x.RoleId == command.RoleId)
-            .Select(x => new
-            {
-                Reward = x,
-                x.Guild.ModChannelLog
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+                .Include(x => x.Guild)
+                .Where(x => x.RoleId == command.RoleId)
+                .Select(x => new { Reward = x, x.Guild.ModChannelLog })
+                .FirstOrDefaultAsync(cancellationToken);
             if (result is null || result.Reward is null)
-                throw new AnticipatedException($"Did not find a saved reward for role {RoleExtensions.Mention(command.RoleId)}");
+                throw new AnticipatedException(
+                    $"Did not find a saved reward for role {RoleExtensions.Mention(command.RoleId)}");
             this._grimoireDbContext.Rewards.Remove(result.Reward);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse
             {
-                Message = $"Removed {result.Reward.Mention()} reward",
-                LogChannelId = result.ModChannelLog
+                Message = $"Removed {result.Reward.Mention()} reward", LogChannelId = result.ModChannelLog
             };
         }
     }
-
 }

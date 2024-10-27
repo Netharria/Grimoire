@@ -24,15 +24,10 @@ public sealed class AddLogMessage
         {
             var logMessage = new OldLogMessage
             {
-                ChannelId = command.ChannelId,
-                GuildId = command.GuildId,
-                Id = command.MessageId
+                ChannelId = command.ChannelId, GuildId = command.GuildId, Id = command.MessageId
             };
             await this._grimoireDbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return;
         }
     }
-
 }
-

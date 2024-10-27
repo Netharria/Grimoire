@@ -15,7 +15,8 @@ public sealed record GetLastBanQuery : IRequest<GetLastBanQueryResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetLastBanQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
+public sealed class GetLastBanQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetLastBanQuery, GetLastBanQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -29,20 +30,16 @@ public sealed class GetLastBanQueryHandler(GrimoireDbContext grimoireDbContext) 
                 UserId = member.UserId,
                 GuildId = member.GuildId,
                 LastSin = member.UserSins.OrderByDescending(x => x.SinOn)
-                        .Where(sin => sin.SinType == SinType.Ban)
-                        .Select(sin => new LastSin
-                        {
-                            SinId = sin.Id,
-                            ModeratorId = sin.ModeratorId,
-                            Reason = sin.Reason,
-                            SinOn = sin.SinOn
-                        })
+                    .Where(sin => sin.SinType == SinType.Ban)
+                    .Select(sin => new LastSin
+                    {
+                        SinId = sin.Id, ModeratorId = sin.ModeratorId, Reason = sin.Reason, SinOn = sin.SinOn
+                    })
                     .FirstOrDefault(),
-
                 LogChannelId = member.Guild.ModChannelLog,
                 ModerationModuleEnabled = member.Guild.ModerationSettings.ModuleEnabled
             })
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (result is null)
             return new GetLastBanQueryResponse();

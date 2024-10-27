@@ -8,6 +8,7 @@
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Logging.UserLogging.Queries;
+
 public static class GetRecentUserAndNickNames
 {
     public sealed record Query : IRequest<Response?>
@@ -17,7 +18,7 @@ public static class GetRecentUserAndNickNames
     }
 
     public sealed class Handler(GrimoireDbContext dbContext)
-    : IRequestHandler<Query, Response?>
+        : IRequestHandler<Query, Response?>
     {
         private readonly GrimoireDbContext _dbContext = dbContext;
 
@@ -34,17 +35,17 @@ public static class GetRecentUserAndNickNames
                     Response = new Response
                     {
                         Usernames = x.User.UsernameHistories
-                        .OrderByDescending(x => x.Timestamp)
-                        .Take(3)
-                        .Select(x => x.Username)
-                        .ToArray(),
+                            .OrderByDescending(x => x.Timestamp)
+                            .Take(3)
+                            .Select(x => x.Username)
+                            .ToArray(),
                         Nicknames = x.NicknamesHistory
-                        .Where(x => x.Nickname != null)
-                        .OrderByDescending(x => x.Timestamp)
-                        .Take(3)
-                        .Select(x => x.Nickname)
-                        .OfType<string>()
-                        .ToArray(),
+                            .Where(x => x.Nickname != null)
+                            .OrderByDescending(x => x.Timestamp)
+                            .Take(3)
+                            .Select(x => x.Nickname)
+                            .OfType<string>()
+                            .ToArray()
                     }
                 }).FirstOrDefaultAsync(cancellationToken);
             if (result is null)

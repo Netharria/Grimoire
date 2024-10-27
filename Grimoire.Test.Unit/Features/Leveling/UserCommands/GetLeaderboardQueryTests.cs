@@ -19,38 +19,40 @@ namespace Grimoire.Test.Unit.Features.Leveling.UserCommands;
 [Collection("Test collection")]
 public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong GuildId = 1;
+    private const ulong User1 = 1;
+    private const ulong User2 = 2;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_ID = 1;
-    private const ulong USER_1 = 1;
-    private const ulong USER_2 = 2;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
-        await this._dbContext.AddAsync(new User { Id = USER_1 });
-        await this._dbContext.AddAsync(new Member { UserId = USER_1, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Guild { Id = GuildId });
+        await this._dbContext.AddAsync(new User { Id = User1 });
+        await this._dbContext.AddAsync(new Member { UserId = User1, GuildId = GuildId });
         await this._dbContext.AddAsync(new XpHistory
         {
-            UserId = USER_1,
-            GuildId = GUILD_ID,
+            UserId = User1,
+            GuildId = GuildId,
             Xp = 300,
             Type = XpHistoryType.Awarded,
-            TimeOut = DateTime.UtcNow.AddMinutes(-5),
+            TimeOut = DateTime.UtcNow.AddMinutes(-5)
         });
 
-        await this._dbContext.AddAsync(new User { Id = USER_2 });
-        await this._dbContext.AddAsync(new Member { UserId = USER_2, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new User { Id = User2 });
+        await this._dbContext.AddAsync(new Member { UserId = User2, GuildId = GuildId });
         await this._dbContext.AddAsync(new XpHistory
         {
-            UserId = USER_2,
-            GuildId = GUILD_ID,
+            UserId = User2,
+            GuildId = GuildId,
             Xp = 0,
             Type = XpHistoryType.Created,
-            TimeOut = DateTime.UtcNow.AddMinutes(-5),
+            TimeOut = DateTime.UtcNow.AddMinutes(-5)
         });
 
         await this._dbContext.SaveChangesAsync();
@@ -61,15 +63,10 @@ public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenCallingGetLeaderboardQueryHandler_IfProvidedUserNotFound_FailResponse()
     {
+        var cut = new GetLeaderboard.Handler(this._dbContext);
+        var command = new GetLeaderboard.Request { GuildId = GuildId, UserId = 234081234 };
 
-        var CUT = new GetLeaderboard.Handler(this._dbContext);
-        var command = new GetLeaderboard.Request
-        {
-            GuildId = GUILD_ID,
-            UserId = 234081234
-        };
-
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
 
         response.Should().NotBeNull();
         response?.Message.Should().Be("Could not find user on leaderboard.");
@@ -78,16 +75,12 @@ public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenCallingGetLeaderboardQueryHandler_ReturnLeaderboardAsync()
     {
+        var cut = new GetLeaderboard.Handler(this._dbContext);
+        var command = new GetLeaderboard.Request { GuildId = GuildId };
 
-        var CUT = new GetLeaderboard.Handler(this._dbContext);
-        var command = new GetLeaderboard.Request
-        {
-            GuildId = GUILD_ID
-        };
+        var response = await cut.Handle(command, default);
 
-        var response = await CUT.Handle(command, default);
-
-        response.LeaderboardText.Should().Be($"**1** <@!{USER_1}> **XP:** 300\n**2** <@!{USER_2}> **XP:** 0\n");
+        response.LeaderboardText.Should().Be($"**1** <@!{User1}> **XP:** 300\n**2** <@!{User2}> **XP:** 0\n");
         response.TotalUserCount.Should().Be(2);
     }
 }

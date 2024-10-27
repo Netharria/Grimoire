@@ -14,14 +14,38 @@ public static class TimespanExtensions
     public static string CustomTimeSpanString(this TimeSpan timeSpan)
     {
         var stringBuilder = new StringBuilder();
-        if (1 < timeSpan.Days) stringBuilder.Append(timeSpan.Days).Append(" days ");
-        if (1 == timeSpan.Days) stringBuilder.Append(timeSpan.Days).Append(" day ");
-        if (1 < timeSpan.Hours) stringBuilder.Append(timeSpan.Hours).Append(" hours ");
-        if (1 == timeSpan.Hours) stringBuilder.Append(timeSpan.Hours).Append(" hour ");
-        if (1 < timeSpan.Minutes) stringBuilder.Append(timeSpan.Minutes).Append(" minutes ");
-        if (1 == timeSpan.Minutes) stringBuilder.Append(timeSpan.Minutes).Append(" minute ");
-        if (0 == timeSpan.Days && 1 < timeSpan.Seconds) stringBuilder.Append(timeSpan.Seconds).Append(" seconds ");
-        if (0 == timeSpan.Days && 1 == timeSpan.Seconds) stringBuilder.Append(timeSpan.Seconds).Append(" second ");
+        switch (timeSpan.Days)
+        {
+            case > 1:
+                stringBuilder.Append(timeSpan.Days).Append(" days ");
+                break;
+            case 1:
+                stringBuilder.Append(timeSpan.Days).Append(" day ");
+                break;
+        }
+
+        switch (timeSpan.Hours)
+        {
+            case > 1:
+                stringBuilder.Append(timeSpan.Hours).Append(" hours ");
+                break;
+            case 1:
+                stringBuilder.Append(timeSpan.Hours).Append(" hour ");
+                break;
+        }
+
+        switch (timeSpan.Minutes)
+        {
+            case > 1:
+                stringBuilder.Append(timeSpan.Minutes).Append(" minutes ");
+                break;
+            case 1:
+                stringBuilder.Append(timeSpan.Minutes).Append(" minute ");
+                break;
+        }
+
+        if (timeSpan is { Days: 0, Seconds: > 1 }) stringBuilder.Append(timeSpan.Seconds).Append(" seconds ");
+        if (timeSpan is { Days: 0, Seconds: 1 }) stringBuilder.Append(timeSpan.Seconds).Append(" second ");
         return stringBuilder.ToString();
     }
 }

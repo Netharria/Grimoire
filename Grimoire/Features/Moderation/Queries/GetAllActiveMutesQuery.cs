@@ -12,19 +12,20 @@ public sealed record GetAllActiveMutesQuery : IRequest<GetAllActiveMutesQueryRes
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetAllActiveMutesQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
+public sealed class GetAllActiveMutesQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetAllActiveMutesQuery, GetAllActiveMutesQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request, CancellationToken cancellationToken)
+    public async Task<GetAllActiveMutesQueryResponse> Handle(GetAllActiveMutesQuery request,
+        CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.GuildModerationSettings
             .AsNoTracking()
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => new GetAllActiveMutesQueryResponse
             {
-                MuteRole = x.MuteRole,
-                MutedUsers = x.Guild.ActiveMutes.Select(x => x.UserId).ToArray(),
+                MuteRole = x.MuteRole, MutedUsers = x.Guild.ActiveMutes.Select(x => x.UserId).ToArray()
             }).FirstOrDefaultAsync(cancellationToken);
         if (result is null)
             throw new AnticipatedException("Could not find the settings for this server.");

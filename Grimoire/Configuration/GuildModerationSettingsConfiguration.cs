@@ -30,6 +30,6 @@ internal sealed class GuildModerationSettingsConfiguration : IEntityTypeConfigur
             .HasForeignKey<GuildModerationSettings>(e => e.MuteRole)
             .IsRequired(false);
         builder.Property(x => x.ModuleEnabled)
-            .HasDefaultValue(value: false);
+            .HasDefaultValue(false);
     }
 }

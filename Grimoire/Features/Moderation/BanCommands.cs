@@ -17,19 +17,20 @@ namespace Grimoire.Features.Moderation;
 [SlashRequireBotPermissions(DiscordPermissions.BanMembers)]
 public sealed partial class BanCommands(IMediator mediator, ILogger<BanCommands> logger) : ApplicationCommandModule
 {
-    private readonly IMediator _mediator = mediator;
     private readonly ILogger<BanCommands> _logger = logger;
+    private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Ban", "Bans a user from the server.")]
     public async Task BanAsync(
         InteractionContext ctx,
         [Option("User", "The user to ban")] DiscordUser user,
         [MaximumLength(1000)]
-        [Option("Reason", "The reason for the ban. This can be updated later with the 'Reason' command.")] string reason = "",
-        [Option("DeleteMessages", "Deletes the messages of the user of the last few days. Default is false.")] bool deleteMessages = false,
-        [Maximum(7)]
-        [Minimum(0)]
-        [Option("DeleteDays", "Number of days of messages to delete. Default is 7")] long deleteDays = 7)
+        [Option("Reason", "The reason for the ban. This can be updated later with the 'Reason' command.")]
+        string reason = "",
+        [Option("DeleteMessages", "Deletes the messages of the user of the last few days. Default is false.")]
+        bool deleteMessages = false,
+        [Maximum(7)] [Minimum(0)] [Option("DeleteDays", "Number of days of messages to delete. Default is 7")]
+        long deleteDays = 7)
     {
         await ctx.DeferAsync();
         if (!CheckIfCanBan(ctx, user))
@@ -37,6 +38,7 @@ public sealed partial class BanCommands(IMediator mediator, ILogger<BanCommands>
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
             return;
         }
+
         if (ctx.User.Id == user.Id)
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "You can't ban yourself.");
@@ -45,22 +47,17 @@ public sealed partial class BanCommands(IMediator mediator, ILogger<BanCommands>
 
         var response = await this._mediator.Send(new AddBan.Command
         {
-            GuildId = ctx.Guild.Id,
-            UserId = user.Id,
-            ModeratorId = ctx.User.Id,
-            Reason = reason
+            GuildId = ctx.Guild.Id, UserId = user.Id, ModeratorId = ctx.User.Id, Reason = reason
         });
 
         try
         {
             if (user is DiscordMember member)
-            {
                 await member.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithAuthor($"Ban ID {response.SinId}")
                     .WithDescription($"You have been banned from {ctx.Guild.Name} "
-                    + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
+                                     + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
                     .WithColor(GrimoireColor.Red));
-            }
         }
         catch (Exception ex)
         {
@@ -98,20 +95,20 @@ public sealed partial class BanCommands(IMediator mediator, ILogger<BanCommands>
         {
             await ctx.Guild.UnbanMemberAsync(user.Id);
             await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
-            .WithAuthor("Unbanned")
-            .AddField("User", user.Mention, true)
-            .AddField("Moderator", ctx.User.Mention, true)
-            .WithColor(GrimoireColor.Green));
+                .WithAuthor("Unbanned")
+                .AddField("User", user.Mention, true)
+                .AddField("Moderator", ctx.User.Mention, true)
+                .WithColor(GrimoireColor.Green));
         }
         catch (Exception ex) when (ex is NotFoundException || ex is ServerErrorException)
         {
             var errorMessage = ex is NotFoundException
-                                ? "user could not be found."
-                                : "error when communicating with discord. Try again before asking for help.";
+                ? "user could not be found."
+                : "error when communicating with discord. Try again before asking for help.";
             await ctx.EditReplyAsync(
-            GrimoireColor.Yellow,
-            title: "Error",
-            message: $"{user.GetUsernameWithDiscriminator()} was not unbanned because {errorMessage}");
+                GrimoireColor.Yellow,
+                title: "Error",
+                message: $"{user.GetUsernameWithDiscriminator()} was not unbanned because {errorMessage}");
         }
     }
 

@@ -16,11 +16,13 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
     private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Add", "Ignores a user, channel, or role for xp gains")]
-    public Task IgnoreAsync(InteractionContext ctx, [Option("items", "The users, channels or roles to ignore")] string value) =>
+    public Task IgnoreAsync(InteractionContext ctx,
+        [Option("items", "The users, channels or roles to ignore")] string value) =>
         this.UpdateIgnoreState(ctx, value, true);
 
     [SlashCommand("Remove", "Removes a user, channel, or role from the ignored xp list.")]
-    public Task WatchAsync(InteractionContext ctx, [Option("Item", "The user, channel or role to Observe")] string value) =>
+    public Task WatchAsync(InteractionContext ctx,
+        [Option("Item", "The user, channel or role to Observe")] string value) =>
         this.UpdateIgnoreState(ctx, value, false);
 
     private async Task UpdateIgnoreState(InteractionContext ctx, string value, bool shouldIgnore)
@@ -28,40 +30,33 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
         await ctx.DeferAsync();
         var matchedIds = await ctx.ParseStringIntoIdsAndGroupByTypeAsync(value)
             .ToDictionaryAsync(
-            x => x.Key,
-            v=> v);
+                x => x.Key,
+                v => v);
         if (matchedIds.Count == 0 || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, message: $"Could not parse any ids from the submited values.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Could not parse any ids from the submitted values.");
             return;
         }
+
         IUpdateIgnoreForXpGain command = shouldIgnore
-            ? new AddIgnoreForXpGain.Command{ GuildId = ctx.Guild.Id }
+            ? new AddIgnoreForXpGain.Command { GuildId = ctx.Guild.Id }
             : new RemoveIgnoreForXpGain.Command { GuildId = ctx.Guild.Id };
 
         if (matchedIds.TryGetValue("User", out var userIds))
             command.Users = await userIds
-            .SelectAwait(async x => await BuildUserDto(ctx.Client, x, ctx.Guild.Id))
-            .OfType<UserDto>()
-            .ToArrayAsync();
+                .SelectAwait(async x => await BuildUserDto(ctx.Client, x, ctx.Guild.Id))
+                .OfType<UserDto>()
+                .ToArrayAsync();
 
         if (matchedIds.TryGetValue("Role", out var roleIds))
             command.Roles = await roleIds
                 .Select(x =>
-                    new RoleDto
-                    {
-                        Id = ulong.Parse(x),
-                        GuildId = ctx.Guild.Id
-                    }).ToArrayAsync();
+                    new RoleDto { Id = ulong.Parse(x), GuildId = ctx.Guild.Id }).ToArrayAsync();
 
         if (matchedIds.TryGetValue("Channel", out var channelIds))
             command.Channels = await channelIds
                 .Select(x =>
-                    new ChannelDto
-                    {
-                        Id = ulong.Parse(x),
-                        GuildId = ctx.Guild.Id
-                    }).ToArrayAsync();
+                    new ChannelDto { Id = ulong.Parse(x), GuildId = ctx.Guild.Id }).ToArrayAsync();
         if (matchedIds.TryGetValue("Invalid", out var invalidIds))
             command.InvalidIds = await invalidIds.ToArrayAsync();
         var response = await this._mediator.Send(command);
@@ -69,8 +64,8 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
 
         await ctx.EditReplyAsync(GrimoireColor.Green,
             string.IsNullOrWhiteSpace(response.Message)
-            ? "All items in list provided were not ignored"
-            : response.Message);
+                ? "All items in list provided were not ignored"
+                : response.Message);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 
@@ -88,6 +83,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
         try
         {
             var user = await client.GetUserAsync(id);
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (user is not null)
                 return new UserDto
                 {
@@ -100,6 +96,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
         {
             return null;
         }
+
         return null;
     }
 }

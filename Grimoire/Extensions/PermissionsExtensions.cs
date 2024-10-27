@@ -7,7 +7,6 @@
 
 namespace Grimoire.Extensions;
 
-
 public static class PermissionsExtensions
 {
     public static DiscordPermissions GetLockPermissions(this DiscordPermissions permissions)
@@ -15,17 +14,23 @@ public static class PermissionsExtensions
 
     public static DiscordPermissions SetLockPermissions(this DiscordPermissions permissions)
         => permissions | PermissionValues.LockPermissions;
+
     public static DiscordPermissions RevokeLockPermissions(this DiscordPermissions permissions)
         => permissions & ~PermissionValues.LockPermissions;
-    public static DiscordPermissions RevertLockPermissions(this DiscordPermissions permissions, DiscordPermissions previousPermissions)
+
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static DiscordPermissions RevertLockPermissions(this DiscordPermissions permissions,
+        DiscordPermissions previousPermissions)
         => permissions & (previousPermissions ^ ~PermissionValues.LockPermissions);
 
-    public static DiscordPermissions RevertLockPermissions(this DiscordPermissions permissions, long previousPermissions)
+    public static DiscordPermissions RevertLockPermissions(this DiscordPermissions permissions,
+        long previousPermissions)
         => permissions.RevertLockPermissions((DiscordPermissions)previousPermissions);
 
 
     public static DiscordPermissions SetVoiceLockPermissions(this DiscordPermissions permissions)
         => permissions | PermissionValues.VoiceLockPermissions;
+
     public static DiscordPermissions RevokeVoiceLockPermissions(this DiscordPermissions permissions)
         => permissions & ~PermissionValues.VoiceLockPermissions;
 

@@ -13,17 +13,18 @@ namespace Grimoire.Utilities;
 
 public interface IDiscordImageEmbedService
 {
-    Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed, bool displayFileNames = true);
+    Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed,
+        bool displayFileNames = true);
 }
 
 public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
 {
-
     private readonly HttpClient _httpClient;
-    private readonly IReadOnlyList<string> _validImageExtensions;
     private readonly ILogger<DiscordImageEmbedService> _logger;
+    private readonly IReadOnlyList<string> _validImageExtensions;
 
-    public DiscordImageEmbedService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<DiscordImageEmbedService> logger)
+    public DiscordImageEmbedService(IHttpClientFactory httpClientFactory, IConfiguration configuration,
+        ILogger<DiscordImageEmbedService> logger)
     {
         this._httpClient = httpClientFactory.CreateClient("Default");
         var validExtensions = configuration.GetValue<string>("validImageExtensions");
@@ -33,7 +34,8 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         this._logger = logger;
     }
 
-    public async Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed, bool displayFileNames = true)
+    public async Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed,
+        bool displayFileNames = true)
     {
         var messageBuilder = new DiscordMessageBuilder();
 
@@ -47,8 +49,8 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
             var stride = 4 * (index / 4);
 
             var imageEmbed = new DiscordEmbedBuilder(embed)
-                    .WithUrl($"https://discord.com/users/{userId}/{stride}")
-                    .WithImageUrl($"attachment://{fileName}");
+                .WithUrl($"https://discord.com/users/{userId}/{stride}")
+                .WithImageUrl($"attachment://{fileName}");
 
             AddAttachmentFileNames(imageUrls, stride, imageEmbed, displayFileNames);
 
@@ -61,10 +63,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
 
         AddImagesThatFailedDownload(images, embed, messageBuilder);
 
-        if (!messageBuilder.Embeds.Any())
-        {
-            messageBuilder.AddEmbed(embed);
-        }
+        if (!messageBuilder.Embeds.Any()) messageBuilder.AddEmbed(embed);
 
         return messageBuilder;
     }
@@ -73,7 +72,8 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         => urls
             .Where(url =>
                 !string.IsNullOrWhiteSpace(url)
-                && this._validImageExtensions.Contains(Path.GetExtension(url.Split('?')[0]), StringComparer.OrdinalIgnoreCase))
+                && this._validImageExtensions.Contains(Path.GetExtension(url.Split('?')[0]),
+                    StringComparer.OrdinalIgnoreCase))
             .Select(url => new Uri(url))
             .ToArray();
 
@@ -86,17 +86,13 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         {
             return new ImageDownloadResult
             {
-                Url = uri.AbsolutePath,
-                Stream = await this._httpClient.GetStreamAsync(uri)
+                Url = uri.AbsolutePath, Stream = await this._httpClient.GetStreamAsync(uri)
             };
         }
         catch (Exception ex)
         {
             LogDownloadError(this._logger, ex, uri.OriginalString);
-            return new ImageDownloadResult
-            {
-                Url = uri.AbsolutePath,
-            };
+            return new ImageDownloadResult { Url = uri.AbsolutePath };
         }
     }
 
@@ -104,7 +100,8 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
     public static partial void LogDownloadError(ILogger logger, Exception ex, string url);
 
 
-    private static void AddAttachmentFileNames(Uri[] imageUrls, int stride, DiscordEmbedBuilder imageEmbed, bool displayFileNames)
+    private static void AddAttachmentFileNames(Uri[] imageUrls, int stride, DiscordEmbedBuilder imageEmbed,
+        bool displayFileNames)
     {
         if (!displayFileNames) return;
 
@@ -132,7 +129,8 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         messageBuilder.AddEmbed(imageEmbed);
     }
 
-    private static void AddImagesThatFailedDownload(ImageDownloadResult[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
+    private static void AddImagesThatFailedDownload(ImageDownloadResult[] urls, DiscordEmbed embed,
+        DiscordMessageBuilder messageBuilder)
     {
         var failedFiles = urls.Where(x => x.Stream is null).Select(x => Path.GetFileName(x.Url)).ToArray();
 
@@ -148,5 +146,4 @@ internal readonly struct ImageDownloadResult
 {
     public readonly string Url { get; init; }
     public readonly Stream? Stream { get; init; }
-
 }

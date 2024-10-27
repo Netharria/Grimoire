@@ -10,6 +10,7 @@ using System.Text;
 
 // ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
+
 public partial class LogSettingsCommands
 {
     public partial class Message
@@ -20,10 +21,11 @@ public partial class LogSettingsCommands
             await ctx.DeferAsync();
 
             var channelOverrideString = new StringBuilder();
-            await foreach(var channelOverride in this._mediator.CreateStream(new GetMessageLogOverrides.Query{ GuildId = ctx.Guild.Id }))
+            await foreach (var channelOverride in this._mediator.CreateStream(
+                               new GetMessageLogOverrides.Query { GuildId = ctx.Guild.Id }))
             {
                 var channel = ctx.Guild.Channels.GetValueOrDefault(channelOverride.ChannelId)
-                    ?? ctx.Guild.Threads.GetValueOrDefault(channelOverride.ChannelId);
+                              ?? ctx.Guild.Threads.GetValueOrDefault(channelOverride.ChannelId);
                 if (channel is null)
                     continue;
 
@@ -36,7 +38,8 @@ public partial class LogSettingsCommands
                     }).AppendLine();
             }
 
-            await ctx.EditReplyAsync(GrimoireColor.Purple, title: "Channel Override Settings", message: channelOverrideString.ToString());
+            await ctx.EditReplyAsync(GrimoireColor.Purple, title: "Channel Override Settings",
+                message: channelOverrideString.ToString());
         }
     }
 }
@@ -47,6 +50,7 @@ public sealed class GetMessageLogOverrides
     {
         public required ulong GuildId { get; init; }
     }
+
     public sealed record Response
     {
         public required ulong ChannelId { get; init; }
@@ -57,21 +61,16 @@ public sealed class GetMessageLogOverrides
     {
         private readonly GrimoireDbContext _dbContext = dbContext;
 
-        public async IAsyncEnumerable<Response> Handle(Query query, [EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<Response> Handle(Query query,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var channelOverrides = this._dbContext.MessagesLogChannelOverrides
                 .AsNoTracking()
                 .Where(x => x.GuildId == query.GuildId)
-                .Select(x => new Response
-                {
-                    ChannelId = x.ChannelId,
-                    ChannelOption = x.ChannelOption
-                }).AsAsyncEnumerable().WithCancellation(cancellationToken);
+                .Select(x => new Response { ChannelId = x.ChannelId, ChannelOption = x.ChannelOption })
+                .AsAsyncEnumerable().WithCancellation(cancellationToken);
 
-            await foreach (var channelOverride in channelOverrides)
-            {
-                yield return channelOverride;
-            }
+            await foreach (var channelOverride in channelOverrides) yield return channelOverride;
         }
     }
 }

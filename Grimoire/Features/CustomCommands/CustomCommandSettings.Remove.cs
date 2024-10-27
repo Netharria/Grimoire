@@ -9,22 +9,20 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.CustomCommands;
 
-
 public sealed partial class CustomCommandSettings
 {
-
     [SlashCommand("Forget", "Forget a command")]
     internal async Task Forget(
         InteractionContext ctx,
         [Autocomplete(typeof(GetCustomCommandOptions.AutocompleteProvider))]
-        [Option("Name", "The name that the command is called.", true)] string name)
+        [Option("Name", "The name that the command is called.", true)]
+        string name)
     {
         await ctx.DeferAsync();
 
         var response = await this._mediator.Send(new RemoveCustomCommand.Request
         {
-            CommandName = name,
-            GuildId = ctx.Guild.Id,
+            CommandName = name, GuildId = ctx.Guild.Id
         });
 
         await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);
@@ -34,8 +32,6 @@ public sealed partial class CustomCommandSettings
 
 public sealed class RemoveCustomCommand
 {
-    
-
     public sealed record Request : IRequest<BaseResponse>
     {
         public required string CommandName { get; init; }
@@ -51,21 +47,21 @@ public sealed class RemoveCustomCommand
             var result = await this._grimoireDbContext.CustomCommands
                 .Include(x => x.CustomCommandRoles)
                 .AsSplitQuery()
-                .FirstOrDefaultAsync(x => x.Name == request.CommandName && x.GuildId == request.GuildId, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Name == request.CommandName && x.GuildId == request.GuildId,
+                    cancellationToken);
             if (result is null)
                 throw new AnticipatedException($"Did not find a saved command with name {request.CommandName}");
 
             this._grimoireDbContext.CustomCommands.Remove(result);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             var modChannelLog = await this._grimoireDbContext.Guilds
-                    .AsNoTracking()
-                    .WhereIdIs(request.GuildId)
-                    .Select(x => x.ModChannelLog)
-                    .FirstOrDefaultAsync(cancellationToken);
+                .AsNoTracking()
+                .WhereIdIs(request.GuildId)
+                .Select(x => x.ModChannelLog)
+                .FirstOrDefaultAsync(cancellationToken);
             return new BaseResponse
             {
-                Message = $"Removed command {request.CommandName}",
-                LogChannelId = modChannelLog
+                Message = $"Removed command {request.CommandName}", LogChannelId = modChannelLog
             };
         }
     }

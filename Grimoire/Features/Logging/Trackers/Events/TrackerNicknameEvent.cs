@@ -9,7 +9,8 @@ using Grimoire.Notifications;
 
 namespace Grimoire.Features.Logging.Trackers.Events;
 
-internal sealed class TrackerNicknameEvent(DiscordClient discordClient, IMediator mediator) : INotificationHandler<NicknameUpdatedNotification>
+internal sealed class TrackerNicknameEvent(DiscordClient discordClient, IMediator mediator)
+    : INotificationHandler<NicknameUpdatedNotification>
 {
     private readonly DiscordClient _discordClient = discordClient;
     private readonly IMediator _mediator = mediator;
@@ -17,23 +18,21 @@ internal sealed class TrackerNicknameEvent(DiscordClient discordClient, IMediato
     public async Task Handle(NicknameUpdatedNotification notification, CancellationToken cancellationToken)
     {
         var response = await this._mediator.Send(
-            new GetTracker.Query
-            {
-                UserId = notification.UserId,
-                GuildId = notification.GuildId
-            }
+            new GetTracker.Query { UserId = notification.UserId, GuildId = notification.GuildId }
             , cancellationToken);
 
         if (response is null)
             return;
-        var embed = new DiscordEmbedBuilder()
+
+        await this._discordClient.SendMessageToLoggingChannel(response.TrackerChannelId,
+            embed => embed
                 .WithAuthor("Nickname Updated")
                 .AddField("User", UserExtensions.Mention(notification.UserId))
-                .AddField("Before", string.IsNullOrWhiteSpace(notification.BeforeNickname)? "None" : notification.BeforeNickname, true)
-                .AddField("After", string.IsNullOrWhiteSpace(notification.AfterNickname)? "None" : notification.AfterNickname, true)
+                .AddField("Before",
+                    string.IsNullOrWhiteSpace(notification.BeforeNickname) ? "None" : notification.BeforeNickname, true)
+                .AddField("After",
+                    string.IsNullOrWhiteSpace(notification.AfterNickname) ? "None" : notification.AfterNickname, true)
                 .WithTimestamp(DateTimeOffset.UtcNow)
-                .WithColor(GrimoireColor.Mint);
-
-        await this._discordClient.SendMessageToLoggingChannel(response.TrackerChannelId, embed);
+                .WithColor(GrimoireColor.Mint));
     }
 }

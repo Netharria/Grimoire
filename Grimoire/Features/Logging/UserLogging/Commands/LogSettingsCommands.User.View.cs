@@ -6,7 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 // ReSharper disable once CheckNamespace
+
 namespace Grimoire.Features.Logging.Settings;
+
 public partial class LogSettingsCommands
 {
     public partial class User
@@ -15,40 +17,42 @@ public partial class LogSettingsCommands
         public async Task ViewAsync(InteractionContext ctx)
         {
             await ctx.DeferAsync(true);
-            var response = await this._mediator.Send(new GetUserLogSettings.Query{ GuildId = ctx.Guild.Id });
+            var response = await this._mediator.Send(new GetUserLogSettings.Query { GuildId = ctx.Guild.Id });
             if (response is null)
             {
-                await ctx.EditReplyAsync(GrimoireColor.Red, "User Logging settings could not be found for this server.");
+                await ctx.EditReplyAsync(GrimoireColor.Red,
+                    "User Logging settings could not be found for this server.");
                 return;
             }
-            var JoinChannelLog =
-                response.JoinChannelLog is null ?
-                "None" :
-                (await ctx.Guild.GetChannelAsync(response.JoinChannelLog.Value)).Mention;
-            var LeaveChannelLog  =
-                response.LeaveChannelLog  is null ?
-                "None" :
-                (await ctx.Guild.GetChannelAsync(response.LeaveChannelLog.Value)).Mention;
-            var UsernameChannelLog =
-                response.UsernameChannelLog is null ?
-                "None" :
-                (await ctx.Guild.GetChannelAsync(response.UsernameChannelLog.Value)).Mention;
-            var NicknameChannelLog =
-                response.NicknameChannelLog is null ?
-                "None" :
-                (await ctx.Guild.GetChannelAsync(response.NicknameChannelLog.Value)).Mention;
-            var AvatarChannelLog =
-                response.AvatarChannelLog is null ?
-                "None" :
-                (await ctx.Guild.GetChannelAsync(response.AvatarChannelLog.Value)).Mention;
+
+            var joinChannelLog =
+                response.JoinChannelLog is null
+                    ? "None"
+                    : (await ctx.Guild.GetChannelAsync(response.JoinChannelLog.Value)).Mention;
+            var leaveChannelLog =
+                response.LeaveChannelLog is null
+                    ? "None"
+                    : (await ctx.Guild.GetChannelAsync(response.LeaveChannelLog.Value)).Mention;
+            var usernameChannelLog =
+                response.UsernameChannelLog is null
+                    ? "None"
+                    : (await ctx.Guild.GetChannelAsync(response.UsernameChannelLog.Value)).Mention;
+            var nicknameChannelLog =
+                response.NicknameChannelLog is null
+                    ? "None"
+                    : (await ctx.Guild.GetChannelAsync(response.NicknameChannelLog.Value)).Mention;
+            var avatarChannelLog =
+                response.AvatarChannelLog is null
+                    ? "None"
+                    : (await ctx.Guild.GetChannelAsync(response.AvatarChannelLog.Value)).Mention;
             await ctx.EditReplyAsync(
                 title: "Current Logging System Settings",
                 message: $"**Module Enabled:** {response.IsLoggingEnabled}\n" +
-                $"**Join Log:** {JoinChannelLog}\n" +
-                $"**Leave Log:** {LeaveChannelLog}\n" +
-                $"**Username Log:** {UsernameChannelLog}\n" +
-                $"**Nickname Log:** {NicknameChannelLog}\n" +
-                $"**Avatar Log:** {AvatarChannelLog}\n");
+                         $"**Join Log:** {joinChannelLog}\n" +
+                         $"**Leave Log:** {leaveChannelLog}\n" +
+                         $"**Username Log:** {usernameChannelLog}\n" +
+                         $"**Nickname Log:** {nicknameChannelLog}\n" +
+                         $"**Avatar Log:** {avatarChannelLog}\n");
         }
     }
 }
@@ -76,7 +80,7 @@ public sealed class GetUserLogSettings
                     NicknameChannelLog = x.NicknameChannelLogId,
                     AvatarChannelLog = x.AvatarChannelLogId,
                     IsLoggingEnabled = x.ModuleEnabled
-                }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                }).FirstOrDefaultAsync(cancellationToken);
     }
 
     public sealed record Response : BaseResponse

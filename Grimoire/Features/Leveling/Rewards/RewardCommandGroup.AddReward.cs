@@ -9,24 +9,22 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
-
-
 public sealed partial class RewardCommandGroup
 {
-
     [SlashCommand("Add", "Adds or updates rewards for the server.")]
     public async Task AddAsync(InteractionContext ctx,
-        [Option("Role", "The role to be added as a reward")] DiscordRole role,
-        [Minimum(1)]
-        [Maximum(int.MaxValue)]
-        [Option("Level", "The level the reward is awarded at.")] long level,
+        [Option("Role", "The role to be added as a reward")]
+        DiscordRole role,
+        [Minimum(1)] [Maximum(int.MaxValue)] [Option("Level", "The level the reward is awarded at.")]
+        long level,
         [MaximumLength(4096)]
-        [Option("Message", "The message to send to users when they earn a reward. Discord Markdown applies.")] string message = "")
+        [Option("Message", "The message to send to users when they earn a reward. Discord Markdown applies.")]
+        string message = "")
     {
         await ctx.DeferAsync();
         if (ctx.Guild.CurrentMember.Hierarchy < role.Position)
             throw new AnticipatedException($"{ctx.Guild.CurrentMember.DisplayName} will not be able to apply this " +
-                $"reward role because the role has a higher rank than it does.");
+                                           $"reward role because the role has a higher rank than it does.");
 
         var response = await this._mediator.Send(
             new AddReward.Request
@@ -36,15 +34,13 @@ public sealed partial class RewardCommandGroup
                 RewardLevel = (int)level,
                 Message = string.IsNullOrWhiteSpace(message) ? null : message
             });
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: response.Message);
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, response.Message);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 }
 
-
 public sealed class AddReward
 {
-
     public sealed record Request : IRequest<BaseResponse>
     {
         public required ulong RoleId { get; init; }
@@ -61,7 +57,7 @@ public sealed class AddReward
         {
             var reward = await this._grimoireDbContext.Rewards
                 .Include(x => x.Guild)
-                .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken: cancellationToken);
+                .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
             if (reward is null)
             {
                 reward = new Reward

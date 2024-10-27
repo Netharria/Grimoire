@@ -31,18 +31,19 @@ public sealed class InviteService : IInviteService
             invite,
             (code, existingInvite) => invite);
     }
+
     public void UpdateGuildInvites(GuildInviteDto guildInvites)
         => this._guilds.AddOrUpdate(
-                    guildInvites.GuildId,
-                    guildInvites,
-                    (guildId, existingGuild) => guildInvites);
+            guildInvites.GuildId,
+            guildInvites,
+            (guildId, existingGuild) => guildInvites);
 
     public void UpdateAllInvites(List<GuildInviteDto> guildInvites)
         => guildInvites.ForEach(guild =>
-                this._guilds.AddOrUpdate(
-                    guild.GuildId,
-                    guild,
-                    (guildId, existingGuild) => guild));
+            this._guilds.AddOrUpdate(
+                guild.GuildId,
+                guild,
+                (guildId, existingGuild) => guild));
 
     public Invite? CalculateInviteUsed(GuildInviteDto guildInvites)
     {
@@ -57,6 +58,7 @@ public sealed class InviteService : IInviteService
             this.UpdateInvite(guildInvites.GuildId, inviteUsed);
             return inviteUsed;
         }
+
         inviteUsed = guild.Invites
             .Except(guildInvites.Invites)
             .Select(x => x.Value)
@@ -68,6 +70,7 @@ public sealed class InviteService : IInviteService
                 throw new Exception("Was not able to delete invite.");
             return inviteUsed;
         }
+
         return null;
     }
 
@@ -76,9 +79,7 @@ public sealed class InviteService : IInviteService
         if (!this._guilds.TryGetValue(guildId, out var guild))
             throw new ArgumentException("Could not find guild.");
         return guild.Invites.TryRemove(inviteCode, out _);
-
     }
-
 }
 
 public sealed record GuildInviteDto

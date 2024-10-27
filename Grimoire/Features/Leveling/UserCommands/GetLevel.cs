@@ -19,23 +19,24 @@ public sealed class GetLevel
         private readonly IMediator _mediator = mediator;
 
         /// <summary>
-        ///
         /// </summary>
         /// <param name="ctx"></param>
         /// <param name="user"></param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+        /// <returns>A <see cref="Task" /> representing the result of the asynchronous operation.</returns>
         [SlashCommand("Level", "Gets the leveling details for the user.")]
         public async Task LevelAsync(
             InteractionContext ctx,
-            [Option("user", "User to get details from. Blank will return your info.")] DiscordUser? user = null)
+            [Option("user", "User to get details from. Blank will return your info.")]
+            DiscordUser? user = null)
         {
-            var userCommandChannel = await this._mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
+            var userCommandChannel =
+                await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
 
             await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermissions.ManageMessages)
-               && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
+                                 && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
             user ??= ctx.User;
 
-            var response = await this._mediator.Send(new Query{ UserId = user.Id, GuildId = ctx.Guild.Id});
+            var response = await this._mediator.Send(new Query { UserId = user.Id, GuildId = ctx.Guild.Id });
 
             DiscordColor color;
             string displayName;
@@ -65,10 +66,11 @@ public sealed class GetLevel
             var embed = new DiscordEmbedBuilder()
                 .WithColor(color)
                 .WithTitle($"Level and EXP for {displayName}")
-                .AddField("XP", $"{response.UsersXp}", inline: true)
-                .AddField("Level", $"{response.UsersLevel}", inline: true)
-                .AddField("Progress", $"{response.LevelProgress}/{response.XpForNextLevel}", inline: true)
-                .AddField("Next Reward", roleReward is null ? "None" : $"{roleReward.Mention}\n at level {response.NextRewardLevel}", inline: true)
+                .AddField("XP", $"{response.UsersXp}", true)
+                .AddField("Level", $"{response.UsersLevel}", true)
+                .AddField("Progress", $"{response.LevelProgress}/{response.XpForNextLevel}", true)
+                .AddField("Next Reward",
+                    roleReward is null ? "None" : $"{roleReward.Mention}\n at level {response.NextRewardLevel}", true)
                 .WithThumbnail(avatarUrl)
                 .WithFooter($"{ctx.Guild.Name}", ctx.Guild.IconUrl)
                 .Build();
@@ -92,13 +94,13 @@ public sealed class GetLevel
                 .AsNoTracking()
                 .WhereMemberHasId(request.UserId, request.GuildId)
                 .Include(x => x.Guild.LevelSettings)
-                .Select(Member => new
+                .Select(member => new
                 {
-                    Xp = Member.XpHistory.Sum(x => x.Xp),
-                    Member.Guild.LevelSettings.Base,
-                    Member.Guild.LevelSettings.Modifier,
-                    Rewards = Member.Guild.Rewards.OrderBy(reward => reward.RewardLevel)
-                    .Select(reward => new { reward.RoleId, reward.RewardLevel })
+                    Xp = member.XpHistory.Sum(x => x.Xp),
+                    member.Guild.LevelSettings.Base,
+                    member.Guild.LevelSettings.Modifier,
+                    Rewards = member.Guild.Rewards.OrderBy(reward => reward.RewardLevel)
+                        .Select(reward => new { reward.RoleId, reward.RewardLevel })
                 }).FirstOrDefaultAsync(cancellationToken);
 
             if (member is null)
@@ -117,7 +119,7 @@ public sealed class GetLevel
                 LevelProgress = member.Xp - currentLevelXp,
                 XpForNextLevel = nextLevelXp - currentLevelXp,
                 NextRewardLevel = nextReward?.RewardLevel,
-                NextRoleRewardId = nextReward?.RoleId,
+                NextRoleRewardId = nextReward?.RoleId
             };
         }
     }
@@ -131,7 +133,4 @@ public sealed class GetLevel
         public required ulong? NextRoleRewardId { get; init; }
         public required int? NextRewardLevel { get; init; }
     }
-
-
 }
-

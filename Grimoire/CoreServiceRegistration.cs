@@ -28,12 +28,14 @@ public static class CoreServiceRegistration
             var dbName = section["DbName"];
             var username = section["Username"];
             var password = section["Password"];
-            connectionString = $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Require; Trust Server Certificate=true; Include Error Detail=true";
+            connectionString =
+                $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Require; Trust Server Certificate=true; Include Error Detail=true";
         }
+
         services.AddDbContextFactory<GrimoireDbContext>(options =>
-            options.UseNpgsql(connectionString,
-            npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
-            .UseExceptionProcessor())
+                options.UseNpgsql(connectionString,
+                        npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
+                    .UseExceptionProcessor())
             .AddSingleton<IInviteService, InviteService>()
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(RequestTimingBehavior<,>))
             .AddScoped(typeof(IPipelineBehavior<,>), typeof(ErrorLoggingBehavior<,>));

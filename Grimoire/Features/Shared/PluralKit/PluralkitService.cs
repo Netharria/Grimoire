@@ -20,40 +20,35 @@ public interface IPluralkitService
 
 public sealed partial class PluralkitService : IPluralkitService
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-
     private const string MessageEndpoint = "messages/";
+    private readonly IHttpClientFactory _httpClientFactory;
 
     private readonly bool _isConfigured;
 
     public PluralkitService(IHttpClientFactory httpClientFactory,
-    IConfiguration configuration,
-    ILogger<PluralkitService> logger)
+        IConfiguration configuration,
+        ILogger<PluralkitService> logger)
     {
         this._httpClientFactory = httpClientFactory;
         this._isConfigured = !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitUserAgent", ""))
-            && !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitToken", ""));
+                             && !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitToken", ""));
         if (!this._isConfigured)
             PluralkitNotConfiguredLog(logger);
     }
 
 
-    public async ValueTask<PluralKitMessage?> GetProxiedMessageInformation(ulong messageId, DateTimeOffset messageTimestamp)
+    public async ValueTask<PluralKitMessage?> GetProxiedMessageInformation(ulong messageId,
+        DateTimeOffset messageTimestamp)
     {
-        if (!this._isConfigured)
-        {
-            return null;
-        }
-        if (messageTimestamp.AddSeconds(60) < DateTimeOffset.UtcNow)
-        {
-            return null;
-        }
+        if (!this._isConfigured) return null;
+        if (messageTimestamp.AddSeconds(60) < DateTimeOffset.UtcNow) return null;
         var httpClient = this._httpClientFactory.CreateClient("Pluralkit");
         try
         {
             return await httpClient.GetFromJsonAsync<PluralKitMessage>(MessageEndpoint + messageId);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound || ex.StatusCode == HttpStatusCode.BadGateway)
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound ||
+                                              ex.StatusCode == HttpStatusCode.BadGateway)
         {
             return null;
         }

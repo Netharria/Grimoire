@@ -34,6 +34,6 @@ internal sealed class GuildMessageLogSettingsConfiguration : IEntityTypeConfigur
             .HasForeignKey<GuildMessageLogSettings>(e => e.EditChannelLogId)
             .IsRequired(false);
         builder.Property(x => x.ModuleEnabled)
-            .HasDefaultValue(value: false);
+            .HasDefaultValue(false);
     }
 }

@@ -9,14 +9,16 @@ using System.Collections.Concurrent;
 using Grimoire.Features.Logging.Settings;
 
 namespace Grimoire.Features.Logging.UserLogging.Events;
-internal sealed class GuildMemberAddedEvent(IMediator mediator, IInviteService inviteService) : IEventHandler<GuildMemberAddedEventArgs>
+
+internal sealed class GuildMemberAddedEvent(IMediator mediator, IInviteService inviteService)
+    : IEventHandler<GuildMemberAddedEventArgs>
 {
-    private readonly IMediator _mediator = mediator;
     private readonly IInviteService _inviteService = inviteService;
+    private readonly IMediator _mediator = mediator;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
-        var settings = await this._mediator.Send(new GetUserLogSettings.Query{ GuildId = args.Guild.Id });
+        var settings = await this._mediator.Send(new GetUserLogSettings.Query { GuildId = args.Guild.Id });
         if (settings is null) return;
         if (!settings.IsLoggingEnabled) return;
         if (settings.JoinChannelLog is null) return;
@@ -41,16 +43,18 @@ internal sealed class GuildMemberAddedEvent(IMediator mediator, IInviteService i
         if (inviteUsed is not null)
             inviteUsedText = $"{inviteUsed.Url} ({inviteUsed.Uses} uses)\n**Created By:** {inviteUsed.Inviter}";
         else if (!string.IsNullOrWhiteSpace(args.Guild.VanityUrlCode))
-            inviteUsedText = $"Vanity Invite";
+            inviteUsedText = "Vanity Invite";
         else
-            inviteUsedText = $"Unknown Invite";
+            inviteUsedText = "Unknown Invite";
 
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("User Joined")
             .AddField("Name", args.Member.Mention, true)
             .AddField("Created", Formatter.Timestamp(args.Member.CreationTimestamp), true)
             .AddField("Invite Used", inviteUsedText)
-            .WithColor(args.Member.CreationTimestamp > DateTimeOffset.UtcNow.AddDays(-7) ? GrimoireColor.Yellow : GrimoireColor.Green)
+            .WithColor(args.Member.CreationTimestamp > DateTimeOffset.UtcNow.AddDays(-7)
+                ? GrimoireColor.Yellow
+                : GrimoireColor.Green)
             .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
             .WithFooter($"Total Members: {args.Guild.MemberCount}")
             .WithTimestamp(DateTimeOffset.UtcNow);

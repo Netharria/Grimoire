@@ -9,6 +9,7 @@
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Logging.MessageLogging.Events;
+
 public partial class LinkProxyMessage
 {
     public record Command : IRequest
@@ -36,20 +37,20 @@ public partial class LinkProxyMessage
 
             try
             {
-                await this._dbContext.AddAsync(new ProxiedMessageLink
-                {
-                    ProxyMessageId = command.ProxyMessageId,
-                    OriginalMessageId = command.OriginalMessageId,
-                    SystemId = command.SystemId,
-                    MemberId = command.MemberId
-                }, cancellationToken);
+                await this._dbContext.AddAsync(
+                    new ProxiedMessageLink
+                    {
+                        ProxyMessageId = command.ProxyMessageId,
+                        OriginalMessageId = command.OriginalMessageId,
+                        SystemId = command.SystemId,
+                        MemberId = command.MemberId
+                    }, cancellationToken);
                 await this._dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
                 LogProxiedMessageFailure(this._logger, ex.Message, ex);
             }
-            return;
         }
 
         [LoggerMessage(LogLevel.Error, "Was not able to save Proxied Message for the following reason. {message}")]

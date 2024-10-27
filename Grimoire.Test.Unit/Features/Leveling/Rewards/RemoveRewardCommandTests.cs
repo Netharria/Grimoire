@@ -19,18 +19,20 @@ namespace Grimoire.Test.Unit.Features.Leveling.Rewards;
 [Collection("Test collection")]
 public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong GuildId = 1;
+    private const ulong RoleId = 1;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_ID = 1;
-    private const ulong ROLE_ID = 1;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
-        await this._dbContext.AddAsync(new Role { Id = ROLE_ID, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Guild { Id = GuildId });
+        await this._dbContext.AddAsync(new Role { Id = RoleId, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -39,27 +41,19 @@ public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenRemovingReward_IfRewardExists_RemoveRoleAsync()
     {
-        await this._dbContext.AddAsync(new Reward
-        {
-            RoleId = ROLE_ID,
-            GuildId = GUILD_ID,
-            RewardLevel = 10
-        });
+        await this._dbContext.AddAsync(new Reward { RoleId = RoleId, GuildId = GuildId, RewardLevel = 10 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new RemoveReward.Handler(this._dbContext);
-        var command = new RemoveReward.Request
-        {
-            RoleId = ROLE_ID
-        };
+        var cut = new RemoveReward.Handler(this._dbContext);
+        var command = new RemoveReward.Request { RoleId = RoleId };
 
-        var response = await CUT.Handle(command, default);
+        var response = await cut.Handle(command, default);
 
-        response.Message.Should().Be($"Removed <@&{ROLE_ID}> reward");
+        response.Message.Should().Be($"Removed <@&{RoleId}> reward");
 
         this._dbContext.ChangeTracker.Clear();
 
-        var reward = await this._dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == ROLE_ID);
+        var reward = await this._dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == RoleId);
 
         reward.Should().BeNull();
     }
@@ -67,15 +61,12 @@ public sealed class RemoveRewardCommandTests(GrimoireCoreFactory factory) : IAsy
     [Fact]
     public async Task WhenAddingReward_IfRewardExist_UpdateRole()
     {
-        var CUT = new RemoveReward.Handler(this._dbContext);
-        var command = new RemoveReward.Request
-        {
-            RoleId = ROLE_ID
-        };
+        var cut = new RemoveReward.Handler(this._dbContext);
+        var command = new RemoveReward.Request { RoleId = RoleId };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async() => await CUT.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
 
         response.Should().NotBeNull();
-        response?.Message.Should().Be($"Did not find a saved reward for role <@&{ROLE_ID}>");
+        response?.Message.Should().Be($"Did not find a saved reward for role <@&{RoleId}>");
     }
 }

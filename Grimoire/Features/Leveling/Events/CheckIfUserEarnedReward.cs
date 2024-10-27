@@ -16,22 +16,22 @@ namespace Grimoire.Features.Leveling.Events;
 public partial class CheckIfUserEarnedReward
 {
     [UsedImplicitly]
-    public partial class NotificationHandler(IMediator mediator, DiscordClient client, ILogger<NotificationHandler> logger) : INotificationHandler<UserGainedXpEvent>
+    public partial class NotificationHandler(
+        IMediator mediator,
+        DiscordClient client,
+        ILogger<NotificationHandler> logger) : INotificationHandler<UserGainedXpEvent>
     {
-        private readonly IMediator _mediator = mediator;
         private readonly DiscordClient _client = client;
         private readonly ILogger<NotificationHandler> _logger = logger;
+        private readonly IMediator _mediator = mediator;
 
         public async Task Handle(UserGainedXpEvent notification, CancellationToken cancellationToken)
         {
             var guild = await this._client.GetGuildAsync(notification.GuildId);
             var member = await guild.GetMemberAsync(notification.UserId);
 
-            var response = await this._mediator.Send(new Request
-            {
-                GuildId = notification.GuildId,
-                UserLevel = notification.UserLevel
-            }, cancellationToken);
+            var response = await this._mediator.Send(
+                new Request { GuildId = notification.GuildId, UserLevel = notification.UserLevel }, cancellationToken);
 
             if (response is null)
                 return;
@@ -44,7 +44,7 @@ public partial class CheckIfUserEarnedReward
                 .Join(guild.Roles,
                     reward => reward.RoleId,
                     role => role.Key,
-                    (reward, role) => role.Value)
+                    (_, role) => role.Value)
                 .Concat(member.Roles)
                 .Distinct()
                 .ToArray();
@@ -64,34 +64,29 @@ public partial class CheckIfUserEarnedReward
                     response.LogChannelId,
                     response.LevelLogChannel);
             }
+
             foreach (var reward in newRewards.Where(x => !string.IsNullOrWhiteSpace(x.Message)))
-            {
                 try
                 {
                     if (guild.Roles.TryGetValue(reward.RoleId, out var role))
-                    {
                         await member.SendMessageAsync(new DiscordEmbedBuilder()
                             .WithAuthor($"Congratulations on earning {role.Name}!", iconUrl: guild.IconUrl)
                             .WithFooter($"Message from the moderators of {guild.Name}.")
-                            .WithDescription(Regex.Unescape(reward!.Message!)));
-                    }
-
+                            .WithDescription(Regex.Unescape(reward.Message!)));
                 }
                 catch (Exception ex)
                 {
                     LogRewardMessageFailure(this._logger, ex, reward.RoleId, reward.Message);
                 }
-            }
 
-            await this._client.SendMessageToLoggingChannel(response.LevelLogChannel, new DiscordEmbedBuilder()
+            await this._client.SendMessageToLoggingChannel(response.LevelLogChannel, embed =>
+                embed
                 .WithColor(GrimoireColor.DarkPurple)
                 .WithAuthor(member.GetUsernameWithDiscriminator())
                 .WithDescription($"{member.Mention} has earned " +
-                $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x.RoleId)))}")
+                                 $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x.RoleId)))}")
                 .WithFooter($"{member.Id}")
                 .WithTimestamp(DateTime.UtcNow));
-
-
         }
 
         [LoggerMessage(LogLevel.Warning, "Failure to send reward message Reward: {roleId} Message: {message}")]
@@ -103,20 +98,19 @@ public partial class CheckIfUserEarnedReward
             ulong? modLogChannelId,
             ulong? levelLogChannelId)
         {
-
             var roleString = string.Join(' ', rewards.Select(RoleExtensions.Mention));
 
             await this._client.SendMessageToLoggingChannel(modLogChannelId,
-                new DiscordEmbedBuilder()
-                        .WithColor(GrimoireColor.Red)
-                        .WithDescription($"{displayName} tried to grant roles " +
-                        $"{roleString} but did not have sufficent permissions."));
+                embed => embed
+                    .WithColor(GrimoireColor.Red)
+                    .WithDescription($"{displayName} tried to grant roles " +
+                                     $"{roleString} but did not have sufficient permissions."));
 
             await this._client.SendMessageToLoggingChannel(levelLogChannelId,
-                new DiscordEmbedBuilder()
-                        .WithColor(GrimoireColor.Red)
-                        .WithDescription($"{displayName} tried to grant roles " +
-                        $"{roleString} but did not have sufficent permissions."));
+                embed => embed
+                    .WithColor(GrimoireColor.Red)
+                    .WithDescription($"{displayName} tried to grant roles " +
+                                     $"{roleString} but did not have sufficient permissions."));
         }
     }
 
@@ -139,11 +133,7 @@ public partial class CheckIfUserEarnedReward
                     LevelLogChannel = guild.LevelSettings.LevelChannelLogId,
                     EarnedRewards = guild.Rewards
                         .Where(reward => reward.RewardLevel <= request.UserLevel)
-                        .Select(reward => new RewardDto
-                        {
-                            Message = reward.RewardMessage,
-                            RoleId = reward.RoleId
-                        })
+                        .Select(reward => new RewardDto { Message = reward.RewardMessage, RoleId = reward.RoleId })
                 }).FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -159,4 +149,3 @@ public partial class CheckIfUserEarnedReward
         public string? Message { get; init; }
     }
 }
-

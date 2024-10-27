@@ -9,18 +9,16 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.DatabaseQueryHelpers;
 
-public static class IModuleDatabaseQueryHelpers
+public static class ModuleDatabaseQueryHelpers
 {
-    public static IQueryable<IModule> GetModulesOfType(this IQueryable<Guild> databaseGuilds, Module module)
-    {
-        return module switch
+    public static IQueryable<IModule> GetModulesOfType(this IQueryable<Guild> databaseGuilds, Module module) =>
+        module switch
         {
             Module.Leveling => databaseGuilds.Select(x => x.LevelSettings),
             Module.UserLog => databaseGuilds.Select(x => x.UserLogSettings),
             Module.Moderation => databaseGuilds.Select(x => x.ModerationSettings),
             Module.MessageLog => databaseGuilds.Select(x => x.MessageLogSettings),
             Module.Commands => databaseGuilds.Select(x => x.CommandsSettings),
-            _ => throw new ArgumentOutOfRangeException(nameof(module), module, message: null)
+            _ => throw new ArgumentOutOfRangeException(nameof(module), module, null)
         };
-    }
 }

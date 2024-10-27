@@ -15,7 +15,7 @@ public sealed class GuildMemberRemovedEvent(IMediator mediator) : IEventHandler<
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberRemovedEventArgs args)
     {
-        var settings = await this._mediator.Send(new GetUserLogSettings.Query{ GuildId = args.Guild.Id });
+        var settings = await this._mediator.Send(new GetUserLogSettings.Query { GuildId = args.Guild.Id });
         if (settings is null) return;
         if (!settings.IsLoggingEnabled) return;
         if (settings.LeaveChannelLog is null) return;
@@ -32,9 +32,9 @@ public sealed class GuildMemberRemovedEvent(IMediator mediator) : IEventHandler<
             .WithFooter($"Total Members: {args.Guild.MemberCount}")
             .WithTimestamp(DateTimeOffset.UtcNow)
             .AddField($"Roles[{args.Member.Roles.Count()}]",
-            args.Member.Roles.Any()
-            ? string.Join(' ', args.Member.Roles.Where(x => x.Id != args.Guild.Id).Select(x => x.Mention))
-            : "None");
+                args.Member.Roles.Any()
+                    ? string.Join(' ', args.Member.Roles.Where(x => x.Id != args.Guild.Id).Select(x => x.Mention))
+                    : "None");
         await logChannel.SendMessageAsync(embed);
     }
 }

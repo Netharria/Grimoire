@@ -21,15 +21,16 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
     public async Task MuteUserAsync(
         InteractionContext ctx,
         [Option("User", "The User to mute.")] DiscordUser user,
-        [Option("DurationType", "Select whether the duration will be in minutes hours or days")] DurationType durationType,
-        [Minimum(0)]
-        [Option("DurationAmount", "Select the amount of time the mute will last.")] long durationAmount,
-        [MaximumLength(1000)]
-        [Option("Reason", "The reason why the user is getting muted.")] string? reason = null
-        )
+        [Option("DurationType", "Select whether the duration will be in minutes hours or days")]
+        DurationType durationType,
+        [Minimum(0)] [Option("DurationAmount", "Select the amount of time the mute will last.")]
+        long durationAmount,
+        [MaximumLength(1000)] [Option("Reason", "The reason why the user is getting muted.")]
+        string? reason = null
+    )
     {
         await ctx.DeferAsync();
-            
+
         var member = user as DiscordMember;
 
         if (member is null)
@@ -67,8 +68,9 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
         {
             await member.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithAuthor($"Mute Id {response.SinId}")
-            .WithDescription($"You have been muted for {durationAmount} {durationType.GetName()} by {ctx.User.Mention} for {reason}")
-            .WithColor(GrimoireColor.Red));
+                .WithDescription(
+                    $"You have been muted for {durationAmount} {durationType.GetName()} by {ctx.User.Mention} for {reason}")
+                .WithColor(GrimoireColor.Red));
         }
         catch (Exception)
         {
@@ -88,7 +90,8 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
     [SlashCommand("Unmute", "Removes the mute on the user allowing them to speak.")]
     public async Task UnmuteUserAsync(
         InteractionContext ctx,
-        [Option("User", "The User to unmute.")] DiscordUser user)
+        [Option("User", "The User to unmute.")]
+        DiscordUser user)
     {
         await ctx.DeferAsync();
         var member = user as DiscordMember;
@@ -96,11 +99,7 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
         if (member is null)
             throw new AnticipatedException("That user is not on the server.");
         if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
-        var response = await this._mediator.Send(new UnmuteUserCommand
-        {
-            UserId = member.Id,
-            GuildId = ctx.Guild.Id
-        });
+        var response = await this._mediator.Send(new UnmuteUserCommand { UserId = member.Id, GuildId = ctx.Guild.Id });
         var muteRole = ctx.Guild.Roles.GetValueOrDefault(response.MuteRole);
         if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
         await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.Member.Mention}");
@@ -118,9 +117,9 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
         try
         {
             await member.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor($"Unmuted")
-            .WithDescription($"You have been unmuted by {ctx.User.Mention}")
-            .WithColor(GrimoireColor.Green));
+                .WithAuthor("Unmuted")
+                .WithDescription($"You have been unmuted by {ctx.User.Mention}")
+                .WithColor(GrimoireColor.Green));
         }
         catch (Exception)
         {
@@ -135,6 +134,5 @@ internal sealed class MuteCommands(IMediator mediator) : ApplicationCommandModul
         if (logChannel is null) return;
 
         await logChannel.SendMessageAsync(embed);
-
     }
 }

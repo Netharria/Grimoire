@@ -27,23 +27,24 @@ public sealed class AddBan
         {
             var memberExists = await this._grimoireDbContext.Members
                 .AnyAsync(x => x.UserId == command.UserId
-                 && x.GuildId == command.GuildId, cancellationToken);
+                               && x.GuildId == command.GuildId, cancellationToken);
             if (!memberExists)
                 await this.AddMissingMember(command, cancellationToken);
-            var sin = await this._grimoireDbContext.Sins.AddAsync(new Sin
-            {
-                GuildId = command.GuildId,
-                UserId = command.UserId,
-                Reason = command.Reason,
-                SinType = SinType.Ban,
-                ModeratorId = command.ModeratorId
-            }, cancellationToken);
+            var sin = await this._grimoireDbContext.Sins.AddAsync(
+                new Sin
+                {
+                    GuildId = command.GuildId,
+                    UserId = command.UserId,
+                    Reason = command.Reason,
+                    SinType = SinType.Ban,
+                    ModeratorId = command.ModeratorId
+                }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
             var loggingChannel = await this._grimoireDbContext.Guilds
-            .WhereIdIs(command.GuildId)
-            .Select(x => x.ModChannelLog)
-            .FirstOrDefaultAsync(cancellationToken);
+                .WhereIdIs(command.GuildId)
+                .Select(x => x.ModChannelLog)
+                .FirstOrDefaultAsync(cancellationToken);
             return new Response { SinId = sin.Entity.Id, LogChannelId = loggingChannel };
         }
 
@@ -56,15 +57,16 @@ public sealed class AddBan
                 UserId = command.UserId,
                 GuildId = command.GuildId,
                 XpHistory =
-                    [
-                        new() {
-                            UserId = command.UserId,
-                            GuildId = command.GuildId,
-                            Xp = 0,
-                            Type = XpHistoryType.Created,
-                            TimeOut = DateTime.UtcNow
-                        }
-                    ],
+                [
+                    new XpHistory
+                    {
+                        UserId = command.UserId,
+                        GuildId = command.GuildId,
+                        Xp = 0,
+                        Type = XpHistoryType.Created,
+                        TimeOut = DateTime.UtcNow
+                    }
+                ]
             }, cancellationToken);
         }
     }
@@ -73,6 +75,4 @@ public sealed class AddBan
     {
         public long SinId { get; init; }
     }
-
 }
-

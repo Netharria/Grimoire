@@ -11,19 +11,17 @@ public sealed record RemoveExpiredTrackersCommand : IRequest<IEnumerable<RemoveE
 {
 }
 
-public sealed class RemoveExpiredTrackersCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
+public sealed class RemoveExpiredTrackersCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<RemoveExpiredTrackersCommand, IEnumerable<RemoveExpiredTrackersCommandResponse>>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<IEnumerable<RemoveExpiredTrackersCommandResponse>> Handle(RemoveExpiredTrackersCommand command, CancellationToken cancellationToken)
+    public async Task<IEnumerable<RemoveExpiredTrackersCommandResponse>> Handle(RemoveExpiredTrackersCommand command,
+        CancellationToken cancellationToken)
     {
         var results = await this._grimoireDbContext.Trackers
             .Where(x => x.EndTime < DateTimeOffset.UtcNow)
-            .Select(x => new
-            {
-                Tracker = x,
-                ModerationLogId = x.Guild.ModChannelLog
-            }).ToArrayAsync(cancellationToken: cancellationToken);
+            .Select(x => new { Tracker = x, ModerationLogId = x.Guild.ModChannelLog }).ToArrayAsync(cancellationToken);
         if (results.Length != 0)
         {
             this._grimoireDbContext.Trackers.RemoveRange(results.Select(x => x.Tracker));

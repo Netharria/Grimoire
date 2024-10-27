@@ -13,7 +13,8 @@ public sealed record ForgetSinCommand : IRequest<ForgetSinCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class ForgetSinCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<ForgetSinCommand, ForgetSinCommandResponse>
+public sealed class ForgetSinCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<ForgetSinCommand, ForgetSinCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -26,9 +27,9 @@ public sealed class ForgetSinCommandHandler(GrimoireDbContext grimoireDbContext)
             {
                 Sin = x,
                 UserName = x.Member.User.UsernameHistories
-                .OrderByDescending(x => x.Timestamp)
-                .Select(x => x.Username)
-                .FirstOrDefault(),
+                    .OrderByDescending(x => x.Timestamp)
+                    .Select(x => x.Username)
+                    .FirstOrDefault(),
                 x.Guild.ModChannelLog
             })
             .FirstOrDefaultAsync(cancellationToken);

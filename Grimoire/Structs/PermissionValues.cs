@@ -11,11 +11,11 @@ public struct PermissionValues
 {
     public static DiscordPermissions LockPermissions
         => DiscordPermissions.SendMessages
-          | DiscordPermissions.SendMessagesInThreads
-          | DiscordPermissions.SendTtsMessages
-          | DiscordPermissions.AddReactions;
+           | DiscordPermissions.SendMessagesInThreads
+           | DiscordPermissions.SendTtsMessages
+           | DiscordPermissions.AddReactions;
 
     public static DiscordPermissions VoiceLockPermissions
         => DiscordPermissions.UseVoice
-        | DiscordPermissions.Speak;
+           | DiscordPermissions.Speak;
 }

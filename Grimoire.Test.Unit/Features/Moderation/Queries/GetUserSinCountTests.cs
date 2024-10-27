@@ -19,26 +19,27 @@ namespace Grimoire.Test.Unit.Features.Moderation.Queries;
 [Collection("Test collection")]
 public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong GuildId = 1;
+    private const ulong UserId = 1;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
-    .UseNpgsql(factory.ConnectionString)
+            .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_ID = 1;
-    private const ulong USER_ID = 1;
 
     public async Task InitializeAsync()
     {
         await this._dbContext.AddAsync(new Guild
         {
-            Id = GUILD_ID,
+            Id = GuildId,
             ModerationSettings = new GuildModerationSettings
             {
-                ModuleEnabled = true,
-                AutoPardonAfter = TimeSpan.FromDays(60)
+                ModuleEnabled = true, AutoPardonAfter = TimeSpan.FromDays(60)
             }
         });
-        await this._dbContext.AddAsync(new User { Id = USER_ID });
+        await this._dbContext.AddAsync(new User { Id = UserId });
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -48,15 +49,11 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     public async Task GivenAUserHasNotBeenOnTheServer_WhenGetUserSinCountIsCalled_ThrowAnticipatedException()
     {
         //Arrange
-        var CUT = new GetUserSinCounts.Handler(this._dbContext);
-        var query = new GetUserSinCounts.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID
-        };
+        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
-        var result = await Assert.ThrowsAsync<AnticipatedException>(async () => await CUT.Handle(query, default));
+        var result = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(query, default));
 
         //Assert
         result.Should().NotBeNull();
@@ -69,25 +66,17 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
         //Arrange
         await this._dbContext.Guilds.AddAsync(new Guild
         {
-            Id = 1234,
-            ModerationSettings = new GuildModerationSettings
-            {
-                ModuleEnabled = false
-            }
+            Id = 1234, ModerationSettings = new GuildModerationSettings { ModuleEnabled = false }
         });
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = 1234 });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = 1234 });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(this._dbContext);
-        var query = new GetUserSinCounts.Query
-        {
-            UserId = USER_ID,
-            GuildId = 1234
-        };
+        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = 1234 };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().BeNull();
@@ -98,19 +87,15 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(this._dbContext);
-        var query = new GetUserSinCounts.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID
-        };
+        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();
@@ -124,42 +109,26 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
         await this._dbContext.Sins.AddRangeAsync(
+            new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Warn, ModeratorId = UserId },
+            new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Warn, ModeratorId = UserId },
             new Sin
             {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
+                UserId = UserId,
+                GuildId = GuildId,
                 SinType = SinType.Warn,
-                ModeratorId = USER_ID,
-            },
-            new Sin
-            {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
-                SinType = SinType.Warn,
-                ModeratorId = USER_ID,
-            },
-            new Sin
-            {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
-                SinType = SinType.Warn,
-                ModeratorId = USER_ID,
+                ModeratorId = UserId,
                 SinOn = DateTimeOffset.UtcNow.AddDays(-61)
             });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(this._dbContext);
-        var query = new GetUserSinCounts.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID
-        };
+        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();
@@ -173,42 +142,26 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
         await this._dbContext.Sins.AddRangeAsync(
+            new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Mute, ModeratorId = UserId },
+            new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Mute, ModeratorId = UserId },
             new Sin
             {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
+                UserId = UserId,
+                GuildId = GuildId,
                 SinType = SinType.Mute,
-                ModeratorId = USER_ID,
-            },
-            new Sin
-            {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
-                SinType = SinType.Mute,
-                ModeratorId = USER_ID,
-            },
-            new Sin
-            {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
-                SinType = SinType.Mute,
-                ModeratorId = USER_ID,
+                ModeratorId = UserId,
                 SinOn = DateTimeOffset.UtcNow.AddDays(-61)
             });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(this._dbContext);
-        var query = new GetUserSinCounts.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID
-        };
+        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();
@@ -222,42 +175,26 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     {
         //Arrange
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
+        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
         await this._dbContext.Sins.AddRangeAsync(
+            new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Ban, ModeratorId = UserId },
+            new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Ban, ModeratorId = UserId },
             new Sin
             {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
+                UserId = UserId,
+                GuildId = GuildId,
                 SinType = SinType.Ban,
-                ModeratorId = USER_ID,
-            },
-            new Sin
-            {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
-                SinType = SinType.Ban,
-                ModeratorId = USER_ID,
-            },
-            new Sin
-            {
-                UserId = USER_ID,
-                GuildId = GUILD_ID,
-                SinType = SinType.Ban,
-                ModeratorId = USER_ID,
+                ModeratorId = UserId,
                 SinOn = DateTimeOffset.UtcNow.AddDays(-61)
             });
         await this._dbContext.SaveChangesAsync();
 
-        var CUT = new GetUserSinCounts.Handler(this._dbContext);
-        var query = new GetUserSinCounts.Query
-        {
-            UserId = USER_ID,
-            GuildId = GUILD_ID
-        };
+        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
 
-        var result = await CUT.Handle(query, default);
+        var result = await cut.Handle(query, default);
 
         //Assert
         result.Should().NotBeNull();

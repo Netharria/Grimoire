@@ -20,20 +20,22 @@ namespace Grimoire.Test.Unit.DatabaseQueryHelpers;
 [Collection("Test collection")]
 public sealed class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const long GuildId = 1;
+    private const long Role1 = 1;
+    private const long Role2 = 2;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const long GUILD_ID = 1;
-    private const long ROLE_1 = 1;
-    private const long ROLE_2 = 2;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
-        await this._dbContext.AddAsync(new Role { Id = ROLE_1, GuildId = GUILD_ID });
-        await this._dbContext.AddAsync(new Role { Id = ROLE_2, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Guild { Id = GuildId });
+        await this._dbContext.AddAsync(new Role { Id = Role1, GuildId = GuildId });
+        await this._dbContext.AddAsync(new Role { Id = Role2, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -44,12 +46,12 @@ public sealed class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     {
         var rolesToAdd = new List<RoleDto>
         {
-            new() { Id = ROLE_1, GuildId = GUILD_ID },
-            new() { Id = ROLE_2, GuildId = GUILD_ID },
-            new() { Id = 4, GuildId = GUILD_ID },
-            new() { Id = 5, GuildId = GUILD_ID }
+            new() { Id = Role1, GuildId = GuildId },
+            new() { Id = Role2, GuildId = GuildId },
+            new() { Id = 4, GuildId = GuildId },
+            new() { Id = 5, GuildId = GuildId }
         };
-        var result = await this._dbContext.Roles.AddMissingRolesAsync(rolesToAdd, default);
+        var result = await this._dbContext.Roles.AddMissingRolesAsync(rolesToAdd);
 
         await this._dbContext.SaveChangesAsync();
         result.Should().BeTrue();
@@ -63,7 +65,7 @@ public sealed class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         var rolesToAdd = new List<RoleDto>(); // No members to add
 
         // Act
-        var result = await this._dbContext.Roles.AddMissingRolesAsync(rolesToAdd, default);
+        var result = await this._dbContext.Roles.AddMissingRolesAsync(rolesToAdd);
 
         // Assert
         result.Should().BeFalse();

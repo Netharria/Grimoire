@@ -27,17 +27,18 @@ public static class GetUserLevelingInfo
             var result = await this._dbContext.Members
                 .AsNoTracking()
                 .WhereMemberHasId(query.UserId, query.GuildId)
-                .Select(x => new
+                .Select(member => new
                 {
-                    x.Guild.LevelSettings.ModuleEnabled,
-                    x.Guild.LevelSettings.Base,
-                    x.Guild.LevelSettings.Modifier,
-                    Xp = x.XpHistory.Sum(x => x.Xp),
-                    Rewards = x.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel }),
+                    member.Guild.LevelSettings.ModuleEnabled,
+                    member.Guild.LevelSettings.Base,
+                    member.Guild.LevelSettings.Modifier,
+                    Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp),
+                    Rewards = member.Guild.Rewards.Select(reward => new { reward.RoleId, reward.RewardLevel }),
                     Response = new Response
                     {
-                        IsXpIgnored = x.IsIgnoredMember != null
-                        || x.Guild.IgnoredRoles.Any(y => query.RoleIds.Any(z => z == y.RoleId))
+                        IsXpIgnored = member.IsIgnoredMember != null
+                                      || member.Guild.IgnoredRoles
+                                          .Any(y => query.RoleIds.Any(z => z == y.RoleId))
                     }
                 }).FirstOrDefaultAsync(cancellationToken);
             if (result is null)

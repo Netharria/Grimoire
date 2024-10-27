@@ -8,6 +8,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
+
 internal sealed class ProxiedMessageLinkConfiguration : IEntityTypeConfiguration<ProxiedMessageLink>
 {
     public void Configure(EntityTypeBuilder<ProxiedMessageLink> builder)

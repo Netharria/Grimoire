@@ -23,13 +23,9 @@ public sealed class GetTracker
 
         public async Task<Response?> Handle(Query request, CancellationToken cancellationToken)
             => await this._grimoireDbContext.Trackers
-            .AsNoTracking()
-            .WhereMemberHasId(request.UserId, request.GuildId)
-            .Select(x => new Response
-            {
-                TrackerChannelId = x.LogChannelId
-            }).FirstOrDefaultAsync(cancellationToken);
-
+                .AsNoTracking()
+                .WhereMemberHasId(request.UserId, request.GuildId)
+                .Select(x => new Response { TrackerChannelId = x.LogChannelId }).FirstOrDefaultAsync(cancellationToken);
     }
 
     public sealed record Response : BaseResponse
@@ -37,5 +33,3 @@ public sealed class GetTracker
         public ulong TrackerChannelId { get; init; }
     }
 }
-
-

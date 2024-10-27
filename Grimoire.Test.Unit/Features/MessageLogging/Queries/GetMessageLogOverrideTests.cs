@@ -19,31 +19,29 @@ namespace Grimoire.Test.Unit.Features.MessageLogging.Queries;
 [Collection("Test collection")]
 public sealed class GetMessageLogOverrideTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong GuildId = 1;
+    private const ulong Channel1Id = 1;
+    private const ulong Channel2Id = 2;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_ID = 1;
-    private const ulong CHANNEL_1_ID = 1;
-    private const ulong CHANNEL_2_ID = 2;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild { Id = GUILD_ID });
-        await this._dbContext.AddAsync(new Channel { Id = CHANNEL_1_ID, GuildId = GUILD_ID });
-        await this._dbContext.AddAsync(new Channel { Id = CHANNEL_2_ID, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Guild { Id = GuildId });
+        await this._dbContext.AddAsync(new Channel { Id = Channel1Id, GuildId = GuildId });
+        await this._dbContext.AddAsync(new Channel { Id = Channel2Id, GuildId = GuildId });
         await this._dbContext.AddAsync(new MessageLogChannelOverride
         {
-            ChannelId = CHANNEL_1_ID,
-            GuildId = GUILD_ID,
-            ChannelOption = MessageLogOverrideOption.AlwaysLog
+            ChannelId = Channel1Id, GuildId = GuildId, ChannelOption = MessageLogOverrideOption.AlwaysLog
         });
         await this._dbContext.AddAsync(new MessageLogChannelOverride
         {
-            ChannelId = CHANNEL_2_ID,
-            GuildId = GUILD_ID,
-            ChannelOption = MessageLogOverrideOption.NeverLog
+            ChannelId = Channel2Id, GuildId = GuildId, ChannelOption = MessageLogOverrideOption.NeverLog
         });
         await this._dbContext.SaveChangesAsync();
     }
@@ -56,10 +54,7 @@ public sealed class GetMessageLogOverrideTests(GrimoireCoreFactory factory) : IA
         var cut = new GetMessageLogOverrides.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GetMessageLogOverrides.Query
-            {
-                GuildId = GUILD_ID
-            }, default).ToListAsync();
+            new GetMessageLogOverrides.Query { GuildId = GuildId }, default).ToListAsync();
 
         this._dbContext.ChangeTracker.Clear();
 
@@ -68,13 +63,11 @@ public sealed class GetMessageLogOverrideTests(GrimoireCoreFactory factory) : IA
             .HaveCount(2).And
             .ContainEquivalentOf(new GetMessageLogOverrides.Response
             {
-                ChannelId = CHANNEL_1_ID,
-                ChannelOption = MessageLogOverrideOption.AlwaysLog
+                ChannelId = Channel1Id, ChannelOption = MessageLogOverrideOption.AlwaysLog
             }).And
             .ContainEquivalentOf(new GetMessageLogOverrides.Response
             {
-                ChannelId = CHANNEL_2_ID,
-                ChannelOption = MessageLogOverrideOption.NeverLog
+                ChannelId = Channel2Id, ChannelOption = MessageLogOverrideOption.NeverLog
             });
     }
 
@@ -84,10 +77,7 @@ public sealed class GetMessageLogOverrideTests(GrimoireCoreFactory factory) : IA
         var cut = new GetMessageLogOverrides.Handler(this._dbContext);
 
         var result = await cut.Handle(
-            new GetMessageLogOverrides.Query
-            {
-                GuildId = 1321654
-            }, default).ToListAsync();
+            new GetMessageLogOverrides.Query { GuildId = 1321654 }, default).ToListAsync();
 
         this._dbContext.ChangeTracker.Clear();
 

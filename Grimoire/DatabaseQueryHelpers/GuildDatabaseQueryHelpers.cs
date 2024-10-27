@@ -9,36 +9,31 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class GuildDatabaseQueryHelpers
 {
-    public static async Task<bool> AddMissingGuildsAsync(this DbSet<Guild> databaseGuilds, IEnumerable<GuildDto> guilds, CancellationToken cancellationToken = default)
+    public static async Task<bool> AddMissingGuildsAsync(this DbSet<Guild> databaseGuilds,
+        IReadOnlyCollection<ulong> guilds, CancellationToken cancellationToken = default)
     {
-
-        var incomingGuilds = guilds
-            .Select(x => x.Id);
-
         var existingGuildIds = await databaseGuilds
             .AsNoTracking()
-            .Where(x => incomingGuilds.Contains(x.Id))
+            .Where(x => guilds.Contains(x.Id))
             .Select(x => x.Id)
             .AsAsyncEnumerable()
             .ToHashSetAsync(cancellationToken);
 
         var guildsToAdd = guilds
-            .Where(x => !existingGuildIds.Contains(x.Id))
+            .Where(x => !existingGuildIds.Contains(x))
             .Select(x => new Guild
             {
-                Id = x.Id,
+                Id = x,
                 LevelSettings = new GuildLevelSettings(),
                 ModerationSettings = new GuildModerationSettings(),
                 UserLogSettings = new GuildUserLogSettings(),
                 MessageLogSettings = new GuildMessageLogSettings(),
-                CommandsSettings = new GuildCommandsSettings(),
-            });
+                CommandsSettings = new GuildCommandsSettings()
+            }).ToArray();
 
-        if (guildsToAdd.Any())
-        {
-            await databaseGuilds.AddRangeAsync(guildsToAdd, cancellationToken);
-            return true;
-        }
-        return false;
+        if (guildsToAdd.Length == 0) return false;
+
+        await databaseGuilds.AddRangeAsync(guildsToAdd, cancellationToken);
+        return true;
     }
 }

@@ -13,12 +13,11 @@ namespace Grimoire.Features.Logging.Trackers;
 internal sealed class TrackerBackgroundTasks(IServiceProvider serviceProvider, ILogger<TrackerBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
-
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
     {
         var mediator = serviceProvider.GetRequiredService<IMediator>();
         var discord = serviceProvider.GetRequiredService<DiscordClient>();
-        var response = await mediator.Send(new RemoveExpiredTrackersCommand(),stoppingToken);
+        var response = await mediator.Send(new RemoveExpiredTrackersCommand(), stoppingToken);
         foreach (var expiredTracker in response)
         {
             var guild = discord.Guilds.GetValueOrDefault(expiredTracker.GuildId);
@@ -33,9 +32,9 @@ internal sealed class TrackerBackgroundTasks(IServiceProvider serviceProvider, I
 
             if (expiredTracker.LogChannelId is not null)
             {
-                var ModerationLogChannel = guild.Channels.GetValueOrDefault(expiredTracker.LogChannelId.Value);
-                if (ModerationLogChannel is not null)
-                    await ModerationLogChannel.SendMessageAsync(embed);
+                var moderationLogChannel = guild.Channels.GetValueOrDefault(expiredTracker.LogChannelId.Value);
+                if (moderationLogChannel is not null)
+                    await moderationLogChannel.SendMessageAsync(embed);
             }
         }
     }

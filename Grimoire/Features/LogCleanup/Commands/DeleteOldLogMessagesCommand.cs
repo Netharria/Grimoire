@@ -33,7 +33,7 @@ public sealed class DeleteOldLogMessages
                 .Select(x => x.MessageId)
                 .ToArray();
 
-            if(successMessages.Length != 0)
+            if (successMessages.Length != 0)
                 await this._grimoireDbContext.OldLogMessages
                     .WhereIdsAre(successMessages)
                     .ExecuteDeleteAsync(cancellationToken);
@@ -48,7 +48,8 @@ public sealed class DeleteOldLogMessages
             {
                 await this._grimoireDbContext.OldLogMessages
                     .WhereIdsAre(erroredMessages)
-                    .ExecuteUpdateAsync(x => x.SetProperty(p => p.TimesTried, p => p.TimesTried + 1), cancellationToken);
+                    .ExecuteUpdateAsync(x => x.SetProperty(p => p.TimesTried, p => p.TimesTried + 1),
+                        cancellationToken);
 
                 await this._grimoireDbContext.OldLogMessages
                     .Where(x => x.TimesTried >= 3)
@@ -58,5 +59,4 @@ public sealed class DeleteOldLogMessages
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         }
     }
-
 }

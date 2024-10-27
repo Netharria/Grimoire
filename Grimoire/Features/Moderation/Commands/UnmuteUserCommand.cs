@@ -15,7 +15,8 @@ public sealed record UnmuteUserCommand : IRequest<UnmuteUserCommandResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class UnmuteUserCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
+public sealed class UnmuteUserCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<UnmuteUserCommand, UnmuteUserCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -23,12 +24,8 @@ public sealed class UnmuteUserCommandHandler(GrimoireDbContext grimoireDbContext
     {
         var response = await this._grimoireDbContext.Mutes
             .WhereMemberHasId(command.UserId, command.GuildId)
-            .Select(x => new
-            {
-                Mute = x,
-                x.Guild.ModerationSettings.MuteRole,
-                x.Guild.ModChannelLog
-            }).FirstOrDefaultAsync(cancellationToken);
+            .Select(x => new { Mute = x, x.Guild.ModerationSettings.MuteRole, x.Guild.ModChannelLog })
+            .FirstOrDefaultAsync(cancellationToken);
         if (response is null) throw new AnticipatedException("That user doesn't seem to be muted.");
         if (response.MuteRole is null) throw new AnticipatedException("A mute role isn't currently configured.");
         this._grimoireDbContext.Mutes.Remove(response.Mute);
@@ -36,8 +33,7 @@ public sealed class UnmuteUserCommandHandler(GrimoireDbContext grimoireDbContext
 
         return new UnmuteUserCommandResponse
         {
-            MuteRole = response.MuteRole.Value,
-            LogChannelId = response.ModChannelLog
+            MuteRole = response.MuteRole.Value, LogChannelId = response.ModChannelLog
         };
     }
 }
@@ -46,4 +42,3 @@ public sealed record UnmuteUserCommandResponse : BaseResponse
 {
     public ulong MuteRole { get; init; }
 }
-

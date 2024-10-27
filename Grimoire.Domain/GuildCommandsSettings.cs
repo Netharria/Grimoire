@@ -11,7 +11,6 @@ using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
-
 [UsedImplicitly]
 public class GuildCommandsSettings : IModule
 {

@@ -14,19 +14,18 @@ public sealed record UnlockChannelCommand : IRequest<UnlockChannelCommandRespons
     public ulong GuildId { get; init; }
 }
 
-public sealed class UnlockChannelCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
+public sealed class UnlockChannelCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<UnlockChannelCommand, UnlockChannelCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<UnlockChannelCommandResponse> Handle(UnlockChannelCommand command, CancellationToken cancellationToken)
+    public async Task<UnlockChannelCommandResponse> Handle(UnlockChannelCommand command,
+        CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Locks
             .Where(x => x.ChannelId == command.ChannelId && x.GuildId == command.GuildId)
-            .Select(x => new
-            {
-                Lock = x,
-                ModerationLogId = x.Guild.ModChannelLog
-            }).FirstOrDefaultAsync(cancellationToken);
+            .Select(x => new { Lock = x, ModerationLogId = x.Guild.ModChannelLog })
+            .FirstOrDefaultAsync(cancellationToken);
         if (result is null || result.Lock is null)
             throw new AnticipatedException("Could not find a lock entry for that channel.");
 

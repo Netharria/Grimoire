@@ -11,6 +11,6 @@ public static class UserExtensions
 {
     public static string Mention(ulong? id)
         => id is not null
-        ? $"<@!{id}>"
-        : "Unknown User";
+            ? $"<@!{id}>"
+            : "Unknown User";
 }

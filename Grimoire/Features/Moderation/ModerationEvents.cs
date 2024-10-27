@@ -15,29 +15,26 @@ namespace Grimoire.Features.Moderation;
 
 public sealed partial class ModerationEvents(IMediator mediator, ILogger<ModerationEvents> logger)
 {
-    private readonly IMediator _mediator = mediator;
     private readonly ILogger<ModerationEvents> _logger = logger;
+    private readonly IMediator _mediator = mediator;
 
     public async Task DiscordOnGuildBanAdded(DiscordClient sender, GuildBanAddedEventArgs args)
     {
         var response = await this._mediator.Send(new GetLastBanQuery
         {
-            UserId = args.Member.Id,
-            GuildId = args.Guild.Id
+            UserId = args.Member.Id, GuildId = args.Guild.Id
         });
 
         if (!response.ModerationModuleEnabled)
             return;
         if (response.LastSin is null || response.LastSin.SinOn < DateTimeOffset.UtcNow.AddSeconds(-5))
         {
-            var addBanCommand = new AddBan.Command
-            {
-                GuildId = args.Guild.Id,
-                UserId = args.Member.Id
-            };
+            var addBanCommand = new AddBan.Command { GuildId = args.Guild.Id, UserId = args.Member.Id };
             try
             {
-                var banAuditLog = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(DiscordAuditLogActionType.Ban, 1500);
+                var banAuditLog =
+                    await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(DiscordAuditLogActionType.Ban,
+                        1500);
                 if (banAuditLog is not null && banAuditLog.Target.Id == args.Member.Id)
                 {
                     addBanCommand.ModeratorId = banAuditLog?.UserResponsible?.Id;
@@ -45,26 +42,27 @@ public sealed partial class ModerationEvents(IMediator mediator, ILogger<Moderat
                 }
             }
             catch (Exception ex) when (
-            ex is UnauthorizedException
-            || ex is ServerErrorException)
+                ex is UnauthorizedException
+                || ex is ServerErrorException)
             {
                 LogAuditException(this._logger, ex);
             }
+
             await this._mediator.Send(addBanCommand);
 
             response = await this._mediator.Send(new GetLastBanQuery
             {
-                UserId = args.Member.Id,
-                GuildId = args.Guild.Id
+                UserId = args.Member.Id, GuildId = args.Guild.Id
             });
         }
+
         if (response.LogChannelId is null) return;
 
         if (!args.Guild.Channels.TryGetValue(response.LogChannelId.Value,
-            out var loggingChannel)) return;
+                out var loggingChannel)) return;
 
         var embed = new DiscordEmbedBuilder()
-            .WithAuthor($"Banned")
+            .WithAuthor("Banned")
             .AddField("User", args.Member.Mention, true)
             .AddField("Sin Id", $"**{response.LastSin?.SinId}**", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
@@ -72,7 +70,8 @@ public sealed partial class ModerationEvents(IMediator mediator, ILogger<Moderat
         if (response.LastSin?.ModeratorId is not null)
             embed.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
 
-        embed.AddField("Reason", !string.IsNullOrWhiteSpace(response.LastSin?.Reason) ? response.LastSin.Reason : "None", true);
+        embed.AddField("Reason",
+            !string.IsNullOrWhiteSpace(response.LastSin?.Reason) ? response.LastSin.Reason : "None", true);
 
         await loggingChannel.SendMessageAsync(embed);
     }
@@ -84,8 +83,7 @@ public sealed partial class ModerationEvents(IMediator mediator, ILogger<Moderat
     {
         var response = await this._mediator.Send(new GetLastBanQuery
         {
-            UserId = args.Member.Id,
-            GuildId = args.Guild.Id
+            UserId = args.Member.Id, GuildId = args.Guild.Id
         });
 
         if (!response.ModerationModuleEnabled)
@@ -97,10 +95,10 @@ public sealed partial class ModerationEvents(IMediator mediator, ILogger<Moderat
         if (response.LogChannelId is null) return;
 
         if (!args.Guild.Channels.TryGetValue(response.LogChannelId.Value,
-            out var loggingChannel)) return;
+                out var loggingChannel)) return;
 
         var embed = new DiscordEmbedBuilder()
-            .WithAuthor($"Unbanned")
+            .WithAuthor("Unbanned")
             .AddField("User", args.Member.Mention, true)
             .AddField("Sin Id", $"**{response.LastSin.SinId}**", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
@@ -139,8 +137,7 @@ public sealed partial class ModerationEvents(IMediator mediator, ILogger<Moderat
     {
         var response = await this._mediator.Send(new GetUserMuteQuery
         {
-            UserId = args.Member.Id,
-            GuildId = args.Guild.Id
+            UserId = args.Member.Id, GuildId = args.Guild.Id
         });
         if (response is null) return;
         var role = args.Guild.Roles.GetValueOrDefault(response.Value);

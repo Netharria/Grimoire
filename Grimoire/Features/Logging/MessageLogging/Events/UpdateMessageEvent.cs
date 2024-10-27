@@ -12,12 +12,13 @@ namespace Grimoire.Features.Logging.MessageLogging.Events;
 
 public sealed class UpdateMessageEvent
 {
-    public sealed partial class EventHandler(IMediator mediator) : IEventHandler<MessageUpdatedEventArgs>
+    public sealed class EventHandler(IMediator mediator) : IEventHandler<MessageUpdatedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
 
         public async Task HandleEventAsync(DiscordClient sender, MessageUpdatedEventArgs args)
         {
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (args.Guild is null
                 || string.IsNullOrWhiteSpace(args.Message.Content))
                 return;
@@ -25,9 +26,7 @@ public sealed class UpdateMessageEvent
             var response = await this._mediator.Send(
                 new Command
                 {
-                    MessageId = args.Message.Id,
-                    GuildId = args.Guild.Id,
-                    MessageContent = args.Message.Content
+                    MessageId = args.Message.Id, GuildId = args.Guild.Id, MessageContent = args.Message.Content
                 });
 
             if (!response.Success)
@@ -40,18 +39,20 @@ public sealed class UpdateMessageEvent
 
             var embeds = new List<DiscordEmbedBuilder>();
             var embed = new DiscordEmbedBuilder()
-            .WithDescription($"**[Jump Url]({args.Message.JumpLink})**")
-            .AddField("Channel", args.Channel.Mention, true)
-            .AddField("Message Id", response.MessageId.ToString(), true)
-            .WithAuthor($"Message edited in #{args.Channel.Name}")
-            .WithTimestamp(DateTime.UtcNow)
-            .WithColor(GrimoireColor.Yellow)
-            .WithThumbnail(avatarUrl);
+                .WithDescription($"**[Jump Url]({args.Message.JumpLink})**")
+                .AddField("Channel", args.Channel.Mention, true)
+                .AddField("Message Id", response.MessageId.ToString(), true)
+                .WithAuthor($"Message edited in #{args.Channel.Name}")
+                .WithTimestamp(DateTime.UtcNow)
+                .WithColor(GrimoireColor.Yellow)
+                .WithThumbnail(avatarUrl);
 
             if (response.OriginalUserId is not null)
                 embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
-                .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId, true)
-                .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId, true);
+                    .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
+                        true)
+                    .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
+                        true);
             else
                 embed.AddField("Author", UserExtensions.Mention(response.UserId), true);
 
@@ -71,19 +72,25 @@ public sealed class UpdateMessageEvent
 
             foreach (var embedToSend in embeds)
             {
-                var message = await sender.SendMessageToLoggingChannel(response.UpdateMessageLogChannelId, new DiscordMessageBuilder()
-                    .AddEmbed(embedToSend));
+                var message = await sender.SendMessageToLoggingChannel(response.UpdateMessageLogChannelId,
+                    message => message
+                        .AddEmbed(embedToSend));
                 if (message is null) return;
-                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
+                await this._mediator.Send(new AddLogMessage.Command
+                {
+                    MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
+                });
             }
         }
     }
+
     public sealed record Command : IRequest<Response>
     {
         public required ulong MessageId { get; init; }
         public required ulong GuildId { get; init; }
         public string MessageContent { get; init; } = string.Empty;
     }
+
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
@@ -91,24 +98,24 @@ public sealed class UpdateMessageEvent
         public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
             var message = await this._grimoireDbContext.Messages
-            .AsNoTracking()
-            .WhereMessageLoggingIsEnabled()
-            .WhereIdIs(command.MessageId)
-            .Select(x => new Response
-            {
-                UpdateMessageLogChannelId = x.Guild.MessageLogSettings.EditChannelLogId,
-                MessageId = x.Id,
-                UserId = x.UserId,
-                MessageContent = x.MessageHistory
-                    .OrderByDescending(x => x.TimeStamp)
-                    .Where(x => x.Action != MessageAction.Deleted)
-                    .First().MessageContent,
-                Success = true,
-                OriginalUserId = x.ProxiedMessageLink.OriginalMessage.UserId,
-                SystemId = x.ProxiedMessageLink.SystemId,
-                MemberId = x.ProxiedMessageLink.MemberId,
-            }
-            ).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .AsNoTracking()
+                .WhereMessageLoggingIsEnabled()
+                .WhereIdIs(command.MessageId)
+                .Select(message => new Response
+                    {
+                        UpdateMessageLogChannelId = message.Guild.MessageLogSettings.EditChannelLogId,
+                        MessageId = message.Id,
+                        UserId = message.UserId,
+                        MessageContent = message.MessageHistory
+                            .OrderByDescending(messageHistory => messageHistory.TimeStamp)
+                            .First(messageHistory => messageHistory.Action != MessageAction.Deleted)
+                            .MessageContent,
+                        Success = true,
+                        OriginalUserId = message.ProxiedMessageLink.OriginalMessage.UserId,
+                        SystemId = message.ProxiedMessageLink.SystemId,
+                        MemberId = message.ProxiedMessageLink.MemberId
+                    }
+                ).FirstOrDefaultAsync(cancellationToken);
             if (message is null
                 || message.MessageContent.Equals(command.MessageContent, StringComparison.CurrentCultureIgnoreCase))
                 return new Response { Success = false };

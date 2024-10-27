@@ -12,7 +12,7 @@ namespace Grimoire.Features.Logging.MessageLogging.Events;
 
 public sealed partial class AddMessageEvent
 {
-    public sealed partial class EventHandler(IMediator mediator) : IEventHandler<MessageCreatedEventArgs>
+    public sealed class EventHandler(IMediator mediator) : IEventHandler<MessageCreatedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
 
@@ -26,11 +26,7 @@ public sealed partial class AddMessageEvent
             {
                 Attachments = args.Message.Attachments
                     .Select(x =>
-                        new AttachmentDto
-                        {
-                            Id = x.Id,
-                            FileName = string.IsNullOrEmpty(x.Url) ? "" : x.Url,
-                        }).ToArray(),
+                        new AttachmentDto { Id = x.Id, FileName = string.IsNullOrEmpty(x.Url) ? "" : x.Url }).ToArray(),
                 UserId = args.Author.Id,
                 ChannelId = args.Channel.Id,
                 MessageContent = args.Message.Content,
@@ -55,7 +51,8 @@ public sealed partial class AddMessageEvent
         public required IEnumerable<ulong> ParentChannelTree { get; init; }
     }
 
-    public sealed partial class Handler(GrimoireDbContext grimoireDbContext, ILogger<Handler> logger) : IRequestHandler<Command>
+    public sealed partial class Handler(GrimoireDbContext grimoireDbContext, ILogger<Handler> logger)
+        : IRequestHandler<Command>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
         private readonly ILogger<Handler> _logger = logger;
@@ -83,19 +80,14 @@ public sealed partial class AddMessageEvent
                     return;
                 if (!result.ChannelExists)
                 {
-                    var channel = new Channel
-                    {
-                        GuildId = command.GuildId,
-                        Id = command.ChannelId
-                    };
+                    var channel = new Channel { GuildId = command.GuildId, Id = command.ChannelId };
                     await this._grimoireDbContext.Channels.AddAsync(channel, cancellationToken);
                 }
-                if (!result.MemberExists)
-                {
-                    await this.AddMissingMember(command, cancellationToken);
-                }
 
-                if (!ShouldLogMessage(command, result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
+                if (!result.MemberExists) await this.AddMissingMember(command, cancellationToken);
+
+                if (!ShouldLogMessage(command,
+                        result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
                     return;
 
                 var message = new Message
@@ -104,18 +96,15 @@ public sealed partial class AddMessageEvent
                     UserId = command.UserId,
                     Attachments = command.Attachments
                         .Select(x =>
-                            new Attachment
-                            {
-                                Id = x.Id,
-                                MessageId = command.MessageId,
-                                FileName = x.FileName,
-                            })
+                            new Attachment { Id = x.Id, MessageId = command.MessageId, FileName = x.FileName })
                         .ToArray(),
                     ChannelId = command.ChannelId,
                     ReferencedMessageId = command.ReferencedMessageId,
                     GuildId = command.GuildId,
-                    MessageHistory = [
-                        new() {
+                    MessageHistory =
+                    [
+                        new MessageHistory
+                        {
                             MessageId = command.MessageId,
                             MessageContent = command.MessageContent,
                             GuildId = command.GuildId,
@@ -133,7 +122,8 @@ public sealed partial class AddMessageEvent
             }
         }
 
-        [LoggerMessage(LogLevel.Error, "Database through exception on message creation. This was the original message {message}")]
+        [LoggerMessage(LogLevel.Error,
+            "Database through exception on message creation. This was the original message {message}")]
         private static partial void LogOriginalMessageForDebugging(ILogger logger, string message);
 
         private async Task AddMissingMember(Command command, CancellationToken cancellationToken)
@@ -145,15 +135,16 @@ public sealed partial class AddMessageEvent
                 UserId = command.UserId,
                 GuildId = command.GuildId,
                 XpHistory =
-                    [
-                        new() {
-                            UserId = command.UserId,
-                            GuildId = command.GuildId,
-                            Xp = 0,
-                            Type = XpHistoryType.Created,
-                            TimeOut = DateTime.UtcNow
-                        }
-                    ],
+                [
+                    new XpHistory
+                    {
+                        UserId = command.UserId,
+                        GuildId = command.GuildId,
+                        Xp = 0,
+                        Type = XpHistoryType.Created,
+                        TimeOut = DateTime.UtcNow
+                    }
+                ]
             }, cancellationToken);
         }
 
@@ -172,11 +163,8 @@ public sealed partial class AddMessageEvent
                     _ => true
                 };
             }
+
             return true;
         }
     }
 }
-
-
-
-

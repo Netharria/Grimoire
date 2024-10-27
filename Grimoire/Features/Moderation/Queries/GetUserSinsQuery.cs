@@ -17,6 +17,7 @@ public enum SinQueryType
     All,
     Mod
 }
+
 public sealed record GetUserSinsQuery : IRequest<GetUserSinsQueryResponse>
 {
     public ulong UserId { get; init; }
@@ -24,7 +25,8 @@ public sealed record GetUserSinsQuery : IRequest<GetUserSinsQueryResponse>
     public SinQueryType SinQueryType { get; init; }
 }
 
-public sealed class GetUserSinsQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
+public sealed class GetUserSinsQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -52,7 +54,7 @@ public sealed class GetUserSinsQueryHandler(GrimoireDbContext grimoireDbContext)
                 Moderator = x.Moderator.Mention(),
                 Pardon = x.Pardon != null,
                 PardonModerator = x.Pardon != null ? x.Pardon.Moderator.Mention() : "",
-                PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue,
+                PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue
             }).ToListAsync(cancellationToken);
         var stringBuilder = new StringBuilder(2048);
         var resultStrings = new List<string>();
@@ -63,21 +65,19 @@ public sealed class GetUserSinsQueryHandler(GrimoireDbContext grimoireDbContext)
                           $"\tModerator: {x.Moderator}\n";
             if (x.Pardon)
                 builder = $"~~{builder}~~" +
-                $"**Pardoned by: {x.PardonModerator} on <t:{x.PardonDate.ToUnixTimeSeconds()}:f>**\n";
+                          $"**Pardoned by: {x.PardonModerator} on <t:{x.PardonDate.ToUnixTimeSeconds()}:f>**\n";
             if (stringBuilder.Length + builder.Length > stringBuilder.Capacity)
             {
                 resultStrings.Add(stringBuilder.ToString());
                 stringBuilder.Clear();
             }
+
             stringBuilder.Append(builder);
         });
         if (stringBuilder.Length > 0)
             resultStrings.Add(stringBuilder.ToString());
 
-        return new GetUserSinsQueryResponse
-        {
-            SinList = [.. resultStrings]
-        };
+        return new GetUserSinsQueryResponse { SinList = [.. resultStrings] };
     }
 }
 

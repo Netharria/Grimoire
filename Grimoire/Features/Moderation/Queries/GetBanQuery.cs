@@ -13,8 +13,8 @@ public sealed record GetBanQuery : IRequest<GetBanQueryResponse>
     public ulong GuildId { get; init; }
 }
 
-
-public sealed class GetBanQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetBanQuery, GetBanQueryResponse>
+public sealed class GetBanQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetBanQuery, GetBanQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -33,9 +33,9 @@ public sealed class GetBanQueryHandler(GrimoireDbContext grimoireDbContext) : IR
                 x.SinOn,
                 x.Guild.ModChannelLog,
                 x.Reason,
-                PublishedBan = x.PublishMessages.Where(x => x.PublishType  == PublishType.Ban).FirstOrDefault()
+                PublishedBan = x.PublishMessages.Where(x => x.PublishType == PublishType.Ban).FirstOrDefault()
             })
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (result is null)
             throw new AnticipatedException("Could not find a ban with that Sin Id");

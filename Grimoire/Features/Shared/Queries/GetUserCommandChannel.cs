@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 namespace Grimoire.Features.Shared.Queries;
+
 public sealed class GetUserCommandChannel
 {
     public sealed record Query : IRequest<Response>
@@ -24,10 +25,7 @@ public sealed class GetUserCommandChannel
                 .Select(x => x.UserCommandChannelId
                 ).FirstOrDefaultAsync(cancellationToken);
 
-            return new Response
-            {
-                UserCommandChannelId = result
-            };
+            return new Response { UserCommandChannelId = result };
         }
     }
 

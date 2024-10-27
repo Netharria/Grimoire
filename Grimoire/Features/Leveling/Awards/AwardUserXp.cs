@@ -21,24 +21,22 @@ public sealed class AwardUserXp
         [SlashCommand("Award", "Awards a user some xp.")]
         public async Task AwardAsync(InteractionContext ctx,
             [Option("User", "User to award xp.")] DiscordUser user,
-            [Minimum(0)]
-        [Option("XP", "The amount of xp to grant.")] long xpToAward)
+            [Minimum(0)] [Option("XP", "The amount of xp to grant.")]
+            long xpToAward)
         {
             await ctx.DeferAsync();
             var response = await this._mediator.Send(
-            new Request
-            {
-                UserId = user.Id,
-                GuildId = ctx.Guild.Id,
-                XpToAward = xpToAward,
-                AwarderId = ctx.User.Id
-            });
+                new Request
+                {
+                    UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id
+                });
 
-            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, message: $"{user.Mention} has been awarded {xpToAward} xp.");
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
                 message: $"{user.Mention} has been awarded {xpToAward} xp by {ctx.Member.Mention}.");
         }
     }
+
     public sealed record Request : IRequest<BaseResponse>
     {
         public required ulong UserId { get; init; }
@@ -53,35 +51,28 @@ public sealed class AwardUserXp
 
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
-
             var member = await this._grimoireDbContext.Members
-            .AsNoTracking()
-            .WhereMemberHasId(command.UserId, command.GuildId)
-            .Select(x => new
-            {
-                x.Guild.ModChannelLog
-            })
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .AsNoTracking()
+                .WhereMemberHasId(command.UserId, command.GuildId)
+                .Select(x => new { x.Guild.ModChannelLog })
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (member is null)
-                throw new AnticipatedException($"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
+                throw new AnticipatedException(
+                    $"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
 
-            await this._grimoireDbContext.XpHistory.AddAsync(new XpHistory
-            {
-                GuildId = command.GuildId,
-                UserId = command.UserId,
-                Xp = command.XpToAward,
-                TimeOut = DateTimeOffset.UtcNow,
-                Type = XpHistoryType.Awarded,
-                AwarderId = command.AwarderId,
-            }, cancellationToken);
+            await this._grimoireDbContext.XpHistory.AddAsync(
+                new XpHistory
+                {
+                    GuildId = command.GuildId,
+                    UserId = command.UserId,
+                    Xp = command.XpToAward,
+                    TimeOut = DateTimeOffset.UtcNow,
+                    Type = XpHistoryType.Awarded,
+                    AwarderId = command.AwarderId
+                }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse()
-            {
-                LogChannelId = member.ModChannelLog
-            };
+            return new BaseResponse { LogChannelId = member.ModChannelLog };
         }
     }
-
 }
-

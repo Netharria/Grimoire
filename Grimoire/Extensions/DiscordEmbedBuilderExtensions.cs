@@ -13,43 +13,46 @@ namespace Grimoire.Extensions;
 public static partial class DiscordEmbedBuilderExtensions
 {
     [GeneratedRegex(@"([\s\S]{1,1024})(?:\s|$)", RegexOptions.Compiled, 1000)]
-    public static partial Regex SplitText();
+    private static partial Regex SplitText();
 
-    public static DiscordEmbedBuilder AddMessageTextToFields(this DiscordEmbedBuilder embedBuilder, string contentType, string? content, bool addBlankField = true)
+    public static DiscordEmbedBuilder AddMessageTextToFields(this DiscordEmbedBuilder embedBuilder, string contentType,
+        string? content, bool addBlankField = true)
     {
         if (string.IsNullOrWhiteSpace(content) && addBlankField)
             return embedBuilder.AddField(contentType, "`blank`");
-        if (!string.IsNullOrWhiteSpace(content))
+        if (string.IsNullOrWhiteSpace(content)) return embedBuilder;
+        var splitContent = SplitText().Matches(content).Select(x => x.Value).ToList();
+
+        if (splitContent.Sum(x => x.Length) != content.Length)
         {
+            Log.Logger.Warning(
+                "Defaulting to crude embed field splitter because the regex return left off some characters. Original Length: ({contentLength}), Regex Length: ({regexLength})",
+                content.Length, splitContent.Sum(x => x.Length));
+            splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
+        }
 
-            var splitContent = SplitText().Matches(content).Select(x => x.Value).ToList();
-
-            if (splitContent.Sum(x => x.Length) != content.Length)
-            {
-                Log.Logger.Warning("Defaulting to crude embed field splitter because the regex return left off some characters. Original Length: ({contentLength}), Regex Length: ({regexLength})",
-                        content.Length, splitContent.Sum(x => x.Length));
-                splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
-            }
+        if (splitContent.Any(x => x.Length > 1024))
+        {
+            Log.Logger.Warning("Size of element is too large. Trying trim.");
+            splitContent = splitContent.Select(x => x.Trim()).ToList();
 
             if (splitContent.Any(x => x.Length > 1024))
             {
-                Log.Logger.Warning("Size of element is too large. Trying trim.");
-                splitContent = splitContent.Select(x => x.Trim()).ToList();
-
-                if (splitContent.Any(x => x.Length > 1024))
-                {
-                    Log.Logger.Warning("Defaulting to crude embed field splitter because the regex returned a string that was longer than 1024. String lengths {lengths}",
-                        string.Join(' ', splitContent.Select(x => x.Length)));
-                    splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
-                }
+                Log.Logger.Warning(
+                    "Defaulting to crude embed field splitter because the regex returned a string that was longer than 1024. String lengths {lengths}",
+                    string.Join(' ', splitContent.Select(x => x.Length)));
+                splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
             }
-
-            if (splitContent.Count > 0)
-                embedBuilder.AddField(contentType, splitContent[0]);
-            if (splitContent.Count > 1)
-                foreach (var x in splitContent.Skip(1))
-                    embedBuilder.AddField("**Continued**", x);
         }
+
+        if (splitContent.Count > 0)
+            embedBuilder.AddField(contentType, splitContent[0]);
+        if (splitContent.Count <= 1)
+            return embedBuilder;
+
+        foreach (var x in splitContent.Skip(1))
+            embedBuilder.AddField("**Continued**", x);
+
         return embedBuilder;
     }
 }

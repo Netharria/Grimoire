@@ -15,7 +15,6 @@ namespace Grimoire.Features.Moderation;
 internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILogger<LockBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
-
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
     {
         var mediator = serviceProvider.GetRequiredService<IMediator>();
@@ -39,7 +38,8 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                     , permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied));
             }
 
-            _ = await mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = guild.Id }, stoppingToken);
+            _ = await mediator.Send(new UnlockChannelCommand { ChannelId = channel.Id, GuildId = guild.Id },
+                stoppingToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Lock on {channel.Mention} has expired.");
@@ -48,9 +48,9 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
 
             if (expiredLock.LogChannelId is not null)
             {
-                var ModerationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
-                if (ModerationLogChannel is not null)
-                    await ModerationLogChannel.SendMessageAsync(embed);
+                var moderationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
+                if (moderationLogChannel is not null)
+                    await moderationLogChannel.SendMessageAsync(embed);
             }
         }
     }

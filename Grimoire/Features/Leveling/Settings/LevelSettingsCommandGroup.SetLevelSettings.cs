@@ -12,34 +12,31 @@ public enum LevelSettings
 {
     [ChoiceName("Timeout between xp gains in minutes")]
     TextTime,
+
     [ChoiceName("Base - linear xp per level modifier")]
     Base,
+
     [ChoiceName("Modifier - exponential xp per level modifier")]
     Modifier,
-    [ChoiceName("Amount per xp gain.")]
-    Amount,
-    [ChoiceName("Log Channel")]
-    LogChannel,
+    [ChoiceName("Amount per xp gain.")] Amount,
+    [ChoiceName("Log Channel")] LogChannel
 }
 
 public sealed partial class LevelSettingsCommandGroup
 {
-
     [SlashCommand("Set", "Set a leveling setting.")]
     public async Task SetAsync(
         InteractionContext ctx,
-        [Option("Setting", "The Setting to change.")] LevelSettings levelSettings,
-        [Maximum(int.MaxValue)]
-        [Minimum(1)]
-        [Option("Value", "The value to change the setting to.")] long value)
+        [Option("Setting", "The Setting to change.")]
+        LevelSettings levelSettings,
+        [Maximum(int.MaxValue)] [Minimum(1)] [Option("Value", "The value to change the setting to.")]
+        long value)
     {
         await ctx.DeferAsync();
 
         var response = await this._mediator.Send(new SetLevelSettings.Request
         {
-            GuildId = ctx.Guild.Id,
-            LevelSettings = levelSettings,
-            Value = value.ToString()
+            GuildId = ctx.Guild.Id, LevelSettings = levelSettings, Value = value.ToString()
         });
 
         await ctx.EditReplyAsync(message: $"Updated {levelSettings.GetName()} level setting to {value}");
@@ -50,8 +47,10 @@ public sealed partial class LevelSettingsCommandGroup
     [SlashCommand("LogSet", "Set the leveling log channel.")]
     public async Task LogSetAsync(
         InteractionContext ctx,
-        [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")] ChannelOption option,
-        [Option("Channel", "The channel to change the log to.")] DiscordChannel? channel = null)
+        [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")]
+        ChannelOption option,
+        [Option("Channel", "The channel to change the log to.")]
+        DiscordChannel? channel = null)
     {
         await ctx.DeferAsync();
         channel = ctx.GetChannelOptionAsync(option, channel);
@@ -59,8 +58,10 @@ public sealed partial class LevelSettingsCommandGroup
         {
             var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
             if (!permissions.HasPermission(DiscordPermissions.SendMessages))
-                throw new AnticipatedException($"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+                throw new AnticipatedException(
+                    $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
         }
+
         var response = await this._mediator.Send(new SetLevelSettings.Request
         {
             GuildId = ctx.Guild.Id,
@@ -69,16 +70,16 @@ public sealed partial class LevelSettingsCommandGroup
         });
         if (option is ChannelOption.Off)
         {
-            await ctx.EditReplyAsync(message: $"Disabled the level log.");
+            await ctx.EditReplyAsync(message: "Disabled the level log.");
             await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the level log.");
             return;
         }
+
         await ctx.EditReplyAsync(message: $"Updated the level log to {channel?.Mention}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.User.Mention} updated the level log to {channel?.Mention}.");
     }
 }
-
 
 public sealed class SetLevelSettings
 {
@@ -97,13 +98,9 @@ public sealed class SetLevelSettings
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
             var levelSettings = await this._grimoireDbContext.GuildLevelSettings
-            .Where(x => x.GuildId == command.GuildId)
-            .Select(x => new
-            {
-                LevelSettings = x,
-                x.Guild.ModChannelLog
-            })
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .Where(x => x.GuildId == command.GuildId)
+                .Select(x => new { LevelSettings = x, x.Guild.ModChannelLog })
+                .FirstOrDefaultAsync(cancellationToken);
             if (levelSettings == null) throw new AnticipatedException("Could not find guild level settings.");
             switch (command.LevelSettings)
             {
@@ -136,11 +133,7 @@ public sealed class SetLevelSettings
 
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-            return new BaseResponse
-            {
-                LogChannelId = levelSettings.ModChannelLog
-            };
+            return new BaseResponse { LogChannelId = levelSettings.ModChannelLog };
         }
     }
 }
-

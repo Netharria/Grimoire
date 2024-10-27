@@ -18,12 +18,13 @@ using Xunit;
 namespace Grimoire.Test.Unit.DatabaseQueryHelpers;
 
 [Collection("Test collection")]
-public sealed class IModuleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
+public sealed class ModuleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
 
     public async Task InitializeAsync()
@@ -38,13 +39,13 @@ public sealed class IModuleDatabaseQueryHelperTests(GrimoireCoreFactory factory)
         });
         await this._dbContext.SaveChangesAsync();
     }
+
     public Task DisposeAsync() => this._resetDatabase();
 
 
     [Fact]
     public async Task WhenGetModulesOfTypeCalled_ReturnCorrectTypeofModuleAsync()
     {
-
         var levelingModule = await this._dbContext.Guilds.GetModulesOfType(Module.Leveling)
             .OfType<GuildLevelSettings>()
             .ToListAsync();

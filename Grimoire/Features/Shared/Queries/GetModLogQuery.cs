@@ -23,18 +23,13 @@ public sealed class GetGeneralSettings
         public async Task<Response> Handle(Query query, CancellationToken cancellationToken)
         {
             var result = await this._grimoireDbContext.Guilds
-            .AsNoTracking()
-            .WhereIdIs(query.GuildId)
-            .Select(x => new
-            {
-                x.ModChannelLog,
-                x.UserCommandChannelId
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+                .AsNoTracking()
+                .WhereIdIs(query.GuildId)
+                .Select(x => new { x.ModChannelLog, x.UserCommandChannelId })
+                .FirstOrDefaultAsync(cancellationToken);
             return new Response
             {
-                ModLogChannel = result?.ModChannelLog,
-                UserCommandChannel = result?.UserCommandChannelId
+                ModLogChannel = result?.ModChannelLog, UserCommandChannel = result?.UserCommandChannelId
             };
         }
     }

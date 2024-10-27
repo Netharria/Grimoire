@@ -9,6 +9,7 @@
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Shared.Commands;
+
 public sealed class SetUserCommandChannel
 {
     public sealed record Command : IRequest<BaseResponse>
@@ -24,18 +25,14 @@ public sealed class SetUserCommandChannel
         public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
             var guild = await this._grimoireDbContext.Guilds
-            .WhereIdIs(command.GuildId)
-            .FirstOrDefaultAsync(cancellationToken);
+                .WhereIdIs(command.GuildId)
+                .FirstOrDefaultAsync(cancellationToken);
             if (guild is null)
                 throw new AnticipatedException("Could not find the settings for this server.");
             guild.UserCommandChannelId = command.ChannelId;
 
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse
-            {
-                LogChannelId = guild.ModChannelLog,
-            };
+            return new BaseResponse { LogChannelId = guild.ModChannelLog };
         }
     }
 }
-

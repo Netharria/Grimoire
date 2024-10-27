@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 namespace Grimoire.Features.Logging.Settings;
+
 public partial class LogSettingsCommands
 {
     [SlashCommandGroup("Message", "View or change the Message Log Module Settings.")]

@@ -13,7 +13,8 @@ public sealed record SetMuteRoleCommand : IRequest<BaseResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class SetMuteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<SetMuteRoleCommand, BaseResponse>
+public sealed class SetMuteRoleCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<SetMuteRoleCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -28,9 +29,6 @@ public sealed class SetMuteRoleCommandHandler(GrimoireDbContext grimoireDbContex
 
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
 
-        return new BaseResponse
-        {
-            LogChannelId = guildModerationSettings.Guild.ModChannelLog
-        };
+        return new BaseResponse { LogChannelId = guildModerationSettings.Guild.ModChannelLog };
     }
 }

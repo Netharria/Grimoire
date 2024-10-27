@@ -19,16 +19,17 @@ namespace Grimoire.Test.Unit.Features.CustomCommands;
 public class AddCustomCommandTest : IAsyncLifetime
 {
     private readonly DbContext _dbContext;
-    private readonly Func<Task> _resetDatabase;
     private readonly IHost _host;
+    private readonly Func<Task> _resetDatabase;
 
     public AddCustomCommandTest(GrimoireCoreFactory factory)
     {
         this._host = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services)
                 => services.AddDbContext<GrimoireDbContext>(options =>
-                    options.UseNpgsql(factory.ConnectionString))
-                .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<AddCustomCommand.Handler>())).Build();
+                        options.UseNpgsql(factory.ConnectionString))
+                    .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<AddCustomCommand.Handler>()))
+            .Build();
 
         this._dbContext = this._host.Services.GetRequiredService<GrimoireDbContext>();
         this._resetDatabase = factory.ResetDatabase;
@@ -37,7 +38,6 @@ public class AddCustomCommandTest : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await this._host.StartAsync();
-        return;
         //await this._dbContext.SaveChangesAsync();
     }
 
@@ -57,7 +57,6 @@ public class AddCustomCommandTest : IAsyncLifetime
 
     //    await CUT.Learn(context, "something else", "");
 
-        
-    //}
 
+    //}
 }

@@ -15,22 +15,29 @@ public static class DiscordChannelExtensions
         string reason = "",
         Func<DiscordMessage, bool>? filter = null)
     {
-        filter ??= message => true;
+        filter ??= _ => true;
         var oldTimestamp = DateTimeOffset.UtcNow.AddDays(-14);
         var messages = await channel.GetMessagesAsync()
             .Where(filter)
             .TakeWhile(x => x.Timestamp > oldTimestamp)
             .Take(count)
             .ToArrayAsync();
-        if (messages.Length == 1)
-            await messages.First().DeleteAsync(reason);
-        if (messages.Length > 1)
-            await messages.Chunk(100).ToAsyncEnumerable()
-                .ForEachAsync(async messages => await channel.DeleteMessagesAsync(messages, reason));
+        switch (messages.Length)
+        {
+            case 1:
+                await messages.First().DeleteAsync(reason);
+                break;
+            case > 1:
+                await messages.Chunk(100).ToAsyncEnumerable()
+                    .ForEachAwaitAsync(async messageChunk
+                        => await channel.DeleteMessagesAsync(messageChunk, reason));
+                break;
+        }
+
         return messages.Length;
     }
 
-    public static IEnumerable<ulong> BuildChannelTree(this DiscordChannel channel)
+    public static IEnumerable<ulong> BuildChannelTree(this DiscordChannel? channel)
     {
         while (channel is not null)
         {

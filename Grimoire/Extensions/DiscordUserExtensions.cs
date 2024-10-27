@@ -11,6 +11,6 @@ public static class DiscordUserExtensions
 {
     public static string GetUsernameWithDiscriminator(this DiscordUser discordUser)
         => discordUser.Discriminator == "0"
-        ? discordUser.Username
-        : $"{discordUser.Username}#{discordUser.Discriminator}";
+            ? discordUser.Username
+            : $"{discordUser.Username}#{discordUser.Discriminator}";
 }

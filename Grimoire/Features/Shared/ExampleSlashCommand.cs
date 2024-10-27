@@ -13,12 +13,12 @@ using DSharpPlus.Interactivity.Extensions;
 namespace Grimoire.Features.Shared;
 
 /// <summary>
-/// Example commands used as simple versions of using the DSharpPlus slash commands in different ways.
+///     Example commands used as simple versions of using the DSharpPlus slash commands in different ways.
 /// </summary>
 internal sealed class ExampleSlashCommand : ApplicationCommandModule
 {
     /// <summary>
-    /// Gets the current ping for the bot.
+    ///     Gets the current ping for the bot.
     /// </summary>
     /// <param name="ctx">The context which triggered the interaction.</param>
     /// <returns>The completed task.</returns>
@@ -28,10 +28,10 @@ internal sealed class ExampleSlashCommand : ApplicationCommandModule
             DiscordInteractionResponseType.ChannelMessageWithSource,
             new DiscordInteractionResponseBuilder()
                 .WithContent($"Pong: {ctx.Client.GetConnectionLatency(ctx.Guild.Id).Milliseconds}ms")
-                .AsEphemeral(ephemeral: true));
+                .AsEphemeral(true));
 
     /// <summary>
-    /// A sample command that shows how to handle an interaction with a long processing time.
+    ///     A sample command that shows how to handle an interaction with a long processing time.
     /// </summary>
     /// <param name="ctx">The context which triggered the interaction.</param>
     /// <returns>The completed task.</returns>
@@ -46,7 +46,7 @@ internal sealed class ExampleSlashCommand : ApplicationCommandModule
     }
 
     /// <summary>
-    /// A sample command that shows how to send a paginated response to an interaction.
+    ///     A sample command that shows how to send a paginated response to an interaction.
     /// </summary>
     /// <param name="ctx">The context which triggered the interaction.</param>
     /// <returns>The completed task.</returns>
@@ -58,6 +58,6 @@ internal sealed class ExampleSlashCommand : ApplicationCommandModule
             pageBuild.Append("This is item number ").Append(i).Append('\n');
 
         var embedPages = InteractivityExtension.GeneratePagesInEmbed(pageBuild.ToString(), SplitType.Line);
-        return ctx.Interaction.SendPaginatedResponseAsync(ephemeral: true, ctx.Member, embedPages);
+        return ctx.Interaction.SendPaginatedResponseAsync(true, ctx.Member, embedPages);
     }
 }

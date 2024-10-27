@@ -10,7 +10,7 @@ using Grimoire.Domain.Shared;
 
 namespace Grimoire.DatabaseQueryHelpers;
 
-public static class IIdentifiableDatabaseQueryHelpers
+public static class IdentifiableDatabaseQueryHelpers
 {
     public static IQueryable<TSource> WhereIdsAre<TSource, T>(this IQueryable<TSource> identifiables, T[] ids)
         where TSource : IIdentifiable<T>

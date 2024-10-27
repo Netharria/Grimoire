@@ -12,7 +12,6 @@ namespace Grimoire.Features.Leveling.UserCommands;
 
 public sealed class GetLeaderboard
 {
-
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Leveling)]
     public sealed class Command(IMediator mediator) : ApplicationCommandModule
@@ -21,11 +20,10 @@ public sealed class GetLeaderboard
 
         [SlashCommand("Leaderboard", "Posts the leaderboard for the server.")]
         public async Task LeaderboardAsync(InteractionContext ctx,
-            [Choice("Top", 0)]
-            [Choice("Me", 1)]
-            [Choice("User", 2)]
-            [Option("Option", "The leaderboard search type.")] long option,
-            [Option("User", "User to find on the leaderboard.")] DiscordUser? user = null)
+            [Choice("Top", 0)] [Choice("Me", 1)] [Choice("User", 2)] [Option("Option", "The leaderboard search type.")]
+            long option,
+            [Option("User", "User to find on the leaderboard.")]
+            DiscordUser? user = null)
         {
             switch (option)
             {
@@ -40,20 +38,18 @@ public sealed class GetLeaderboard
                         throw new AnticipatedException("Must provide a user for this option.");
                     break;
             }
-            var userCommandChannel = await this._mediator.Send(new GetUserCommandChannel.Query{ GuildId = ctx.Guild.Id });
+
+            var userCommandChannel =
+                await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
 
             await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermissions.ManageMessages)
-               && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
+                                 && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
 
-            var getUserCenteredLeaderboardQuery = new Request
-            {
-                UserId = user?.Id,
-                GuildId = ctx.Guild.Id,
-            };
+            var getUserCenteredLeaderboardQuery = new Request { UserId = user?.Id, GuildId = ctx.Guild.Id };
 
             var response = await this._mediator.Send(getUserCenteredLeaderboardQuery);
             await ctx.EditReplyAsync(
-                color: GrimoireColor.DarkPurple,
+                GrimoireColor.DarkPurple,
                 title: "LeaderBoard",
                 message: response.LeaderboardText,
                 footer: $"Total Users {response.TotalUserCount}");
@@ -73,10 +69,10 @@ public sealed class GetLeaderboard
         public async Task<Response> Handle(Request request, CancellationToken cancellationToken)
         {
             var query = this._grimoireDbContext.Members
-                    .AsNoTracking()
-                    .Where(x => x.GuildId == request.GuildId)
-                    .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
-                    .OrderByDescending(x => x.Xp);
+                .AsNoTracking()
+                .Where(x => x.GuildId == request.GuildId)
+                .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
+                .OrderByDescending(x => x.Xp);
 
             if (request.UserId is null)
             {
@@ -91,7 +87,8 @@ public sealed class GetLeaderboard
 
                 var leaderboardText = new StringBuilder();
                 for (var i = 0; i < 15 && i < totalMemberCount; i++)
-                    leaderboardText.Append($"**{i + 1}** {UserExtensions.Mention(rankedMembers[i].UserId)} **XP:** {rankedMembers[i].Xp}\n");
+                    leaderboardText.Append(
+                        $"**{i + 1}** {UserExtensions.Mention(rankedMembers[i].UserId)} **XP:** {rankedMembers[i].Xp}\n");
                 return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
             }
             else
@@ -100,7 +97,8 @@ public sealed class GetLeaderboard
 
                 var totalMemberCount = rankedMembers.Count;
 
-                var memberPosition = rankedMembers.FindIndex(x => x.UserId == request.UserId); ;
+                var memberPosition = rankedMembers.FindIndex(x => x.UserId == request.UserId);
+                ;
 
                 if (memberPosition == -1)
                     throw new AnticipatedException("Could not find user on leaderboard.");
@@ -111,7 +109,8 @@ public sealed class GetLeaderboard
 
                 var leaderboardText = new StringBuilder();
                 for (var i = 0; i < 15 && startIndex < totalMemberCount; i++, startIndex++)
-                    leaderboardText.Append($"**{startIndex + 1}** {UserExtensions.Mention(rankedMembers[startIndex].UserId)} **XP:** {rankedMembers[startIndex].Xp}\n");
+                    leaderboardText.Append(
+                        $"**{startIndex + 1}** {UserExtensions.Mention(rankedMembers[startIndex].UserId)} **XP:** {rankedMembers[startIndex].Xp}\n");
 
                 return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
             }
@@ -124,4 +123,3 @@ public sealed class GetLeaderboard
         public required int TotalUserCount { get; init; }
     }
 }
-

@@ -15,4 +15,3 @@ public sealed class MuteAdminCommands
         public required DiscordChannel Channel { get; init; }
     }
 }
-

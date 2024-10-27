@@ -23,5 +23,4 @@ internal sealed class MemberEventManagementModule(IMediator mediator)
                 UserName = args.Member.GetUsernameWithDiscriminator(),
                 AvatarUrl = args.Member.GetGuildAvatarUrl(ImageFormat.Auto, 128)
             });
-
 }

@@ -16,20 +16,18 @@ public sealed record EnableModuleCommand : IRequest<EnableModuleCommandResponse>
     public bool Enable { get; init; }
 }
 
-public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<EnableModuleCommand, EnableModuleCommandResponse>
+public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<EnableModuleCommand, EnableModuleCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<EnableModuleCommandResponse> Handle(EnableModuleCommand command, CancellationToken cancellationToken)
+    public async Task<EnableModuleCommandResponse> Handle(EnableModuleCommand command,
+        CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Guilds
             .WhereIdIs(command.GuildId)
             .GetModulesOfType(command.Module)
-            .Select(module => new
-            {
-                Module = module,
-                module.Guild.ModChannelLog,
-            })
+            .Select(module => new { Module = module, module.Guild.ModChannelLog })
             .FirstOrDefaultAsync(cancellationToken);
         if (result is null)
             throw new AnticipatedException("Could not find the settings for this server.");
@@ -43,16 +41,13 @@ public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbConte
             Module.Moderation => new GuildModerationSettings { GuildId = command.GuildId },
             Module.MessageLog => new GuildMessageLogSettings { GuildId = command.GuildId },
             Module.Commands => new GuildCommandsSettings { GuildId = command.GuildId },
-            _ => throw new NotImplementedException(),
+            _ => throw new NotImplementedException()
         };
         guildModule.ModuleEnabled = command.Enable;
         if (result.Module is null)
             await this._grimoireDbContext.AddAsync(guildModule, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return new EnableModuleCommandResponse
-        {
-            ModerationLog = modChannelLog
-        };
+        return new EnableModuleCommandResponse { ModerationLog = modChannelLog };
     }
 }
 

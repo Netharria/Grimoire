@@ -6,7 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 // ReSharper disable once CheckNamespace
+
 namespace Grimoire.Features.Logging.Settings;
+
 public partial class LogSettingsCommands
 {
     public partial class Message
@@ -15,30 +17,31 @@ public partial class LogSettingsCommands
         public async Task ViewAsync(InteractionContext ctx)
         {
             await ctx.DeferAsync(true);
-            var response = await this._mediator.Send(new GetMessageLogSettings.Query{ GuildId = ctx.Guild.Id });
+            var response = await this._mediator.Send(new GetMessageLogSettings.Query { GuildId = ctx.Guild.Id });
             if (response is null)
             {
                 await ctx.EditReplyAsync(GrimoireColor.Red, "Message Log settings could not be found for this server.");
                 return;
             }
-            var DeleteChannelLog =
-                response.DeleteChannelLog is null ?
-                "None" :
-                (await ctx.Guild.GetChannelAsync(response.DeleteChannelLog.Value)).Mention;
-            var BulkDeleteChannelLog =
-                response.BulkDeleteChannelLog is null ?
-                "None" :
-                (await ctx.Guild.GetChannelAsync(response.BulkDeleteChannelLog.Value)).Mention;
-            var EditChannelLog =
-                response.EditChannelLog is null ?
-                "None" :
-                (await ctx.Guild.GetChannelAsync(response.EditChannelLog.Value)).Mention;
+
+            var deleteChannelLog =
+                response.DeleteChannelLog is null
+                    ? "None"
+                    : (await ctx.Guild.GetChannelAsync(response.DeleteChannelLog.Value)).Mention;
+            var bulkDeleteChannelLog =
+                response.BulkDeleteChannelLog is null
+                    ? "None"
+                    : (await ctx.Guild.GetChannelAsync(response.BulkDeleteChannelLog.Value)).Mention;
+            var editChannelLog =
+                response.EditChannelLog is null
+                    ? "None"
+                    : (await ctx.Guild.GetChannelAsync(response.EditChannelLog.Value)).Mention;
             await ctx.EditReplyAsync(
                 title: "Current Logging System Settings",
                 message: $"**Module Enabled:** {response.IsLoggingEnabled}\n" +
-                $"**Delete Log:** {DeleteChannelLog}\n" +
-                $"**Bulk Delete Log:** {BulkDeleteChannelLog}\n" +
-                $"**Edit Log:** {EditChannelLog}\n");
+                         $"**Delete Log:** {deleteChannelLog}\n" +
+                         $"**Bulk Delete Log:** {bulkDeleteChannelLog}\n" +
+                         $"**Edit Log:** {editChannelLog}\n");
         }
     }
 }
@@ -63,7 +66,7 @@ public sealed class GetMessageLogSettings
                     DeleteChannelLog = x.DeleteChannelLogId,
                     BulkDeleteChannelLog = x.BulkDeleteChannelLogId,
                     IsLoggingEnabled = x.ModuleEnabled
-                }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                }).FirstOrDefaultAsync(cancellationToken);
     }
 
     public sealed record Response : BaseResponse
@@ -74,4 +77,3 @@ public sealed class GetMessageLogSettings
         public required bool IsLoggingEnabled { get; init; }
     }
 }
-

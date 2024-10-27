@@ -13,23 +13,27 @@ namespace Grimoire.Features.Logging.MessageLogging.Events;
 
 public sealed class DeleteMessageEvent
 {
-    public sealed class EventHandler(IMediator mediator,
+    public sealed class EventHandler(
+        IMediator mediator,
         IDiscordImageEmbedService attachmentUploadService,
         IDiscordAuditLogParserService logParserService,
         IPluralkitService pluralKitService) : IEventHandler<MessageDeletedEventArgs>
     {
-        private readonly IMediator _mediator = mediator;
         private readonly IDiscordImageEmbedService _attachmentUploadService = attachmentUploadService;
         private readonly IDiscordAuditLogParserService _logParserService = logParserService;
+        private readonly IMediator _mediator = mediator;
         private readonly IPluralkitService _pluralKitService = pluralKitService;
 
 
         public async Task HandleEventAsync(DiscordClient sender, MessageDeletedEventArgs args)
         {
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (args.Guild is null)
                 return;
 
-            var pluralkitMessage = await this._pluralKitService.GetProxiedMessageInformation(args.Message.Id, args.Message.CreationTimestamp);
+            var pluralkitMessage =
+                await this._pluralKitService.GetProxiedMessageInformation(args.Message.Id,
+                    args.Message.CreationTimestamp);
 
             if (pluralkitMessage is not null
                 && ulong.TryParse(pluralkitMessage.Id, out var proxyMessageId)
@@ -47,7 +51,9 @@ public sealed class DeleteMessageEvent
                 return;
             }
 
-            var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Channel.Id, args.Message.Id);
+            var auditLogEntry =
+                await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Channel.Id,
+                    args.Message.Id);
             var response = await this._mediator.Send(
                 new Command
                 {
@@ -56,50 +62,55 @@ public sealed class DeleteMessageEvent
                     GuildId = args.Guild.Id
                 });
 
-            if (!response.Success || response.LoggingChannel is null)
+            if (!response.Success)
                 return;
 
-            var avatarUrl = await sender.GetUserAvatar(
-                response.OriginalUserId is null ? response.UserId : response.OriginalUserId.Value,
-                 args.Guild);
+            var message = await sender.SendMessageToLoggingChannel(response.LoggingChannel,
+                async () =>
+                {
 
-            if (avatarUrl is null)
-                return;
+                    var embed = new DiscordEmbedBuilder()
+                        .WithAuthor($"Message deleted in #{args.Channel.Name}")
+                        .AddField("Channel", ChannelExtensions.Mention(args.Channel.Id), true)
+                        .AddField("Message Id", args.Message.Id.ToString(), true)
+                        .WithTimestamp(DateTime.UtcNow)
+                        .WithColor(GrimoireColor.Red);
+                    var avatarUrl = await sender.GetUserAvatar(
+                            response.OriginalUserId ?? response.UserId,
+                            args.Guild);
+                    if (avatarUrl is not null)
+                        embed.WithThumbnail(avatarUrl);
 
-            var embed = new DiscordEmbedBuilder()
-                .WithAuthor($"Message deleted in #{args.Channel.Name}")
-                .AddField("Channel", ChannelExtensions.Mention(args.Channel.Id), true)
-                .AddField("Message Id", args.Message.Id.ToString(), true)
-                .WithTimestamp(DateTime.UtcNow)
-                .WithColor(GrimoireColor.Red)
-                .WithThumbnail(avatarUrl);
+                    if (response.OriginalUserId is null)
+                        embed.AddField("Author", UserExtensions.Mention(response.UserId), true);
+                    else
+                        embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
+                            .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
+                                true)
+                            .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
+                                true);
 
-            if (response.OriginalUserId is null)
-                embed.AddField("Author", UserExtensions.Mention(response.UserId), true);
-            else
-                embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
-                .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId, true)
-                .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId, true);
+                    if (auditLogEntry is not null && auditLogEntry.UserResponsible is not null)
+                        embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
 
-            if (auditLogEntry is not null && auditLogEntry.UserResponsible is not null)
-                embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
+                    if (response.ReferencedMessage is not null)
+                        embed.WithDescription(
+                            $"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
 
-            if (response.ReferencedMessage is not null)
-                embed.WithDescription($"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
+                    embed.AddMessageTextToFields("**Content**", response.MessageContent, false);
 
-            embed.AddMessageTextToFields("**Content**", response.MessageContent, false);
+                    return await this._attachmentUploadService.BuildImageEmbedAsync(
+                        response.Attachments.Select(x => x.FileName).ToArray(),
+                        response.UserId,
+                        embed);
+                });
 
-            var messageBuilder = await this._attachmentUploadService.BuildImageEmbedAsync(
-                response.Attachments.Select(x => x.FileName).ToArray(),
-                response.UserId,
-                embed);
-
-            var message = await sender.SendMessageToLoggingChannel(response.LoggingChannel, messageBuilder);
             if (message is not null)
-                await this._mediator.Send(new AddLogMessage.Command { MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id });
-
+                await this._mediator.Send(new AddLogMessage.Command
+                {
+                    MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
+                });
         }
-
     }
 
     public sealed record Command : IRequest<Response>
@@ -116,40 +127,36 @@ public sealed class DeleteMessageEvent
         public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
             var message = await this._grimoireDbContext.Messages
-            .AsNoTracking()
-            .WhereIdIs(command.MessageId)
-            .WhereMessageLoggingIsEnabled()
-            .Select(x => new Response
-            {
-                LoggingChannel = x.Guild.MessageLogSettings.DeleteChannelLogId,
-                UserId = x.UserId,
-                MessageContent = x.MessageHistory
-                    .OrderByDescending(x => x.TimeStamp)
-                    .First(y => y.Action != MessageAction.Deleted)
-                    .MessageContent,
-                ReferencedMessage = x.ReferencedMessageId,
-                Attachments = x.Attachments
-                    .Select(x => new AttachmentDto
-                    {
-                        Id = x.Id,
-                        FileName = x.FileName,
-                    })
-                    .ToArray(),
-                Success = true,
-                OriginalUserId = x.ProxiedMessageLink.OriginalMessage.UserId,
-                SystemId = x.ProxiedMessageLink.SystemId,
-                MemberId = x.ProxiedMessageLink.MemberId,
-
-            }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .AsNoTracking()
+                .WhereIdIs(command.MessageId)
+                .WhereMessageLoggingIsEnabled()
+                .Select(message => new Response
+                {
+                    LoggingChannel = message.Guild.MessageLogSettings.DeleteChannelLogId,
+                    UserId = message.UserId,
+                    MessageContent = message.MessageHistory
+                        .OrderByDescending(messageHistory => messageHistory.TimeStamp)
+                        .First(messageHistory => messageHistory.Action != MessageAction.Deleted)
+                        .MessageContent,
+                    ReferencedMessage = message.ReferencedMessageId,
+                    Attachments = message.Attachments
+                        .Select(attachment => new AttachmentDto { Id = attachment.Id, FileName = attachment.FileName })
+                        .ToArray(),
+                    Success = true,
+                    OriginalUserId = message.ProxiedMessageLink.OriginalMessage.UserId,
+                    SystemId = message.ProxiedMessageLink.SystemId,
+                    MemberId = message.ProxiedMessageLink.MemberId
+                }).FirstOrDefaultAsync(cancellationToken);
             if (message is null)
                 return new Response { Success = false };
-            await this._grimoireDbContext.MessageHistory.AddAsync(new MessageHistory
-            {
-                MessageId = command.MessageId,
-                Action = MessageAction.Deleted,
-                GuildId = command.GuildId,
-                DeletedByModeratorId = command.DeletedByModerator
-            }, cancellationToken);
+            await this._grimoireDbContext.MessageHistory.AddAsync(
+                new MessageHistory
+                {
+                    MessageId = command.MessageId,
+                    Action = MessageAction.Deleted,
+                    GuildId = command.GuildId,
+                    DeletedByModeratorId = command.DeletedByModerator
+                }, cancellationToken);
             await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
             return message;
         }
@@ -168,5 +175,3 @@ public sealed class DeleteMessageEvent
         public string? MemberId { get; init; }
     }
 }
-
-

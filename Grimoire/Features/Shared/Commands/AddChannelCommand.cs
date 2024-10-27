@@ -20,14 +20,11 @@ public sealed class AddChannelCommandHandler(GrimoireDbContext grimoireDbContext
     public async Task Handle(AddChannelCommand command, CancellationToken cancellationToken)
     {
         if (await this._grimoireDbContext.Channels
-            .AsNoTracking()
-            .AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
             return;
-        await this._grimoireDbContext.Channels.AddAsync(new Channel
-        {
-            Id = command.ChannelId,
-            GuildId = command.GuildId
-        }, cancellationToken);
+        await this._grimoireDbContext.Channels.AddAsync(
+            new Channel { Id = command.ChannelId, GuildId = command.GuildId }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
     }
 }

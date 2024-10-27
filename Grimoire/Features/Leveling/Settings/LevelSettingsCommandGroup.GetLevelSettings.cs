@@ -13,24 +13,25 @@ public sealed partial class LevelSettingsCommandGroup
     public async Task ViewAsync(InteractionContext ctx)
     {
         await ctx.DeferAsync();
-        var response = await this._mediator.Send(new GetLevelSettings.Request{ GuildId = ctx.Guild.Id });
+        var response = await this._mediator.Send(new GetLevelSettings.Request { GuildId = ctx.Guild.Id });
         if (response is null)
         {
             await ctx.EditReplyAsync(GrimoireColor.Red, "Leveling settings could not be found for this server.");
             return;
         }
+
         var levelLogMention =
-                response.LevelChannelLog is null ?
-                "None" :
-                ctx.Guild.Channels.GetValueOrDefault(response.LevelChannelLog.Value)?.Mention;
+            response.LevelChannelLog is null
+                ? "None"
+                : ctx.Guild.Channels.GetValueOrDefault(response.LevelChannelLog.Value)?.Mention;
         await ctx.EditReplyAsync(
             title: "Current Level System Settings",
             message: $"**Module Enabled:** {response.ModuleEnabled}\n" +
-            $"**Texttime:** {response.TextTime.TotalMinutes} minutes.\n" +
-            $"**Base:** {response.Base}\n" +
-            $"**Modifier:** {response.Modifier}\n" +
-            $"**Reward Amount:** {response.Amount}\n" +
-            $"**Log-Channel:** {levelLogMention}\n");
+                     $"**Text Time:** {response.TextTime.TotalMinutes} minutes.\n" +
+                     $"**Base:** {response.Base}\n" +
+                     $"**Modifier:** {response.Modifier}\n" +
+                     $"**Reward Amount:** {response.Amount}\n" +
+                     $"**Log-Channel:** {levelLogMention}\n");
     }
 }
 
@@ -46,18 +47,17 @@ public sealed class GetLevelSettings
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
         public async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
-         => await this._grimoireDbContext.GuildLevelSettings
-            .Where(x => x.GuildId == request.GuildId)
-            .Select(x => new Response
-            {
-                ModuleEnabled = x.ModuleEnabled,
-                TextTime = x.TextTime,
-                Base = x.Base,
-                Modifier = x.Modifier,
-                Amount = x.Amount,
-                LevelChannelLog = x.LevelChannelLogId
-            }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
-
+            => await this._grimoireDbContext.GuildLevelSettings
+                .Where(x => x.GuildId == request.GuildId)
+                .Select(x => new Response
+                {
+                    ModuleEnabled = x.ModuleEnabled,
+                    TextTime = x.TextTime,
+                    Base = x.Base,
+                    Modifier = x.Modifier,
+                    Amount = x.Amount,
+                    LevelChannelLog = x.LevelChannelLogId
+                }).FirstOrDefaultAsync(cancellationToken);
     }
 
     public sealed record Response : BaseResponse
@@ -69,7 +69,4 @@ public sealed class GetLevelSettings
         public required int Amount { get; init; }
         public ulong? LevelChannelLog { get; init; }
     }
-
-
 }
-

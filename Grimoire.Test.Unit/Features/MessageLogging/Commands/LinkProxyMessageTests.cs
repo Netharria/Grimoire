@@ -19,33 +19,37 @@ namespace Grimoire.Test.Unit.Features.MessageLogging.Commands;
 [Collection("Test collection")]
 public class LinkProxyMessageTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong GuildId = 1;
+    private const ulong ChannelId = 1;
+    private const ulong UserId = 1;
+    private const ulong MessageId1 = 1;
+    private const ulong MessageId2 = 2;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_ID = 1;
-    private const ulong CHANNEL_ID = 1;
-    private const ulong USER_ID = 1;
-    private const ulong MESSAGE_ID_1 = 1;
-    private const ulong MESSAGE_ID_2 = 2;
 
     public async Task InitializeAsync()
     {
         await this._dbContext.AddAsync(new Guild
         {
-            Id = GUILD_ID,
-            MessageLogSettings = new GuildMessageLogSettings
-            {
-                GuildId = GUILD_ID,
-                ModuleEnabled = true
-            }
+            Id = GuildId,
+            MessageLogSettings = new GuildMessageLogSettings { GuildId = GuildId, ModuleEnabled = true }
         });
-        await this._dbContext.AddAsync(new Channel { Id = CHANNEL_ID, GuildId = GUILD_ID });
-        await this._dbContext.AddAsync(new User { Id = USER_ID });
-        await this._dbContext.AddAsync(new Member { UserId = USER_ID, GuildId = GUILD_ID });
-        await this._dbContext.AddAsync(new Message { Id = MESSAGE_ID_1, UserId = USER_ID, GuildId = GUILD_ID, ChannelId = CHANNEL_ID });
-        await this._dbContext.AddAsync(new Message { Id = MESSAGE_ID_2, UserId = USER_ID, GuildId = GUILD_ID, ChannelId = CHANNEL_ID });
+        await this._dbContext.AddAsync(new Channel { Id = ChannelId, GuildId = GuildId });
+        await this._dbContext.AddAsync(new User { Id = UserId });
+        await this._dbContext.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await this._dbContext.AddAsync(new Message
+        {
+            Id = MessageId1, UserId = UserId, GuildId = GuildId, ChannelId = ChannelId
+        });
+        await this._dbContext.AddAsync(new Message
+        {
+            Id = MessageId2, UserId = UserId, GuildId = GuildId, ChannelId = ChannelId
+        });
         await this._dbContext.SaveChangesAsync();
     }
 
@@ -57,21 +61,22 @@ public class LinkProxyMessageTests(GrimoireCoreFactory factory) : IAsyncLifetime
         var logger = new NullLogger<LinkProxyMessage.Handler>();
         var cut = new LinkProxyMessage.Handler(this._dbContext, logger);
 
-        await cut.Handle(new LinkProxyMessage.Command
-        {
-            OriginalMessageId = MESSAGE_ID_1,
-            ProxyMessageId = MESSAGE_ID_2,
-            GuildId = GUILD_ID,
-            SystemId = "SystemId",
-            MemberId = "MemberId"
-        }, default);
+        await cut.Handle(
+            new LinkProxyMessage.Command
+            {
+                OriginalMessageId = MessageId1,
+                ProxyMessageId = MessageId2,
+                GuildId = GuildId,
+                SystemId = "SystemId",
+                MemberId = "MemberId"
+            }, default);
 
         this._dbContext.ChangeTracker.Clear();
 
         var result = await this._dbContext.ProxiedMessages
             .FirstOrDefaultAsync(x =>
-            x.OriginalMessageId == MESSAGE_ID_1
-            && x.ProxyMessageId == MESSAGE_ID_2);
+                x.OriginalMessageId == MessageId1
+                && x.ProxyMessageId == MessageId2);
 
         result.Should().NotBeNull();
         result!.SystemId.Should().Be("SystemId");

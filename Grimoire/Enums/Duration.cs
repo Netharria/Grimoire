@@ -6,14 +6,12 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 namespace Grimoire.Enums;
+
 public enum Duration
 {
-    [ChoiceName("Days")]
-    Days,
-    [ChoiceName("Months")]
-    Months,
-    [ChoiceName("Years")]
-    Years
+    [ChoiceName("Days")] Days,
+    [ChoiceName("Months")] Months,
+    [ChoiceName("Years")] Years
 }
 
 public static class DurationExtensions

@@ -16,7 +16,8 @@ public sealed record SetModLogCommand : IRequest<BaseResponse>
     public ulong? ChannelId { get; init; }
 }
 
-public sealed class SetModLogCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<SetModLogCommand, BaseResponse>
+public sealed class SetModLogCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<SetModLogCommand, BaseResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -30,9 +31,6 @@ public sealed class SetModLogCommandHandler(GrimoireDbContext grimoireDbContext)
         guild.ModChannelLog = command.ChannelId;
 
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        return new BaseResponse
-        {
-            LogChannelId = command.ChannelId,
-        };
+        return new BaseResponse { LogChannelId = command.ChannelId };
     }
 }

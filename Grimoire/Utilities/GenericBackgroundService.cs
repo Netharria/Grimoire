@@ -11,7 +11,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Utilities;
 
-public abstract partial class GenericBackgroundService(IServiceProvider serviceProvider, ILogger<GenericBackgroundService> logger, TimeSpan timeSpan) : BackgroundService
+public abstract partial class GenericBackgroundService(
+    IServiceProvider serviceProvider,
+    ILogger<GenericBackgroundService> logger,
+    TimeSpan timeSpan) : BackgroundService
 {
     private readonly PeriodicTimer _timer = new(timeSpan);
 
@@ -22,7 +25,6 @@ public abstract partial class GenericBackgroundService(IServiceProvider serviceP
         await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(5000)), stoppingToken);
 
         while (await this._timer.WaitForNextTickAsync(stoppingToken))
-        {
             try
             {
                 using var scope = serviceProvider.CreateScope();
@@ -32,7 +34,6 @@ public abstract partial class GenericBackgroundService(IServiceProvider serviceP
             {
                 LogBackgroundTaskError(logger, ex, ex.Message);
             }
-        }
     }
 
     [LoggerMessage(LogLevel.Information, "Starting Background task {type}")]

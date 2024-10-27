@@ -12,7 +12,8 @@ public sealed record GetMuteRoleQuery : IRequest<GetMuteRoleQueryResponse>
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetMuteRoleQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
+public sealed class GetMuteRoleQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -22,7 +23,7 @@ public sealed class GetMuteRoleQueryHandler(GrimoireDbContext grimoireDbContext)
             .AsNoTracking()
             .Where(x => x.GuildId == request.GuildId)
             .Select(x => x.MuteRole)
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
         if (muteRoleId is null) throw new AnticipatedException("No mute role is configured.");
         return new GetMuteRoleQueryResponse { RoleId = muteRoleId.Value };
     }

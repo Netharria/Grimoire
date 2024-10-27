@@ -21,13 +21,11 @@ public sealed class PublishBanCommandHandler(GrimoireDbContext grimoireDbContext
 
     public async Task Handle(PublishBanCommand command, CancellationToken cancellationToken)
     {
-        await this._grimoireDbContext.PublishedMessages.AddAsync(new PublishedMessage
-        {
-            MessageId = command.MessageId,
-            SinId = command.SinId,
-            PublishType = command.PublishType,
-        }, cancellationToken);
+        await this._grimoireDbContext.PublishedMessages.AddAsync(
+            new PublishedMessage
+            {
+                MessageId = command.MessageId, SinId = command.SinId, PublishType = command.PublishType
+            }, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-
     }
 }

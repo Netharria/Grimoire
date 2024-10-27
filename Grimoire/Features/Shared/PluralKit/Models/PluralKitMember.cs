@@ -8,63 +8,49 @@
 using System.Text.Json.Serialization;
 
 namespace Grimoire.Features.Shared.PluralKit.Models;
+
 public sealed record PluralKitMember
 {
     [JsonPropertyName("id")]
     // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public required string Id { get; set; }
 
-    [JsonPropertyName("uuid")]
-    public required Guid Guid { get; set; }
+    [JsonPropertyName("uuid")] public required Guid Guid { get; set; }
 
-    [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    [JsonPropertyName("name")] public required string Name { get; set; }
 
-    [JsonPropertyName("display_name")]
-    public string? DisplayName { get; set; }
+    [JsonPropertyName("display_name")] public string? DisplayName { get; set; }
 
-    [JsonPropertyName("color")]
-    public string? Color { get; set; }
+    [JsonPropertyName("color")] public string? Color { get; set; }
 
-    [JsonPropertyName("birthday")]
-    public DateOnly? BirthDay { get; set; }
+    [JsonPropertyName("birthday")] public DateOnly? BirthDay { get; set; }
 
-    [JsonPropertyName("pronouns")]
-    public string? Pronouns { get; set; }
+    [JsonPropertyName("pronouns")] public string? Pronouns { get; set; }
 
-    [JsonPropertyName("avatar_url")]
-    public string? AvatarUrl { get; set; }
+    [JsonPropertyName("avatar_url")] public string? AvatarUrl { get; set; }
 
     [JsonPropertyName("webhook_avatar_url")]
     public string? WebhookAvatarUrl { get; set; }
 
-    [JsonPropertyName("banner")]
-    public string? BannerUrl { get; set; }
+    [JsonPropertyName("banner")] public string? BannerUrl { get; set; }
 
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonPropertyName("description")] public string? Description { get; set; }
 
-    [JsonPropertyName("created")]
-    public DateTime? Created { get; set; }
+    [JsonPropertyName("created")] public DateTime? Created { get; set; }
 
-    [JsonPropertyName("proxy_tags")]
-    public PluralKitProxyTag[] ProxyTag { get; set; } = [];
+    [JsonPropertyName("proxy_tags")] public PluralKitProxyTag[] ProxyTag { get; set; } = [];
 
-    [JsonPropertyName("keep_proxy")]
-    public required bool KeepProxy { get; set; }
+    [JsonPropertyName("keep_proxy")] public required bool KeepProxy { get; set; }
 
-    [JsonPropertyName("tts")]
-    public required bool Tts { get; set; }
+    [JsonPropertyName("tts")] public required bool Tts { get; set; }
 
     [JsonPropertyName("autoproxy_enabled")]
     public bool? AutoproxyEnabled { get; set; }
 
-    [JsonPropertyName("message_count")]
-    public int? MessageCount { get; set; }
+    [JsonPropertyName("message_count")] public int? MessageCount { get; set; }
 
     [JsonPropertyName("last_message_timestamp")]
     public DateTime? LastMessageTimestamp { get; set; }
 
-    [JsonPropertyName("privacy")]
-    public Dictionary<string, string> PrivacySettings { get; set; } = [];
+    [JsonPropertyName("privacy")] public Dictionary<string, string> PrivacySettings { get; set; } = [];
 }

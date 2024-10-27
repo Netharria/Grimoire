@@ -14,18 +14,19 @@ using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Grimoire.Test.Unit;
+
 public sealed class GrimoireCoreFactory : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgreSqlContainer =
         new PostgreSqlBuilder()
-        .WithImage("postgres:15-alpine")
-        .Build();
-
-
-    public string ConnectionString => this._postgreSqlContainer.GetConnectionString();
+            .WithImage("postgres:15-alpine")
+            .Build();
 
     private DbConnection _dbConnection = default!;
     private Respawner _respawner = default!;
+
+
+    public string ConnectionString => this._postgreSqlContainer.GetConnectionString();
 
 
     public async Task InitializeAsync()
@@ -34,22 +35,18 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
         this._dbConnection = new NpgsqlConnection(this._postgreSqlContainer.GetConnectionString());
 
         var dbContext = new GrimoireDbContext(
-        new DbContextOptionsBuilder<GrimoireDbContext>()
-            .UseNpgsql(this._postgreSqlContainer.GetConnectionString())
-            .Options);
+            new DbContextOptionsBuilder<GrimoireDbContext>()
+                .UseNpgsql(this._postgreSqlContainer.GetConnectionString())
+                .Options);
 
         await dbContext.Database.MigrateAsync();
 
         await this._dbConnection.OpenAsync();
         this._respawner = await Respawner.CreateAsync(this._dbConnection,
-            new RespawnerOptions
-            {
-                DbAdapter = DbAdapter.Postgres
-            });
+            new RespawnerOptions { DbAdapter = DbAdapter.Postgres });
     }
-
-    public async Task ResetDatabase() => await this._respawner.ResetAsync(this._dbConnection);
 
     public Task DisposeAsync() => this._postgreSqlContainer.DisposeAsync().AsTask();
 
+    public async Task ResetDatabase() => await this._respawner.ResetAsync(this._dbConnection);
 }

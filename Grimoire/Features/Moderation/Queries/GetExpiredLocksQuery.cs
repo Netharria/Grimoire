@@ -7,14 +7,18 @@
 
 namespace Grimoire.Features.Moderation.Queries;
 
-public sealed record GetExpiredLocksQuery : IStreamRequest<GetExpiredLocksQueryResponse> { }
+public sealed record GetExpiredLocksQuery : IStreamRequest<GetExpiredLocksQueryResponse>
+{
+}
 
-public sealed class GetExpiredLocksQueryHandler(GrimoireDbContext grimoireDbContext) : IStreamRequestHandler<GetExpiredLocksQuery, GetExpiredLocksQueryResponse>
+public sealed class GetExpiredLocksQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IStreamRequestHandler<GetExpiredLocksQuery, GetExpiredLocksQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public IAsyncEnumerable<GetExpiredLocksQueryResponse> Handle(GetExpiredLocksQuery query, CancellationToken cancellationToken)
-     => this._grimoireDbContext.Locks
+    public IAsyncEnumerable<GetExpiredLocksQueryResponse> Handle(GetExpiredLocksQuery query,
+        CancellationToken cancellationToken)
+        => this._grimoireDbContext.Locks
             .AsNoTracking()
             .Where(x => x.EndTime < DateTimeOffset.UtcNow)
             .Select(x => new GetExpiredLocksQueryResponse

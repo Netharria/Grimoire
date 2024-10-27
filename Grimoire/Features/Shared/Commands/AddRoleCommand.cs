@@ -13,18 +13,14 @@ public sealed record AddRoleCommand : IRequest
     public ulong GuildId { get; init; }
 }
 
-
 public sealed class AddRoleCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<AddRoleCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
     public async Task Handle(AddRoleCommand command, CancellationToken cancellationToken)
     {
-        await this._grimoireDbContext.Roles.AddAsync(new Role
-        {
-            Id = command.RoleId,
-            GuildId = command.GuildId
-        }, cancellationToken);
+        await this._grimoireDbContext.Roles.AddAsync(new Role { Id = command.RoleId, GuildId = command.GuildId },
+            cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
     }
 }

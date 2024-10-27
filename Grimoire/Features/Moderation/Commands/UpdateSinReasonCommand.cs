@@ -14,11 +14,13 @@ public sealed record UpdateSinReasonCommand : IRequest<UpdateSinReasonCommandRes
     public ulong GuildId { get; init; }
 }
 
-public sealed class UpdateSinReasonCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
+public sealed class UpdateSinReasonCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<UpdateSinReasonCommand, UpdateSinReasonCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<UpdateSinReasonCommandResponse> Handle(UpdateSinReasonCommand command, CancellationToken cancellationToken)
+    public async Task<UpdateSinReasonCommandResponse> Handle(UpdateSinReasonCommand command,
+        CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Sins
             .Where(x => x.Id == command.SinId)
@@ -27,9 +29,9 @@ public sealed class UpdateSinReasonCommandHandler(GrimoireDbContext grimoireDbCo
             {
                 Sin = x,
                 UserName = x.Member.User.UsernameHistories
-                .OrderByDescending(x => x.Timestamp)
-                .Select(x => x.Username)
-                .FirstOrDefault(),
+                    .OrderByDescending(x => x.Timestamp)
+                    .Select(x => x.Username)
+                    .FirstOrDefault(),
                 x.Guild.ModChannelLog
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -54,4 +56,3 @@ public sealed record UpdateSinReasonCommandResponse : BaseResponse
     public long SinId { get; init; }
     public string SinnerName { get; init; } = string.Empty;
 }
-

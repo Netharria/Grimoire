@@ -9,56 +9,59 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class UserDatabaseQueryHelpers
 {
-    public static async Task<bool> AddMissingUsersAsync(this DbSet<User> databaseUsers, IEnumerable<UserDto> users, CancellationToken cancellationToken = default)
+    public static async Task<bool> AddMissingUsersAsync(this DbSet<User> databaseUsers,
+        IReadOnlyCollection<UserDto> users,
+        CancellationToken cancellationToken = default)
     {
         var incomingUserIds = users
             .Select(x => x.Id);
 
         var existingUserIds = await databaseUsers
             .AsNoTracking()
-            .Where(x => incomingUserIds.Contains(x.Id))
-            .Select(x => x.Id)
+            .Where(user => incomingUserIds.Contains(user.Id))
+            .Select(user => user.Id)
             .AsAsyncEnumerable()
             .ToHashSetAsync(cancellationToken);
 
         var usersToAdd = users
             .Where(x => !existingUserIds.Contains(x.Id))
-            .Select(x => new User
-            {
-                Id = x.Id
-            });
+            .Select(x => new User { Id = x.Id })
+            .ToArray().AsReadOnly();
 
-        if (usersToAdd.Any())
-        {
-            await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);
-            return true;
-        }
-            
-        return false;
+        if (usersToAdd.Count == 0)
+            return false;
+
+        await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);
+        return true;
+
     }
 
-    public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames, IEnumerable<UserDto> users, CancellationToken cancellationToken = default)
+    public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames,
+        IReadOnlyCollection<UserDto> users, CancellationToken cancellationToken = default)
     {
         var existingUsernames = await databaseUsernames
             .AsNoTracking()
-            .GroupBy(x => x.UserId)
-            .Select(x => new { UserId = x.Key, x.OrderByDescending(x => x.Timestamp).First().Username })
+            .GroupBy(username => username.UserId)
+            .Select(usernameGroup =>
+                new
+                {
+                    UserId = usernameGroup.Key,
+                    usernameGroup.OrderByDescending(username => username.Timestamp).First().Username
+                })
             .AsAsyncEnumerable()
             .Select(x => (x.UserId, x.Username))
             .ToHashSetAsync(cancellationToken);
 
         var usernamesToAdd = users
             .Where(x => !existingUsernames.Contains((x.Id, x.Username)))
-            .Select(x => new UsernameHistory
-            {
-                UserId = x.Id,
-                Username = x.Username
-            });
-        if (usernamesToAdd.Any())
-        {
-            await databaseUsernames.AddRangeAsync(usernamesToAdd, cancellationToken);
-            return true;
-        }
-        return false;
+            .Select(x => new UsernameHistory { UserId = x.Id, Username = x.Username })
+            .ToArray().AsReadOnly();
+
+        if (usernamesToAdd.Count == 0)
+            return false;
+
+        await databaseUsernames.AddRangeAsync(usernamesToAdd, cancellationToken);
+        return true;
+
     }
 }

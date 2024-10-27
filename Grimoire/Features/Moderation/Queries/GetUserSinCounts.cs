@@ -8,6 +8,7 @@
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Queries;
+
 public static class GetUserSinCounts
 {
     public sealed record Query : IRequest<Response?>
@@ -31,14 +32,14 @@ public static class GetUserSinCounts
                     Response = new Response
                     {
                         WarnCount = x.UserSins
-                        .Where(x => x.SinOn > DateTimeOffset.UtcNow - x.Guild.ModerationSettings.AutoPardonAfter)
-                        .Count(x => x.SinType == SinType.Warn),
+                            .Where(x => x.SinOn > DateTimeOffset.UtcNow - x.Guild.ModerationSettings.AutoPardonAfter)
+                            .Count(x => x.SinType == SinType.Warn),
                         MuteCount = x.UserSins
-                        .Where(x => x.SinOn > DateTimeOffset.UtcNow - x.Guild.ModerationSettings.AutoPardonAfter)
-                        .Count(x => x.SinType == SinType.Mute),
+                            .Where(x => x.SinOn > DateTimeOffset.UtcNow - x.Guild.ModerationSettings.AutoPardonAfter)
+                            .Count(x => x.SinType == SinType.Mute),
                         BanCount = x.UserSins
-                        .Where(x => x.SinOn > DateTimeOffset.UtcNow - x.Guild.ModerationSettings.AutoPardonAfter)
-                        .Count(x => x.SinType == SinType.Ban),
+                            .Where(x => x.SinOn > DateTimeOffset.UtcNow - x.Guild.ModerationSettings.AutoPardonAfter)
+                            .Count(x => x.SinType == SinType.Ban)
                     }
                 }).FirstOrDefaultAsync(cancellationToken);
             if (result is null)

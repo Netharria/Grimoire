@@ -18,27 +18,31 @@ public sealed class RemoveTracker
 
         [SlashCommand("Untrack", "Stops the logging of the user's activity")]
         public async Task UnTrackAsync(InteractionContext ctx,
-            [Option("User", "User to stop logging.")] DiscordUser member)
+            [Option("User", "User to stop logging.")]
+            DiscordUser member)
         {
             await ctx.DeferAsync();
-            var response = await this._mediator.Send(new Request{ UserId = member.Id, GuildId = ctx.Guild.Id});
+            var response = await this._mediator.Send(new Request { UserId = member.Id, GuildId = ctx.Guild.Id });
 
 
             await ctx.EditReplyAsync(message: $"Tracker removed from {member.Mention}");
 
             await ctx.Client.SendMessageToLoggingChannel(response.ModerationLogId,
-                new DiscordEmbedBuilder()
-                .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} removed a tracker on {member.Mention}")
-                .WithColor(GrimoireColor.Purple));
+               embed => embed
+                    .WithDescription(
+                        $"{ctx.Member.GetUsernameWithDiscriminator()} removed a tracker on {member.Mention}")
+                    .WithColor(GrimoireColor.Purple));
         }
     }
+
     public sealed record Request : IRequest<Response>
     {
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
     }
 
-    public sealed class RemoveTrackerCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
+    public sealed class RemoveTrackerCommandHandler(GrimoireDbContext grimoireDbContext)
+        : IRequestHandler<Request, Response>
     {
         private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -48,9 +52,7 @@ public sealed class RemoveTracker
                 .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
                 .Select(x => new
                 {
-                    Tracker = x,
-                    ModerationLogId = x.Guild.ModChannelLog,
-                    TrackerChannelId = x.LogChannelId
+                    Tracker = x, ModerationLogId = x.Guild.ModChannelLog, TrackerChannelId = x.LogChannelId
                 }).FirstOrDefaultAsync(cancellationToken);
             if (result is null || result.Tracker is null)
                 throw new AnticipatedException("Could not find a tracker for that user.");
@@ -60,8 +62,7 @@ public sealed class RemoveTracker
 
             return new Response
             {
-                ModerationLogId = result.ModerationLogId,
-                TrackerChannelId = result.TrackerChannelId
+                ModerationLogId = result.ModerationLogId, TrackerChannelId = result.TrackerChannelId
             };
         }
     }

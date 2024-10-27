@@ -11,33 +11,31 @@ namespace Grimoire.Features.Shared.SharedModule;
 [SlashCommandGroup("Purge", "Delete several recent messages at once.")]
 internal sealed class PurgeCommands : ApplicationCommandModule
 {
-
     [SlashCommand("All", "Deletes all messages.")]
     public static async Task AllAsync(InteractionContext ctx,
-        [Minimum(0)]
-        [Maximum(1000)]
-        [Option("Count", "The number of matching messages to delete.")] long count)
+        [Minimum(0)] [Maximum(1000)] [Option("Count", "The number of matching messages to delete.")]
+        long count)
     {
         await ctx.DeferAsync(true);
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync((int)count, $"{ctx.User.Username} purged these messages.");
         await ctx.EditReplyAsync(GrimoireColor.Green,
-            message: PurgeMessageBuilder(messagesDeleted));
+            PurgeMessageBuilder(messagesDeleted));
     }
 
     [SlashCommand("User", "Deletes all messages that were sent by this user.")]
     public static async Task UserAsync(InteractionContext ctx,
-        [Option("User", "The user to delete the messages of.")] DiscordUser user,
-        [Minimum(0)]
-        [Maximum(1000)]
-        [Option("Count", "The number of matching messages to delete.")] long count)
+        [Option("User", "The user to delete the messages of.")]
+        DiscordUser user,
+        [Minimum(0)] [Maximum(1000)] [Option("Count", "The number of matching messages to delete.")]
+        long count)
     {
         await ctx.DeferAsync(true);
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync((int)count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
-           messages => messages.Author is not null && messages.Author == user);
+                messages => messages.Author is not null && messages.Author == user);
         await ctx.EditReplyAsync(GrimoireColor.Green,
-            message: PurgeMessageBuilder(messagesDeleted));
+            PurgeMessageBuilder(messagesDeleted));
     }
 
     private static string PurgeMessageBuilder(int count)

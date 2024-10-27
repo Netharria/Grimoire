@@ -11,9 +11,9 @@ public static class RewardExtensions
 {
     public static string Mention(this Reward? reward)
         =>
-        reward switch
-        {
-            Reward => $"<@&{reward.RoleId}>",
-            null => "Unknown Role",
-        };
+            reward switch
+            {
+                not null => $"<@&{reward.RoleId}>",
+                null => "Unknown Role"
+            };
 }

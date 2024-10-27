@@ -16,7 +16,6 @@ public sealed record AddMemberCommand : IRequest
     public string AvatarUrl { get; init; } = string.Empty;
 }
 
-
 public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<AddMemberCommand>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
@@ -26,16 +25,14 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
         var userResult = await this._grimoireDbContext.Users
             .AsNoTracking()
             .Where(x => x.Id == command.UserId)
-            .Select(x => new
-            {
-                x.UsernameHistories.OrderByDescending(username => username.Timestamp).First().Username,
-            }).FirstOrDefaultAsync(cancellationToken);
+            .Select(x => new { x.UsernameHistories.OrderByDescending(username => username.Timestamp).First().Username })
+            .FirstOrDefaultAsync(cancellationToken);
         var memberResult = await this._grimoireDbContext.Members
             .AsNoTracking()
             .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
             .Select(x => new
             {
-                x.NicknamesHistory.OrderByDescending(Nickname => Nickname.Timestamp).First().Nickname,
+                x.NicknamesHistory.OrderByDescending(nickname => nickname.Timestamp).First().Nickname,
                 x.AvatarHistory.OrderByDescending(avatar => avatar.Timestamp).First().FileName
             }).FirstOrDefaultAsync(cancellationToken);
 
@@ -43,21 +40,16 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
             await this._grimoireDbContext.Users.AddAsync(new User
             {
                 Id = command.UserId,
-                UsernameHistories = [
-                        new() {
-                            Username = command.UserName,
-                            UserId = command.UserId
-                        }
-                    ]
+                UsernameHistories =
+                [
+                    new UsernameHistory { Username = command.UserName, UserId = command.UserId }
+                ]
             }, cancellationToken);
 
         if (userResult is not null)
             if (!string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase))
-                await this._grimoireDbContext.UsernameHistory.AddAsync(new UsernameHistory
-                {
-                    Username = command.UserName,
-                    UserId = command.UserId
-                }, cancellationToken);
+                await this._grimoireDbContext.UsernameHistory.AddAsync(
+                    new UsernameHistory { Username = command.UserName, UserId = command.UserId }, cancellationToken);
 
         if (memberResult is null)
         {
@@ -67,7 +59,8 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
                 GuildId = command.GuildId,
                 XpHistory =
                 [
-                    new() {
+                    new XpHistory
+                    {
                         UserId = command.UserId,
                         GuildId = command.GuildId,
                         Type = XpHistoryType.Created,
@@ -77,18 +70,13 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
                 ],
                 AvatarHistory =
                 [
-                    new() {
-                        UserId = command.UserId,
-                        GuildId = command.GuildId,
-                        FileName = command.AvatarUrl
-                    }
+                    new Avatar { UserId = command.UserId, GuildId = command.GuildId, FileName = command.AvatarUrl }
                 ],
                 NicknamesHistory =
                 [
-                    new() {
-                        UserId = command.UserId,
-                        GuildId = command.GuildId,
-                        Nickname = command.Nickname
+                    new NicknameHistory
+                    {
+                        UserId = command.UserId, GuildId = command.GuildId, Nickname = command.Nickname
                     }
                 ]
             };
@@ -99,21 +87,18 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
         if (memberResult is not null)
         {
             if (!string.Equals(memberResult.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase))
-                await this._grimoireDbContext.NicknameHistory.AddAsync(new NicknameHistory
-                {
-                    UserId = command.UserId,
-                    GuildId = command.GuildId,
-                    Nickname = command.Nickname
-                }, cancellationToken);
+                await this._grimoireDbContext.NicknameHistory.AddAsync(
+                    new NicknameHistory
+                    {
+                        UserId = command.UserId, GuildId = command.GuildId, Nickname = command.Nickname
+                    }, cancellationToken);
 
             if (!string.Equals(memberResult.FileName, command.AvatarUrl, StringComparison.Ordinal))
-                await this._grimoireDbContext.Avatars.AddAsync(new Avatar
-                {
-                    UserId = command.UserId,
-                    GuildId = command.GuildId,
-                    FileName = command.AvatarUrl
-                }, cancellationToken);
+                await this._grimoireDbContext.Avatars.AddAsync(
+                    new Avatar { UserId = command.UserId, GuildId = command.GuildId, FileName = command.AvatarUrl },
+                    cancellationToken);
         }
+
         if (userResult is null
             || memberResult is null
             || !string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase)

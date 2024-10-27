@@ -42,6 +42,6 @@ internal sealed class GuildUserLogSettingsConfiguration : IEntityTypeConfigurati
             .HasForeignKey<GuildUserLogSettings>(e => e.AvatarChannelLogId)
             .IsRequired(false);
         builder.Property(x => x.ModuleEnabled)
-            .HasDefaultValue(value: false);
+            .HasDefaultValue(false);
     }
 }

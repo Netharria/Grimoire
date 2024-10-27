@@ -26,5 +26,3 @@ public sealed class GetMessageAuthor
         }
     }
 }
-
-

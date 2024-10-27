@@ -17,7 +17,8 @@ public sealed record WarnUserCommand : IRequest<WarnUserCommandResponse>
     public ulong ModeratorId { get; init; }
 }
 
-public sealed class WarnUserCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<WarnUserCommand, WarnUserCommandResponse>
+public sealed class WarnUserCommandHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<WarnUserCommand, WarnUserCommandResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
@@ -34,14 +35,10 @@ public sealed class WarnUserCommandHandler(GrimoireDbContext grimoireDbContext) 
         await this._grimoireDbContext.Sins
             .AddAsync(sin, cancellationToken);
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-        var LogChannelId = await this._grimoireDbContext.Guilds
+        var logChannelId = await this._grimoireDbContext.Guilds
             .WhereIdIs(command.GuildId)
             .Select(x => x.ModChannelLog).FirstOrDefaultAsync(cancellationToken);
-        return new WarnUserCommandResponse
-        {
-            SinId = sin.Id,
-            LogChannelId = LogChannelId
-        };
+        return new WarnUserCommandResponse { SinId = sin.Id, LogChannelId = logChannelId };
     }
 }
 

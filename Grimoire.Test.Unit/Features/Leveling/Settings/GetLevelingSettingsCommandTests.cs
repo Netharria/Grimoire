@@ -19,48 +19,38 @@ namespace Grimoire.Test.Unit.Features.Leveling.Settings;
 [Collection("Test collection")]
 public class GetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
+    private const ulong GuildId = 1;
+    private const ulong ChannelId = 1;
+
     private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
-    .UseNpgsql(factory.ConnectionString)
+            .UseNpgsql(factory.ConnectionString)
             .Options);
+
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
-    private const ulong GUILD_ID = 1;
-    private const ulong CHANNEL_ID = 1;
 
     public async Task InitializeAsync()
     {
         await this._dbContext.AddAsync(new Guild
         {
-            Id = GUILD_ID,
+            Id = GuildId,
             LevelSettings = new GuildLevelSettings
             {
-                GuildId = GUILD_ID,
-                LevelChannelLogId = CHANNEL_ID,
-                ModuleEnabled = true,
+                GuildId = GuildId, LevelChannelLogId = ChannelId, ModuleEnabled = true
             }
         });
-        await this._dbContext.AddAsync(new Guild
-        {
-            Id = 2,
-            LevelSettings = new GuildLevelSettings
-            {
-                GuildId = 2,
-            }
-        });
-        await this._dbContext.AddAsync(new Channel { Id = CHANNEL_ID, GuildId = GUILD_ID });
+        await this._dbContext.AddAsync(new Guild { Id = 2, LevelSettings = new GuildLevelSettings { GuildId = 2 } });
+        await this._dbContext.AddAsync(new Channel { Id = ChannelId, GuildId = GuildId });
         await this._dbContext.SaveChangesAsync();
-
     }
+
     public Task DisposeAsync() => this._resetDatabase();
 
     [Fact]
     public async Task Handle_ReturnsSettingsForCorrectGuild()
     {
         // Arrange
-        var request = new GetLevelSettings.Request
-        {
-            GuildId = GUILD_ID
-        };
+        var request = new GetLevelSettings.Request { GuildId = GuildId };
         var handler = new GetLevelSettings.Handler(this._dbContext);
 
         // Act
@@ -69,6 +59,6 @@ public class GetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         // Assert
         result!.Should().NotBeNull();
         result!.ModuleEnabled.Should().BeTrue();
-        result!.LevelChannelLog.Should().Be(CHANNEL_ID);
+        result!.LevelChannelLog.Should().Be(ChannelId);
     }
 }

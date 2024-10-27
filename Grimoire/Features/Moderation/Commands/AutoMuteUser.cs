@@ -11,7 +11,6 @@ namespace Grimoire.Features.Moderation.Commands;
 
 public sealed class AutoMuteUser
 {
-
     public sealed record Command : IRequest<Response?>
     {
         public required ulong UserId { get; init; }
@@ -27,17 +26,17 @@ public sealed class AutoMuteUser
         public async Task<Response?> Handle(Command command, CancellationToken cancellationToken)
         {
             var response = await this._grimoireDbContext.Members
-            .WhereMemberHasId(command.UserId, command.GuildId)
-            .Select(x => new
-            {
-                x.ActiveMute,
-                x.Guild.ModerationSettings.MuteRole,
-                x.Guild.ModChannelLog,
-                x.Guild.ModerationSettings.ModuleEnabled,
-                MuteCount = x.UserSins.Where(x => x.SinType == SinType.Mute)
-                    .Where(x => x.SinOn > DateTimeOffset.UtcNow.AddDays(-1))
-                    .Count()
-            }).FirstOrDefaultAsync(cancellationToken);
+                .WhereMemberHasId(command.UserId, command.GuildId)
+                .Select(x => new
+                {
+                    x.ActiveMute,
+                    x.Guild.ModerationSettings.MuteRole,
+                    x.Guild.ModChannelLog,
+                    x.Guild.ModerationSettings.ModuleEnabled,
+                    MuteCount = x.UserSins.Where(x => x.SinType == SinType.Mute)
+                        .Where(x => x.SinOn > DateTimeOffset.UtcNow.AddDays(-1))
+                        .Count()
+                }).FirstOrDefaultAsync(cancellationToken);
             if (response is null) return null;
             if (response.MuteRole is null) return null;
             if (!response.ModuleEnabled) return null;
@@ -54,7 +53,7 @@ public sealed class AutoMuteUser
                 {
                     GuildId = command.GuildId,
                     UserId = command.UserId,
-                    EndTime = DateTimeOffset.UtcNow + duration,
+                    EndTime = DateTimeOffset.UtcNow + duration
                 }
             };
             await this._grimoireDbContext.Sins.AddAsync(sin, cancellationToken);
@@ -64,7 +63,7 @@ public sealed class AutoMuteUser
                 MuteRole = response.MuteRole.Value,
                 LogChannelId = response.ModChannelLog,
                 SinId = sin.Id,
-                Duration = duration,
+                Duration = duration
             };
         }
     }
@@ -76,7 +75,3 @@ public sealed class AutoMuteUser
         public TimeSpan Duration { get; init; }
     }
 }
-
-
-
-

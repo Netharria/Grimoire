@@ -21,7 +21,7 @@ internal sealed class GuildLevelSettingsConfiguration : IEntityTypeConfiguration
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.Property(x => x.ModuleEnabled)
-            .HasDefaultValue(value: false);
+            .HasDefaultValue(false);
         builder.Property(e => e.TextTime)
             .HasDefaultValue(TimeSpan.FromMinutes(3));
         builder.Property(e => e.Base)

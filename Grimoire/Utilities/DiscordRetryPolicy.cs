@@ -10,10 +10,11 @@ using Polly;
 using Polly.Retry;
 
 namespace Grimoire.Utilities;
+
 public static class DiscordRetryPolicy
 {
     private static readonly RetryStrategyOptions _retryStrategyOptions
-        = new ()
+        = new()
         {
             ShouldHandle = new PredicateBuilder().Handle<ServerErrorException>(),
             BackoffType = DelayBackoffType.Exponential,
@@ -21,12 +22,16 @@ public static class DiscordRetryPolicy
             MaxRetryAttempts = 4,
             Delay = TimeSpan.FromSeconds(3)
         };
-    private static readonly ResiliencePipeline _resiliencePipeline = new ResiliencePipelineBuilder().AddRetry(_retryStrategyOptions).Build();
 
-    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function, CancellationToken cancellationToken = default)
+    private static readonly ResiliencePipeline _resiliencePipeline =
+        new ResiliencePipelineBuilder().AddRetry(_retryStrategyOptions).Build();
+
+    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function,
+        CancellationToken cancellationToken = default)
         => _resiliencePipeline.ExecuteAsync(function, cancellationToken);
 
-    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function, T defaultValue, CancellationToken cancellationToken = default)
+    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function, T defaultValue,
+        CancellationToken cancellationToken = default)
     {
         try
         {

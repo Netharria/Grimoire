@@ -8,39 +8,30 @@
 using System.Text.Json.Serialization;
 
 namespace Grimoire.Features.Shared.PluralKit.Models;
+
 public record PluralKitSystem
 {
     [JsonPropertyName("id")]
     // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public required string Id { get; set; }
 
-    [JsonPropertyName("uuid")]
-    public required Guid Guid { get; set; }
+    [JsonPropertyName("uuid")] public required Guid Guid { get; set; }
 
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
+    [JsonPropertyName("name")] public string? Name { get; set; }
 
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonPropertyName("description")] public string? Description { get; set; }
 
-    [JsonPropertyName("tag")]
-    public string? Tag { get; set; }
+    [JsonPropertyName("tag")] public string? Tag { get; set; }
 
-    [JsonPropertyName("pronouns")]
-    public string? Pronouns { get; set; }
+    [JsonPropertyName("pronouns")] public string? Pronouns { get; set; }
 
-    [JsonPropertyName("avatar_url")]
-    public string? AvatarUrl { get; set; }
+    [JsonPropertyName("avatar_url")] public string? AvatarUrl { get; set; }
 
-    [JsonPropertyName("banner")]
-    public string? BannerUrl { get; set; }
+    [JsonPropertyName("banner")] public string? BannerUrl { get; set; }
 
-    [JsonPropertyName("color")]
-    public string? Color { get; set; }
+    [JsonPropertyName("color")] public string? Color { get; set; }
 
-    [JsonPropertyName("created")]
-    public DateTime? Created { get; set; }
+    [JsonPropertyName("created")] public DateTime? Created { get; set; }
 
-    [JsonPropertyName("privacy")]
-    public Dictionary<string, string> PrivacySettings { get; set; } = [];
+    [JsonPropertyName("privacy")] public Dictionary<string, string> PrivacySettings { get; set; } = [];
 }

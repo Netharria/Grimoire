@@ -9,7 +9,8 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class ChannelDatabaseQueryHelpers
 {
-    public static async Task<bool> AddMissingChannelsAsync(this DbSet<Channel> databaseChannels, IEnumerable<ChannelDto> channels, CancellationToken cancellationToken = default)
+    public static async Task<bool> AddMissingChannelsAsync(this DbSet<Channel> databaseChannels,
+        IReadOnlyCollection<ChannelDto> channels, CancellationToken cancellationToken = default)
     {
         var incomingChannelIds = channels.Select(x => x.Id);
 
@@ -22,18 +23,11 @@ public static class ChannelDatabaseQueryHelpers
 
         var channelsToAdd = channels
             .Where(x => !existingChannelIds.Contains(x.Id))
-            .Select(x => new Channel
-            {
-                Id = x.Id,
-                GuildId = x.GuildId
-            });
+            .Select(x => new Channel { Id = x.Id, GuildId = x.GuildId }).ToArray().AsReadOnly();
 
-        if (channelsToAdd.Any())
-        {
-            await databaseChannels.AddRangeAsync(channelsToAdd, cancellationToken);
-            return true;
-        }
-            
-        return false;
+        if (channelsToAdd.Count == 0)
+            return false;
+        await databaseChannels.AddRangeAsync(channelsToAdd, cancellationToken);
+        return true;
     }
 }

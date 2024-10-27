@@ -10,18 +10,18 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Utilities;
+
 internal sealed partial class DiscordStartService(
     DiscordClient discordClient,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     ILogger<DiscordStartService> logger) : IHostedService
 {
-    private readonly DiscordClient _discordClient = discordClient;
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly DiscordClient _discordClient = discordClient;
     private readonly ILogger<DiscordStartService> _logger = logger;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-
         await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         {
             var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
@@ -37,10 +37,10 @@ internal sealed partial class DiscordStartService(
         //connect client
         await this._discordClient.ConnectAsync();
     }
+
     public Task StopAsync(CancellationToken cancellationToken)
         => this._discordClient.DisconnectAsync();
 
     [LoggerMessage(LogLevel.Warning, "Applied pending migrattings in {time} ms")]
     static partial void LogMigrationDuration(ILogger<DiscordStartService> logger, long time);
-
 }

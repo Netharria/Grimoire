@@ -28,40 +28,31 @@ internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogg
                 })
             .SelectMany(channelInfo =>
                 channelInfo.DatabaseChannel.MessageIds
-                .ToAsyncEnumerable()
-                .SelectAwait(async messageId => await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, stoppingToken))
-                ).ToArrayAsync(stoppingToken);
+                    .ToAsyncEnumerable()
+                    .SelectAwait(async messageId =>
+                        await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, stoppingToken))
+            ).ToArrayAsync(stoppingToken);
 
         await mediator.Send(new DeleteOldLogsCommand(), stoppingToken);
         if (oldLogMessages is not null)
-            await mediator.Send(new DeleteOldLogMessages.Command { DeletedOldLogMessageIds = oldLogMessages }, stoppingToken);
+            await mediator.Send(new DeleteOldLogMessages.Command { DeletedOldLogMessageIds = oldLogMessages },
+                stoppingToken);
     }
 
-    private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, ulong messageId, CancellationToken cancellationToken = default)
+    private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, ulong messageId,
+        CancellationToken cancellationToken = default)
     {
         try
         {
             if (channel is null)
-                return new DeleteMessageResult
-                {
-                    WasSuccessful = false,
-                    MessageId = messageId
-                };
-            var message =  await channel.GetMessageAsync(messageId).WaitAsync(cancellationToken);
+                return new DeleteMessageResult { WasSuccessful = false, MessageId = messageId };
+            var message = await channel.GetMessageAsync(messageId).WaitAsync(cancellationToken);
             await message.DeleteAsync().WaitAsync(cancellationToken);
-            return new DeleteMessageResult
-            {
-                WasSuccessful = true,
-                MessageId = messageId
-            };
+            return new DeleteMessageResult { WasSuccessful = true, MessageId = messageId };
         }
         catch (Exception)
         {
-            return new DeleteMessageResult
-            {
-                WasSuccessful = false,
-                MessageId = messageId
-            };
+            return new DeleteMessageResult { WasSuccessful = false, MessageId = messageId };
         }
     }
 
@@ -76,5 +67,4 @@ internal sealed class LogBackgroundTasks(IServiceProvider serviceProvider, ILogg
             return null;
         }
     }
-
 }

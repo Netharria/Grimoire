@@ -7,6 +7,7 @@
 
 
 namespace Grimoire.Features.Logging.Settings;
+
 public partial class LogSettingsCommands
 {
     [SlashRequireModuleEnabled(Module.UserLog)]

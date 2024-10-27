@@ -8,6 +8,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
+
 internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<CustomCommand>
 {
     public void Configure(EntityTypeBuilder<CustomCommand> builder)

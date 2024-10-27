@@ -21,7 +21,8 @@ internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<Ni
             .OnDelete(DeleteBehavior.Cascade);
         builder.Property(x => x.Nickname)
             .HasMaxLength(32)
-            .IsRequired(false); ;
+            .IsRequired(false);
+        ;
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
     }

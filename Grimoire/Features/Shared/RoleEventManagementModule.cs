@@ -15,7 +15,7 @@ internal sealed class RoleEventManagementModule(IMediator mediator)
 
     public async Task DiscordOnGuildRoleCreated(DiscordClient sender, GuildRoleCreatedEventArgs args)
         => await this._mediator.Send(new AddRoleCommand { RoleId = args.Role.Id, GuildId = args.Guild.Id });
+
     public async Task DiscordOnGuildRoleDeleted(DiscordClient sender, GuildRoleDeletedEventArgs args)
         => await this._mediator.Send(new DeleteRoleCommand { RoleId = args.Role.Id });
-
 }

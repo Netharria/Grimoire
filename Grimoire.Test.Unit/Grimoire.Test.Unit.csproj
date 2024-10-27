@@ -8,21 +8,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="6.12.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.10" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="FluentAssertions" Version="6.12.1"/>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.10"/>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1"/>
     <PackageReference Include="coverlet.collector" Version="6.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="NSubstitute" Version="5.1.0" />
+    <PackageReference Include="NSubstitute" Version="5.1.0"/>
     <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Respawn" Version="6.2.1" />
-    <PackageReference Include="Testcontainers.PostgreSql" Version="3.10.0" />
-    <PackageReference Include="xunit" Version="2.9.0" />
+    <PackageReference Include="Respawn" Version="6.2.1"/>
+    <PackageReference Include="Testcontainers.PostgreSql" Version="3.10.0"/>
+    <PackageReference Include="xunit" Version="2.9.0"/>
     <PackageReference Include="xunit.runner.console" Version="2.9.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Grimoire\Grimoire.csproj" />
+    <ProjectReference Include="..\Grimoire\Grimoire.csproj"/>
   </ItemGroup>
 
 </Project>

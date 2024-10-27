@@ -8,6 +8,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
+
 internal sealed class CustomCommandRoleConfiguration : IEntityTypeConfiguration<CustomCommandRole>
 {
     public void Configure(EntityTypeBuilder<CustomCommandRole> builder)
@@ -25,6 +26,5 @@ internal sealed class CustomCommandRoleConfiguration : IEntityTypeConfiguration<
             .WithMany(e => e.CustomCommandRoles)
             .HasForeignKey(e => new { e.CustomCommandName, e.GuildId })
             .IsRequired();
-
     }
 }

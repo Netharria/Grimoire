@@ -13,7 +13,8 @@ internal sealed class TrackerJoinedVoiceChannelEvent(IMediator mediator) : IEven
 
     public async Task HandleEventAsync(DiscordClient sender, VoiceStateUpdatedEventArgs args)
     {
-        var response = await this._mediator.Send(new GetTracker.Query{ UserId = args.User.Id, GuildId = args.Guild.Id });
+        var response =
+            await this._mediator.Send(new GetTracker.Query { UserId = args.User.Id, GuildId = args.Guild.Id });
         if (response is null) return;
 
         var loggingChannel = args.Guild.Channels.GetValueOrDefault(response.TrackerChannelId);
@@ -44,10 +45,10 @@ internal sealed class TrackerJoinedVoiceChannelEvent(IMediator mediator) : IEven
 
         if (args.Before.Channel != args.After.Channel)
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithAuthor("Moved Voice Channels")
-                    .AddField("User", args.User.Mention, true)
-                    .AddField("From", args.Before.Channel.Mention, true)
-                    .AddField("To", args.After.Channel.Mention, true)
-                    .WithTimestamp(DateTime.UtcNow));
+                .WithAuthor("Moved Voice Channels")
+                .AddField("User", args.User.Mention, true)
+                .AddField("From", args.Before.Channel.Mention, true)
+                .AddField("To", args.After.Channel.Mention, true)
+                .WithTimestamp(DateTime.UtcNow));
     }
 }
