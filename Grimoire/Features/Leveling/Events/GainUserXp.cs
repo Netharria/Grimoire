@@ -38,11 +38,11 @@ public sealed class GainUserXp
             if (response.PreviousLevel < response.CurrentLevel)
                 await sender.SendMessageToLoggingChannel(response.LevelLogChannel,
                     embed => embed
-                    .WithColor(GrimoireColor.Purple)
-                    .WithAuthor(member.GetUsernameWithDiscriminator())
-                    .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
-                    .WithFooter($"{member.Id}")
-                    .WithTimestamp(DateTime.UtcNow));
+                        .WithColor(GrimoireColor.Purple)
+                        .WithAuthor(member.GetUsernameWithDiscriminator())
+                        .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
+                        .WithFooter($"{member.Id}")
+                        .WithTimestamp(DateTime.UtcNow));
         }
     }
 
@@ -61,9 +61,10 @@ public sealed class GainUserXp
         public required ulong[] RoleIds { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactoryFactory)
+        : IRequestHandler<Request, Response>
     {
-        private static readonly Func<GrimoireDbContext, ulong, ulong, ulong, ulong[], IAsyncEnumerable<QueryResult>>
+        private static readonly Func<GrimoireDbContext, ulong, ulong, ulong, ulong[], Task<QueryResult?>>
             _getUserXpInfoQuery = EF.CompileAsyncQuery(
                 (GrimoireDbContext context, ulong userId, ulong guildId, ulong channelId, ulong[] roleIds) =>
                     context.Members
@@ -85,23 +86,23 @@ public sealed class GainUserXp
                             Amount = member.Guild.LevelSettings.Amount,
                             LevelChannelLogId = member.Guild.LevelSettings.LevelChannelLogId,
                             TextTime = member.Guild.LevelSettings.TextTime
-                        }).Take(1));
+                        }).FirstOrDefault());
 
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactoryFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var result = await _getUserXpInfoQuery(this._grimoireDbContext,
-                    command.UserId,
-                    command.GuildId,
-                    command.ChannelId,
-                    command.RoleIds)
-                .FirstOrDefaultAsync(cancellationToken);
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await _getUserXpInfoQuery(dbContext,
+                command.UserId,
+                command.GuildId,
+                command.ChannelId,
+                command.RoleIds);
 
             if (result is null || result.Timeout > DateTimeOffset.UtcNow)
                 return new Response();
 
-            await this._grimoireDbContext.XpHistory.AddAsync(
+            await dbContext.XpHistory.AddAsync(
                 new XpHistory
                 {
                     Xp = result.Amount,
@@ -110,7 +111,7 @@ public sealed class GainUserXp
                     TimeOut = DateTimeOffset.UtcNow + result.TextTime,
                     Type = XpHistoryType.Earned
                 }, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response
             {
@@ -133,7 +134,7 @@ public sealed class GainUserXp
     public sealed record QueryResult
     {
         public required long Xp { get; init; }
-        public required DateTimeOffset Timeout { get; init; }
+        public required DateTimeOffset? Timeout { get; init; }
         public required int Base { get; init; }
         public required int Modifier { get; init; }
         public required int Amount { get; init; }

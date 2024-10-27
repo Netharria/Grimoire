@@ -13,6 +13,7 @@ public static class MemberExtensions
     {
         var i = 0;
         if (xp > 1000)
+            // This is to reduce the number of iterations. Minor inaccuracy is acceptable.
             // ReSharper disable once PossibleLossOfFraction
             i = (int)Math.Floor(Math.Sqrt((xp - @base) * 100 /
                                           (@base * modifier)));

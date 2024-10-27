@@ -28,7 +28,7 @@ public sealed class RemoveTracker
             await ctx.EditReplyAsync(message: $"Tracker removed from {member.Mention}");
 
             await ctx.Client.SendMessageToLoggingChannel(response.ModerationLogId,
-               embed => embed
+                embed => embed
                     .WithDescription(
                         $"{ctx.Member.GetUsernameWithDiscriminator()} removed a tracker on {member.Mention}")
                     .WithColor(GrimoireColor.Purple));

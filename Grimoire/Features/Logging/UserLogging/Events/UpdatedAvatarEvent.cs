@@ -35,7 +35,6 @@ public sealed class UpdatedAvatarEvent
                 return;
 
 
-
             var message = await sender.SendMessageToLoggingChannel(avatarResponse.AvatarChannelLogId,
                 () =>
                 {

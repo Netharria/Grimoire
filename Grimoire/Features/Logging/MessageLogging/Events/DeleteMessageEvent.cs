@@ -68,7 +68,6 @@ public sealed class DeleteMessageEvent
             var message = await sender.SendMessageToLoggingChannel(response.LoggingChannel,
                 async () =>
                 {
-
                     var embed = new DiscordEmbedBuilder()
                         .WithAuthor($"Message deleted in #{args.Channel.Name}")
                         .AddField("Channel", ChannelExtensions.Mention(args.Channel.Id), true)
@@ -76,8 +75,8 @@ public sealed class DeleteMessageEvent
                         .WithTimestamp(DateTime.UtcNow)
                         .WithColor(GrimoireColor.Red);
                     var avatarUrl = await sender.GetUserAvatar(
-                            response.OriginalUserId ?? response.UserId,
-                            args.Guild);
+                        response.OriginalUserId ?? response.UserId,
+                        args.Guild);
                     if (avatarUrl is not null)
                         embed.WithThumbnail(avatarUrl);
 
@@ -85,9 +84,11 @@ public sealed class DeleteMessageEvent
                         embed.AddField("Author", UserExtensions.Mention(response.UserId), true);
                     else
                         embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
-                            .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
+                            .AddField("System Id",
+                                string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
                                 true)
-                            .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
+                            .AddField("Member Id",
+                                string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
                                 true);
 
                     if (auditLogEntry is not null && auditLogEntry.UserResponsible is not null)

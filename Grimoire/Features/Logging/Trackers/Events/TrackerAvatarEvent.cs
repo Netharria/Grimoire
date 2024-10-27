@@ -39,6 +39,5 @@ internal sealed class TrackerAvatarEvent(
                     embed,
                     false);
             });
-
     }
 }

@@ -30,7 +30,8 @@ internal sealed class TrackerUsernameEvent(DiscordClient discordClient, IMediato
                     string.IsNullOrWhiteSpace(notification.BeforeUsername) ? "`Unknown`" : notification.BeforeUsername,
                     true)
                 .AddField("After",
-                    string.IsNullOrWhiteSpace(notification.AfterUsername) ? "`Unknown`" : notification.AfterUsername, true)
+                    string.IsNullOrWhiteSpace(notification.AfterUsername) ? "`Unknown`" : notification.AfterUsername,
+                    true)
                 .WithTimestamp(DateTimeOffset.UtcNow)
                 .WithColor(GrimoireColor.Mint));
     }

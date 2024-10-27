@@ -56,7 +56,7 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
     [Fact]
     public async Task WhenGuildsAreNotInDatabase_AddThemAsync()
     {
-        ulong[] guildsToAdd = [Guild1, Guild2];
+        ulong[] guildsToAdd = [Guild1, Guild2, 3];
         var result = await this._dbContext.Guilds.AddMissingGuildsAsync(guildsToAdd);
 
         await this._dbContext.SaveChangesAsync();

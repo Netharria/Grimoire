@@ -18,6 +18,7 @@ public sealed partial class AddMessageEvent
 
         public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
         {
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (args.Guild is null
                 || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
                 return;
@@ -31,7 +32,7 @@ public sealed partial class AddMessageEvent
                 ChannelId = args.Channel.Id,
                 MessageContent = args.Message.Content,
                 MessageId = args.Message.Id,
-                ReferencedMessageId = args.Message?.ReferencedMessage?.Id,
+                ReferencedMessageId = args.Message.ReferencedMessage?.Id,
                 GuildId = args.Guild.Id,
                 ParentChannelTree = args.Channel.BuildChannelTree()
             });
@@ -51,17 +52,20 @@ public sealed partial class AddMessageEvent
         public required IEnumerable<ulong> ParentChannelTree { get; init; }
     }
 
-    public sealed partial class Handler(GrimoireDbContext grimoireDbContext, ILogger<Handler> logger)
+    public sealed partial class Handler(
+        IDbContextFactory<GrimoireDbContext> dbContextFactoryFactoryFactory,
+        ILogger<Handler> logger)
         : IRequestHandler<Command>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactoryFactoryFactory;
         private readonly ILogger<Handler> _logger = logger;
 
         public async Task Handle(Command command, CancellationToken cancellationToken)
         {
             try
             {
-                var result = await this._grimoireDbContext.Guilds
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+                var result = await dbContext.Guilds
                     .AsNoTracking()
                     .WhereIdIs(command.GuildId)
                     .Select(guild => new
@@ -81,10 +85,10 @@ public sealed partial class AddMessageEvent
                 if (!result.ChannelExists)
                 {
                     var channel = new Channel { GuildId = command.GuildId, Id = command.ChannelId };
-                    await this._grimoireDbContext.Channels.AddAsync(channel, cancellationToken);
+                    await dbContext.Channels.AddAsync(channel, cancellationToken);
                 }
 
-                if (!result.MemberExists) await this.AddMissingMember(command, cancellationToken);
+                if (!result.MemberExists) await AddMissingMember(command, dbContext, cancellationToken);
 
                 if (!ShouldLogMessage(command,
                         result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
@@ -112,8 +116,8 @@ public sealed partial class AddMessageEvent
                         }
                     ]
                 };
-                await this._grimoireDbContext.Messages.AddAsync(message, cancellationToken);
-                await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+                await dbContext.Messages.AddAsync(message, cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException)
             {
@@ -126,11 +130,12 @@ public sealed partial class AddMessageEvent
             "Database through exception on message creation. This was the original message {message}")]
         private static partial void LogOriginalMessageForDebugging(ILogger logger, string message);
 
-        private async Task AddMissingMember(Command command, CancellationToken cancellationToken)
+        private static async Task AddMissingMember(Command command, GrimoireDbContext dbContext,
+            CancellationToken cancellationToken)
         {
-            if (!await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
-                await this._grimoireDbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
-            await this._grimoireDbContext.Members.AddAsync(new Member
+            if (!await dbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
+                await dbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
+            await dbContext.Members.AddAsync(new Member
             {
                 UserId = command.UserId,
                 GuildId = command.GuildId,

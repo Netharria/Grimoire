@@ -27,28 +27,9 @@ public static class InteractionContextExtension
             .WithTimestamp(timeStamp)
             .Build();
 
-        await ctx.EditResponseAsync(
-            new DiscordWebhookBuilder().AddEmbed(embed));
-    }
-
-    public static async ValueTask<(bool, ulong)> TryMatchStringToChannelOrDefaultAsync(this InteractionContext ctx,
-        string? s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return (true, ctx.Channel.Id);
-        var parsedValue = DiscordSnowflakeParser.MatchSnowflake().Match(s).Value;
-        if (!ulong.TryParse(parsedValue, out var parsedId))
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Please give a valid channel.");
-            return (false, 0);
-        }
-
-        if (!ctx.Guild.Channels.ContainsKey(parsedId) && parsedId != 0)
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Did not find that channel on this server.");
-            return (false, 0);
-        }
-
-        return (true, parsedId);
+        await DiscordRetryPolicy.RetryDiscordCall(async _ =>
+            await ctx.EditResponseAsync(
+                new DiscordWebhookBuilder().AddEmbed(embed)));
     }
 
     public static async Task SendLogAsync(this InteractionContext ctx,

@@ -23,7 +23,8 @@ public static class ChannelDatabaseQueryHelpers
 
         var channelsToAdd = channels
             .Where(x => !existingChannelIds.Contains(x.Id))
-            .Select(x => new Channel { Id = x.Id, GuildId = x.GuildId }).ToArray().AsReadOnly();
+            .Select(x => new Channel { Id = x.Id, GuildId = x.GuildId })
+            .ToArray().AsReadOnly();
 
         if (channelsToAdd.Count == 0)
             return false;

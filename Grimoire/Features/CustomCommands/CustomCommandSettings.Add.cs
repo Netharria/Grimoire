@@ -14,7 +14,7 @@ namespace Grimoire.Features.CustomCommands;
 public sealed partial class CustomCommandSettings
 {
     [GeneratedRegex(@"[0-9A-Fa-f]{6}\b", RegexOptions.Compiled, 1000)]
-   private static partial Regex ValidHexColor();
+    private static partial Regex ValidHexColor();
 
     [SlashCommand("Learn", "Learn a new command or update an existing one")]
     public async Task Learn(

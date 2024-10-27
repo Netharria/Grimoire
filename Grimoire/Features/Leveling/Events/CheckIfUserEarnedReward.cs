@@ -81,12 +81,12 @@ public partial class CheckIfUserEarnedReward
 
             await this._client.SendMessageToLoggingChannel(response.LevelLogChannel, embed =>
                 embed
-                .WithColor(GrimoireColor.DarkPurple)
-                .WithAuthor(member.GetUsernameWithDiscriminator())
-                .WithDescription($"{member.Mention} has earned " +
-                                 $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x.RoleId)))}")
-                .WithFooter($"{member.Id}")
-                .WithTimestamp(DateTime.UtcNow));
+                    .WithColor(GrimoireColor.DarkPurple)
+                    .WithAuthor(member.GetUsernameWithDiscriminator())
+                    .WithDescription($"{member.Mention} has earned " +
+                                     $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x.RoleId)))}")
+                    .WithFooter($"{member.Id}")
+                    .WithTimestamp(DateTime.UtcNow));
         }
 
         [LoggerMessage(LogLevel.Warning, "Failure to send reward message Reward: {roleId} Message: {message}")]

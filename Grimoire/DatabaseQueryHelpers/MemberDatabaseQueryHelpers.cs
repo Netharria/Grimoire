@@ -59,8 +59,12 @@ public static class MemberDatabaseQueryHelpers
     public static async Task<bool> AddMissingNickNameHistoryAsync(this DbSet<NicknameHistory> databaseNicknames,
         IReadOnlyCollection<MemberDto> users, CancellationToken cancellationToken = default)
     {
+        var userIds = users.Select(x => x.UserId);
+        var guildIds = users.Select(x => x.GuildId);
+
         var existingNicknames = await databaseNicknames
             .AsNoTracking()
+            .Where(x => userIds.Contains(x.UserId) && guildIds.Contains(x.GuildId))
             .GroupBy(nickname => new { nickname.UserId, nickname.GuildId })
             .Select(nicknameGroup => new
             {
@@ -86,8 +90,12 @@ public static class MemberDatabaseQueryHelpers
     public static async Task<bool> AddMissingAvatarsHistoryAsync(this DbSet<Avatar> databaseAvatars,
         IReadOnlyCollection<MemberDto> users, CancellationToken cancellationToken = default)
     {
+        var userIds = users.Select(x => x.UserId);
+        var guildIds = users.Select(x => x.GuildId);
+
         var existingAvatars = await databaseAvatars
             .AsNoTracking()
+            .Where(x => userIds.Contains(x.UserId) && guildIds.Contains(x.GuildId))
             .GroupBy(avatar => new { avatar.UserId, avatar.GuildId })
             .Select(avatarGroup
                 => new

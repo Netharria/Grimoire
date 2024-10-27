@@ -17,15 +17,20 @@ public sealed class GetTracker
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Query, Response?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Query request, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Trackers
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.Trackers
                 .AsNoTracking()
                 .WhereMemberHasId(request.UserId, request.GuildId)
-                .Select(x => new Response { TrackerChannelId = x.LogChannelId }).FirstOrDefaultAsync(cancellationToken);
+                .Select(x => new Response { TrackerChannelId = x.LogChannelId })
+                .FirstOrDefaultAsync(cancellationToken);
+        }
     }
 
     public sealed record Response : BaseResponse

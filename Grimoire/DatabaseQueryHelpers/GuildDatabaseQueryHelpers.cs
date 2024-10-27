@@ -29,9 +29,9 @@ public static class GuildDatabaseQueryHelpers
                 UserLogSettings = new GuildUserLogSettings(),
                 MessageLogSettings = new GuildMessageLogSettings(),
                 CommandsSettings = new GuildCommandsSettings()
-            }).ToArray();
+            }).ToArray().AsReadOnly();
 
-        if (guildsToAdd.Length == 0) return false;
+        if (guildsToAdd.Count == 0) return false;
 
         await databaseGuilds.AddRangeAsync(guildsToAdd, cancellationToken);
         return true;

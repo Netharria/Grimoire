@@ -73,10 +73,10 @@ public sealed class AddTracker
 
 
             await ctx.Client.SendMessageToLoggingChannel(response.ModerationLogId,
-                    embed => embed
-                .WithDescription(
-                    $"{ctx.Member.GetUsernameWithDiscriminator()} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}")
-                .WithColor(GrimoireColor.Purple));
+                embed => embed
+                    .WithDescription(
+                        $"{ctx.Member.GetUsernameWithDiscriminator()} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}")
+                    .WithColor(GrimoireColor.Purple));
         }
     }
 

@@ -35,12 +35,9 @@ public class AddCustomCommandTest : IAsyncLifetime
         this._resetDatabase = factory.ResetDatabase;
     }
 
-    public async Task InitializeAsync()
-    {
-        await this._host.StartAsync();
-        //await this._dbContext.SaveChangesAsync();
-    }
+    public async Task InitializeAsync() => await this._host.StartAsync();
 
+    //await this._dbContext.SaveChangesAsync();
     public async Task DisposeAsync()
     {
         await this._resetDatabase();

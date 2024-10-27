@@ -33,14 +33,17 @@ public static class UserDatabaseQueryHelpers
 
         await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);
         return true;
-
     }
 
     public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames,
         IReadOnlyCollection<UserDto> users, CancellationToken cancellationToken = default)
     {
+        var incomingUserIds = users
+            .Select(x => x.Id);
+
         var existingUsernames = await databaseUsernames
             .AsNoTracking()
+            .Where(user => incomingUserIds.Contains(user.UserId))
             .GroupBy(username => username.UserId)
             .Select(usernameGroup =>
                 new
@@ -62,6 +65,5 @@ public static class UserDatabaseQueryHelpers
 
         await databaseUsernames.AddRangeAsync(usernamesToAdd, cancellationToken);
         return true;
-
     }
 }

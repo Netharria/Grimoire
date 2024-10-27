@@ -9,7 +9,8 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class RoleDatabaseQueryHelpers
 {
-    public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles, IReadOnlyCollection<RoleDto> roles,
+    public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles,
+        IReadOnlyCollection<RoleDto> roles,
         CancellationToken cancellationToken = default)
     {
         var incomingRoles = roles
@@ -32,6 +33,5 @@ public static class RoleDatabaseQueryHelpers
 
         await databaseRoles.AddRangeAsync(rolesToAdd, cancellationToken);
         return true;
-
     }
 }

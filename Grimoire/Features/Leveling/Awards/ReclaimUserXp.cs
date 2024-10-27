@@ -74,11 +74,7 @@ public sealed class ReclaimUserXp
                 .AsNoTracking()
                 .WhereMemberHasId(command.UserId, command.GuildId)
                 .Select(member =>
-                    new
-                    {
-                        Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp),
-                        member.Guild.ModChannelLog
-                    })
+                    new { Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp), member.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken);
             if (member is null)
                 throw new AnticipatedException(

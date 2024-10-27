@@ -28,7 +28,7 @@ internal sealed class ExampleSlashCommand : ApplicationCommandModule
             DiscordInteractionResponseType.ChannelMessageWithSource,
             new DiscordInteractionResponseBuilder()
                 .WithContent($"Pong: {ctx.Client.GetConnectionLatency(ctx.Guild.Id).Milliseconds}ms")
-                .AsEphemeral(true));
+                .AsEphemeral());
 
     /// <summary>
     ///     A sample command that shows how to handle an interaction with a long processing time.

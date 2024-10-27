@@ -60,7 +60,7 @@ public class TrackerMessageUpdateEvent
                         .Where(message => message.Id == request.MessageId)
                         .Select(message => message.MessageHistory
                             .Where(messageHistory => messageHistory.Action != MessageAction.Deleted
-                                        && messageHistory.TimeStamp < DateTime.UtcNow.AddSeconds(-1))
+                                                     && messageHistory.TimeStamp < DateTime.UtcNow.AddSeconds(-1))
                             .OrderByDescending(x => x.TimeStamp)
                             .First().MessageContent)
                         .First()

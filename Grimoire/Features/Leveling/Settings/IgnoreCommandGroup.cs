@@ -17,12 +17,14 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
 
     [SlashCommand("Add", "Ignores a user, channel, or role for xp gains")]
     public Task IgnoreAsync(InteractionContext ctx,
-        [Option("items", "The users, channels or roles to ignore")] string value) =>
+        [Option("items", "The users, channels or roles to ignore")]
+        string value) =>
         this.UpdateIgnoreState(ctx, value, true);
 
     [SlashCommand("Remove", "Removes a user, channel, or role from the ignored xp list.")]
     public Task WatchAsync(InteractionContext ctx,
-        [Option("Item", "The user, channel or role to Observe")] string value) =>
+        [Option("Item", "The user, channel or role to Observe")]
+        string value) =>
         this.UpdateIgnoreState(ctx, value, false);
 
     private async Task UpdateIgnoreState(InteractionContext ctx, string value, bool shouldIgnore)
