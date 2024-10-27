@@ -11,10 +11,11 @@ namespace Grimoire.Features.Shared.PluralKit.Models;
 public record PluralKitSystem
 {
     [JsonPropertyName("id")]
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public required string Id { get; set; }
 
     [JsonPropertyName("uuid")]
-    public required Guid GUID { get; set; }
+    public required Guid Guid { get; set; }
 
     [JsonPropertyName("name")]
     public string? Name { get; set; }

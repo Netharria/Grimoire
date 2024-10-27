@@ -11,10 +11,11 @@ namespace Grimoire.Features.Shared.PluralKit.Models;
 public sealed record PluralKitMember
 {
     [JsonPropertyName("id")]
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public required string Id { get; set; }
 
     [JsonPropertyName("uuid")]
-    public required Guid GUID { get; set; }
+    public required Guid Guid { get; set; }
 
     [JsonPropertyName("name")]
     public required string Name { get; set; }
@@ -53,7 +54,7 @@ public sealed record PluralKitMember
     public required bool KeepProxy { get; set; }
 
     [JsonPropertyName("tts")]
-    public required bool TTS { get; set; }
+    public required bool Tts { get; set; }
 
     [JsonPropertyName("autoproxy_enabled")]
     public bool? AutoproxyEnabled { get; set; }

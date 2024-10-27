@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.Collections.Immutable;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -38,11 +37,11 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
     {
         var messageBuilder = new DiscordMessageBuilder();
 
-        var imageUrls = this.GetImageurls(urls);
+        var imageUrls = this.GetImageUrls(urls);
 
         var images = await this.GetImages(imageUrls);
 
-        foreach ((var image, var index) in images.Where(x => x.Stream is not null).Select((x, i) => (x, i)))
+        foreach (var (image, index) in images.Where(x => x.Stream is not null).Select((x, i) => (x, i)))
         {
             var fileName = $"attachment{index}.{Path.GetExtension(image.Url)}";
             var stride = 4 * (index / 4);
@@ -70,7 +69,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         return messageBuilder;
     }
 
-    private Uri[] GetImageurls(string[] urls)
+    private Uri[] GetImageUrls(string[] urls)
         => urls
             .Where(url =>
                 !string.IsNullOrWhiteSpace(url)
@@ -107,44 +106,41 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
 
     private static void AddAttachmentFileNames(Uri[] imageUrls, int stride, DiscordEmbedBuilder imageEmbed, bool displayFileNames)
     {
-        if (displayFileNames)
-        {
-            var attachments = imageUrls
-                    .Skip(stride)
-                    .Take(4)
-                    .Select(x => $"**{Path.GetFileName(x.AbsolutePath)}**")
-                    .ToArray();
-            imageEmbed.AddMessageTextToFields("Attachments", string.Join("\n", attachments));
-        }
+        if (!displayFileNames) return;
+
+        var attachments = imageUrls
+            .Skip(stride)
+            .Take(4)
+            .Select(x => $"**{Path.GetFileName(x.AbsolutePath)}**")
+            .ToArray();
+        imageEmbed.AddMessageTextToFields("Attachments", string.Join("\n", attachments));
     }
 
     private void AddNonImageEmbed(string[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
     {
-        var nonImageAttachements = urls
+        var nonImageAttachments = urls
             .Where(url =>
                 !string.IsNullOrWhiteSpace(url)
                 && !this._validImageExtensions.Contains(Path.GetExtension(url.Split('?')[0])))
             .Select(x => $"**{Path.GetFileName(x)}**")
-            .ToArray(); ;
+            .ToArray();
 
-        if (nonImageAttachements.Length != 0)
-        {
-            var imageEmbed = new DiscordEmbedBuilder(embed)
-                .AddMessageTextToFields("Non-Image Attachments", string.Join("\n", nonImageAttachements));
-            messageBuilder.AddEmbed(imageEmbed);
-        }
+        if (nonImageAttachments.Length == 0) return;
+
+        var imageEmbed = new DiscordEmbedBuilder(embed)
+            .AddMessageTextToFields("Non-Image Attachments", string.Join("\n", nonImageAttachments));
+        messageBuilder.AddEmbed(imageEmbed);
     }
 
     private static void AddImagesThatFailedDownload(ImageDownloadResult[] urls, DiscordEmbed embed, DiscordMessageBuilder messageBuilder)
     {
-
         var failedFiles = urls.Where(x => x.Stream is null).Select(x => Path.GetFileName(x.Url)).ToArray();
-        if (failedFiles.Length != 0)
-        {
-            var imageEmbed = new DiscordEmbedBuilder(embed)
-                .AddMessageTextToFields("Failed to download these images.", string.Join("\n", failedFiles));
-            messageBuilder.AddEmbed(imageEmbed);
-        }
+
+        if (failedFiles.Length == 0) return;
+
+        var imageEmbed = new DiscordEmbedBuilder(embed)
+            .AddMessageTextToFields("Failed to download these images.", string.Join("\n", failedFiles));
+        messageBuilder.AddEmbed(imageEmbed);
     }
 }
 

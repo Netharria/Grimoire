@@ -70,7 +70,7 @@ public sealed partial class CustomCommandSettings
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 
-    internal async static IAsyncEnumerable<RoleDto> ParseStringAndGetRoles(InteractionContext ctx, string rolesText)
+    internal static async IAsyncEnumerable<RoleDto> ParseStringAndGetRoles(InteractionContext ctx, string rolesText)
     {
         if (string.IsNullOrWhiteSpace(rolesText))
             yield break;

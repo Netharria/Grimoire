@@ -5,19 +5,22 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using JetBrains.Annotations;
+
 namespace Grimoire.Domain;
 
+[UsedImplicitly]
 public class MessageHistory
 {
-    public ulong MessageId { get; set; }
-    public Message Message { get; set; } = null!;
-    public ulong GuildId { get; set; }
-    public Guild Guild { get; set; } = null!;
-    public MessageAction Action { get; set; }
-    public string MessageContent { get; set; } = string.Empty;
-    public ulong? DeletedByModeratorId { get; set; }
-    public virtual Member? DeletedByModerator { get; set; } = null!;
-    public DateTimeOffset TimeStamp { get; set; }
+    public ulong MessageId { get; init; }
+    public Message Message { get; init; } = null!;
+    public ulong GuildId { get; init; }
+    public Guild Guild { get; init; } = null!;
+    public MessageAction Action { get; init; }
+    public string MessageContent { get; init; } = string.Empty;
+    public ulong? DeletedByModeratorId { get; init; }
+    public virtual Member? DeletedByModerator { get; init; }
+    public DateTimeOffset TimeStamp { get; init; }
 }
 
 public enum MessageAction

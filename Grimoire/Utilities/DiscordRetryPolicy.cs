@@ -23,33 +23,18 @@ public static class DiscordRetryPolicy
         };
     private static readonly ResiliencePipeline _resiliencePipeline = new ResiliencePipelineBuilder().AddRetry(_retryStrategyOptions).Build();
 
-    public static ValueTask<T> RetryDiscordCall<T>(Func<Task<T>> function, CancellationToken cancellationToken = default)
-        => _resiliencePipeline.ExecuteAsync(async token => await function(), cancellationToken);
+    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function, CancellationToken cancellationToken = default)
+        => _resiliencePipeline.ExecuteAsync(function, cancellationToken);
 
-    public static async ValueTask<T> RetryDiscordCall<T>(Func<Task<T>> function, T defaultValue, CancellationToken cancellationToken = default)
+    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function, T defaultValue, CancellationToken cancellationToken = default)
     {
         try
         {
-            return await _resiliencePipeline.ExecuteAsync(async token => await function(), cancellationToken);
+            return _resiliencePipeline.ExecuteAsync(function, cancellationToken);
         }
         catch (ServerErrorException)
         {
-            return defaultValue;
-        }
-    }
-
-    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, Task<T>> function, CancellationToken cancellationToken = default)
-        => _resiliencePipeline.ExecuteAsync(async token => await function(token), cancellationToken);
-
-    public static async ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, Task<T>> function, T defaultValue, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await _resiliencePipeline.ExecuteAsync(async token => await function(token), cancellationToken);
-        }
-        catch (ServerErrorException)
-        {
-            return defaultValue;
+            return ValueTask.FromResult(defaultValue);
         }
     }
 }

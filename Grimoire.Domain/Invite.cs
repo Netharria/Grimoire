@@ -9,9 +9,9 @@ namespace Grimoire.Domain;
 
 public sealed record Invite
 {
-    public string Code { get; set; } = string.Empty;
-    public string Inviter { get; set; } = string.Empty;
-    public int Uses { get; set; }
-    public int MaxUses { get; set; }
-    public string Url { get; set; } = string.Empty;
+    public string Code { get; init; } = string.Empty;
+    public string Inviter { get; init; } = string.Empty;
+    public int Uses { get; init; }
+    public int MaxUses { get; init; }
+    public string Url { get; init; } = string.Empty;
 }

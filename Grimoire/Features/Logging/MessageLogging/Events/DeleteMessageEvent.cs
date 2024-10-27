@@ -7,8 +7,7 @@
 
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.LogCleanup.Commands;
-using Grimoire.Features.MessageLogging.Commands;
-using Grimoire.PluralKit;
+using Grimoire.Features.Shared.PluralKit;
 
 namespace Grimoire.Features.Logging.MessageLogging.Events;
 

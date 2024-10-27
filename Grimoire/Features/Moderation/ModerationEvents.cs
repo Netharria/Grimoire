@@ -11,7 +11,7 @@ using Grimoire.Features.Moderation.Commands;
 using Grimoire.Features.Moderation.Queries;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.ModerationModule;
+namespace Grimoire.Features.Moderation;
 
 public sealed partial class ModerationEvents(IMediator mediator, ILogger<ModerationEvents> logger)
 {

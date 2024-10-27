@@ -25,16 +25,17 @@ public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbConte
         var result = await this._grimoireDbContext.Guilds
             .WhereIdIs(command.GuildId)
             .GetModulesOfType(command.Module)
-            .Select(x => new
+            .Select(module => new
             {
-                Module = x,
-                x.Guild.ModChannelLog,
+                Module = module,
+                module.Guild.ModChannelLog,
             })
             .FirstOrDefaultAsync(cancellationToken);
         if (result is null)
             throw new AnticipatedException("Could not find the settings for this server.");
 
-        var ModChannelLog = result.ModChannelLog;
+        var modChannelLog = result.ModChannelLog;
+        // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         var guildModule = result.Module ?? command.Module switch
         {
             Module.Leveling => new GuildLevelSettings { GuildId = command.GuildId },
@@ -50,7 +51,7 @@ public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbConte
         await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
         return new EnableModuleCommandResponse
         {
-            ModerationLog = ModChannelLog
+            ModerationLog = modChannelLog
         };
     }
 }

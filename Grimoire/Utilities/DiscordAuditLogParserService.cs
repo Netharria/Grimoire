@@ -38,11 +38,11 @@ public sealed class DiscordAuditLogParserService(DiscordClient discordClient, IM
         try
         {
             deleteEntry = await DiscordRetryPolicy.RetryDiscordCall(
-                async () => await guild.GetAuditLogsAsync(10, actionType: DiscordAuditLogActionType.MessageDelete)
+                async token => await guild.GetAuditLogsAsync(10, actionType: DiscordAuditLogActionType.MessageDelete)
                 .OfType<DiscordAuditLogMessageEntry>()
                 .Where(x => x.Target.Id == result && x.Channel.Id == channelId)
                 .OrderByDescending(x => x.CreationTimestamp)
-                .FirstOrDefaultAsync());
+                .FirstOrDefaultAsync(token));
         }
         catch (Exception)
         {

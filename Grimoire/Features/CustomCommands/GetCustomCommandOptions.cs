@@ -40,8 +40,8 @@ public sealed class GetCustomCommandOptions
     }
     public sealed record Request : IStreamRequest<Response>
     {
-        public required string EnteredText { get; set; }
-        public required ulong GuildId { get; set; }
+        public required string EnteredText { get; init; }
+        public required ulong GuildId { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext grimoireDbContext) : IStreamRequestHandler<Request, Response>
@@ -74,8 +74,8 @@ public sealed class GetCustomCommandOptions
 
     public sealed record Response
     {
-        public required string Name { get; set; }
-        public required bool HasMention { get; set; }
-        public required bool HasMessage { get; set; }
+        public required string Name { get; init; }
+        public required bool HasMention { get; init; }
+        public required bool HasMessage { get; init; }
     }
 }

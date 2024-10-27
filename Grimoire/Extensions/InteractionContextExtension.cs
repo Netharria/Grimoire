@@ -69,7 +69,7 @@ public static class InteractionContextExtension
             .WithTimestamp(DateTime.UtcNow)
             .Build();
 
-        await DiscordRetryPolicy.RetryDiscordCall(async () => await logChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed)));
+        await DiscordRetryPolicy.RetryDiscordCall(async token => await logChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed)));
 
     }
 

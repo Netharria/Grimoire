@@ -7,6 +7,7 @@
 
 using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using static Grimoire.Features.Leveling.Events.GainUserXp;
 
@@ -14,6 +15,7 @@ namespace Grimoire.Features.Leveling.Events;
 
 public partial class CheckIfUserEarnedReward
 {
+    [UsedImplicitly]
     public partial class NotificationHandler(IMediator mediator, DiscordClient client, ILogger<NotificationHandler> logger) : INotificationHandler<UserGainedXpEvent>
     {
         private readonly IMediator _mediator = mediator;
@@ -35,11 +37,14 @@ public partial class CheckIfUserEarnedReward
                 return;
 
             var newRewards = response.EarnedRewards
-                .Where(x => !member.Roles.Any(y => y.Id == x.RoleId))
+                .Where(reward => member.Roles.All(role => role.Id != reward.RoleId))
                 .ToArray();
 
             var rolesToAdd = newRewards
-                .Join(guild.Roles, x => x.RoleId, y => y.Key, (x, y) => y.Value)
+                .Join(guild.Roles,
+                    reward => reward.RoleId,
+                    role => role.Key,
+                    (reward, role) => role.Value)
                 .Concat(member.Roles)
                 .Distinct()
                 .ToArray();
@@ -78,7 +83,7 @@ public partial class CheckIfUserEarnedReward
                 }
             }
 
-            await _client.SendMessageToLoggingChannel(response.LevelLogChannel, new DiscordEmbedBuilder()
+            await this._client.SendMessageToLoggingChannel(response.LevelLogChannel, new DiscordEmbedBuilder()
                 .WithColor(GrimoireColor.DarkPurple)
                 .WithAuthor(member.GetUsernameWithDiscriminator())
                 .WithDescription($"{member.Mention} has earned " +
@@ -101,13 +106,13 @@ public partial class CheckIfUserEarnedReward
 
             var roleString = string.Join(' ', rewards.Select(RoleExtensions.Mention));
 
-            await _client.SendMessageToLoggingChannel(modLogChannelId,
+            await this._client.SendMessageToLoggingChannel(modLogChannelId,
                 new DiscordEmbedBuilder()
                         .WithColor(GrimoireColor.Red)
                         .WithDescription($"{displayName} tried to grant roles " +
                         $"{roleString} but did not have sufficent permissions."));
 
-            await _client.SendMessageToLoggingChannel(levelLogChannelId,
+            await this._client.SendMessageToLoggingChannel(levelLogChannelId,
                 new DiscordEmbedBuilder()
                         .WithColor(GrimoireColor.Red)
                         .WithDescription($"{displayName} tried to grant roles " +

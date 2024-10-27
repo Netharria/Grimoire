@@ -6,14 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Grimoire.Features.Leveling.Events;
 using Xunit;
 using Grimoire.Domain;
@@ -86,7 +81,7 @@ public class CheckIfUserEarnedRewardsTests(GrimoireCoreFactory factory) : IAsync
             GuildId = GUILD_ID,
             UserLevel = 3
         };
-        var handler = new CheckIfUserEarnedReward.RequestHandler(_dbContext);
+        var handler = new CheckIfUserEarnedReward.RequestHandler(this._dbContext);
 
         // Act
         var result = await handler.Handle(request, CancellationToken.None);

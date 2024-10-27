@@ -23,7 +23,8 @@ public sealed class GetModuleStateForGuildQueryHandler(GrimoireDbContext grimoir
     {
         var result = await this._grimoireDbContext.Guilds.AsNoTracking().WhereIdIs(request.GuildId)
             .GetModulesOfType(request.Module)
-            .Select(x => x != null && x.ModuleEnabled)
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+            .Select(module => module != null && module.ModuleEnabled)
             .FirstOrDefaultAsync(cancellationToken);
         return result;
     }

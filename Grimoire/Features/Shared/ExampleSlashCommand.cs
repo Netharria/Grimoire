@@ -23,14 +23,12 @@ internal sealed class ExampleSlashCommand : ApplicationCommandModule
     /// <param name="ctx">The context which triggered the interaction.</param>
     /// <returns>The completed task.</returns>
     [SlashCommand("ping", "Checks the current connection status of the bot,")]
-    public static Task PingAsync(InteractionContext ctx)
-    {
-        return ctx.CreateResponseAsync(
+    public static Task PingAsync(InteractionContext ctx) =>
+        ctx.CreateResponseAsync(
             DiscordInteractionResponseType.ChannelMessageWithSource,
             new DiscordInteractionResponseBuilder()
                 .WithContent($"Pong: {ctx.Client.GetConnectionLatency(ctx.Guild.Id).Milliseconds}ms")
                 .AsEphemeral(ephemeral: true));
-    }
 
     /// <summary>
     /// A sample command that shows how to handle an interaction with a long processing time.

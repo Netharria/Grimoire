@@ -24,19 +24,19 @@ public class AddCustomCommandTest : IAsyncLifetime
 
     public AddCustomCommandTest(GrimoireCoreFactory factory)
     {
-        _host = Host.CreateDefaultBuilder()
+        this._host = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services)
                 => services.AddDbContext<GrimoireDbContext>(options =>
                     options.UseNpgsql(factory.ConnectionString))
                 .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<AddCustomCommand.Handler>())).Build();
 
-        _dbContext = _host.Services.GetRequiredService<GrimoireDbContext>();
-        _resetDatabase = factory.ResetDatabase;
+        this._dbContext = this._host.Services.GetRequiredService<GrimoireDbContext>();
+        this._resetDatabase = factory.ResetDatabase;
     }
 
     public async Task InitializeAsync()
     {
-        await _host.StartAsync();
+        await this._host.StartAsync();
         return;
         //await this._dbContext.SaveChangesAsync();
     }
@@ -44,7 +44,7 @@ public class AddCustomCommandTest : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await this._resetDatabase();
-        await _host.StopAsync();
+        await this._host.StopAsync();
     }
 
     //[Fact]

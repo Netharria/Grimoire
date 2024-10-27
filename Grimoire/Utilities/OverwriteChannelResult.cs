@@ -7,7 +7,7 @@
 
 namespace Grimoire.Utilities;
 
-public sealed partial class MuteAdminCommands
+public sealed class MuteAdminCommands
 {
     internal sealed class OverwriteChannelResult
     {

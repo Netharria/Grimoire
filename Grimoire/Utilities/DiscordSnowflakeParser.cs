@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
 namespace Grimoire.Utilities;
@@ -29,12 +28,12 @@ public static partial class DiscordSnowflakeParser
                 if (ctx.Guild.Roles.ContainsKey(id)) return "Role";
                 if (ctx.Guild.Channels.ContainsKey(id)) return "Channel";
                 var user = await ctx.Client.GetUserAsync(id);
-                if (user is not null) return "User";
-                return "Invalid";
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+                return user is not null ? "User" : "Invalid";
             }))
         {
             yield return group;
         }
     }
-        
+
 }

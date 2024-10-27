@@ -55,15 +55,15 @@ public sealed record GetLastBanQueryResponse : BaseResponse
 {
     public ulong UserId { get; set; }
     public ulong GuildId { get; set; }
-    public bool ModerationModuleEnabled { get; set; }
+    public bool ModerationModuleEnabled { get; init; }
 
-    public LastSin? LastSin { get; set; }
+    public LastSin? LastSin { get; init; }
 }
 
 public sealed record LastSin
 {
-    public long SinId { get; set; }
-    public ulong? ModeratorId { get; set; }
-    public string Reason { get; set; } = string.Empty;
-    public DateTimeOffset SinOn { get; set; }
+    public long SinId { get; init; }
+    public ulong? ModeratorId { get; init; }
+    public string Reason { get; init; } = string.Empty;
+    public DateTimeOffset SinOn { get; init; }
 }

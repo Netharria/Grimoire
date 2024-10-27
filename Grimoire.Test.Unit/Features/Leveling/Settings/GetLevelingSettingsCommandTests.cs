@@ -6,12 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Docker.DotNet.Models;
 using FluentAssertions;
 using Grimoire.Domain;
 using Grimoire.Features.Leveling.Settings;
@@ -65,7 +61,7 @@ public class GetLevelingSettingsCommandTests(GrimoireCoreFactory factory) : IAsy
         {
             GuildId = GUILD_ID
         };
-        var handler = new GetLevelSettings.Handler(_dbContext);
+        var handler = new GetLevelSettings.Handler(this._dbContext);
 
         // Act
         var result = await handler.Handle(request, CancellationToken.None);

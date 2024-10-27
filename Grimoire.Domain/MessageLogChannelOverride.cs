@@ -6,6 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
+using JetBrains.Annotations;
+
 namespace Grimoire.Domain;
 
 public enum MessageLogOverrideOption
@@ -14,12 +16,12 @@ public enum MessageLogOverrideOption
     NeverLog
 }
 
+[UsedImplicitly]
 public class MessageLogChannelOverride
 {
-    public ulong ChannelId { get; set; }
-    public virtual Channel Channel { get; set; } = null!;
-    public ulong GuildId { get; set; }
-    public virtual Guild Guild { get; set; } = null!;
+    public ulong ChannelId { get; init; }
+    public virtual Channel Channel { get; init; } = null!;
+    public ulong GuildId { get; init; }
+    public virtual Guild Guild { get; init; } = null!;
     public MessageLogOverrideOption ChannelOption { get; set; }
-
 }

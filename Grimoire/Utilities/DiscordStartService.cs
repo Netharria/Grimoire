@@ -31,7 +31,7 @@ internal sealed partial class DiscordStartService(
                 sw.Start();
                 await context.Database.MigrateAsync(cancellationToken);
                 sw.Stop();
-                LogMigrationDuration(_logger, sw.ElapsedMilliseconds);
+                LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
             }
         }
         //connect client

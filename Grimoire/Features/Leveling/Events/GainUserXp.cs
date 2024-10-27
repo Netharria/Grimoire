@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.DatabaseQueryHelpers;
-
 namespace Grimoire.Features.Leveling.Events;
 
 public sealed partial class GainUserXp
@@ -74,29 +72,28 @@ public sealed partial class GainUserXp
             _getUserXpInfoQuery = EF.CompileAsyncQuery((GrimoireDbContext context, ulong userId, ulong guildId, ulong channelId, ulong[] roleIds) =>
                 context.Members
                 .AsNoTracking()
-                .Where(x => x.Guild.LevelSettings.ModuleEnabled)
-                .Where(x => x.UserId == userId)
-                .Where(x => x.GuildId == guildId)
-                .Where(x => x.IsIgnoredMember == null)
-                .Where(x => !x.Guild.IgnoredChannels.Any(x => x.ChannelId == channelId))
-                .Where(x => !x.Guild.IgnoredRoles.Any(x => roleIds.Contains(x.RoleId)))
-                .Select(x => new QueryResult
+                .Where(member => member.Guild.LevelSettings.ModuleEnabled)
+                .Where(member => member.UserId == userId)
+                .Where(member => member.GuildId == guildId)
+                .Where(member => member.IsIgnoredMember == null)
+                .Where(member => member.Guild.IgnoredChannels.All(x => x.ChannelId != channelId))
+                .Where(member => !member.Guild.IgnoredRoles.Any(x => roleIds.Contains(x.RoleId)))
+                .Select(member => new QueryResult
                 {
-                    Xp = x.XpHistory.Sum(x => x.Xp),
-                    Timeout = x.XpHistory.Select(x => x.TimeOut)
-                        .OrderByDescending(x => x)
-                        .FirstOrDefault(),
-                    Base = x.Guild.LevelSettings.Base,
-                    Modifier = x.Guild.LevelSettings.Modifier,
-                    Amount = x.Guild.LevelSettings.Amount,
-                    LevelChannelLogId = x.Guild.LevelSettings.LevelChannelLogId,
-                    TextTime = x.Guild.LevelSettings.TextTime
+                    Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp),
+                    Timeout = member.XpHistory
+                        .Select(xpHistory => xpHistory.TimeOut)
+                        .Max(dateTimeOffset => dateTimeOffset),
+                    Base = member.Guild.LevelSettings.Base,
+                    Modifier = member.Guild.LevelSettings.Modifier,
+                    Amount = member.Guild.LevelSettings.Amount,
+                    LevelChannelLogId = member.Guild.LevelSettings.LevelChannelLogId,
+                    TextTime = member.Guild.LevelSettings.TextTime
                 }).Take(1));
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var result = await _getUserXpInfoQuery(
-                    _grimoireDbContext,
+            var result = await _getUserXpInfoQuery(this._grimoireDbContext,
                     command.UserId,
                     command.GuildId,
                     command.ChannelId,

@@ -6,22 +6,24 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Domain.Shared;
+using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
+[UsedImplicitly]
 public class OldLogMessage : IIdentifiable<ulong>
 {
-    public ulong Id { get; set; }
+    public ulong ChannelId { get; init; }
 
-    public ulong ChannelId { get; set; }
+    public virtual Channel Channel { get; init; } = null!;
 
-    public virtual Channel Channel { get; set; } = null!;
+    public ulong GuildId { get; init; }
 
-    public ulong GuildId { get; set; }
+    public virtual Guild Guild { get; init; } = null!;
 
-    public virtual Guild Guild { get; set; } = null!;
-
+    // ReSharper disable once UnassignedGetOnlyAutoProperty
     public DateTimeOffset CreatedAt { get; }
 
-    public int TimesTried { get; set; }
+    public int TimesTried { get; init; }
+    public ulong Id { get; set; }
 }

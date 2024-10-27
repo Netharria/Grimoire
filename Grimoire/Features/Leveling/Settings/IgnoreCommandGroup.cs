@@ -74,7 +74,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 
-    private async static ValueTask<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
+    private static async ValueTask<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
     {
         var id = ulong.Parse(idString);
         if (client.Guilds[guildId].Members.TryGetValue(id, out var member))

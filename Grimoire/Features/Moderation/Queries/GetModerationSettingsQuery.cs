@@ -36,7 +36,7 @@ public sealed class GetModerationSettingsQueryHandler(GrimoireDbContext context)
 
 public sealed record GetModerationSettingsQueryResponse
 {
-    public TimeSpan AutoPardonAfter { get; internal set; }
-    public bool ModuleEnabled { get; internal set; }
-    public ulong? PublicBanLog { get; internal set; }
+    public TimeSpan AutoPardonAfter { get; internal init; }
+    public bool ModuleEnabled { get; internal init; }
+    public ulong? PublicBanLog { get; internal init; }
 }

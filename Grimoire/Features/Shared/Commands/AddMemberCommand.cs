@@ -13,7 +13,7 @@ public sealed record AddMemberCommand : IRequest
     public ulong GuildId { get; init; }
     public string UserName { get; init; } = string.Empty;
     public string? Nickname { get; init; }
-    public string AvatarUrl { get; set; } = string.Empty;
+    public string AvatarUrl { get; init; } = string.Empty;
 }
 
 

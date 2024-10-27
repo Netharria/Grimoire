@@ -24,11 +24,13 @@ public sealed class GetAllModuleStatesForGuildQueryHandler(GrimoireDbContext gri
             .WhereIdIs(request.GuildId)
             .Select(x => new GetAllModuleStatesForGuildQueryResponse
             {
+                // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                 LevelingIsEnabled = x.LevelSettings != null && x.LevelSettings.ModuleEnabled,
                 UserLogIsEnabled = x.UserLogSettings != null && x.UserLogSettings.ModuleEnabled,
                 ModerationIsEnabled = x.ModerationSettings != null && x.ModerationSettings.ModuleEnabled,
                 MessageLogIsEnabled = x.MessageLogSettings != null && x.MessageLogSettings.ModuleEnabled,
                 CommandsIsEnabled = x.CommandsSettings != null && x.CommandsSettings.ModuleEnabled
+                // ReSharper restore ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             }).FirstOrDefaultAsync(cancellationToken: cancellationToken);
 }
 

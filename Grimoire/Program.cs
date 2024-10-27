@@ -10,8 +10,6 @@ using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.Net;
-using DSharpPlus.Net.Gateway;
 using Grimoire;
 using Grimoire.Features.Leveling.Awards;
 using Grimoire.Features.Leveling.Events;
@@ -20,23 +18,21 @@ using Grimoire.Features.Leveling.Settings;
 using Grimoire.Features.Leveling.UserCommands;
 using Grimoire.Features.LogCleanup;
 using Grimoire.Features.Logging.MessageLogging.Events;
-using Grimoire.Features.Logging.Settings;
 using Grimoire.Features.Logging.Trackers;
 using Grimoire.Features.Logging.Trackers.Commands;
 using Grimoire.Features.Logging.Trackers.Events;
 using Grimoire.Features.Logging.UserLogging.Events;
-using Grimoire.Features.MessageLogging.Commands;
 using Grimoire.Features.Moderation;
-using Grimoire.Features.Shared;
 using Grimoire.Features.Shared.SharedModule;
 using Grimoire.Features.Shared.SpamModule;
 using Grimoire.Features.CustomCommands;
-using Grimoire.PluralKit;
+using Grimoire.Features.Shared.PluralKit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Serilog;
+using Grimoire.Features.Logging.Settings;
 
 var rateLimiter = new SlidingWindowRateLimiter(
     new SlidingWindowRateLimiterOptions
@@ -69,8 +65,6 @@ await Host.CreateDefaultBuilder(args)
         .AddDiscordClient(
             token: token,
             intents: DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents)
-            .Configure<RestClientOptions>(x => { })
-            .Configure<GatewayClientOptions>(x => { })
         .AddCoreServices(context.Configuration)
         .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
         .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
@@ -160,13 +154,13 @@ await Host.CreateDefaultBuilder(args)
         {
             var endpoint = context.Configuration["pluralkitApiEndpoint"];
             var userAgent = context.Configuration["pluralkitUserAgent"];
-            var token = context.Configuration["pluralkitToken"];
+            var pluralkitToken = context.Configuration["pluralkitToken"];
 
             ArgumentException.ThrowIfNullOrEmpty(endpoint, nameof(endpoint));
 
             x.BaseAddress = new Uri(endpoint);
             x.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
-            x.DefaultRequestHeaders.Add("Authorization", token);
+            x.DefaultRequestHeaders.Add("Authorization", pluralkitToken);
         }).AddStandardResilienceHandler(builder
             => builder.RateLimiter = new HttpRateLimiterStrategyOptions
             {
@@ -174,7 +168,6 @@ await Host.CreateDefaultBuilder(args)
                 RateLimiter = args => rateLimiter
                 .AcquireAsync(cancellationToken: args.Context.CancellationToken)
             });
-        ;
     }).RunConsoleAsync();
 
 

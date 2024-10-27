@@ -9,6 +9,7 @@ using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
+using Grimoire.Features.Logging.MessageLogging.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -53,10 +54,10 @@ public class LinkProxyMessageTests(GrimoireCoreFactory factory) : IAsyncLifetime
     [Fact]
     public async Task WhenProxyMessageIsSent_LinkWithOriginalMessage()
     {
-        var logger = new NullLogger<Grimoire.Features.MessageLogging.Commands.LinkProxyMessage.Handler>();
-        var cut = new Grimoire.Features.MessageLogging.Commands.LinkProxyMessage.Handler(this._dbContext, logger);
+        var logger = new NullLogger<LinkProxyMessage.Handler>();
+        var cut = new LinkProxyMessage.Handler(this._dbContext, logger);
 
-        await cut.Handle(new Grimoire.Features.MessageLogging.Commands.LinkProxyMessage.Command
+        await cut.Handle(new LinkProxyMessage.Command
         {
             OriginalMessageId = MESSAGE_ID_1,
             ProxyMessageId = MESSAGE_ID_2,

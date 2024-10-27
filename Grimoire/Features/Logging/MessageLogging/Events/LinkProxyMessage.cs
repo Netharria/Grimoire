@@ -8,7 +8,7 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Features.MessageLogging.Commands;
+namespace Grimoire.Features.Logging.MessageLogging.Events;
 public partial class LinkProxyMessage
 {
     public record Command : IRequest

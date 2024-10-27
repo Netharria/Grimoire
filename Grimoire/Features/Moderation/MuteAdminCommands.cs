@@ -8,11 +8,13 @@
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Moderation.Commands;
 using Grimoire.Features.Moderation.Queries;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using static Grimoire.Utilities.MuteAdminCommands;
 
-namespace Grimoire.ModerationModule;
+namespace Grimoire.Features.Moderation;
 
+[UsedImplicitly]
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
@@ -41,6 +43,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator) : ApplicationC
             embed.AddField("Mute Role", role.Mention);
         else
             embed.AddField("Mute Role", "None");
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (users is not null && users.Length != 0)
             embed.AddField("Muted Users", string.Join(" ", users.Select(x => x.Mention)));
         else
@@ -154,7 +157,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator) : ApplicationC
     private static async Task<OverwriteChannelResult> OverwriteChannelAsync(DiscordChannel channel, DiscordRole role)
     {
         var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
-        return await DiscordRetryPolicy.RetryDiscordCall(async () =>
+        return await DiscordRetryPolicy.RetryDiscordCall(async token =>
         {
             if (permissions is not null)
                 await channel.AddOverwriteAsync(role,
@@ -191,7 +194,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator) : ApplicationC
     {
         var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
 
-        return await DiscordRetryPolicy.RetryDiscordCall(async () =>
+        return await DiscordRetryPolicy.RetryDiscordCall(async token =>
         {
             if (permissions is not null)
                 await channel.AddOverwriteAsync(role,

@@ -10,7 +10,7 @@ using Grimoire.Features.Moderation.Commands;
 using Grimoire.Features.Moderation.Queries;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.ModerationModule;
+namespace Grimoire.Features.Moderation;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]

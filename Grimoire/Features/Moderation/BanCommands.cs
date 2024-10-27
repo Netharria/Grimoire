@@ -9,7 +9,7 @@ using DSharpPlus.Exceptions;
 using Grimoire.Features.Moderation.Commands;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.ModerationModule;
+namespace Grimoire.Features.Moderation;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]

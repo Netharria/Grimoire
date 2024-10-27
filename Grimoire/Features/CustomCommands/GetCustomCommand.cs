@@ -71,8 +71,8 @@ public sealed class GetCustomCommand
 
     public sealed record Request : IRequest<Response>
     {
-        public required string Name { get; set; }
-        public required ulong GuildId { get; set; }
+        public required string Name { get; init; }
+        public required ulong GuildId { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext GrimoireDbContext) : IRequestHandler<Request, Response?>
@@ -99,11 +99,11 @@ public sealed class GetCustomCommand
     public sealed record Response
     {
         public required string Content { get; set; }
-        public required bool HasMention { get; set; }
-        public required bool HasMessage { get; set; }
-        public required bool IsEmbedded { get; set; }
-        public required string? EmbedColor { get; set; }
-        public required bool RestrictedUse { get; set; }
-        public required IEnumerable<ulong> PermissionRoles { get; set; }
+        public required bool HasMention { get; init; }
+        public required bool HasMessage { get; init; }
+        public required bool IsEmbedded { get; init; }
+        public required string? EmbedColor { get; init; }
+        public required bool RestrictedUse { get; init; }
+        public required IEnumerable<ulong> PermissionRoles { get; init; }
     }
 }

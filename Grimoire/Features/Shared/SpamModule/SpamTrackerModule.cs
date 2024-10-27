@@ -21,8 +21,8 @@ public class SpamTrackerModule
 
     public sealed record CheckSpamResult
     {
-        public required bool IsSpam { get; set; }
-        public string Reason { get; set; } = string.Empty;
+        public required bool IsSpam { get; init; }
+        public string Reason { get; init; } = string.Empty;
     }
 
     public ConcurrentDictionary<DiscordMember, SpamTracker> SpamUsers { get; set; } = new ConcurrentDictionary<DiscordMember, SpamTracker>();

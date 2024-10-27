@@ -13,69 +13,69 @@ namespace Grimoire;
 /// <param name="options"></param>
 public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : DbContext(options)
 {
-    public DbSet<Attachment> Attachments { get; set; } = null!;
+    public DbSet<Attachment> Attachments { get; init; } = null!;
 
-    public DbSet<Avatar> Avatars { get; set; } = null!;
+    public DbSet<Avatar> Avatars { get; init; } = null!;
 
-    public DbSet<Channel> Channels { get; set; } = null!;
+    public DbSet<Channel> Channels { get; init; } = null!;
 
-    public DbSet<CustomCommand> CustomCommands { get; set; } = null!;
+    public DbSet<CustomCommand> CustomCommands { get; init; } = null!;
 
-    public DbSet<CustomCommandRole> CustomCommandsRole { get; set; } = null!;
+    public DbSet<CustomCommandRole> CustomCommandsRole { get; init; } = null!;
 
-    public DbSet<Guild> Guilds { get; set; } = null!;
+    public DbSet<Guild> Guilds { get; init; } = null!;
 
-    public DbSet<GuildCommandsSettings> GuildCommandsSettings { get; set; } = null!;
+    public DbSet<GuildCommandsSettings> GuildCommandsSettings { get; init; } = null!;
 
-    public DbSet<GuildLevelSettings> GuildLevelSettings { get; set; } = null!;
+    public DbSet<GuildLevelSettings> GuildLevelSettings { get; init; } = null!;
 
-    public DbSet<GuildUserLogSettings> GuildUserLogSettings { get; set; } = null!;
+    public DbSet<GuildUserLogSettings> GuildUserLogSettings { get; init; } = null!;
 
-    public DbSet<GuildMessageLogSettings> GuildMessageLogSettings { get; set; } = null!;
+    public DbSet<GuildMessageLogSettings> GuildMessageLogSettings { get; init; } = null!;
 
-    public DbSet<GuildModerationSettings> GuildModerationSettings { get; set; } = null!;
+    public DbSet<GuildModerationSettings> GuildModerationSettings { get; init; } = null!;
 
-    public DbSet<IgnoredChannel> IgnoredChannels { get; set; } = null!;
+    public DbSet<IgnoredChannel> IgnoredChannels { get; init; } = null!;
 
-    public DbSet<IgnoredMember> IgnoredMembers { get; set; } = null!;
+    public DbSet<IgnoredMember> IgnoredMembers { get; init; } = null!;
 
-    public DbSet<IgnoredRole> IgnoredRoles { get; set; } = null!;
+    public DbSet<IgnoredRole> IgnoredRoles { get; init; } = null!;
 
-    public DbSet<Lock> Locks { get; set; } = null!;
+    public DbSet<Lock> Locks { get; init; } = null!;
 
-    public DbSet<Member> Members { get; set; } = null!;
+    public DbSet<Member> Members { get; init; } = null!;
 
-    public DbSet<Message> Messages { get; set; } = null!;
+    public DbSet<Message> Messages { get; init; } = null!;
 
-    public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; set; } = null!;
+    public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; init; } = null!;
 
-    public DbSet<MessageHistory> MessageHistory { get; set; } = null!;
+    public DbSet<MessageHistory> MessageHistory { get; init; } = null!;
 
-    public DbSet<Mute> Mutes { get; set; } = null!;
+    public DbSet<Mute> Mutes { get; init; } = null!;
 
-    public DbSet<NicknameHistory> NicknameHistory { get; set; } = null!;
+    public DbSet<NicknameHistory> NicknameHistory { get; init; } = null!;
 
-    public DbSet<OldLogMessage> OldLogMessages { get; set; } = null!;
+    public DbSet<OldLogMessage> OldLogMessages { get; init; } = null!;
 
-    public DbSet<Pardon> Pardons { get; set; } = null!;
+    public DbSet<Pardon> Pardons { get; init; } = null!;
 
-    public DbSet<ProxiedMessageLink> ProxiedMessages { get; set; }
+    public DbSet<ProxiedMessageLink> ProxiedMessages { get; init; }
 
-    public DbSet<PublishedMessage> PublishedMessages { get; set; } = null!;
+    public DbSet<PublishedMessage> PublishedMessages { get; init; } = null!;
 
-    public DbSet<Reward> Rewards { get; set; } = null!;
+    public DbSet<Reward> Rewards { get; init; } = null!;
 
-    public DbSet<Role> Roles { get; set; } = null!;
+    public DbSet<Role> Roles { get; init; } = null!;
 
-    public DbSet<Sin> Sins { get; set; } = null!;
+    public DbSet<Sin> Sins { get; init; } = null!;
 
-    public DbSet<Tracker> Trackers { get; set; } = null!;
+    public DbSet<Tracker> Trackers { get; init; } = null!;
 
-    public DbSet<User> Users { get; set; } = null!;
+    public DbSet<User> Users { get; init; } = null!;
 
-    public DbSet<UsernameHistory> UsernameHistory { get; set; } = null!;
+    public DbSet<UsernameHistory> UsernameHistory { get; init; } = null!;
 
-    public DbSet<XpHistory> XpHistory { get; set; } = null!;
+    public DbSet<XpHistory> XpHistory { get; init; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(GrimoireDbContext).Assembly)

@@ -27,6 +27,6 @@ internal sealed class TrackerUsernameEvent(DiscordClient discordClient, IMediato
             .AddField("After", string.IsNullOrWhiteSpace(notification.AfterUsername)? "`Unknown`" : notification.AfterUsername, true)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Mint);
-        await _discordClient.SendMessageToLoggingChannel(response.TrackerChannelId, embed);
+        await this._discordClient.SendMessageToLoggingChannel(response.TrackerChannelId, embed);
     }
 }

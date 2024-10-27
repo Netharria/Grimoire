@@ -14,7 +14,7 @@ using Grimoire.Features.Leveling.UserCommands;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Grimoire.Test.Unit.Features.Leveling.Commands;
+namespace Grimoire.Test.Unit.Features.Leveling.UserCommands;
 
 [Collection("Test collection")]
 public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime

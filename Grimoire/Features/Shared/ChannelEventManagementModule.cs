@@ -9,10 +9,6 @@ using Grimoire.Features.Shared.Commands;
 
 namespace Grimoire.Features.Shared;
 
-/// <summary>
-/// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
-/// </summary>
-/// <param name="guildService"></param>
 internal sealed class ChannelEventManagementModule(IMediator mediator)
 {
     private readonly IMediator _mediator = mediator;

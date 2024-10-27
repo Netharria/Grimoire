@@ -8,6 +8,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 
+// ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
 public partial class LogSettingsCommands
 {

@@ -5,7 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
+
 public partial class LogSettingsCommands
 {
     public partial class Message
@@ -44,7 +46,7 @@ public sealed class UpdateMessageLogOverride
     {
         public required ulong ChannelId { get; init; }
         public required ulong GuildId { get; init; }
-        public required MessageLogOverrideSetting ChannelOverrideSetting { get; set; }
+        public required MessageLogOverrideSetting ChannelOverrideSetting { get; init; }
     }
 
     public sealed class Handler(GrimoireDbContext dbContext) : IRequestHandler<Command, BaseResponse>

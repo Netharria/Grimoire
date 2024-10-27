@@ -6,26 +6,28 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Domain.Shared;
+using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
+[UsedImplicitly]
 public class GuildMessageLogSettings : IModule
 {
-    public ulong GuildId { get; set; }
-
-    public virtual Guild Guild { get; set; } = null!;
+    public ulong GuildId { get; init; }
 
     public ulong? DeleteChannelLogId { get; set; }
 
-    public virtual Channel? DeleteChannelLog { get; set; }
+    public virtual Channel? DeleteChannelLog { get; init; }
 
     public ulong? BulkDeleteChannelLogId { get; set; }
 
-    public virtual Channel? BulkDeleteChannelLog { get; set; }
+    public virtual Channel? BulkDeleteChannelLog { get; init; }
 
     public ulong? EditChannelLogId { get; set; }
 
-    public virtual Channel? EditChannelLog { get; set; }
+    public virtual Channel? EditChannelLog { get; init; }
+
+    public virtual Guild Guild { get; set; } = null!;
 
     public bool ModuleEnabled { get; set; }
 }

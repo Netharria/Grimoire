@@ -5,25 +5,28 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using JetBrains.Annotations;
+
 namespace Grimoire.Domain;
 
+[UsedImplicitly]
 public class Lock
 {
-    public ulong ChannelId { get; set; }
+    public ulong ChannelId { get; init; }
 
-    public virtual Channel Channel { get; set; } = null!;
+    public virtual Channel Channel { get; init; } = null!;
 
-    public long PreviouslyAllowed { get; set; }
+    public long PreviouslyAllowed { get; init; }
 
-    public long PreviouslyDenied { get; set; }
+    public long PreviouslyDenied { get; init; }
 
     public ulong? ModeratorId { get; set; }
 
-    public virtual Member? Moderator { get; set; } = null!;
+    public virtual Member? Moderator { get; init; }
 
-    public ulong GuildId { get; set; }
+    public ulong GuildId { get; init; }
 
-    public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; init; } = null!;
 
     public string Reason { get; set; } = string.Empty;
 

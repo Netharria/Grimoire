@@ -11,7 +11,7 @@ using Grimoire.Features.Shared.PluralKit.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.PluralKit;
+namespace Grimoire.Features.Shared.PluralKit;
 
 public interface IPluralkitService
 {
@@ -22,7 +22,7 @@ public sealed partial class PluralkitService : IPluralkitService
 {
     private readonly IHttpClientFactory _httpClientFactory;
 
-    private const string MESSAGE_ENDPOINT = "messages/";
+    private const string MessageEndpoint = "messages/";
 
     private readonly bool _isConfigured;
 
@@ -51,7 +51,7 @@ public sealed partial class PluralkitService : IPluralkitService
         var httpClient = this._httpClientFactory.CreateClient("Pluralkit");
         try
         {
-            return await httpClient.GetFromJsonAsync<PluralKitMessage>(MESSAGE_ENDPOINT + messageId);
+            return await httpClient.GetFromJsonAsync<PluralKitMessage>(MessageEndpoint + messageId);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound || ex.StatusCode == HttpStatusCode.BadGateway)
         {

@@ -14,7 +14,7 @@ public sealed record WarnUserCommand : IRequest<WarnUserCommandResponse>
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
     public string Reason { get; init; } = string.Empty;
-    public ulong ModeratorId { get; set; }
+    public ulong ModeratorId { get; init; }
 }
 
 public sealed class WarnUserCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<WarnUserCommand, WarnUserCommandResponse>

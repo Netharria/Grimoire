@@ -8,7 +8,7 @@
 using Grimoire.DatabaseQueryHelpers;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Features.MessageLogging.Commands;
+namespace Grimoire.Features.Logging.MessageLogging.Events;
 
 public sealed partial class AddMessageEvent
 {

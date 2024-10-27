@@ -34,6 +34,6 @@ internal sealed class TrackerNicknameEvent(DiscordClient discordClient, IMediato
                 .WithTimestamp(DateTimeOffset.UtcNow)
                 .WithColor(GrimoireColor.Mint);
 
-        await _discordClient.SendMessageToLoggingChannel(response.TrackerChannelId, embed);
+        await this._discordClient.SendMessageToLoggingChannel(response.TrackerChannelId, embed);
     }
 }

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace Grimoire.Features.Shared.PipelineBehaviors;
 
 public sealed partial class ErrorLoggingBehavior<TRequest, TException>(ILogger<ErrorLoggingBehavior<TRequest, TException>> logger) : IRequestExceptionAction<TRequest, TException>
-    where TRequest : notnull, IRequest
+    where TRequest : IRequest
     where TException : Exception
 {
     private readonly ILogger<ErrorLoggingBehavior<TRequest, TException>> _logger = logger;

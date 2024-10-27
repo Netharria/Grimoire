@@ -13,7 +13,7 @@ using EntityFramework.Exceptions.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire;
+namespace Grimoire.Features.Shared;
 
 /// <summary>
 /// Initializes a new instance of the <see cref="SlashCommandHandler"/> class.
@@ -27,18 +27,17 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
     private readonly ILogger<SlashCommandHandler> _logger = logger;
     private readonly IConfiguration _configuration = configuration;
 
-    private static async Task<StringBuilder> BuildSlashCommandLogAsync(StringBuilder builder, IEnumerable<DiscordInteractionDataOption> commandOptions)
+    private static void BuildSlashCommandLogAsync(StringBuilder builder, IEnumerable<DiscordInteractionDataOption> commandOptions)
     {
         foreach (var option in commandOptions)
         {
             builder.Append(option.Name).Append(' ');
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (option.Options is not null)
-                await BuildSlashCommandLogAsync(builder, option.Options);
+                BuildSlashCommandLogAsync(builder, option.Options);
             if (option.Value is not null)
                 builder.Append('\'').Append(option.Value).Append("' ");
         }
-
-        return builder;
     }
 
     private async Task SendErrorLogToLogChannel(DiscordClient client, string action, Exception exception, string? errorId = "")
@@ -145,13 +144,15 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
                 .WithColor(GrimoireColor.Yellow)
                 .WithDescription($"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
         }
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         else if (args.Exception is not null)
         {
             var errorHexString = RandomNumberGenerator.GetHexString(10);
             var commandOptions = args.Context.Interaction.Data.Options;
             var log = new StringBuilder();
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (commandOptions is not null)
-                await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
+                BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
             LogSlashCommandError(this._logger,
                 args.Exception,
                 errorHexString,
@@ -165,7 +166,7 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
         }
     }
 
-    public async static Task SendOrEditMessageAsync(SlashCommandErrorEventArgs args, DiscordEmbedBuilder embed)
+    private static async Task SendOrEditMessageAsync(SlashCommandErrorEventArgs args, DiscordEmbedBuilder embed)
     {
         try
         {
@@ -178,17 +179,19 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
     }
 
     [LoggerMessage(LogLevel.Error, "Error on SlashCommand: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
-    public static partial void LogSlashCommandError(ILogger logger, Exception ex, string ErrorId, string interactionName, string interactionOptions);
+    public static partial void LogSlashCommandError(ILogger logger, Exception ex, string errorId, string interactionName, string interactionOptions);
 
-    public async Task HandleEventAsync(DiscordClient sender, SlashCommandExecutedEventArgs args)
+    public Task HandleEventAsync(DiscordClient sender, SlashCommandExecutedEventArgs args)
     {
         var commandOptions = args.Context.Interaction.Data.Options;
         var log = new StringBuilder();
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (commandOptions is not null)
-            await BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
+            BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
         LogSlashCommandInvoked(this._logger,
             args.Context.Interaction.Data.Name,
             log.ToString());
+        return Task.CompletedTask;
     }
 
     [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]

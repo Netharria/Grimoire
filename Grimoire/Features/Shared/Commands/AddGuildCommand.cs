@@ -18,7 +18,7 @@ public sealed record AddGuildCommand : IRequest
     public IEnumerable<MemberDto> Members { get; init; } = [];
     public IEnumerable<RoleDto> Roles { get; init; } = [];
     public IEnumerable<ChannelDto> Channels { get; init; } = [];
-    public IEnumerable<Invite> Invites { get; set; } = [];
+    public IEnumerable<Invite> Invites { get; init; } = [];
 }
 
 public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, IInviteService inviteService) : IRequestHandler<AddGuildCommand>

@@ -10,12 +10,9 @@ using Grimoire.Features.Logging.UserLogging;
 using Grimoire.Features.Shared.Commands;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.DatabaseManagementModules;
+namespace Grimoire.Features.Shared;
 
-/// <summary>
-/// Initializes a new instance of the <see cref="SharedManagementModule"/> class.
-/// </summary>
-/// <param name="guildService"></param>
+
 //[DiscordGuildDownloadCompletedEventSubscriber]
 //[DiscordGuildCreatedEventSubscriber]
 //[DiscordInviteCreatedEventSubscriber]
@@ -78,18 +75,18 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
             Invites = await args.Guilds.Values
                 .ToAsyncEnumerable()
                 .Where(x => x.CurrentMember.Permissions.HasPermission(DiscordPermissions.ManageGuild))
-                .SelectManyAwait(async x =>
-                    (await DiscordRetryPolicy.RetryDiscordCall(x.GetInvitesAsync))
+                .SelectManyAwait(async guild =>
+                    (await DiscordRetryPolicy.RetryDiscordCall(async _ => await guild.GetInvitesAsync()))
                     .ToAsyncEnumerable())
                     .Select(x =>
-                    new Invite
-                    {
-                        Code = x.Code,
-                        Inviter = x.Inviter.GetUsernameWithDiscriminator(),
-                        Url = x.ToString(),
-                        Uses = x.Uses,
-                        MaxUses = x.MaxUses
-                    }).ToListAsync()
+                        new Invite
+                        {
+                            Code = x.Code,
+                            Inviter = x.Inviter.GetUsernameWithDiscriminator(),
+                            Url = x.ToString(),
+                            Uses = x.Uses,
+                            MaxUses = x.MaxUses
+                        }).ToListAsync()
         });
     }
 
@@ -131,18 +128,18 @@ public sealed partial class GuildEventManagementModule(IMediator mediator, IInvi
                 GuildId = args.Guild.Id
             }),
             Invites = args.Guild.CurrentMember.Permissions.HasPermission(DiscordPermissions.ManageGuild)
-        ? await DiscordRetryPolicy.RetryDiscordCall(args.Guild
-            .GetInvitesAsync)
+        ? await DiscordRetryPolicy.RetryDiscordCall(async _ => await args.Guild
+                .GetInvitesAsync())
             .AsTask()
-            .ContinueWith(x => x.Result
-                .Select(x =>
+            .ContinueWith(invites => invites.Result
+                .Select(invite =>
                 new Invite
                 {
-                    Code = x.Code,
-                    Inviter = x.Inviter.GetUsernameWithDiscriminator(),
-                    Url = x.ToString(),
-                    Uses = x.Uses,
-                    MaxUses = x.MaxUses
+                    Code = invite.Code,
+                    Inviter = invite.Inviter.GetUsernameWithDiscriminator(),
+                    Url = invite.ToString(),
+                    Uses = invite.Uses,
+                    MaxUses = invite.MaxUses
                 }))
         : []
         });

@@ -9,7 +9,7 @@ namespace Grimoire.Extensions;
 
 public static class DiscordClientExtensions
 {
-    public async static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ulong channelId)
+    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ulong channelId)
     {
         try
         {
@@ -24,24 +24,24 @@ public static class DiscordClientExtensions
     public static Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId, DiscordEmbedBuilder discordEmbedBuilder)
         => SendMessageToLoggingChannel(client, logChannelId, new DiscordMessageBuilder().AddEmbed(discordEmbedBuilder));
 
-    public async static Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId, DiscordMessageBuilder discordMessageBuilder)
+    public static async Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId, DiscordMessageBuilder discordMessageBuilder)
     {
         if (logChannelId is not ulong loggingChannelId)
             return null;
         var channel = await client.GetChannelOrDefaultAsync(loggingChannelId);
-        if (channel is not DiscordChannel loggingChannel)
+        if (channel is null)
             return null;
-        return await DiscordRetryPolicy.RetryDiscordCall(async () => await loggingChannel.SendMessageAsync(discordMessageBuilder));
+        return await DiscordRetryPolicy.RetryDiscordCall(async token => await channel.SendMessageAsync(discordMessageBuilder));
 
     }
 
-    public async static Task<string?> GetUserAvatar(this DiscordClient client, ulong userId, DiscordGuild? guild = null)
+    public static async Task<string?> GetUserAvatar(this DiscordClient client, ulong userId, DiscordGuild? guild = null)
     {
         if (guild?.Members.TryGetValue(userId, out var member) is true)
         {
             return member.GetGuildAvatarUrl(ImageFormat.Auto);
         }
         var user = await client.GetUserAsync(userId);
-        return user?.GetAvatarUrl(ImageFormat.Auto); 
+        return user?.GetAvatarUrl(ImageFormat.Auto);
     }
 }

@@ -11,8 +11,8 @@ namespace Grimoire.Features.Moderation.Queries;
 
 public sealed record GetUserMuteQuery : IRequest<ulong?>
 {
-    public ulong UserId { get; set; }
-    public ulong GuildId { get; set; }
+    public ulong UserId { get; init; }
+    public ulong GuildId { get; init; }
 }
 
 public sealed class GetUserMuteQueryHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetUserMuteQuery, ulong?>

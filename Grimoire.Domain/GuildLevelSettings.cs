@@ -6,14 +6,14 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Domain.Shared;
+using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
+[UsedImplicitly]
 public class GuildLevelSettings : IModule
 {
-    public ulong GuildId { get; set; }
-
-    public virtual Guild Guild { get; set; } = null!;
+    public ulong GuildId { get; init; }
 
     public TimeSpan TextTime { get; set; }
 
@@ -25,7 +25,9 @@ public class GuildLevelSettings : IModule
 
     public ulong? LevelChannelLogId { get; set; }
 
-    public virtual Channel? LevelChannelLog { get; set; }
+    public virtual Channel? LevelChannelLog { get; init; }
+
+    public virtual Guild Guild { get; set; } = null!;
 
     public bool ModuleEnabled { get; set; }
 }
