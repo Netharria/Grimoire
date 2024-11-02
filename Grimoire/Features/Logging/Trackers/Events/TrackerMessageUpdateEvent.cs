@@ -45,12 +45,14 @@ public class TrackerMessageUpdateEvent
         public ulong MessageId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Trackers
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.Trackers
                 .AsNoTracking()
                 .WhereMemberHasId(request.UserId, request.GuildId)
                 .Select(tracker => new Response
@@ -65,6 +67,7 @@ public class TrackerMessageUpdateEvent
                             .First().MessageContent)
                         .First()
                 }).FirstOrDefaultAsync(cancellationToken);
+        }
     }
 
     public sealed record Response : BaseResponse

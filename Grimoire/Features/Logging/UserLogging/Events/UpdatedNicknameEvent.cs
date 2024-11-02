@@ -72,14 +72,15 @@ public sealed class UpdatedNicknameEvent
         public string? Nickname { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Command, UpdateNicknameCommandResponse?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<UpdateNicknameCommandResponse?> Handle(Command command, CancellationToken cancellationToken)
         {
-            var currentNickname = await this._grimoireDbContext.NicknameHistory
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var currentNickname = await dbContext.NicknameHistory
                 .AsNoTracking()
                 .WhereMemberHasId(command.UserId, command.GuildId)
                 .Where(x => x.Guild.UserLogSettings.ModuleEnabled)
@@ -90,10 +91,10 @@ public sealed class UpdatedNicknameEvent
                 || string.Equals(currentNickname.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase))
                 return null;
 
-            await this._grimoireDbContext.NicknameHistory.AddAsync(
+            await dbContext.NicknameHistory.AddAsync(
                 new NicknameHistory { GuildId = command.GuildId, UserId = command.UserId, Nickname = command.Nickname },
                 cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new UpdateNicknameCommandResponse
             {
                 BeforeNickname = currentNickname.Nickname,

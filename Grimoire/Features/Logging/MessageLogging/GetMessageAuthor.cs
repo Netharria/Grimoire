@@ -14,15 +14,18 @@ public sealed class GetMessageAuthor
         public ulong MessageId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoire) : IRequestHandler<Query, ulong?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, ulong?>
     {
-        private readonly GrimoireDbContext _grimoire = grimoire;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<ulong?> Handle(Query query, CancellationToken cancellationToken)
         {
-            var message = await this._grimoire.Messages
-                .AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.MessageId, cancellationToken);
-            return message?.UserId;
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.Messages
+                .AsNoTracking()
+                .Where(message => message.Id == query.MessageId)
+                .Select(message => message.UserId)
+                .FirstOrDefaultAsync(cancellationToken);
         }
     }
 }

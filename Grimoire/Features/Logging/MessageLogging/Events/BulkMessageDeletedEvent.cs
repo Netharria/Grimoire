@@ -83,13 +83,14 @@ public sealed class BulkMessageDeletedEvent
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var messages = await this._grimoireDbContext.Messages
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var messages = await dbContext.Messages
                 .AsNoTracking()
                 .WhereIdsAre(command.Ids)
                 .WhereMessageLoggingIsEnabled()
@@ -119,8 +120,8 @@ public sealed class BulkMessageDeletedEvent
                     MessageId = x.Message.MessageId, Action = MessageAction.Deleted, GuildId = command.GuildId
                 });
 
-            await this._grimoireDbContext.MessageHistory.AddRangeAsync(messageHistory, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.MessageHistory.AddRangeAsync(messageHistory, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new Response
             {
                 BulkDeleteLogChannelId = messages.First().BulkDeleteLogId,

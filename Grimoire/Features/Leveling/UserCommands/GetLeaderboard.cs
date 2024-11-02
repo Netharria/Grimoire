@@ -62,16 +62,17 @@ public sealed class GetLeaderboard
         public ulong? UserId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request request, CancellationToken cancellationToken)
         {
-            var query = this._grimoireDbContext.Members
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var query = dbContext.Members
                 .AsNoTracking()
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new { x.UserId, Xp = x.XpHistory.Sum(x => x.Xp) })
+                .Where(member => member.GuildId == request.GuildId)
+                .Select(member => new { member.UserId, Xp = member.XpHistory.Sum(xp => xp.Xp) })
                 .OrderByDescending(x => x.Xp);
 
             if (request.UserId is null)
@@ -80,7 +81,7 @@ public sealed class GetLeaderboard
                     .Take(15)
                     .ToListAsync(cancellationToken);
 
-                var totalMemberCount = await this._grimoireDbContext.Members
+                var totalMemberCount = await dbContext.Members
                     .AsNoTracking()
                     .Where(x => x.GuildId == request.GuildId)
                     .CountAsync(cancellationToken);
@@ -98,7 +99,6 @@ public sealed class GetLeaderboard
                 var totalMemberCount = rankedMembers.Count;
 
                 var memberPosition = rankedMembers.FindIndex(x => x.UserId == request.UserId);
-                ;
 
                 if (memberPosition == -1)
                     throw new AnticipatedException("Could not find user on leaderboard.");

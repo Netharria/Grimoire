@@ -15,22 +15,23 @@ public sealed class GetOldLogMessages
     {
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IStreamRequestHandler<Query, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IStreamRequestHandler<Query, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async IAsyncEnumerable<Response> Handle(Query request,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var oldDate = DateTime.UtcNow - TimeSpan.FromDays(30);
-            await foreach (var item in this._grimoireDbContext.OldLogMessages
-                               .Where(x => x.CreatedAt < oldDate)
-                               .GroupBy(x => new { x.ChannelId, x.GuildId })
-                               .Select(x => new Response
+            await foreach (var item in dbContext.OldLogMessages
+                               .Where(oldLogMessage => oldLogMessage.CreatedAt < oldDate)
+                               .GroupBy(oldLogMessage => new { oldLogMessage.ChannelId, oldLogMessage.GuildId })
+                               .Select(oldLogMessages => new Response
                                {
-                                   ChannelId = x.Key.ChannelId,
-                                   GuildId = x.Key.GuildId,
-                                   MessageIds = x.Select(x => x.Id).ToArray()
+                                   ChannelId = oldLogMessages.Key.ChannelId,
+                                   GuildId = oldLogMessages.Key.GuildId,
+                                   MessageIds = oldLogMessages.Select(x => x.Id).ToArray()
                                }).AsAsyncEnumerable().WithCancellation(cancellationToken))
                 yield return item;
         }

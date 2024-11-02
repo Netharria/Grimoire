@@ -73,13 +73,14 @@ public sealed class SetMessageLogSettings
         public ulong? ChannelId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
-            var messageSettings = await this._grimoireDbContext.GuildMessageLogSettings
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var messageSettings = await dbContext.GuildMessageLogSettings
                 .Where(x => x.GuildId == command.GuildId)
                 .Select(x => new { LogSettings = x, x.Guild.ModChannelLog }).FirstOrDefaultAsync(cancellationToken);
             if (messageSettings == null) throw new AnticipatedException("Could not find message log settings.");
@@ -96,7 +97,7 @@ public sealed class SetMessageLogSettings
                     break;
             }
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse { LogChannelId = messageSettings.ModChannelLog };
         }
     }

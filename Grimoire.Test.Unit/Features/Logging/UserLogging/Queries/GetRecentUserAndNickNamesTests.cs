@@ -12,9 +12,10 @@ using Grimoire.Domain;
 using Grimoire.Exceptions;
 using Grimoire.Features.Logging.UserLogging.Queries;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
-namespace Grimoire.Test.Unit.Features.UserLogging.Queries;
+namespace Grimoire.Test.Unit.Features.Logging.UserLogging.Queries;
 
 [Collection("Test collection")]
 public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) : IAsyncLifetime
@@ -22,21 +23,27 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
     private const ulong GuildId = 1;
     private const ulong UserId = 1;
 
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly Func<GrimoireDbContext> _createDbContext = () => new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
+    private readonly IDbContextFactory<GrimoireDbContext> _mockDbContextFactory =
+        Substitute.For<IDbContextFactory<GrimoireDbContext>>();
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild
+        await using var dbContext = this._createDbContext();
+        await dbContext.AddAsync(new Guild
         {
             Id = GuildId, UserLogSettings = new GuildUserLogSettings { ModuleEnabled = true }
         });
-        await this._dbContext.AddAsync(new User { Id = UserId });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.AddAsync(new User { Id = UserId });
+        await dbContext.SaveChangesAsync();
+
+        this._mockDbContextFactory.CreateDbContextAsync().Returns(this._createDbContext());
     }
 
     public Task DisposeAsync() => this._resetDatabase();
@@ -45,7 +52,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
     public async Task GivenAUserHasNotBeenOnTheServer_WhenGetNamesIsCalled_ThrowAnticipatedException()
     {
         //Arrange
-        var cut = new GetRecentUserAndNickNames.Handler(this._dbContext);
+        var cut = new GetRecentUserAndNickNames.Handler(this._mockDbContextFactory);
         var query = new GetRecentUserAndNickNames.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -59,15 +66,16 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
     [Fact]
     public async Task GivenAGuildDoesNotHaveTheModuleEnabled_WhenGetNamesIsCalled_ReturnNull()
     {
+        await using var dbContext = this._createDbContext();
         //Arrange
-        await this._dbContext.Guilds.AddAsync(new Guild
+        await dbContext.Guilds.AddAsync(new Guild
         {
             Id = 1234, UserLogSettings = new GuildUserLogSettings { ModuleEnabled = false }
         });
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = 1234 });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = 1234 });
+        await dbContext.SaveChangesAsync();
 
-        var cut = new GetRecentUserAndNickNames.Handler(this._dbContext);
+        var cut = new GetRecentUserAndNickNames.Handler(this._mockDbContextFactory);
         var query = new GetRecentUserAndNickNames.Query { UserId = UserId, GuildId = 1234 };
 
         //Act
@@ -82,11 +90,11 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
     public async Task GivenAUserDoesNotHaveUserOrNickNames_WhenGetNamesIsCalled_ReturnEmptyLists()
     {
         //Arrange
+        await using var dbContext = this._createDbContext();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await dbContext.SaveChangesAsync();
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
-        await this._dbContext.SaveChangesAsync();
-
-        var cut = new GetRecentUserAndNickNames.Handler(this._dbContext);
+        var cut = new GetRecentUserAndNickNames.Handler(this._mockDbContextFactory);
         var query = new GetRecentUserAndNickNames.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -97,7 +105,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         result.Should().NotBeNull();
         result!.Usernames.Should().NotBeNull()
             .And.BeEmpty();
-        result!.Nicknames.Should().NotBeNull()
+        result.Nicknames.Should().NotBeNull()
             .And.BeEmpty();
     }
 
@@ -105,19 +113,19 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
     public async Task GivenAUserHasOneUserAndNickName_WhenGetNamesIsCalled_ReturnListOfOneItem()
     {
         //Arrange
-
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
-        await this._dbContext.UsernameHistory.AddAsync(new UsernameHistory
+        await using var dbContext = this._createDbContext();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await dbContext.UsernameHistory.AddAsync(new UsernameHistory
         {
             UserId = UserId, Username = "User1", Timestamp = DateTimeOffset.UtcNow.AddDays(-1)
         });
-        await this._dbContext.NicknameHistory.AddAsync(new NicknameHistory
+        await dbContext.NicknameHistory.AddAsync(new NicknameHistory
         {
             UserId = UserId, GuildId = GuildId, Nickname = "Nick1", Timestamp = DateTimeOffset.UtcNow.AddDays(-1)
         });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        var cut = new GetRecentUserAndNickNames.Handler(this._dbContext);
+        var cut = new GetRecentUserAndNickNames.Handler(this._mockDbContextFactory);
         var query = new GetRecentUserAndNickNames.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -129,7 +137,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         result!.Usernames.Should().NotBeNull()
             .And.HaveCount(1)
             .And.Contain("User1");
-        result!.Nicknames.Should().NotBeNull()
+        result.Nicknames.Should().NotBeNull()
             .And.HaveCount(1)
             .And.Contain("Nick1");
     }
@@ -138,14 +146,14 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
     public async Task GivenAUserHasSeveralUserAndNickName_WhenGetNamesIsCalled_ReturnListOfThreeIMostRecentItems()
     {
         //Arrange
-
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
-        await this._dbContext.UsernameHistory.AddRangeAsync(
+        await using var dbContext = this._createDbContext();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await dbContext.UsernameHistory.AddRangeAsync(
             new UsernameHistory { UserId = UserId, Username = "User1", Timestamp = DateTimeOffset.UtcNow.AddDays(-4) },
             new UsernameHistory { UserId = UserId, Username = "User2", Timestamp = DateTimeOffset.UtcNow.AddDays(-3) },
             new UsernameHistory { UserId = UserId, Username = "User3", Timestamp = DateTimeOffset.UtcNow.AddDays(-2) },
             new UsernameHistory { UserId = UserId, Username = "User4", Timestamp = DateTimeOffset.UtcNow.AddDays(-1) });
-        await this._dbContext.NicknameHistory.AddRangeAsync(
+        await dbContext.NicknameHistory.AddRangeAsync(
             new NicknameHistory
             {
                 UserId = UserId,
@@ -174,9 +182,9 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
                 Nickname = "Nick4",
                 Timestamp = DateTimeOffset.UtcNow.AddDays(-1)
             });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        var cut = new GetRecentUserAndNickNames.Handler(this._dbContext);
+        var cut = new GetRecentUserAndNickNames.Handler(this._mockDbContextFactory);
         var query = new GetRecentUserAndNickNames.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -188,7 +196,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         result!.Usernames.Should().NotBeNull()
             .And.HaveCount(3)
             .And.ContainInConsecutiveOrder("User4", "User3", "User2");
-        result!.Nicknames.Should().NotBeNull()
+        result.Nicknames.Should().NotBeNull()
             .And.HaveCount(3)
             .And.ContainInOrder("Nick4", "Nick3", "Nick2");
     }

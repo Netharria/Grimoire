@@ -18,7 +18,7 @@ public sealed class AddTracker
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Track", "Creates a log of a user's activity into the specificed channel.")]
+        [SlashCommand("Track", "Creates a log of a user's activity into the specified channel.")]
         public async Task TrackAsync(InteractionContext ctx,
             [Option("User", "User to log.")] DiscordUser user,
             [Option("DurationType", "Select whether the duration will be in minutes hours or days")]
@@ -90,15 +90,15 @@ public sealed class AddTracker
         public ulong ModeratorId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
             var trackerEndTime = DateTimeOffset.UtcNow + command.Duration;
-
-            var result = await this._grimoireDbContext.Guilds
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Guilds
                 .Where(x => x.Id == command.GuildId)
                 .Select(x =>
                     new
@@ -110,17 +110,17 @@ public sealed class AddTracker
                 .FirstOrDefaultAsync(cancellationToken);
             if (result?.Tracker is null)
             {
-                var local = this._grimoireDbContext.Trackers.Local
+                var local = dbContext.Trackers.Local
                     .FirstOrDefault(x => x.UserId == command.UserId
                                          && x.GuildId == command.GuildId);
                 if (local is not null)
-                    this._grimoireDbContext.Entry(local).State = EntityState.Detached;
+                    dbContext.Entry(local).State = EntityState.Detached;
                 if (result?.MemberExist is null || !result.MemberExist)
                 {
-                    if (!await this._grimoireDbContext.Users.WhereIdIs(command.UserId).AnyAsync(cancellationToken))
-                        await this._grimoireDbContext.Users.AddAsync(new User { Id = command.UserId },
+                    if (!await dbContext.Users.WhereIdIs(command.UserId).AnyAsync(cancellationToken))
+                        await dbContext.Users.AddAsync(new User { Id = command.UserId },
                             cancellationToken);
-                    await this._grimoireDbContext.Members.AddAsync(new Member
+                    await dbContext.Members.AddAsync(new Member
                     {
                         UserId = command.UserId,
                         GuildId = command.GuildId,
@@ -138,7 +138,7 @@ public sealed class AddTracker
                     }, cancellationToken);
                 }
 
-                await this._grimoireDbContext.Trackers.AddAsync(
+                await dbContext.Trackers.AddAsync(
                     new Tracker
                     {
                         UserId = command.UserId,
@@ -155,7 +155,7 @@ public sealed class AddTracker
                 result.Tracker.ModeratorId = command.ModeratorId;
             }
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response { ModerationLogId = result?.ModChannelLog };
         }

@@ -9,23 +9,25 @@ namespace Grimoire.Features.Shared.Queries;
 
 public sealed class GetUserCommandChannel
 {
-    public sealed record Query : IRequest<Response>
+    public sealed record Query : IRequest<Response?>
     {
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext dbContext) : IRequestHandler<Query, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, Response?>
     {
-        private readonly GrimoireDbContext _dbContext = dbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<Response> Handle(Query query, CancellationToken cancellationToken)
+        public async Task<Response?> Handle(Query query, CancellationToken cancellationToken)
         {
-            var result = await this._dbContext.Guilds
-                .Where(x => x.Id == query.GuildId)
-                .Select(x => x.UserCommandChannelId
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.Guilds
+                .Where(guild => guild.Id == query.GuildId)
+                .Select(guild =>  new Response
+                    {
+                        UserCommandChannelId = guild.UserCommandChannelId
+                    }
                 ).FirstOrDefaultAsync(cancellationToken);
-
-            return new Response { UserCommandChannelId = result };
         }
     }
 

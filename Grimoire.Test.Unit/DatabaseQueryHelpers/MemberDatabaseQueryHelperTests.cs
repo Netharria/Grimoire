@@ -107,10 +107,10 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
             {
                 x.UserId.Should().BeOneOf(Member1, Member2);
                 x.XpHistory.Should().HaveCount(1)
-                    .And.AllSatisfy(x =>
+                    .And.AllSatisfy(xpHistory =>
                     {
-                        x.Type.Should().Be(XpHistoryType.Created);
-                        x.Xp.Should().Be(0);
+                        xpHistory.Type.Should().Be(XpHistoryType.Created);
+                        xpHistory.Xp.Should().Be(0);
                     });
             });
     }
@@ -143,7 +143,7 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
     public async Task WhenNoMembersAreAdded_ReturnsFalse()
     {
         // Arrange
-        var membersToAdd = new List<MemberDto>(); // No members to add
+        var membersToAdd = Array.Empty<MemberDto>(); // No members to add
 
         // Act
         var result = await this._dbContext.Members.AddMissingMembersAsync(membersToAdd);
@@ -206,7 +206,7 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
     public async Task WhenNoNicknamesAreAdded_ReturnsFalse()
     {
         // Arrange
-        var membersToAdd = new List<MemberDto>(); // No members to add
+        var membersToAdd = Array.Empty<MemberDto>(); // No members to add
 
         // Act
         var result = await this._dbContext.NicknameHistory.AddMissingNickNameHistoryAsync(membersToAdd);
@@ -270,7 +270,7 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
     public async Task WhenNoAvatarsAreAdded_ReturnsFalse()
     {
         // Arrange
-        var membersToAdd = new List<MemberDto>(); // No members to add
+        var membersToAdd = Array.Empty<MemberDto>(); // No members to add
 
         // Act
         var result = await this._dbContext.Avatars.AddMissingAvatarsHistoryAsync(membersToAdd);

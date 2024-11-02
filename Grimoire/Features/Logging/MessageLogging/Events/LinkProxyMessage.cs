@@ -21,14 +21,15 @@ public partial class LinkProxyMessage
         public string? MemberId { get; init; }
     }
 
-    public partial class Handler(GrimoireDbContext dbContext, ILogger<Handler> logger) : IRequestHandler<Command>
+    public partial class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory, ILogger<Handler> logger) : IRequestHandler<Command>
     {
-        private readonly GrimoireDbContext _dbContext = dbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
         private readonly ILogger<Handler> _logger = logger;
 
         public async Task Handle(Command command, CancellationToken cancellationToken)
         {
-            var moduleEnabled = await this._dbContext.GuildMessageLogSettings
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var moduleEnabled = await dbContext.GuildMessageLogSettings
                 .Where(x => x.GuildId == command.GuildId)
                 .Select(x => x.ModuleEnabled)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -37,7 +38,7 @@ public partial class LinkProxyMessage
 
             try
             {
-                await this._dbContext.AddAsync(
+                await dbContext.AddAsync(
                     new ProxiedMessageLink
                     {
                         ProxyMessageId = command.ProxyMessageId,
@@ -45,7 +46,7 @@ public partial class LinkProxyMessage
                         SystemId = command.SystemId,
                         MemberId = command.MemberId
                     }, cancellationToken);
-                await this._dbContext.SaveChangesAsync(cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {

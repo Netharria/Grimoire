@@ -78,13 +78,14 @@ public sealed class UpdatedAvatarEvent
         public string AvatarUrl { get; init; } = string.Empty;
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, Response?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Command command, CancellationToken cancellationToken)
         {
-            var currentAvatar = await this._grimoireDbContext.Avatars
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var currentAvatar = await dbContext.Avatars
                 .AsNoTracking()
                 .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
                 .Where(x => x.Member.Guild.UserLogSettings.ModuleEnabled)
@@ -95,10 +96,10 @@ public sealed class UpdatedAvatarEvent
                 || string.Equals(currentAvatar.FileName, command.AvatarUrl, StringComparison.Ordinal))
                 return null;
 
-            await this._grimoireDbContext.Avatars.AddAsync(
+            await dbContext.Avatars.AddAsync(
                 new Avatar { GuildId = command.GuildId, UserId = command.UserId, FileName = command.AvatarUrl },
                 cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new Response
             {
                 BeforeAvatar = currentAvatar.FileName,

@@ -8,11 +8,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.Domain;
 using Grimoire.Exceptions;
 using Grimoire.Features.Leveling.Awards;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace Grimoire.Test.Unit.Features.Leveling.Awards;
@@ -23,19 +25,24 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     private const ulong GuildId = 1;
     private const ulong UserId = 1;
 
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly Func<GrimoireDbContext> _createDbContext = () => new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
+            .UseExceptionProcessor()
             .Options);
+
+    private readonly IDbContextFactory<GrimoireDbContext> _mockDbContextFactory =
+        Substitute.For<IDbContextFactory<GrimoireDbContext>>();
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild { Id = GuildId });
-        await this._dbContext.AddAsync(new User { Id = UserId });
-        await this._dbContext.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
-        await this._dbContext.AddAsync(new XpHistory
+        await using var dbContext = this._createDbContext();
+        await dbContext.AddAsync(new Guild { Id = GuildId });
+        await dbContext.AddAsync(new User { Id = UserId });
+        await dbContext.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await dbContext.AddAsync(new XpHistory
         {
             UserId = UserId,
             GuildId = GuildId,
@@ -43,7 +50,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
             Type = XpHistoryType.Awarded,
             TimeOut = DateTime.UtcNow.AddMinutes(-5)
         });
-        await this._dbContext.AddAsync(new XpHistory
+        await dbContext.AddAsync(new XpHistory
         {
             UserId = UserId,
             GuildId = GuildId,
@@ -51,7 +58,9 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
             Type = XpHistoryType.Awarded,
             TimeOut = DateTime.UtcNow.AddMinutes(-5)
         });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
+
+        this._mockDbContextFactory.CreateDbContextAsync().Returns(this._createDbContext());
     }
 
     public Task DisposeAsync() => this._resetDatabase();
@@ -59,7 +68,8 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     [Fact]
     public async Task WhenReclaimUserXpCommandHandlerCalled_UpdateMembersXpAsync()
     {
-        var cut = new ReclaimUserXp.Handler(this._dbContext);
+        await using var dbContext = this._createDbContext();
+        var cut = new ReclaimUserXp.Handler(this._mockDbContextFactory);
 
         var result = await cut.Handle(
             new ReclaimUserXp.Request
@@ -67,13 +77,13 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
                 UserId = UserId, GuildId = GuildId, XpToTake = 200, XpOption = XpOption.Amount
             }, default);
 
-        this._dbContext.ChangeTracker.Clear();
+        dbContext.ChangeTracker.Clear();
 
         result.Should().NotBeNull();
         result.LogChannelId.Should().BeNull();
         result.XpTaken.Should().Be(200);
 
-        var member = await this._dbContext.Members.Where(x =>
+        var member = await dbContext.Members.Where(x =>
                 x.UserId == UserId
                 && x.GuildId == GuildId
             ).Include(x => x.XpHistory)
@@ -85,17 +95,20 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     [Fact]
     public async Task WhenReclaimUserXpCommandHandlerCalled_WithAllArgument_UpdateMembersXpAsync()
     {
-        var cut = new ReclaimUserXp.Handler(this._dbContext);
+        await using var dbContext = this._createDbContext();
+        var cut = new ReclaimUserXp.Handler(this._mockDbContextFactory);
 
-        var result = await cut.Handle(
+        _ = await cut.Handle(
             new ReclaimUserXp.Request { UserId = UserId, GuildId = GuildId, XpToTake = 0, XpOption = XpOption.All },
             default);
-        this._dbContext.ChangeTracker.Clear();
+        dbContext.ChangeTracker.Clear();
 
-        var member = await this._dbContext.Members.Where(x =>
-            x.UserId == UserId
-            && x.GuildId == GuildId
-        ).FirstAsync();
+        var member = await dbContext.Members
+            .Where(x =>
+                x.UserId == UserId
+                && x.GuildId == GuildId
+            ).Include(member => member.XpHistory)
+            .FirstAsync();
 
         member.XpHistory.Sum(x => x.Xp).Should().Be(0);
     }
@@ -103,27 +116,29 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
     [Fact]
     public async Task WhenReclaimUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
     {
-        var cut = new ReclaimUserXp.Handler(this._dbContext);
+        await using var dbContext = this._createDbContext();
+        var cut = new ReclaimUserXp.Handler(this._mockDbContextFactory);
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
             new ReclaimUserXp.Request { UserId = 20001, GuildId = GuildId, XpToTake = 20, XpOption = XpOption.Amount },
             default));
-        this._dbContext.ChangeTracker.Clear();
+        dbContext.ChangeTracker.Clear();
         response.Should().NotBeNull();
-        response?.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
+        response.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
     }
 
     [Fact]
     public async Task WhenReclaimUserXpCommandHandlerCalled_WithXpOptionNotImplemented_ThrowOutOfRangeException()
     {
-        var cut = new ReclaimUserXp.Handler(this._dbContext);
+        await using var dbContext = this._createDbContext();
+        var cut = new ReclaimUserXp.Handler(this._mockDbContextFactory);
 
         var response = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await cut.Handle(
             new ReclaimUserXp.Request { UserId = UserId, GuildId = GuildId, XpToTake = 20, XpOption = (XpOption)2 },
             default));
-        this._dbContext.ChangeTracker.Clear();
+        dbContext.ChangeTracker.Clear();
         response.Should().NotBeNull();
-        response?.Message.Should().Be("XpOption not implemented in switch statement. (Parameter 'command')");
-        response?.ParamName.Should().Be("command");
+        response.Message.Should().Be("XpOption not implemented in switch statement. (Parameter 'command')");
+        response.ParamName.Should().Be("command");
     }
 }

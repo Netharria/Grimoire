@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Features.CustomCommands;
@@ -44,7 +45,8 @@ public sealed class GetCustomCommandOptions
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IStreamRequestHandler<Request, Response>
+    [UsedImplicitly]
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IStreamRequestHandler<Request, Response>
     {
         private static readonly Func<GrimoireDbContext, ulong, string, IAsyncEnumerable<Response>> _getCommandsAsync =
             EF.CompileAsyncQuery((GrimoireDbContext context, ulong guildId, string cleanedText) =>
@@ -56,13 +58,14 @@ public sealed class GetCustomCommandOptions
                     .Select(x => new Response { Name = x.Name, HasMention = x.HasMention, HasMessage = x.HasMessage })
             );
 
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async IAsyncEnumerable<Response> Handle(Request request,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var cleanedText = request.EnteredText.Split(' ').FirstOrDefault(string.Empty);
-            await foreach (var response in _getCommandsAsync(this._grimoireDbContext, request.GuildId, cleanedText)
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await foreach (var response in _getCommandsAsync(dbContext, request.GuildId, cleanedText)
                                .WithCancellation(cancellationToken))
                 yield return response;
         }

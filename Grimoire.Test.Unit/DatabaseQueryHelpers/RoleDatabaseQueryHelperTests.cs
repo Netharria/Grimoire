@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
@@ -24,9 +25,10 @@ public sealed class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     private const long Role1 = 1;
     private const long Role2 = 2;
 
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
+            .UseExceptionProcessor()
             .Options);
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
@@ -62,7 +64,7 @@ public sealed class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     public async Task WhenNoRolesAreAdded_ReturnsFalse()
     {
         // Arrange
-        var rolesToAdd = new List<RoleDto>(); // No members to add
+        var rolesToAdd = Array.Empty<RoleDto>(); // No members to add
 
         // Act
         var result = await this._dbContext.Roles.AddMissingRolesAsync(rolesToAdd);

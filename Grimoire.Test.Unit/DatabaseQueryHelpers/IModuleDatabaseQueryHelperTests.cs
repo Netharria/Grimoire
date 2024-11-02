@@ -8,6 +8,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
@@ -20,9 +21,10 @@ namespace Grimoire.Test.Unit.DatabaseQueryHelpers;
 [Collection("Test collection")]
 public sealed class ModuleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
+            .UseExceptionProcessor()
             .Options);
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;

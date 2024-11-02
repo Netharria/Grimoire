@@ -17,13 +17,14 @@ public static class GetUserSinCounts
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext dbContext) : IRequestHandler<Query, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, Response?>
     {
-        private readonly GrimoireDbContext _dbContext = dbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Query query, CancellationToken cancellationToken)
         {
-            var result = await this._dbContext.Members
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Members
                 .AsNoTracking()
                 .WhereMemberHasId(query.UserId, query.GuildId)
                 .Select(x => new

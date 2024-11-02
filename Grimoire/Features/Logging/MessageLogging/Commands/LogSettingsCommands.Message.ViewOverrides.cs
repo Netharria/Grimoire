@@ -57,18 +57,20 @@ public sealed class GetMessageLogOverrides
         public required MessageLogOverrideOption ChannelOption { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext dbContext) : IStreamRequestHandler<Query, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IStreamRequestHandler<Query, Response>
     {
-        private readonly GrimoireDbContext _dbContext = dbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async IAsyncEnumerable<Response> Handle(Query query,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var channelOverrides = this._dbContext.MessagesLogChannelOverrides
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var channelOverrides = dbContext.MessagesLogChannelOverrides
                 .AsNoTracking()
                 .Where(x => x.GuildId == query.GuildId)
                 .Select(x => new Response { ChannelId = x.ChannelId, ChannelOption = x.ChannelOption })
-                .AsAsyncEnumerable().WithCancellation(cancellationToken);
+                .AsAsyncEnumerable()
+                .WithCancellation(cancellationToken);
 
             await foreach (var channelOverride in channelOverrides) yield return channelOverride;
         }

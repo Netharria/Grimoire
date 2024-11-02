@@ -7,10 +7,12 @@
 
 using System;
 using System.Threading.Tasks;
+using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.Domain;
 using Grimoire.Features.Leveling.Rewards;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace Grimoire.Test.Unit.Features.Leveling.Rewards;
@@ -21,18 +23,25 @@ public sealed class AddRewardCommandTests(GrimoireCoreFactory factory) : IAsyncL
     private const ulong GuildId = 1;
     private const ulong RoleId = 1;
 
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly Func<GrimoireDbContext> _createDbContext = () => new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
+            .UseExceptionProcessor()
             .Options);
+
+    private readonly IDbContextFactory<GrimoireDbContext> _mockDbContextFactory =
+        Substitute.For<IDbContextFactory<GrimoireDbContext>>();
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild { Id = GuildId });
-        await this._dbContext.AddAsync(new Role { Id = RoleId, GuildId = GuildId });
-        await this._dbContext.SaveChangesAsync();
+        await using var dbContext = this._createDbContext();
+        await dbContext.AddAsync(new Guild { Id = GuildId });
+        await dbContext.AddAsync(new Role { Id = RoleId, GuildId = GuildId });
+        await dbContext.SaveChangesAsync();
+
+        this._mockDbContextFactory.CreateDbContextAsync().Returns(this._createDbContext());
     }
 
     public Task DisposeAsync() => this._resetDatabase();
@@ -41,14 +50,15 @@ public sealed class AddRewardCommandTests(GrimoireCoreFactory factory) : IAsyncL
     [Fact]
     public async Task WhenAddingReward_IfRewardDoesntExist_AddRoleAsync()
     {
-        var cut = new AddReward.Handler(this._dbContext);
+        await using var dbContext = this._createDbContext();
+        var cut = new AddReward.Handler(this._mockDbContextFactory);
         var command = new AddReward.Request { RoleId = RoleId, GuildId = GuildId, RewardLevel = 10, Message = "Test" };
 
         var response = await cut.Handle(command, default);
 
-        this._dbContext.ChangeTracker.Clear();
+        dbContext.ChangeTracker.Clear();
 
-        var reward = await this._dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == RoleId);
+        var reward = await dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == RoleId);
 
         response.Message.Should().Be($"Added <@&{RoleId}> reward at level 10");
         reward.Should().NotBeNull();
@@ -60,17 +70,18 @@ public sealed class AddRewardCommandTests(GrimoireCoreFactory factory) : IAsyncL
     [Fact]
     public async Task WhenAddingReward_IfRewardExist_UpdateRoleAsync()
     {
-        await this._dbContext.AddAsync(new Reward { RoleId = RoleId, GuildId = GuildId, RewardLevel = 10 });
-        await this._dbContext.SaveChangesAsync();
+        await using var dbContext = this._createDbContext();
+        await dbContext.AddAsync(new Reward { RoleId = RoleId, GuildId = GuildId, RewardLevel = 10 });
+        await dbContext.SaveChangesAsync();
 
-        var cut = new AddReward.Handler(this._dbContext);
+        var cut = new AddReward.Handler(this._mockDbContextFactory);
         var command = new AddReward.Request { RoleId = RoleId, GuildId = GuildId, RewardLevel = 15, Message = "Test" };
 
         var response = await cut.Handle(command, default);
 
-        this._dbContext.ChangeTracker.Clear();
+        dbContext.ChangeTracker.Clear();
 
-        var reward = await this._dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == RoleId);
+        var reward = await dbContext.Rewards.FirstOrDefaultAsync(x => x.RoleId == RoleId);
 
         response.Message.Should().Be($"Updated <@&{RoleId}> reward to level 15");
 

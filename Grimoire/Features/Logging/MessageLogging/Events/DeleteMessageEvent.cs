@@ -121,13 +121,14 @@ public sealed class DeleteMessageEvent
         public ulong? DeletedByModerator { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
-            var message = await this._grimoireDbContext.Messages
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var message = await dbContext.Messages
                 .AsNoTracking()
                 .WhereIdIs(command.MessageId)
                 .WhereMessageLoggingIsEnabled()
@@ -150,7 +151,7 @@ public sealed class DeleteMessageEvent
                 }).FirstOrDefaultAsync(cancellationToken);
             if (message is null)
                 return new Response { Success = false };
-            await this._grimoireDbContext.MessageHistory.AddAsync(
+            await dbContext.MessageHistory.AddAsync(
                 new MessageHistory
                 {
                     MessageId = command.MessageId,
@@ -158,7 +159,7 @@ public sealed class DeleteMessageEvent
                     GuildId = command.GuildId,
                     DeletedByModeratorId = command.DeletedByModerator
                 }, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return message;
         }
     }

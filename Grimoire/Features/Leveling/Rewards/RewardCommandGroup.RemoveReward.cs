@@ -31,13 +31,14 @@ public sealed class RemoveReward
         public required ulong RoleId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Rewards
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Rewards
                 .Include(x => x.Guild)
                 .Where(x => x.RoleId == command.RoleId)
                 .Select(x => new { Reward = x, x.Guild.ModChannelLog })
@@ -45,8 +46,8 @@ public sealed class RemoveReward
             if (result is null || result.Reward is null)
                 throw new AnticipatedException(
                     $"Did not find a saved reward for role {RoleExtensions.Mention(command.RoleId)}");
-            this._grimoireDbContext.Rewards.Remove(result.Reward);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            dbContext.Rewards.Remove(result.Reward);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse
             {
                 Message = $"Removed {result.Reward.Mention()} reward", LogChannelId = result.ModChannelLog

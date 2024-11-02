@@ -6,11 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.DatabaseQueryHelpers;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
 public sealed partial class CustomCommandSettings
 {
+    [UsedImplicitly]
     [SlashCommand("Forget", "Forget a command")]
     internal async Task Forget(
         InteractionContext ctx,
@@ -38,13 +40,15 @@ public sealed class RemoveCustomCommand
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>
+    [UsedImplicitly]
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Request request, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.CustomCommands
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.CustomCommands
                 .Include(x => x.CustomCommandRoles)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Name == request.CommandName && x.GuildId == request.GuildId,
@@ -52,9 +56,9 @@ public sealed class RemoveCustomCommand
             if (result is null)
                 throw new AnticipatedException($"Did not find a saved command with name {request.CommandName}");
 
-            this._grimoireDbContext.CustomCommands.Remove(result);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            var modChannelLog = await this._grimoireDbContext.Guilds
+            dbContext.CustomCommands.Remove(result);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            var modChannelLog = await dbContext.Guilds
                 .AsNoTracking()
                 .WhereIdIs(request.GuildId)
                 .Select(x => x.ModChannelLog)

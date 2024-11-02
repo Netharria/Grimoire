@@ -12,6 +12,7 @@ using Grimoire.Domain;
 using Grimoire.Exceptions;
 using Grimoire.Features.Moderation.Queries;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace Grimoire.Test.Unit.Features.Moderation.Queries;
@@ -22,16 +23,20 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     private const ulong GuildId = 1;
     private const ulong UserId = 1;
 
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly Func<GrimoireDbContext> _createDbContext = () => new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .Options);
+
+    private readonly IDbContextFactory<GrimoireDbContext> _mockDbContextFactory =
+        Substitute.For<IDbContextFactory<GrimoireDbContext>>();
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
 
     public async Task InitializeAsync()
     {
-        await this._dbContext.AddAsync(new Guild
+        await using var dbContext = this._createDbContext();
+        await dbContext.AddAsync(new Guild
         {
             Id = GuildId,
             ModerationSettings = new GuildModerationSettings
@@ -39,8 +44,10 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
                 ModuleEnabled = true, AutoPardonAfter = TimeSpan.FromDays(60)
             }
         });
-        await this._dbContext.AddAsync(new User { Id = UserId });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.AddAsync(new User { Id = UserId });
+        await dbContext.SaveChangesAsync();
+
+        this._mockDbContextFactory.CreateDbContextAsync().Returns(this._createDbContext());
     }
 
     public Task DisposeAsync() => this._resetDatabase();
@@ -49,7 +56,7 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     public async Task GivenAUserHasNotBeenOnTheServer_WhenGetUserSinCountIsCalled_ThrowAnticipatedException()
     {
         //Arrange
-        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var cut = new GetUserSinCounts.Handler(this._mockDbContextFactory);
         var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -64,14 +71,15 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     public async Task GivenAGuildDoesNotHaveTheModuleEnabled_WhenGetUserSinCountIsCalled_ReturnNull()
     {
         //Arrange
-        await this._dbContext.Guilds.AddAsync(new Guild
+        await using var dbContext = this._createDbContext();
+        await dbContext.Guilds.AddAsync(new Guild
         {
             Id = 1234, ModerationSettings = new GuildModerationSettings { ModuleEnabled = false }
         });
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = 1234 });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = 1234 });
+        await dbContext.SaveChangesAsync();
 
-        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var cut = new GetUserSinCounts.Handler(this._mockDbContextFactory);
         var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = 1234 };
 
         //Act
@@ -86,11 +94,11 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
     public async Task GivenAUserDoesNotHaveSins_WhenGetSinCountsIsCalled_ReturnZero()
     {
         //Arrange
+        await using var dbContext = this._createDbContext();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await dbContext.SaveChangesAsync();
 
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
-        await this._dbContext.SaveChangesAsync();
-
-        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var cut = new GetUserSinCounts.Handler(this._mockDbContextFactory);
         var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -100,17 +108,17 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
         //Assert
         result.Should().NotBeNull();
         result!.WarnCount.Should().Be(0);
-        result!.MuteCount.Should().Be(0);
-        result!.BanCount.Should().Be(0);
+        result.MuteCount.Should().Be(0);
+        result.BanCount.Should().Be(0);
     }
 
     [Fact]
     public async Task GivenAUserHasWarns_WhenGetSinCountsIsCalled_ReturnCorrectCount()
     {
         //Arrange
-
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
-        await this._dbContext.Sins.AddRangeAsync(
+        await using var dbContext = this._createDbContext();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await dbContext.Sins.AddRangeAsync(
             new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Warn, ModeratorId = UserId },
             new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Warn, ModeratorId = UserId },
             new Sin
@@ -121,9 +129,9 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
                 ModeratorId = UserId,
                 SinOn = DateTimeOffset.UtcNow.AddDays(-61)
             });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var cut = new GetUserSinCounts.Handler(this._mockDbContextFactory);
         var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -133,17 +141,17 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
         //Assert
         result.Should().NotBeNull();
         result!.WarnCount.Should().Be(2);
-        result!.MuteCount.Should().Be(0);
-        result!.BanCount.Should().Be(0);
+        result.MuteCount.Should().Be(0);
+        result.BanCount.Should().Be(0);
     }
 
     [Fact]
     public async Task GivenAUserHasMutes_WhenGetSinCountsIsCalled_ReturnCorrectCount()
     {
         //Arrange
-
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
-        await this._dbContext.Sins.AddRangeAsync(
+        await using var dbContext = this._createDbContext();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await dbContext.Sins.AddRangeAsync(
             new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Mute, ModeratorId = UserId },
             new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Mute, ModeratorId = UserId },
             new Sin
@@ -154,9 +162,9 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
                 ModeratorId = UserId,
                 SinOn = DateTimeOffset.UtcNow.AddDays(-61)
             });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var cut = new GetUserSinCounts.Handler(this._mockDbContextFactory);
         var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -166,17 +174,17 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
         //Assert
         result.Should().NotBeNull();
         result!.WarnCount.Should().Be(0);
-        result!.MuteCount.Should().Be(2);
-        result!.BanCount.Should().Be(0);
+        result.MuteCount.Should().Be(2);
+        result.BanCount.Should().Be(0);
     }
 
     [Fact]
     public async Task GivenAUserHasBans_WhenGetSinCountsIsCalled_ReturnCorrectCount()
     {
         //Arrange
-
-        await this._dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
-        await this._dbContext.Sins.AddRangeAsync(
+        await using var dbContext = this._createDbContext();
+        await dbContext.Members.AddAsync(new Member { UserId = UserId, GuildId = GuildId });
+        await dbContext.Sins.AddRangeAsync(
             new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Ban, ModeratorId = UserId },
             new Sin { UserId = UserId, GuildId = GuildId, SinType = SinType.Ban, ModeratorId = UserId },
             new Sin
@@ -187,9 +195,9 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
                 ModeratorId = UserId,
                 SinOn = DateTimeOffset.UtcNow.AddDays(-61)
             });
-        await this._dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        var cut = new GetUserSinCounts.Handler(this._dbContext);
+        var cut = new GetUserSinCounts.Handler(this._mockDbContextFactory);
         var query = new GetUserSinCounts.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
@@ -199,7 +207,7 @@ public sealed class GetUserSinCountTests(GrimoireCoreFactory factory) : IAsyncLi
         //Assert
         result.Should().NotBeNull();
         result!.WarnCount.Should().Be(0);
-        result!.MuteCount.Should().Be(0);
-        result!.BanCount.Should().Be(2);
+        result.MuteCount.Should().Be(0);
+        result.BanCount.Should().Be(2);
     }
 }

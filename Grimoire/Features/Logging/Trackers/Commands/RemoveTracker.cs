@@ -41,24 +41,26 @@ public sealed class RemoveTracker
         public ulong GuildId { get; init; }
     }
 
-    public sealed class RemoveTrackerCommandHandler(GrimoireDbContext grimoireDbContext)
+    public sealed class RemoveTrackerCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Trackers
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Trackers
                 .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
                 .Select(x => new
                 {
-                    Tracker = x, ModerationLogId = x.Guild.ModChannelLog, TrackerChannelId = x.LogChannelId
+                    Tracker = x, ModerationLogId = x.Guild.ModChannelLog,
+                    TrackerChannelId = x.LogChannelId
                 }).FirstOrDefaultAsync(cancellationToken);
-            if (result is null || result.Tracker is null)
+            if (result?.Tracker is null)
                 throw new AnticipatedException("Could not find a tracker for that user.");
 
-            this._grimoireDbContext.Trackers.Remove(result.Tracker);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            dbContext.Trackers.Remove(result.Tracker);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response
             {

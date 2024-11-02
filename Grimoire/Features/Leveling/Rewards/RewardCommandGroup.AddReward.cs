@@ -49,13 +49,14 @@ public sealed class AddReward
         public string? Message { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
-            var reward = await this._grimoireDbContext.Rewards
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var reward = await dbContext.Rewards
                 .Include(x => x.Guild)
                 .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
             if (reward is null)
@@ -67,9 +68,9 @@ public sealed class AddReward
                     RewardLevel = command.RewardLevel,
                     RewardMessage = command.Message
                 };
-                await this._grimoireDbContext.Rewards.AddAsync(reward, cancellationToken);
-                await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-                var modChannelLog = await this._grimoireDbContext.Guilds
+                await dbContext.Rewards.AddAsync(reward, cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                var modChannelLog = await dbContext.Guilds
                     .AsNoTracking()
                     .WhereIdIs(command.GuildId)
                     .Select(x => x.ModChannelLog)
@@ -84,7 +85,7 @@ public sealed class AddReward
             reward.RewardLevel = command.RewardLevel;
             reward.RewardMessage = command.Message;
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new BaseResponse
             {

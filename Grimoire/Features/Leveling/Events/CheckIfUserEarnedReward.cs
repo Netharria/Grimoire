@@ -120,12 +120,14 @@ public partial class CheckIfUserEarnedReward
         public required int UserLevel { get; init; }
     }
 
-    public sealed class RequestHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response?>
+    public sealed class RequestHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Guilds
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.Guilds
                 .Where(guild => guild.Id == request.GuildId)
                 .Select(guild => new Response
                 {
@@ -135,6 +137,7 @@ public partial class CheckIfUserEarnedReward
                         .Where(reward => reward.RewardLevel <= request.UserLevel)
                         .Select(reward => new RewardDto { Message = reward.RewardMessage, RoleId = reward.RoleId })
                 }).FirstOrDefaultAsync(cancellationToken);
+        }
     }
 
     public sealed record Response : BaseResponse

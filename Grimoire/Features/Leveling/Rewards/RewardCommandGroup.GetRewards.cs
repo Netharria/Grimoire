@@ -28,13 +28,14 @@ public sealed class GetRewards
     }
 
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Request request, CancellationToken cancellationToken)
         {
-            var rewards = await this._grimoireDbContext.Rewards
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var rewards = await dbContext.Rewards
                 .AsNoTracking()
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x =>

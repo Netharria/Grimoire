@@ -37,7 +37,7 @@ public class AddCustomCommandTest : IAsyncLifetime
 
     public async Task InitializeAsync() => await this._host.StartAsync();
 
-    //await this._dbContext.SaveChangesAsync();
+    //await dbContext.SaveChangesAsync();
     public async Task DisposeAsync()
     {
         await this._resetDatabase();

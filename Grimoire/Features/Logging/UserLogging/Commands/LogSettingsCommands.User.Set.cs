@@ -78,13 +78,14 @@ public sealed class SetUserLogSettings
     }
 
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
-            var userSettings = await this._grimoireDbContext.GuildUserLogSettings
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var userSettings = await dbContext.GuildUserLogSettings
                 .Where(x => x.GuildId == command.GuildId)
                 .Select(x => new { UserSettings = x, x.Guild.ModChannelLog }).FirstOrDefaultAsync(cancellationToken);
             if (userSettings == null) throw new AnticipatedException("Could not find user log settings.");
@@ -107,7 +108,7 @@ public sealed class SetUserLogSettings
                     break;
             }
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse { LogChannelId = userSettings.ModChannelLog };
         }
     }

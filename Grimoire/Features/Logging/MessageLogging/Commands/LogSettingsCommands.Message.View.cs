@@ -53,12 +53,14 @@ public sealed class GetMessageLogSettings
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, Response?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public Task<Response?> Handle(Query request, CancellationToken cancellationToken)
-            => this._grimoireDbContext.GuildMessageLogSettings
+        public async Task<Response?> Handle(Query request, CancellationToken cancellationToken)
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.GuildMessageLogSettings
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => new Response
                 {
@@ -67,6 +69,7 @@ public sealed class GetMessageLogSettings
                     BulkDeleteChannelLog = x.BulkDeleteChannelLogId,
                     IsLoggingEnabled = x.ModuleEnabled
                 }).FirstOrDefaultAsync(cancellationToken);
+        }
     }
 
     public sealed record Response : BaseResponse

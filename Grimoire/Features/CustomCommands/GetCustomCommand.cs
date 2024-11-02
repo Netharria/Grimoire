@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using JetBrains.Annotations;
+
 namespace Grimoire.Features.CustomCommands;
 
 public sealed class GetCustomCommand
@@ -21,6 +23,7 @@ public sealed class GetCustomCommand
         private readonly IMediator _mediator = mediator;
 
         [SlashCommand("Command", "Call a custom command.")]
+        [UsedImplicitly]
         internal async Task CallCommand(
             InteractionContext ctx,
             [Autocomplete(typeof(GetCustomCommandOptions.AutocompleteProvider))]
@@ -76,12 +79,16 @@ public sealed class GetCustomCommand
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response?>
+    [UsedImplicitly]
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Request query, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.CustomCommands
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+            return await dbContext.CustomCommands
                 .AsSplitQuery()
                 .Where(command => command.GuildId == query.GuildId && command.Name == query.Name)
                 .Select(command => new Response
@@ -94,6 +101,7 @@ public sealed class GetCustomCommand
                     RestrictedUse = command.RestrictedUse,
                     PermissionRoles = command.CustomCommandRoles.Select(commandRole => commandRole.RoleId)
                 }).FirstOrDefaultAsync(cancellationToken);
+        }
     }
 
     public sealed record Response

@@ -84,13 +84,14 @@ public sealed class GetLevel
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Query request, CancellationToken cancellationToken)
         {
-            var member = await this._grimoireDbContext.Members
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var member = await dbContext.Members
                 .AsNoTracking()
                 .WhereMemberHasId(request.UserId, request.GuildId)
                 .Include(x => x.Guild.LevelSettings)

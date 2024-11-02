@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
@@ -25,9 +26,10 @@ public sealed class ChannelDatabaseQueryHelperTests(GrimoireCoreFactory factory)
     private const ulong Channel2 = 2;
     private const ulong Channel3 = 3;
 
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
+            .UseExceptionProcessor()
             .Options);
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;

@@ -22,19 +22,20 @@ public sealed class DeleteOldLogMessages
         public required IEnumerable<DeleteMessageResult> DeletedOldLogMessageIds { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task Handle(Command command, CancellationToken cancellationToken)
         {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var successMessages = command.DeletedOldLogMessageIds
                 .Where(x => x.WasSuccessful)
                 .Select(x => x.MessageId)
                 .ToArray();
 
             if (successMessages.Length != 0)
-                await this._grimoireDbContext.OldLogMessages
+                await dbContext.OldLogMessages
                     .WhereIdsAre(successMessages)
                     .ExecuteDeleteAsync(cancellationToken);
 
@@ -46,17 +47,17 @@ public sealed class DeleteOldLogMessages
 
             if (erroredMessages.Length != 0)
             {
-                await this._grimoireDbContext.OldLogMessages
+                await dbContext.OldLogMessages
                     .WhereIdsAre(erroredMessages)
                     .ExecuteUpdateAsync(x => x.SetProperty(p => p.TimesTried, p => p.TimesTried + 1),
                         cancellationToken);
 
-                await this._grimoireDbContext.OldLogMessages
+                await dbContext.OldLogMessages
                     .Where(x => x.TimesTried >= 3)
                     .ExecuteDeleteAsync(cancellationToken);
             }
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

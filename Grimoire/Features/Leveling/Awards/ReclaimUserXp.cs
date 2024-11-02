@@ -64,13 +64,14 @@ public sealed class ReclaimUserXp
         public ulong? ReclaimerId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var member = await this._grimoireDbContext.Members
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var member = await dbContext.Members
                 .AsNoTracking()
                 .WhereMemberHasId(command.UserId, command.GuildId)
                 .Select(member =>
@@ -90,7 +91,7 @@ public sealed class ReclaimUserXp
 
             xpToTake = Math.Min(member.Xp, xpToTake);
 
-            await this._grimoireDbContext.XpHistory.AddAsync(
+            await dbContext.XpHistory.AddAsync(
                 new XpHistory
                 {
                     UserId = command.UserId,
@@ -100,7 +101,7 @@ public sealed class ReclaimUserXp
                     AwarderId = command.ReclaimerId,
                     TimeOut = DateTimeOffset.UtcNow
                 }, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response { LogChannelId = member.ModChannelLog, XpTaken = xpToTake };
         }

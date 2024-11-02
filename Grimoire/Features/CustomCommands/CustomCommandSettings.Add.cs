@@ -8,6 +8,7 @@
 
 using System.Text.RegularExpressions;
 using Grimoire.DatabaseQueryHelpers;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -16,6 +17,7 @@ public sealed partial class CustomCommandSettings
     [GeneratedRegex(@"[0-9A-Fa-f]{6}\b", RegexOptions.Compiled, 1000)]
     private static partial Regex ValidHexColor();
 
+    [UsedImplicitly]
     [SlashCommand("Learn", "Learn a new command or update an existing one")]
     public async Task Learn(
         InteractionContext ctx,
@@ -101,15 +103,16 @@ public sealed class AddCustomCommand
         public required IReadOnlyCollection<RoleDto> PermissionRoles { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
-            await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.PermissionRoles, cancellationToken);
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await dbContext.Roles.AddMissingRolesAsync(command.PermissionRoles, cancellationToken);
 
-            var result = await this._grimoireDbContext.CustomCommands
+            var result = await dbContext.CustomCommands
                 .Include(x => x.CustomCommandRoles)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Name == command.CommandName && x.GuildId == command.GuildId,
@@ -133,7 +136,7 @@ public sealed class AddCustomCommand
                     RestrictedUse = command.RestrictedUse,
                     CustomCommandRoles = commandRoles
                 };
-                await this._grimoireDbContext.AddAsync(result, cancellationToken);
+                await dbContext.AddAsync(result, cancellationToken);
             }
             else
             {
@@ -150,8 +153,8 @@ public sealed class AddCustomCommand
                     result.CustomCommandRoles.Add(role);
             }
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            var modChannelLog = await this._grimoireDbContext.Guilds
+            await dbContext.SaveChangesAsync(cancellationToken);
+            var modChannelLog = await dbContext.Guilds
                 .AsNoTracking()
                 .WhereIdIs(command.GuildId)
                 .Select(x => x.ModChannelLog)

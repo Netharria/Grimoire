@@ -91,13 +91,14 @@ public sealed class SetLevelSettings
     }
 
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
-            var levelSettings = await this._grimoireDbContext.GuildLevelSettings
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var levelSettings = await dbContext.GuildLevelSettings
                 .Where(x => x.GuildId == command.GuildId)
                 .Select(x => new { LevelSettings = x, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -131,7 +132,7 @@ public sealed class SetLevelSettings
                     break;
             }
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new BaseResponse { LogChannelId = levelSettings.ModChannelLog };
         }

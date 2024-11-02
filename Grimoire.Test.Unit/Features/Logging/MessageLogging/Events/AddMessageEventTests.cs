@@ -15,7 +15,6 @@ using Grimoire.Domain;
 using Grimoire.Features.Logging.MessageLogging.Events;
 using Grimoire.Features.Shared.SharedDtos;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;

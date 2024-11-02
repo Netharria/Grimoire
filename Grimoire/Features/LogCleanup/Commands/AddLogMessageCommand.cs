@@ -16,18 +16,19 @@ public sealed class AddLogMessage
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class AddLogMessageCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command>
+    public sealed class AddLogMessageCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task Handle(Command command, CancellationToken cancellationToken)
         {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var logMessage = new OldLogMessage
             {
                 ChannelId = command.ChannelId, GuildId = command.GuildId, Id = command.MessageId
             };
-            await this._grimoireDbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

@@ -7,6 +7,7 @@
 
 using System;
 using System.Threading.Tasks;
+using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
@@ -21,9 +22,10 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
     private const ulong Guild1 = 1;
     private const ulong Guild2 = 2;
 
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
+            .UseExceptionProcessor()
             .Options);
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;

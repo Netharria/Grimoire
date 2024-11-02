@@ -53,9 +53,9 @@ public sealed class UpdateMessageLogOverride
         public required MessageLogOverrideSetting ChannelOverrideSetting { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext dbContext) : IRequestHandler<Command, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, BaseResponse>
     {
-        private readonly GrimoireDbContext _dbContext = dbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -66,14 +66,15 @@ public sealed class UpdateMessageLogOverride
 
         private async Task<BaseResponse> DeleteOverride(Command command, CancellationToken cancellationToken)
         {
-            var result = await this._dbContext.MessagesLogChannelOverrides
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.MessagesLogChannelOverrides
                 .Where(x => x.ChannelId == command.ChannelId)
                 .Select(x => new { Override = x, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken);
-            if (result is null || result.Override is null)
+            if (result?.Override is null)
                 throw new AnticipatedException("That channel did not have an override.");
-            this._dbContext.MessagesLogChannelOverrides.Remove(result.Override);
-            await this._dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.MessagesLogChannelOverrides.Remove(result.Override);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new BaseResponse
             {
@@ -83,7 +84,8 @@ public sealed class UpdateMessageLogOverride
 
         private async Task<BaseResponse> AddOrUpdateOverride(Command command, CancellationToken cancellationToken)
         {
-            var result = await this._dbContext.Guilds
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Guilds
                 .Where(x => x.Id == command.GuildId)
                 .Select(x => new
                 {
@@ -94,7 +96,7 @@ public sealed class UpdateMessageLogOverride
             if (result is null)
                 throw new AnticipatedException("Could not find guild settings.");
             if (result.Override is null)
-                await this._dbContext.MessagesLogChannelOverrides.AddAsync(new MessageLogChannelOverride
+                await dbContext.MessagesLogChannelOverrides.AddAsync(new MessageLogChannelOverride
                 {
                     ChannelId = command.ChannelId,
                     GuildId = command.GuildId,
@@ -115,7 +117,7 @@ public sealed class UpdateMessageLogOverride
                         "A Message log Override option was selected that has not been implemented.")
                 };
 
-            await this._dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse
             {
                 LogChannelId = result.ModChannelLog,

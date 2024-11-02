@@ -42,12 +42,14 @@ public sealed class GetLevelSettings
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Request, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.GuildLevelSettings
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.GuildLevelSettings
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => new Response
                 {
@@ -58,6 +60,7 @@ public sealed class GetLevelSettings
                     Amount = x.Amount,
                     LevelChannelLog = x.LevelChannelLogId
                 }).FirstOrDefaultAsync(cancellationToken);
+        }
     }
 
     public sealed record Response : BaseResponse

@@ -36,13 +36,14 @@ public sealed class GetIgnoredItems
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
         {
-            var ignoredItems = await this._grimoireDbContext.Guilds
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var ignoredItems = await dbContext.Guilds
                 .AsNoTracking()
                 .AsSplitQuery()
                 .WhereIdIs(request.GuildId)

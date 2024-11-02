@@ -91,13 +91,14 @@ public sealed class UpdateMessageEvent
         public string MessageContent { get; init; } = string.Empty;
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
-            var message = await this._grimoireDbContext.Messages
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var message = await dbContext.Messages
                 .AsNoTracking()
                 .WhereMessageLoggingIsEnabled()
                 .WhereIdIs(command.MessageId)
@@ -120,7 +121,7 @@ public sealed class UpdateMessageEvent
                 || message.MessageContent.Equals(command.MessageContent, StringComparison.CurrentCultureIgnoreCase))
                 return new Response { Success = false };
 
-            await this._grimoireDbContext.MessageHistory.AddAsync(
+            await dbContext.MessageHistory.AddAsync(
                 new MessageHistory
                 {
                     MessageId = message.MessageId,
@@ -128,7 +129,7 @@ public sealed class UpdateMessageEvent
                     GuildId = command.GuildId,
                     MessageContent = command.MessageContent
                 }, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return message;
         }
     }

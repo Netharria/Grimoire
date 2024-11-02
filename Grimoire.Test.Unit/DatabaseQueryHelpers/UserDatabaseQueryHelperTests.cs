@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
@@ -24,9 +25,10 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     private const long User1 = 1;
     private const long User2 = 2;
 
-    private readonly GrimoireDbContext _dbContext = new(
+    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
+            .UseExceptionProcessor()
             .Options);
 
     private readonly Func<Task> _resetDatabase = factory.ResetDatabase;
@@ -69,7 +71,7 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     public async Task WhenNoUsersAreAdded_ReturnsFalse()
     {
         // Arrange
-        var usersToAdd = new List<UserDto>(); // No members to add
+        var usersToAdd = Array.Empty<UserDto>(); // No members to add
 
         // Act
         var result = await this._dbContext.Users.AddMissingUsersAsync(usersToAdd);
@@ -96,10 +98,10 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     }
 
     [Fact]
-    public async Task WhenNoUsersnamesAreAdded_ReturnsFalse()
+    public async Task WhenNoUsernamesAreAdded_ReturnsFalse()
     {
         // Arrange
-        var usersToAdd = new List<UserDto>(); // No members to add
+        var usersToAdd = Array.Empty<UserDto>(); // No members to add
 
         // Act
         var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd);
