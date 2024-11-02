@@ -7,8 +7,10 @@
 
 using DSharpPlus.Entities.AuditLogs;
 using DSharpPlus.Exceptions;
+using Grimoire.Features.Moderation.Ban;
 using Grimoire.Features.Moderation.Commands;
-using Grimoire.Features.Moderation.Queries;
+using Grimoire.Features.Moderation.Lock;
+using Grimoire.Features.Moderation.Mute;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation;
