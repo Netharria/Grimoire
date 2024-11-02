@@ -155,8 +155,6 @@ public sealed partial class AddMessageEvent
 
         private static bool ShouldLogMessage(Command command, Dictionary<ulong, MessageLogOverrideOption> overrides)
         {
-            if (overrides.Count == 0)
-                return true;
             foreach (var channel in command.ParentChannelTree)
             {
                 if (!overrides.TryGetValue(channel, out var channelOverride))

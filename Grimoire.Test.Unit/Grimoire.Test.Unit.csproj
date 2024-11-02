@@ -37,4 +37,8 @@
     <ProjectReference Include="..\Grimoire\Grimoire.csproj"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Logging\" />
+  </ItemGroup>
+
 </Project>
