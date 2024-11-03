@@ -7,7 +7,7 @@
 
 using Grimoire.DatabaseQueryHelpers;
 
-namespace Grimoire.Features.Moderation.Ban;
+namespace Grimoire.Features.Moderation.Ban.Shared;
 
 public sealed class AddBan
 {
@@ -19,18 +19,20 @@ public sealed class AddBan
         public ulong? ModeratorId { get; set; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Command, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
-            var memberExists = await this._grimoireDbContext.Members
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var memberExists = await dbContext.Members
                 .AnyAsync(x => x.UserId == command.UserId
                                && x.GuildId == command.GuildId, cancellationToken);
             if (!memberExists)
-                await this.AddMissingMember(command, cancellationToken);
-            var sin = await this._grimoireDbContext.Sins.AddAsync(
+                await this.AddMissingMember(dbContext, command, cancellationToken);
+            var sin = await dbContext.Sins.AddAsync(
                 new Sin
                 {
                     GuildId = command.GuildId,
@@ -39,20 +41,21 @@ public sealed class AddBan
                     SinType = SinType.Ban,
                     ModeratorId = command.ModeratorId
                 }, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-            var loggingChannel = await this._grimoireDbContext.Guilds
+            var loggingChannel = await dbContext.Guilds
                 .WhereIdIs(command.GuildId)
                 .Select(x => x.ModChannelLog)
                 .FirstOrDefaultAsync(cancellationToken);
             return new Response { SinId = sin.Entity.Id, LogChannelId = loggingChannel };
         }
 
-        private async Task AddMissingMember(Command command, CancellationToken cancellationToken)
+        private async Task AddMissingMember(GrimoireDbContext dbContext, Command command,
+            CancellationToken cancellationToken)
         {
-            if (!await this._grimoireDbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
-                await this._grimoireDbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
-            await this._grimoireDbContext.Members.AddAsync(new Member
+            if (!await dbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
+                await dbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
+            await dbContext.Members.AddAsync(new Member
             {
                 UserId = command.UserId,
                 GuildId = command.GuildId,

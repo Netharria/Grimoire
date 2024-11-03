@@ -8,7 +8,7 @@
 using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Features.Moderation.Ban;
+namespace Grimoire.Features.Moderation.PublishSins;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]

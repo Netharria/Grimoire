@@ -25,6 +25,7 @@ using Grimoire.Features.Logging.Trackers.Commands;
 using Grimoire.Features.Logging.Trackers.Events;
 using Grimoire.Features.Logging.UserLogging.Events;
 using Grimoire.Features.Moderation.Lock;
+using Grimoire.Features.Moderation.Lock.BackgroundTask;
 using Grimoire.Features.Moderation.Mute;
 using Grimoire.Features.Moderation.SpamFilter;
 using Grimoire.Features.Shared.PluralKit;

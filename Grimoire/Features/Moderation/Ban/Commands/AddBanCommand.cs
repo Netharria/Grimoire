@@ -6,17 +6,18 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Exceptions;
+using Grimoire.Features.Moderation.Ban.Shared;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Features.Moderation.Ban;
+namespace Grimoire.Features.Moderation.Ban.Commands;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
 [SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
 [SlashRequireBotPermissions(DiscordPermissions.BanMembers)]
-public sealed partial class BanCommands(IMediator mediator, ILogger<BanCommands> logger) : ApplicationCommandModule
+public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanCommand> logger) : ApplicationCommandModule
 {
-    private readonly ILogger<BanCommands> _logger = logger;
+    private readonly ILogger<AddBanCommand> _logger = logger;
     private readonly IMediator _mediator = mediator;
 
     [SlashCommand("Ban", "Bans a user from the server.")]
@@ -82,34 +83,7 @@ public sealed partial class BanCommands(IMediator mediator, ILogger<BanCommands>
     }
 
     [LoggerMessage(LogLevel.Warning, "Was not able to send a direct message to user.")]
-    private static partial void LogFailedDirectMessage(ILogger<BanCommands> logger, Exception ex);
-
-    [SlashCommand("Unban", "Bans a user from the server.")]
-    public static async Task UnbanAsync(
-        InteractionContext ctx,
-        [Option("User", "The user to unban")] DiscordUser user)
-    {
-        await ctx.DeferAsync();
-        try
-        {
-            await ctx.Guild.UnbanMemberAsync(user.Id);
-            await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
-                .WithAuthor("Unbanned")
-                .AddField("User", user.Mention, true)
-                .AddField("Moderator", ctx.User.Mention, true)
-                .WithColor(GrimoireColor.Green));
-        }
-        catch (Exception ex) when (ex is NotFoundException || ex is ServerErrorException)
-        {
-            var errorMessage = ex is NotFoundException
-                ? "user could not be found."
-                : "error when communicating with discord. Try again before asking for help.";
-            await ctx.EditReplyAsync(
-                GrimoireColor.Yellow,
-                title: "Error",
-                message: $"{user.GetUsernameWithDiscriminator()} was not unbanned because {errorMessage}");
-        }
-    }
+    private static partial void LogFailedDirectMessage(ILogger<AddBanCommand> logger, Exception ex);
 
     private static bool CheckIfCanBan(InteractionContext ctx, DiscordUser user)
     {

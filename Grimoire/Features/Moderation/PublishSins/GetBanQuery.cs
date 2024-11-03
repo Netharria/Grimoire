@@ -5,20 +5,20 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Features.Moderation.Ban;
+namespace Grimoire.Features.Moderation.PublishSins;
 
-public sealed record GetUnbanQuery : IRequest<GetBanQueryResponse>
+public sealed record GetBanQuery : IRequest<GetBanQueryResponse>
 {
     public long SinId { get; init; }
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetUnbanQueryHandler(GrimoireDbContext grimoireDbContext)
-    : IRequestHandler<GetUnbanQuery, GetBanQueryResponse>
+public sealed class GetBanQueryHandler(GrimoireDbContext grimoireDbContext)
+    : IRequestHandler<GetBanQuery, GetBanQueryResponse>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<GetBanQueryResponse> Handle(GetUnbanQuery request, CancellationToken cancellationToken)
+    public async Task<GetBanQueryResponse> Handle(GetBanQuery request, CancellationToken cancellationToken)
     {
         var result = await this._grimoireDbContext.Sins
             .AsNoTracking()
@@ -30,9 +30,10 @@ public sealed class GetUnbanQueryHandler(GrimoireDbContext grimoireDbContext)
                 x.UserId,
                 UsernameHistory = x.Member.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(),
                 x.Guild.ModerationSettings.PublicBanLog,
+                x.SinOn,
                 x.Guild.ModChannelLog,
-                x.Pardon,
-                PublishedUnban = x.PublishMessages.Where(x => x.PublishType == PublishType.Unban).FirstOrDefault()
+                x.Reason,
+                PublishedBan = x.PublishMessages.Where(x => x.PublishType == PublishType.Ban).FirstOrDefault()
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -40,18 +41,26 @@ public sealed class GetUnbanQueryHandler(GrimoireDbContext grimoireDbContext)
             throw new AnticipatedException("Could not find a ban with that Sin Id");
         if (result.PublicBanLog is null)
             throw new AnticipatedException("No Public Ban Log is configured.");
-        if (result.Pardon is null)
-            throw new AnticipatedException("The ban must be pardoned first before the unban can be published.");
 
         return new GetBanQueryResponse
         {
             UserId = result.UserId,
             Username = result.UsernameHistory.Username,
             BanLogId = result.PublicBanLog.Value,
-            Date = result.Pardon.PardonDate,
+            Date = result.SinOn,
             LogChannelId = result.ModChannelLog,
-            Reason = result.Pardon.Reason,
-            PublishedMessage = result.PublishedUnban?.MessageId
+            Reason = result.Reason,
+            PublishedMessage = result.PublishedBan?.MessageId
         };
     }
+}
+
+public sealed record GetBanQueryResponse : BaseResponse
+{
+    public ulong BanLogId { get; init; }
+    public DateTimeOffset Date { get; init; }
+    public string Username { get; init; } = string.Empty;
+    public ulong UserId { get; init; }
+    public string Reason { get; init; } = string.Empty;
+    public ulong? PublishedMessage { get; init; }
 }

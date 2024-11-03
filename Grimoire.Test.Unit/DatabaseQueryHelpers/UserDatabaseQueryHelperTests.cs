@@ -92,8 +92,8 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         var users = await this._dbContext.UsernameHistory
             .Where(x => x.UserId == User1)
             .ToListAsync();
-        users.Should().NotBeNull();
-        users.Should().HaveCount(2)
+        users.Should().NotBeNull()
+            .And.HaveCount(2)
             .And.AllSatisfy(x => x.Username.Should().BeOneOf("Username2", "User1"));
     }
 
