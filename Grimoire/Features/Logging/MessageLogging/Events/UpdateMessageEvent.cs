@@ -91,7 +91,8 @@ public sealed class UpdateMessageEvent
         public string MessageContent { get; init; } = string.Empty;
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Command, Response>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

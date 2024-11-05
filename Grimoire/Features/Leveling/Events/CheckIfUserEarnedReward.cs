@@ -120,7 +120,8 @@ public partial class CheckIfUserEarnedReward
         public required int UserLevel { get; init; }
     }
 
-    public sealed class RequestHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response?>
+    public sealed class RequestHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Request, Response?>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

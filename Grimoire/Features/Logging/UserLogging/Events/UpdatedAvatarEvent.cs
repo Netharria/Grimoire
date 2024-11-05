@@ -78,7 +78,8 @@ public sealed class UpdatedAvatarEvent
         public string AvatarUrl { get; init; } = string.Empty;
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Command, Response?>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

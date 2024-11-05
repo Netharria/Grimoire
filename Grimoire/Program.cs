@@ -25,7 +25,6 @@ using Grimoire.Features.Logging.Trackers.Commands;
 using Grimoire.Features.Logging.Trackers.Events;
 using Grimoire.Features.Logging.UserLogging.Events;
 using Grimoire.Features.Moderation.Lock;
-using Grimoire.Features.Moderation.Lock.BackgroundTask;
 using Grimoire.Features.Moderation.Mute;
 using Grimoire.Features.Moderation.SpamFilter;
 using Grimoire.Features.Shared.PluralKit;
@@ -143,8 +142,8 @@ await Host.CreateDefaultBuilder(args)
                 options.RegisterCommands<GetCustomCommand.Command>();
             })
             .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<Program>())
-            .AddHostedService<LogBackgroundTasks>()
-            .AddHostedService<TrackerBackgroundTasks>()
+            .AddHostedService<CleanupLogs.BackgroundTask>()
+            .AddHostedService<RemoveExpiredTrackers.BackgroundTask>()
             .AddHostedService<LockBackgroundTasks>()
             .AddHostedService<MuteBackgroundTasks>()
             .AddHostedService<DiscordStartService>()

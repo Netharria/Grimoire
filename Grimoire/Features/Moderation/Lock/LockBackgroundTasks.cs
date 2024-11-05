@@ -9,7 +9,7 @@ using Grimoire.Features.Moderation.Lock.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Grimoire.Features.Moderation.Lock.BackgroundTask;
+namespace Grimoire.Features.Moderation.Lock;
 
 internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILogger<LockBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))

@@ -42,7 +42,8 @@ public sealed class GetLevelSettings
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Request, Response?>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

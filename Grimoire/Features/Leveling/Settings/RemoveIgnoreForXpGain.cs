@@ -21,7 +21,8 @@ public sealed class RemoveIgnoreForXpGain
         public IReadOnlyCollection<string> InvalidIds { get; set; } = [];
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Command, BaseResponse>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

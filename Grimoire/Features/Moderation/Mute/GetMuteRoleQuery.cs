@@ -7,17 +7,17 @@
 
 namespace Grimoire.Features.Moderation.Mute;
 
-public sealed record GetMuteRoleQuery : IRequest<GetMuteRoleQueryResponse>
+public sealed record GetMuteRoleQuery : IRequest<ulong>
 {
     public ulong GuildId { get; init; }
 }
 
 public sealed class GetMuteRoleQueryHandler(GrimoireDbContext grimoireDbContext)
-    : IRequestHandler<GetMuteRoleQuery, GetMuteRoleQueryResponse>
+    : IRequestHandler<GetMuteRoleQuery, ulong>
 {
     private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
 
-    public async Task<GetMuteRoleQueryResponse> Handle(GetMuteRoleQuery request, CancellationToken cancellationToken)
+    public async Task<ulong> Handle(GetMuteRoleQuery request, CancellationToken cancellationToken)
     {
         var muteRoleId = await this._grimoireDbContext.GuildModerationSettings
             .AsNoTracking()
@@ -25,11 +25,6 @@ public sealed class GetMuteRoleQueryHandler(GrimoireDbContext grimoireDbContext)
             .Select(x => x.MuteRole)
             .FirstOrDefaultAsync(cancellationToken);
         if (muteRoleId is null) throw new AnticipatedException("No mute role is configured.");
-        return new GetMuteRoleQueryResponse { RoleId = muteRoleId.Value };
+        return muteRoleId.Value;
     }
-}
-
-public sealed record GetMuteRoleQueryResponse : BaseResponse
-{
-    public ulong RoleId { get; init; }
 }

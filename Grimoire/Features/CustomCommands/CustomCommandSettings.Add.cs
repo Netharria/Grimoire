@@ -103,7 +103,8 @@ public sealed class AddCustomCommand
         public required IReadOnlyCollection<RoleDto> PermissionRoles { get; init; }
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Request, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Request, BaseResponse>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

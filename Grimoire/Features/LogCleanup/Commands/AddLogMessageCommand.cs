@@ -16,7 +16,8 @@ public sealed class AddLogMessage
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class AddLogMessageCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command>
+    public sealed class AddLogMessageCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Command>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

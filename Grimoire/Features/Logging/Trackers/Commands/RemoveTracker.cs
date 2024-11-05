@@ -53,8 +53,7 @@ public sealed class RemoveTracker
                 .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
                 .Select(x => new
                 {
-                    Tracker = x, ModerationLogId = x.Guild.ModChannelLog,
-                    TrackerChannelId = x.LogChannelId
+                    Tracker = x, ModerationLogId = x.Guild.ModChannelLog, TrackerChannelId = x.LogChannelId
                 }).FirstOrDefaultAsync(cancellationToken);
             if (result?.Tracker is null)
                 throw new AnticipatedException("Could not find a tracker for that user.");

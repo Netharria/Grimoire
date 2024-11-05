@@ -8,6 +8,7 @@
 
 // ReSharper disable AccessToDisposedClosure
 // Action handled immediately after creation
+
 namespace Grimoire.Features.LogCleanup.Commands;
 
 public sealed record DeleteOldLogsCommand : IRequest
@@ -30,7 +31,7 @@ public sealed class DeleteOldLogsCommandHandler(IDbContextFactory<GrimoireDbCont
         await dbContext.Avatars
             .Select(x => new { x.GuildId, x.UserId })
             .Distinct()
-            .SelectMany((x) => dbContext.Avatars
+            .SelectMany(x => dbContext.Avatars
                 .Where(avatar => avatar.UserId == x.UserId && avatar.GuildId == x.GuildId)
                 .OrderByDescending(avatar => avatar.Timestamp)
                 .Skip(3).ToList())

@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Exceptions;
+using Grimoire.Features.Moderation.Mute.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -45,12 +46,14 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                 }
             }
 
-            _ = await mediator.Send(new UnmuteUserCommand { UserId = user.Id, GuildId = guild.Id }, stoppingToken);
+            _ = await mediator.Send(new UnmuteUser.Request { UserId = user.Id, GuildId = guild.Id }, stoppingToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Mute on {user.Mention} has expired.");
 
             await user.SendMessageAsync(embed);
+
+
 
             if (expiredLock.LogChannelId is not null)
             {

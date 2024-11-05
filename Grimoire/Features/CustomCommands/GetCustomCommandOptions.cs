@@ -46,7 +46,8 @@ public sealed class GetCustomCommandOptions
     }
 
     [UsedImplicitly]
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IStreamRequestHandler<Request, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IStreamRequestHandler<Request, Response>
     {
         private static readonly Func<GrimoireDbContext, ulong, string, IAsyncEnumerable<Response>> _getCommandsAsync =
             EF.CompileAsyncQuery((GrimoireDbContext context, ulong guildId, string cleanedText) =>

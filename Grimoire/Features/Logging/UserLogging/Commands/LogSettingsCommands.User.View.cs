@@ -65,14 +65,15 @@ public sealed class GetUserLogSettings
     }
 
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Query, Response?>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Query request, CancellationToken cancellationToken)
-       {
-           await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-           return await dbContext.GuildUserLogSettings
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.GuildUserLogSettings
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => new Response
                 {

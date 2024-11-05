@@ -21,7 +21,8 @@ public partial class LinkProxyMessage
         public string? MemberId { get; init; }
     }
 
-    public partial class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory, ILogger<Handler> logger) : IRequestHandler<Command>
+    public partial class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory, ILogger<Handler> logger)
+        : IRequestHandler<Command>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
         private readonly ILogger<Handler> _logger = logger;

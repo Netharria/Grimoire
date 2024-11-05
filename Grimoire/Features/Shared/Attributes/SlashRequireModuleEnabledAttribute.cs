@@ -12,7 +12,7 @@ namespace Grimoire.Features.Shared.Attributes;
 
 internal sealed class SlashRequireModuleEnabledAttribute(Module module) : SlashCheckBaseAttribute
 {
-    public Module Module = module;
+    public readonly Module Module = module;
 
     public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
     {

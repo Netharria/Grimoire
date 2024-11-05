@@ -57,7 +57,8 @@ public sealed class GetMessageLogOverrides
         public required MessageLogOverrideOption ChannelOption { get; init; }
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IStreamRequestHandler<Query, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IStreamRequestHandler<Query, Response>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

@@ -14,7 +14,8 @@ public sealed class GetUserCommandChannel
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Query, Response?>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
@@ -23,10 +24,7 @@ public sealed class GetUserCommandChannel
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             return await dbContext.Guilds
                 .Where(guild => guild.Id == query.GuildId)
-                .Select(guild =>  new Response
-                    {
-                        UserCommandChannelId = guild.UserCommandChannelId
-                    }
+                .Select(guild => new Response { UserCommandChannelId = guild.UserCommandChannelId }
                 ).FirstOrDefaultAsync(cancellationToken);
         }
     }
