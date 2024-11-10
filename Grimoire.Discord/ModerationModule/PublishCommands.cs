@@ -85,7 +85,7 @@ public sealed partial class PublishCommands(IMediator mediator) : ApplicationCom
         if (banLogChannel is null)
             throw new AnticipatedException("Could not find the ban log channel.");
         var username = response.Username;
-        if (response.Username is null)
+        if (string.IsNullOrWhiteSpace(username))
         {
             var user = await ctx.Client.GetUserAsync(response.UserId);
             username = user.Username;
