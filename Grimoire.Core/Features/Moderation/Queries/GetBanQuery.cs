@@ -25,15 +25,17 @@ public sealed class GetBanQueryHandler(GrimoireDbContext grimoireDbContext) : IR
             .Where(x => x.SinType == SinType.Ban)
             .Where(x => x.Id == request.SinId)
             .Where(x => x.GuildId == request.GuildId)
-            .Select(x => new
+            .Select(sin => new
             {
-                x.UserId,
-                UsernameHistory = x.Member.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(),
-                x.Guild.ModerationSettings.PublicBanLog,
-                x.SinOn,
-                x.Guild.ModChannelLog,
-                x.Reason,
-                PublishedBan = x.PublishMessages.Where(x => x.PublishType  == PublishType.Ban).FirstOrDefault()
+                sin.UserId,
+                UsernameHistory = sin.Member.User.UsernameHistories
+                    .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
+                    .FirstOrDefault(),
+                sin.Guild.ModerationSettings.PublicBanLog,
+                sin.SinOn,
+                sin.Guild.ModChannelLog,
+                sin.Reason,
+                PublishedBan = sin.PublishMessages.FirstOrDefault(x => x.PublishType  == PublishType.Ban)
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
@@ -45,7 +47,7 @@ public sealed class GetBanQueryHandler(GrimoireDbContext grimoireDbContext) : IR
         return new GetBanQueryResponse
         {
             UserId = result.UserId,
-            Username = result.UsernameHistory.Username,
+            Username = result.UsernameHistory?.Username,
             BanLogId = result.PublicBanLog.Value,
             Date = result.SinOn,
             LogChannelId = result.ModChannelLog,
@@ -59,7 +61,7 @@ public sealed record GetBanQueryResponse : BaseResponse
 {
     public ulong BanLogId { get; init; }
     public DateTimeOffset Date { get; init; }
-    public string Username { get; init; } = string.Empty;
+    public string? Username { get; init; }
     public ulong UserId { get; init; }
     public string Reason { get; init; } = string.Empty;
     public ulong? PublishedMessage { get; init; }
