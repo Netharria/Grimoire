@@ -84,6 +84,13 @@ public sealed partial class PublishCommands(IMediator mediator) : ApplicationCom
 
         if (banLogChannel is null)
             throw new AnticipatedException("Could not find the ban log channel.");
+        var username = response.Username;
+        if (response.Username is null)
+        {
+            var user = await ctx.Client.GetUserAsync(response.UserId);
+            username = user.Username;
+        }
+
 
         if (response.PublishedMessage is not null)
         {
@@ -93,7 +100,7 @@ public sealed partial class PublishCommands(IMediator mediator) : ApplicationCom
                 return await message.ModifyAsync(new DiscordEmbedBuilder()
                     .WithTitle(publish.ToString())
                     .WithDescription($"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
-                                    $"**User:** {response.Username} ({response.UserId})\n" +
+                                    $"**User:** {username} ({response.UserId})\n" +
                                     $"**Reason:** {response.Reason}")
                     .WithColor(GrimoireColor.Purple).Build());
             }
