@@ -113,7 +113,7 @@ public sealed partial class PublishCommands(IMediator mediator) : ApplicationCom
         return await banLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
             .WithTitle(publish.ToString())
             .WithDescription($"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
-                            $"**User:** {response.Username} ({response.UserId})\n" +
+                            $"**User:** {username} ({response.UserId})\n" +
                             $"**Reason:** {response.Reason}")
             .WithColor(GrimoireColor.Purple));
     }
