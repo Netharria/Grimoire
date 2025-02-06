@@ -46,12 +46,8 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 .WithDescription($"Lock on {channel.Mention} has expired.");
 
             await channel.SendMessageAsync(embed);
-
-            if (expiredLock.LogChannelId is null)
-                continue;
-            var moderationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
-            if (moderationLogChannel is not null)
-                await moderationLogChannel.SendMessageAsync(embed);
+            await discordClient.SendMessageToLoggingChannel(expiredLock.LogChannelId,
+                builder => builder.AddEmbed(embed));
         }
     }
 }

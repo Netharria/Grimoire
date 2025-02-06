@@ -24,7 +24,7 @@ public sealed class LockedTreadEvents
             if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermissions.ManageMessages))
                 return;
             if (await this._mediator.Send(new GetLockQuery { ChannelId = args.Channel.Id, GuildId = args.Guild.Id }))
-                await args.Message.DeleteAsync();
+                await args.Message.DeleteAsync("Thread is locked.");
         }
 
         public async Task HandleEventAsync(DiscordClient sender, MessageReactionAddedEventArgs args)

@@ -24,8 +24,13 @@ using Grimoire.Features.Logging.Trackers;
 using Grimoire.Features.Logging.Trackers.Commands;
 using Grimoire.Features.Logging.Trackers.Events;
 using Grimoire.Features.Logging.UserLogging.Events;
+using Grimoire.Features.Moderation.Ban.Commands;
+using Grimoire.Features.Moderation.Ban.Events;
 using Grimoire.Features.Moderation.Lock;
+using Grimoire.Features.Moderation.Lock.Commands;
 using Grimoire.Features.Moderation.Mute;
+using Grimoire.Features.Moderation.Mute.Commands;
+using Grimoire.Features.Moderation.PublishSins;
 using Grimoire.Features.Moderation.SpamFilter;
 using Grimoire.Features.Shared.PluralKit;
 using Grimoire.Features.Shared.SharedModule;
@@ -90,7 +95,12 @@ await Host.CreateDefaultBuilder(args)
                     .AddEventHandlers<GuildMemberRemovedEvent>()
                     .AddEventHandlers<UpdatedAvatarEvent.EventHandler>()
                     .AddEventHandlers<UpdatedNicknameEvent.EventHandler>()
-                    .AddEventHandlers<UpdatedUsernameEvent.EventHandler>())
+                    .AddEventHandlers<UpdatedUsernameEvent.EventHandler>()
+                    //Moderation Log
+                    .AddEventHandlers<BanAddedEvent>()
+                    .AddEventHandlers<BanRemovedEvent>()
+                    .AddEventHandlers<UserJoinedWhileMuted.EventHandler>()
+                    )
             .AddInteractivityExtension(new InteractivityConfiguration
             {
                 ResponseBehavior = InteractionResponseBehavior.Ack,
@@ -129,11 +139,13 @@ await Host.CreateDefaultBuilder(args)
 
                 ////Moderation
                 //extension.RegisterCommands<ModerationSettingsCommands>();
-                //extension.RegisterCommands<Grimoire.ModerationModule.MuteAdminCommands>();
-                //extension.RegisterCommands<BanCommands>();
+                options.RegisterCommands<MuteAdminCommands>();
+                options.RegisterCommands<AddBanCommand>();
+                options.RegisterCommands<RemoveBanCommand>();
                 //extension.RegisterCommands<SinAdminCommands>();
-                //extension.RegisterCommands<LockCommands>();
-                //extension.RegisterCommands<PublishCommands>();
+                options.RegisterCommands<LockChannel.Command>();
+                options.RegisterCommands<UnlockChannel.Command>();
+                options.RegisterCommands<PublishCommands>();
                 //extension.RegisterCommands<SinLogCommands>();
                 //extension.RegisterCommands<MuteCommands>();
                 //extension.RegisterCommands<WarnCommands>();

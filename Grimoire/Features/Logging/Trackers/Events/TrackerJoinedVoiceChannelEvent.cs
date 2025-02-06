@@ -21,34 +21,36 @@ internal sealed class TrackerJoinedVoiceChannelEvent(IMediator mediator) : IEven
 
         if (loggingChannel is null) return;
 
-        if (args.Before?.Channel is null && args.After?.Channel is null) return;
+        if (args.Before?.Channel is null && args.After?.Channel is null)
+            return;
+
+        var embed = new DiscordEmbedBuilder()
+            .AddField("User", args.User.Mention, true)
+            .WithTimestamp(DateTime.UtcNow);
 
         if (args.Before?.Channel is null)
         {
-            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor("Joined Voice Channel")
-                .AddField("User", args.User.Mention, true)
-                .AddField("Channel", args.After.Channel is null ? "" : args.After.Channel.Mention, true)
-                .WithTimestamp(DateTime.UtcNow));
+            await loggingChannel.SendMessageAsync(
+                embed
+                    .WithAuthor("Joined Voice Channel")
+                    .AddField("Channel", args.After.Channel?.Mention ?? "", true));
             return;
         }
 
         if (args.After?.Channel is null)
         {
-            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor("Left Voice Channel")
-                .AddField("User", args.User.Mention, true)
-                .AddField("Channel", args.Before.Channel.Mention, true)
-                .WithTimestamp(DateTime.UtcNow));
+            await loggingChannel.SendMessageAsync(
+                embed
+                    .WithAuthor("Left Voice Channel")
+                    .AddField("Channel", args.Before.Channel.Mention, true));
             return;
         }
 
         if (args.Before.Channel != args.After.Channel)
-            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor("Moved Voice Channels")
-                .AddField("User", args.User.Mention, true)
-                .AddField("From", args.Before.Channel.Mention, true)
-                .AddField("To", args.After.Channel.Mention, true)
-                .WithTimestamp(DateTime.UtcNow));
+            await loggingChannel.SendMessageAsync(
+                embed
+                    .WithAuthor("Moved Voice Channels")
+                    .AddField("From", args.Before.Channel.Mention, true)
+                    .AddField("To", args.After.Channel.Mention, true));
     }
 }

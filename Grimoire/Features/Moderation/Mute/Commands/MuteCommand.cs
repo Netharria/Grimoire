@@ -33,9 +33,7 @@ public sealed class MuteUser
         {
             await ctx.DeferAsync();
 
-            var member = user as DiscordMember;
-
-            if (member is null)
+            if (user is not DiscordMember member)
                 throw new AnticipatedException("That user is not on the server.");
 
             if (ctx.Guild.Id == member.Guild.Id) throw new AnticipatedException("That user is not on the server.");

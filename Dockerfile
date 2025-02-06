@@ -6,7 +6,6 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["Grimoire/Grimoire.csproj", "Grimoire/"]
-COPY ["Grimoire/Grimoire.csproj", "Grimoire/"]
 COPY ["Grimoire.Domain/Grimoire.Domain.csproj", "Grimoire.Domain/"]
 RUN dotnet restore "Grimoire/Grimoire.csproj"
 COPY . .

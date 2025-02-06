@@ -7,11 +7,8 @@
 
 namespace Grimoire.Utilities;
 
-public sealed class MuteAdminCommands
+internal sealed class OverwriteChannelResult
 {
-    internal sealed class OverwriteChannelResult
-    {
-        public required bool WasSuccessful { get; init; }
-        public required DiscordChannel Channel { get; init; }
-    }
+    public required bool WasSuccessful { get; init; }
+    public required DiscordChannel Channel { get; init; }
 }
