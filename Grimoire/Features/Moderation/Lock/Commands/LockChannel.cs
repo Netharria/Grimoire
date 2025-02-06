@@ -105,16 +105,16 @@ public sealed class LockChannel
         public long DurationAmount { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
             var lockEndTime = command.DurationType.GetDateTimeOffset(command.DurationAmount);
-
-            var result = await this._grimoireDbContext.Channels
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Channels
                 .Where(x => x.GuildId == command.GuildId)
                 .Where(x => x.Id == command.ChannelId)
                 .Select(x => new { x.Lock, x.Guild.ModChannelLog })
@@ -130,9 +130,9 @@ public sealed class LockChannel
             }
             else
             {
-                var local = this._grimoireDbContext.Locks.Local.FirstOrDefault(x => x.ChannelId == command.ChannelId);
+                var local = dbContext.Locks.Local.FirstOrDefault(x => x.ChannelId == command.ChannelId);
                 if (local is not null)
-                    this._grimoireDbContext.Entry(local).State = EntityState.Detached;
+                    dbContext.Entry(local).State = EntityState.Detached;
                 var lockToAdd = new Domain.Lock
                 {
                     ChannelId = command.ChannelId,
@@ -143,10 +143,10 @@ public sealed class LockChannel
                     PreviouslyAllowed = command.PreviouslyAllowed,
                     PreviouslyDenied = command.PreviouslyDenied
                 };
-                await this._grimoireDbContext.Locks.AddAsync(lockToAdd, cancellationToken);
+                await dbContext.Locks.AddAsync(lockToAdd, cancellationToken);
             }
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse { LogChannelId = result.ModChannelLog };
         }
     }

@@ -46,13 +46,16 @@ public sealed class LockedTreadEvents
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<GetLockQuery, bool>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<GetLockQuery, bool>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<bool> Handle(GetLockQuery query, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Locks
+        {
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.Locks
                 .AsNoTracking()
                 .AnyAsync(x => x.ChannelId == query.ChannelId && x.GuildId == query.GuildId, cancellationToken);
+        }
     }
 }

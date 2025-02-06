@@ -16,15 +16,16 @@ public sealed record EnableModuleCommand : IRequest<EnableModuleCommandResponse>
     public bool Enable { get; init; }
 }
 
-public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbContext)
+public sealed class EnableModuleCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IRequestHandler<EnableModuleCommand, EnableModuleCommandResponse>
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     public async Task<EnableModuleCommandResponse> Handle(EnableModuleCommand command,
         CancellationToken cancellationToken)
     {
-        var result = await this._grimoireDbContext.Guilds
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var result = await dbContext.Guilds
             .WhereIdIs(command.GuildId)
             .GetModulesOfType(command.Module)
             .Select(module => new { Module = module, module.Guild.ModChannelLog })
@@ -45,8 +46,8 @@ public sealed class EnableModuleCommandHandler(GrimoireDbContext grimoireDbConte
         };
         guildModule.ModuleEnabled = command.Enable;
         if (result.Module is null)
-            await this._grimoireDbContext.AddAsync(guildModule, cancellationToken);
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.AddAsync(guildModule, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
         return new EnableModuleCommandResponse { ModerationLog = modChannelLog };
     }
 }

@@ -16,13 +16,14 @@ public sealed class GetGeneralSettings
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Query, Response>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Query, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Query query, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Guilds
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Guilds
                 .AsNoTracking()
                 .WhereIdIs(query.GuildId)
                 .Select(x => new { x.ModChannelLog, x.UserCommandChannelId })

@@ -15,14 +15,15 @@ public sealed record GetModuleStateForGuildQuery : IRequest<bool>
     public Module Module { get; init; }
 }
 
-public sealed class GetModuleStateForGuildQueryHandler(GrimoireDbContext grimoireDbContext)
+public sealed class GetModuleStateForGuildQueryHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IRequestHandler<GetModuleStateForGuildQuery, bool>
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     public async Task<bool> Handle(GetModuleStateForGuildQuery request, CancellationToken cancellationToken)
     {
-        var result = await this._grimoireDbContext.Guilds.AsNoTracking().WhereIdIs(request.GuildId)
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var result = await dbContext.Guilds.AsNoTracking().WhereIdIs(request.GuildId)
             .GetModulesOfType(request.Module)
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             .Select(module => module != null && module.ModuleEnabled)

@@ -88,7 +88,7 @@ public sealed partial class AddMessageEvent
                     await dbContext.Channels.AddAsync(channel, cancellationToken);
                 }
 
-                if (!result.MemberExists) await AddMissingMember(command, dbContext, cancellationToken);
+                if (!result.MemberExists) await dbContext.AddMissingMember(command.UserId, command.GuildId, cancellationToken);
 
                 if (!ShouldLogMessage(command,
                         result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))
@@ -129,29 +129,6 @@ public sealed partial class AddMessageEvent
         [LoggerMessage(LogLevel.Error,
             "Database through exception on message creation. This was the original message {message}")]
         private static partial void LogOriginalMessageForDebugging(ILogger logger, string message);
-
-        private static async Task AddMissingMember(Command command, GrimoireDbContext dbContext,
-            CancellationToken cancellationToken)
-        {
-            if (!await dbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
-                await dbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
-            await dbContext.Members.AddAsync(new Member
-            {
-                UserId = command.UserId,
-                GuildId = command.GuildId,
-                XpHistory =
-                [
-                    new XpHistory
-                    {
-                        UserId = command.UserId,
-                        GuildId = command.GuildId,
-                        Xp = 0,
-                        Type = XpHistoryType.Created,
-                        TimeOut = DateTime.UtcNow
-                    }
-                ]
-            }, cancellationToken);
-        }
 
         private static bool ShouldLogMessage(Command command, Dictionary<ulong, MessageLogOverrideOption> overrides)
         {

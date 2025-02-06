@@ -51,23 +51,24 @@ public sealed class UnlockChannel
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command,
             CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Locks
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Locks
                 .Where(x => x.ChannelId == command.ChannelId && x.GuildId == command.GuildId)
                 .Select(x => new { Lock = x, ModerationLogId = x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken);
             if (result?.Lock is null)
                 throw new AnticipatedException("Could not find a lock entry for that channel.");
 
-            this._grimoireDbContext.Locks.Remove(result.Lock);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            dbContext.Locks.Remove(result.Lock);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response
             {

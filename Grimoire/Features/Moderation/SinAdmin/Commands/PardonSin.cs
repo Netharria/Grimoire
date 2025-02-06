@@ -55,14 +55,15 @@ internal sealed class PardonSin
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Sins
+            var dbcontext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbcontext.Sins
                 .Where(x => x.Id == command.SinId)
                 .Where(x => x.GuildId == command.GuildId)
                 .Include(x => x.Pardon)
@@ -90,7 +91,7 @@ internal sealed class PardonSin
                     ModeratorId = command.ModeratorId,
                     Reason = command.Reason
                 };
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbcontext.SaveChangesAsync(cancellationToken);
 
             return new Response
             {

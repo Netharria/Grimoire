@@ -16,18 +16,19 @@ public sealed record AddMemberCommand : IRequest
     public string AvatarUrl { get; init; } = string.Empty;
 }
 
-public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<AddMemberCommand>
+public sealed class AddMemberCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<AddMemberCommand>
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     public async Task Handle(AddMemberCommand command, CancellationToken cancellationToken)
     {
-        var userResult = await this._grimoireDbContext.Users
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var userResult = await dbContext.Users
             .AsNoTracking()
             .Where(x => x.Id == command.UserId)
             .Select(x => new { x.UsernameHistories.OrderByDescending(username => username.Timestamp).First().Username })
             .FirstOrDefaultAsync(cancellationToken);
-        var memberResult = await this._grimoireDbContext.Members
+        var memberResult = await dbContext.Members
             .AsNoTracking()
             .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
             .Select(x => new
@@ -37,7 +38,7 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
             }).FirstOrDefaultAsync(cancellationToken);
 
         if (userResult is null)
-            await this._grimoireDbContext.Users.AddAsync(new User
+            await dbContext.Users.AddAsync(new User
             {
                 Id = command.UserId,
                 UsernameHistories =
@@ -48,7 +49,7 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
 
         if (userResult is not null)
             if (!string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase))
-                await this._grimoireDbContext.UsernameHistory.AddAsync(
+                await dbContext.UsernameHistory.AddAsync(
                     new UsernameHistory { Username = command.UserName, UserId = command.UserId }, cancellationToken);
 
         if (memberResult is null)
@@ -81,20 +82,20 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
                 ]
             };
 
-            await this._grimoireDbContext.Members.AddAsync(member, cancellationToken);
+            await dbContext.Members.AddAsync(member, cancellationToken);
         }
 
         if (memberResult is not null)
         {
             if (!string.Equals(memberResult.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase))
-                await this._grimoireDbContext.NicknameHistory.AddAsync(
+                await dbContext.NicknameHistory.AddAsync(
                     new NicknameHistory
                     {
                         UserId = command.UserId, GuildId = command.GuildId, Nickname = command.Nickname
                     }, cancellationToken);
 
             if (!string.Equals(memberResult.FileName, command.AvatarUrl, StringComparison.Ordinal))
-                await this._grimoireDbContext.Avatars.AddAsync(
+                await dbContext.Avatars.AddAsync(
                     new Avatar { UserId = command.UserId, GuildId = command.GuildId, FileName = command.AvatarUrl },
                     cancellationToken);
         }
@@ -104,6 +105,6 @@ public sealed class AddMemberCommandHandler(GrimoireDbContext grimoireDbContext)
             || !string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase)
             || !string.Equals(memberResult.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase)
             || !string.Equals(memberResult.FileName, command.AvatarUrl, StringComparison.Ordinal))
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

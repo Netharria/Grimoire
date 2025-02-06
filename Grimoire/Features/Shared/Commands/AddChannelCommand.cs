@@ -13,18 +13,19 @@ public sealed record AddChannelCommand : IRequest
     public ulong ChannelId { get; init; }
 }
 
-public sealed class AddChannelCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<AddChannelCommand>
+public sealed class AddChannelCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<AddChannelCommand>
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     public async Task Handle(AddChannelCommand command, CancellationToken cancellationToken)
     {
-        if (await this._grimoireDbContext.Channels
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        if (await dbContext.Channels
                 .AsNoTracking()
                 .AnyAsync(x => x.Id == command.ChannelId, cancellationToken))
             return;
-        await this._grimoireDbContext.Channels.AddAsync(
+        await dbContext.Channels.AddAsync(
             new Channel { Id = command.ChannelId, GuildId = command.GuildId }, cancellationToken);
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

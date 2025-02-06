@@ -18,20 +18,21 @@ public sealed class SetUserCommandChannel
         public ulong? ChannelId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, BaseResponse>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
-            var guild = await this._grimoireDbContext.Guilds
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var guild = await dbContext.Guilds
                 .WhereIdIs(command.GuildId)
                 .FirstOrDefaultAsync(cancellationToken);
             if (guild is null)
                 throw new AnticipatedException("Could not find the settings for this server.");
             guild.UserCommandChannelId = command.ChannelId;
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new BaseResponse { LogChannelId = guild.ModChannelLog };
         }
     }

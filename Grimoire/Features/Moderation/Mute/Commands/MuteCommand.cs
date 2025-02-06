@@ -98,20 +98,21 @@ public sealed class MuteUser
         public string Reason { get; init; } = string.Empty;
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var response = await this._grimoireDbContext.Members
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var response = await dbContext.Members
                 .WhereMemberHasId(command.UserId, command.GuildId)
                 .Select(x => new { x.ActiveMute, x.Guild.ModerationSettings.MuteRole, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken);
             if (response is null) throw new AnticipatedException("Could not find User.");
             if (response.MuteRole is null) throw new AnticipatedException("A mute role is not configured.");
-            if (response.ActiveMute is not null) this._grimoireDbContext.Mutes.Remove(response.ActiveMute);
+            if (response.ActiveMute is not null) dbContext.Mutes.Remove(response.ActiveMute);
             var lockEndTime = command.DurationType.GetDateTimeOffset(command.DurationAmount);
             var sin = new Sin
             {
@@ -122,8 +123,8 @@ public sealed class MuteUser
                 SinType = SinType.Mute,
                 Mute = new Domain.Mute { GuildId = command.GuildId, UserId = command.UserId, EndTime = lockEndTime }
             };
-            await this._grimoireDbContext.Sins.AddAsync(sin, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.Sins.AddAsync(sin, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new Response
             {
                 MuteRole = response.MuteRole.Value, LogChannelId = response.ModChannelLog, SinId = sin.Id

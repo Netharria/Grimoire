@@ -19,13 +19,14 @@ public sealed class AutoMuteUser
         public required string Reason { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, Response?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response?> Handle(Command command, CancellationToken cancellationToken)
         {
-            var response = await this._grimoireDbContext.Members
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var response = await dbContext.Members
                 .WhereMemberHasId(command.UserId, command.GuildId)
                 .Select(x => new
                 {
@@ -39,7 +40,7 @@ public sealed class AutoMuteUser
                 }).FirstOrDefaultAsync(cancellationToken);
             if (response?.MuteRole is null) return null;
             if (!response.ModuleEnabled) return null;
-            if (response.ActiveMute is not null) this._grimoireDbContext.Mutes.Remove(response.ActiveMute);
+            if (response.ActiveMute is not null) dbContext.Mutes.Remove(response.ActiveMute);
             var duration = TimeSpan.FromMinutes(Math.Pow(2, response.MuteCount));
             var sin = new Sin
             {
@@ -55,8 +56,8 @@ public sealed class AutoMuteUser
                     EndTime = DateTimeOffset.UtcNow + duration
                 }
             };
-            await this._grimoireDbContext.Sins.AddAsync(sin, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.Sins.AddAsync(sin, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
             return new Response
             {
                 MuteRole = response.MuteRole.Value,

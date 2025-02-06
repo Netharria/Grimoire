@@ -21,22 +21,23 @@ public sealed record AddGuildCommand : IRequest
     public IReadOnlyCollection<Invite> Invites { get; init; } = [];
 }
 
-public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, IInviteService inviteService)
+public sealed class AddGuildCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory, IInviteService inviteService)
     : IRequestHandler<AddGuildCommand>
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly IInviteService _inviteService = inviteService;
 
     public async Task Handle(AddGuildCommand command, CancellationToken cancellationToken)
     {
-        var usersAdded = await this._grimoireDbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var usersAdded = await dbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
 
-        var guildExists = await this._grimoireDbContext.Guilds
+        var guildExists = await dbContext.Guilds
             .AsNoTracking()
             .AnyAsync(x => x.Id == command.GuildId, cancellationToken);
 
         if (!guildExists)
-            await this._grimoireDbContext.Guilds.AddAsync(
+            await dbContext.Guilds.AddAsync(
                 new Guild
                 {
                     Id = command.GuildId,
@@ -47,24 +48,24 @@ public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, 
                     CommandsSettings = new GuildCommandsSettings()
                 }, cancellationToken);
 
-        var rolesAdded = await this._grimoireDbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);
+        var rolesAdded = await dbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);
 
         var channelsAdded =
-            await this._grimoireDbContext.Channels.AddMissingChannelsAsync(command.Channels, cancellationToken);
+            await dbContext.Channels.AddMissingChannelsAsync(command.Channels, cancellationToken);
 
         var membersAdded =
-            await this._grimoireDbContext.Members.AddMissingMembersAsync(command.Members, cancellationToken);
+            await dbContext.Members.AddMissingMembersAsync(command.Members, cancellationToken);
 
         var usernamesUpdated =
-            await this._grimoireDbContext.UsernameHistory.AddMissingUsernameHistoryAsync(command.Users,
+            await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(command.Users,
                 cancellationToken);
 
         var nicknamesUpdated =
-            await this._grimoireDbContext.NicknameHistory.AddMissingNickNameHistoryAsync(command.Members,
+            await dbContext.NicknameHistory.AddMissingNickNameHistoryAsync(command.Members,
                 cancellationToken);
 
         var avatarsUpdated =
-            await this._grimoireDbContext.Avatars.AddMissingAvatarsHistoryAsync(command.Members, cancellationToken);
+            await dbContext.Avatars.AddMissingAvatarsHistoryAsync(command.Members, cancellationToken);
 
         this._inviteService.UpdateGuildInvites(
             new GuildInviteDto
@@ -75,6 +76,6 @@ public sealed class AddGuildCommandHandler(GrimoireDbContext grimoireDbContext, 
 
         if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded || usernamesUpdated ||
             nicknamesUpdated || avatarsUpdated)
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

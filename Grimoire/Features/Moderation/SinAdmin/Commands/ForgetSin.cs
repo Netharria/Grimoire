@@ -48,14 +48,15 @@ internal sealed class ForgetSin
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Sins
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Sins
                 .Where(x => x.Id == command.SinId)
                 .Where(x => x.GuildId == command.GuildId)
                 .Select(x => new
@@ -72,8 +73,8 @@ internal sealed class ForgetSin
             if (result is null) throw new AnticipatedException("Could not find a sin with that ID.");
 
 
-            this._grimoireDbContext.Sins.Remove(result.Sin);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            dbContext.Sins.Remove(result.Sin);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response
             {

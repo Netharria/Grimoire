@@ -14,14 +14,16 @@ public sealed record GetAllModuleStatesForGuildQuery : IRequest<GetAllModuleStat
     public ulong GuildId { get; init; }
 }
 
-public sealed class GetAllModuleStatesForGuildQueryHandler(GrimoireDbContext grimoireDbContext)
+public sealed class GetAllModuleStatesForGuildQueryHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IRequestHandler<GetAllModuleStatesForGuildQuery, GetAllModuleStatesForGuildQueryResponse?>
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-    public Task<GetAllModuleStatesForGuildQueryResponse?> Handle(GetAllModuleStatesForGuildQuery request,
+    public async Task<GetAllModuleStatesForGuildQueryResponse?> Handle(GetAllModuleStatesForGuildQuery request,
         CancellationToken cancellationToken)
-        => this._grimoireDbContext.Guilds
+    {
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await dbContext.Guilds
             .AsNoTracking()
             .WhereIdIs(request.GuildId)
             .Select(x => new GetAllModuleStatesForGuildQueryResponse
@@ -34,6 +36,7 @@ public sealed class GetAllModuleStatesForGuildQueryHandler(GrimoireDbContext gri
                 CommandsIsEnabled = x.CommandsSettings != null && x.CommandsSettings.ModuleEnabled
                 // ReSharper restore ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             }).FirstOrDefaultAsync(cancellationToken);
+    }
 }
 
 public sealed record GetAllModuleStatesForGuildQueryResponse : BaseResponse

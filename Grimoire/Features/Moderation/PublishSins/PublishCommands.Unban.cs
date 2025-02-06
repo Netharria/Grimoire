@@ -39,14 +39,15 @@ public sealed class GetUnbanForPublish
         public ulong GuildId { get; init; }
     }
 
-    public sealed class GetUnbanQueryHandler(GrimoireDbContext grimoireDbContext)
+    public sealed class GetUnbanQueryHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Query, GetBanForPublish.Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<GetBanForPublish.Response> Handle(Query request, CancellationToken cancellationToken)
         {
-            var result = await this._grimoireDbContext.Sins
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.Sins
                 .AsNoTracking()
                 .Where(x => x.SinType == SinType.Ban)
                 .Where(x => x.Id == request.SinId)

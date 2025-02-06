@@ -41,15 +41,16 @@ internal sealed class GetModerationSettings
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext context)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Query, Response>
     {
-        private readonly GrimoireDbContext _context = context;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Query query,
             CancellationToken cancellationToken)
         {
-            var result = await this._context.GuildModerationSettings
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await dbContext.GuildModerationSettings
                 .AsNoTracking()
                 .Where(x => x.GuildId == query.GuildId)
                 .Select(x => new Response

@@ -77,13 +77,14 @@ internal sealed class Warn
         public ulong ModeratorId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
+            var dbcontext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var sin = new Sin
             {
                 UserId = command.UserId,
@@ -92,10 +93,10 @@ internal sealed class Warn
                 Reason = command.Reason,
                 SinType = SinType.Warn
             };
-            await this._grimoireDbContext.Sins
+            await dbcontext.Sins
                 .AddAsync(sin, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
-            var logChannelId = await this._grimoireDbContext.Guilds
+            await dbcontext.SaveChangesAsync(cancellationToken);
+            var logChannelId = await dbcontext.Guilds
                 .WhereIdIs(command.GuildId)
                 .Select(x => x.ModChannelLog).FirstOrDefaultAsync(cancellationToken);
             return new Response { SinId = sin.Id, LogChannelId = logChannelId };

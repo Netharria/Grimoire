@@ -12,14 +12,15 @@ public sealed record DeleteChannelCommand : IRequest
     public ulong ChannelId { get; init; }
 }
 
-public sealed class DeleteChannelCommandHandler(GrimoireDbContext grimoireDbContext)
+public sealed class DeleteChannelCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IRequestHandler<DeleteChannelCommand>
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     public async Task Handle(DeleteChannelCommand command, CancellationToken cancellationToken)
     {
-        this._grimoireDbContext.Channels.Remove(new Channel { Id = command.ChannelId });
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        dbContext.Channels.Remove(new Channel { Id = command.ChannelId });
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

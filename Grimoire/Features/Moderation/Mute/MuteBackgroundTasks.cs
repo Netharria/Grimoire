@@ -72,15 +72,16 @@ public sealed class GetExpiredMutes
     {
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IStreamRequestHandler<Query, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async IAsyncEnumerable<Response> Handle(Query query,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            await foreach (var mute in this._grimoireDbContext.Mutes
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await foreach (var mute in dbContext.Mutes
                                .AsNoTracking()
                                .Where(x => x.EndTime < DateTimeOffset.UtcNow)
                                .Where(x => x.Guild.ModerationSettings.MuteRole != null)

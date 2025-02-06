@@ -72,14 +72,16 @@ internal sealed class SinLog
         public ulong GuildId { get; init; }
     }
 
-    public sealed class GetModActionCountsQueryHandler(GrimoireDbContext grimoireDbContext)
+    public sealed class GetModActionCountsQueryHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<GetModActionCountsQuery, GetModActionCountsQueryResponse?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<GetModActionCountsQueryResponse?> Handle(GetModActionCountsQuery query,
             CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Members
+        {
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.Members
                 .AsNoTracking()
                 .WhereMemberHasId(query.UserId, query.GuildId)
                 .Select(x => new GetModActionCountsQueryResponse
@@ -88,6 +90,7 @@ internal sealed class SinLog
                     MuteCount = x.ModeratedSins.Count(x => x.SinType == SinType.Mute),
                     WarnCount = x.ModeratedSins.Count(x => x.SinType == SinType.Warn)
                 }).FirstOrDefaultAsync(cancellationToken);
+        }
     }
 
     public sealed record GetModActionCountsQueryResponse : BaseResponse
@@ -113,14 +116,15 @@ internal sealed class SinLog
         public SinQueryType SinQueryType { get; init; }
     }
 
-    public sealed class GetUserSinsQueryHandler(GrimoireDbContext grimoireDbContext)
+    public sealed class GetUserSinsQueryHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<GetUserSinsQuery, GetUserSinsQueryResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<GetUserSinsQueryResponse> Handle(GetUserSinsQuery query, CancellationToken cancellationToken)
         {
-            var queryable = this._grimoireDbContext.Sins
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var queryable = dbContext.Sins
                 .AsNoTracking().Where(x => x.UserId == query.UserId && x.GuildId == query.GuildId);
 
             queryable = query.SinQueryType switch

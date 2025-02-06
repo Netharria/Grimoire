@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using Grimoire.Features.Moderation.Lock.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -56,24 +57,28 @@ public sealed class GetExpiredLocks
 {
     public sealed record Request : IStreamRequest<Response>;
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IStreamRequestHandler<Request, Response>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public IAsyncEnumerable<Response> Handle(Request query,
-            CancellationToken cancellationToken)
-            => this._grimoireDbContext.Locks
-                .AsNoTracking()
-                .Where(x => x.EndTime < DateTimeOffset.UtcNow)
-                .Select(x => new Response
-                {
-                    ChannelId = x.ChannelId,
-                    GuildId = x.GuildId,
-                    PreviouslyAllowed = x.PreviouslyAllowed,
-                    PreviouslyDenied = x.PreviouslyDenied,
-                    LogChannelId = x.Guild.ModChannelLog
-                }).AsAsyncEnumerable();
+        public async IAsyncEnumerable<Response> Handle(Request query,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await foreach (var lockedChannel in dbContext.Locks
+                               .AsNoTracking()
+                               .Where(x => x.EndTime < DateTimeOffset.UtcNow)
+                               .Select(x => new Response
+                               {
+                                   ChannelId = x.ChannelId,
+                                   GuildId = x.GuildId,
+                                   PreviouslyAllowed = x.PreviouslyAllowed,
+                                   PreviouslyDenied = x.PreviouslyDenied,
+                                   LogChannelId = x.Guild.ModChannelLog
+                               }).AsAsyncEnumerable().WithCancellation(cancellationToken))
+                yield return lockedChannel;
+        }
     }
 
     public sealed record Response : BaseResponse

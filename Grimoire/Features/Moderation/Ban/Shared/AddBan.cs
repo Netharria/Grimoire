@@ -31,7 +31,7 @@ public sealed class AddBan
                 .AnyAsync(x => x.UserId == command.UserId
                                && x.GuildId == command.GuildId, cancellationToken);
             if (!memberExists)
-                await this.AddMissingMember(dbContext, command, cancellationToken);
+                await dbContext.AddMissingMember(command.UserId, command.GuildId, cancellationToken);
             var sin = await dbContext.Sins.AddAsync(
                 new Sin
                 {
@@ -48,29 +48,6 @@ public sealed class AddBan
                 .Select(x => x.ModChannelLog)
                 .FirstOrDefaultAsync(cancellationToken);
             return new Response { SinId = sin.Entity.Id, LogChannelId = loggingChannel };
-        }
-
-        private async Task AddMissingMember(GrimoireDbContext dbContext, Command command,
-            CancellationToken cancellationToken)
-        {
-            if (!await dbContext.Users.AnyAsync(x => x.Id == command.UserId, cancellationToken))
-                await dbContext.Users.AddAsync(new User { Id = command.UserId }, cancellationToken);
-            await dbContext.Members.AddAsync(new Member
-            {
-                UserId = command.UserId,
-                GuildId = command.GuildId,
-                XpHistory =
-                [
-                    new XpHistory
-                    {
-                        UserId = command.UserId,
-                        GuildId = command.GuildId,
-                        Xp = 0,
-                        Type = XpHistoryType.Created,
-                        TimeOut = DateTime.UtcNow
-                    }
-                ]
-            }, cancellationToken);
         }
     }
 

@@ -41,14 +41,15 @@ internal sealed class SetAutoPardon
         public TimeSpan DurationAmount { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Command, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
-            var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var guildModerationSettings = await dbContext.GuildModerationSettings
                 .Include(x => x.Guild)
                 .FirstOrDefaultAsync(guildModerationSettings => guildModerationSettings.GuildId.Equals(command.GuildId),
                     cancellationToken);
@@ -57,7 +58,7 @@ internal sealed class SetAutoPardon
 
             guildModerationSettings.AutoPardonAfter = command.DurationAmount;
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new BaseResponse { LogChannelId = guildModerationSettings.Guild.ModChannelLog };
         }

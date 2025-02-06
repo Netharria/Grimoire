@@ -32,21 +32,22 @@ public sealed class SetMuteRole
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
         {
-            var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var guildModerationSettings = await dbContext.GuildModerationSettings
                 .Include(x => x.Guild)
                 .FirstOrDefaultAsync(x => x.GuildId == command.GuildId, cancellationToken);
             if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
 
             guildModerationSettings.MuteRole = command.Role;
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new BaseResponse { LogChannelId = guildModerationSettings.Guild.ModChannelLog };
         }

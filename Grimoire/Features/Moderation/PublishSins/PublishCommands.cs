@@ -68,18 +68,22 @@ public sealed class PublishBan
         public PublishType PublishType { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext) : IRequestHandler<Command>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task Handle(Command command, CancellationToken cancellationToken)
         {
-            await this._grimoireDbContext.PublishedMessages.AddAsync(
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await dbContext.PublishedMessages.AddAsync(
                 new PublishedMessage
                 {
-                    MessageId = command.MessageId, SinId = command.SinId, PublishType = command.PublishType
+                    MessageId = command.MessageId,
+                    SinId = command.SinId,
+                    PublishType = command.PublishType,
+
                 }, cancellationToken);
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

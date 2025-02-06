@@ -12,13 +12,14 @@ public sealed record DeleteRoleCommand : IRequest
     public ulong RoleId { get; init; }
 }
 
-public sealed class DeleteRoleCommandHandler(GrimoireDbContext grimoireDbContext) : IRequestHandler<DeleteRoleCommand>
+public sealed class DeleteRoleCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<DeleteRoleCommand>
 {
-    private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     public async Task Handle(DeleteRoleCommand command, CancellationToken cancellationToken)
     {
-        this._grimoireDbContext.Roles.Remove(this._grimoireDbContext.Roles.First(x => x.Id == command.RoleId));
-        await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        dbContext.Roles.Remove(dbContext.Roles.First(x => x.Id == command.RoleId));
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

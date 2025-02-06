@@ -36,19 +36,22 @@ public sealed class UserJoinedWhileMuted
         public ulong GuildId { get; init; }
     }
 
-    public sealed class GetUserMuteQueryHandler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Query, ulong?>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<ulong?> Handle(Query query, CancellationToken cancellationToken)
-            => await this._grimoireDbContext.Mutes
+        {
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            return await dbContext.Mutes
                 .AsNoTracking()
                 .WhereMemberHasId(query.UserId, query.GuildId)
                 .Where(x => x.Guild.ModerationSettings.ModuleEnabled)
                 .Select(x =>
                     x.Guild.ModerationSettings.MuteRole)
                 .FirstOrDefaultAsync(cancellationToken);
+        }
     }
 
 }

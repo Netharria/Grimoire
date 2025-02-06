@@ -46,14 +46,15 @@ public class GetMuteRole
         public required ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Query, ulong>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<ulong> Handle(Query request, CancellationToken cancellationToken)
         {
-            var muteRoleId = await this._grimoireDbContext.GuildModerationSettings
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var muteRoleId = await dbContext.GuildModerationSettings
                 .AsNoTracking()
                 .Where(x => x.GuildId == request.GuildId)
                 .Select(x => x.MuteRole)

@@ -53,21 +53,22 @@ internal sealed class SetBanLogChannel
         public ulong? ChannelId { get; init; }
     }
 
-    public sealed class Handler(GrimoireDbContext grimoireDbContext)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Command, BaseResponse>
     {
-        private readonly GrimoireDbContext _grimoireDbContext = grimoireDbContext;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
         {
-            var guildModerationSettings = await this._grimoireDbContext.GuildModerationSettings
+            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            var guildModerationSettings = await dbContext.GuildModerationSettings
                 .Include(x => x.Guild)
                 .FirstOrDefaultAsync(x => x.GuildId.Equals(command.GuildId), cancellationToken);
             if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
 
             guildModerationSettings.PublicBanLog = command.ChannelId;
 
-            await this._grimoireDbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new BaseResponse { LogChannelId = guildModerationSettings.Guild.ModChannelLog };
         }
