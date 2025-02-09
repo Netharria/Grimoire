@@ -22,7 +22,7 @@ public sealed class IdentifiableDatabaseQueryHelperTests(GrimoireCoreFactory fac
     private const ulong Guild1 = 1;
     private const ulong Guild2 = 2;
 
-    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
+    private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .UseExceptionProcessor()

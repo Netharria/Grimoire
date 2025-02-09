@@ -14,7 +14,7 @@ public partial class MuteAdminCommands
     {
         await ctx.DeferAsync();
 
-        var response = await this._mediator.Send(new GetMuteRole.Query() { GuildId = ctx.Guild.Id });
+        var response = await this._mediator.Send(new GetMuteRole.Query { GuildId = ctx.Guild.Id });
 
         if (!ctx.Guild.Roles.TryGetValue(response, out var role))
         {
@@ -35,8 +35,6 @@ public partial class MuteAdminCommands
                 $"Was not able to set permissions for the following channels. " +
                 $"{string.Join(' ', result.Select(x => x.Channel.Mention))}");
     }
-
-
 }
 
 public class GetMuteRole

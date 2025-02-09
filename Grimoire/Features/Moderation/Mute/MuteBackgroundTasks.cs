@@ -55,7 +55,6 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             await user.SendMessageAsync(embed);
 
 
-
             if (expiredLock.LogChannelId is not null)
             {
                 var moderationLogChannel = guild.Channels.GetValueOrDefault(expiredLock.LogChannelId.Value);
@@ -102,5 +101,4 @@ public sealed class GetExpiredMutes
         public ulong GuildId { get; init; }
         public ulong MuteRole { get; init; }
     }
-
 }

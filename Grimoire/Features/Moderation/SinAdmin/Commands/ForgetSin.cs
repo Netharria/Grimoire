@@ -90,7 +90,4 @@ internal sealed class ForgetSin
         public long SinId { get; init; }
         public string SinnerName { get; init; } = string.Empty;
     }
-
 }
-
-

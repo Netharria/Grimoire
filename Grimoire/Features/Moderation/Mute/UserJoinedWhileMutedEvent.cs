@@ -9,27 +9,22 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Mute;
 
-
-
-
 public sealed class UserJoinedWhileMuted
 {
-    public sealed class EventHandler(IMediator mediator): IEventHandler<GuildMemberAddedEventArgs>
+    public sealed class EventHandler(IMediator mediator) : IEventHandler<GuildMemberAddedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
 
         public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
         {
-            var response = await this._mediator.Send(new Query
-            {
-                UserId = args.Member.Id, GuildId = args.Guild.Id
-            });
+            var response = await this._mediator.Send(new Query { UserId = args.Member.Id, GuildId = args.Guild.Id });
             if (response is null) return;
             var role = args.Guild.Roles.GetValueOrDefault(response.Value);
             if (role is null) return;
             await args.Member.GrantRoleAsync(role, "Rejoined while muted");
         }
     }
+
     public sealed record Query : IRequest<ulong?>
     {
         public ulong UserId { get; init; }
@@ -53,6 +48,4 @@ public sealed class UserJoinedWhileMuted
                 .FirstOrDefaultAsync(cancellationToken);
         }
     }
-
 }
-

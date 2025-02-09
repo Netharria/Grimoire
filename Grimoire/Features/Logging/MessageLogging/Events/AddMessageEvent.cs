@@ -88,7 +88,8 @@ public sealed partial class AddMessageEvent
                     await dbContext.Channels.AddAsync(channel, cancellationToken);
                 }
 
-                if (!result.MemberExists) await dbContext.AddMissingMember(command.UserId, command.GuildId, cancellationToken);
+                if (!result.MemberExists)
+                    await dbContext.AddMissingMember(command.UserId, command.GuildId, cancellationToken);
 
                 if (!ShouldLogMessage(command,
                         result.ChannelLogOverride.ToDictionary(k => k.ChannelId, v => v.ChannelOption)))

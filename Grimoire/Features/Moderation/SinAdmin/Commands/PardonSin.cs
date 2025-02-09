@@ -47,6 +47,7 @@ internal sealed class PardonSin
                 .WithColor(GrimoireColor.Green));
         }
     }
+
     public sealed record Request : IRequest<Response>
     {
         public long SinId { get; init; }
@@ -107,6 +108,4 @@ internal sealed class PardonSin
         public long SinId { get; init; }
         public string SinnerName { get; init; } = string.Empty;
     }
-
 }
-

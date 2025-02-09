@@ -29,7 +29,6 @@ public sealed partial class PublishCommands
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"{ctx.Member.GetUsernameWithDiscriminator()} published ban reason of sin {sinId}");
     }
-
 }
 
 public sealed class GetBanForPublish
@@ -93,6 +92,3 @@ public sealed class GetBanForPublish
         public ulong? PublishedMessage { get; init; }
     }
 }
-
-
-

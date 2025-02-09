@@ -32,8 +32,8 @@ using Grimoire.Features.Moderation.Mute;
 using Grimoire.Features.Moderation.Mute.Commands;
 using Grimoire.Features.Moderation.PublishSins;
 using Grimoire.Features.Moderation.SpamFilter;
+using Grimoire.Features.Shared.Commands;
 using Grimoire.Features.Shared.PluralKit;
-using Grimoire.Features.Shared.SharedModule;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -100,7 +100,7 @@ await Host.CreateDefaultBuilder(args)
                     .AddEventHandlers<BanAddedEvent>()
                     .AddEventHandlers<BanRemovedEvent>()
                     .AddEventHandlers<UserJoinedWhileMuted.EventHandler>()
-                    )
+            )
             .AddInteractivityExtension(new InteractivityConfiguration
             {
                 ResponseBehavior = InteractionResponseBehavior.Ack,

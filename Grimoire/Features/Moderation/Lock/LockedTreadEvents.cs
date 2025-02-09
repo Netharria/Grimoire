@@ -46,7 +46,8 @@ public sealed class LockedTreadEvents
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<GetLockQuery, bool>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<GetLockQuery, bool>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

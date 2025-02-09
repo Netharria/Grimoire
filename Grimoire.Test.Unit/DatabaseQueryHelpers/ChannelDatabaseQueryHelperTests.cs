@@ -26,7 +26,7 @@ public sealed class ChannelDatabaseQueryHelperTests(GrimoireCoreFactory factory)
     private const ulong Channel2 = 2;
     private const ulong Channel3 = 3;
 
-    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
+    private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .UseExceptionProcessor()

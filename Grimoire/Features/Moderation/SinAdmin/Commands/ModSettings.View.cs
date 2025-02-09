@@ -55,7 +55,9 @@ internal sealed class GetModerationSettings
                 .Where(x => x.GuildId == query.GuildId)
                 .Select(x => new Response
                 {
-                    AutoPardonAfter = x.AutoPardonAfter, PublicBanLog = x.PublicBanLog, ModuleEnabled = x.ModuleEnabled
+                    AutoPardonAfter = x.AutoPardonAfter,
+                    PublicBanLog = x.PublicBanLog,
+                    ModuleEnabled = x.ModuleEnabled
                 }).FirstOrDefaultAsync(cancellationToken);
 
             if (result is null) throw new AnticipatedException("No settings were found for this server.");
@@ -70,5 +72,4 @@ internal sealed class GetModerationSettings
         public bool ModuleEnabled { get; internal init; }
         public ulong? PublicBanLog { get; internal init; }
     }
-
 }

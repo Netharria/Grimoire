@@ -20,42 +20,43 @@ public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishC
     private readonly ILogger<PublishCommands> _logger = logger;
     private readonly IMediator _mediator = mediator;
 
-    private static async Task<DiscordMessage> SendPublicLogMessage(InteractionContext ctx, GetBanForPublish.Response response,
-            PublishType publish, ILogger<PublishCommands> logger)
-        {
-            var banLogChannel = ctx.Guild.Channels.GetValueOrDefault(response.BanLogId);
+    private static async Task<DiscordMessage> SendPublicLogMessage(InteractionContext ctx,
+        GetBanForPublish.Response response,
+        PublishType publish, ILogger<PublishCommands> logger)
+    {
+        var banLogChannel = ctx.Guild.Channels.GetValueOrDefault(response.BanLogId);
 
-            if (banLogChannel is null)
-                throw new AnticipatedException("Could not find the ban log channel.");
+        if (banLogChannel is null)
+            throw new AnticipatedException("Could not find the ban log channel.");
 
 
-            if (response.PublishedMessage is not null)
-                try
-                {
-                    var message = await banLogChannel.GetMessageAsync(response.PublishedMessage.Value);
-                    return await message.ModifyAsync(new DiscordEmbedBuilder()
-                        .WithTitle(publish.ToString())
-                        .WithDescription(
-                            $"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
-                            $"**User:** {response.Username} ({response.UserId})\n" +
-                            $"**Reason:** {response.Reason}")
-                        .WithColor(GrimoireColor.Purple).Build());
-                }
-                catch (NotFoundException ex)
-                {
-                    LogPublishedMessageNotFound(logger, ex, response.PublishedMessage);
-                }
+        if (response.PublishedMessage is not null)
+            try
+            {
+                var message = await banLogChannel.GetMessageAsync(response.PublishedMessage.Value);
+                return await message.ModifyAsync(new DiscordEmbedBuilder()
+                    .WithTitle(publish.ToString())
+                    .WithDescription(
+                        $"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
+                        $"**User:** {response.Username} ({response.UserId})\n" +
+                        $"**Reason:** {response.Reason}")
+                    .WithColor(GrimoireColor.Purple).Build());
+            }
+            catch (NotFoundException ex)
+            {
+                LogPublishedMessageNotFound(logger, ex, response.PublishedMessage);
+            }
 
-            return await banLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithTitle(publish.ToString())
-                .WithDescription($"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
-                                 $"**User:** {response.Username} ({response.UserId})\n" +
-                                 $"**Reason:** {response.Reason}")
-                .WithColor(GrimoireColor.Purple));
-        }
+        return await banLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
+            .WithTitle(publish.ToString())
+            .WithDescription($"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
+                             $"**User:** {response.Username} ({response.UserId})\n" +
+                             $"**Reason:** {response.Reason}")
+            .WithColor(GrimoireColor.Purple));
+    }
 
-        [LoggerMessage(LogLevel.Warning, "Could not find published message {id}")]
-        private static partial void LogPublishedMessageNotFound(ILogger<PublishCommands> logger, Exception ex, ulong? id);
+    [LoggerMessage(LogLevel.Warning, "Could not find published message {id}")]
+    private static partial void LogPublishedMessageNotFound(ILogger<PublishCommands> logger, Exception ex, ulong? id);
 }
 
 public sealed class PublishBan
@@ -78,10 +79,7 @@ public sealed class PublishBan
             await dbContext.PublishedMessages.AddAsync(
                 new PublishedMessage
                 {
-                    MessageId = command.MessageId,
-                    SinId = command.SinId,
-                    PublishType = command.PublishType,
-
+                    MessageId = command.MessageId, SinId = command.SinId, PublishType = command.PublishType
                 }, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
         }

@@ -25,7 +25,7 @@ public sealed class RoleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     private const long Role1 = 1;
     private const long Role2 = 2;
 
-    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
+    private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .UseExceptionProcessor()

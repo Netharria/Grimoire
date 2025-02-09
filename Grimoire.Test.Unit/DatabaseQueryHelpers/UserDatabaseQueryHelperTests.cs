@@ -25,7 +25,7 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     private const long User1 = 1;
     private const long User2 = 2;
 
-    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
+    private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .UseExceptionProcessor()

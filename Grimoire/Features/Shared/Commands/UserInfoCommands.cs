@@ -9,7 +9,7 @@ using Grimoire.Features.Leveling.Queries;
 using Grimoire.Features.Logging.UserLogging.Queries;
 using Grimoire.Features.Moderation.SinAdmin;
 
-namespace Grimoire.Features.Shared.SharedModule;
+namespace Grimoire.Features.Shared.Commands;
 
 [SlashRequireGuild]
 [SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]

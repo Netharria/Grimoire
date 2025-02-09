@@ -59,7 +59,10 @@ public class SpamTrackerModule
 
         if (message.Content.Length > 0 && message.Content == spamTracker.MessageCache)
             if (AddPressure(spamTracker, 10))
-                return new CheckSpamResult { IsSpam = true, Reason = "Auto mod: User sent too many duplicate Messages" };
+                return new CheckSpamResult
+                {
+                    IsSpam = true, Reason = "Auto mod: User sent too many duplicate Messages"
+                };
         spamTracker.MessageCache = message.Content;
         spamTracker.DateTimeOffset = message.Timestamp;
         return new CheckSpamResult { IsSpam = false };

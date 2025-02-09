@@ -49,8 +49,12 @@ public sealed class InviteService : IInviteService
     {
         if (!this._guilds.TryGetValue(guildInvites.GuildId, out var guild))
             throw new ArgumentException("Could not find guild.");
-        var inviteUsed = guildInvites.Invites
-            .Except(guild.Invites)
+
+        var newInvites = guildInvites.Invites;
+        var existingInvites = guild.Invites;
+
+        var inviteUsed = newInvites
+            .Where(x => !existingInvites.ContainsKey(x.Key))
             .Select(x => x.Value)
             .FirstOrDefault();
         if (inviteUsed is not null)
@@ -59,19 +63,15 @@ public sealed class InviteService : IInviteService
             return inviteUsed;
         }
 
-        inviteUsed = guild.Invites
-            .Except(guildInvites.Invites)
+        inviteUsed = existingInvites
+            .Where(x => newInvites.ContainsKey(x.Key))
             .Select(x => x.Value)
             .FirstOrDefault();
-        if (inviteUsed is not null
-            && inviteUsed.Uses + 1 == inviteUsed.MaxUses)
-        {
-            if (!this.DeleteInvite(guildInvites.GuildId, inviteUsed.Code))
-                throw new Exception("Was not able to delete invite.");
-            return inviteUsed;
-        }
-
-        return null;
+        if (inviteUsed is null || inviteUsed.Uses + 1 != inviteUsed.MaxUses)
+            return null;
+        if (!this.DeleteInvite(guildInvites.GuildId, inviteUsed.Code))
+            throw new Exception("Was not able to delete invite.");
+        return inviteUsed;
     }
 
     public bool DeleteInvite(ulong guildId, string inviteCode)

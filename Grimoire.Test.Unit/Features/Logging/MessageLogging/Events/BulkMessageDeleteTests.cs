@@ -9,5 +9,4 @@ namespace Grimoire.Test.Unit.Features.Logging.MessageLogging.Events;
 
 public class BulkMessageDeleteTests
 {
-    
 }

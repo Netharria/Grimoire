@@ -38,6 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Shared\SharedModule\" />
     <Folder Include="Migrations\"/>
   </ItemGroup>
 

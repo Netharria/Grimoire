@@ -12,6 +12,15 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed class SinLog
 {
+    public enum SinQueryType
+    {
+        Warn,
+        Mute,
+        Ban,
+        All,
+        Mod
+    }
+
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
@@ -100,15 +109,6 @@ internal sealed class SinLog
         public int WarnCount { get; init; }
     }
 
-    public enum SinQueryType
-    {
-        Warn,
-        Mute,
-        Ban,
-        All,
-        Mod
-    }
-
     public sealed record GetUserSinsQuery : IRequest<GetUserSinsQueryResponse>
     {
         public ulong UserId { get; init; }
@@ -178,4 +178,3 @@ internal sealed class SinLog
         public string[] SinList { get; init; } = [];
     }
 }
-

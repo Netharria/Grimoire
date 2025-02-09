@@ -9,7 +9,6 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed partial class ModSettings
 {
-
     [SlashCommand("AutoPardon", "Updates how long till sins are pardoned.")]
     public async Task AutoPardonAsync(
         InteractionContext ctx,
@@ -63,5 +62,4 @@ internal sealed class SetAutoPardon
             return new BaseResponse { LogChannelId = guildModerationSettings.Guild.ModChannelLog };
         }
     }
-
 }

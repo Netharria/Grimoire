@@ -19,7 +19,8 @@ public sealed class AutoMuteUser
         public required string Reason { get; init; }
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command, Response?>
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+        : IRequestHandler<Command, Response?>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 

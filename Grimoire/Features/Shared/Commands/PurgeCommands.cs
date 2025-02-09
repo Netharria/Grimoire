@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Features.Shared.SharedModule;
+namespace Grimoire.Features.Shared.Commands;
 
 [SlashRequirePermissions(DiscordPermissions.ManageMessages)]
 [SlashCommandGroup("Purge", "Delete several recent messages at once.")]

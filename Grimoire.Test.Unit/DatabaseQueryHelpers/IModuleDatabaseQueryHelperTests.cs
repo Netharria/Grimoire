@@ -21,7 +21,7 @@ namespace Grimoire.Test.Unit.DatabaseQueryHelpers;
 [Collection("Test collection")]
 public sealed class ModuleDatabaseQueryHelperTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
-    private readonly GrimoireDbContext _dbContext = new GrimoireDbContext(
+    private readonly GrimoireDbContext _dbContext = new(
         new DbContextOptionsBuilder<GrimoireDbContext>()
             .UseNpgsql(factory.ConnectionString)
             .UseExceptionProcessor()

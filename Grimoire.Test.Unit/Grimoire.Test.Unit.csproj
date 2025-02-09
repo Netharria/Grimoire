@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Logging\" />
+    <Folder Include="Features\Logging\"/>
   </ItemGroup>
 
 </Project>

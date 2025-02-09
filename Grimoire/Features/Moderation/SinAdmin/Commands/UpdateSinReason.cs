@@ -45,10 +45,12 @@ internal sealed class UpdateSinReason
                     out var loggingChannel)) return;
 
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithDescription($"{ctx.Member.GetUsernameWithDiscriminator()} updated reason to {reason} for {message}")
+                .WithDescription(
+                    $"{ctx.Member.GetUsernameWithDiscriminator()} updated reason to {reason} for {message}")
                 .WithColor(GrimoireColor.Green));
         }
     }
+
     public sealed record Request : IRequest<Response>
     {
         public long SinId { get; init; }
@@ -99,6 +101,4 @@ internal sealed class UpdateSinReason
         public long SinId { get; init; }
         public string SinnerName { get; init; } = string.Empty;
     }
-
 }
-

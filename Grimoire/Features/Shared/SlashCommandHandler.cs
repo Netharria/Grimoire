@@ -22,6 +22,7 @@ namespace Grimoire.Features.Shared;
 
 //must implement new command framework before this will work.
 public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration)
+ : IEventHandler<ClientErrorEventArgs>
 {
     private readonly IConfiguration _configuration = configuration;
     private readonly ILogger<SlashCommandHandler> _logger = logger;
@@ -72,7 +73,7 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
         }
     }
 
-    public async Task DiscordOnClientErrored(DiscordClient sender, ClientErrorEventArgs args)
+    public async Task HandleEventAsync(DiscordClient sender, ClientErrorEventArgs args)
         => await this.SendErrorLogToLogChannel(sender, args.EventName, args.Exception);
 
     public async Task HandleEventAsync(DiscordClient sender, SlashCommandErrorEventArgs args)
@@ -191,7 +192,7 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
     public static partial void LogSlashCommandError(ILogger logger, Exception ex, string errorId,
         string interactionName, string interactionOptions);
 
-    public Task HandleEventAsync(DiscordClient sender, SlashCommandExecutedEventArgs args)
+    public Task HandleEventAsync(DiscordClient sender, SlashCommandInvokedEventArgs args)
     {
         var commandOptions = args.Context.Interaction.Data.Options;
         var log = new StringBuilder();

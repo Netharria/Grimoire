@@ -90,8 +90,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
         await using var dbContext = this._createDbContext();
         await dbContext.AddAsync(new Guild
         {
-            Id = 45,
-            MessageLogSettings = new GuildMessageLogSettings { GuildId = 45, ModuleEnabled = false }
+            Id = 45, MessageLogSettings = new GuildMessageLogSettings { GuildId = 45, ModuleEnabled = false }
         });
         await dbContext.AddAsync(new Channel { Id = 46, GuildId = 45 });
         await dbContext.AddAsync(new Member { UserId = UserId, GuildId = 45 });
@@ -178,9 +177,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
         await dbContext.AddAsync(new Channel { Id = 999, GuildId = GuildId });
         await dbContext.AddAsync(new MessageLogChannelOverride
         {
-            ChannelId = ChannelId,
-            ChannelOption = MessageLogOverrideOption.NeverLog,
-            GuildId = GuildId
+            ChannelId = ChannelId, ChannelOption = MessageLogOverrideOption.NeverLog, GuildId = GuildId
         });
         await dbContext.AddAsync(new MessageLogChannelOverride
         {
@@ -222,9 +219,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
         await dbContext.AddAsync(new Channel { Id = 999, GuildId = GuildId });
         await dbContext.AddAsync(new MessageLogChannelOverride
         {
-            ChannelId = ChannelId,
-            ChannelOption = MessageLogOverrideOption.AlwaysLog,
-            GuildId = GuildId
+            ChannelId = ChannelId, ChannelOption = MessageLogOverrideOption.AlwaysLog, GuildId = GuildId
         });
         await dbContext.AddAsync(new MessageLogChannelOverride
         {
@@ -262,9 +257,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
         await dbContext.AddAsync(new Channel { Id = 999, GuildId = GuildId });
         await dbContext.AddAsync(new MessageLogChannelOverride
         {
-            ChannelId = ChannelId,
-            ChannelOption = MessageLogOverrideOption.AlwaysLog,
-            GuildId = GuildId
+            ChannelId = ChannelId, ChannelOption = MessageLogOverrideOption.AlwaysLog, GuildId = GuildId
         });
         await dbContext.SaveChangesAsync();
 
@@ -300,9 +293,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
         await dbContext.AddAsync(new Channel { Id = 999, GuildId = GuildId });
         await dbContext.AddAsync(new MessageLogChannelOverride
         {
-            ChannelId = ChannelId,
-            ChannelOption = MessageLogOverrideOption.NeverLog,
-            GuildId = GuildId
+            ChannelId = ChannelId, ChannelOption = MessageLogOverrideOption.NeverLog, GuildId = GuildId
         });
         await dbContext.SaveChangesAsync();
 
@@ -333,10 +324,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
         await using var dbContext = this._createDbContext();
         await dbContext.AddAsync(new Message
         {
-            Id = MessageId1,
-            ChannelId = ChannelId,
-            GuildId = GuildId,
-            UserId = UserId
+            Id = MessageId1, ChannelId = ChannelId, GuildId = GuildId, UserId = UserId
         });
         await dbContext.SaveChangesAsync();
 

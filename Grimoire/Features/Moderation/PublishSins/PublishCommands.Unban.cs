@@ -16,7 +16,8 @@ public sealed partial class PublishCommands
         long sinId)
     {
         await ctx.DeferAsync();
-        var response = await this._mediator.Send(new GetUnbanForPublish.Query { SinId = sinId, GuildId = ctx.Guild.Id });
+        var response =
+            await this._mediator.Send(new GetUnbanForPublish.Query { SinId = sinId, GuildId = ctx.Guild.Id });
 
         var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Unban, this._logger);
         if (response.PublishedMessage is null)

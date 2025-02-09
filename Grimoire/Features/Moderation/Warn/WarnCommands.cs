@@ -107,6 +107,4 @@ internal sealed class Warn
     {
         public long SinId { get; init; }
     }
-
 }
-
