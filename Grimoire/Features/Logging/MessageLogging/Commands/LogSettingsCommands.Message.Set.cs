@@ -32,7 +32,7 @@ public partial class LogSettingsCommands
             if (channel is not null)
             {
                 var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
-                if (!permissions.HasPermission(DiscordPermissions.SendMessages))
+                if (!permissions.HasPermission(DiscordPermission.SendMessages))
                     throw new AnticipatedException(
                         $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
             }

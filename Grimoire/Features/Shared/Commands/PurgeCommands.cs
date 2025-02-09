@@ -7,7 +7,7 @@
 
 namespace Grimoire.Features.Shared.Commands;
 
-[SlashRequirePermissions(DiscordPermissions.ManageMessages)]
+[SlashRequirePermissions(false, DiscordPermission.ManageMessages)]
 [SlashCommandGroup("Purge", "Delete several recent messages at once.")]
 internal sealed class PurgeCommands : ApplicationCommandModule
 {

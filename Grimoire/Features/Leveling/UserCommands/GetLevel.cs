@@ -32,7 +32,7 @@ public sealed class GetLevel
             var userCommandChannel =
                 await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
 
-            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermissions.ManageMessages)
+            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
                                  && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
             user ??= ctx.User;
 

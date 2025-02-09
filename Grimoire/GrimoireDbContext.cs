@@ -41,7 +41,7 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<IgnoredRole> IgnoredRoles { get; init; } = null!;
 
-    public DbSet<Lock> Locks { get; init; } = null!;
+    public DbSet<Domain.Lock> Locks { get; init; } = null!;
 
     public DbSet<Member> Members { get; init; } = null!;
 

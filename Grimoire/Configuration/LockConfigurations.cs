@@ -11,14 +11,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Configuration;
 
 [ExcludeFromCodeCoverage]
-internal sealed class LockConfigurations : IEntityTypeConfiguration<Lock>
+internal sealed class LockConfigurations : IEntityTypeConfiguration<Domain.Lock>
 {
-    public void Configure(EntityTypeBuilder<Lock> builder)
+    public void Configure(EntityTypeBuilder<Domain.Lock> builder)
     {
         builder.HasKey(e => e.ChannelId);
         builder.HasOne(e => e.Channel)
             .WithOne(e => e.Lock)
-            .HasForeignKey<Lock>(x => x.ChannelId)
+            .HasForeignKey<Domain.Lock>(x => x.ChannelId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.Property(e => e.PreviouslyAllowed)

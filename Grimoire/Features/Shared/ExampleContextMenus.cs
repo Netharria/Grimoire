@@ -21,7 +21,7 @@ internal sealed class ExampleContextMenus : ApplicationCommandModule
     [ContextMenu(DiscordApplicationCommandType.UserContextMenu, "ChannelBan")]
     public static async Task ChannelBanAsync(ContextMenuContext ctx)
     {
-        await ctx.Channel.AddOverwriteAsync(ctx.TargetMember, DiscordPermissions.None, DiscordPermissions.SendMessages);
+        await ctx.Channel.AddOverwriteAsync(ctx.TargetMember, DiscordPermissions.None, DiscordPermission.SendMessages);
         await ctx.CreateResponseAsync(new DiscordEmbedBuilder().WithDescription("User was channel banned."));
     }
 

@@ -11,8 +11,8 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
-[SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
-[SlashRequireBotPermissions(DiscordPermissions.BanMembers)]
+[SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+[SlashRequireBotPermissions(false,DiscordPermission.BanMembers)]
 public sealed class RemoveBanCommand : ApplicationCommandModule
 {
     [SlashCommand("Unban", "Bans a user from the server.")]

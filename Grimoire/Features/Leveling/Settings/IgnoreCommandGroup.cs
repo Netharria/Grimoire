@@ -8,7 +8,7 @@
 namespace Grimoire.Features.Leveling.Settings;
 
 [SlashRequireGuild]
-[SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
+[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 [SlashRequireModuleEnabled(Module.Leveling)]
 [SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
 public sealed partial class IgnoreCommandGroup(IMediator mediator) : ApplicationCommandModule

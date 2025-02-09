@@ -13,7 +13,7 @@ public sealed class AddTracker
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.MessageLog)]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;
@@ -36,7 +36,7 @@ public sealed class AddTracker
             }
 
             if (ctx.Guild.Members.TryGetValue(user.Id, out var member))
-                if (member.Permissions.HasPermission(DiscordPermissions.ManageGuild))
+                if (member.Permissions.HasPermission(DiscordPermission.ManageGuild))
                 {
                     await ctx.EditReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
                     return;
@@ -53,7 +53,7 @@ public sealed class AddTracker
             }
 
             var permissions = discordChannel.PermissionsFor(ctx.Guild.CurrentMember);
-            if (!permissions.HasPermission(DiscordPermissions.SendMessages))
+            if (!permissions.HasPermission(DiscordPermission.SendMessages))
                 throw new AnticipatedException(
                     $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
 

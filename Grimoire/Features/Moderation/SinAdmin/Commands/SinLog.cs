@@ -35,11 +35,11 @@ internal sealed class SinLog
             [Option("User", "The user to look up the logs for. Leave blank for self.")]
             DiscordUser? user = null)
         {
-            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermissions.ManageMessages));
+            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages));
             user ??= ctx.User;
 
 
-            if (!ctx.Member.Permissions.HasPermission(DiscordPermissions.ManageMessages) && ctx.User != user)
+            if (!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages) && ctx.User != user)
                 throw new AnticipatedException("Only moderators can look up logs for someone else.");
             if (sinQueryType == SinQueryType.Mod)
             {

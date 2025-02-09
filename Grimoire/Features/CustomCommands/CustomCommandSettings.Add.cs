@@ -6,7 +6,11 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
+using System.ComponentModel;
 using System.Text.RegularExpressions;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 using JetBrains.Annotations;
 
@@ -18,27 +22,33 @@ public sealed partial class CustomCommandSettings
     private static partial Regex ValidHexColor();
 
     [UsedImplicitly]
-    [SlashCommand("Learn", "Learn a new command or update an existing one")]
+    [Command("Learn")]
+    [Description("Learn a new command or update an existing one")]
     public async Task Learn(
-        InteractionContext ctx,
-        [MaximumLength(24)]
-        [MinimumLength(0)]
-        [Option("Name", "The name that the command will be called. This is used to activate the command.")]
+        SlashCommandContext ctx,
+        [MinMaxLength(0, 24)]
+        [Parameter("Name")]
+        [Description("The name that the command will be called. This is used to activate the command.")]
         string name,
-        [MaximumLength(2000)]
-        [Option("Content", "The content of the command. Use %mention or %message to add a message arguments")]
+        [MinMaxLength(maxLength: 2000)]
+        [Parameter("Content")]
+        [Description("The content of the command. Use %mention or %message to add a message arguments")]
         string content,
-        [Option("Embed", "Put the message in an embed")]
+        [Parameter("Embed")]
+        [Description("Put the message in an embed")]
         bool embed = false,
-        [MaximumLength(6)] [Option("EmbedColor", "Hexadecimal color of the embed")]
+        [MinMaxLength(maxLength: 6)]
+        [Parameter("EmbedColor")]
+        [Description("Hexadecimal color of the embed")]
         string? embedColor = null,
-        [Option("RestrictedUse", "Only explicitly allowed roles can use this command")]
+        [Parameter("RestrictedUse")]
+        [Description("Only explicitly allowed roles can use this command")]
         bool restrictedUse = false,
-        [Option("PermissionRoles",
-            "Deny roles the ability to use this command or allow roles if command is restricted use")]
-        string allowedRolesText = "")
+        [Parameter("PermissionRoles")]
+        [Description("Deny roles the ability to use this command or allow roles if command is restricted use")]
+        [VariadicArgument(10)] IReadOnlyList<DiscordRole> allowedRolesText = null)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
 
         if (name.Contains(' '))
         {

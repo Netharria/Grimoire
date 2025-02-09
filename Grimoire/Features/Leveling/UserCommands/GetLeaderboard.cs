@@ -42,7 +42,7 @@ public sealed class GetLeaderboard
             var userCommandChannel =
                 await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
 
-            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermissions.ManageMessages)
+            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
                                  && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
 
             var getUserCenteredLeaderboardQuery = new Request { UserId = user?.Id, GuildId = ctx.Guild.Id };

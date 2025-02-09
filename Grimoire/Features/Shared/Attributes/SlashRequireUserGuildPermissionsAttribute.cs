@@ -12,13 +12,13 @@ namespace Grimoire.Features.Shared.Attributes;
 /// </summary>
 /// <param name="permissions">Permissions required to execute this command.</param>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, Inherited = false)]
-internal sealed class SlashRequireUserGuildPermissionsAttribute(DiscordPermissions permissions)
+internal sealed class SlashRequireUserGuildPermissionsAttribute(DiscordPermission permissions)
     : SlashCheckBaseAttribute
 {
     /// <summary>
     ///     Gets the permissions required by this attribute.
     /// </summary>
-    public DiscordPermissions Permissions { get; } = permissions;
+    public DiscordPermission Permissions { get; } = permissions;
 
     /// <summary>
     ///     Runs checks.
@@ -37,7 +37,7 @@ internal sealed class SlashRequireUserGuildPermissionsAttribute(DiscordPermissio
 
         var pusr = usr.Permissions;
 
-        if ((pusr & DiscordPermissions.Administrator) != 0)
+        if (pusr.HasPermission(DiscordPermission.Administrator))
             return Task.FromResult(true);
 
         return (pusr & this.Permissions) == this.Permissions ? Task.FromResult(true) : Task.FromResult(false);

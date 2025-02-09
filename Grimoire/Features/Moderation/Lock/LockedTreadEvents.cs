@@ -21,7 +21,7 @@ public sealed class LockedTreadEvents
                 return;
             if (args.Author is not DiscordMember member)
                 return;
-            if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermissions.ManageMessages))
+            if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermission.ManageMessages))
                 return;
             if (await this._mediator.Send(new GetLockQuery { ChannelId = args.Channel.Id, GuildId = args.Guild.Id }))
                 await args.Message.DeleteAsync("Thread is locked.");
@@ -33,7 +33,7 @@ public sealed class LockedTreadEvents
                 return;
             if (args.User is not DiscordMember member)
                 return;
-            if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermissions.ManageMessages))
+            if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermission.ManageMessages))
                 return;
             if (await this._mediator.Send(new GetLockQuery { ChannelId = args.Channel.Id, GuildId = args.Guild.Id }))
                 await args.Message.DeleteReactionAsync(args.Emoji, args.User, "Thread is locked.");

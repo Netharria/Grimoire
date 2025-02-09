@@ -13,8 +13,8 @@ public sealed class UnmuteUser
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
-    [SlashRequireBotPermissions(DiscordPermissions.ManageRoles)]
+    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+    [SlashRequireBotPermissions(false, DiscordPermission.ManageRoles)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

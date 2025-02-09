@@ -9,7 +9,7 @@ namespace Grimoire.Features.Logging.Settings;
 
 [SlashCommandGroup("Log", "View or change the settings of the Logging Modules.")]
 [SlashRequireGuild]
-[SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
+[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 public partial class LogSettingsCommands : ApplicationCommandModule
 {
 }

@@ -25,7 +25,7 @@ public static class PermissionsExtensions
 
     public static DiscordPermissions RevertLockPermissions(this DiscordPermissions permissions,
         long previousPermissions)
-        => permissions.RevertLockPermissions((DiscordPermissions)previousPermissions);
+        => permissions.RevertLockPermissions(new DiscordPermissions(previousPermissions));
 
 
     public static DiscordPermissions SetVoiceLockPermissions(this DiscordPermissions permissions)
@@ -35,5 +35,5 @@ public static class PermissionsExtensions
         => permissions & ~PermissionValues.VoiceLockPermissions;
 
     public static long ToLong(this DiscordPermissions permissions)
-        => (long)permissions;
+        => long.Parse(permissions.ToString());
 }

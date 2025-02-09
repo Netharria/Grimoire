@@ -52,7 +52,7 @@ internal sealed class UpdateAllGuilds
                     ).ToArray().AsReadOnly(),
                 Invites = await eventArgs.Guilds.Values
                     .ToAsyncEnumerable()
-                    .Where(x => x.CurrentMember.Permissions.HasPermission(DiscordPermissions.ManageGuild))
+                    .Where(x => x.CurrentMember.Permissions.HasPermission(DiscordPermission.ManageGuild))
                     .SelectManyAwait(async guild =>
                         (await DiscordRetryPolicy.RetryDiscordCall(async _ => await guild.GetInvitesAsync()))
                         .ToAsyncEnumerable())

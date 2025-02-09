@@ -12,7 +12,7 @@ namespace Grimoire.Features.Moderation.PublishSins;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
-[SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
+[SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [SlashCommandGroup("Publish", "Publishes a ban or unban to the public ban log channel.")]
 public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishCommands> logger)
     : ApplicationCommandModule

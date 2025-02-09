@@ -43,7 +43,7 @@ internal sealed class GuildAdded
                 Channels = eventArgs.Guild.Channels
                     .Select(x =>
                         new ChannelDto { Id = x.Value.Id, GuildId = eventArgs.Guild.Id }).ToArray().AsReadOnly(),
-                Invites = eventArgs.Guild.CurrentMember.Permissions.HasPermission(DiscordPermissions.ManageGuild)
+                Invites = eventArgs.Guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ManageGuild)
                     ? (await DiscordRetryPolicy.RetryDiscordCall(async _ => await eventArgs.Guild
                             .GetInvitesAsync())
                         .AsTask()

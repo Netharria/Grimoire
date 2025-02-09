@@ -18,7 +18,7 @@ public class SpamTrackerModule
         if (message.Author is not DiscordMember member)
             return new CheckSpamResult { IsSpam = false };
 
-        if (member.Permissions.HasPermission(DiscordPermissions.ManageChannels) || member.IsOwner)
+        if (member.Permissions.HasPermission(DiscordPermission.ManageChannels) || member.IsOwner)
             return new CheckSpamResult { IsSpam = false };
 
         var spamTracker = this._spamUsers.GetOrAdd(member, new SpamTracker());

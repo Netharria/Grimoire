@@ -11,7 +11,7 @@ namespace Grimoire.Features.Shared.Commands;
 
 [SlashCommandGroup("Modules", "Enables or Disables the modules")]
 [SlashRequireGuild]
-[SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
+[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 internal sealed partial class ModuleCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;

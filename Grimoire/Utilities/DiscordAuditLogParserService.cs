@@ -30,7 +30,7 @@ public sealed class DiscordAuditLogParserService(
         ulong messageId)
     {
         if (!this._discordClient.Guilds.TryGetValue(guildId, out var guild)
-            || !guild.CurrentMember.Permissions.HasPermission(DiscordPermissions.ViewAuditLog))
+            || !guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ViewAuditLog))
             return null;
 
         var result = await this._mediator.Send(new GetMessageAuthor.Query { MessageId = messageId });

@@ -14,7 +14,7 @@ internal sealed class Warn
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserPermissions(DiscordPermissions.ManageMessages)]
+    [SlashRequireUserPermissions(false, DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

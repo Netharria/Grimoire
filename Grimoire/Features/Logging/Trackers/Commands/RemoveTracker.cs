@@ -11,7 +11,7 @@ public sealed class RemoveTracker
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.MessageLog)]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

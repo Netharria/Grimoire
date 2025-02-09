@@ -11,7 +11,7 @@ internal sealed class PardonSin
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

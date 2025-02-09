@@ -13,8 +13,8 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Moderation)]
-[SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
-[SlashRequireBotPermissions(DiscordPermissions.BanMembers)]
+[SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+[SlashRequireBotPermissions(true, DiscordPermission.BanMembers)]
 public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanCommand> logger) : ApplicationCommandModule
 {
     private readonly ILogger<AddBanCommand> _logger = logger;

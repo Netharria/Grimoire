@@ -10,7 +10,7 @@ namespace Grimoire.Features.CustomCommands;
 [SlashCommandGroup("Commands", "Manage custom commands.")]
 [SlashRequireGuild]
 [SlashRequireModuleEnabled(Module.Commands)]
-[SlashRequireUserGuildPermissions(DiscordPermissions.ManageGuild)]
+[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 public partial class CustomCommandSettings(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;

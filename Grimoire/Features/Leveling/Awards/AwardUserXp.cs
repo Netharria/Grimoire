@@ -12,7 +12,7 @@ namespace Grimoire.Features.Leveling.Awards;
 public sealed class AwardUserXp
 {
     [SlashRequireGuild]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [SlashRequireModuleEnabled(Module.Leveling)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {

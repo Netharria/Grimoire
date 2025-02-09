@@ -20,7 +20,7 @@ public enum XpOption
 public sealed class ReclaimUserXp
 {
     [SlashRequireGuild]
-    [SlashRequireUserGuildPermissions(DiscordPermissions.ManageMessages)]
+    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [SlashRequireModuleEnabled(Module.Leveling)]
     public sealed class Command(IMediator mediator) : ApplicationCommandModule
     {

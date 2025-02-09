@@ -11,8 +11,8 @@ public sealed class UnlockChannel
 {
     [SlashRequireGuild]
     [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserPermissions(DiscordPermissions.ManageMessages)]
-    [SlashRequireBotPermissions(DiscordPermissions.ManageChannels)]
+    [SlashRequireUserPermissions(false, DiscordPermission.ManageMessages)]
+    [SlashRequireBotPermissions(false, DiscordPermission.ManageChannels)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;
