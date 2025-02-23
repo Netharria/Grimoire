@@ -74,7 +74,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
         var result = await cut.Handle(
             new ReclaimUserXp.Request
             {
-                UserId = UserId, GuildId = GuildId, XpToTake = 200, XpOption = XpOption.Amount
+                UserId = UserId, GuildId = GuildId, XpToTake = 200, XpOption = ReclaimUserXp.XpOption.Amount
             }, default);
 
         dbContext.ChangeTracker.Clear();
@@ -99,7 +99,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
         var cut = new ReclaimUserXp.Handler(this._mockDbContextFactory);
 
         _ = await cut.Handle(
-            new ReclaimUserXp.Request { UserId = UserId, GuildId = GuildId, XpToTake = 0, XpOption = XpOption.All },
+            new ReclaimUserXp.Request { UserId = UserId, GuildId = GuildId, XpToTake = 0, XpOption = ReclaimUserXp.XpOption.All },
             default);
         dbContext.ChangeTracker.Clear();
 
@@ -120,7 +120,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
         var cut = new ReclaimUserXp.Handler(this._mockDbContextFactory);
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new ReclaimUserXp.Request { UserId = 20001, GuildId = GuildId, XpToTake = 20, XpOption = XpOption.Amount },
+            new ReclaimUserXp.Request { UserId = 20001, GuildId = GuildId, XpToTake = 20, XpOption = ReclaimUserXp.XpOption.Amount },
             default));
         dbContext.ChangeTracker.Clear();
         response.Should().NotBeNull();
@@ -134,7 +134,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
         var cut = new ReclaimUserXp.Handler(this._mockDbContextFactory);
 
         var response = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await cut.Handle(
-            new ReclaimUserXp.Request { UserId = UserId, GuildId = GuildId, XpToTake = 20, XpOption = (XpOption)2 },
+            new ReclaimUserXp.Request { UserId = UserId, GuildId = GuildId, XpToTake = 20, XpOption = (ReclaimUserXp.XpOption)2 },
             default));
         dbContext.ChangeTracker.Clear();
         response.Should().NotBeNull();

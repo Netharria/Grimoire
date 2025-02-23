@@ -5,23 +5,36 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
 public sealed partial class RewardCommandGroup
 {
-    [SlashCommand("Add", "Adds or updates rewards for the server.")]
-    public async Task AddAsync(InteractionContext ctx,
-        [Option("Role", "The role to be added as a reward")]
+    [Command("Add")]
+    [Description("Adds or updates rewards for the server.")]
+    public async Task AddAsync(SlashCommandContext ctx,
+        [Parameter("Role")]
+        [Description("The role to be added as a reward.")]
         DiscordRole role,
-        [Minimum(1)] [Maximum(int.MaxValue)] [Option("Level", "The level the reward is awarded at.")]
+        [MinMaxValue(1, int.MaxValue)]
+        [Parameter("Level")]
+        [Description("The level the reward is awarded at.")]
         long level,
-        [MaximumLength(4096)]
-        [Option("Message", "The message to send to users when they earn a reward. Discord Markdown applies.")]
+        [MinMaxLength(maxLength:4096)]
+        [Parameter("Message")]
+        [Description("The message to send to users when they earn a reward. Discord Markdown applies.")]
         string message = "")
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         if (ctx.Guild.CurrentMember.Hierarchy < role.Position)
             throw new AnticipatedException($"{ctx.Guild.CurrentMember.DisplayName} will not be able to apply this " +
                                            $"reward role because the role has a higher rank than it does.");
