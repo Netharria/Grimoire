@@ -5,36 +5,48 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
 public sealed class GetCustomCommand
 {
-    private static bool IsUserAuthorized(InteractionContext ctx, Response response) =>
-        response.RestrictedUse
-            ? ctx.Member.Roles.Any(x => response.PermissionRoles.Contains(x.Id))
-            : ctx.Member.Roles.All(x => !response.PermissionRoles.Contains(x.Id));
+    private static bool IsUserAuthorized(CommandContext ctx, Response response) =>
+        (response.RestrictedUse
+            ? ctx.Member?.Roles.Any(x => response.PermissionRoles.Contains(x.Id))
+            : ctx.Member?.Roles.All(x => !response.PermissionRoles.Contains(x.Id))) ?? false;
 
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Commands)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Commands)]
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Command", "Call a custom command.")]
+        [Command("Command")]
+        [Description("Call a custom command.")]
         [UsedImplicitly]
         internal async Task CallCommand(
-            InteractionContext ctx,
-            [Autocomplete(typeof(GetCustomCommandOptions.AutocompleteProvider))]
-            [Option("CommandName", "Enter the name of the command.", true)]
+            SlashCommandContext ctx,
+            [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
+            [Parameter("CommandName")]
+            [Description("The name of the command to call.")]
             string name,
-            [Option("Mention", "The person to mention if the command has one.")]
+            [Parameter("Mention")]
+            [Description("The person to mention if the command has one.")]
             SnowflakeObject? snowflakeObject = null,
-            [Option("Message", "The custom message to add if the command has one.")]
+            [Parameter("Message")]
+            [Description("The custom message to add if the command has one.")]
             string message = "")
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
 
             var response = await this._mediator.Send(new Request { Name = name, GuildId = ctx.Guild.Id });
 

@@ -5,37 +5,67 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using System.Xml.Serialization;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+using DSharpPlus.Commands.Trees;
+using Grimoire;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Leveling.Awards;
 
 namespace Grimoire.Features.Leveling.Awards;
 
-public enum XpOption
-{
-    [ChoiceName("Take all their xp.")] All,
 
-    [ChoiceName("Take a specific amount.")]
-    Amount
-}
 
 public sealed class ReclaimUserXp
 {
-    [SlashRequireGuild]
-    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    [SlashRequireModuleEnabled(Module.Leveling)]
-    public sealed class Command(IMediator mediator) : ApplicationCommandModule
+    public enum XpOption
+    {
+        All,
+        Amount
+    }
+
+    public class XpOptionProvider : IChoiceProvider
+    {
+        public ValueTask<IEnumerable<DiscordApplicationCommandOptionChoice>> ProvideAsync(CommandParameter parameter)
+            => ValueTask.FromResult<IEnumerable<DiscordApplicationCommandOptionChoice>>(
+                new List<DiscordApplicationCommandOptionChoice>
+                {
+                    new("All", (int)XpOption.All),
+                    new("Amount", (int)XpOption.Amount)
+                });
+    }
+
+    [RequireGuild]
+    [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+    [RequireModuleEnabled(Module.Leveling)]
+    public sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Reclaim", "Takes away xp from user.")]
-        public async Task ReclaimAsync(InteractionContext ctx,
-            [Option("User", "User to take xp away from.")]
+        [Command("Reclaim")]
+        [Description("Takes away xp from user.")]
+        public async Task ReclaimAsync(SlashCommandContext ctx,
+            [Parameter("User")]
+            [Description("The user to take xp from.")]
             DiscordUser user,
-            [Option("Option", "Select either to take all of their xp or a specific amount.")]
-            XpOption option,
-            [Minimum(0)] [Option("Amount", "The amount of xp to Take.")]
+            [Parameter("Option")]
+            [Description( "Select either to take all of their xp or a specific amount.")]
+            [SlashChoiceProvider<XpOptionProvider>]
+            int optionValue,
+            [MinMaxValue(0)]
+            [Parameter("Amount")]
+            [Description("The amount of xp to take.")]
             long amount = 0)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+            var option = (XpOption)optionValue;
             if (option == XpOption.Amount && amount == 0)
                 throw new AnticipatedException("Specify an amount greater than 0");
             var response = await this._mediator.Send(
@@ -51,7 +81,7 @@ public sealed class ReclaimUserXp
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
                 $"{response.XpTaken} xp has been taken from {user.Mention}.");
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{response.XpTaken} xp has been taken from {user.Mention} by {ctx.Member.Mention}.");
+                message: $"{response.XpTaken} xp has been taken from {user.Mention} by {ctx.User.Mention}.");
         }
     }
 

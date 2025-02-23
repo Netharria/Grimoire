@@ -9,9 +9,9 @@ namespace Grimoire.Features.Logging.Trackers.Commands;
 
 public sealed class RemoveTracker
 {
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.MessageLog)]
-    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.MessageLog)]
+    [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

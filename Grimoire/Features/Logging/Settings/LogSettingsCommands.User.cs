@@ -10,7 +10,7 @@ namespace Grimoire.Features.Logging.Settings;
 
 public partial class LogSettingsCommands
 {
-    [SlashRequireModuleEnabled(Module.UserLog)]
+    [RequireModuleEnabled(Module.UserLog)]
     [SlashCommandGroup("User", "View or change the User Log Module Settings.")]
     public partial class User(IMediator mediator) : ApplicationCommandModule
     {

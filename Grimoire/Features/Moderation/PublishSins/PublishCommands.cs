@@ -10,9 +10,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.PublishSins;
 
-[SlashRequireGuild]
-[SlashRequireModuleEnabled(Module.Moderation)]
-[SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+[RequireGuild]
+[RequireModuleEnabled(Module.Moderation)]
+[RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [SlashCommandGroup("Publish", "Publishes a ban or unban to the public ban log channel.")]
 public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishCommands> logger)
     : ApplicationCommandModule

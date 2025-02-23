@@ -21,8 +21,8 @@ internal sealed class SinLog
         Mod
     }
 
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Moderation)]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Moderation)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

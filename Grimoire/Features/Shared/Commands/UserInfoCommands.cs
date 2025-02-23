@@ -11,8 +11,8 @@ using Grimoire.Features.Moderation.SinAdmin;
 
 namespace Grimoire.Features.Shared.Commands;
 
-[SlashRequireGuild]
-[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+[RequireGuild]
+[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;

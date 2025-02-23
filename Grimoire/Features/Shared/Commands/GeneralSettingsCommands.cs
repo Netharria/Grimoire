@@ -10,8 +10,8 @@ using Grimoire.Features.Shared.Queries;
 namespace Grimoire.Features.Shared.Commands;
 
 [SlashCommandGroup("GeneralSettings", "View or set general settings.")]
-[SlashRequireGuild]
-[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+[RequireGuild]
+[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 internal sealed partial class GeneralSettingsCommands(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;

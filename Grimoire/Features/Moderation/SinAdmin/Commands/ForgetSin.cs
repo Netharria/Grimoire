@@ -9,9 +9,9 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed class ForgetSin
 {
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Moderation)]
+    [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

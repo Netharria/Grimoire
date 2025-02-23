@@ -8,9 +8,9 @@
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 [SlashCommandGroup("ModSettings", "Changes the settings of the Moderation Module")]
-[SlashRequireGuild]
-[SlashRequireModuleEnabled(Module.Moderation)]
-[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+[RequireGuild]
+[RequireModuleEnabled(Module.Moderation)]
+[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 internal sealed partial class ModSettings(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;

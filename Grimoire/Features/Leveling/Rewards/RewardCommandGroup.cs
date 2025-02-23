@@ -8,9 +8,9 @@
 namespace Grimoire.Features.Leveling.Rewards;
 
 [SlashCommandGroup("Rewards", "Commands for updating and viewing the server rewards")]
-[SlashRequireGuild]
-[SlashRequireModuleEnabled(Module.Leveling)]
-[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+[RequireGuild]
+[RequireModuleEnabled(Module.Leveling)]
+[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 public sealed partial class RewardCommandGroup(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;

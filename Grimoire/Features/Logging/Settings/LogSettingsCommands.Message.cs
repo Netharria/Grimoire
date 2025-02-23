@@ -10,7 +10,7 @@ namespace Grimoire.Features.Logging.Settings;
 public partial class LogSettingsCommands
 {
     [SlashCommandGroup("Message", "View or change the Message Log Module Settings.")]
-    [SlashRequireModuleEnabled(Module.MessageLog)]
+    [RequireModuleEnabled(Module.MessageLog)]
     public partial class Message(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

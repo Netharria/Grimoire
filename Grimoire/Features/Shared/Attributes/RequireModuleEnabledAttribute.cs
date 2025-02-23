@@ -5,21 +5,30 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.ContextChecks;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Queries;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Features.Shared.Attributes;
 
-internal sealed class SlashRequireModuleEnabledAttribute(Module module) : SlashCheckBaseAttribute
+internal sealed class RequireModuleEnabledAttribute(Module module) : ContextCheckAttribute
 {
     public readonly Module Module = module;
+}
 
-    public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
+internal sealed class RequireModuleEnabledCheck : IContextCheck<RequireModuleEnabledAttribute>
+{
+    public async ValueTask<string?> ExecuteCheckAsync(RequireModuleEnabledAttribute attribute, CommandContext context)
     {
-        using var scope = ctx.Services.CreateScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        return await mediator.Send(new GetModuleStateForGuild.Request { GuildId = ctx.Guild.Id, Module = this.Module });
+        if (context.Guild is null)
+        {
+            return "This command can only be used in a server.";
+        }
+        var mediator = context.ServiceProvider.GetRequiredService<IMediator>();
+        var result = await mediator.Send(new GetModuleStateForGuild.Request { GuildId = context.Guild.Id, Module = attribute.Module });
+        return !result ? "This module is disabled in this server." : null;
     }
 }
 

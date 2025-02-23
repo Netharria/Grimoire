@@ -8,9 +8,9 @@
 namespace Grimoire.Features.Leveling.Settings;
 
 [SlashCommandGroup("LevelSettings", "Changes the settings of the Leveling Module.")]
-[SlashRequireGuild]
-[SlashRequireModuleEnabled(Module.Leveling)]
-[SlashRequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+[RequireGuild]
+[RequireModuleEnabled(Module.Leveling)]
+[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 public sealed partial class LevelSettingsCommandGroup(IMediator mediator) : ApplicationCommandModule
 {
     private readonly IMediator _mediator = mediator;

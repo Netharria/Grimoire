@@ -21,7 +21,6 @@ public sealed partial class CustomCommandSettings
     [GeneratedRegex(@"[0-9A-Fa-f]{6}\b", RegexOptions.Compiled, 1000)]
     private static partial Regex ValidHexColor();
 
-    [UsedImplicitly]
     [Command("Learn")]
     [Description("Learn a new command or update an existing one")]
     public async Task Learn(
@@ -46,7 +45,7 @@ public sealed partial class CustomCommandSettings
         bool restrictedUse = false,
         [Parameter("PermissionRoles")]
         [Description("Deny roles the ability to use this command or allow roles if command is restricted use")]
-        [VariadicArgument(10)] IReadOnlyList<DiscordRole> allowedRolesText = null)
+        [VariadicArgument(10)] IReadOnlyList<DiscordRole>? allowedRoles = null)
     {
         await ctx.DeferResponseAsync();
 
@@ -62,8 +61,16 @@ public sealed partial class CustomCommandSettings
             return;
         }
 
-        var permissionRoles = await ParseStringAndGetRoles(ctx, allowedRolesText)
-            .ToListAsync();
+        if (ctx.Guild is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
+            return;
+        }
+
+        allowedRoles ??= new List<DiscordRole>();
+
+        var permissionRoles = allowedRoles.Select(role =>
+            new RoleDto {Id = role.Id, GuildId = ctx.Guild.Id }).ToList();
 
         if (restrictedUse && permissionRoles.Count != 0)
         {
@@ -84,19 +91,6 @@ public sealed partial class CustomCommandSettings
 
         await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
-    }
-
-    private static async IAsyncEnumerable<RoleDto> ParseStringAndGetRoles(InteractionContext ctx, string rolesText)
-    {
-        if (string.IsNullOrWhiteSpace(rolesText))
-            yield break;
-
-        await foreach (var role in ctx.ParseStringIntoIdsAndGroupByTypeAsync(rolesText)
-                           .Where(x => x.Key == "Role")
-                           .SelectMany(roleList =>
-                               roleList.Select(role =>
-                                   new RoleDto { Id = ulong.Parse(role), GuildId = ctx.Guild.Id })))
-            yield return role;
     }
 }
 

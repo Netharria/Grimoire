@@ -12,8 +12,8 @@ namespace Grimoire.Features.Leveling.UserCommands;
 
 public sealed class GetLevel
 {
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Leveling)]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Leveling)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {
         private readonly IMediator _mediator = mediator;

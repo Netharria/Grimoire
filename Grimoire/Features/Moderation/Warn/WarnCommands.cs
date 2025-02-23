@@ -12,8 +12,8 @@ namespace Grimoire.Features.Moderation.Warn;
 
 internal sealed class Warn
 {
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Moderation)]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Moderation)]
     [SlashRequireUserPermissions(false, DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {

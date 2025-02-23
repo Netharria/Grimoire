@@ -9,8 +9,8 @@ namespace Grimoire.Features.Moderation.Lock.Commands;
 
 public sealed class LockChannel
 {
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Moderation)]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Moderation)]
     [SlashRequireUserPermissions(false, DiscordPermission.ManageMessages)]
     [SlashRequireBotPermissions(false, DiscordPermission.ManageChannels)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule

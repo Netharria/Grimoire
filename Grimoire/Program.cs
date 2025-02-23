@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.RateLimiting;
+using DSharpPlus.Commands;
 using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
@@ -107,51 +108,54 @@ await Host.CreateDefaultBuilder(args)
                 ResponseMessage = "That's not a valid button",
                 Timeout = TimeSpan.FromMinutes(2),
                 PaginationDeletion = PaginationDeletion.DeleteMessage
-            }).AddSlashCommandsExtension(options =>
+            }).AddCommandsExtension((IServiceProvider serviceProvider, CommandsExtension extension) =>
             {
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
-                    //options.RegisterCommands<EmptySlashCommands>(guildId);
-                    options.RegisterCommands<CustomCommandSettings>(guildId);
-                    options.RegisterCommands<GetCustomCommand.Command>(guildId);
+                    //extension.RegisterCommands<EmptySlashCommands>(guildId);
+                    extension.AddCommands<CustomCommandSettings>(guildId);
+                    extension.AddCommands<GetCustomCommand.Command>(guildId);
                 }
 
                 //Shared
-                options.RegisterCommands<ModuleCommands>();
-                options.RegisterCommands<GeneralSettingsCommands>();
-                options.RegisterCommands<PurgeCommands>();
-                options.RegisterCommands<UserInfoCommands>();
+                extension.AddCommands<ModuleCommands>();
+                extension.AddCommands<GeneralSettingsCommands>();
+                extension.AddCommands<PurgeCommands>();
+                extension.AddCommands<UserInfoCommands>();
 
 
                 ////Leveling
-                options.RegisterCommands<AwardUserXp.Command>();
-                options.RegisterCommands<ReclaimUserXp.Command>();
-                options.RegisterCommands<RewardCommandGroup>();
-                options.RegisterCommands<IgnoreCommandGroup>();
-                options.RegisterCommands<LevelSettingsCommandGroup>();
-                options.RegisterCommands<GetLeaderboard.Command>();
-                options.RegisterCommands<GetLevel.Command>();
+                extension.AddCommands<AwardUserXp.Command>();
+                extension.AddCommands<ReclaimUserXp.Command>();
+                extension.AddCommands<RewardCommandGroup>();
+                extension.AddCommands<IgnoreCommandGroup>();
+                extension.AddCommands<LevelSettingsCommandGroup>();
+                extension.AddCommands<GetLeaderboard.Command>();
+                extension.AddCommands<GetLevel.Command>();
 
                 ////Logging
-                options.RegisterCommands<LogSettingsCommands>();
-                options.RegisterCommands<AddTracker.Command>();
-                options.RegisterCommands<RemoveTracker.Command>();
+                extension.AddCommands<LogSettingsCommands>();
+                extension.AddCommands<AddTracker.Command>();
+                extension.AddCommands<RemoveTracker.Command>();
 
                 ////Moderation
-                //extension.RegisterCommands<ModerationSettingsCommands>();
-                options.RegisterCommands<MuteAdminCommands>();
-                options.RegisterCommands<AddBanCommand>();
-                options.RegisterCommands<RemoveBanCommand>();
-                //extension.RegisterCommands<SinAdminCommands>();
-                options.RegisterCommands<LockChannel.Command>();
-                options.RegisterCommands<UnlockChannel.Command>();
-                options.RegisterCommands<PublishCommands>();
-                //extension.RegisterCommands<SinLogCommands>();
-                //extension.RegisterCommands<MuteCommands>();
-                //extension.RegisterCommands<WarnCommands>();
+                //extension.AddCommands<ModerationSettingsCommands>();
+                extension.AddCommands<MuteAdminCommands>();
+                extension.AddCommands<AddBanCommand>();
+                extension.AddCommands<RemoveBanCommand>();
+                //extension.AddCommands<SinAdminCommands>();
+                extension.AddCommands<LockChannel.Command>();
+                extension.AddCommands<UnlockChannel.Command>();
+                extension.AddCommands<PublishCommands>();
+                //extension.AddCommands<SinLogCommands>();
+                //extension.AddCommands<MuteCommands>();
+                //extension.AddCommands<WarnCommands>();
                 ////Custom Commands
-                options.RegisterCommands<CustomCommandSettings>();
-                options.RegisterCommands<GetCustomCommand.Command>();
+                extension.AddCommands<CustomCommandSettings>();
+                extension.AddCommands<GetCustomCommand.Command>();
+
+                extension.AddCheck<RequireModuleEnabledCheck>();
+                extension.AddCheck<RequireUserGuildPermissionsCheck>();
             })
             .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<Program>())
             .AddHostedService<CleanupLogs.BackgroundTask>()

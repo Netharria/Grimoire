@@ -11,9 +11,9 @@ namespace Grimoire.Features.Moderation.Mute.Commands;
 
 public sealed class MuteUser
 {
-    [SlashRequireGuild]
-    [SlashRequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Moderation)]
+    [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [SlashRequireBotPermissions(false, DiscordPermission.ManageRoles)]
     internal sealed class Command(IMediator mediator) : ApplicationCommandModule
     {

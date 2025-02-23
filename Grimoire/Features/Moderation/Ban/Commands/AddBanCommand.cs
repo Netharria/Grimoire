@@ -11,9 +11,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Ban.Commands;
 
-[SlashRequireGuild]
-[SlashRequireModuleEnabled(Module.Moderation)]
-[SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+[RequireGuild]
+[RequireModuleEnabled(Module.Moderation)]
+[RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [SlashRequireBotPermissions(true, DiscordPermission.BanMembers)]
 public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanCommand> logger) : ApplicationCommandModule
 {

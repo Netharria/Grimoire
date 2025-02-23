@@ -5,26 +5,38 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Leveling.Awards;
 
 public sealed class AwardUserXp
 {
-    [SlashRequireGuild]
-    [SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    [SlashRequireModuleEnabled(Module.Leveling)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    [RequireGuild]
+    [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+    [RequireModuleEnabled(Module.Leveling)]
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Award", "Awards a user some xp.")]
-        public async Task AwardAsync(InteractionContext ctx,
-            [Option("User", "User to award xp.")] DiscordUser user,
-            [Minimum(0)] [Option("XP", "The amount of xp to grant.")]
+        [Command("Award")]
+        [Description("Awards a user some xp.")]
+        public async Task AwardAsync(SlashCommandContext ctx,
+            [Parameter("User")]
+            [Description("The user to award xp.")]
+            DiscordMember user,
+            [MinMaxValue(0)]
+            [Parameter("XP")]
+            [Description("The amount of xp to grant.")]
             long xpToAward)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+            if(ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
             var response = await this._mediator.Send(
                 new Request
                 {
@@ -33,7 +45,7 @@ public sealed class AwardUserXp
 
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{user.Mention} has been awarded {xpToAward} xp by {ctx.Member.Mention}.");
+                message: $"{user.Mention} has been awarded {xpToAward} xp by {ctx.User.Mention}.");
         }
     }
 

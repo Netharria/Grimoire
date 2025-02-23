@@ -9,9 +9,9 @@ using DSharpPlus.Exceptions;
 
 namespace Grimoire.Features.Moderation.Ban.Commands;
 
-[SlashRequireGuild]
-[SlashRequireModuleEnabled(Module.Moderation)]
-[SlashRequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+[RequireGuild]
+[RequireModuleEnabled(Module.Moderation)]
+[RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [SlashRequireBotPermissions(false,DiscordPermission.BanMembers)]
 public sealed class RemoveBanCommand : ApplicationCommandModule
 {

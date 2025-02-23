@@ -5,6 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
 using JetBrains.Annotations;
 
@@ -13,14 +17,19 @@ namespace Grimoire.Features.CustomCommands;
 public sealed partial class CustomCommandSettings
 {
     [UsedImplicitly]
-    [SlashCommand("Forget", "Forget a command")]
+    [Command("Forget")]
+    [Description("Forget a command that you have saved. This will remove the command from the bot's memory and it will no longer be available.")]
     internal async Task Forget(
-        InteractionContext ctx,
-        [Autocomplete(typeof(GetCustomCommandOptions.AutocompleteProvider))]
-        [Option("Name", "The name that the command is called.", true)]
+        SlashCommandContext ctx,
+        [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
+        [Parameter("Name")]
+        [Description("The name of the command to forget.")]
         string name)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
 
         var response = await this._mediator.Send(new RemoveCustomCommand.Request
         {
