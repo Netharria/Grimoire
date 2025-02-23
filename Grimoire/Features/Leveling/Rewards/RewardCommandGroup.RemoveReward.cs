@@ -6,16 +6,20 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
+using System.ComponentModel;
+
 namespace Grimoire.Features.Leveling.Rewards;
 
 public sealed partial class RewardCommandGroup
 {
-    [SlashCommand("Remove", "Removes a reward from the server.")]
-    public async Task RemoveAsync(InteractionContext ctx,
-        [Option("Role", "The role to be awarded")]
+    [Command("Remove")]
+    [Description("Removes a reward from the server.")]
+    public async Task RemoveAsync(CommandContext ctx,
+        [Parameter("Role")]
+        [Description("The role to be removed as a reward.")]
         DiscordRole role)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
         var response = await this._mediator.Send(
             new RemoveReward.Request { RoleId = role.Id });
 

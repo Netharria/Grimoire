@@ -61,7 +61,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = 12341234, LevelSettings = LevelSettings.TextTime, Value = "something"
+            GuildId = 12341234, LevelSettings = LevelSettingsCommandGroup.LevelSettings.TextTime, Value = "something"
         };
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
@@ -76,7 +76,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.TextTime, Value = "adsfas"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.TextTime, Value = "adsfas"
         };
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
@@ -91,7 +91,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.Base, Value = "adsfas"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Base, Value = "adsfas"
         };
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
@@ -105,7 +105,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.Modifier, Value = "adsfas"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Modifier, Value = "adsfas"
         };
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
@@ -119,7 +119,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.Amount, Value = "adsfas"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Amount, Value = "adsfas"
         };
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
@@ -133,7 +133,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.LogChannel, Value = "Something"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.LogChannel, Value = "Something"
         };
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
 
@@ -148,7 +148,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.TextTime, Value = "23"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.TextTime, Value = "23"
         };
 
         await cut.Handle(command, default);
@@ -168,7 +168,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.Base, Value = "23"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Base, Value = "23"
         };
 
         _ = await cut.Handle(command, default);
@@ -188,7 +188,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.Modifier, Value = "23"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Modifier, Value = "23"
         };
 
         _ = await cut.Handle(command, default);
@@ -208,7 +208,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.Amount, Value = "23"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Amount, Value = "23"
         };
 
         _ = await cut.Handle(command, default);
@@ -227,7 +227,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.LogChannel, Value = ChannelId.ToString()
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.LogChannel, Value = ChannelId.ToString()
         };
 
         _ = await cut.Handle(command, default);
@@ -247,7 +247,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         var cut = new SetLevelSettings.Handler(this._mockDbContextFactory);
         var command = new SetLevelSettings.Request
         {
-            GuildId = GuildId, LevelSettings = LevelSettings.LogChannel, Value = "0"
+            GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.LogChannel, Value = "0"
         };
 
         var response = await cut.Handle(command, default);

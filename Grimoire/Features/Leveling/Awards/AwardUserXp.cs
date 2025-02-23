@@ -6,10 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.ComponentModel;
-using DSharpPlus.Commands;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Leveling.Awards;
@@ -25,7 +23,7 @@ public sealed class AwardUserXp
 
         [Command("Award")]
         [Description("Awards a user some xp.")]
-        public async Task AwardAsync(SlashCommandContext ctx,
+        public async Task AwardAsync(CommandContext ctx,
             [Parameter("User")]
             [Description("The user to award xp.")]
             DiscordMember user,

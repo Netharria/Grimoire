@@ -56,6 +56,6 @@ public partial class LinkProxyMessage
         }
 
         [LoggerMessage(LogLevel.Error, "Was not able to save Proxied Message for the following reason. {message}")]
-        private static partial void LogProxiedMessageFailure(ILogger<Handler> logger, string message, Exception ex);
+        static partial void LogProxiedMessageFailure(ILogger<Handler> logger, string message, Exception ex);
     }
 }

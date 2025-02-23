@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
@@ -13,9 +15,10 @@ namespace Grimoire.Features.Moderation.Mute.Commands;
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-[SlashRequireBotPermissions(false, DiscordPermission.ManageRoles)]
-[SlashCommandGroup("Mutes", "Manages the mute role settings.")]
-public sealed partial class MuteAdminCommands(IMediator mediator) : ApplicationCommandModule
+[RequirePermissions([DiscordPermission.ManageRoles], [])]
+[Command("Mutes")]
+[Description("Manages the mute role settings.")]
+public sealed partial class MuteAdminCommands(IMediator mediator)
 {
     private readonly IMediator _mediator = mediator;
 
@@ -37,7 +40,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator) : ApplicationC
     private static async Task<OverwriteChannelResult> OverwriteChannelAsync(DiscordChannel channel, DiscordRole role)
     {
         var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
-        return await DiscordRetryPolicy.RetryDiscordCall(async token =>
+        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
         {
             if (permissions is not null)
                 await channel.AddOverwriteAsync(role,
@@ -55,7 +58,7 @@ public sealed partial class MuteAdminCommands(IMediator mediator) : ApplicationC
     {
         var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
 
-        return await DiscordRetryPolicy.RetryDiscordCall(async token =>
+        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
         {
             if (permissions is not null)
                 await channel.AddOverwriteAsync(role,

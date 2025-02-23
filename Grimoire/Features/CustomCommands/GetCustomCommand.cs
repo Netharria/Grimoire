@@ -6,9 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.ComponentModel;
-using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using JetBrains.Annotations;
 
@@ -31,7 +29,7 @@ public sealed class GetCustomCommand
         [Description("Call a custom command.")]
         [UsedImplicitly]
         internal async Task CallCommand(
-            SlashCommandContext ctx,
+            CommandContext ctx,
             [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
             [Parameter("CommandName")]
             [Description("The name of the command to call.")]
@@ -52,7 +50,7 @@ public sealed class GetCustomCommand
 
             if (response is null || !IsUserAuthorized(ctx, response))
             {
-                await ctx.Interaction.DeleteOriginalResponseAsync();
+                await ctx.DeleteResponseAsync();
                 return;
             }
 

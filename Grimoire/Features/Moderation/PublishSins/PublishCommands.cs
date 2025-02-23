@@ -5,6 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -13,17 +16,21 @@ namespace Grimoire.Features.Moderation.PublishSins;
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-[SlashCommandGroup("Publish", "Publishes a ban or unban to the public ban log channel.")]
+[Command("Publish")]
+[Description("Publishes a ban or unban to the public ban log channel.")]
 public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishCommands> logger)
-    : ApplicationCommandModule
+
 {
     private readonly ILogger<PublishCommands> _logger = logger;
     private readonly IMediator _mediator = mediator;
 
-    private static async Task<DiscordMessage> SendPublicLogMessage(InteractionContext ctx,
+    private static async Task<DiscordMessage> SendPublicLogMessage(SlashCommandContext ctx,
         GetBanForPublish.Response response,
         PublishType publish, ILogger<PublishCommands> logger)
     {
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var banLogChannel = ctx.Guild.Channels.GetValueOrDefault(response.BanLogId);
 
         if (banLogChannel is null)
@@ -56,7 +63,7 @@ public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishC
     }
 
     [LoggerMessage(LogLevel.Warning, "Could not find published message {id}")]
-    private static partial void LogPublishedMessageNotFound(ILogger<PublishCommands> logger, Exception ex, ulong? id);
+    static partial void LogPublishedMessageNotFound(ILogger<PublishCommands> logger, Exception ex, ulong? id);
 }
 
 public sealed class PublishBan

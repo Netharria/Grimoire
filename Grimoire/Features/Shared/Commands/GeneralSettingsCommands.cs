@@ -5,14 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Features.Shared.Queries;
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
 
 namespace Grimoire.Features.Shared.Commands;
 
-[SlashCommandGroup("GeneralSettings", "View or set general settings.")]
+[Command("GeneralSettings")]
+[Description("Change the settings of the General Module.")]
 [RequireGuild]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-internal sealed partial class GeneralSettingsCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed partial class GeneralSettingsCommands(IMediator mediator)
 {
     private readonly IMediator _mediator = mediator;
 }

@@ -34,5 +34,5 @@ public sealed partial class RequestTimingBehavior<TMessage, TResponse>(
     }
 
     [LoggerMessage(LogLevel.Warning, "{RequestType}; Execution time={ElapsedTime}ms")]
-    public static partial void LogHandlerDurationWarning(ILogger logger, Type requestType, double elapsedTime);
+    static partial void LogHandlerDurationWarning(ILogger logger, Type requestType, double elapsedTime);
 }

@@ -1,12 +1,19 @@
-﻿using Grimoire.DatabaseQueryHelpers;
+﻿using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Shared.Commands;
 internal sealed partial class GeneralSettingsCommands
 {
-    [SlashCommand("View", "View the current general settings.")]
-        public async Task ViewAsync(InteractionContext ctx)
+    [Command("View")]
+    [Description("View the current general settings for this server.")]
+        public async Task ViewAsync(SlashCommandContext ctx)
         {
-            await ctx.DeferAsync(true);
+            await ctx.DeferResponseAsync(true);
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             var response = await this._mediator.Send(new GetGeneralSettings.Query { GuildId = ctx.Guild.Id });
             var moderationLogText = response.ModLogChannel is null
                 ? "None"

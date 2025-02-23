@@ -5,35 +5,50 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
 using System.Text;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Queries;
 
 namespace Grimoire.Features.Leveling.UserCommands;
 
 public sealed class GetLeaderboard
 {
+    public enum LeaderboardOption
+    {
+        [ChoiceDisplayName("Top")]Top,
+        [ChoiceDisplayName("Me")]Me,
+        [ChoiceDisplayName("User")]User
+    }
     [RequireGuild]
     [RequireModuleEnabled(Module.Leveling)]
-    public sealed class Command(IMediator mediator) : ApplicationCommandModule
+    public sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Leaderboard", "Posts the leaderboard for the server.")]
-        public async Task LeaderboardAsync(InteractionContext ctx,
-            [Choice("Top", 0)] [Choice("Me", 1)] [Choice("User", 2)] [Option("Option", "The leaderboard search type.")]
-            long option,
-            [Option("User", "User to find on the leaderboard.")]
+        [Command("Leaderboard")]
+        [Description("Posts the leaderboard for the server.")]
+        public async Task LeaderboardAsync(SlashCommandContext ctx,
+            [Parameter("Option")]
+            [Description("Select either to view the top users, your position, or a specific user.")]
+            LeaderboardOption option,
+            [Parameter("User")]
+            [Description("The user to find on the leaderboard.")]
             DiscordUser? user = null)
         {
+            if (ctx.Guild is null || ctx.Member is null)
+                throw new AnticipatedException("This command can only be used in a server.");
             switch (option)
             {
-                case 0:
+                case LeaderboardOption.Top:
                     user = null;
                     break;
-                case 1:
+                case LeaderboardOption.Me:
                     user = ctx.User;
                     break;
-                case 2:
+                case LeaderboardOption.User:
                     if (user is null)
                         throw new AnticipatedException("Must provide a user for this option.");
                     break;
@@ -42,7 +57,7 @@ public sealed class GetLeaderboard
             var userCommandChannel =
                 await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
 
-            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+            await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
                                  && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
 
             var getUserCenteredLeaderboardQuery = new Request { UserId = user?.Id, GuildId = ctx.Guild.Id };

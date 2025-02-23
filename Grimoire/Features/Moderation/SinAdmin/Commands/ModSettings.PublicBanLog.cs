@@ -5,19 +5,29 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed partial class ModSettings
 {
-    [SlashCommand("PublicBanLog", "Set public channel to publish ban and unbans to.")]
+    [Command("PublicBanLog")]
+    [Description("Set the public channel to publish ban and unbans to.")]
     public async Task BanLogAsync(
-        InteractionContext ctx,
-        [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")]
+        SlashCommandContext ctx,
+        [Parameter("Option")]
+        [Description("Select whether to turn log off, use the current channel, or specify a channel.")]
         ChannelOption option,
-        [Option("Channel", "The channel to send to send the logs to.")]
+        [Parameter("Channel")]
+        [Description("The channel to send the logs to.")]
         DiscordChannel? channel = null)
     {
-        await ctx.DeferAsync(true);
+        await ctx.DeferResponseAsync(true);
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         channel = ctx.GetChannelOptionAsync(option, channel);
         if (channel is not null)
         {

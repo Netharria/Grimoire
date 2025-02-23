@@ -5,14 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Serilog;
 
 namespace Grimoire.Extensions;
 
 public static partial class DiscordEmbedBuilderExtensions
 {
-    [GeneratedRegex(@"([\s\S]{1,1024})(?:\s|$)", RegexOptions.Compiled, 1000)]
+    [GeneratedRegex(@"([\s\S]{1,1024})(?:\s|$)", RegexOptions.None, 1000)]
     private static partial Regex SplitText();
 
     public static DiscordEmbedBuilder AddMessageTextToFields(this DiscordEmbedBuilder embedBuilder, string contentType,

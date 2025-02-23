@@ -5,7 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
 using System.Text;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
@@ -23,19 +26,25 @@ internal sealed class SinLog
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("SinLog", "Looks up the sin logs for the provided user.")]
+        [Command("SinLog")]
+        [Description("Looks up the sin logs for the provided user.")]
         public async Task SinLogAsync(
-            InteractionContext ctx,
-            [Option("Type", "The Type of logs to lookup.")]
+            SlashCommandContext ctx,
+            [Parameter("Type")]
+            [Description("The type of logs to look up.")]
             SinQueryType sinQueryType,
-            [Option("User", "The user to look up the logs for. Leave blank for self.")]
+            [Parameter("User")]
+            [Description("The user to look up the logs for. Leave blank for self.")]
             DiscordUser? user = null)
         {
-            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages));
+            if (ctx.Guild is null || ctx.Member is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
+            await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages));
             user ??= ctx.User;
 
 
@@ -93,11 +102,11 @@ internal sealed class SinLog
             return await dbContext.Members
                 .AsNoTracking()
                 .WhereMemberHasId(query.UserId, query.GuildId)
-                .Select(x => new GetModActionCountsQueryResponse
+                .Select(member => new GetModActionCountsQueryResponse
                 {
-                    BanCount = x.ModeratedSins.Count(x => x.SinType == SinType.Ban),
-                    MuteCount = x.ModeratedSins.Count(x => x.SinType == SinType.Mute),
-                    WarnCount = x.ModeratedSins.Count(x => x.SinType == SinType.Warn)
+                    BanCount = member.ModeratedSins.Count(sin => sin.SinType == SinType.Ban),
+                    MuteCount = member.ModeratedSins.Count(sin => sin.SinType == SinType.Mute),
+                    WarnCount = member.ModeratedSins.Count(sin => sin.SinType == SinType.Warn)
                 }).FirstOrDefaultAsync(cancellationToken);
         }
     }

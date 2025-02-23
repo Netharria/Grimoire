@@ -5,17 +5,28 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.PublishSins;
 
 public sealed partial class PublishCommands
 {
-    [SlashCommand("Ban", "Publishes a ban to the public ban log channel.")]
+    [Command("Ban")]
+    [Description("Publish a ban reason to the public ban log.")]
     public async Task PublishBanAsync(
-        InteractionContext ctx,
-        [Minimum(0)] [Option("SinId", "The id of the sin to be published")]
+        SlashCommandContext ctx,
+        [MinMaxValue(0)]
+        [Parameter("SinId")]
+        [Description("The id of the sin to be published.")]
         long sinId)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if(ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var response = await this._mediator.Send(new GetBanForPublish.Query { SinId = sinId, GuildId = ctx.Guild.Id });
 
         var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Ban, this._logger);
@@ -27,7 +38,7 @@ public sealed partial class PublishCommands
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published ban : {sinId}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.Member.GetUsernameWithDiscriminator()} published ban reason of sin {sinId}");
+            message: $"{ctx.User.GetUsernameWithDiscriminator()} published ban reason of sin {sinId}");
     }
 }
 

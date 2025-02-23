@@ -6,31 +6,36 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-// ReSharper disable once CheckNamespace
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+using DSharpPlus.Commands.Processors.SlashCommands;
 
+// ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
 
 public partial class LogSettingsCommands
 {
     public partial class User
     {
-        [SlashCommand("Set", "Set a User Log setting.")]
+        [Command("Set")]
+        [Description("Set a User Log setting.")]
         public async Task SetAsync(
-            InteractionContext ctx,
-            [Choice("Joined Server Log", 0)]
-            [Choice("Left Server Log", 1)]
-            [Choice("Username Change Log", 2)]
-            [Choice("Nickname Change Log", 3)]
-            [Choice("Avatar Change Log", 4)]
-            [Option("Setting", "The Setting to change.")]
-            long loggingSetting,
-            [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")]
+            SlashCommandContext ctx,
+            [Parameter("Setting")]
+            [Description("The setting to change.")]
+            SetUserLogSettings.UserLogSetting logSetting,
+            [Parameter("Option")]
+            [Description("Select whether to turn log off, use the current channel, or specify a channel")]
             ChannelOption option,
-            [Option("Value", "The channel to change the log to.")]
+            [Parameter("Value")]
+            [Description("The channel to change the log setting to.")]
             DiscordChannel? channel = null)
         {
-            await ctx.DeferAsync();
-            var logSetting = (SetUserLogSettings.UserLogSetting)loggingSetting;
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             channel = ctx.GetChannelOptionAsync(option, channel);
             if (channel is not null)
             {
@@ -46,15 +51,15 @@ public partial class LogSettingsCommands
             });
             if (option is ChannelOption.Off)
             {
-                await ctx.EditReplyAsync(message: $"Disabled {logSetting.GetName()}");
+                await ctx.EditReplyAsync(message: $"Disabled {logSetting}");
                 await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                    message: $"{ctx.User.Mention} disabled {logSetting.GetName()}.");
+                    message: $"{ctx.User.Mention} disabled {logSetting}.");
                 return;
             }
 
-            await ctx.EditReplyAsync(message: $"Updated {logSetting.GetName()} to {channel?.Mention}");
+            await ctx.EditReplyAsync(message: $"Updated {logSetting} to {channel?.Mention}");
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{ctx.User.Mention} updated {logSetting.GetName()} to {channel?.Mention}.");
+                message: $"{ctx.User.Mention} updated {logSetting} to {channel?.Mention}.");
         }
     }
 }
@@ -63,11 +68,11 @@ public sealed class SetUserLogSettings
 {
     public enum UserLogSetting
     {
-        JoinLog,
-        LeaveLog,
-        UsernameLog,
-        NicknameLog,
-        AvatarLog
+        [ChoiceDisplayName("Joined Server Log")]JoinLog,
+        [ChoiceDisplayName("Left Server Log")]LeaveLog,
+        [ChoiceDisplayName("Username Change Log")]UsernameLog,
+        [ChoiceDisplayName("Nickname Change Log")]NicknameLog,
+        [ChoiceDisplayName("Avatar Change Log")]AvatarLog
     }
 
     public sealed record Command : IRequest<BaseResponse>

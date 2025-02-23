@@ -18,20 +18,20 @@ using Microsoft.Extensions.Logging;
 namespace Grimoire.Features.Shared;
 
 /// <summary>
-///     Initializes a new instance of the <see cref="SlashCommandHandler" /> class.
+///     Initializes a new instance of the <see cref="CommandHandler" /> class.
 /// </summary>
 /// <param name="logger"></param>
 
 //must implement new command framework before this will work.
-public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> logger, IConfiguration configuration)
+public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConfiguration configuration)
  : IEventHandler<ClientErrorEventArgs>,
    IEventHandler<CommandErroredEventArgs>,
     IEventHandler<CommandExecutedEventArgs>
 {
     private readonly IConfiguration _configuration = configuration;
-    private readonly ILogger<SlashCommandHandler> _logger = logger;
+    private readonly ILogger<CommandHandler> _logger = logger;
 
-    private static void BuildSlashCommandLogAsync(StringBuilder builder,
+    private static void BuildCommandLogAsync(StringBuilder builder,
         IReadOnlyDictionary<CommandParameter, object?> commandParameters)
     {
         foreach (var commandParameter in commandParameters)
@@ -95,8 +95,8 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
             var log = new StringBuilder();
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (commandOptions is not null)
-                BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
-            LogSlashCommandError(this._logger,
+                BuildCommandLogAsync(log.Append(' '), commandOptions);
+            LogCommandError(this._logger,
                 args.Exception,
                 errorHexString,
                 args.Context.Command.Name,
@@ -123,8 +123,8 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
 
     }
 
-    [LoggerMessage(LogLevel.Error, "Error on SlashCommand: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
-    public static partial void LogSlashCommandError(ILogger logger, Exception ex, string errorId,
+    [LoggerMessage(LogLevel.Error, "Error on Command: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
+    static partial void LogCommandError(ILogger logger, Exception ex, string errorId,
         string interactionName, string interactionOptions);
 
     public Task HandleEventAsync(DiscordClient sender, CommandExecutedEventArgs args)
@@ -133,13 +133,13 @@ public sealed partial class SlashCommandHandler(ILogger<SlashCommandHandler> log
         var log = new StringBuilder();
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (commandOptions.Count > 0)
-            BuildSlashCommandLogAsync(log.Append(' '), commandOptions);
-        LogSlashCommandInvoked(this._logger,
+            BuildCommandLogAsync(log.Append(' '), commandOptions);
+        LogCommandInvoked(this._logger,
             args.Context.Command.Name,
             log.ToString());
         return Task.CompletedTask;
     }
 
     [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
-    public static partial void LogSlashCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
+    static partial void LogCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
 }

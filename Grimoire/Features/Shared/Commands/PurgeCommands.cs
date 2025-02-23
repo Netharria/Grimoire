@@ -5,32 +5,45 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Shared.Commands;
 
-[SlashRequirePermissions(false, DiscordPermission.ManageMessages)]
-[SlashCommandGroup("Purge", "Delete several recent messages at once.")]
-internal sealed class PurgeCommands : ApplicationCommandModule
+[RequirePermissions(DiscordPermission.ManageMessages)]
+[Command("Purge")]
+[Description("Delete several recent messages at once.")]
+internal sealed class PurgeCommands
 {
-    [SlashCommand("All", "Deletes all messages.")]
-    public static async Task AllAsync(InteractionContext ctx,
-        [Minimum(0)] [Maximum(1000)] [Option("Count", "The number of matching messages to delete.")]
+    [Command("All")]
+    [Description("Deletes all messages in the channel.")]
+    public static async Task AllAsync(SlashCommandContext ctx,
+        [MinMaxValue(0, 1000)]
+        [Parameter("Count")]
+        [Description("The number of messages to delete.")]
         long count)
     {
-        await ctx.DeferAsync(true);
+        await ctx.DeferResponseAsync(true);
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync((int)count, $"{ctx.User.Username} purged these messages.");
         await ctx.EditReplyAsync(GrimoireColor.Green,
             PurgeMessageBuilder(messagesDeleted));
     }
 
-    [SlashCommand("User", "Deletes all messages that were sent by this user.")]
-    public static async Task UserAsync(InteractionContext ctx,
-        [Option("User", "The user to delete the messages of.")]
+    [Command("User")]
+    [Description("Deletes all messages that were sent by this user.")]
+    public static async Task UserAsync(SlashCommandContext ctx,
+        [Parameter("User")]
+        [Description("The user to delete the messages of.")]
         DiscordUser user,
-        [Minimum(0)] [Maximum(1000)] [Option("Count", "The number of matching messages to delete.")]
+        [MinMaxValue(0, 1000)]
+        [Parameter("Count")]
+        [Description("The number of matching messages to delete.")]
         long count)
     {
-        await ctx.DeferAsync(true);
+        await ctx.DeferResponseAsync(true);
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync((int)count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
                 messages => messages.Author is not null && messages.Author == user);

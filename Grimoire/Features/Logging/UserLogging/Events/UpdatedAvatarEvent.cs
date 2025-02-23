@@ -25,7 +25,7 @@ public sealed class UpdatedAvatarEvent
             {
                 GuildId = args.Guild.Id,
                 UserId = args.Member.Id,
-                AvatarUrl = args.MemberAfter.GetGuildAvatarUrl(ImageFormat.Auto, 128)
+                AvatarUrl = args.MemberAfter.GetGuildAvatarUrl(MediaFormat.Auto, 128)
             });
             if (avatarResponse is null
                 || string.Equals(

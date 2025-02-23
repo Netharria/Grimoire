@@ -5,20 +5,29 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
 using System.Text;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire.DatabaseQueryHelpers;
+using Microsoft.VisualBasic;
 using ChannelExtensions = Grimoire.Extensions.ChannelExtensions;
 
 namespace Grimoire.Features.Leveling.Settings;
 
 public sealed partial class IgnoreCommandGroup
 {
-    [SlashCommand("View", "View all currently ignored users, channels and roles for the server.")]
-    public async Task ShowIgnoredAsync(InteractionContext ctx)
+    [Command("View")]
+    [Description("Displays all ignored users, channels and roles on this server.")]
+    public async Task ShowIgnoredAsync(SlashCommandContext ctx)
     {
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var response = await this._mediator.Send(new GetIgnoredItems.Query { GuildId = ctx.Guild.Id });
 
         var embed = new DiscordEmbedBuilder()

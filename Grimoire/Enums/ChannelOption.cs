@@ -11,7 +11,7 @@ namespace Grimoire.Enums;
 
 public enum ChannelOption
 {
-    [ChoiceDisplayName("Off")] Off,
-    [ChoiceDisplayName("Current Channel")] CurrentChannel,
-    [ChoiceDisplayName("Select Channel")] SelectChannel
+    [ChoiceDisplayName("Off")]Off,
+    [ChoiceDisplayName("Current Channel")]CurrentChannel,
+    [ChoiceDisplayName("Select Channel")]SelectChannel
 }

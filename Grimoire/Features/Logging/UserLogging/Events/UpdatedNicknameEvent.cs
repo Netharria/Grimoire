@@ -41,7 +41,7 @@ public sealed class UpdatedNicknameEvent
                         string.IsNullOrWhiteSpace(nicknameResponse.AfterNickname)
                             ? "`None`"
                             : nicknameResponse.AfterNickname, true)
-                    .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
+                    .WithThumbnail(args.Member.GetGuildAvatarUrl(MediaFormat.Auto))
                     .WithTimestamp(DateTimeOffset.UtcNow)
                     .WithColor(GrimoireColor.Mint));
 

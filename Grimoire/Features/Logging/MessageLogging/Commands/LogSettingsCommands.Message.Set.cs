@@ -5,29 +5,37 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-// ReSharper disable once CheckNamespace
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+
+using DSharpPlus.Commands.Processors.SlashCommands;
+// ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
 
 public partial class LogSettingsCommands
 {
     public partial class Message
     {
-        [SlashCommand("Set", "Set a Message Log setting.")]
+        [Command("Set")]
+        [Description("Set a Message Log setting.")]
         public async Task SetAsync(
-            InteractionContext ctx,
-            [Choice("Delete Message Log", 0)]
-            [Choice("Bulk Delete Message Log", 1)]
-            [Choice("Edit Message Log", 2)]
-            [Option("Setting", "The Setting to change.")]
-            long loggingSetting,
-            [Option("Option", "Select whether to turn log off, use the current channel, or specify a channel")]
+            SlashCommandContext ctx,
+            [Parameter("Setting")]
+            [Description("The setting to change.")]
+            SetMessageLogSettings.MessageLogSetting logSetting,
+            [Parameter("Option")]
+            [Description("Select whether to turn log off, use the current channel, or specify a channel")]
             ChannelOption option,
-            [Option("Value", "The channel to change the log setting to.")]
+            [Parameter("Value")]
+            [Description("The channel to change the log setting to.")]
             DiscordChannel? channel = null)
         {
-            await ctx.DeferAsync();
-            var logSetting = (SetMessageLogSettings.MessageLogSetting)loggingSetting;
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             channel = ctx.GetChannelOptionAsync(option, channel);
             if (channel is not null)
             {
@@ -44,15 +52,15 @@ public partial class LogSettingsCommands
 
             if (option is ChannelOption.Off)
             {
-                await ctx.EditReplyAsync(message: $"Disabled {logSetting.GetName()}");
+                await ctx.EditReplyAsync(message: $"Disabled {logSetting}");
                 await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                    message: $"{ctx.User.Mention} disabled {logSetting.GetName()}.");
+                    message: $"{ctx.User.Mention} disabled {logSetting}.");
                 return;
             }
 
-            await ctx.EditReplyAsync(message: $"Updated {logSetting.GetName()} to {channel?.Mention}");
+            await ctx.EditReplyAsync(message: $"Updated {logSetting} to {channel?.Mention}");
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{ctx.User.Mention} updated {logSetting.GetName()} to {channel?.Mention}.");
+                message: $"{ctx.User.Mention} updated {logSetting} to {channel?.Mention}.");
         }
     }
 }
@@ -61,9 +69,9 @@ public sealed class SetMessageLogSettings
 {
     public enum MessageLogSetting
     {
-        DeleteLog,
-        BulkDeleteLog,
-        EditLog
+        [ChoiceDisplayName("Delete Message Log")]DeleteLog,
+        [ChoiceDisplayName("Bulk Delete Message Log")]BulkDeleteLog,
+        [ChoiceDisplayName("Edit Message Log")]EditLog
     }
 
     public sealed record Command : IRequest<BaseResponse>

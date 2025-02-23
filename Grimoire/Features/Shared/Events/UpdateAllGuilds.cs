@@ -36,7 +36,7 @@ internal sealed class UpdateAllGuilds
                             GuildId = x.Guild.Id,
                             UserId = x.Id,
                             Nickname = x.Nickname,
-                            AvatarUrl = x.GetGuildAvatarUrl(ImageFormat.Auto, 128)
+                            AvatarUrl = x.GetGuildAvatarUrl(MediaFormat.Auto, 128)
                         }).ToArray().AsReadOnly(),
                 Roles = eventArgs.Guilds.Values.Select(x => new { x.Id, x.Roles })
                     .Select(x => x.Roles.Select(y =>

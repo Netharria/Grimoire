@@ -5,6 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
@@ -14,26 +17,32 @@ public sealed class UnmuteUser
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    [SlashRequireBotPermissions(false, DiscordPermission.ManageRoles)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    [RequirePermissions([DiscordPermission.ManageRoles], [])]
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Unmute", "Removes the mute on the user allowing them to speak.")]
+        [Command("Unmute")]
+        [Description("Unmutes a user.")]
         public async Task UnmuteUserAsync(
-            InteractionContext ctx,
-            [Option("User", "The User to unmute.")]
+            SlashCommandContext ctx,
+            [Parameter("User")]
+            [Description("The user to unmute.")]
             DiscordUser user)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
 
             if (user is not DiscordMember member)
                 throw new AnticipatedException("That user is not on the server.");
+
             if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
             var response = await this._mediator.Send(new Request { UserId = member.Id, GuildId = ctx.Guild.Id });
             var muteRole = ctx.Guild.Roles.GetValueOrDefault(response.MuteRole);
             if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
-            await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.Member.Mention}");
+            await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.User.Mention}");
 
             var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Unmute")

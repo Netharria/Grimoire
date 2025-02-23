@@ -5,6 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Exceptions;
 
 namespace Grimoire.Features.Moderation.Ban.Commands;
@@ -12,15 +15,22 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-[SlashRequireBotPermissions(false,DiscordPermission.BanMembers)]
-public sealed class RemoveBanCommand : ApplicationCommandModule
+[RequirePermissions([DiscordPermission.BanMembers], [])]
+public sealed class RemoveBanCommand
 {
-    [SlashCommand("Unban", "Bans a user from the server.")]
+    [Command("Unban")]
+    [Description("Unbans a user from the server.")]
     public static async Task UnbanAsync(
-        InteractionContext ctx,
-        [Option("User", "The user to unban")] DiscordUser user)
+        SlashCommandContext ctx,
+        [Parameter("User")]
+        [Description("The user to unban.")]
+        DiscordUser user)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         try
         {
             await ctx.Guild.UnbanMemberAsync(user.Id);

@@ -5,8 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
+using DSharpPlus.Commands.Processors.SlashCommands;
 
 // ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
@@ -15,10 +17,14 @@ public partial class LogSettingsCommands
 {
     public partial class Message
     {
-        [SlashCommand("ViewOverrides", "View the currently Configured log overrides")]
-        public async Task ViewOverrides(InteractionContext ctx)
+        [Command("ViewOverrides")]
+        [Description("View the currently Configured log overrides")]
+        public async Task ViewOverrides(SlashCommandContext ctx)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
 
             var channelOverrideString = new StringBuilder();
             await foreach (var channelOverride in this._mediator.CreateStream(

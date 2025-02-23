@@ -97,7 +97,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
     }
 
     [LoggerMessage(LogLevel.Error, "Was not able to download the image at {url}")]
-    public static partial void LogDownloadError(ILogger logger, Exception ex, string url);
+    static partial void LogDownloadError(ILogger logger, Exception ex, string url);
 
 
     private static void AddAttachmentFileNames(Uri[] imageUrls, int stride, DiscordEmbedBuilder imageEmbed,

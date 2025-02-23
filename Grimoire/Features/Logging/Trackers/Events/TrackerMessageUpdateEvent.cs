@@ -31,7 +31,7 @@ public class TrackerMessageUpdateEvent
                     .AddField("User", args.Author.Mention, true)
                     .AddField("Channel", args.Channel.Mention, true)
                     .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
-                    .WithFooter("Message Sent", args.Author.GetAvatarUrl(ImageFormat.Auto))
+                    .WithFooter("Message Sent", args.Author.GetAvatarUrl(MediaFormat.Auto))
                     .WithTimestamp(DateTime.UtcNow)
                     .AddMessageTextToFields("Before", response.OldMessageContent)
                     .AddMessageTextToFields("After", args.Message.Content));

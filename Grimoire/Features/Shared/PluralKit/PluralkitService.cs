@@ -59,5 +59,5 @@ public sealed partial class PluralkitService : IPluralkitService
     }
 
     [LoggerMessage(LogLevel.Warning, "UserAgent or Pluralkit Token Not Present. Pluralkit integration disabled.")]
-    public static partial void PluralkitNotConfiguredLog(ILogger<PluralkitService> logger);
+    static partial void PluralkitNotConfiguredLog(ILogger<PluralkitService> logger);
 }

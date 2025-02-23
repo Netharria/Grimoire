@@ -5,30 +5,40 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed partial class ModSettings
 {
-    [SlashCommand("AutoPardon", "Updates how long till sins are pardoned.")]
+    [Command("AutoPardon")]
+    [Description("Updates how long till sins are automatically pardoned.")]
     public async Task AutoPardonAsync(
-        InteractionContext ctx,
-        [Option("DurationType", "Select whether the duration will be in minutes hours or days")]
+        SlashCommandContext ctx,
+        [Parameter("DurationType")]
+        [Description("Select whether the duration will be in minutes hours or days")]
         Duration durationType,
-        [Maximum(int.MaxValue)]
-        [Minimum(0)]
-        [Option("DurationAmount", "Select the amount of time before sins are auto pardoned.")]
+        [MinMaxValue(0, int.MaxValue)]
+        [Parameter("DurationAmount")]
+        [Description("The amount of time before sins are auto pardoned.")]
         long durationAmount)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if(ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var response = await this._mediator.Send(new SetAutoPardon.Command
         {
             GuildId = ctx.Guild.Id, DurationAmount = durationType.GetTimeSpan(durationAmount)
         });
 
-        await ctx.EditReplyAsync(message: $"Will now auto pardon sins after {durationAmount} {durationType.GetName()}");
+        await ctx.EditReplyAsync(message: $"Will now auto pardon sins after {durationAmount} {durationType}");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message: $"Auto pardon was updated by {ctx.User.Mention} " +
-                     $"to pardon sins after {durationAmount} {durationType.GetName()}.");
+                     $"to pardon sins after {durationAmount} {durationType}.");
     }
 }
 

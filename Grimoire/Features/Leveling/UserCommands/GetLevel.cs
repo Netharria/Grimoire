@@ -5,6 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Queries;
 
@@ -14,25 +17,25 @@ public sealed class GetLevel
 {
     [RequireGuild]
     [RequireModuleEnabled(Module.Leveling)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        /// <summary>
-        /// </summary>
-        /// <param name="ctx"></param>
-        /// <param name="user"></param>
-        /// <returns>A <see cref="Task" /> representing the result of the asynchronous operation.</returns>
-        [SlashCommand("Level", "Gets the leveling details for the user.")]
+        [Command("Level")]
+        [Description("Gets the leveling details for the user.")]
         public async Task LevelAsync(
-            InteractionContext ctx,
-            [Option("user", "User to get details from. Blank will return your info.")]
+            SlashCommandContext ctx,
+            [Parameter("user")]
+            [Description("User to get details from. Blank will return your info.")]
             DiscordUser? user = null)
         {
+            if(ctx.Guild is null || ctx.Member is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             var userCommandChannel =
                 await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
 
-            await ctx.DeferAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+            await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
                                  && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
             user ??= ctx.User;
 
@@ -46,13 +49,13 @@ public sealed class GetLevel
             {
                 color = member.Color;
                 displayName = member.DisplayName;
-                avatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto);
+                avatarUrl = member.GetGuildAvatarUrl(MediaFormat.Auto);
             }
             else
             {
                 color = user.BannerColor ?? DiscordColor.Blurple;
                 displayName = user.Username;
-                avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
+                avatarUrl = user.GetAvatarUrl(MediaFormat.Auto);
             }
 
             if (string.IsNullOrEmpty(avatarUrl))

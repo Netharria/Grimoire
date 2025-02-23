@@ -43,7 +43,7 @@ public sealed class UpdatedUsernameEvent
                         string.IsNullOrWhiteSpace(usernameResponse.AfterUsername)
                             ? "`Unknown`"
                             : usernameResponse.AfterUsername, true)
-                    .WithThumbnail(args.MemberAfter.GetAvatarUrl(ImageFormat.Auto))
+                    .WithThumbnail(args.MemberAfter.GetAvatarUrl(MediaFormat.Auto))
                     .WithTimestamp(DateTimeOffset.UtcNow)
                     .WithColor(GrimoireColor.Mint));
 

@@ -5,6 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed class ForgetSin
@@ -12,16 +17,23 @@ internal sealed class ForgetSin
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Forget", "Forget a user's sin. This will permanently remove the sin from the database.")]
-        public async Task ForgetAsync(InteractionContext ctx,
-            [Minimum(0)] [Option("SinId", "The sin id that will be forgotten.")]
+        [Command("Forget")]
+        [Description("Forget a user's sin. This will permanently remove the sin from the bots memory.")]
+        public async Task ForgetAsync(SlashCommandContext ctx,
+            [MinMaxValue(0)]
+            [Parameter("SinId")]
+            [Description("The id of the sin to be forgotten.")]
             long sinId)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             var response = await this._mediator.Send(new Request { SinId = sinId, GuildId = ctx.Guild.Id });
 
             var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
@@ -37,7 +49,7 @@ internal sealed class ForgetSin
                 .WithAuthor($"{ctx.Guild.CurrentMember.Nickname} has been commanded to forget.")
                 .AddField("User", response.SinnerName, true)
                 .AddField("Sin Id", response.SinId.ToString(), true)
-                .AddField("Moderator", ctx.Member.Mention, true)
+                .AddField("Moderator", ctx.User.Mention, true)
                 .WithColor(GrimoireColor.Green));
         }
     }
@@ -57,16 +69,16 @@ internal sealed class ForgetSin
         {
             var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await dbContext.Sins
-                .Where(x => x.Id == command.SinId)
-                .Where(x => x.GuildId == command.GuildId)
-                .Select(x => new
+                .Where(sin => sin.Id == command.SinId)
+                .Where(sin => sin.GuildId == command.GuildId)
+                .Select(sin => new
                 {
-                    Sin = x,
-                    UserName = x.Member.User.UsernameHistories
-                        .OrderByDescending(x => x.Timestamp)
-                        .Select(x => x.Username)
+                    Sin = sin,
+                    UserName = sin.Member.User.UsernameHistories
+                        .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
+                        .Select(usernameHistory => usernameHistory.Username)
                         .FirstOrDefault(),
-                    x.Guild.ModChannelLog
+                    sin.Guild.ModChannelLog
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 

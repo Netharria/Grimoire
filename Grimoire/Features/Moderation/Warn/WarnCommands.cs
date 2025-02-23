@@ -5,6 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Exceptions;
 using Grimoire.DatabaseQueryHelpers;
 
@@ -14,21 +18,27 @@ internal sealed class Warn
 {
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserPermissions(false, DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    [RequirePermissions([], [DiscordPermission.ManageMessages])]
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Warn", "Issue a warning to the user.")]
-        public async Task WarnAsync(InteractionContext ctx,
-            [Option("User", "The user to warn.")] DiscordUser user,
-            [MaximumLength(1000)] [Option("Reason", "The reason for the warn.")]
+        [Command("Warn")]
+        [Description("Issue a warning to the user.")]
+        public async Task WarnAsync(SlashCommandContext ctx,
+            [Parameter("User")]
+            [Description("The user to warn.")]
+            DiscordUser user,
+            [MinMaxLength(maxLength: 1000)]
+            [Parameter("Reason")]
+            [Description("The reason for the warn.")]
             string reason)
         {
-            await ctx.DeferAsync();
-            var member = user as DiscordMember;
-            if (member is null)
-                throw new AnticipatedException("The user supplied is not part of this server.");
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             if (ctx.User == user)
                 throw new AnticipatedException("You cannot warn yourself.");
             var response = await this._mediator.Send(new Request
@@ -48,10 +58,11 @@ internal sealed class Warn
 
             try
             {
-                await member.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithAuthor($"Warning Id {response.SinId}")
-                    .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
-                    .WithColor(GrimoireColor.Yellow));
+                if (user is DiscordMember member)
+                    await member.SendMessageAsync(new DiscordEmbedBuilder()
+                        .WithAuthor($"Warning Id {response.SinId}")
+                        .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
+                        .WithColor(GrimoireColor.Yellow));
             }
             catch (Exception ex) when (ex is BadRequestException or UnauthorizedException)
             {

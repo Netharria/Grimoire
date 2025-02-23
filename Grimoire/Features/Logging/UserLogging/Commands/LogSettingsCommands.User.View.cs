@@ -5,18 +5,26 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-// ReSharper disable once CheckNamespace
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
+// ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
 
 public partial class LogSettingsCommands
 {
     public partial class User
     {
-        [SlashCommand("View", "View the current settings for the User Log module.")]
-        public async Task ViewAsync(InteractionContext ctx)
+        [Command("View")]
+        [Description("View the current settings for the User Log module.")]
+        public async Task ViewAsync(SlashCommandContext ctx)
         {
-            await ctx.DeferAsync(true);
+            await ctx.DeferResponseAsync(true);
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             var response = await this._mediator.Send(new GetUserLogSettings.Query { GuildId = ctx.Guild.Id });
             if (response is null)
             {

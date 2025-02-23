@@ -129,7 +129,7 @@ public sealed partial class AddMessageEvent
 
         [LoggerMessage(LogLevel.Error,
             "Database through exception on message creation. This was the original message {message}")]
-        private static partial void LogOriginalMessageForDebugging(ILogger logger, string message);
+        static partial void LogOriginalMessageForDebugging(ILogger logger, string message);
 
         private static bool ShouldLogMessage(Command command, Dictionary<ulong, MessageLogOverrideOption> overrides)
         {

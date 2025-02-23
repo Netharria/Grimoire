@@ -6,8 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.ComponentModel;
-using DSharpPlus.Commands;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
 using JetBrains.Annotations;
@@ -20,7 +18,7 @@ public sealed partial class CustomCommandSettings
     [Command("Forget")]
     [Description("Forget a command that you have saved. This will remove the command from the bot's memory and it will no longer be available.")]
     internal async Task Forget(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
         [Parameter("Name")]
         [Description("The name of the command to forget.")]

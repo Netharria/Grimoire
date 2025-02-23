@@ -22,7 +22,7 @@ internal sealed class MemberAdded
                     GuildId = eventArgs.Guild.Id,
                     UserId = eventArgs.Member.Id,
                     UserName = eventArgs.Member.GetUsernameWithDiscriminator(),
-                    AvatarUrl = eventArgs.Member.GetGuildAvatarUrl(ImageFormat.Auto, 128)
+                    AvatarUrl = eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128)
                 });
     }
 

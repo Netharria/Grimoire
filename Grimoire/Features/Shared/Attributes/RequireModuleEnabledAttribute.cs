@@ -5,10 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.Shared.Queries;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Features.Shared.Attributes;

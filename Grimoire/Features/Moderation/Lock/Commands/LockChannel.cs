@@ -5,42 +5,57 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.Lock.Commands;
 
 public sealed class LockChannel
 {
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserPermissions(false, DiscordPermission.ManageMessages)]
-    [SlashRequireBotPermissions(false, DiscordPermission.ManageChannels)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    [RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Lock", "Prevents users from being able to speak in the channel")]
+        [Command("Lock")]
+        [Description("Locks a channel for a specified amount of time.")]
         public async Task LockChannelAsync(
-            InteractionContext ctx,
-            [Option("DurationType", "Select whether the duration will be in minutes hours or days")]
+            SlashCommandContext ctx,
+            [Parameter("DurationType")]
+            [Description("Select whether the duration will be in minutes hours or days.")]
             DurationType durationType,
-            [Minimum(0)] [Option("DurationAmount", "Select the amount of time the lock will last.")]
+            [MinMaxValue(0)]
+            [Parameter("DurationAmount")]
+            [Description("The amount of time the lock will last.")]
             long durationAmount,
             [ChannelTypes(DiscordChannelType.Text, DiscordChannelType.PublicThread, DiscordChannelType.PrivateThread,
                 DiscordChannelType.Category, DiscordChannelType.GuildForum)]
-            [Option("Channel", "The Channel to lock. Current channel if not specified.")]
+            [Parameter("Channel")]
+            [Description("The channel to lock. Current channel if not specified.")]
             DiscordChannel? channel = null,
-            [MaximumLength(1000)] [Option("Reason", "The reason why the channel is getting locked")]
+            [MinMaxLength(maxLength:1000)]
+            [Parameter("Reason")]
+            [Description("The reason for the lock.")]
             string? reason = null)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
             channel ??= ctx.Channel;
+
+            if(ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             BaseResponse? response;
 
             if (channel.IsThread)
-                response = await this.ThreadLockAsync(ctx, channel, reason, durationType, durationAmount);
+                response = await this.ThreadLockAsync(ctx.Guild, ctx.User, channel, reason, durationType, durationAmount);
             else if (channel.Type is DiscordChannelType.Text
                      or DiscordChannelType.Category
                      or DiscordChannelType.GuildForum)
-                response = await this.ChannelLockAsync(ctx, channel, reason, durationType, durationAmount);
+                response = await this.ChannelLockAsync(ctx.Guild, ctx.User, channel, reason, durationType, durationAmount);
             else
             {
                 await ctx.EditReplyAsync(message: "Channel not of valid type.");
@@ -48,45 +63,45 @@ public sealed class LockChannel
             }
 
             await ctx.EditReplyAsync(
-                message: $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()}");
+                message: $"{channel.Mention} has been locked for {durationAmount} {durationType}");
 
             await ctx.SendLogAsync(response, GrimoireColor.Purple,
                 message:
-                $"{channel.Mention} has been locked for {durationAmount} {durationType.GetName()} by {ctx.User.Mention}"
+                $"{channel.Mention} has been locked for {durationAmount} {durationType} by {ctx.User.Mention}"
                 + (string.IsNullOrWhiteSpace(reason) ? "" : $"for {reason}"));
         }
 
-        private async Task<BaseResponse> ChannelLockAsync(InteractionContext ctx, DiscordChannel channel,
+        private async Task<BaseResponse> ChannelLockAsync(DiscordGuild guild, DiscordUser moderator, DiscordChannel channel,
             string? reason,
             DurationType durationType, long durationAmount)
         {
-            var previousSetting = ctx.Guild.Channels[channel.Id].PermissionOverwrites
-                .First(x => x.Id == ctx.Guild.EveryoneRole.Id);
+            var previousSetting = guild.Channels[channel.Id].PermissionOverwrites
+                .First(x => x.Id == guild.EveryoneRole.Id);
             var response = await this._mediator.Send(new Request
             {
                 ChannelId = channel.Id,
                 PreviouslyAllowed = previousSetting.Allowed.GetLockPermissions().ToLong(),
                 PreviouslyDenied = previousSetting.Denied.GetLockPermissions().ToLong(),
-                ModeratorId = ctx.User.Id,
-                GuildId = ctx.Guild.Id,
+                ModeratorId = moderator.Id,
+                GuildId = guild.Id,
                 Reason = reason ?? string.Empty,
                 DurationType = durationType,
                 DurationAmount = durationAmount
             });
-            await channel.AddOverwriteAsync(ctx.Guild.EveryoneRole,
+            await channel.AddOverwriteAsync(guild.EveryoneRole,
                 previousSetting.Allowed.RevokeLockPermissions(),
                 previousSetting.Denied.SetLockPermissions());
 
             return response;
         }
 
-        private async Task<BaseResponse> ThreadLockAsync(InteractionContext ctx, DiscordChannel channel, string? reason,
+        private async Task<BaseResponse> ThreadLockAsync(DiscordGuild guild, DiscordUser moderator, DiscordChannel channel, string? reason,
             DurationType durationType, long durationAmount) =>
             await this._mediator.Send(new Request
             {
                 ChannelId = channel.Id,
-                ModeratorId = ctx.User.Id,
-                GuildId = ctx.Guild.Id,
+                ModeratorId = moderator.Id,
+                GuildId = guild.Id,
                 Reason = reason ?? string.Empty,
                 DurationType = durationType,
                 DurationAmount = durationAmount

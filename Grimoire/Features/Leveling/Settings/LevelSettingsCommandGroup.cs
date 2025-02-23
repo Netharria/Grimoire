@@ -5,13 +5,17 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
+
 namespace Grimoire.Features.Leveling.Settings;
 
-[SlashCommandGroup("LevelSettings", "Changes the settings of the Leveling Module.")]
+[Command("LevelSettings")]
+[Description("Commands for updating and viewing the server leveling settings.")]
 [RequireGuild]
 [RequireModuleEnabled(Module.Leveling)]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-public sealed partial class LevelSettingsCommandGroup(IMediator mediator) : ApplicationCommandModule
+public sealed partial class LevelSettingsCommandGroup(IMediator mediator)
 {
     private readonly IMediator _mediator = mediator;
 }

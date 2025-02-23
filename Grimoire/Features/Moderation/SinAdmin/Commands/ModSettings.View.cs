@@ -5,14 +5,22 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed partial class ModSettings
 {
-    [SlashCommand("View", "See current moderation settings")]
-    public async Task ViewSettingsAsync(InteractionContext ctx)
+    [Command("View")]
+    [Description("View the current moderation settings for this server.")]
+    public async Task ViewSettingsAsync(SlashCommandContext ctx)
     {
-        await ctx.DeferAsync(true);
+        await ctx.DeferResponseAsync(true);
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var response = await this._mediator.Send(new GetModerationSettings.Query { GuildId = ctx.Guild.Id });
 
         var banLog = response.PublicBanLog is null

@@ -20,7 +20,7 @@ public abstract partial class GenericBackgroundService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        LogBackgroundTaskStart(logger, this.GetType().Name);
+        LogBackgroundTaskStart(logger, this.GetType().FullName ?? this.GetType().Name);
 
         await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(5000)), stoppingToken);
 
@@ -37,10 +37,10 @@ public abstract partial class GenericBackgroundService(
     }
 
     [LoggerMessage(LogLevel.Information, "Starting Background task {type}")]
-    public static partial void LogBackgroundTaskStart(ILogger logger, string type);
+    static partial void LogBackgroundTaskStart(ILogger logger, string type);
 
     [LoggerMessage(LogLevel.Error, "Exception was thrown when running a background task. Message: ({message})")]
-    public static partial void LogBackgroundTaskError(ILogger logger, Exception ex, string message);
+    static partial void LogBackgroundTaskError(ILogger logger, Exception ex, string message);
 
     protected abstract Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken);
 }

@@ -5,25 +5,34 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.Lock.Commands;
 
 public sealed class UnlockChannel
 {
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
-    [SlashRequireUserPermissions(false, DiscordPermission.ManageMessages)]
-    [SlashRequireBotPermissions(false, DiscordPermission.ManageChannels)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    [RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Unlock", "Prevents users from being able to speak in the channel")]
+        [Command("Unlock")]
+        [Description("Unlocks a channel.")]
         public async Task UnlockChannelAsync(
-            InteractionContext ctx,
-            [Option("Channel", "The Channel to unlock. Current channel if not specified.")]
+            SlashCommandContext ctx,
+            [Parameter("Channel")]
+            [Description("The channel to unlock. Current channel if not specified.")]
             DiscordChannel? channel = null)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+
+            if(ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             channel ??= ctx.Channel;
             var response =
                 await this._mediator.Send(new Request { ChannelId = channel.Id, GuildId = ctx.Guild.Id });

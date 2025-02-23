@@ -5,14 +5,21 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+
 namespace Grimoire.Features.Leveling.Settings;
 
 public sealed partial class LevelSettingsCommandGroup
 {
-    [SlashCommand("View", "View the current settings for the leveling module.")]
-    public async Task ViewAsync(InteractionContext ctx)
+    [Command("View")]
+    [Description("View the current settings for the leveling module.")]
+    public async Task ViewAsync(CommandContext ctx)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var response = await this._mediator.Send(new GetLevelSettings.Request { GuildId = ctx.Guild.Id });
         if (response is null)
         {

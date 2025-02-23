@@ -5,14 +5,13 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using DSharpPlus.Commands.Processors.SlashCommands;
 
 namespace Grimoire.Extensions;
 
-public static class InteractionContextExtension
+public static class SlashCommandContextExtension
 {
     public static async Task EditReplyAsync(
-        this SlashCommandContext ctx,
+        this CommandContext ctx,
         DiscordColor? color = null,
         string message = "",
         string title = "",
@@ -34,7 +33,7 @@ public static class InteractionContextExtension
                 new DiscordWebhookBuilder().AddEmbed(embed)));
     }
 
-    public static async Task SendLogAsync(this SlashCommandContext ctx,
+    public static async Task SendLogAsync(this CommandContext ctx,
         BaseResponse response,
         DiscordColor? color,
         string title = "",
@@ -56,7 +55,7 @@ public static class InteractionContextExtension
             await logChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed)));
     }
 
-    public static DiscordChannel? GetChannelOptionAsync(this SlashCommandContext ctx, ChannelOption channelOption,
+    public static DiscordChannel? GetChannelOptionAsync(this CommandContext ctx, ChannelOption channelOption,
         DiscordChannel? selectedChannel)
     {
         switch (channelOption)

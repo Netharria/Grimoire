@@ -55,7 +55,7 @@ internal sealed class GuildMemberAddedEvent(IMediator mediator, IInviteService i
             .WithColor(args.Member.CreationTimestamp > DateTimeOffset.UtcNow.AddDays(-7)
                 ? GrimoireColor.Yellow
                 : GrimoireColor.Green)
-            .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
+            .WithThumbnail(args.Member.GetGuildAvatarUrl(MediaFormat.Auto))
             .WithFooter($"Total Members: {args.Guild.MemberCount}")
             .WithTimestamp(DateTimeOffset.UtcNow);
 

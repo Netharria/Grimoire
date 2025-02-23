@@ -5,6 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed class UpdateSinReason
@@ -12,18 +17,27 @@ internal sealed class UpdateSinReason
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Reason", "Update the reason for a user's sin.")]
-        public async Task ReasonAsync(InteractionContext ctx,
-            [Minimum(0)] [Option("SinId", "The sin id that will have its reason updated.")]
+        [Command("Reason")]
+        [Description("Update the reason for a user's sin.")]
+        public async Task ReasonAsync(SlashCommandContext ctx,
+            [MinMaxValue(0)]
+            [Parameter("SinId")]
+            [Description("The id of the sin to be updated.")]
             long sinId,
-            [MaximumLength(1000)] [Option("Reason", "The reason the sin will be updated to.")]
+            [MinMaxLength(maxLength: 1000)]
+            [Parameter("Reason")]
+            [Description("The reason the sin will be updated to.")]
             string reason)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             var response = await this._mediator.Send(new Request
             {
                 SinId = sinId, GuildId = ctx.Guild.Id, Reason = reason
@@ -46,7 +60,7 @@ internal sealed class UpdateSinReason
 
             await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
                 .WithDescription(
-                    $"{ctx.Member.GetUsernameWithDiscriminator()} updated reason to {reason} for {message}")
+                    $"{ctx.User.GetUsernameWithDiscriminator()} updated reason to {reason} for {message}")
                 .WithColor(GrimoireColor.Green));
         }
     }
@@ -68,16 +82,16 @@ internal sealed class UpdateSinReason
         {
             var dbcontext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await dbcontext.Sins
-                .Where(x => x.Id == command.SinId)
-                .Where(x => x.GuildId == command.GuildId)
-                .Select(x => new
+                .Where(sin => sin.Id == command.SinId)
+                .Where(sin => sin.GuildId == command.GuildId)
+                .Select(sin => new
                 {
-                    Sin = x,
-                    UserName = x.Member.User.UsernameHistories
-                        .OrderByDescending(x => x.Timestamp)
-                        .Select(x => x.Username)
+                    Sin = sin,
+                    UserName = sin.Member.User.UsernameHistories
+                        .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
+                        .Select(usernameHistory => usernameHistory.Username)
                         .FirstOrDefault(),
-                    x.Guild.ModChannelLog
+                    sin.Guild.ModChannelLog
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 

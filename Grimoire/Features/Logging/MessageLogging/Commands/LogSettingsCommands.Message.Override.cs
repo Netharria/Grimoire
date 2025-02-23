@@ -5,7 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+
+using System.ComponentModel;
 // ReSharper disable once CheckNamespace
+using DSharpPlus.Commands.Processors.SlashCommands;
 
 namespace Grimoire.Features.Logging.Settings;
 
@@ -13,16 +16,18 @@ public partial class LogSettingsCommands
 {
     public partial class Message
     {
-        [SlashCommand("Override",
-            "Overrides the default message logging settings. Use this to control which channels are logged.")]
+        [Command("Override")]
+        [Description("Overrides the default message logging settings. Use this to control which channels are logged.")]
         public async Task Override(
-            InteractionContext ctx,
-            [Option("Option", "Override option to set the channel to.")]
+            SlashCommandContext ctx,
+            [Parameter("Option")]
+            [Description("Override option to set the channel to")]
             UpdateMessageLogOverride.MessageLogOverrideSetting overrideSetting,
-            [Option("Channel", "The channel to override the message log settings of. Leave empty for current channel.")]
+            [Parameter("Channel")]
+            [Description("The channel to override the message log settings of. Leave empty for current channel.")]
             DiscordChannel? channel = null)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
             channel ??= ctx.Channel;
 
             var response = await this._mediator.Send(new UpdateMessageLogOverride.Command

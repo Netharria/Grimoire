@@ -6,38 +6,19 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.ComponentModel;
-using System.Xml.Serialization;
-using DSharpPlus.Commands;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using DSharpPlus.Commands.Trees;
-using Grimoire;
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.Leveling.Awards;
 
 namespace Grimoire.Features.Leveling.Awards;
-
-
 
 public sealed class ReclaimUserXp
 {
     public enum XpOption
     {
-        All,
-        Amount
-    }
-
-    public class XpOptionProvider : IChoiceProvider
-    {
-        public ValueTask<IEnumerable<DiscordApplicationCommandOptionChoice>> ProvideAsync(CommandParameter parameter)
-            => ValueTask.FromResult<IEnumerable<DiscordApplicationCommandOptionChoice>>(
-                new List<DiscordApplicationCommandOptionChoice>
-                {
-                    new("All", (int)XpOption.All),
-                    new("Amount", (int)XpOption.Amount)
-                });
+        [ChoiceDisplayName("Take all their xp.")]All,
+        [ChoiceDisplayName("Take a specific amount.")]Amount
     }
 
     [RequireGuild]
@@ -49,14 +30,13 @@ public sealed class ReclaimUserXp
 
         [Command("Reclaim")]
         [Description("Takes away xp from user.")]
-        public async Task ReclaimAsync(SlashCommandContext ctx,
+        public async Task ReclaimAsync(CommandContext ctx,
             [Parameter("User")]
             [Description("The user to take xp from.")]
             DiscordUser user,
             [Parameter("Option")]
             [Description( "Select either to take all of their xp or a specific amount.")]
-            [SlashChoiceProvider<XpOptionProvider>]
-            int optionValue,
+            XpOption option,
             [MinMaxValue(0)]
             [Parameter("Amount")]
             [Description("The amount of xp to take.")]
@@ -65,7 +45,6 @@ public sealed class ReclaimUserXp
             await ctx.DeferResponseAsync();
             if (ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
-            var option = (XpOption)optionValue;
             if (option == XpOption.Amount && amount == 0)
                 throw new AnticipatedException("Specify an amount greater than 0");
             var response = await this._mediator.Send(

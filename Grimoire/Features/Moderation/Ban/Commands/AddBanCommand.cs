@@ -5,6 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Moderation.Ban.Shared;
 using Microsoft.Extensions.Logging;
@@ -14,26 +18,37 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-[SlashRequireBotPermissions(true, DiscordPermission.BanMembers)]
-public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanCommand> logger) : ApplicationCommandModule
+[RequirePermissions([DiscordPermission.BanMembers], [])]
+public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanCommand> logger)
 {
     private readonly ILogger<AddBanCommand> _logger = logger;
     private readonly IMediator _mediator = mediator;
 
-    [SlashCommand("Ban", "Bans a user from the server.")]
+    [Command("Ban")]
+    [Description("Bans a user from the server.")]
     public async Task BanAsync(
-        InteractionContext ctx,
-        [Option("User", "The user to ban")] DiscordUser user,
-        [MaximumLength(1000)]
-        [Option("Reason", "The reason for the ban. This can be updated later with the 'Reason' command.")]
+        SlashCommandContext ctx,
+        [Parameter("User")]
+        [Description("The user to ban.")]
+        DiscordUser user,
+        [MinMaxLength(maxLength:1000)]
+        [Parameter("Reason")]
+        [Description("The reason for the ban. This can be updated later with the 'Reason' command.")]
         string reason = "",
-        [Option("DeleteMessages", "Deletes the messages of the user of the last few days. Default is false.")]
+        [Parameter("DeleteMessages")]
+        [Description("Deletes the messages of the user of the last few days. Default is false.")]
         bool deleteMessages = false,
-        [Maximum(7)] [Minimum(0)] [Option("DeleteDays", "Number of days of messages to delete. Default is 7")]
+        [MinMaxValue(0,7)]
+        [Parameter("DeleteDays")]
+        [Description("The number of days of messages to delete. Default is 7.")]
         long deleteDays = 7)
     {
-        await ctx.DeferAsync();
-        if (!CheckIfCanBan(ctx, user))
+        await ctx.DeferResponseAsync();
+
+        if(ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
+        if (!CheckIfCanBan(ctx.Guild.CurrentMember, user))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
             return;
@@ -83,12 +98,12 @@ public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanComm
     }
 
     [LoggerMessage(LogLevel.Warning, "Was not able to send a direct message to user.")]
-    private static partial void LogFailedDirectMessage(ILogger<AddBanCommand> logger, Exception ex);
+    static partial void LogFailedDirectMessage(ILogger<AddBanCommand> logger, Exception ex);
 
-    private static bool CheckIfCanBan(InteractionContext ctx, DiscordUser user)
+    private static bool CheckIfCanBan(DiscordMember botMember, DiscordUser user)
     {
         if (user is not DiscordMember member)
             return true;
-        return ctx.Guild.CurrentMember.Hierarchy > member.Hierarchy;
+        return botMember.Hierarchy > member.Hierarchy;
     }
 }

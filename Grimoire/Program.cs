@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.RateLimiting;
-using DSharpPlus.Commands;
 using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
@@ -65,7 +64,6 @@ await Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-#pragma warning disable CS0618 // Type or member is obsolete
         var token = context.Configuration.GetValue<string>("token")!;
         services
             .AddSerilog(x => x.ReadFrom.Configuration(context.Configuration))
@@ -112,47 +110,47 @@ await Host.CreateDefaultBuilder(args)
             {
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
-                    //extension.RegisterCommands<EmptySlashCommands>(guildId);
-                    extension.AddCommands<CustomCommandSettings>(guildId);
-                    extension.AddCommands<GetCustomCommand.Command>(guildId);
+                    //extension.RegisterCommands<EmptyCommands>(guildId);
+                    // extension.AddCommands<CustomCommandSettings>(guildId);
+                    // extension.AddCommands<GetCustomCommand.Command>(guildId);
                 }
 
                 //Shared
                 extension.AddCommands<ModuleCommands>();
-                extension.AddCommands<GeneralSettingsCommands>();
-                extension.AddCommands<PurgeCommands>();
-                extension.AddCommands<UserInfoCommands>();
-
-
-                ////Leveling
-                extension.AddCommands<AwardUserXp.Command>();
-                extension.AddCommands<ReclaimUserXp.Command>();
-                extension.AddCommands<RewardCommandGroup>();
-                extension.AddCommands<IgnoreCommandGroup>();
-                extension.AddCommands<LevelSettingsCommandGroup>();
-                extension.AddCommands<GetLeaderboard.Command>();
-                extension.AddCommands<GetLevel.Command>();
-
-                ////Logging
-                extension.AddCommands<LogSettingsCommands>();
-                extension.AddCommands<AddTracker.Command>();
-                extension.AddCommands<RemoveTracker.Command>();
-
-                ////Moderation
-                //extension.AddCommands<ModerationSettingsCommands>();
-                extension.AddCommands<MuteAdminCommands>();
-                extension.AddCommands<AddBanCommand>();
-                extension.AddCommands<RemoveBanCommand>();
-                //extension.AddCommands<SinAdminCommands>();
-                extension.AddCommands<LockChannel.Command>();
-                extension.AddCommands<UnlockChannel.Command>();
-                extension.AddCommands<PublishCommands>();
-                //extension.AddCommands<SinLogCommands>();
-                //extension.AddCommands<MuteCommands>();
-                //extension.AddCommands<WarnCommands>();
-                ////Custom Commands
-                extension.AddCommands<CustomCommandSettings>();
-                extension.AddCommands<GetCustomCommand.Command>();
+                // extension.AddCommands<GeneralSettingsCommands>();
+                // extension.AddCommands<PurgeCommands>();
+                // extension.AddCommands<UserInfoCommands>();
+                //
+                //
+                // ////Leveling
+                // extension.AddCommands<AwardUserXp.Command>();
+                // extension.AddCommands<ReclaimUserXp.Command>();
+                // extension.AddCommands<RewardCommandGroup>();
+                // extension.AddCommands<IgnoreCommandGroup>();
+                // extension.AddCommands<LevelSettingsCommandGroup>();
+                // extension.AddCommands<GetLeaderboard.Command>();
+                // extension.AddCommands<GetLevel.Command>();
+                //
+                // ////Logging
+                // extension.AddCommands<LogSettingsCommands>();
+                // extension.AddCommands<AddTracker.Command>();
+                // extension.AddCommands<RemoveTracker.Command>();
+                //
+                // ////Moderation
+                // //extension.AddCommands<ModerationSettingsCommands>();
+                // extension.AddCommands<MuteAdminCommands>();
+                // extension.AddCommands<AddBanCommand>();
+                // extension.AddCommands<RemoveBanCommand>();
+                // //extension.AddCommands<SinAdminCommands>();
+                // extension.AddCommands<LockChannel.Command>();
+                // extension.AddCommands<UnlockChannel.Command>();
+                // extension.AddCommands<PublishCommands>();
+                // //extension.AddCommands<SinLogCommands>();
+                // //extension.AddCommands<MuteCommands>();
+                // //extension.AddCommands<WarnCommands>();
+                // ////Custom Commands
+                // extension.AddCommands<CustomCommandSettings>();
+                // extension.AddCommands<GetCustomCommand.Command>();
 
                 extension.AddCheck<RequireModuleEnabledCheck>();
                 extension.AddCheck<RequireUserGuildPermissionsCheck>();
@@ -166,7 +164,6 @@ await Host.CreateDefaultBuilder(args)
             .AddMemoryCache()
             .AddHttpClient("Default")
             .AddStandardResilienceHandler();
-#pragma warning restore CS0618 // Type or member is obsolete
 
         services.AddHttpClient("Pluralkit", x =>
         {

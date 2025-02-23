@@ -5,13 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+
 namespace Grimoire.Features.Logging.Settings;
 
 public partial class LogSettingsCommands
 {
-    [SlashCommandGroup("Message", "View or change the Message Log Module Settings.")]
+    [Command("Message")]
+    [Description("View or change the Message Log Module Settings.")]
     [RequireModuleEnabled(Module.MessageLog)]
-    public partial class Message(IMediator mediator) : ApplicationCommandModule
+    public partial class Message(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
     }

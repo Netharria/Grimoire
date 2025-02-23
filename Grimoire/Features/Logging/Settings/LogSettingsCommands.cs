@@ -5,11 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
+
 namespace Grimoire.Features.Logging.Settings;
 
-[SlashCommandGroup("Log", "View or change the settings of the Logging Modules.")]
+[Command("Log")]
+[Description("View or change the settings of the Logging Modules.")]
 [RequireGuild]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-public partial class LogSettingsCommands : ApplicationCommandModule
+public partial class LogSettingsCommands
 {
 }

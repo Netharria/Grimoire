@@ -28,7 +28,7 @@ public sealed class GuildMemberRemovedEvent(IMediator mediator) : IEventHandler<
             .AddField("Created", Formatter.Timestamp(args.Member.CreationTimestamp), true)
             .AddField("Joined", Formatter.Timestamp(args.Member.JoinedAt), true)
             .WithColor(GrimoireColor.Red)
-            .WithThumbnail(args.Member.GetGuildAvatarUrl(ImageFormat.Auto))
+            .WithThumbnail(args.Member.GetGuildAvatarUrl(MediaFormat.Auto))
             .WithFooter($"Total Members: {args.Guild.MemberCount}")
             .WithTimestamp(DateTimeOffset.UtcNow)
             .AddField($"Roles[{args.Member.Roles.Count()}]",

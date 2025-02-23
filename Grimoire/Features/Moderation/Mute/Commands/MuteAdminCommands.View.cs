@@ -5,14 +5,22 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
 public partial class MuteAdminCommands
 {
-    [SlashCommand("View", "View the current configured mute role and any active mutes.")]
-    public async Task ViewMutesAsync(InteractionContext ctx)
+    [Command("View")]
+    [Description("View the current configured mute role and any active mutes.")]
+    public async Task ViewMutesAsync(SlashCommandContext ctx)
     {
-        await ctx.DeferAsync(true);
+        await ctx.DeferResponseAsync(true);
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var response = await this._mediator.Send(new GetAllActiveMutes.Query { GuildId = ctx.Guild.Id });
 
         DiscordRole? role = null;
@@ -52,9 +60,10 @@ public sealed class GetAllActiveMutes
             var result = await dbContext.GuildModerationSettings
                 .AsNoTracking()
                 .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new Response
+                .Select(guildModerationSettings => new Response
                 {
-                    MuteRole = x.MuteRole, MutedUsers = x.Guild.ActiveMutes.Select(x => x.UserId).ToArray()
+                    MuteRole = guildModerationSettings.MuteRole,
+                    MutedUsers = guildModerationSettings.Guild.ActiveMutes.Select(mute => mute.UserId).ToArray()
                 }).FirstOrDefaultAsync(cancellationToken);
             if (result is null)
                 throw new AnticipatedException("Could not find the settings for this server.");

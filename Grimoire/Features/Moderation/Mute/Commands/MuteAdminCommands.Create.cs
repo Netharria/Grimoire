@@ -5,14 +5,22 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
 public partial class MuteAdminCommands
 {
-    [SlashCommand("Create", "Creates a new role to be use for muting users and set permissions in all channels.")]
-    public async Task CreateMuteRoleAsync(InteractionContext ctx)
+    [Command("Create")]
+    [Description("Creates a new role to be use for muting users and set permissions in all channels.")]
+    public async Task CreateMuteRoleAsync(SlashCommandContext ctx)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var role = await ctx.Guild.CreateRoleAsync("Muted");
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
@@ -35,6 +43,6 @@ public partial class MuteAdminCommands
 
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message:
-            $"{ctx.Member.Mention} asked {ctx.Guild.CurrentMember} to create {role.Mention} to use as a mute role.");
+            $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember} to create {role.Mention} to use as a mute role.");
     }
 }

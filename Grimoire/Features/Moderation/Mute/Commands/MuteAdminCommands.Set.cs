@@ -5,22 +5,31 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
 public partial class MuteAdminCommands
 {
-    [SlashCommand("Set", "Sets the role that is used for muting users.")]
+    [Command("Set")]
+    [Description("Sets the role that is used for muting users.")]
     public async Task SetMuteRoleAsync(
-        InteractionContext ctx,
-        [Option("Role", "The role to use for muting")]
+        SlashCommandContext ctx,
+        [Parameter("Role")]
+        [Description("The role to use for muting users.")]
         DiscordRole role)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var response = await this._mediator.Send(new SetMuteRole.Request { Role = role.Id, GuildId = ctx.Guild.Id });
 
         await ctx.EditReplyAsync(message: $"Will now use role {role.Mention} for muting users.");
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.Member.Mention} updated the mute role to {role.Mention}");
+            message: $"{ctx.User.Mention} updated the mute role to {role.Mention}");
     }
 }
 

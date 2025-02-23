@@ -8,23 +8,20 @@
 
 using System.ComponentModel;
 using System.Text.RegularExpressions;
-using DSharpPlus.Commands;
 using DSharpPlus.Commands.ArgumentModifiers;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
-using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
 public sealed partial class CustomCommandSettings
 {
-    [GeneratedRegex(@"[0-9A-Fa-f]{6}\b", RegexOptions.Compiled, 1000)]
+    [GeneratedRegex(@"[0-9A-Fa-f]{6}\b", RegexOptions.None, 1000)]
     private static partial Regex ValidHexColor();
 
     [Command("Learn")]
     [Description("Learn a new command or update an existing one")]
     public async Task Learn(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [MinMaxLength(0, 24)]
         [Parameter("Name")]
         [Description("The name that the command will be called. This is used to activate the command.")]

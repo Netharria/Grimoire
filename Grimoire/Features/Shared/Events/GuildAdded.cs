@@ -35,7 +35,7 @@ internal sealed class GuildAdded
                             GuildId = x.Value.Guild.Id,
                             UserId = x.Key,
                             Nickname = x.Value.Nickname,
-                            AvatarUrl = x.Value.GetGuildAvatarUrl(ImageFormat.Auto)
+                            AvatarUrl = x.Value.GetGuildAvatarUrl(MediaFormat.Auto)
                         }).ToArray().AsReadOnly(),
                 Roles = eventArgs.Guild.Roles
                     .Select(x =>

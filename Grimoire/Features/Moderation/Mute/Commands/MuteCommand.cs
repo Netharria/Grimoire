@@ -5,6 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
@@ -14,24 +18,35 @@ public sealed class MuteUser
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    [SlashRequireBotPermissions(false, DiscordPermission.ManageRoles)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    [RequirePermissions([DiscordPermission.ManageRoles], [])]
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Mute", "Prevents the user from being able to speak.")]
+        [Command("Mute")]
+        [Description("Mutes a user for a specified amount of time.")]
         public async Task MuteUserAsync(
-            InteractionContext ctx,
-            [Option("User", "The User to mute.")] DiscordUser user,
-            [Option("DurationType", "Select whether the duration will be in minutes hours or days")]
+            SlashCommandContext ctx,
+            [Parameter("User")]
+            [Description("The user to mute.")]
+            DiscordUser user,
+            [Parameter("DurationType")]
+            [Description("Select whether the duration will be in minutes hours or days")]
             DurationType durationType,
-            [Minimum(0)] [Option("DurationAmount", "Select the amount of time the mute will last.")]
+            [MinMaxValue(0)]
+            [Parameter("DurationAmount")]
+            [Description("The amount of time the mute will last.")]
             long durationAmount,
-            [MaximumLength(1000)] [Option("Reason", "The reason why the user is getting muted.")]
+            [MinMaxLength(maxLength: 1000)]
+            [Parameter("Reason")]
+            [Description("The reason for the mute.")]
             string? reason = null
         )
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
 
             if (user is not DiscordMember member)
                 throw new AnticipatedException("That user is not on the server.");
@@ -55,7 +70,7 @@ public sealed class MuteUser
                 .AddField("User", user.Mention, true)
                 .AddField("Sin Id", $"**{response.SinId}**", true)
                 .AddField("Moderator", ctx.User.Mention, true)
-                .AddField("Length", $"{durationAmount} {durationType.GetName()}", true)
+                .AddField("Length", $"{durationAmount} {durationType}", true)
                 .WithColor(GrimoireColor.Red)
                 .WithTimestamp(DateTimeOffset.UtcNow);
 
@@ -69,7 +84,7 @@ public sealed class MuteUser
                 await member.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithAuthor($"Mute Id {response.SinId}")
                     .WithDescription(
-                        $"You have been muted for {durationAmount} {durationType.GetName()} by {ctx.User.Mention} for {reason}")
+                        $"You have been muted for {durationAmount} {durationType} by {ctx.User.Mention} for {reason}")
                     .WithColor(GrimoireColor.Red));
             }
             catch (Exception)

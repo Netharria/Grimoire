@@ -5,14 +5,19 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+
 namespace Grimoire.Features.Leveling.Rewards;
 
 public sealed partial class RewardCommandGroup
 {
-    [SlashCommand("View", "Displays all rewards on this server.")]
-    public async Task ViewAsync(InteractionContext ctx)
+    [Command("View")]
+    [Description("Displays all rewards on this server.")]
+    public async Task ViewAsync(CommandContext ctx)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+        if(ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
         var response = await this._mediator.Send(new GetRewards.Request { GuildId = ctx.Guild.Id });
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             title: "Rewards",

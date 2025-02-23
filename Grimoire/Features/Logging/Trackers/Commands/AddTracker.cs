@@ -5,6 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Logging.Trackers.Commands;
@@ -14,21 +18,32 @@ public sealed class AddTracker
     [RequireGuild]
     [RequireModuleEnabled(Module.MessageLog)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator) : ApplicationCommandModule
+    internal sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
-        [SlashCommand("Track", "Creates a log of a user's activity into the specified channel.")]
-        public async Task TrackAsync(InteractionContext ctx,
-            [Option("User", "User to log.")] DiscordUser user,
-            [Option("DurationType", "Select whether the duration will be in minutes hours or days")]
+        [Command("Track")]
+        [Description("Creates a log of a user's activity into the specified channel.")]
+        public async Task TrackAsync(SlashCommandContext ctx,
+            [Parameter("User")]
+            [Description("The user to log.")]
+            DiscordUser user,
+            [Parameter("DurationType")]
+            [Description("Select whether the duration will be in minutes hours or days.")]
             DurationType durationType,
-            [Minimum(0)] [Option("DurationAmount", "Select the amount of time the logging will last.")]
+            [MinMaxValue(0)]
+            [Parameter("DurationAmount")]
+            [Description("The amount of time the logging will last.")]
             long durationAmount,
-            [Option("Channel", "Select the channel to log to. Current channel if left blank.")]
+            [Parameter("Channel")]
+            [Description("Select the channel to log to. Current channel if left blank.")]
             DiscordChannel? discordChannel = null)
         {
-            await ctx.DeferAsync();
+            await ctx.DeferResponseAsync();
+
+            if (ctx.Guild is null)
+                throw new AnticipatedException("This command can only be used in a server.");
+
             if (user.Id == ctx.Client.CurrentUser.Id)
             {
                 await ctx.EditReplyAsync(message: "Why would I track myself?");
@@ -64,18 +79,18 @@ public sealed class AddTracker
                     GuildId = ctx.Guild.Id,
                     Duration = durationType.GetTimeSpan(durationAmount),
                     ChannelId = discordChannel.Id,
-                    ModeratorId = ctx.Member.Id
+                    ModeratorId = ctx.User.Id
                 });
 
             await ctx.EditReplyAsync(
                 message:
-                $"Tracker placed on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}");
+                $"Tracker placed on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType}");
 
 
             await ctx.Client.SendMessageToLoggingChannel(response.ModerationLogId,
-                embed => embed
+                embed  => embed
                     .WithDescription(
-                        $"{ctx.Member.GetUsernameWithDiscriminator()} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType.GetName()}")
+                        $"{ctx.User.GetUsernameWithDiscriminator()} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType}")
                     .WithColor(GrimoireColor.Purple));
         }
     }

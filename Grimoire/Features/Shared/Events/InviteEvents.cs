@@ -59,5 +59,5 @@ public sealed partial class InviteEvents(
     }
 
     [LoggerMessage(LogLevel.Warning, "Was not able to retrieve audit log entry for deleted invite.")]
-    public static partial void LogAuditError(ILogger logger);
+    static partial void LogAuditError(ILogger logger);
 }

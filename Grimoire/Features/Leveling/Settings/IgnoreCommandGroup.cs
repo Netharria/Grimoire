@@ -5,35 +5,48 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
+
 namespace Grimoire.Features.Leveling.Settings;
 
 [RequireGuild]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 [RequireModuleEnabled(Module.Leveling)]
-[SlashCommandGroup("Ignore", "View or edit who is ignored for xp gain.")]
-public sealed partial class IgnoreCommandGroup(IMediator mediator) : ApplicationCommandModule
+[Command("Ignore")]
+[Description("Commands for updating and viewing the server ignore list.")]
+public sealed partial class IgnoreCommandGroup(IMediator mediator)
 {
     private readonly IMediator _mediator = mediator;
 
-    [SlashCommand("Add", "Ignores a user, channel, or role for xp gains")]
-    public Task IgnoreAsync(InteractionContext ctx,
-        [Option("items", "The users, channels or roles to ignore")]
-        string value) =>
+    [Command("Add")]
+    [Description("Adds a user, channel, or role to the ignored xp list.")]
+    public Task IgnoreAsync(CommandContext ctx,
+        [Parameter("items")]
+        [Description("The user, channel or role to ignore")]
+        IReadOnlyList<SnowflakeObject> value) =>
         this.UpdateIgnoreState(ctx, value, true);
 
-    [SlashCommand("Remove", "Removes a user, channel, or role from the ignored xp list.")]
-    public Task WatchAsync(InteractionContext ctx,
-        [Option("Item", "The user, channel or role to Observe")]
-        string value) =>
+    [Command("Remove")]
+    [Description("Removes a user, channel, or role from the ignored xp list.")]
+    public Task WatchAsync(CommandContext ctx,
+        [Parameter("Item")]
+        [Description("The user, channel or role to remove from the ignore xp list.")]
+        [VariadicArgument(10, 0)]
+        IReadOnlyList<SnowflakeObject> value) =>
         this.UpdateIgnoreState(ctx, value, false);
 
-    private async Task UpdateIgnoreState(InteractionContext ctx, string value, bool shouldIgnore)
+    private async Task UpdateIgnoreState(CommandContext ctx, IReadOnlyList<SnowflakeObject> value, bool shouldIgnore)
     {
-        await ctx.DeferAsync();
-        var matchedIds = await ctx.ParseStringIntoIdsAndGroupByTypeAsync(value)
-            .ToDictionaryAsync(
-                x => x.Key,
-                v => v);
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
+        var matchedIds = value.GroupBy(snowflakeObject => snowflakeObject.GetType().Name)
+            .ToDictionary(group => group.Key,
+                group => group.Select(snowflake => snowflake.Id));
         if (matchedIds.Count == 0 || (matchedIds.ContainsKey("Invalid") && matchedIds.Keys.Count == 1))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "Could not parse any ids from the submitted values.");
@@ -44,23 +57,22 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
             ? new AddIgnoreForXpGain.Command { GuildId = ctx.Guild.Id }
             : new RemoveIgnoreForXpGain.Command { GuildId = ctx.Guild.Id };
 
-        if (matchedIds.TryGetValue("User", out var userIds))
+        if (matchedIds.TryGetValue("DiscordUser", out var userIds))
             command.Users = await userIds
+                .ToAsyncEnumerable()
                 .SelectAwait(async x => await BuildUserDto(ctx.Client, x, ctx.Guild.Id))
                 .OfType<UserDto>()
                 .ToArrayAsync();
 
-        if (matchedIds.TryGetValue("Role", out var roleIds))
-            command.Roles = await roleIds
+        if (matchedIds.TryGetValue("DiscordRole", out var roleIds))
+            command.Roles = roleIds
                 .Select(x =>
-                    new RoleDto { Id = ulong.Parse(x), GuildId = ctx.Guild.Id }).ToArrayAsync();
+                    new RoleDto { Id = x, GuildId = ctx.Guild.Id }).ToArray();
 
-        if (matchedIds.TryGetValue("Channel", out var channelIds))
-            command.Channels = await channelIds
+        if (matchedIds.TryGetValue("DiscordChannel", out var channelIds))
+            command.Channels = channelIds
                 .Select(x =>
-                    new ChannelDto { Id = ulong.Parse(x), GuildId = ctx.Guild.Id }).ToArrayAsync();
-        if (matchedIds.TryGetValue("Invalid", out var invalidIds))
-            command.InvalidIds = await invalidIds.ToArrayAsync();
+                    new ChannelDto { Id = x, GuildId = ctx.Guild.Id }).ToArray();
         var response = await this._mediator.Send(command);
 
 
@@ -71,16 +83,15 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
         await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
     }
 
-    private static async ValueTask<UserDto?> BuildUserDto(DiscordClient client, string idString, ulong guildId)
+    private static async ValueTask<UserDto?> BuildUserDto(DiscordClient client, ulong id, ulong guildId)
     {
-        var id = ulong.Parse(idString);
         if (client.Guilds[guildId].Members.TryGetValue(id, out var member))
             return new UserDto
             {
                 Id = member.Id,
                 Nickname = member.Nickname,
                 Username = member.GetUsernameWithDiscriminator(),
-                AvatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto)
+                AvatarUrl = member.GetGuildAvatarUrl(MediaFormat.Auto)
             };
         try
         {
@@ -91,7 +102,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator) : Application
                 {
                     Id = user.Id,
                     Username = user.GetUsernameWithDiscriminator(),
-                    AvatarUrl = user.GetAvatarUrl(ImageFormat.Auto)
+                    AvatarUrl = user.GetAvatarUrl(MediaFormat.Auto)
                 };
         }
         catch (Exception)

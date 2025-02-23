@@ -5,14 +5,21 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
+
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
 public partial class MuteAdminCommands
 {
-    [SlashCommand("Refresh", "Refreshes the permissions of the currently configured mute role.")]
-    public async Task RefreshMuteRoleAsync(InteractionContext ctx)
+    [Command("Refresh")]
+    [Description("Refreshes the permissions of the currently configured mute role.")]
+    public async Task RefreshMuteRoleAsync(SlashCommandContext ctx)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
 
         var response = await this._mediator.Send(new GetMuteRole.Query { GuildId = ctx.Guild.Id });
 

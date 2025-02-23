@@ -5,28 +5,37 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Shared.Commands;
 
 internal sealed partial class ModuleCommands
 {
-    [SlashCommand("Set", "Enable or Disable a module")]
-    public async Task SetAsync(InteractionContext ctx,
-        [Option("Module", "The module to enable or disable")]
+    [Command("Set")]
+    [Description("Enable or Disable a module.")]
+    public async Task SetAsync(SlashCommandContext ctx,
+        [Parameter("Module")]
+        [Description("The module to enable or disable.")]
         Module module,
-        [Option("Enable", "Whether to enable or disable the module")]
+        [Parameter("Enable")]
+        [Description("Whether to enable or disable the module.")]
         bool enable)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if(ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
+
         var response = await this._mediator.Send(new EnableModule.Request
         {
             GuildId = ctx.Guild.Id, Module = module, Enable = enable
         });
         await ctx.SendLogAsync(response, GrimoireColor.Purple,
             message:
-            $"{ctx.Member.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module.GetName()}");
-        await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module.GetName()}");
+            $"{ctx.User.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module}");
+        await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module}");
     }
 }
 

@@ -5,6 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel;
+using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.Features.Leveling.Queries;
 using Grimoire.Features.Logging.UserLogging.Queries;
 using Grimoire.Features.Moderation.SinAdmin;
@@ -13,16 +16,21 @@ namespace Grimoire.Features.Shared.Commands;
 
 [RequireGuild]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandModule
+internal sealed class UserInfoCommands(IMediator mediator)
 {
     private readonly IMediator _mediator = mediator;
 
-    [SlashCommand("UserInfo", "Gets details about a user including recent Usernames and Nicknames")]
-    public async Task GetUserInfo(InteractionContext ctx,
-        [Option("user", "User to get the info of")]
+    [Command("UserInfo")]
+    [Description("Get information about a user.")]
+    public async Task GetUserInfo(SlashCommandContext ctx,
+        [Parameter("user")]
+        [Description("The user to get the information of.")]
         DiscordUser user)
     {
-        await ctx.DeferAsync();
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
 
         var (color, displayName, avatarUrl, joinDate, roles) = GetUserInfo(user);
 
@@ -58,7 +66,7 @@ internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandM
         {
             color = member.Color;
             displayName = member.DisplayName;
-            avatarUrl = member.GetGuildAvatarUrl(ImageFormat.Auto);
+            avatarUrl = member.GetGuildAvatarUrl(MediaFormat.Auto);
             joinDate = Formatter.Timestamp(member.JoinedAt);
             roles = member.Roles.Select(x => x.Id).ToArray();
         }
@@ -66,7 +74,7 @@ internal sealed class UserInfoCommands(IMediator mediator) : ApplicationCommandM
         {
             color = user.BannerColor ?? DiscordColor.Blurple;
             displayName = user.Username;
-            avatarUrl = user.GetAvatarUrl(ImageFormat.Auto);
+            avatarUrl = user.GetAvatarUrl(MediaFormat.Auto);
             joinDate = "Not On Server";
             roles = [];
         }

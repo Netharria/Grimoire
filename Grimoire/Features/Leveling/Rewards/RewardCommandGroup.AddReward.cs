@@ -6,9 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.ComponentModel;
-using DSharpPlus.Commands;
 using DSharpPlus.Commands.ArgumentModifiers;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Leveling.Rewards;
@@ -17,7 +15,7 @@ public sealed partial class RewardCommandGroup
 {
     [Command("Add")]
     [Description("Adds or updates rewards for the server.")]
-    public async Task AddAsync(SlashCommandContext ctx,
+    public async Task AddAsync(CommandContext ctx,
         [Parameter("Role")]
         [Description("The role to be added as a reward.")]
         DiscordRole role,

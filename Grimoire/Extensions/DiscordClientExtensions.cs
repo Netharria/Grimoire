@@ -86,9 +86,9 @@ public static class DiscordClientExtensions
     public static async Task<string?> GetUserAvatar(this DiscordClient client, ulong userId, DiscordGuild? guild = null)
     {
         if (guild?.Members.TryGetValue(userId, out var member) is true)
-            return member.GetGuildAvatarUrl(ImageFormat.Auto);
+            return member.GetGuildAvatarUrl(MediaFormat.Auto);
         var user = await client.GetUserAsync(userId);
         // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
-        return user?.GetAvatarUrl(ImageFormat.Auto);
+        return user?.GetAvatarUrl(MediaFormat.Auto);
     }
 }
