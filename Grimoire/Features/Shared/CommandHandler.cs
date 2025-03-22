@@ -35,10 +35,8 @@ public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConf
         IReadOnlyDictionary<CommandParameter, object?> commandParameters)
     {
         foreach (var commandParameter in commandParameters)
-        {
             builder.Append(commandParameter.Key.Name).Append(' ')
                 .Append('\'').Append(commandParameter.Value).Append("' ");
-        }
     }
 
     private async Task SendErrorLogToLogChannel(DiscordClient client, string action, Exception exception,

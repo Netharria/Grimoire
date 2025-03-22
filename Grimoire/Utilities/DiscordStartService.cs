@@ -41,6 +41,6 @@ internal sealed partial class DiscordStartService(
     public Task StopAsync(CancellationToken cancellationToken)
         => this._discordClient.DisconnectAsync();
 
-    [LoggerMessage(LogLevel.Warning, "Applied pending migrattings in {time} ms")]
+    [LoggerMessage(LogLevel.Warning, "Applied pending migrations in {time} ms")]
     static partial void LogMigrationDuration(ILogger<DiscordStartService> logger, long time);
 }

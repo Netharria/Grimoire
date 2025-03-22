@@ -5,33 +5,25 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Threading.Channels;
 using System.Threading.RateLimiting;
 using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire;
-using Grimoire.Features.CustomCommands;
-using Grimoire.Features.Leveling.Awards;
 using Grimoire.Features.Leveling.Events;
-using Grimoire.Features.Leveling.Rewards;
-using Grimoire.Features.Leveling.Settings;
-using Grimoire.Features.Leveling.UserCommands;
 using Grimoire.Features.LogCleanup;
 using Grimoire.Features.Logging.MessageLogging.Events;
-using Grimoire.Features.Logging.Settings;
 using Grimoire.Features.Logging.Trackers;
-using Grimoire.Features.Logging.Trackers.Commands;
 using Grimoire.Features.Logging.Trackers.Events;
 using Grimoire.Features.Logging.UserLogging.Events;
-using Grimoire.Features.Moderation.Ban.Commands;
 using Grimoire.Features.Moderation.Ban.Events;
 using Grimoire.Features.Moderation.Lock;
-using Grimoire.Features.Moderation.Lock.Commands;
 using Grimoire.Features.Moderation.Mute;
-using Grimoire.Features.Moderation.Mute.Commands;
-using Grimoire.Features.Moderation.PublishSins;
 using Grimoire.Features.Moderation.SpamFilter;
+using Grimoire.Features.Shared;
+using Grimoire.Features.Shared.Channels;
 using Grimoire.Features.Shared.Commands;
 using Grimoire.Features.Shared.PluralKit;
 using Microsoft.Extensions.Configuration;
@@ -39,6 +31,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Serilog;
+using Channel = System.Threading.Channels.Channel;
 
 var rateLimiter = new SlidingWindowRateLimiter(
     new SlidingWindowRateLimiterOptions
@@ -75,8 +68,16 @@ await Host.CreateDefaultBuilder(args)
             .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
             .AddScoped<IPluralkitService, PluralkitService>()
             .AddSingleton<SpamTrackerModule>()
+            .AddSingleton<Channel<PublishToGuildLog>>(
+                _ => Channel.CreateUnbounded<PublishToGuildLog>(new UnboundedChannelOptions
+                {
+                    SingleReader = true,
+                    SingleWriter = false
+                }))
+            .AddHostedService<PublishToGuildLogProcessor>()
             .ConfigureEventHandlers(eventHandlerBuilder =>
                 eventHandlerBuilder
+                    .AddEventHandlers<CommandHandler>()
                     //Leveling
                     .AddEventHandlers<GainUserXp.EventHandler>()
 
@@ -106,7 +107,7 @@ await Host.CreateDefaultBuilder(args)
                 ResponseMessage = "That's not a valid button",
                 Timeout = TimeSpan.FromMinutes(2),
                 PaginationDeletion = PaginationDeletion.DeleteMessage
-            }).AddCommandsExtension((IServiceProvider serviceProvider, CommandsExtension extension) =>
+            }).AddCommandsExtension((_, extension) =>
             {
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {

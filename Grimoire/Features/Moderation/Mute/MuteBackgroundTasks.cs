@@ -8,6 +8,7 @@
 using System.Runtime.CompilerServices;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Moderation.Mute.Commands;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -67,10 +68,9 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
 
 public sealed class GetExpiredMutes
 {
-    public sealed record Query : IStreamRequest<Response>
-    {
-    }
+    public sealed record Query : IStreamRequest<Response>;
 
+    [UsedImplicitly]
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IStreamRequestHandler<Query, Response>
     {

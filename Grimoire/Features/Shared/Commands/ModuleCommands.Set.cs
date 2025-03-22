@@ -8,6 +8,7 @@
 using System.ComponentModel;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -32,17 +33,22 @@ internal sealed partial class ModuleCommands
         {
             GuildId = ctx.Guild.Id, Module = module, Enable = enable
         });
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message:
-            $"{ctx.User.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module}");
+
         await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module}");
+
+        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        {
+            LogChannelId = response.LogChannelId,
+            Description = $"{ctx.User.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module}",
+            Color = GrimoireColor.Purple
+        });
     }
 }
 
 
 internal sealed class EnableModule
 {
-    public sealed record Request : IRequest<Response>
+    public sealed record Request : IRequest<BaseResponse>
 {
     public ulong GuildId { get; init; }
     public Module Module { get; init; }
@@ -50,11 +56,11 @@ internal sealed class EnableModule
 }
 
 public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-    : IRequestHandler<Request, Response>
+    : IRequestHandler<Request, BaseResponse>
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-    public async Task<Response> Handle(Request command,
+    public async Task<BaseResponse> Handle(Request command,
         CancellationToken cancellationToken)
     {
         var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -81,12 +87,7 @@ public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactor
         if (result.Module is null)
             await dbContext.AddAsync(guildModule, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new Response { ModerationLog = modChannelLog };
+        return new BaseResponse { LogChannelId = modChannelLog };
     }
-}
-
-public sealed record Response : BaseResponse
-{
-    public ulong? ModerationLog { get; init; }
 }
 }

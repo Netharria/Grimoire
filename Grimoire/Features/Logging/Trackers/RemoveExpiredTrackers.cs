@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -37,10 +38,9 @@ public sealed class RemoveExpiredTrackers
         }
     }
 
-    public sealed record Request : IRequest<IEnumerable<Response>>
-    {
-    }
+    public sealed record Request : IRequest<IEnumerable<Response>>;
 
+    [UsedImplicitly]
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, IEnumerable<Response>>
     {

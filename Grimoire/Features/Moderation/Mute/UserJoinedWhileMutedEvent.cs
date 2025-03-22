@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.DatabaseQueryHelpers;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Moderation.Mute;
 
@@ -31,6 +32,7 @@ public sealed class UserJoinedWhileMuted
         public ulong GuildId { get; init; }
     }
 
+    [UsedImplicitly]
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Query, ulong?>
     {

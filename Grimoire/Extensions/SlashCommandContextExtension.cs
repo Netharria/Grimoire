@@ -33,6 +33,7 @@ public static class SlashCommandContextExtension
                 new DiscordWebhookBuilder().AddEmbed(embed)));
     }
 
+    [Obsolete("Use Publish To Guild Log Channel instead.")]
     public static async Task SendLogAsync(this CommandContext ctx,
         BaseResponse response,
         DiscordColor? color,

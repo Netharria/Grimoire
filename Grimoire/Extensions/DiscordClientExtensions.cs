@@ -20,7 +20,7 @@ public static class DiscordClientExtensions
             return null;
         }
     }
-
+    [Obsolete("Use Publish To Guild Log Channel instead.")]
     public static Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId,
         Action<DiscordEmbedBuilder> discordEmbedBuilder)
         => SendMessageToLoggingChannel(client, logChannelId,
@@ -30,7 +30,7 @@ public static class DiscordClientExtensions
                 discordEmbedBuilder(embedBuilder);
                 builder.AddEmbed(embedBuilder);
             });
-
+    [Obsolete("Use Publish To Guild Log Channel instead.")]
     public static async Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client,
         ulong? logChannelId, Action<DiscordMessageBuilder> discordMessageBuilder)
     {
@@ -42,7 +42,7 @@ public static class DiscordClientExtensions
         return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
             await channel.SendMessageAsync(discordMessageBuilder));
     }
-
+    [Obsolete("Use Publish To Guild Log Channel instead.")]
     public static Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId,
         Func<DiscordEmbedBuilder, Task> discordEmbedBuilder)
         => SendMessageToLoggingChannel(client, logChannelId,
@@ -52,7 +52,7 @@ public static class DiscordClientExtensions
                 await discordEmbedBuilder(embedBuilder);
                 builder.AddEmbed(embedBuilder);
             });
-
+    [Obsolete("Use Publish To Guild Log Channel instead.")]
     public static async Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client,
         ulong? logChannelId, Func<DiscordMessageBuilder, Task> discordMessageBuilder)
     {
@@ -68,7 +68,7 @@ public static class DiscordClientExtensions
         return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
             await channel.SendMessageAsync(builder));
     }
-
+    [Obsolete("Use Publish To Guild Log Channel instead.")]
     public static async Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client,
         ulong? logChannelId, Func<Task<DiscordMessageBuilder>> discordMessageBuilder)
     {

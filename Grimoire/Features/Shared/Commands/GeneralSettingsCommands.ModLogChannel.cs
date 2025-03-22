@@ -8,6 +8,8 @@
 using System.ComponentModel;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -45,13 +47,24 @@ internal sealed partial class GeneralSettingsCommands
         if (option is ChannelOption.Off)
         {
             await ctx.EditReplyAsync(message: "Disabled the moderation log.");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the level log.");
+            await this._channel.Writer.WriteAsync(new PublishToGuildLog
+            {
+                LogChannelId = response.LogChannelId,
+                Description = $"{ctx.User.Mention} disabled the level log.",
+                Color = GrimoireColor.Purple
+
+            });
             return;
         }
 
         await ctx.EditReplyAsync(message: $"Updated the moderation log to {channel?.Mention}");
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.User.Mention} updated the moderation log to {channel?.Mention}.");
+        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        {
+            LogChannelId = response.LogChannelId,
+            Description = $"{ctx.User.Mention} updated the moderation log to {channel?.Mention}.",
+            Color = GrimoireColor.Purple
+
+        });
     }
 }
 
@@ -63,6 +76,7 @@ internal sealed class SetModLog
         public ulong? ChannelId { get; init; }
     }
 
+    [UsedImplicitly]
     internal sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, BaseResponse>
     {

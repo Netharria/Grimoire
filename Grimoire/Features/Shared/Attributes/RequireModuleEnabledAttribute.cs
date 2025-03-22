@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.DatabaseQueryHelpers;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Features.Shared.Attributes;
@@ -21,9 +22,7 @@ internal sealed class RequireModuleEnabledCheck : IContextCheck<RequireModuleEna
     public async ValueTask<string?> ExecuteCheckAsync(RequireModuleEnabledAttribute attribute, CommandContext context)
     {
         if (context.Guild is null)
-        {
-            return "This command can only be used in a server.";
-        }
+                return "This command can only be used in a server.";
         var mediator = context.ServiceProvider.GetRequiredService<IMediator>();
         var result = await mediator.Send(new GetModuleStateForGuild.Request { GuildId = context.Guild.Id, Module = attribute.Module });
         return !result ? "This module is disabled in this server." : null;
@@ -38,6 +37,7 @@ internal sealed class GetModuleStateForGuild
         public Module Module { get; init; }
     }
 
+    [UsedImplicitly]
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, bool>
     {

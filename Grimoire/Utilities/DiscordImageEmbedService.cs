@@ -144,6 +144,6 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
 
 internal readonly struct ImageDownloadResult
 {
-    public readonly string Url { get; init; }
-    public readonly Stream? Stream { get; init; }
+    public string Url { get; init; }
+    public Stream? Stream { get; init; }
 }

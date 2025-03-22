@@ -10,10 +10,10 @@ namespace Grimoire.Structs;
 public struct PermissionValues
 {
     public static DiscordPermissions LockPermissions
-        => new DiscordPermissions(new []{DiscordPermission.SendMessages, DiscordPermission.SendThreadMessages,
+        => new (new []{DiscordPermission.SendMessages, DiscordPermission.SendThreadMessages,
             DiscordPermission.SendTtsMessages, DiscordPermission.AddReactions});
 
     public static DiscordPermissions VoiceLockPermissions
-        => new DiscordPermissions(new[] { DiscordPermission.Connect, DiscordPermission.Speak });
+        => new(new[] { DiscordPermission.Connect, DiscordPermission.Speak });
 
 }

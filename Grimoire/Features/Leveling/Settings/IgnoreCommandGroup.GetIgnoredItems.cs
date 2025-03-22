@@ -12,7 +12,6 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire.DatabaseQueryHelpers;
-using Microsoft.VisualBasic;
 using ChannelExtensions = Grimoire.Extensions.ChannelExtensions;
 
 namespace Grimoire.Features.Leveling.Settings;

@@ -8,6 +8,8 @@
 using System.ComponentModel;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -37,14 +39,24 @@ internal sealed partial class GeneralSettingsCommands
         if (option is ChannelOption.Off)
         {
             await ctx.EditReplyAsync(message: "Disabled the User Command Channel.");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                $"{ctx.User.Mention} disabled the User Command Channel.");
+            await this._channel.Writer.WriteAsync(new PublishToGuildLog
+            {
+                LogChannelId = response.LogChannelId,
+                Description = $"{ctx.User.Mention} disabled the User Command Channel.",
+                Color = GrimoireColor.Purple
+
+            });
             return;
         }
 
         await ctx.EditReplyAsync(message: $"Updated the User Command Channel to {channel?.Mention}");
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.User.Mention} updated the User Command Channel to {channel?.Mention}.");
+        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        {
+            LogChannelId = response.LogChannelId,
+            Description = $"{ctx.User.Mention} updated the User Command Channel to {channel?.Mention}.",
+            Color = GrimoireColor.Purple
+
+        });
     }
 }
 
@@ -56,6 +68,7 @@ public sealed class SetUserCommandChannel
         public ulong? ChannelId { get; init; }
     }
 
+    [UsedImplicitly]
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IRequestHandler<Request, BaseResponse>
     {
