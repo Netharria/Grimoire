@@ -57,7 +57,6 @@ public sealed class UpdatedNicknameEvent
             {
                 UserId = args.Member.Id,
                 GuildId = args.Guild.Id,
-                Username = args.Member.GetUsernameWithDiscriminator(),
                 BeforeNickname = nicknameResponse.BeforeNickname,
                 AfterNickname = nicknameResponse.AfterNickname
             });

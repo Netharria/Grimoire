@@ -64,8 +64,6 @@ public sealed class UpdatedAvatarEvent
             {
                 UserId = args.Member.Id,
                 GuildId = args.Guild.Id,
-                Username = args.Member.GetUsernameWithDiscriminator(),
-                BeforeAvatar = avatarResponse.BeforeAvatar,
                 AfterAvatar = avatarResponse.AfterAvatar
             });
         }
