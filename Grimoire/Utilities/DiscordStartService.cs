@@ -22,20 +22,23 @@ internal sealed partial class DiscordStartService(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        {
-            var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
-            if (pendingMigrations.Any())
-            {
-                Stopwatch sw = new();
-                sw.Start();
-                await context.Database.MigrateAsync(cancellationToken);
-                sw.Stop();
-                LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
-            }
-        }
+        await ApplyDatabaseMigrations(cancellationToken);
         //connect client
         await this._discordClient.ConnectAsync();
+    }
+
+    private async Task ApplyDatabaseMigrations(CancellationToken cancellationToken)
+    {
+        await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
+        if (pendingMigrations.Any())
+        {
+            Stopwatch sw = new();
+            sw.Start();
+            await context.Database.MigrateAsync(cancellationToken);
+            sw.Stop();
+            LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

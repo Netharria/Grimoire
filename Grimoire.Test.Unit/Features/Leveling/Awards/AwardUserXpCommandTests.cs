@@ -86,6 +86,6 @@ public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyn
             new AwardUserXp.Request { UserId = 20001, GuildId = GuildId, XpToAward = 20 }, default));
 
         response.Should().NotBeNull();
-        response?.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
+        response.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
     }
 }

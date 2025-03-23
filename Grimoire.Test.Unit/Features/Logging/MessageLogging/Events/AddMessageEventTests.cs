@@ -29,7 +29,6 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
     private const ulong UserId = 1;
     private const ulong UserId2 = 2;
     private const ulong MessageId1 = 1;
-    private const ulong MessageId2 = 2;
 
     private readonly Func<GrimoireDbContext> _createDbContext = () => new GrimoireDbContext(
         new DbContextOptionsBuilder<GrimoireDbContext>()

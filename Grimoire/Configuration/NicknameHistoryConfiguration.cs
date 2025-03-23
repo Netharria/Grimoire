@@ -22,7 +22,6 @@ internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<Ni
         builder.Property(x => x.Nickname)
             .HasMaxLength(32)
             .IsRequired(false);
-        ;
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
     }

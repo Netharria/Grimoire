@@ -88,6 +88,6 @@ public class LinkProxyMessageTests(GrimoireCoreFactory factory) : IAsyncLifetime
 
         result.Should().NotBeNull();
         result!.SystemId.Should().Be("SystemId");
-        result!.MemberId.Should().Be("MemberId");
+        result.MemberId.Should().Be("MemberId");
     }
 }

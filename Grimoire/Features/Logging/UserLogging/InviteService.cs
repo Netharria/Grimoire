@@ -29,21 +29,21 @@ public sealed class InviteService : IInviteService
         guild.Invites.AddOrUpdate(
             invite.Code,
             invite,
-            (code, existingInvite) => invite);
+            (_, _) => invite);
     }
 
     public void UpdateGuildInvites(GuildInviteDto guildInvites)
         => this._guilds.AddOrUpdate(
             guildInvites.GuildId,
             guildInvites,
-            (guildId, existingGuild) => guildInvites);
+            (_, _) => guildInvites);
 
     public void UpdateAllInvites(List<GuildInviteDto> guildInvites)
         => guildInvites.ForEach(guild =>
             this._guilds.AddOrUpdate(
                 guild.GuildId,
                 guild,
-                (guildId, existingGuild) => guild));
+                (_, _) => guild));
 
     public Invite? CalculateInviteUsed(GuildInviteDto guildInvites)
     {

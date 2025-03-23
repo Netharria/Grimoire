@@ -39,7 +39,7 @@ internal sealed class GuildMemberAddedEvent(IMediator mediator, IInviteService i
                         MaxUses = x.MaxUses
                     }).ToDictionary(x => x.Code))
         });
-        var inviteUsedText = "";
+        string? inviteUsedText;
         if (inviteUsed is not null)
             inviteUsedText = $"{inviteUsed.Url} ({inviteUsed.Uses} uses)\n**Created By:** {inviteUsed.Inviter}";
         else if (!string.IsNullOrWhiteSpace(args.Guild.VanityUrlCode))

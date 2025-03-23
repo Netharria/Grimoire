@@ -11,7 +11,6 @@ public sealed record NicknameUpdatedNotification : INotification
 {
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
-    public string Username { get; init; } = string.Empty;
     public string? BeforeNickname { get; init; }
     public string? AfterNickname { get; init; }
 }
