@@ -8,11 +8,13 @@
 using System.ComponentModel;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
 
 internal sealed partial class ModuleCommands
 {
+    [UsedImplicitly]
     [Command("View")]
     [Description("View the current states of the modules.")]
     public async Task ViewAsync(SlashCommandContext ctx)

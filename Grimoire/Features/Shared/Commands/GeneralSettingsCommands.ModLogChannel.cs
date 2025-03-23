@@ -15,6 +15,7 @@ namespace Grimoire.Features.Shared.Commands;
 
 internal sealed partial class GeneralSettingsCommands
 {
+    [UsedImplicitly]
     [Command("ModLogChannel")]
     [Description("Set the moderation log channel.")]
     public async Task SetAsync(

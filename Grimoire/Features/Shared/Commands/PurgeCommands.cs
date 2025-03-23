@@ -9,6 +9,7 @@ using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -17,21 +18,23 @@ namespace Grimoire.Features.Shared.Commands;
 [Description("Delete several recent messages at once.")]
 internal sealed class PurgeCommands
 {
+    [UsedImplicitly]
     [Command("All")]
     [Description("Deletes all messages in the channel.")]
     public static async Task AllAsync(SlashCommandContext ctx,
         [MinMaxValue(0, 1000)]
         [Parameter("Count")]
         [Description("The number of messages to delete.")]
-        long count)
+        int count)
     {
         await ctx.DeferResponseAsync(true);
         var messagesDeleted = await ctx.Channel
-            .PurgeMessagesAsync((int)count, $"{ctx.User.Username} purged these messages.");
+            .PurgeMessagesAsync(count, $"{ctx.User.Username} purged these messages.");
         await ctx.EditReplyAsync(GrimoireColor.Green,
             PurgeMessageBuilder(messagesDeleted));
     }
 
+    [UsedImplicitly]
     [Command("User")]
     [Description("Deletes all messages that were sent by this user.")]
     public static async Task UserAsync(SlashCommandContext ctx,
@@ -41,11 +44,11 @@ internal sealed class PurgeCommands
         [MinMaxValue(0, 1000)]
         [Parameter("Count")]
         [Description("The number of matching messages to delete.")]
-        long count)
+        int count)
     {
         await ctx.DeferResponseAsync(true);
         var messagesDeleted = await ctx.Channel
-            .PurgeMessagesAsync((int)count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
+            .PurgeMessagesAsync(count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
                 messages => messages.Author is not null && messages.Author == user);
         await ctx.EditReplyAsync(GrimoireColor.Green,
             PurgeMessageBuilder(messagesDeleted));

@@ -10,6 +10,8 @@ using System.ComponentModel;
 using System.Text.RegularExpressions;
 using DSharpPlus.Commands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -18,6 +20,8 @@ public sealed partial class CustomCommandSettings
     [GeneratedRegex(@"[0-9A-Fa-f]{6}\b", RegexOptions.None, 1000)]
     private static partial Regex ValidHexColor();
 
+    //todo: fix this when variadic arguments are fixed
+    [UsedImplicitly]
     [Command("Learn")]
     [Description("Learn a new command or update an existing one")]
     public async Task Learn(
@@ -36,14 +40,19 @@ public sealed partial class CustomCommandSettings
         [MinMaxLength(maxLength: 6)]
         [Parameter("EmbedColor")]
         [Description("Hexadecimal color of the embed")]
-        string? embedColor = null,
-        [Parameter("RestrictedUse")]
-        [Description("Only explicitly allowed roles can use this command")]
-        bool restrictedUse = false,
-        [Parameter("PermissionRoles")]
-        [Description("Deny roles the ability to use this command or allow roles if command is restricted use")]
-        [VariadicArgument(10)] IReadOnlyList<DiscordRole>? allowedRoles = null)
+        string? embedColor = null
+        // ,
+        // [Parameter("RestrictedUse")]
+        // [Description("Only explicitly allowed roles can use this command")]
+        // bool restrictedUse = false,
+        // [Parameter("PermissionRoles")]
+        // [Description("Deny roles the ability to use this command or allow roles if command is restricted use")]
+        // [VariadicArgument(10)]
+        // IReadOnlyList<DiscordRole>? allowedRoles = null
+        )
     {
+        IReadOnlyList<DiscordRole> allowedRoles;
+        const bool restrictedUse = false;
         await ctx.DeferResponseAsync();
 
         if (name.Contains(' '))
@@ -64,7 +73,7 @@ public sealed partial class CustomCommandSettings
             return;
         }
 
-        allowedRoles ??= new List<DiscordRole>();
+        allowedRoles = Array.Empty<DiscordRole>();
 
         var permissionRoles = allowedRoles.Select(role =>
             new RoleDto {Id = role.Id, GuildId = ctx.Guild.Id }).ToList();
@@ -87,7 +96,13 @@ public sealed partial class CustomCommandSettings
         });
 
         await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);
-        await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
+        await this._channel.Writer.WriteAsync(
+            new PublishToGuildLog
+            {
+                LogChannelId = response.LogChannelId,
+                Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember} to learn a new command: {name}",
+                Color = GrimoireColor.Purple
+            });
     }
 }
 

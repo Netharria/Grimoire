@@ -17,16 +17,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Shared;
 
-/// <summary>
-///     Initializes a new instance of the <see cref="CommandHandler" /> class.
-/// </summary>
-/// <param name="logger"></param>
 
-//must implement new command framework before this will work.
+//todo: convert these to static methods if DI is not possible
 public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConfiguration configuration)
  : IEventHandler<ClientErrorEventArgs>,
    IEventHandler<CommandErroredEventArgs>,
-    IEventHandler<CommandExecutedEventArgs>
+   IEventHandler<CommandExecutedEventArgs>
 {
     private readonly IConfiguration _configuration = configuration;
     private readonly ILogger<CommandHandler> _logger = logger;

@@ -9,11 +9,13 @@ using System.ComponentModel;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
 
 internal sealed partial class ModuleCommands
 {
+    [UsedImplicitly]
     [Command("Set")]
     [Description("Enable or Disable a module.")]
     public async Task SetAsync(SlashCommandContext ctx,

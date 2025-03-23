@@ -18,6 +18,7 @@ public static class DiscordChannelExtensions
         filter ??= _ => true;
         var oldTimestamp = DateTimeOffset.UtcNow.AddDays(-14);
         var messages = await channel.GetMessagesAsync()
+            .OrderByDescending(x => x.Timestamp)
             .Where(filter)
             .TakeWhile(x => x.Timestamp > oldTimestamp)
             .Take(count)

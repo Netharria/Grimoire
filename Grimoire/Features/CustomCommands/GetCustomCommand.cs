@@ -21,14 +21,14 @@ public sealed class GetCustomCommand
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Commands)]
-    internal sealed class Command(IMediator mediator)
+    public sealed class Command(IMediator mediator)
     {
         private readonly IMediator _mediator = mediator;
 
         [Command("Command")]
         [Description("Call a custom command.")]
         [UsedImplicitly]
-        internal async Task CallCommand(
+        public async Task CallCommand(
             CommandContext ctx,
             [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
             [Parameter("CommandName")]

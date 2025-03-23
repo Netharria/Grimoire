@@ -6,8 +6,10 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.ComponentModel;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
@@ -16,9 +18,9 @@ public sealed partial class CustomCommandSettings
 {
     [UsedImplicitly]
     [Command("Forget")]
-    [Description("Forget a command that you have saved. This will remove the command from the bot's memory and it will no longer be available.")]
-    internal async Task Forget(
-        CommandContext ctx,
+    [Description("Forget a command that you have saved.")]
+    public async Task Forget(
+        SlashCommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
         [Parameter("Name")]
         [Description("The name of the command to forget.")]
@@ -35,7 +37,12 @@ public sealed partial class CustomCommandSettings
         });
 
         await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);
-        await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
+        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        {
+            LogChannelId = response.LogChannelId,
+            Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember} to forget command: {name}",
+            Color = GrimoireColor.Purple
+        });
     }
 }
 

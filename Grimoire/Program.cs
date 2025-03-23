@@ -12,6 +12,7 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire;
+using Grimoire.Features.CustomCommands;
 using Grimoire.Features.Leveling.Events;
 using Grimoire.Features.LogCleanup;
 using Grimoire.Features.Logging.MessageLogging.Events;
@@ -111,50 +112,30 @@ await Host.CreateDefaultBuilder(args)
             {
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
-                    //extension.RegisterCommands<EmptyCommands>(guildId);
-                    // extension.AddCommands<CustomCommandSettings>(guildId);
-                    // extension.AddCommands<GetCustomCommand.Command>(guildId);
+                    extension.AddCommands<GeneralSettingsCommands>(guildId);
+                    extension.AddCommands<PurgeCommands>(guildId);
+                    extension.AddCommands<UserInfoCommands>(guildId);
+                    extension.AddCommands<CustomCommandSettings>(guildId);
+                    extension.AddCommands<GetCustomCommand.Command>(guildId);
                 }
 
                 //Shared
                 extension.AddCommands<ModuleCommands>();
-                // extension.AddCommands<GeneralSettingsCommands>();
-                // extension.AddCommands<PurgeCommands>();
-                // extension.AddCommands<UserInfoCommands>();
-                //
-                //
-                // ////Leveling
-                // extension.AddCommands<AwardUserXp.Command>();
-                // extension.AddCommands<ReclaimUserXp.Command>();
-                // extension.AddCommands<RewardCommandGroup>();
-                // extension.AddCommands<IgnoreCommandGroup>();
-                // extension.AddCommands<LevelSettingsCommandGroup>();
-                // extension.AddCommands<GetLeaderboard.Command>();
-                // extension.AddCommands<GetLevel.Command>();
-                //
-                // ////Logging
-                // extension.AddCommands<LogSettingsCommands>();
-                // extension.AddCommands<AddTracker.Command>();
-                // extension.AddCommands<RemoveTracker.Command>();
-                //
-                // ////Moderation
-                // //extension.AddCommands<ModerationSettingsCommands>();
-                // extension.AddCommands<MuteAdminCommands>();
-                // extension.AddCommands<AddBanCommand>();
-                // extension.AddCommands<RemoveBanCommand>();
-                // //extension.AddCommands<SinAdminCommands>();
-                // extension.AddCommands<LockChannel.Command>();
-                // extension.AddCommands<UnlockChannel.Command>();
-                // extension.AddCommands<PublishCommands>();
-                // //extension.AddCommands<SinLogCommands>();
-                // //extension.AddCommands<MuteCommands>();
-                // //extension.AddCommands<WarnCommands>();
-                // ////Custom Commands
-                // extension.AddCommands<CustomCommandSettings>();
-                // extension.AddCommands<GetCustomCommand.Command>();
+
+
+                // Leveling
+
+                // Logging
+
+                // Moderation
+
+                // Custom Commands
 
                 extension.AddCheck<RequireModuleEnabledCheck>();
                 extension.AddCheck<RequireUserGuildPermissionsCheck>();
+            }, new CommandsConfiguration()
+            {
+                // UseDefaultCommandErrorHandler = false,
             })
             .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<Program>())
             .AddHostedService<CleanupLogs.BackgroundTask>()

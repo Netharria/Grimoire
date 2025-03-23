@@ -15,6 +15,7 @@ namespace Grimoire.Features.Shared.Commands;
 
 internal sealed partial class GeneralSettingsCommands
 {
+    [UsedImplicitly]
     [Command("UserCommands")]
     [Description("Set the channel where some commands are visible for non moderators.")]
     public async Task SetUserCommandChannelAsync(

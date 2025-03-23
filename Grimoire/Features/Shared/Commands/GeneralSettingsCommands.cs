@@ -9,7 +9,6 @@ using System.ComponentModel;
 using System.Threading.Channels;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels;
-using Channel = System.Threading.Channels.Channel;
 
 namespace Grimoire.Features.Shared.Commands;
 
