@@ -13,19 +13,15 @@ using DSharpPlus.Commands.Trees;
 using DSharpPlus.Exceptions;
 using EntityFramework.Exceptions.Common;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Shared;
 
 
 //todo: convert these to static methods if DI is not possible
-public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConfiguration configuration)
- : IEventHandler<ClientErrorEventArgs>,
-   IEventHandler<CommandErroredEventArgs>,
-   IEventHandler<CommandExecutedEventArgs>
+public sealed partial class CommandHandler : IClientErrorHandler
 {
-    private readonly IConfiguration _configuration = configuration;
-    private readonly ILogger<CommandHandler> _logger = logger;
 
     private static void BuildCommandLogAsync(StringBuilder builder,
         IReadOnlyDictionary<CommandParameter, object?> commandParameters)
@@ -35,14 +31,15 @@ public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConf
                 .Append('\'').Append(commandParameter.Value).Append("' ");
     }
 
-    private async Task SendErrorLogToLogChannel(DiscordClient client, string action, Exception exception,
+    private static async Task SendErrorLogToLogChannel(DiscordClient client, string action, Exception exception,
         string? errorId = "")
     {
         if (action.Equals("COMMAND_ERRORED") && exception is NullReferenceException)
             return;
         if (exception is UniqueConstraintException)
             return;
-        if (!ulong.TryParse(this._configuration.GetSection("channelId").Value, out var channelId))
+        var configuration = client.ServiceProvider.GetRequiredService<IConfiguration>();
+        if (!ulong.TryParse(configuration.GetSection("channelId").Value, out var channelId))
             return;
         var channel = await client.GetChannelOrDefaultAsync(channelId);
         if (channel is not null)
@@ -66,11 +63,12 @@ public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConf
                                            $"```csharp\n{exceptionMessage}\n{shortStackTrace}\n```");
         }
     }
+    public async ValueTask HandleEventHandlerError(string name, Exception exception, Delegate invokedDelegate, object sender,
+        object args) => await SendErrorLogToLogChannel((DiscordClient) sender, name, exception);
 
-    public async Task HandleEventAsync(DiscordClient sender, ClientErrorEventArgs args)
-        => await this.SendErrorLogToLogChannel(sender, args.EventName, args.Exception);
+    public ValueTask HandleGatewayError(Exception exception) => ValueTask.CompletedTask;
 
-    public async Task HandleEventAsync(DiscordClient sender, CommandErroredEventArgs args)
+    public static async Task HandleEventAsync(DiscordClient sender, CommandErroredEventArgs args)
     {
         if (args.Exception is AnticipatedException)
             await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
@@ -90,7 +88,7 @@ public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConf
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (commandOptions is not null)
                 BuildCommandLogAsync(log.Append(' '), commandOptions);
-            LogCommandError(this._logger,
+            LogCommandError(sender.Logger,
                 args.Exception,
                 errorHexString,
                 args.Context.Command.Name,
@@ -100,7 +98,7 @@ public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConf
                 .WithColor(GrimoireColor.Yellow)
                 .WithDescription(
                     $"Encountered exception while executing {args.Context.Command.Name} [ID {errorHexString}]"));
-            await this.SendErrorLogToLogChannel(sender, args.Context.Command.Name, args.Exception,
+            await SendErrorLogToLogChannel(sender, args.Context.Command.Name, args.Exception,
                 errorHexString);
         }
     }
@@ -121,14 +119,14 @@ public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConf
     static partial void LogCommandError(ILogger logger, Exception ex, string errorId,
         string interactionName, string interactionOptions);
 
-    public Task HandleEventAsync(DiscordClient sender, CommandExecutedEventArgs args)
+    public static Task HandleEventAsync(DiscordClient sender, CommandExecutedEventArgs args)
     {
         var commandOptions = args.Context.Arguments;
         var log = new StringBuilder();
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (commandOptions.Count > 0)
             BuildCommandLogAsync(log.Append(' '), commandOptions);
-        LogCommandInvoked(this._logger,
+        LogCommandInvoked(sender.Logger,
             args.Context.Command.Name,
             log.ToString());
         return Task.CompletedTask;
@@ -136,4 +134,5 @@ public sealed partial class CommandHandler(ILogger<CommandHandler> logger, IConf
 
     [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
     static partial void LogCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
+
 }

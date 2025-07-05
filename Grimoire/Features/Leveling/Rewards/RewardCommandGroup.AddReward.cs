@@ -8,6 +8,7 @@
 using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -19,10 +20,9 @@ public sealed partial class RewardCommandGroup
         [Parameter("Role")]
         [Description("The role to be added as a reward.")]
         DiscordRole role,
-        [MinMaxValue(1, int.MaxValue)]
         [Parameter("Level")]
         [Description("The level the reward is awarded at.")]
-        long level,
+        int level,
         [MinMaxLength(maxLength:4096)]
         [Parameter("Message")]
         [Description("The message to send to users when they earn a reward. Discord Markdown applies.")]
@@ -42,11 +42,16 @@ public sealed partial class RewardCommandGroup
             {
                 RoleId = role.Id,
                 GuildId = ctx.Guild.Id,
-                RewardLevel = (int)level,
+                RewardLevel = level,
                 Message = string.IsNullOrWhiteSpace(message) ? null : message
             });
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, response.Message);
-        await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
+        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        {
+            LogChannelId = response.LogChannelId,
+            Color = GrimoireColor.DarkPurple,
+            Description = response.Message
+        });
     }
 }
 

@@ -15,7 +15,6 @@ public sealed class GainUserXp
 
         public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
         {
-            throw new Exception("Test");
             if (args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply
                 || args.Author is not DiscordMember member
                 || member.IsBot)

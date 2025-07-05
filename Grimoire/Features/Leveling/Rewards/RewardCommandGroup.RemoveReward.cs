@@ -7,6 +7,7 @@
 
 
 using System.ComponentModel;
+using Grimoire.Features.Shared.Channels;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -24,7 +25,12 @@ public sealed partial class RewardCommandGroup
             new RemoveReward.Request { RoleId = role.Id });
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, response.Message);
-        await ctx.SendLogAsync(response, GrimoireColor.DarkPurple);
+        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        {
+            LogChannelId = response.LogChannelId,
+            Color = GrimoireColor.DarkPurple,
+            Description = response.Message
+        });
     }
 }
 

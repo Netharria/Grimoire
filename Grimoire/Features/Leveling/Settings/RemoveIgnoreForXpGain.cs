@@ -18,7 +18,6 @@ public sealed class RemoveIgnoreForXpGain
         public IReadOnlyCollection<UserDto> Users { get; set; } = [];
         public IReadOnlyCollection<RoleDto> Roles { get; set; } = [];
         public IReadOnlyCollection<ChannelDto> Channels { get; set; } = [];
-        public IReadOnlyCollection<string> InvalidIds { get; set; } = [];
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -44,7 +43,7 @@ public sealed class RemoveIgnoreForXpGain
                     dbContext.IgnoredMembers.RemoveRange(allUsersToIgnore);
             }
 
-            if (command.Roles.Any())
+            if (command.Roles.Count != 0)
             {
                 var rolesIds = command.Roles.Select(x => x.Id).ToArray();
                 var allRolesToIgnore = await dbContext.IgnoredRoles
@@ -56,7 +55,7 @@ public sealed class RemoveIgnoreForXpGain
                     dbContext.IgnoredRoles.RemoveRange(allRolesToIgnore);
             }
 
-            if (command.Channels.Any())
+            if (command.Channels.Count != 0)
             {
                 var channelIds = command.Channels.Select(x => x.Id).ToArray();
                 var allChannelsToIgnore = await dbContext.IgnoredChannels
@@ -70,14 +69,8 @@ public sealed class RemoveIgnoreForXpGain
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            var couldNotMatch = new StringBuilder();
-            if (command.InvalidIds.Any())
-                foreach (var id in command.InvalidIds)
-                    couldNotMatch.Append(id).Append(' ');
 
             var finalString = new StringBuilder();
-            if (couldNotMatch.Length > 0)
-                finalString.Append("Could not match ").Append(couldNotMatch).Append("with a role, channel or user. ");
             if (newIgnoredItems.Length > 0)
                 finalString.Append(newIgnoredItems).Append(" are no longer ignored for xp gain.");
             var modChannelLog = await dbContext.Guilds

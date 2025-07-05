@@ -13,7 +13,11 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire;
 using Grimoire.Features.CustomCommands;
+using Grimoire.Features.Leveling.Awards;
 using Grimoire.Features.Leveling.Events;
+using Grimoire.Features.Leveling.Rewards;
+using Grimoire.Features.Leveling.Settings;
+using Grimoire.Features.Leveling.UserCommands;
 using Grimoire.Features.LogCleanup;
 using Grimoire.Features.Logging.MessageLogging.Events;
 using Grimoire.Features.Logging.Trackers;
@@ -78,7 +82,6 @@ await Host.CreateDefaultBuilder(args)
             .AddHostedService<PublishToGuildLogProcessor>()
             .ConfigureEventHandlers(eventHandlerBuilder =>
                 eventHandlerBuilder
-                    .AddEventHandlers<CommandHandler>()
                     //Leveling
                     .AddEventHandlers<GainUserXp.EventHandler>()
 
@@ -112,19 +115,25 @@ await Host.CreateDefaultBuilder(args)
             {
                 if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
-                    extension.AddCommands<GeneralSettingsCommands>(guildId);
-                    extension.AddCommands<PurgeCommands>(guildId);
-                    extension.AddCommands<UserInfoCommands>(guildId);
-                    extension.AddCommands<CustomCommandSettings>(guildId);
-                    extension.AddCommands<GetCustomCommand.Command>(guildId);
+
                 }
 
                 //Shared
                 extension.AddCommands<ModuleCommands>();
-
+                extension.AddCommands<GeneralSettingsCommands>();
+                extension.AddCommands<PurgeCommands>();
+                extension.AddCommands<UserInfoCommands>();
+                extension.AddCommands<CustomCommandSettings>();
+                extension.AddCommands<GetCustomCommand.Command>();
 
                 // Leveling
-
+                extension.AddCommands<AwardUserXp.Command>();
+                extension.AddCommands<ReclaimUserXp.Command>();
+                extension.AddCommands<RewardCommandGroup>();
+                extension.AddCommands<IgnoreCommandGroup>();
+                extension.AddCommands<LevelSettingsCommandGroup>();
+                extension.AddCommands<GetLevel.Command>();
+                extension.AddCommands<GetLeaderboard.Command>();
                 // Logging
 
                 // Moderation
@@ -133,9 +142,13 @@ await Host.CreateDefaultBuilder(args)
 
                 extension.AddCheck<RequireModuleEnabledCheck>();
                 extension.AddCheck<RequireUserGuildPermissionsCheck>();
+                extension.CommandErrored += (sender, eventArgs)
+                    => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
+                extension.CommandExecuted += (sender, eventArgs)
+                    => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
             }, new CommandsConfiguration()
             {
-                // UseDefaultCommandErrorHandler = false,
+                UseDefaultCommandErrorHandler = false,
             })
             .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<Program>())
             .AddHostedService<CleanupLogs.BackgroundTask>()

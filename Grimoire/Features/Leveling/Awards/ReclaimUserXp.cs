@@ -40,7 +40,7 @@ public sealed class ReclaimUserXp
             [MinMaxValue(0)]
             [Parameter("Amount")]
             [Description("The amount of xp to take.")]
-            long amount = 0)
+            int amount = 0)
         {
             await ctx.DeferResponseAsync();
             if (ctx.Guild is null)

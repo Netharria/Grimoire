@@ -30,7 +30,7 @@ public sealed class AwardUserXp
             [MinMaxValue(0)]
             [Parameter("XP")]
             [Description("The amount of xp to grant.")]
-            long xpToAward)
+            int xpToAward)
         {
             await ctx.DeferResponseAsync();
             if(ctx.Guild is null)

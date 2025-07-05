@@ -9,6 +9,7 @@
 using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+using Grimoire.Features.Shared.Channels;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -35,7 +36,7 @@ public sealed partial class LevelSettingsCommandGroup
         [MinMaxValue(1, int.MaxValue)]
         [Parameter("Value")]
         [Description("The value to change the setting to.")]
-        long value)
+        int value)
     {
         await ctx.DeferResponseAsync();
 
@@ -48,8 +49,12 @@ public sealed partial class LevelSettingsCommandGroup
         });
 
         await ctx.EditReplyAsync(message: $"Updated {levelSettings} level setting to {value}");
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.User.Mention} updated {levelSettings} level setting to {value}");
+        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        {
+            LogChannelId = response.LogChannelId,
+            Color = GrimoireColor.DarkPurple,
+            Description = $"{ctx.User.Mention} updated {levelSettings} level setting to {value}"
+        });
     }
 
     [Command("LogSet")]
@@ -86,13 +91,22 @@ public sealed partial class LevelSettingsCommandGroup
         if (option is ChannelOption.Off)
         {
             await ctx.EditReplyAsync(message: "Disabled the level log.");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple, $"{ctx.User.Mention} disabled the level log.");
+            await this._channel.Writer.WriteAsync(new PublishToGuildLog
+            {
+                LogChannelId = response.LogChannelId,
+                Color = GrimoireColor.DarkPurple,
+                Description = $"{ctx.User.Mention} disabled the level log."
+            });
             return;
         }
 
         await ctx.EditReplyAsync(message: $"Updated the level log to {channel?.Mention}");
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.User.Mention} updated the level log to {channel?.Mention}.");
+        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        {
+            LogChannelId = response.LogChannelId,
+            Color = GrimoireColor.DarkPurple,
+            Description = $"{ctx.User.Mention} updated the level log to {channel?.Mention}."
+        });
     }
 }
 
