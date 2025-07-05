@@ -5,13 +5,17 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using JetBrains.Annotations;
+
 namespace Grimoire.Domain;
+
+[UsedImplicitly]
 public class ProxiedMessageLink
 {
-    public ulong ProxyMessageId { get; set; }
-    public virtual Message ProxyMessage { get; set; } = null!;
-    public ulong OriginalMessageId { get; set; }
-    public virtual Message OriginalMessage { get; set; } = null!;
-    public string? SystemId { get; set; }
-    public string? MemberId { get; set; }
+    public ulong ProxyMessageId { get; init; }
+    public virtual Message ProxyMessage { get; init; } = null!;
+    public ulong OriginalMessageId { get; init; }
+    public virtual Message OriginalMessage { get; init; } = null!;
+    public string? SystemId { get; init; }
+    public string? MemberId { get; init; }
 }

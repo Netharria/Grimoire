@@ -9,7 +9,7 @@ using System.Numerics;
 
 namespace Grimoire.Domain.Shared;
 
-public interface IIdentifiable<T> where T : IBinaryInteger<T>
+public interface IIdentifiable<out T> where T : IBinaryInteger<T>
 {
-    public T Id { get; set; }
+    public T Id { get; }
 }

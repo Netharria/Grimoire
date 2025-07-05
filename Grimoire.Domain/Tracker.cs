@@ -6,26 +6,27 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Domain.Shared;
+using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
+[UsedImplicitly]
 public class Tracker : IMember
 {
-    public ulong UserId { get; set; }
+    public virtual Member Member { get; init; } = null!;
 
-    public virtual Member Member { get; set; } = null!;
-
-    public ulong GuildId { get; set; }
-
-    public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; init; } = null!;
 
     public ulong LogChannelId { get; set; }
 
-    public virtual Channel LogChannel { get; set; } = null!;
+    public virtual Channel LogChannel { get; init; } = null!;
 
     public DateTimeOffset EndTime { get; set; }
 
     public ulong? ModeratorId { get; set; }
 
-    public virtual Member? Moderator { get; set; } = null!;
+    public virtual Member? Moderator { get; init; }
+    public ulong UserId { get; set; }
+
+    public ulong GuildId { get; set; }
 }

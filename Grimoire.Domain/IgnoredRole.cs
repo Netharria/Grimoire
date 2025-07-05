@@ -5,11 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using JetBrains.Annotations;
+
 namespace Grimoire.Domain;
+
+[UsedImplicitly]
 public class IgnoredRole
 {
-    public ulong RoleId { get; set; }
-    public virtual Role Role { get; set; } = null!;
-    public ulong GuildId { get; set; }
-    public virtual Guild Guild { get; set; } = null!;
+    public ulong RoleId { get; init; }
+    public virtual Role Role { get; init; } = null!;
+    public ulong GuildId { get; init; }
+    public virtual Guild Guild { get; init; } = null!;
 }

@@ -5,21 +5,24 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using JetBrains.Annotations;
+
 namespace Grimoire.Domain;
 
 public enum PublishType
 {
     Ban,
-    Unban,
+    Unban
 }
 
+[UsedImplicitly]
 public class PublishedMessage
 {
-    public ulong MessageId { get; set; }
+    public ulong MessageId { get; init; }
 
-    public long SinId { get; set; }
+    public long SinId { get; init; }
 
-    public virtual Sin Sin { get; set; } = null!;
+    public virtual Sin Sin { get; init; } = null!;
 
-    public PublishType PublishType { get; set; }
+    public PublishType PublishType { get; init; }
 }

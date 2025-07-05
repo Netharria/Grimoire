@@ -6,26 +6,29 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Domain.Shared;
+using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
+[UsedImplicitly]
 public class Channel : IIdentifiable<ulong>
 {
+    public virtual IgnoredChannel? IsIgnoredChannel { get; init; }
+
+    public ulong GuildId { get; init; }
+
+    public virtual Guild Guild { get; init; } = null!;
+
+    public virtual MessageLogChannelOverride? MessageLogChannelOverride { get; init; }
+
+    public virtual SpamFilterOverride? SpamFilterOverride { get; init; }
+
+    public virtual ICollection<Message> Messages { get; init; } = [];
+
+    public virtual ICollection<OldLogMessage> OldMessages { get; init; } = [];
+
+    public virtual ICollection<Tracker> Trackers { get; init; } = [];
+
+    public virtual Lock? Lock { get; init; }
     public ulong Id { get; set; }
-
-    public virtual IgnoredChannel? IsIgnoredChannel { get; set; }
-
-    public ulong GuildId { get; set; }
-
-    public virtual Guild Guild { get; set; } = null!;
-
-    public virtual MessageLogChannelOverride? MessageLogChannelOverride { get; set; }
-
-    public virtual ICollection<Message> Messages { get; set; } = [];
-
-    public virtual ICollection<OldLogMessage> OldMessages { get; set; } = [];
-
-    public virtual ICollection<Tracker> Trackers { get; set; } = [];
-
-    public virtual Lock? Lock { get; set; }
 }

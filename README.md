@@ -1,40 +1,50 @@
 # Grimoire
 
-Grimoire is a general purpose bot for discord. It includes moderation tools, advanced logging features, and a leveling system. This is the successor to my previous bots Fuzzy, Lumberjack, and Anubis and includes all the features of those bots as well as new functionality.
+Grimoire is a general purpose bot for discord. It includes moderation tools, advanced logging features, and a leveling
+system. This is the successor to my previous bots Fuzzy, Lumberjack, and Anubis and includes all the features of those
+bots as well as new functionality.
 
 ## FAQ
+
 Q: **I was using one of your previous bots. Do I have to setup everything from scratch again?**
-A: No! All of your data and settings have been transered over to the new bot it just needs to be invited and it will work straight away.
+A: No! All of your data and settings have been transered over to the new bot it just needs to be invited and it will
+work straight away.
 
 Q: **I was only using one of your bots. Do I now have to use all the new features that I was using before?**
-A: No! Grimoire has been split into modules that you can enable or disable with "/modules set" command and see the currently enabled modules with "/modules view".
+A: No! Grimoire has been split into modules that you can enable or disable with "/modules set" command and see the
+currently enabled modules with "/modules view".
 
 Q: **I don't want my messages being stored on Grimoire.**
-A: Grimoire will only store your messages if the "Message Log" module is enabled. 
+A: Grimoire will only store your messages if the "Message Log" module is enabled.
 
 Q: **How long is message data stored for?**
 A: Grimoire will purge all message data 30 days after the original message was sent.
 
 Q: **How do I invite Grimoire to my server?**
-A: You can find an invite link [here.](https://discord.com/api/oauth2/authorize?client_id=885624963866959963&permissions=1512197975231&scope=applications.commands%20bot)
+A: You can find an invite
+link [here.](https://discord.com/api/oauth2/authorize?client_id=885624963866959963&permissions=1512197975231&scope=applications.commands%20bot)
 
 Q: **Can I run my own copy of Grimoire?**
 A: You sure can. The requirements to run are listed in the [Requirements Section](#Requirements)
 
 # Requirements
 
-Grimoire runs using [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) and a [PostgreSQL database](https://www.postgresql.org/download/). Optionally you can run Grimoire in a [docker container](https://www.docker.com/get-started/).
+Grimoire runs using [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) and
+a [PostgreSQL database](https://www.postgresql.org/download/). Optionally you can run Grimoire in
+a [docker container](https://www.docker.com/get-started/).
 
 You will also need a [Discord Bot Account and Token](https://discord.com/developers/docs/getting-started)
 
-
 # Configuration
 
-There is a few parameters that need to be set for Grimoire to work. Under Grimoire.Discord folder there is an `appsettings.json` file where you can set the configuration. The following properties are available to be set.
+There is a few parameters that need to be set for Grimoire to work. Under Grimoire folder there is an `appsettings.json`
+file where you can set the configuration. The following properties are available to be set.
 
 * `token` The Discord Bot token to connect with.
-* `ConnectionStrings.Grimoire` The connection string for the database in the [Npgsql format](https://www.npgsql.org/doc/connection-string-parameters.html)
-* `ConnectionProperties.\*` This section will build a connection string if one is not provided in `ConnectionStrings.Grimoire`
+* `ConnectionStrings.Grimoire` The connection string for the database in
+  the [Npgsql format](https://www.npgsql.org/doc/connection-string-parameters.html)
+* `ConnectionProperties.\*` This section will build a connection string if one is not provided in
+  `ConnectionStrings.Grimoire`
 * `ConnectionProperties.Hostname` The hostname of the database.
 * `ConnectionProperties.Port` The port the database uses to connect.
 * `ConnectionProperties.DbName` The name of the database.
@@ -44,7 +54,9 @@ There is a few parameters that need to be set for Grimoire to work. Under Grimoi
 * `guildId` *(Optional)* The server Id that will be allowed to use experimental commands.
 * `Serilog.\*` Sets the configuration for logs. Reasonable defaults have been set but you can customize them here.
 
-You can also set these properties using environmental variables which will override the settings set in the `appsettings.json` file. Use `__` (double underscore) as a seperator between levels. If you plan on running Grimoire in a docker container, you can set the configuration in the `docker-compose.yml` file.
+You can also set these properties using environmental variables which will override the settings set in the
+`appsettings.json` file. Use `__` (double underscore) as a seperator between levels. If you plan on running Grimoire in
+a docker container, you can set the configuration in the `docker-compose.yml` file.
 
 # Running
 
@@ -60,19 +72,20 @@ $ nano docker-compose.yml
 $ docker-compose up -d
 ```
 
-A database admin console has been included which can be reached at `http://localhost:8080` to connect to the database enter server location `host.docker.internal:5432` and use the credentials in the docker-compose.yml. 
+A database admin console has been included which can be reached at `http://localhost:8080` to connect to the database
+enter server location `host.docker.internal:5432` and use the credentials in the docker-compose.yml.
 
 ## Manually
 
 * Install the [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 * Clone this repository: `git clone https://github.com/Netharria/Grimoire`
 * Set the [configuration](#configuration) in the `appsettings.json`
-* Change director to Grimoire.Discord
+* Change director to Grimoire
 * Run the bot: dotnet run
 
 ```
 $ git clone https://github.com/Netharria/Grimoire
-$ cd Grimoire.Discord
+$ cd Grimoire
 $ nano appsettings.json
 $ dotnet run
 ```
