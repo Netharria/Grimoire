@@ -53,6 +53,8 @@ public class Guild : IIdentifiable<ulong>
 
     public virtual ICollection<MessageLogChannelOverride> MessageLogChannelOverrides { get; init; } = [];
 
+    public virtual ICollection<SpamFilterOverride> SpamFilterOverrides { get; init; } = [];
+
     public virtual ICollection<CustomCommand> CustomCommands { get; init; } = [];
 
     public virtual ICollection<CustomCommandRole> CustomCommandRoles { get; init; } = [];

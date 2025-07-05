@@ -12,9 +12,61 @@ namespace Grimoire.Features.Moderation.SpamFilter;
 public class SpamTrackerModule
 {
     private readonly ConcurrentDictionary<DiscordMember, SpamTracker> _spamUsers = new();
+    private readonly ConcurrentDictionary<ulong, SpamFilterOverrideOption> _spamFilterOverrideChannels;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory;
+
+    public SpamTrackerModule(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+    {
+        using var dbContext = dbContextFactory.CreateDbContext();
+        var something = dbContext.SpamFilterOverrides
+            .AsNoTracking()
+            .ToDictionary(x => x.ChannelId, x => x.ChannelOption);
+        this._dbContextFactory = dbContextFactory;
+        this._spamFilterOverrideChannels = new ConcurrentDictionary<ulong, SpamFilterOverrideOption>(something);
+    }
+
+    public async Task AddOrUpdateOverride(SpamFilterOverride spamFilterOverride, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var existingOverride = await dbContext.SpamFilterOverrides
+            .FirstOrDefaultAsync(x =>
+                x.ChannelId == spamFilterOverride.ChannelId
+                && x.GuildId == spamFilterOverride.GuildId,
+                cancellationToken);
+        if (existingOverride != null)
+            existingOverride.ChannelOption = spamFilterOverride.ChannelOption;
+        else
+            await dbContext.SpamFilterOverrides.AddAsync(spamFilterOverride, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        this._spamFilterOverrideChannels.AddOrUpdate(spamFilterOverride.ChannelId, spamFilterOverride.ChannelOption,
+            (key, oldValue) => spamFilterOverride.ChannelOption);
+    }
+
+    public async Task RemoveOverride(ulong channelId, ulong guildId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var existingOverride = await dbContext.SpamFilterOverrides
+            .FirstOrDefaultAsync(x => x.ChannelId == channelId && x.GuildId == guildId, cancellationToken);
+        if (existingOverride != null)
+        {
+            dbContext.SpamFilterOverrides.Remove(existingOverride);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            this._spamFilterOverrideChannels.TryRemove(channelId, out _);
+        }
+    }
 
     public CheckSpamResult CheckSpam(DiscordMessage message)
     {
+        foreach (var channelId in message.Channel.BuildChannelTree())
+        {
+            if (!this._spamFilterOverrideChannels.TryGetValue(channelId, out var spamFilterOverrideOption))
+                continue;
+            if (spamFilterOverrideOption == SpamFilterOverrideOption.AlwaysFilter)
+                break;
+            if (spamFilterOverrideOption == SpamFilterOverrideOption.NeverFilter)
+                return new CheckSpamResult { IsSpam = false };
+        }
+
         if (message.Author is not DiscordMember member)
             return new CheckSpamResult { IsSpam = false };
 

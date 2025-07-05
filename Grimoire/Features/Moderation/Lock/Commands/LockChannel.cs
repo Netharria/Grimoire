@@ -31,7 +31,7 @@ public sealed class LockChannel
             [MinMaxValue(0)]
             [Parameter("DurationAmount")]
             [Description("The amount of time the lock will last.")]
-            long durationAmount,
+            int durationAmount,
             [ChannelTypes(DiscordChannelType.Text, DiscordChannelType.PublicThread, DiscordChannelType.PrivateThread,
                 DiscordChannelType.Category, DiscordChannelType.GuildForum)]
             [Parameter("Channel")]

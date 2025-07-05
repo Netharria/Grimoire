@@ -41,7 +41,7 @@ public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanComm
         [MinMaxValue(0,7)]
         [Parameter("DeleteDays")]
         [Description("The number of days of messages to delete. Default is 7.")]
-        long deleteDays = 7)
+        int deleteDays = 7)
     {
         await ctx.DeferResponseAsync();
 

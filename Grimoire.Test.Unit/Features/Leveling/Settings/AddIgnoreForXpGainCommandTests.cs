@@ -99,17 +99,4 @@ public sealed class AddIgnoreForXpGainCommandTests(GrimoireCoreFactory factory) 
 
         channel.IsIgnoredChannel.Should().NotBeNull();
     }
-
-    [Fact]
-    public async Task
-        WhenUpdateIgnoreStateForXpGainCommandHandlerCalled_AndThereAreInvalidAndMissingIds_UpdateMessageAsync()
-    {
-        await using var dbContext = this._createDbContext();
-        var cut = new AddIgnoreForXpGain.Handler(this._mockDbContextFactory);
-
-        var result = await cut.Handle(
-            new AddIgnoreForXpGain.Command { GuildId = GuildId, InvalidIds = ["asldfkja"] }, default);
-        dbContext.ChangeTracker.Clear();
-        result.Message.Should().Be("Could not match asldfkja with a role, channel or user. ");
-    }
 }

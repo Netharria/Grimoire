@@ -7,12 +7,12 @@
 
 namespace Grimoire.Features.Moderation.SpamFilter;
 
-internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModule)
+internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModule) : IEventHandler<MessageCreatedEventArgs>
 {
     private readonly IMediator _mediator = mediator;
     private readonly SpamTrackerModule _spamModule = spamModule;
 
-    public async Task DiscordOnMessageCreated(DiscordClient sender, MessageCreatedEventArgs args)
+    public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
         if (args.Author.IsBot)
             return;

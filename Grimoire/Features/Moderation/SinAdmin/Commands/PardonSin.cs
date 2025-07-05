@@ -27,7 +27,7 @@ internal sealed class PardonSin
             [MinMaxValue(0)]
             [Parameter("SinId")]
             [Description("The id of the sin to be pardoned.")]
-            long sinId,
+            int sinId,
             [MinMaxLength(maxLength: 1000)]
             [Parameter("Reason")]
             [Description("The reason the sin is getting pardoned.")]

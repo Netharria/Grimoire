@@ -20,16 +20,26 @@ using Grimoire.Features.Leveling.Settings;
 using Grimoire.Features.Leveling.UserCommands;
 using Grimoire.Features.LogCleanup;
 using Grimoire.Features.Logging.MessageLogging.Events;
+using Grimoire.Features.Logging.Settings;
 using Grimoire.Features.Logging.Trackers;
+using Grimoire.Features.Logging.Trackers.Commands;
 using Grimoire.Features.Logging.Trackers.Events;
 using Grimoire.Features.Logging.UserLogging.Events;
+using Grimoire.Features.Moderation.Ban.Commands;
 using Grimoire.Features.Moderation.Ban.Events;
 using Grimoire.Features.Moderation.Lock;
+using Grimoire.Features.Moderation.Lock.Commands;
 using Grimoire.Features.Moderation.Mute;
+using Grimoire.Features.Moderation.Mute.Commands;
+using Grimoire.Features.Moderation.PublishSins;
+using Grimoire.Features.Moderation.SinAdmin;
+using Grimoire.Features.Moderation.SinAdmin.Commands;
 using Grimoire.Features.Moderation.SpamFilter;
+using Grimoire.Features.Moderation.SpamFilter.Commands;
 using Grimoire.Features.Shared;
 using Grimoire.Features.Shared.Channels;
 using Grimoire.Features.Shared.Commands;
+using Grimoire.Features.Shared.Events;
 using Grimoire.Features.Shared.PluralKit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,7 +94,6 @@ await Host.CreateDefaultBuilder(args)
                 eventHandlerBuilder
                     //Leveling
                     .AddEventHandlers<GainUserXp.EventHandler>()
-
                     //Message Log
                     .AddEventHandlers<AddMessageEvent.EventHandler>()
                     .AddEventHandlers<DeleteMessageEvent.EventHandler>()
@@ -104,6 +113,16 @@ await Host.CreateDefaultBuilder(args)
                     .AddEventHandlers<BanAddedEvent>()
                     .AddEventHandlers<BanRemovedEvent>()
                     .AddEventHandlers<UserJoinedWhileMuted.EventHandler>()
+                    .AddEventHandlers<SpamEvents>()
+                    //General Events
+                    .AddEventHandlers<ChannelAdded.EventHandler>()
+                    .AddEventHandlers<ChannelDeleted.EventHandler>()
+                    .AddEventHandlers<GuildAdded.EventHandler>()
+                    .AddEventHandlers<InviteEvents>()
+                    .AddEventHandlers<MemberAdded.EventHandler>()
+                    .AddEventHandlers<RoleAdded.EventHandler>()
+                    .AddEventHandlers<RoleDeleted.EventHandler>()
+                    .AddEventHandlers<UpdateAllGuilds.EventHandler>()
             )
             .AddInteractivityExtension(new InteractivityConfiguration
             {
@@ -113,7 +132,7 @@ await Host.CreateDefaultBuilder(args)
                 PaginationDeletion = PaginationDeletion.DeleteMessage
             }).AddCommandsExtension((_, extension) =>
             {
-                if (ulong.TryParse(context.Configuration["guildId"], out var guildId))
+                if (!ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
 
                 }
@@ -123,8 +142,6 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<GeneralSettingsCommands>();
                 extension.AddCommands<PurgeCommands>();
                 extension.AddCommands<UserInfoCommands>();
-                extension.AddCommands<CustomCommandSettings>();
-                extension.AddCommands<GetCustomCommand.Command>();
 
                 // Leveling
                 extension.AddCommands<AwardUserXp.Command>();
@@ -134,11 +151,33 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<LevelSettingsCommandGroup>();
                 extension.AddCommands<GetLevel.Command>();
                 extension.AddCommands<GetLeaderboard.Command>();
+
                 // Logging
+                extension.AddCommands<LogSettingsCommands>();
+
+                //Trackers
+                extension.AddCommands<AddTracker.Command>();
+                extension.AddCommands<RemoveTracker.Command>();
 
                 // Moderation
+                extension.AddCommands<AddBanCommand>();
+                extension.AddCommands<RemoveBanCommand>();
+                extension.AddCommands<LockChannel>();
+                extension.AddCommands<UnlockChannel>();
+                extension.AddCommands<MuteAdminCommands>();
+                extension.AddCommands<MuteUser.Command>();
+                extension.AddCommands<UnmuteUser.Command>();
+                extension.AddCommands<PublishCommands>();
+                extension.AddCommands<ForgetSin.Command>();
+                extension.AddCommands<ModSettings>();
+                extension.AddCommands<PardonSin.Command>();
+                extension.AddCommands<SinLog.Command>();
+                extension.AddCommands<UpdateSinReason.Command>();
+                extension.AddCommands<SpamFilterOverrideCommands>();
 
                 // Custom Commands
+                extension.AddCommands<CustomCommandSettings>();
+                extension.AddCommands<GetCustomCommand.Command>();
 
                 extension.AddCheck<RequireModuleEnabledCheck>();
                 extension.AddCheck<RequireUserGuildPermissionsCheck>();

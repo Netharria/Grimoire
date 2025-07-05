@@ -23,7 +23,7 @@ internal sealed partial class ModSettings
         [MinMaxValue(0, int.MaxValue)]
         [Parameter("DurationAmount")]
         [Description("The amount of time before sins are auto pardoned.")]
-        long durationAmount)
+        int durationAmount)
     {
         await ctx.DeferResponseAsync();
 

@@ -20,7 +20,7 @@ public sealed partial class PublishCommands
         [MinMaxValue(0)]
         [Parameter("SinId")]
         [Description("The id of the sin to be published.")]
-        long sinId)
+        int sinId)
     {
         await ctx.DeferResponseAsync();
 

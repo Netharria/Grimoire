@@ -21,6 +21,8 @@ public class Channel : IIdentifiable<ulong>
 
     public virtual MessageLogChannelOverride? MessageLogChannelOverride { get; init; }
 
+    public virtual SpamFilterOverride? SpamFilterOverride { get; init; }
+
     public virtual ICollection<Message> Messages { get; init; } = [];
 
     public virtual ICollection<OldLogMessage> OldMessages { get; init; } = [];

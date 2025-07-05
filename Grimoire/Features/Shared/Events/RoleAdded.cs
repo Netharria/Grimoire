@@ -7,7 +7,7 @@
 
 namespace Grimoire.Features.Shared.Events;
 
-internal sealed class RollAdded
+internal sealed class RoleAdded
 {
     internal sealed class EventHandler(IMediator mediator) : IEventHandler<GuildRoleCreatedEventArgs>
     {

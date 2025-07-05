@@ -34,7 +34,7 @@ public sealed class AddTracker
             [MinMaxValue(0)]
             [Parameter("DurationAmount")]
             [Description("The amount of time the logging will last.")]
-            long durationAmount,
+            int durationAmount,
             [Parameter("Channel")]
             [Description("Select the channel to log to. Current channel if left blank.")]
             DiscordChannel? discordChannel = null)

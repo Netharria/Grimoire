@@ -36,7 +36,7 @@ public sealed class MuteUser
             [MinMaxValue(0)]
             [Parameter("DurationAmount")]
             [Description("The amount of time the mute will last.")]
-            long durationAmount,
+            int durationAmount,
             [MinMaxLength(maxLength: 1000)]
             [Parameter("Reason")]
             [Description("The reason for the mute.")]

@@ -27,7 +27,7 @@ internal sealed class ForgetSin
             [MinMaxValue(0)]
             [Parameter("SinId")]
             [Description("The id of the sin to be forgotten.")]
-            long sinId)
+            int sinId)
         {
             await ctx.DeferResponseAsync();
 

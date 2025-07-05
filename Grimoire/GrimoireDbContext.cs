@@ -69,6 +69,8 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<Sin> Sins { get; init; } = null!;
 
+    public DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; } = null!;
+
     public DbSet<Tracker> Trackers { get; init; } = null!;
 
     public DbSet<User> Users { get; init; } = null!;
