@@ -66,7 +66,9 @@ public sealed class GetBanForPublish
                 .Select(sin => new
                 {
                     sin.UserId,
-                    UsernameHistory = sin.Member.User.UsernameHistories.OrderByDescending(x => x.Timestamp).First(),
+                    UsernameHistory = sin.Member.User.UsernameHistories
+                        .OrderByDescending(x => x.Timestamp)
+                        .FirstOrDefault(),
                     sin.Guild.ModerationSettings.PublicBanLog,
                     sin.SinOn,
                     sin.Guild.ModChannelLog,
@@ -83,7 +85,7 @@ public sealed class GetBanForPublish
             return new Response
             {
                 UserId = result.UserId,
-                Username = result.UsernameHistory.Username,
+                Username = result.UsernameHistory?.Username,
                 BanLogId = result.PublicBanLog.Value,
                 Date = result.SinOn,
                 LogChannelId = result.ModChannelLog,
@@ -97,7 +99,7 @@ public sealed class GetBanForPublish
     {
         public ulong BanLogId { get; init; }
         public DateTimeOffset Date { get; init; }
-        public string Username { get; init; } = string.Empty;
+        public string? Username { get; init; }
         public ulong UserId { get; init; }
         public string Reason { get; init; } = string.Empty;
         public ulong? PublishedMessage { get; init; }

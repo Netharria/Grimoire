@@ -36,6 +36,12 @@ public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishC
         if (banLogChannel is null)
             throw new AnticipatedException("Could not find the ban log channel.");
 
+        var username = response.Username;
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            var user = await ctx.Client.GetUserAsync(response.UserId);
+            username = user.Username;
+        }
 
         if (response.PublishedMessage is not null)
             try
@@ -45,7 +51,7 @@ public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishC
                     .WithTitle(publish.ToString())
                     .WithDescription(
                         $"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
-                        $"**User:** {response.Username} ({response.UserId})\n" +
+                        $"**User:** {username} ({response.UserId})\n" +
                         $"**Reason:** {response.Reason}")
                     .WithColor(GrimoireColor.Purple).Build());
             }
@@ -57,7 +63,7 @@ public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishC
         return await banLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
             .WithTitle(publish.ToString())
             .WithDescription($"**Date:** {Formatter.Timestamp(response.Date, TimestampFormat.ShortDateTime)}\n" +
-                             $"**User:** {response.Username} ({response.UserId})\n" +
+                             $"**User:** {username} ({response.UserId})\n" +
                              $"**Reason:** {response.Reason}")
             .WithColor(GrimoireColor.Purple));
     }
