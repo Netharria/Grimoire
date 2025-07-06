@@ -36,6 +36,7 @@ using Grimoire.Features.Moderation.SinAdmin;
 using Grimoire.Features.Moderation.SinAdmin.Commands;
 using Grimoire.Features.Moderation.SpamFilter;
 using Grimoire.Features.Moderation.SpamFilter.Commands;
+using Grimoire.Features.Moderation.Warn;
 using Grimoire.Features.Shared;
 using Grimoire.Features.Shared.Channels;
 using Grimoire.Features.Shared.Commands;
@@ -174,6 +175,7 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<SinLog.Command>();
                 extension.AddCommands<UpdateSinReason.Command>();
                 extension.AddCommands<SpamFilterOverrideCommands>();
+                extension.AddCommands<Warn.Command>();
 
                 // Custom Commands
                 extension.AddCommands<CustomCommandSettings>();
