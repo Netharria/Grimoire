@@ -22,6 +22,8 @@ public sealed class UpdateMessageEvent
             if (args.Guild is null
                 || string.IsNullOrWhiteSpace(args.Message.Content))
                 return;
+            if(args.Message.Author?.Id == args.Guild.CurrentMember.Id)
+                return;
 
             var response = await this._mediator.Send(
                 new Command

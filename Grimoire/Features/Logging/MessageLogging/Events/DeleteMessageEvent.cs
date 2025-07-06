@@ -31,6 +31,9 @@ public sealed class DeleteMessageEvent
             if (args.Guild is null)
                 return;
 
+            if(args.Message.Author?.Id == args.Guild.CurrentMember.Id)
+                return;
+
             var pluralkitMessage =
                 await this._pluralKitService.GetProxiedMessageInformation(args.Message.Id,
                     args.Message.CreationTimestamp);
