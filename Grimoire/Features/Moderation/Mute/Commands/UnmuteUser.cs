@@ -28,15 +28,12 @@ public sealed class UnmuteUser
             SlashCommandContext ctx,
             [Parameter("User")]
             [Description("The user to unmute.")]
-            DiscordUser user)
+            DiscordMember member)
         {
             await ctx.DeferResponseAsync();
 
             if (ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
-
-            if (user is not DiscordMember member)
-                throw new AnticipatedException("That user is not on the server.");
 
             if (ctx.Guild.Id == member.Id) throw new AnticipatedException("That user is not on the server.");
             var response = await this._mediator.Send(new Request { UserId = member.Id, GuildId = ctx.Guild.Id });
@@ -46,7 +43,7 @@ public sealed class UnmuteUser
 
             var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Unmute")
-                .AddField("User", user.Mention, true)
+                .AddField("User", member.Mention, true)
                 .AddField("Moderator", ctx.User.Mention, true)
                 .WithColor(GrimoireColor.Green)
                 .WithTimestamp(DateTimeOffset.UtcNow);
@@ -64,7 +61,7 @@ public sealed class UnmuteUser
             catch (Exception)
             {
                 await ctx.SendLogAsync(response, GrimoireColor.Red,
-                    message: $"Was not able to send a direct message with the unmute details to {user.Mention}");
+                    message: $"Was not able to send a direct message with the unmute details to {member.Mention}");
             }
 
             if (response.LogChannelId is null) return;

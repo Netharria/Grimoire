@@ -29,7 +29,7 @@ public sealed class MuteUser
             SlashCommandContext ctx,
             [Parameter("User")]
             [Description("The user to mute.")]
-            DiscordUser user,
+            DiscordMember member,
             [Parameter("DurationType")]
             [Description("Select whether the duration will be in minutes hours or days")]
             DurationType durationType,
@@ -48,9 +48,6 @@ public sealed class MuteUser
             if (ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
 
-            if (user is not DiscordMember member)
-                throw new AnticipatedException("That user is not on the server.");
-
             if (ctx.Guild.Id == member.Guild.Id) throw new AnticipatedException("That user is not on the server.");
             var response = await this._mediator.Send(new Request
             {
@@ -67,7 +64,7 @@ public sealed class MuteUser
 
             var embed = new DiscordEmbedBuilder()
                 .WithAuthor("Mute")
-                .AddField("User", user.Mention, true)
+                .AddField("User", member.Mention, true)
                 .AddField("Sin Id", $"**{response.SinId}**", true)
                 .AddField("Moderator", ctx.User.Mention, true)
                 .AddField("Length", $"{durationAmount} {durationType}", true)
@@ -90,7 +87,7 @@ public sealed class MuteUser
             catch (Exception)
             {
                 await ctx.SendLogAsync(response, GrimoireColor.Red,
-                    message: $"Was not able to send a direct message with the mute details to {user.Mention}");
+                    message: $"Was not able to send a direct message with the mute details to {member.Mention}");
             }
 
             if (response.LogChannelId is null) return;
