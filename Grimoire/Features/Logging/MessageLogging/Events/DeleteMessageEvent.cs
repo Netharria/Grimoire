@@ -67,6 +67,8 @@ public sealed class DeleteMessageEvent
 
             if (!response.Success)
                 return;
+            if (response.UserId == args.Guild.CurrentMember.Id)
+                return;
 
             var message = await sender.SendMessageToLoggingChannel(response.LoggingChannel,
                 async () =>
