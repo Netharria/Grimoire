@@ -54,7 +54,9 @@ public sealed class InviteService : IInviteService
         var existingInvites = guild.Invites;
 
         var inviteUsed = newInvites
-            .Where(x => !existingInvites.ContainsKey(x.Key))
+            .Where(x =>
+                !existingInvites.TryGetValue(x.Key, out var existingInvite)
+                || x.Value.Uses != existingInvite.Uses)
             .Select(x => x.Value)
             .FirstOrDefault();
         if (inviteUsed is not null)
@@ -64,8 +66,10 @@ public sealed class InviteService : IInviteService
         }
 
         inviteUsed = existingInvites
-            .Where(x => newInvites.ContainsKey(x.Key))
-            .Select(x => x.Value)
+            .Where(invite =>
+                !newInvites.TryGetValue(invite.Key, out var newInvite)
+                || invite.Value.Uses != newInvite.Uses)
+            .Select(invite => invite.Value)
             .FirstOrDefault();
         if (inviteUsed is null || inviteUsed.Uses + 1 != inviteUsed.MaxUses)
             return null;
