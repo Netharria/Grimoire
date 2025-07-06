@@ -48,7 +48,7 @@ public sealed class MuteUser
             if (ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
 
-            if (ctx.Guild.Id == member.Guild.Id) throw new AnticipatedException("That user is not on the server.");
+            if (ctx.Guild.Id != member.Guild.Id) throw new AnticipatedException("That user is not on the server.");
             var response = await this._mediator.Send(new Request
             {
                 UserId = member.Id,
