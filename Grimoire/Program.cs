@@ -93,6 +93,8 @@ await Host.CreateDefaultBuilder(args)
             .AddHostedService<PublishToGuildLogProcessor>()
             .ConfigureEventHandlers(eventHandlerBuilder =>
                 eventHandlerBuilder
+                    //Custom Commands
+                    .AddEventHandlers<TextCustomCommand.EventHandler>()
                     //Leveling
                     .AddEventHandlers<GainUserXp.EventHandler>()
                     //Message Log

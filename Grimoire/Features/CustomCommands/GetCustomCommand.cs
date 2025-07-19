@@ -14,10 +14,10 @@ namespace Grimoire.Features.CustomCommands;
 
 public sealed class GetCustomCommand
 {
-    private static bool IsUserAuthorized(CommandContext ctx, Response response) =>
+    public static bool IsUserAuthorized(DiscordMember member, Response response) =>
         (response.RestrictedUse
-            ? ctx.Member?.Roles.Any(x => response.PermissionRoles.Contains(x.Id))
-            : ctx.Member?.Roles.All(x => !response.PermissionRoles.Contains(x.Id))) ?? false;
+            ? member?.Roles.Any(x => response.PermissionRoles.Contains(x.Id))
+            : member?.Roles.All(x => !response.PermissionRoles.Contains(x.Id))) ?? false;
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Commands)]
@@ -43,12 +43,12 @@ public sealed class GetCustomCommand
         {
             await ctx.DeferResponseAsync();
 
-            if (ctx.Guild is null)
+            if (ctx.Guild is null || ctx.Member is null)
                 throw new AnticipatedException("This command can only be used in a server.");
 
             var response = await this._mediator.Send(new Request { Name = name, GuildId = ctx.Guild.Id });
 
-            if (response is null || !IsUserAuthorized(ctx, response))
+            if (response is null || !IsUserAuthorized(ctx.Member, response))
             {
                 await ctx.DeleteResponseAsync();
                 return;

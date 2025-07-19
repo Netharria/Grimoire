@@ -100,7 +100,7 @@ public sealed partial class CustomCommandSettings
             new PublishToGuildLog
             {
                 LogChannelId = response.LogChannelId,
-                Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember} to learn a new command: {name}",
+                Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember.Mention} to learn a new command: {name}",
                 Color = GrimoireColor.Purple
             });
     }
