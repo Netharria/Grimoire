@@ -5,17 +5,18 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Features.Shared.Channels.TrackerLog;
 using Grimoire.Notifications;
 
 namespace Grimoire.Features.Logging.Trackers.Events;
 
 internal sealed class TrackerAvatarEvent(
-    DiscordClient clientService,
     IMediator mediator,
-    IDiscordImageEmbedService imageEmbedService) : INotificationHandler<AvatarUpdatedNotification>
+    IDiscordImageEmbedService imageEmbedService,
+    TrackerLog trackerLog) : INotificationHandler<AvatarUpdatedNotification>
 {
-    private readonly DiscordClient _discordClient = clientService;
     private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
+    private readonly TrackerLog _trackerLog = trackerLog;
     private readonly IMediator _mediator = mediator;
 
     public async Task Handle(AvatarUpdatedNotification notification, CancellationToken cancellationToken)
@@ -25,19 +26,21 @@ internal sealed class TrackerAvatarEvent(
         if (response is null)
             return;
 
-        await this._discordClient.SendMessageToLoggingChannel(response.TrackerChannelId,
-            async () =>
-            {
-                var embed = new DiscordEmbedBuilder()
+        await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomMessage
+        {
+            GuildId = notification.GuildId,
+            TrackerId = response.TrackerChannelId,
+            TrackerIdType = TrackerIdType.ChannelId,
+            Message = await this._imageEmbedService.BuildImageEmbedAsync(
+                [notification.AfterAvatar],
+                notification.UserId,
+                new DiscordEmbedBuilder()
                     .WithAuthor("Avatar Updated")
-                    .WithDescription($"**User:** {UserExtensions.Mention(notification.UserId)}")
-                    .WithColor(GrimoireColor.Purple)
-                    .WithTimestamp(DateTimeOffset.UtcNow);
-                return await this._imageEmbedService.BuildImageEmbedAsync(
-                    [notification.AfterAvatar],
-                    notification.UserId,
-                    embed,
-                    false);
-            });
+                    .AddField("User", UserExtensions.Mention(notification.UserId))
+                    .WithThumbnail(notification.AfterAvatar)
+                    .WithTimestamp(DateTimeOffset.UtcNow)
+                    .WithColor(GrimoireColor.Purple),
+                false)
+        }, cancellationToken);
     }
 }

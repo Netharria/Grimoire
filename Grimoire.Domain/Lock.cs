@@ -15,11 +15,11 @@ public class Lock
     public ulong ChannelId { get; init; }
 
     public virtual Channel Channel { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public long PreviouslyAllowed { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public long PreviouslyDenied { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? ModeratorId { get; set; }
 
     public virtual Member? Moderator { get; init; }
@@ -27,8 +27,8 @@ public class Lock
     public ulong GuildId { get; init; }
 
     public virtual Guild Guild { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public string Reason { get; set; } = string.Empty;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DateTimeOffset EndTime { get; set; }
 }

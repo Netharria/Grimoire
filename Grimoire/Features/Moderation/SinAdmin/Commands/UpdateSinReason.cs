@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
@@ -17,9 +16,10 @@ internal sealed class UpdateSinReason
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator)
+    internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         [Command("Reason")]
         [Description("Update the reason for a user's sin.")]
@@ -53,15 +53,13 @@ internal sealed class UpdateSinReason
                 .WithTimestamp(DateTimeOffset.UtcNow)
                 .WithColor(GrimoireColor.Green));
 
-            if (response.LogChannelId is null) return;
-
-            if (!ctx.Guild.Channels.TryGetValue(response.LogChannelId.Value,
-                    out var loggingChannel)) return;
-
-            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithDescription(
-                    $"{ctx.User.GetUsernameWithDiscriminator()} updated reason to {reason} for {message}")
-                .WithColor(GrimoireColor.Green));
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.Green,
+                Description = $"{ctx.User.Mention} updated reason to {reason} for {message}"
+            });
         }
     }
 
@@ -91,7 +89,6 @@ internal sealed class UpdateSinReason
                         .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                         .Select(usernameHistory => usernameHistory.Username)
                         .FirstOrDefault(),
-                    sin.Guild.ModChannelLog
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -105,12 +102,11 @@ internal sealed class UpdateSinReason
             {
                 SinId = command.SinId,
                 SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId),
-                LogChannelId = result.ModChannelLog
             };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public long SinId { get; init; }
         public string SinnerName { get; init; } = string.Empty;

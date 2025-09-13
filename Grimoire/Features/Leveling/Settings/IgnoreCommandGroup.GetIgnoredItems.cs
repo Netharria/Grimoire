@@ -5,14 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using System.Text;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire.DatabaseQueryHelpers;
-using ChannelExtensions = Grimoire.Extensions.ChannelExtensions;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -29,34 +26,78 @@ public sealed partial class IgnoreCommandGroup
 
         var response = await this._mediator.Send(new GetIgnoredItems.Query { GuildId = ctx.Guild.Id });
 
+
+        if (!response.IgnoredRoles.Any() && !response.IgnoredChannels.Any() &&
+            !response.IgnoredMembers.Any())
+            throw new AnticipatedException("This server does not have any ignored channels, roles or users.");
+
+
         var embed = new DiscordEmbedBuilder()
             .WithTitle("Ignored Channels Roles and Users.")
             .WithTimestamp(DateTime.UtcNow);
-        var embedPages = InteractivityExtension.GeneratePagesInEmbed(response.Message, SplitType.Line, embed);
+        var embedPages = InteractivityExtension.GeneratePagesInEmbed(
+            await BuildMessageAsync(ctx, response),
+            SplitType.Line,
+            embed);
         await ctx.Interaction.SendPaginatedResponseAsync(false, ctx.User, embedPages);
+    }
+
+    private static async Task<string> BuildMessageAsync(SlashCommandContext ctx, GetIgnoredItems.Response response)
+    {
+        ArgumentNullException.ThrowIfNull(ctx.Guild);
+        var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
+        foreach (var channel in response.IgnoredChannels)
+        {
+            var discordChannel = await ctx.Guild.GetChannelOrDefaultAsync(channel);
+            if (discordChannel is null)
+                continue;
+            ignoredMessageBuilder.Append(discordChannel.Mention).Append('\n');
+        }
+
+
+        ignoredMessageBuilder.Append("\n**Roles**\n");
+
+        foreach (var role in response.IgnoredRoles)
+        {
+            var discordRole = await ctx.Guild.GetRoleOrDefaultAsync(role);
+            if (discordRole is null)
+                continue;
+            ignoredMessageBuilder.Append(discordRole.Mention).Append('\n');
+        }
+
+        ignoredMessageBuilder.Append("\n**Users**\n");
+
+        foreach (var member in response.IgnoredMembers)
+        {
+            var user = await ctx.Client.GetUserOrDefaultAsync(member);
+            if (user is null)
+                continue;
+            ignoredMessageBuilder.Append(user.Mention).Append('\n');
+        }
+        return ignoredMessageBuilder.ToString();
     }
 }
 
 public sealed class GetIgnoredItems
 {
-    public sealed record Query : IRequest<BaseResponse>
+    public sealed record Query : IRequest<Response>
     {
         public ulong GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Query, BaseResponse>
+        : IRequestHandler<Query, Response>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Query request, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var ignoredItems = await dbContext.Guilds
                 .AsNoTracking()
                 .AsSplitQuery()
                 .WhereIdIs(request.GuildId)
-                .Select(guild => new
+                .Select(guild => new Response
                 {
                     IgnoredRoles = guild.IgnoredRoles.Select(ignoredRole => ignoredRole.RoleId),
                     IgnoredChannels = guild.IgnoredChannels.Select(ignoredChannel => ignoredChannel.ChannelId),
@@ -67,26 +108,17 @@ public sealed class GetIgnoredItems
             if (ignoredItems is null)
                 throw new AnticipatedException("Could not find the settings for this server.");
 
-            if (!ignoredItems.IgnoredRoles.Any() && !ignoredItems.IgnoredChannels.Any() &&
-                !ignoredItems.IgnoredMembers.Any())
-                throw new AnticipatedException("This server does not have any ignored channels, roles or users.");
 
-            var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
 
-            foreach (var channel in ignoredItems.IgnoredChannels)
-                ignoredMessageBuilder.Append(ChannelExtensions.Mention(channel)).Append('\n');
-
-            ignoredMessageBuilder.Append("\n**Roles**\n");
-
-            foreach (var role in ignoredItems.IgnoredRoles)
-                ignoredMessageBuilder.Append(RoleExtensions.Mention(role)).Append('\n');
-
-            ignoredMessageBuilder.Append("\n**Users**\n");
-
-            foreach (var member in ignoredItems.IgnoredMembers)
-                ignoredMessageBuilder.Append(UserExtensions.Mention(member)).Append('\n');
-
-            return new BaseResponse { Message = ignoredMessageBuilder.ToString() };
+            return ignoredItems;
         }
+    }
+
+    public sealed record Response
+    {
+
+        public required IEnumerable<ulong> IgnoredRoles { get; init; }
+        public required IEnumerable<ulong> IgnoredChannels { get; init; }
+        public required IEnumerable<ulong> IgnoredMembers { get; init; }
     }
 }

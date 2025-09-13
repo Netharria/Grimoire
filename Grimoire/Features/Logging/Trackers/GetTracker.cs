@@ -33,7 +33,7 @@ public sealed class GetTracker
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong TrackerChannelId { get; init; }
     }

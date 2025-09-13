@@ -5,13 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Features.Shared.Channels.GuildLog;
+
 namespace Grimoire.Features.Leveling.Events;
 
 public sealed class GainUserXp
 {
-    public sealed class EventHandler(IMediator mediator) : IEventHandler<MessageCreatedEventArgs>
+    public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<MessageCreatedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
         {
@@ -36,13 +39,17 @@ public sealed class GainUserXp
             });
 
             if (response.PreviousLevel < response.CurrentLevel)
-                await sender.SendMessageToLoggingChannel(response.LevelLogChannel,
-                    embed => embed
+                await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+                {
+                    GuildId = args.Guild.Id,
+                    GuildLogType = GuildLogType.Leveling,
+                    Embed = new DiscordEmbedBuilder()
                         .WithColor(GrimoireColor.Purple)
-                        .WithAuthor(member.GetUsernameWithDiscriminator())
+                        .WithAuthor(member.Username)
                         .WithDescription($"{member.Mention} has leveled to level {response.CurrentLevel}.")
                         .WithFooter($"{member.Id}")
-                        .WithTimestamp(DateTime.UtcNow));
+                        .WithTimestamp(DateTime.UtcNow)
+                });
         }
     }
 
@@ -84,7 +91,6 @@ public sealed class GainUserXp
                             Base = member.Guild.LevelSettings.Base,
                             Modifier = member.Guild.LevelSettings.Modifier,
                             Amount = member.Guild.LevelSettings.Amount,
-                            LevelChannelLogId = member.Guild.LevelSettings.LevelChannelLogId,
                             TextTime = member.Guild.LevelSettings.TextTime
                         }).FirstOrDefault());
 
@@ -118,16 +124,14 @@ public sealed class GainUserXp
                 EarnedXp = true,
                 PreviousLevel = MemberExtensions.GetLevel(result.Xp, result.Base, result.Modifier),
                 CurrentLevel = MemberExtensions.GetLevel(result.Xp + result.Amount, result.Base, result.Modifier),
-                LevelLogChannel = result.LevelChannelLogId
             };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public int PreviousLevel { get; init; }
         public int CurrentLevel { get; init; }
-        public ulong? LevelLogChannel { get; init; }
         public bool EarnedXp { get; init; }
     }
 
@@ -138,7 +142,6 @@ public sealed class GainUserXp
         public required int Base { get; init; }
         public required int Modifier { get; init; }
         public required int Amount { get; init; }
-        public ulong? LevelChannelLogId { get; init; }
         public required TimeSpan TextTime { get; init; }
     }
 }

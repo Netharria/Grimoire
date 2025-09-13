@@ -7,6 +7,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
@@ -62,7 +63,7 @@ public sealed class GetMessageLogOverrideTests(GrimoireCoreFactory factory) : IA
         var cut = new GetMessageLogOverrides.Handler(this._mockDbContextFactory);
 
         var result = await cut.Handle(
-            new GetMessageLogOverrides.Query { GuildId = GuildId }, default).ToListAsync();
+            new GetMessageLogOverrides.Query { GuildId = GuildId }, CancellationToken.None).ToListAsync();
 
         dbContext.ChangeTracker.Clear();
 
@@ -86,7 +87,7 @@ public sealed class GetMessageLogOverrideTests(GrimoireCoreFactory factory) : IA
         var cut = new GetMessageLogOverrides.Handler(this._mockDbContextFactory);
 
         var result = await cut.Handle(
-            new GetMessageLogOverrides.Query { GuildId = 1321654 }, default).ToListAsync();
+            new GetMessageLogOverrides.Query { GuildId = 1321654 }, CancellationToken.None).ToListAsync();
 
         dbContext.ChangeTracker.Clear();
 

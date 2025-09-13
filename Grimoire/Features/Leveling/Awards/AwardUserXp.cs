@@ -5,10 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Leveling.Awards;
 
@@ -17,9 +17,10 @@ public sealed class AwardUserXp
     [RequireGuild]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [RequireModuleEnabled(Module.Leveling)]
-    internal sealed class Command(IMediator mediator)
+    internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         [Command("Award")]
         [Description("Awards a user some xp.")]
@@ -35,19 +36,24 @@ public sealed class AwardUserXp
             await ctx.DeferResponseAsync();
             if(ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
-            var response = await this._mediator.Send(
+            await this._mediator.Send(
                 new Request
                 {
                     UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id
                 });
 
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{user.Mention} has been awarded {xpToAward} xp by {ctx.User.Mention}.");
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Description = $"{user.Mention} has been awarded {xpToAward} xp by {ctx.User.Mention}.",
+                Color = GrimoireColor.Purple
+            });
         }
     }
 
-    public sealed record Request : IRequest<BaseResponse>
+    public sealed record Request : IRequest
     {
         public required ulong UserId { get; init; }
         public required ulong GuildId { get; init; }
@@ -56,20 +62,19 @@ public sealed class AwardUserXp
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, BaseResponse>
+        : IRequestHandler<Request>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task Handle(Request command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var member = await dbContext.Members
                 .AsNoTracking()
                 .WhereMemberHasId(command.UserId, command.GuildId)
-                .Select(x => new { x.Guild.ModChannelLog })
-                .FirstOrDefaultAsync(cancellationToken);
+                .AnyAsync(cancellationToken);
 
-            if (member is null)
+            if (member is false)
                 throw new AnticipatedException(
                     $"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
 
@@ -84,7 +89,6 @@ public sealed class AwardUserXp
                     AwarderId = command.AwarderId
                 }, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { LogChannelId = member.ModChannelLog };
         }
     }
 }

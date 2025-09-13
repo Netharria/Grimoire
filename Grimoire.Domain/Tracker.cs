@@ -16,13 +16,13 @@ public class Tracker : IMember
     public virtual Member Member { get; init; } = null!;
 
     public virtual Guild Guild { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong LogChannelId { get; set; }
 
     public virtual Channel LogChannel { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DateTimeOffset EndTime { get; set; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? ModeratorId { get; set; }
 
     public virtual Member? Moderator { get; init; }

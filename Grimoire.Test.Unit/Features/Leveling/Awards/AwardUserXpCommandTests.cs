@@ -7,6 +7,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
@@ -62,8 +63,8 @@ public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyn
         await using var dbContext = this._createDbContext();
         var cut = new AwardUserXp.Handler(this._mockDbContextFactory);
 
-        var result = await cut.Handle(
-            new AwardUserXp.Request { UserId = UserId, GuildId = GuildId, XpToAward = 20 }, default);
+        await cut.Handle(
+            new AwardUserXp.Request { UserId = UserId, GuildId = GuildId, XpToAward = 20 }, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 
@@ -72,10 +73,6 @@ public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyn
             && x.GuildId == GuildId
         ).Include(x => x.XpHistory).FirstAsync();
         member.XpHistory.Sum(x => x.Xp).Should().Be(20);
-
-        result.Should().NotBeNull();
-        result.LogChannelId.Should().NotBeNull();
-        result.LogChannelId.Should().Be(ChannelId);
     }
 
     [Fact]
@@ -83,7 +80,7 @@ public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyn
     {
         var cut = new AwardUserXp.Handler(this._mockDbContextFactory);
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new AwardUserXp.Request { UserId = 20001, GuildId = GuildId, XpToAward = 20 }, default));
+            new AwardUserXp.Request { UserId = 20001, GuildId = GuildId, XpToAward = 20 }, CancellationToken.None));
 
         response.Should().NotBeNull();
         response.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");

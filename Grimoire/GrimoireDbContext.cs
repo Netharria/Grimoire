@@ -22,35 +22,35 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<CustomCommand> CustomCommands { get; init; } = null!;
 
     public DbSet<CustomCommandRole> CustomCommandsRole { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<Guild> Guilds { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<GuildCommandsSettings> GuildCommandsSettings { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<GuildLevelSettings> GuildLevelSettings { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<GuildUserLogSettings> GuildUserLogSettings { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<GuildMessageLogSettings> GuildMessageLogSettings { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<GuildModerationSettings> GuildModerationSettings { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<IgnoredChannel> IgnoredChannels { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<IgnoredMember> IgnoredMembers { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<IgnoredRole> IgnoredRoles { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<Domain.Lock> Locks { get; init; } = null!;
 
     public DbSet<Member> Members { get; init; } = null!;
 
     public DbSet<Message> Messages { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; init; } = null!;
 
     public DbSet<MessageHistory> MessageHistory { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<Mute> Mutes { get; init; } = null!;
 
     public DbSet<NicknameHistory> NicknameHistory { get; init; } = null!;
@@ -62,7 +62,7 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<ProxiedMessageLink> ProxiedMessages { get; init; }
 
     public DbSet<PublishedMessage> PublishedMessages { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<Reward> Rewards { get; init; } = null!;
 
     public DbSet<Role> Roles { get; init; } = null!;
@@ -70,7 +70,7 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<Sin> Sins { get; init; } = null!;
 
     public DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DbSet<Tracker> Trackers { get; init; } = null!;
 
     public DbSet<User> Users { get; init; } = null!;

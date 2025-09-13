@@ -33,29 +33,6 @@ public static class SlashCommandContextExtension
                 new DiscordWebhookBuilder().AddEmbed(embed)));
     }
 
-    [Obsolete("Use Publish To Guild Log Channel instead.")]
-    public static async Task SendLogAsync(this CommandContext ctx,
-        BaseResponse response,
-        DiscordColor? color,
-        string title = "",
-        string? message = null)
-    {
-        message ??= response.Message;
-        if (response.LogChannelId is null) return;
-        var logChannel = ctx.Guild?.Channels.GetValueOrDefault(response.LogChannelId.Value);
-
-        if (logChannel is null) return;
-        var embed = new DiscordEmbedBuilder()
-            .WithColor(color ?? GrimoireColor.Purple)
-            .WithTitle(title)
-            .WithDescription(message)
-            .WithTimestamp(DateTime.UtcNow)
-            .Build();
-
-        await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-            await logChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed)));
-    }
-
     public static DiscordChannel? GetChannelOptionAsync(this CommandContext ctx, ChannelOption channelOption,
         DiscordChannel? selectedChannel)
     {

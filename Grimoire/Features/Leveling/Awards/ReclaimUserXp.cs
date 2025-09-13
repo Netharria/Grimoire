@@ -5,11 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Leveling.Awards;
 
@@ -24,9 +24,10 @@ public sealed class ReclaimUserXp
     [RequireGuild]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [RequireModuleEnabled(Module.Leveling)]
-    public sealed class Command(IMediator mediator)
+    public sealed class Command(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         [Command("Reclaim")]
         [Description("Takes away xp from user.")]
@@ -59,8 +60,13 @@ public sealed class ReclaimUserXp
 
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
                 $"{response.XpTaken} xp has been taken from {user.Mention}.");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{response.XpTaken} xp has been taken from {user.Mention} by {ctx.User.Mention}.");
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Description = $"{response.XpTaken} xp has been taken from {user.Mention} by {ctx.User.Mention}.",
+                Color = GrimoireColor.Purple
+            });
         }
     }
 
@@ -84,8 +90,7 @@ public sealed class ReclaimUserXp
             var member = await dbContext.Members
                 .AsNoTracking()
                 .WhereMemberHasId(command.UserId, command.GuildId)
-                .Select(member =>
-                    new { Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp), member.Guild.ModChannelLog })
+                .Select(member => new { Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp) })
                 .FirstOrDefaultAsync(cancellationToken);
             if (member is null)
                 throw new AnticipatedException(
@@ -113,11 +118,11 @@ public sealed class ReclaimUserXp
                 }, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return new Response { LogChannelId = member.ModChannelLog, XpTaken = xpToTake };
+            return new Response { XpTaken = xpToTake };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public required long XpTaken { get; init; }
     }

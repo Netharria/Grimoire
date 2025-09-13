@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Exceptions;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.PublishSins;
@@ -18,11 +17,12 @@ namespace Grimoire.Features.Moderation.PublishSins;
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [Command("Publish")]
 [Description("Publishes a ban or unban to the public ban log channel.")]
-public sealed partial class PublishCommands(IMediator mediator, ILogger<PublishCommands> logger)
+public sealed partial class PublishCommands(IMediator mediator, GuildLog guildLog, ILogger<PublishCommands> logger)
 
 {
     private readonly ILogger<PublishCommands> _logger = logger;
     private readonly IMediator _mediator = mediator;
+    private readonly GuildLog _guildLog = guildLog;
 
     private static async Task<DiscordMessage> SendPublicLogMessage(SlashCommandContext ctx,
         GetBanForPublish.Response response,

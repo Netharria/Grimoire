@@ -5,9 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.PublishSins;
 
@@ -38,8 +37,13 @@ public sealed partial class PublishCommands
             });
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.User.GetUsernameWithDiscriminator()} published unban reason of sin {sinId}");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        {
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Color = GrimoireColor.Purple,
+            Description = $"{ctx.User.Mention} published unban reason of sin {sinId}"
+        });
     }
 }
 
@@ -71,7 +75,6 @@ public sealed class GetUnbanForPublish
                         .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                         .First(),
                     x.Guild.ModerationSettings.PublicBanLog,
-                    x.Guild.ModChannelLog,
                     x.Pardon,
                     PublishedUnban = x.PublishMessages
                         .FirstOrDefault(publishedMessage => publishedMessage.PublishType == PublishType.Unban)
@@ -91,7 +94,6 @@ public sealed class GetUnbanForPublish
                 Username = result.UsernameHistory.Username,
                 BanLogId = result.PublicBanLog.Value,
                 Date = result.Pardon.PardonDate,
-                LogChannelId = result.ModChannelLog,
                 Reason = result.Pardon.Reason,
                 PublishedMessage = result.PublishedUnban?.MessageId
             };

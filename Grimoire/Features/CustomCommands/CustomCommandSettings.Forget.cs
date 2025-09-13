@@ -5,11 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
@@ -31,15 +28,16 @@ public sealed partial class CustomCommandSettings
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var response = await this._mediator.Send(new RemoveCustomCommand.Request
+        await this._mediator.Send(new RemoveCustomCommand.Request
         {
             CommandName = name, GuildId = ctx.Guild.Id
         });
 
-        await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);
-        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        await ctx.EditReplyAsync(GrimoireColor.Green, $"Forgot command: {name}");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            LogChannelId = response.LogChannelId,
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
             Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember} to forget command: {name}",
             Color = GrimoireColor.Purple
         });
@@ -48,7 +46,7 @@ public sealed partial class CustomCommandSettings
 
 public sealed class RemoveCustomCommand
 {
-    public sealed record Request : IRequest<BaseResponse>
+    public sealed record Request : IRequest
     {
         public required string CommandName { get; init; }
         public required ulong GuildId { get; init; }
@@ -56,11 +54,11 @@ public sealed class RemoveCustomCommand
 
     [UsedImplicitly]
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, BaseResponse>
+        : IRequestHandler<Request>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Request request, CancellationToken cancellationToken)
+        public async Task Handle(Request request, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await dbContext.CustomCommands
@@ -73,15 +71,6 @@ public sealed class RemoveCustomCommand
 
             dbContext.CustomCommands.Remove(result);
             await dbContext.SaveChangesAsync(cancellationToken);
-            var modChannelLog = await dbContext.Guilds
-                .AsNoTracking()
-                .WhereIdIs(request.GuildId)
-                .Select(x => x.ModChannelLog)
-                .FirstOrDefaultAsync(cancellationToken);
-            return new BaseResponse
-            {
-                Message = $"Removed command {request.CommandName}", LogChannelId = modChannelLog
-            };
         }
     }
 }

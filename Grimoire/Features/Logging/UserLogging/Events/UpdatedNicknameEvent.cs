@@ -6,16 +6,17 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.LogCleanup.Commands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Notifications;
 
 namespace Grimoire.Features.Logging.UserLogging.Events;
 
 public sealed class UpdatedNicknameEvent
 {
-    public sealed class EventHandler(IMediator mediator) : IEventHandler<GuildMemberUpdatedEventArgs>
+    public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<GuildMemberUpdatedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
         {
@@ -29,8 +30,11 @@ public sealed class UpdatedNicknameEvent
                     StringComparison.CurrentCultureIgnoreCase))
                 return;
 
-            var message = await sender.SendMessageToLoggingChannel(nicknameResponse.NicknameChannelLogId,
-                embed => embed
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+            {
+                GuildId = args.Guild.Id,
+                GuildLogType = GuildLogType.NicknameUpdated,
+                Embed = new DiscordEmbedBuilder()
                     .WithAuthor("Nickname Updated")
                     .AddField("User", args.Member.Mention)
                     .AddField("Before",
@@ -43,14 +47,8 @@ public sealed class UpdatedNicknameEvent
                             : nicknameResponse.AfterNickname, true)
                     .WithThumbnail(args.Member.GetGuildAvatarUrl(MediaFormat.Auto))
                     .WithTimestamp(DateTimeOffset.UtcNow)
-                    .WithColor(GrimoireColor.Mint));
+                    .WithColor(GrimoireColor.Mint)
 
-            if (message is null)
-                return;
-
-            await this._mediator.Send(new AddLogMessage.Command
-            {
-                MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
             });
 
             await this._mediator.Publish(new NicknameUpdatedNotification
@@ -103,7 +101,7 @@ public sealed class UpdatedNicknameEvent
         }
     }
 
-    public sealed record UpdateNicknameCommandResponse : BaseResponse
+    public sealed record UpdateNicknameCommandResponse
     {
         public string? BeforeNickname { get; init; }
         public string? AfterNickname { get; init; }

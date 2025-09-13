@@ -13,10 +13,14 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public class Guild : IIdentifiable<ulong>
 {
+
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? ModChannelLog { get; set; }
 
     public virtual Channel? ModLogChannel { get; init; }
 
+
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? UserCommandChannelId { get; set; }
 
     public virtual Channel? UserCommandChannel { get; init; }
@@ -31,27 +35,35 @@ public class Guild : IIdentifiable<ulong>
 
     public virtual ICollection<OldLogMessage> OldLogMessages { get; init; } = [];
 
-    public virtual ICollection<Tracker> Trackers { get; init; } = [];
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual ISet<Tracker> Trackers { get; init; } = new HashSet<Tracker>();
 
-    public virtual ICollection<Reward> Rewards { get; init; } = [];
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual ISet<Reward> Rewards { get; init; } = new HashSet<Reward>();
 
     public virtual ICollection<Member> Members { get; init; } = [];
 
     public virtual ICollection<Sin> Sins { get; init; } = [];
 
-    public virtual ICollection<Mute> ActiveMutes { get; init; } = [];
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual ISet<Mute> ActiveMutes { get; init; } = new HashSet<Mute>();
 
-    public virtual ICollection<Lock> LockedChannels { get; init; } = [];
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual ISet<Lock> LockedChannels { get; init; } = new HashSet<Lock>();
 
     public virtual ICollection<XpHistory> XpHistory { get; init; } = [];
 
-    public virtual ICollection<IgnoredChannel> IgnoredChannels { get; init; } = [];
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual ISet<IgnoredChannel> IgnoredChannels { get; init; } = new HashSet<IgnoredChannel>();
 
-    public virtual ICollection<IgnoredMember> IgnoredMembers { get; init; } = [];
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual ISet<IgnoredMember> IgnoredMembers { get; init; } = new HashSet<IgnoredMember>();
 
-    public virtual ICollection<IgnoredRole> IgnoredRoles { get; init; } = [];
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual ISet<IgnoredRole> IgnoredRoles { get; init; } = new HashSet<IgnoredRole>();
 
-    public virtual ICollection<MessageLogChannelOverride> MessageLogChannelOverrides { get; init; } = [];
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual ISet<MessageLogChannelOverride> MessageLogChannelOverrides { get; init; } = new HashSet<MessageLogChannelOverride>();
 
     public virtual ICollection<SpamFilterOverride> SpamFilterOverrides { get; init; } = [];
 
@@ -59,14 +71,20 @@ public class Guild : IIdentifiable<ulong>
 
     public virtual ICollection<CustomCommandRole> CustomCommandRoles { get; init; } = [];
 
-    public virtual GuildUserLogSettings UserLogSettings { get; init; } = null!;
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual GuildUserLogSettings UserLogSettings { get; set; } = null!;
 
-    public virtual GuildLevelSettings LevelSettings { get; init; } = null!;
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual GuildLevelSettings LevelSettings { get; set; } = null!;
 
-    public virtual GuildModerationSettings ModerationSettings { get; init; } = null!;
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual GuildModerationSettings ModerationSettings { get; set; } = null!;
 
-    public virtual GuildMessageLogSettings MessageLogSettings { get; init; } = null!;
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual GuildMessageLogSettings MessageLogSettings { get; set; } = null!;
 
-    public virtual GuildCommandsSettings CommandsSettings { get; init; } = null!;
-    public ulong Id { get; set; }
+    [Obsolete("Temporary to help identify where configurations are changed.")]
+    public virtual GuildCommandsSettings CommandsSettings { get; set; } = null!;
+
+    public ulong Id { get; init; }
 }

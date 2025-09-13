@@ -5,9 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Entities.AuditLogs;
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.LogCleanup.Commands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.PluralKit;
+using Grimoire.Features.Shared.Settings;
 
 namespace Grimoire.Features.Logging.MessageLogging.Events;
 
@@ -17,12 +19,14 @@ public sealed class DeleteMessageEvent
         IMediator mediator,
         IDiscordImageEmbedService attachmentUploadService,
         IDiscordAuditLogParserService logParserService,
-        IPluralkitService pluralKitService) : IEventHandler<MessageDeletedEventArgs>
+        IPluralkitService pluralKitService,
+        GuildLog guildLog) : IEventHandler<MessageDeletedEventArgs>
     {
         private readonly IDiscordImageEmbedService _attachmentUploadService = attachmentUploadService;
         private readonly IDiscordAuditLogParserService _logParserService = logParserService;
         private readonly IMediator _mediator = mediator;
         private readonly IPluralkitService _pluralKitService = pluralKitService;
+        private readonly GuildLog _guildLog = guildLog;
 
 
         public async Task HandleEventAsync(DiscordClient sender, MessageDeletedEventArgs args)
@@ -30,6 +34,7 @@ public sealed class DeleteMessageEvent
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (args.Guild is null)
                 return;
+
 
             if(args.Message.Author?.Id == args.Guild.CurrentMember.Id)
                 return;
@@ -70,52 +75,61 @@ public sealed class DeleteMessageEvent
             if (response.UserId == args.Guild.CurrentMember.Id)
                 return;
 
-            var message = await sender.SendMessageToLoggingChannel(response.LoggingChannel,
-                async () =>
-                {
-                    var embed = new DiscordEmbedBuilder()
-                        .WithAuthor($"Message deleted in #{args.Channel.Name}")
-                        .AddField("Channel", ChannelExtensions.Mention(args.Channel.Id), true)
-                        .AddField("Message Id", args.Message.Id.ToString(), true)
-                        .WithTimestamp(DateTime.UtcNow)
-                        .WithColor(GrimoireColor.Red);
-                    var avatarUrl = await sender.GetUserAvatar(
-                        response.OriginalUserId ?? response.UserId,
-                        args.Guild);
-                    if (avatarUrl is not null)
-                        embed.WithThumbnail(avatarUrl);
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
+            {
+                GuildId = args.Guild.Id,
+                GuildLogType = GuildLogType.MessageDeleted,
+                Message = await this.BuildLogMessage(sender, args, response, auditLogEntry),
+            });
+        }
 
-                    if (response.OriginalUserId is null)
-                        embed.AddField("Author", UserExtensions.Mention(response.UserId), true);
-                    else
-                        embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
-                            .AddField("System Id",
-                                string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
-                                true)
-                            .AddField("Member Id",
-                                string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
-                                true);
+        private async Task<DiscordMessageBuilder> BuildLogMessage(
+            DiscordClient sender,
+            MessageDeletedEventArgs args,
+            Response response,
+            DiscordAuditLogMessageEntry? auditLogEntry)
+        {
+            var embed = new DiscordEmbedBuilder()
+                .WithAuthor($"Message deleted in #{args.Channel.Name}")
+                .AddField("Channel", args.Channel.Mention, true)
+                .AddField("Message Id", args.Message.Id.ToString(), true)
+                .WithTimestamp(DateTime.UtcNow)
+                .WithColor(GrimoireColor.Red);
+            var avatarUrl = await sender.GetUserAvatar(
+                response.OriginalUserId ?? response.UserId,
+                args.Guild);
+            if (avatarUrl is not null)
+                embed.WithThumbnail(avatarUrl);
 
-                    if (auditLogEntry is not null && auditLogEntry.UserResponsible is not null)
-                        embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
+            if (response.OriginalUserId is null && args.Message.Author is not null)
+                embed.AddField("Author", args.Message.Author.Mention, true);
+            else if (response.OriginalUserId is not null)
+            {
+                var user = await sender.GetUserOrDefaultAsync(response.OriginalUserId.Value);
+                if (user is not null)
+                    embed.AddField("Original Author", user.Mention, true);
+                embed.AddField("System Id",
+                        string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
+                        true)
+                    .AddField("Member Id",
+                        string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
+                        true);
 
-                    if (response.ReferencedMessage is not null)
-                        embed.WithDescription(
-                            $"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
+            }
 
-                    embed.AddMessageTextToFields("**Content**", response.MessageContent, false);
+            if (auditLogEntry?.UserResponsible is not null)
+                embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
 
-                    return await this._attachmentUploadService.BuildImageEmbedAsync(
-                        response.Attachments.Select(x => x.FileName).ToArray(),
-                        response.UserId,
-                        embed);
-                });
+            if (response.ReferencedMessage is not null)
+                embed.WithDescription(
+                    $"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
 
-            if (message is not null)
-                await this._mediator.Send(new AddLogMessage.Command
-                {
-                    MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
-                });
+            embed.AddMessageTextToFields("**Content**", response.MessageContent, false);
+
+            return await this._attachmentUploadService.BuildImageEmbedAsync(
+                response.Attachments.Select(x => x.FileName).ToArray(),
+                response.UserId,
+                embed);
         }
     }
 
@@ -126,21 +140,22 @@ public sealed class DeleteMessageEvent
         public ulong? DeletedByModerator { get; init; }
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule)
         : IRequestHandler<Command, Response>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+        private readonly SettingsModule _settingsModule = settingsModule;
 
         public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
+            if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, command.GuildId, cancellationToken))
+                return new Response { Success = false };
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var message = await dbContext.Messages
                 .AsNoTracking()
                 .WhereIdIs(command.MessageId)
-                .WhereMessageLoggingIsEnabled()
                 .Select(message => new Response
                 {
-                    LoggingChannel = message.Guild.MessageLogSettings.DeleteChannelLogId,
                     UserId = message.UserId,
                     MessageContent = message.MessageHistory
                         .OrderByDescending(messageHistory => messageHistory.TimeStamp)
@@ -170,9 +185,8 @@ public sealed class DeleteMessageEvent
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
-        public ulong? LoggingChannel { get; init; }
         public ulong UserId { get; init; }
         public string? MessageContent { get; init; }
         public ulong? ReferencedMessage { get; init; }

@@ -26,7 +26,7 @@ public sealed partial class InviteEvents(
             new Invite
             {
                 Code = args.Invite.Code,
-                Inviter = args.Invite.Inviter.GetUsernameWithDiscriminator(),
+                Inviter = args.Invite.Inviter.Username,
                 Url = args.Invite.ToString(),
                 Uses = args.Invite.Uses,
                 MaxUses = args.Invite.MaxUses

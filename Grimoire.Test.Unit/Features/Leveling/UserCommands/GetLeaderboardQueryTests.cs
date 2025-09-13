@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
@@ -75,7 +76,7 @@ public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsy
         var cut = new GetLeaderboard.Handler(this._mockDbContextFactory);
         var command = new GetLeaderboard.Request { GuildId = GuildId, UserId = 234081234 };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
 
         response.Should().NotBeNull();
         response.Message.Should().Be("Could not find user on leaderboard.");
@@ -87,7 +88,7 @@ public sealed class GetLeaderboardQueryTests(GrimoireCoreFactory factory) : IAsy
         var cut = new GetLeaderboard.Handler(this._mockDbContextFactory);
         var command = new GetLeaderboard.Request { GuildId = GuildId };
 
-        var response = await cut.Handle(command, default);
+        var response = await cut.Handle(command, CancellationToken.None);
 
         response.LeaderboardText.Should().Be($"**1** <@!{User1}> **XP:** 300\n**2** <@!{User2}> **XP:** 0\n");
         response.TotalUserCount.Should().Be(2);

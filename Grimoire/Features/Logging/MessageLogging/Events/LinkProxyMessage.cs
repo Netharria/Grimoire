@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
+using EntityFramework.Exceptions.Common;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Logging.MessageLogging.Events;
@@ -36,26 +37,34 @@ public partial class LinkProxyMessage
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (!moduleEnabled) return;
-
+            await dbContext.AddAsync(
+                new ProxiedMessageLink
+                {
+                    ProxyMessageId = command.ProxyMessageId,
+                    OriginalMessageId = command.OriginalMessageId,
+                    SystemId = command.SystemId,
+                    MemberId = command.MemberId
+                }, cancellationToken);
             try
             {
-                await dbContext.AddAsync(
-                    new ProxiedMessageLink
-                    {
-                        ProxyMessageId = command.ProxyMessageId,
-                        OriginalMessageId = command.OriginalMessageId,
-                        SystemId = command.SystemId,
-                        MemberId = command.MemberId
-                    }, cancellationToken);
+
                 await dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (UniqueConstraintException)
+            {
+                LogProxiedMessageFailure(this._logger);
             }
             catch (Exception ex)
             {
                 LogProxiedMessageFailure(this._logger, ex.Message, ex);
+                throw;
             }
         }
 
         [LoggerMessage(LogLevel.Error, "Was not able to save Proxied Message for the following reason. {message}")]
         static partial void LogProxiedMessageFailure(ILogger<Handler> logger, string message, Exception ex);
+
+        [LoggerMessage(LogLevel.Error, "Was not able to save Proxied Message due to violating a unique constraint.")]
+        static partial void LogProxiedMessageFailure(ILogger<Handler> logger);
     }
 }

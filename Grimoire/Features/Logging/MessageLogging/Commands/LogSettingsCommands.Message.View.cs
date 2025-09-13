@@ -6,8 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
+
 
 // ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
@@ -81,7 +80,7 @@ public sealed class GetMessageLogSettings
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong? EditChannelLog { get; init; }
         public ulong? DeleteChannelLog { get; init; }

@@ -8,7 +8,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using DSharpPlus.Commands.EventArgs;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Trees;
 using DSharpPlus.Exceptions;
 using EntityFramework.Exceptions.Common;

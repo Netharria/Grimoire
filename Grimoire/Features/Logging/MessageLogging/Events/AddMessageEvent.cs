@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using EntityFramework.Exceptions.Common;
 using Grimoire.DatabaseQueryHelpers;
 using Microsoft.Extensions.Logging;
 
@@ -118,17 +119,32 @@ public sealed partial class AddMessageEvent
                     ]
                 };
                 await dbContext.Messages.AddAsync(message, cancellationToken);
-                await dbContext.SaveChangesAsync(cancellationToken);
+                try
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+                catch (UniqueConstraintException)
+                {
+
+                }
+
             }
-            catch (DbUpdateException)
+            catch (UniqueConstraintException)
+            {
+                LogNonUniqueMessage(this._logger);
+            }
+            catch (Exception)
             {
                 LogOriginalMessageForDebugging(this._logger, command.MessageContent);
                 throw;
             }
         }
+        [LoggerMessage(LogLevel.Error,
+            "Was not able to save Message due to violating a unique constraint.")]
+        static partial void LogNonUniqueMessage(ILogger logger);
 
         [LoggerMessage(LogLevel.Error,
-            "Database through exception on message creation. This was the original message {message}")]
+            "Database threw exception on message creation. This was the original message {message}")]
         static partial void LogOriginalMessageForDebugging(ILogger logger, string message);
 
         private static bool ShouldLogMessage(Command command, Dictionary<ulong, MessageLogOverrideOption> overrides)

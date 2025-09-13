@@ -7,15 +7,17 @@
 
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.LogCleanup.Commands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Notifications;
 
 namespace Grimoire.Features.Logging.UserLogging.Events;
 
 public sealed class UpdatedUsernameEvent
 {
-    public sealed class EventHandler(IMediator mediator) : IEventHandler<GuildMemberUpdatedEventArgs>
+    public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<GuildMemberUpdatedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
         {
@@ -23,7 +25,7 @@ public sealed class UpdatedUsernameEvent
             {
                 GuildId = args.Guild.Id,
                 UserId = args.Member.Id,
-                Username = args.MemberAfter.GetUsernameWithDiscriminator()
+                Username = args.MemberAfter.Username
             });
             if (usernameResponse is null
                 || string.Equals(usernameResponse.BeforeUsername,
@@ -31,8 +33,11 @@ public sealed class UpdatedUsernameEvent
                     StringComparison.CurrentCultureIgnoreCase))
                 return;
 
-            var message = await sender.SendMessageToLoggingChannel(usernameResponse.UsernameChannelLogId,
-                embed => embed
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+            {
+                GuildId = args.Guild.Id,
+                GuildLogType = GuildLogType.UsernameUpdated,
+                Embed = new DiscordEmbedBuilder()
                     .WithAuthor("Username Updated")
                     .AddField("User", args.MemberAfter.Mention)
                     .AddField("Before",
@@ -45,13 +50,7 @@ public sealed class UpdatedUsernameEvent
                             : usernameResponse.AfterUsername, true)
                     .WithThumbnail(args.MemberAfter.GetAvatarUrl(MediaFormat.Auto))
                     .WithTimestamp(DateTimeOffset.UtcNow)
-                    .WithColor(GrimoireColor.Mint));
-
-            if (message is null)
-                return;
-            await this._mediator.Send(new AddLogMessage.Command
-            {
-                MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
+                    .WithColor(GrimoireColor.Mint)
             });
 
             await this._mediator.Publish(new UsernameTrackerNotification
@@ -105,7 +104,7 @@ public sealed class UpdatedUsernameEvent
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public string BeforeUsername { get; init; } = string.Empty;
         public string AfterUsername { get; init; } = string.Empty;

@@ -5,9 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.PublishSins;
 
@@ -37,8 +36,13 @@ public sealed partial class PublishCommands
             });
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published ban : {sinId}");
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.User.GetUsernameWithDiscriminator()} published ban reason of sin {sinId}");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        {
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Color = GrimoireColor.Purple,
+            Description = $"{ctx.User.Mention} published ban reason of sin {sinId}"
+        });
     }
 }
 
@@ -71,7 +75,6 @@ public sealed class GetBanForPublish
                         .FirstOrDefault(),
                     sin.Guild.ModerationSettings.PublicBanLog,
                     sin.SinOn,
-                    sin.Guild.ModChannelLog,
                     sin.Reason,
                     PublishedBan = sin.PublishMessages.FirstOrDefault(x => x.PublishType == PublishType.Ban)
                 })
@@ -88,14 +91,13 @@ public sealed class GetBanForPublish
                 Username = result.UsernameHistory?.Username,
                 BanLogId = result.PublicBanLog.Value,
                 Date = result.SinOn,
-                LogChannelId = result.ModChannelLog,
                 Reason = result.Reason,
                 PublishedMessage = result.PublishedBan?.MessageId
             };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong BanLogId { get; init; }
         public DateTimeOffset Date { get; init; }

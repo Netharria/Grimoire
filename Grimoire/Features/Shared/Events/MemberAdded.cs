@@ -21,7 +21,7 @@ internal sealed class MemberAdded
                         string.IsNullOrWhiteSpace(eventArgs.Member.Nickname) ? null : eventArgs.Member.Nickname,
                     GuildId = eventArgs.Guild.Id,
                     UserId = eventArgs.Member.Id,
-                    UserName = eventArgs.Member.GetUsernameWithDiscriminator(),
+                    UserName = eventArgs.Member.Username,
                     AvatarUrl = eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128)
                 });
     }

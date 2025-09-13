@@ -5,9 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
-
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
 public partial class MuteAdminCommands
@@ -71,7 +68,7 @@ public sealed class GetAllActiveMutes
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong? MuteRole { get; init; }
         public ulong[] MutedUsers { get; init; } = [];

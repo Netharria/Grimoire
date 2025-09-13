@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
@@ -56,7 +57,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
         var query = new GetRecentUserAndNickNames.Query { UserId = UserId, GuildId = GuildId };
 
         //Act
-        var result = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(query, default));
+        var result = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(query, CancellationToken.None));
 
         //Assert
         result.Should().NotBeNull();
@@ -80,7 +81,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
 
         //Act
 
-        var result = await cut.Handle(query, default);
+        var result = await cut.Handle(query, CancellationToken.None);
 
         //Assert
         result.Should().BeNull();
@@ -99,7 +100,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
 
         //Act
 
-        var result = await cut.Handle(query, default);
+        var result = await cut.Handle(query, CancellationToken.None);
 
         //Assert
         result.Should().NotBeNull();
@@ -130,7 +131,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
 
         //Act
 
-        var result = await cut.Handle(query, default);
+        var result = await cut.Handle(query, CancellationToken.None);
 
         //Assert
         result.Should().NotBeNull();
@@ -189,7 +190,7 @@ public sealed class GetRecentUserAndNickNamesTests(GrimoireCoreFactory factory) 
 
         //Act
 
-        var result = await cut.Handle(query, default);
+        var result = await cut.Handle(query, CancellationToken.None);
 
         //Assert
         result.Should().NotBeNull();

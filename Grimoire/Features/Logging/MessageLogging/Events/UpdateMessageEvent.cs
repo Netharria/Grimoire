@@ -6,15 +6,17 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.LogCleanup.Commands;
+using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Settings;
 
 namespace Grimoire.Features.Logging.MessageLogging.Events;
 
 public sealed class UpdateMessageEvent
 {
-    public sealed class EventHandler(IMediator mediator) : IEventHandler<MessageUpdatedEventArgs>
+    public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<MessageUpdatedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         public async Task HandleEventAsync(DiscordClient sender, MessageUpdatedEventArgs args)
         {
@@ -50,13 +52,20 @@ public sealed class UpdateMessageEvent
                 .WithThumbnail(avatarUrl);
 
             if (response.OriginalUserId is not null)
-                embed.AddField("Original Author", UserExtensions.Mention(response.OriginalUserId), true)
-                    .AddField("System Id", string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
+            {
+                var user = await sender.GetUserOrDefaultAsync(response.OriginalUserId.Value);
+                if (user is not null)
+                    embed.AddField("Original Author", user.Mention, true);
+                embed.AddField("System Id",
+                        string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
                         true)
-                    .AddField("Member Id", string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
+                    .AddField("Member Id",
+                        string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
                         true);
+
+            }
             else
-                embed.AddField("Author", UserExtensions.Mention(response.UserId), true);
+                embed.AddField("Author", args.Author.Mention, true);
 
             if (response.MessageContent.Length + args.Message.Content.Length >= 5000)
             {
@@ -73,16 +82,12 @@ public sealed class UpdateMessageEvent
             }
 
             foreach (var embedToSend in embeds)
-            {
-                var message = await sender.SendMessageToLoggingChannel(response.UpdateMessageLogChannelId,
-                    message => message
-                        .AddEmbed(embedToSend));
-                if (message is null) return;
-                await this._mediator.Send(new AddLogMessage.Command
+                await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
                 {
-                    MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
+                    GuildId = args.Guild.Id,
+                    GuildLogType = GuildLogType.MessageEdited,
+                    Embed = embedToSend
                 });
-            }
         }
     }
 
@@ -93,21 +98,22 @@ public sealed class UpdateMessageEvent
         public string MessageContent { get; init; } = string.Empty;
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule)
         : IRequestHandler<Command, Response>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+        private readonly SettingsModule _settingsModule = settingsModule;
 
         public async Task<Response> Handle(Command command, CancellationToken cancellationToken)
         {
+            if (await this._settingsModule.IsModuleEnabled(Module.MessageLog, command.GuildId, cancellationToken))
+                return new Response { Success = false };
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var message = await dbContext.Messages
                 .AsNoTracking()
-                .WhereMessageLoggingIsEnabled()
                 .WhereIdIs(command.MessageId)
                 .Select(message => new Response
                     {
-                        UpdateMessageLogChannelId = message.Guild.MessageLogSettings.EditChannelLogId,
                         MessageId = message.Id,
                         UserId = message.UserId,
                         MessageContent = message.MessageHistory
@@ -137,10 +143,9 @@ public sealed class UpdateMessageEvent
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong MessageId { get; init; }
-        public ulong? UpdateMessageLogChannelId { get; init; }
         public string MessageContent { get; init; } = string.Empty;
         public ulong UserId { get; init; }
         public bool Success { get; init; }

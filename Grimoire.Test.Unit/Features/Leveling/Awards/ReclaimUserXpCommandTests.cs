@@ -7,6 +7,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
@@ -75,12 +76,11 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
             new ReclaimUserXp.Request
             {
                 UserId = UserId, GuildId = GuildId, XpToTake = 200, XpOption = ReclaimUserXp.XpOption.Amount
-            }, default);
+            }, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 
         result.Should().NotBeNull();
-        result.LogChannelId.Should().BeNull();
         result.XpTaken.Should().Be(200);
 
         var member = await dbContext.Members.Where(x =>
@@ -100,7 +100,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
 
         _ = await cut.Handle(
             new ReclaimUserXp.Request { UserId = UserId, GuildId = GuildId, XpToTake = 0, XpOption = ReclaimUserXp.XpOption.All },
-            default);
+            CancellationToken.None);
         dbContext.ChangeTracker.Clear();
 
         var member = await dbContext.Members
@@ -121,7 +121,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
 
         var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
             new ReclaimUserXp.Request { UserId = 20001, GuildId = GuildId, XpToTake = 20, XpOption = ReclaimUserXp.XpOption.Amount },
-            default));
+            CancellationToken.None));
         dbContext.ChangeTracker.Clear();
         response.Should().NotBeNull();
         response.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
@@ -135,7 +135,7 @@ public sealed class ReclaimUserXpCommandTests(GrimoireCoreFactory factory) : IAs
 
         var response = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await cut.Handle(
             new ReclaimUserXp.Request { UserId = UserId, GuildId = GuildId, XpToTake = 20, XpOption = (ReclaimUserXp.XpOption)2 },
-            default));
+            CancellationToken.None));
         dbContext.ChangeTracker.Clear();
         response.Should().NotBeNull();
         response.Message.Should().Be("XpOption not implemented in switch statement. (Parameter 'command')");

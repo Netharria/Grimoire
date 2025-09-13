@@ -5,9 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Exceptions;
 
 namespace Grimoire.Features.Moderation.Ban.Commands;
@@ -48,7 +46,7 @@ public sealed class RemoveBanCommand
             await ctx.EditReplyAsync(
                 GrimoireColor.Yellow,
                 title: "Error",
-                message: $"{user.GetUsernameWithDiscriminator()} was not unbanned because {errorMessage}");
+                message: $"{user.Username} was not unbanned because {errorMessage}");
         }
     }
 }

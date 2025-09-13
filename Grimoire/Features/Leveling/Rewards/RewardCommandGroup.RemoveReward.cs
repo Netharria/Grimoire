@@ -6,8 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.ComponentModel;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -20,49 +19,49 @@ public sealed partial class RewardCommandGroup
         [Description("The role to be removed as a reward.")]
         DiscordRole role)
     {
+        if (ctx.Guild is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
+            return;
+        }
         await ctx.DeferResponseAsync();
-        var response = await this._mediator.Send(
+        await this._mediator.Send(
             new RemoveReward.Request { RoleId = role.Id });
 
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, response.Message);
-        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Removed {role.Mention} reward");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            LogChannelId = response.LogChannelId,
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
-            Description = response.Message
+            Description = $"{ctx.User.Mention} removed {role.Mention} reward"
         });
     }
 }
 
 public sealed class RemoveReward
 {
-    public sealed record Request : IRequest<BaseResponse>
+    public sealed record Request : IRequest
     {
         public required ulong RoleId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, BaseResponse>
+        : IRequestHandler<Request>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task Handle(Request command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await dbContext.Rewards
                 .Include(x => x.Guild)
                 .Where(x => x.RoleId == command.RoleId)
-                .Select(x => new { Reward = x, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken);
-            if (result is null || result.Reward is null)
-                throw new AnticipatedException(
-                    $"Did not find a saved reward for role {RoleExtensions.Mention(command.RoleId)}");
-            dbContext.Rewards.Remove(result.Reward);
+            if (result is null)
+                return;
+            dbContext.Rewards.Remove(result);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse
-            {
-                Message = $"Removed {result.Reward.Mention()} reward", LogChannelId = result.ModChannelLog
-            };
         }
     }
 }

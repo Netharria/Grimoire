@@ -5,10 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Queries;
 
@@ -126,14 +124,14 @@ public sealed class GetLeaderboard
                 var leaderboardText = new StringBuilder();
                 for (var i = 0; i < 15 && startIndex < totalMemberCount; i++, startIndex++)
                     leaderboardText.Append(
-                        $"**{startIndex + 1}** {UserExtensions.Mention(rankedMembers[startIndex].UserId)} **XP:** {rankedMembers[startIndex].Xp}\n");
+                        $"**{startIndex + 1}** <@!{rankedMembers[startIndex].UserId}> **XP:** {rankedMembers[startIndex].Xp}\n");
 
                 return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
             }
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public required string LeaderboardText { get; init; }
         public required int TotalUserCount { get; init; }

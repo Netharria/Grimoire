@@ -5,9 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.Lock.Commands;
 
@@ -16,9 +15,10 @@ public sealed class UnlockChannel
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
     [RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
-    internal sealed class Command(IMediator mediator)
+    internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         [Command("Unlock")]
         [Description("Unlocks a channel.")]
@@ -48,8 +48,13 @@ public sealed class UnlockChannel
 
             await ctx.EditReplyAsync(message: $"{channel.Mention} has been unlocked");
 
-            await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{channel.Mention} has been unlocked by {ctx.User.Mention}");
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.Purple,
+                Description = $"{ctx.User.Mention} unlocked {channel.Mention}"
+            });
         }
     }
 
@@ -81,14 +86,13 @@ public sealed class UnlockChannel
 
             return new Response
             {
-                LogChannelId = result.ModerationLogId,
                 PreviouslyAllowed = result.Lock.PreviouslyAllowed,
                 PreviouslyDenied = result.Lock.PreviouslyDenied
             };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public long PreviouslyAllowed { get; init; }
         public long PreviouslyDenied { get; init; }

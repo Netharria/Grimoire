@@ -14,15 +14,17 @@ namespace Grimoire.Domain;
 public class GuildModerationSettings : IModule
 {
     public ulong GuildId { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? PublicBanLog { get; set; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public TimeSpan AutoPardonAfter { get; set; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? MuteRole { get; set; }
     public virtual Role? MuteRoleNav { get; init; }
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public bool AntiSpamEnabled { get; init; }
 
     public virtual Guild Guild { get; set; } = null!;
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public bool ModuleEnabled { get; set; }
 }

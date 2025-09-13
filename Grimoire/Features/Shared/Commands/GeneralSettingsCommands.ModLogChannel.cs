@@ -5,10 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
@@ -41,28 +39,22 @@ internal sealed partial class GeneralSettingsCommands
                     $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
         }
 
-        var response = await this._mediator.Send(new SetModLog.Request
+        await this._mediator.Send(new SetModLog.Request
         {
             GuildId = ctx.Guild.Id, ChannelId = channel?.Id
         });
-        if (option is ChannelOption.Off)
-        {
-            await ctx.EditReplyAsync(message: "Disabled the moderation log.");
-            await this._channel.Writer.WriteAsync(new PublishToGuildLog
-            {
-                LogChannelId = response.LogChannelId,
-                Description = $"{ctx.User.Mention} disabled the level log.",
-                Color = GrimoireColor.Purple
 
-            });
-            return;
-        }
 
-        await ctx.EditReplyAsync(message: $"Updated the moderation log to {channel?.Mention}");
-        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        await ctx.EditReplyAsync(message:  option is ChannelOption.Off
+            ? $"{ctx.User.Mention} disabled the moderation log to {channel?.Mention}"
+            : $"Updated the moderation log to {channel?.Mention}");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            LogChannelId = response.LogChannelId,
-            Description = $"{ctx.User.Mention} updated the moderation log to {channel?.Mention}.",
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Description = option is ChannelOption.Off
+            ? $"{ctx.User.Mention} disabled the moderation log."
+            : $"{ctx.User.Mention} updated the moderation log to {channel?.Mention}.",
             Color = GrimoireColor.Purple
 
         });
@@ -71,7 +63,7 @@ internal sealed partial class GeneralSettingsCommands
 
 internal sealed class SetModLog
 {
-    internal sealed record Request : IRequest<BaseResponse>
+    internal sealed record Request : IRequest
     {
         public ulong GuildId { get; init; }
         public ulong? ChannelId { get; init; }
@@ -79,11 +71,11 @@ internal sealed class SetModLog
 
     [UsedImplicitly]
     internal sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, BaseResponse>
+        : IRequestHandler<Request>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task Handle(Request command, CancellationToken cancellationToken)
         {
             var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var guild = await dbContext.Guilds
@@ -94,7 +86,6 @@ internal sealed class SetModLog
             guild.ModChannelLog = command.ChannelId;
 
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { LogChannelId = command.ChannelId };
         }
     }
 }

@@ -23,5 +23,6 @@ public class MessageLogChannelOverride
     public virtual Channel Channel { get; init; } = null!;
     public ulong GuildId { get; init; }
     public virtual Guild Guild { get; init; } = null!;
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public MessageLogOverrideOption ChannelOption { get; set; }
 }

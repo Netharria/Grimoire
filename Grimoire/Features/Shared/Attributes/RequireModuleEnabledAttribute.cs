@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Settings;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,35 +24,8 @@ internal sealed class RequireModuleEnabledCheck : IContextCheck<RequireModuleEna
     {
         if (context.Guild is null)
                 return "This command can only be used in a server.";
-        var mediator = context.ServiceProvider.GetRequiredService<IMediator>();
-        var result = await mediator.Send(new GetModuleStateForGuild.Request { GuildId = context.Guild.Id, Module = attribute.Module });
+        var settingsModule = context.ServiceProvider.GetRequiredService<SettingsModule>();
+        var result = await settingsModule.IsModuleEnabled(attribute.Module, context.Guild.Id);
         return !result ? "This module is disabled in this server." : null;
-    }
-}
-
-internal sealed class GetModuleStateForGuild
-{
-    public sealed record Request : IRequest<bool>
-    {
-        public ulong GuildId { get; init; }
-        public Module Module { get; init; }
-    }
-
-    [UsedImplicitly]
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, bool>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<bool> Handle(Request request, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbContext.Guilds.AsNoTracking().WhereIdIs(request.GuildId)
-                .GetModulesOfType(request.Module)
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-                .Select(module => module != null && module.ModuleEnabled)
-                .FirstOrDefaultAsync(cancellationToken);
-            return result;
-        }
     }
 }

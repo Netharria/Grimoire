@@ -33,7 +33,7 @@ internal sealed class GuildMemberAddedEvent(IMediator mediator, IInviteService i
                     new Invite
                     {
                         Code = x.Code,
-                        Inviter = x.Inviter.GetUsernameWithDiscriminator(),
+                        Inviter = x.Inviter.Username,
                         Url = x.ToString(),
                         Uses = x.Uses,
                         MaxUses = x.MaxUses

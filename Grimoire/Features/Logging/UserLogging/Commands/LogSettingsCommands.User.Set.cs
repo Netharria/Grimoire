@@ -6,9 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.ComponentModel;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 // ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
@@ -45,21 +44,24 @@ public partial class LogSettingsCommands
                         $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
             }
 
-            var response = await this._mediator.Send(new SetUserLogSettings.Command
+            await this._mediator.Send(new SetUserLogSettings.Command
             {
                 GuildId = ctx.Guild.Id, UserLogSetting = logSetting, ChannelId = channel?.Id
             });
-            if (option is ChannelOption.Off)
-            {
-                await ctx.EditReplyAsync(message: $"Disabled {logSetting}");
-                await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                    message: $"{ctx.User.Mention} disabled {logSetting}.");
-                return;
-            }
 
-            await ctx.EditReplyAsync(message: $"Updated {logSetting} to {channel?.Mention}");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{ctx.User.Mention} updated {logSetting} to {channel?.Mention}.");
+
+            await ctx.EditReplyAsync(message: option is ChannelOption.Off
+            ? $"Disabled {logSetting}"
+            : $"Updated {logSetting} to {channel?.Mention}");
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Description = option is ChannelOption.Off
+                    ? $"{ctx.User.Mention} disabled {logSetting}."
+                    : $"{ctx.User.Mention} updated {logSetting} to {channel?.Mention}.",
+                Color = GrimoireColor.Purple
+            });
         }
     }
 }
@@ -75,7 +77,7 @@ public sealed class SetUserLogSettings
         [ChoiceDisplayName("Avatar Change Log")]AvatarLog
     }
 
-    public sealed record Command : IRequest<BaseResponse>
+    public sealed record Command : IRequest
     {
         public ulong GuildId { get; init; }
         public UserLogSetting UserLogSetting { get; init; }
@@ -84,38 +86,37 @@ public sealed class SetUserLogSettings
 
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Command, BaseResponse>
+        : IRequestHandler<Command>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        public async Task Handle(Command command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var userSettings = await dbContext.GuildUserLogSettings
                 .Where(x => x.GuildId == command.GuildId)
-                .Select(x => new { UserSettings = x, x.Guild.ModChannelLog }).FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(cancellationToken);
             if (userSettings == null) throw new AnticipatedException("Could not find user log settings.");
             switch (command.UserLogSetting)
             {
                 case UserLogSetting.JoinLog:
-                    userSettings.UserSettings.JoinChannelLogId = command.ChannelId;
+                    userSettings.JoinChannelLogId = command.ChannelId;
                     break;
                 case UserLogSetting.LeaveLog:
-                    userSettings.UserSettings.LeaveChannelLogId = command.ChannelId;
+                    userSettings.LeaveChannelLogId = command.ChannelId;
                     break;
                 case UserLogSetting.UsernameLog:
-                    userSettings.UserSettings.UsernameChannelLogId = command.ChannelId;
+                    userSettings.UsernameChannelLogId = command.ChannelId;
                     break;
                 case UserLogSetting.NicknameLog:
-                    userSettings.UserSettings.NicknameChannelLogId = command.ChannelId;
+                    userSettings.NicknameChannelLogId = command.ChannelId;
                     break;
                 case UserLogSetting.AvatarLog:
-                    userSettings.UserSettings.AvatarChannelLogId = command.ChannelId;
+                    userSettings.AvatarChannelLogId = command.ChannelId;
                     break;
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { LogChannelId = userSettings.ModChannelLog };
         }
     }
 }

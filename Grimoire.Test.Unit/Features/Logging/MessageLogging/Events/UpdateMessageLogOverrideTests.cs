@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
@@ -51,18 +52,15 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
         await using var dbContext = this._createDbContext();
         var cut = new UpdateMessageLogOverride.Handler(this._mockDbContextFactory);
 
-        var result = await cut.Handle(
+        await cut.Handle(
             new UpdateMessageLogOverride.Command
             {
                 ChannelId = ChannelId,
                 GuildId = GuildId,
                 ChannelOverrideSetting = UpdateMessageLogOverride.MessageLogOverrideSetting.Always
-            }, default);
+            }, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
-
-        result.Message.Should().Be("Will now always log messages from <#1> and its sub channels/threads.");
-        result.LogChannelId.Should().BeNull();
 
         var channelOverride = await dbContext.MessagesLogChannelOverrides
             .FirstOrDefaultAsync(x => x.ChannelId == ChannelId);
@@ -77,18 +75,15 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
         await using var dbContext = this._createDbContext();
         var cut = new UpdateMessageLogOverride.Handler(this._mockDbContextFactory);
 
-        var result = await cut.Handle(
+        await cut.Handle(
             new UpdateMessageLogOverride.Command
             {
                 ChannelId = ChannelId,
                 GuildId = GuildId,
                 ChannelOverrideSetting = UpdateMessageLogOverride.MessageLogOverrideSetting.Never
-            }, default);
+            }, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
-
-        result.Message.Should().Be("Will now never log messages from <#1> and its sub channels/threads.");
-        result.LogChannelId.Should().BeNull();
 
         var channelOverride = await dbContext.MessagesLogChannelOverrides
             .FirstOrDefaultAsync(x => x.ChannelId == ChannelId);
@@ -110,7 +105,7 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
                             ChannelId = ChannelId,
                             GuildId = GuildId,
                             ChannelOverrideSetting = (UpdateMessageLogOverride.MessageLogOverrideSetting)5000
-                        }, default))
+                        }, CancellationToken.None))
             .Should()
             .ThrowAsync<NotImplementedException>()
             .WithMessage("A Message log Override option was selected that has not been implemented.");
@@ -129,7 +124,7 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
                             ChannelId = ChannelId,
                             GuildId = 526546546546546,
                             ChannelOverrideSetting = UpdateMessageLogOverride.MessageLogOverrideSetting.Always
-                        }, default))
+                        }, CancellationToken.None))
             .Should()
             .ThrowAsync<AnticipatedException>()
             .WithMessage("Could not find guild settings.");
@@ -147,18 +142,15 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
 
         var cut = new UpdateMessageLogOverride.Handler(this._mockDbContextFactory);
 
-        var result = await cut.Handle(
+        await cut.Handle(
             new UpdateMessageLogOverride.Command
             {
                 ChannelId = ChannelId,
                 GuildId = GuildId,
                 ChannelOverrideSetting = UpdateMessageLogOverride.MessageLogOverrideSetting.Always
-            }, default);
+            }, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
-
-        result.Message.Should().Be("Will now always log messages from <#1> and its sub channels/threads.");
-        result.LogChannelId.Should().BeNull();
 
         var channelOverride = await dbContext.MessagesLogChannelOverrides
             .FirstOrDefaultAsync(x => x.ChannelId == ChannelId);
@@ -179,18 +171,15 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
 
         var cut = new UpdateMessageLogOverride.Handler(this._mockDbContextFactory);
 
-        var result = await cut.Handle(
+        await cut.Handle(
             new UpdateMessageLogOverride.Command
             {
                 ChannelId = ChannelId,
                 GuildId = GuildId,
                 ChannelOverrideSetting = UpdateMessageLogOverride.MessageLogOverrideSetting.Never
-            }, default);
+            }, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
-
-        result.Message.Should().Be("Will now never log messages from <#1> and its sub channels/threads.");
-        result.LogChannelId.Should().BeNull();
 
         var channelOverride = await dbContext.MessagesLogChannelOverrides
             .FirstOrDefaultAsync(x => x.ChannelId == ChannelId);
@@ -219,7 +208,7 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
                             ChannelId = ChannelId,
                             GuildId = GuildId,
                             ChannelOverrideSetting = (UpdateMessageLogOverride.MessageLogOverrideSetting)5000
-                        }, default))
+                        }, CancellationToken.None))
             .Should()
             .ThrowAsync<NotImplementedException>()
             .WithMessage("A Message log Override option was selected that has not been implemented.");
@@ -237,18 +226,15 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
 
         var cut = new UpdateMessageLogOverride.Handler(this._mockDbContextFactory);
 
-        var result = await cut.Handle(
+        await cut.Handle(
             new UpdateMessageLogOverride.Command
             {
                 ChannelId = ChannelId,
                 GuildId = GuildId,
                 ChannelOverrideSetting = UpdateMessageLogOverride.MessageLogOverrideSetting.Inherit
-            }, default);
+            }, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
-
-        result.Message.Should().Be("Override was successfully removed from the channel.");
-        result.LogChannelId.Should().BeNull();
 
         var channelOverride = await dbContext.MessagesLogChannelOverrides
             .FirstOrDefaultAsync(x => x.ChannelId == ChannelId);
@@ -269,7 +255,7 @@ public sealed class UpdateMessageLogOverrideTests(GrimoireCoreFactory factory) :
                     ChannelId = ChannelId,
                     GuildId = GuildId,
                     ChannelOverrideSetting = UpdateMessageLogOverride.MessageLogOverrideSetting.Inherit
-                }, default))
+                }, CancellationToken.None))
             .Should()
             .ThrowAsync<AnticipatedException>()
             .WithMessage("That channel did not have an override.");

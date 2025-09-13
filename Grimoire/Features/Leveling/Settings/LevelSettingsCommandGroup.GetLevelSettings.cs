@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-
 namespace Grimoire.Features.Leveling.Settings;
 
 public sealed partial class LevelSettingsCommandGroup
@@ -71,7 +69,7 @@ public sealed class GetLevelSettings
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public required bool ModuleEnabled { get; init; }
         public required TimeSpan TextTime { get; init; }

@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
@@ -77,7 +78,7 @@ public class LinkProxyMessageTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 GuildId = GuildId,
                 SystemId = "SystemId",
                 MemberId = "MemberId"
-            }, default);
+            }, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 

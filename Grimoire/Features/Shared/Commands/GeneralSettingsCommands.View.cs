@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
-using Grimoire.DatabaseQueryHelpers;
+﻿using Grimoire.DatabaseQueryHelpers;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;

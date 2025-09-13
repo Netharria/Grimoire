@@ -6,10 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.ComponentModel;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
-using DSharpPlus.Commands.Processors.SlashCommands;
 // ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;
 
@@ -45,22 +44,25 @@ public partial class LogSettingsCommands
                         $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
             }
 
-            var response = await this._mediator.Send(new SetMessageLogSettings.Command
+            await this._mediator.Send(new SetMessageLogSettings.Command
             {
                 GuildId = ctx.Guild.Id, MessageLogSetting = logSetting, ChannelId = channel?.Id
             });
 
-            if (option is ChannelOption.Off)
-            {
-                await ctx.EditReplyAsync(message: $"Disabled {logSetting}");
-                await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                    message: $"{ctx.User.Mention} disabled {logSetting}.");
-                return;
-            }
 
-            await ctx.EditReplyAsync(message: $"Updated {logSetting} to {channel?.Mention}");
-            await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                message: $"{ctx.User.Mention} updated {logSetting} to {channel?.Mention}.");
+            await ctx.EditReplyAsync(message: option is ChannelOption.Off
+                ? $"Disabled {logSetting}"
+                : $"Updated {logSetting} to {channel?.Mention}");
+
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Description = option is ChannelOption.Off
+                    ? $"{ctx.User.Mention} disabled {logSetting}."
+                    : $"{ctx.User.Mention} updated {logSetting} to {channel?.Mention}.",
+                Color = GrimoireColor.Purple
+            });
         }
     }
 }
@@ -74,7 +76,7 @@ public sealed class SetMessageLogSettings
         [ChoiceDisplayName("Edit Message Log")]EditLog
     }
 
-    public sealed record Command : IRequest<BaseResponse>
+    public sealed record Command : IRequest
     {
         public ulong GuildId { get; init; }
         public MessageLogSetting MessageLogSetting { get; init; }
@@ -82,32 +84,31 @@ public sealed class SetMessageLogSettings
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Command, BaseResponse>
+        : IRequestHandler<Command>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
+        public async Task Handle(Command command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var messageSettings = await dbContext.GuildMessageLogSettings
                 .Where(x => x.GuildId == command.GuildId)
-                .Select(x => new { LogSettings = x, x.Guild.ModChannelLog }).FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(cancellationToken);
             if (messageSettings == null) throw new AnticipatedException("Could not find message log settings.");
             switch (command.MessageLogSetting)
             {
                 case MessageLogSetting.DeleteLog:
-                    messageSettings.LogSettings.DeleteChannelLogId = command.ChannelId;
+                    messageSettings.DeleteChannelLogId = command.ChannelId;
                     break;
                 case MessageLogSetting.BulkDeleteLog:
-                    messageSettings.LogSettings.BulkDeleteChannelLogId = command.ChannelId;
+                    messageSettings.BulkDeleteChannelLogId = command.ChannelId;
                     break;
                 case MessageLogSetting.EditLog:
-                    messageSettings.LogSettings.EditChannelLogId = command.ChannelId;
+                    messageSettings.EditChannelLogId = command.ChannelId;
                     break;
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse { LogChannelId = messageSettings.ModChannelLog };
         }
     }
 }

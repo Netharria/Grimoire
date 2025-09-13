@@ -18,4 +18,28 @@ public static class DiscordGuildExtensions
             .OfType<T>()
             .FirstOrDefaultAsync(
                 x => x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
+
+    public static async Task<DiscordRole?> GetRoleOrDefaultAsync(this DiscordGuild guild, ulong roleId)
+    {
+        try
+        {
+            return await guild.GetRoleAsync(roleId);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordGuild guild, ulong channelId)
+    {
+        try
+        {
+            return await guild.GetChannelAsync(channelId);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }

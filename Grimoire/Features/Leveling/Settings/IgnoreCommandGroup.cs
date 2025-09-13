@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using System.Threading.Channels;
+using System.Text;
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -17,10 +16,10 @@ namespace Grimoire.Features.Leveling.Settings;
 [RequireModuleEnabled(Module.Leveling)]
 [Command("Ignore")]
 [Description("Commands for updating and viewing the server ignore list.")]
-public sealed partial class IgnoreCommandGroup(IMediator mediator, Channel<PublishToGuildLog> channel)
+public sealed partial class IgnoreCommandGroup(IMediator mediator, GuildLog guildLog)
 {
     private readonly IMediator _mediator = mediator;
-    private readonly Channel<PublishToGuildLog> _channel = channel;
+    private readonly GuildLog _guildLog = guildLog;
 
     [Command("Add")]
     [Description("Adds a user, channel, or role to the ignored xp list.")]
@@ -76,16 +75,22 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, Channel<Publi
 
         var response = await this._mediator.Send(command);
 
+        var messageBuilder = await BuildIgnoreListAsync(ctx, response)
+            ;
+        var message = messageBuilder.Length == 0
+            ? "All items in list provided were not ignored"
+            : messageBuilder
+                .Append(shouldIgnore ? " are now ignored for xp gain." : " are no longer ignored for xp gain.")
+                .ToString();
 
         await ctx.EditReplyAsync(GrimoireColor.Green,
-            string.IsNullOrWhiteSpace(response.Message)
-                ? "All items in list provided were not ignored"
-                : response.Message);
-        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+            message: message);
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            LogChannelId = response.LogChannelId,
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
-            Description = response.Message
+            Description = message
         });
     }
 
@@ -96,7 +101,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, Channel<Publi
             {
                 Id = member.Id,
                 Nickname = member.Nickname,
-                Username = member.GetUsernameWithDiscriminator(),
+                Username = member.Username,
                 AvatarUrl = member.GetGuildAvatarUrl(MediaFormat.Auto)
             };
         try
@@ -107,7 +112,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, Channel<Publi
                 return new UserDto
                 {
                     Id = user.Id,
-                    Username = user.GetUsernameWithDiscriminator(),
+                    Username = user.Username,
                     AvatarUrl = user.GetAvatarUrl(MediaFormat.Auto)
                 };
         }
@@ -117,5 +122,54 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, Channel<Publi
         }
 
         return null;
+    }
+
+    private static async Task<StringBuilder> BuildIgnoreListAsync(CommandContext ctx, Response response)
+    {
+        ArgumentNullException.ThrowIfNull(ctx.Guild);
+        var stringBuilder = new StringBuilder();
+        if (response.IgnoredMembers is not null)
+        {
+            foreach (var ignorable in response.IgnoredMembers)
+            {
+                var ignoredMember = await ctx.Client.GetUserOrDefaultAsync(ignorable.UserId);
+                if (ignoredMember is not null)
+                    stringBuilder.Append(ignoredMember.Mention).Append(' ');
+            }
+        }
+        if (response.IgnoredRoles is not null)
+        {
+            foreach (var ignorable in response.IgnoredRoles)
+            {
+                var ignoredRole = await ctx.Guild.GetRoleOrDefaultAsync(ignorable.RoleId);
+                if (ignoredRole is not null)
+                    stringBuilder.Append(ignoredRole.Mention).Append(' ');
+            }
+        }
+        if (response.IgnoredChannels is not null)
+        {
+            foreach (var ignorable in response.IgnoredChannels)
+            {
+                var ignoredChannel = await ctx.Guild.GetChannelOrDefaultAsync(ignorable.ChannelId);
+                if (ignoredChannel is not null)
+                    stringBuilder.Append(ignoredChannel.Mention).Append(' ');
+            }
+        }
+        return stringBuilder;
+    }
+
+    public interface IUpdateIgnoreForXpGain : IRequest<Response>
+    {
+        public ulong GuildId { get; init; }
+        public IReadOnlyCollection<UserDto> Users { get; set; }
+        public IReadOnlyCollection<RoleDto> Roles { get; set; }
+        public IReadOnlyCollection<ChannelDto> Channels { get; set; }
+    }
+
+    public sealed record Response
+    {
+        public IgnoredChannel[]? IgnoredChannels { get; internal set; }
+        public IgnoredMember[]? IgnoredMembers { get; internal set; }
+        public IgnoredRole[]? IgnoredRoles { get; internal set; }
     }
 }

@@ -13,5 +13,6 @@ public enum Module
     UserLog,
     Moderation,
     MessageLog,
-    Commands
+    Commands,
+    General
 }

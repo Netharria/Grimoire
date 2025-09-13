@@ -5,10 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
-using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -45,19 +43,24 @@ public sealed partial class RewardCommandGroup
                 RewardLevel = level,
                 Message = string.IsNullOrWhiteSpace(message) ? null : message
             });
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, response.Message);
-        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        var responseMessage = response.RewardExisted
+            ? $"Updated the reward for {role.Mention} to level {level}."
+            : $"Added a new reward for {role.Mention} at level {level}.";
+
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, responseMessage);
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            LogChannelId = response.LogChannelId,
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Leveling,
             Color = GrimoireColor.DarkPurple,
-            Description = response.Message
+            Description = responseMessage
         });
     }
 }
 
 public sealed class AddReward
 {
-    public sealed record Request : IRequest<BaseResponse>
+    public sealed record Request : IRequest<Response>
     {
         public required ulong RoleId { get; init; }
         public required ulong GuildId { get; init; }
@@ -66,11 +69,11 @@ public sealed class AddReward
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, BaseResponse>
+        : IRequestHandler<Request, Response>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var reward = await dbContext.Rewards
@@ -78,37 +81,31 @@ public sealed class AddReward
                 .FirstOrDefaultAsync(x => x.RoleId == command.RoleId, cancellationToken);
             if (reward is null)
             {
-                reward = new Reward
+                await dbContext.Rewards.AddAsync(new Reward
                 {
                     GuildId = command.GuildId,
                     RoleId = command.RoleId,
                     RewardLevel = command.RewardLevel,
                     RewardMessage = command.Message
-                };
-                await dbContext.Rewards.AddAsync(reward, cancellationToken);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                var modChannelLog = await dbContext.Guilds
-                    .AsNoTracking()
-                    .WhereIdIs(command.GuildId)
-                    .Select(x => x.ModChannelLog)
-                    .FirstOrDefaultAsync(cancellationToken);
-                return new BaseResponse
-                {
-                    Message = $"Added {reward.Mention()} reward at level {command.RewardLevel}",
-                    LogChannelId = modChannelLog
-                };
+                }, cancellationToken);
             }
-
-            reward.RewardLevel = command.RewardLevel;
-            reward.RewardMessage = command.Message;
+            else
+            {
+                reward.RewardLevel = command.RewardLevel;
+                reward.RewardMessage = command.Message;
+            }
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return new BaseResponse
+            return new Response
             {
-                Message = $"Updated {reward.Mention()} reward to level {command.RewardLevel}",
-                LogChannelId = reward.Guild.ModChannelLog
+                RewardExisted = reward is not null
             };
         }
+    }
+
+    public record Response
+    {
+        public required bool RewardExisted { get; init; }
     }
 }

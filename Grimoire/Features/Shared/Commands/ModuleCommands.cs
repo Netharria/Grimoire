@@ -5,17 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Threading.Channels;
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Shared.Commands;
 
 [Command("Modules")]
 [RequireGuild]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-internal sealed partial class ModuleCommands(IMediator mediator, Channel<PublishToGuildLog> channel)
+internal sealed partial class ModuleCommands(IMediator mediator, GuildLog guildLog)
 {
     private readonly IMediator _mediator = mediator;
-    private readonly Channel<PublishToGuildLog> _channel = channel;
+    private readonly GuildLog _guildLog = guildLog;
 }

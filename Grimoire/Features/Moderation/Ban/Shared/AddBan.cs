@@ -43,15 +43,11 @@ public sealed class AddBan
                 }, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            var loggingChannel = await dbContext.Guilds
-                .WhereIdIs(command.GuildId)
-                .Select(x => x.ModChannelLog)
-                .FirstOrDefaultAsync(cancellationToken);
-            return new Response { SinId = sin.Entity.Id, LogChannelId = loggingChannel };
+            return new Response { SinId = sin.Entity.Id };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public long SinId { get; init; }
     }

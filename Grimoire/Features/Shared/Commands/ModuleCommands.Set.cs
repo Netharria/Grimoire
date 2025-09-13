@@ -5,10 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Domain.Shared;
+using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Settings;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
@@ -31,17 +31,18 @@ internal sealed partial class ModuleCommands
         if(ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var response = await this._mediator.Send(new EnableModule.Request
+        await this._mediator.Send(new EnableModule.Request
         {
             GuildId = ctx.Guild.Id, Module = module, Enable = enable
         });
 
         await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module}");
 
-        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            LogChannelId = response.LogChannelId,
-            Description = $"{ctx.User.GetUsernameWithDiscriminator()} {(enable ? "Enabled" : "Disabled")} {module}",
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Description = $"{ctx.User.Username} {(enable ? "Enabled" : "Disabled")} {module}",
             Color = GrimoireColor.Purple
         });
     }
@@ -50,46 +51,59 @@ internal sealed partial class ModuleCommands
 
 internal sealed class EnableModule
 {
-    public sealed record Request : IRequest<BaseResponse>
+    public sealed record Request : IRequest
 {
     public ulong GuildId { get; init; }
     public Module Module { get; init; }
     public bool Enable { get; init; }
 }
 
-public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-    : IRequestHandler<Request, BaseResponse>
+public sealed class Handler(SettingsModule settingsModule)
+    : IRequestHandler<Request>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
-    public async Task<BaseResponse> Handle(Request command,
+    public async Task Handle(Request command,
         CancellationToken cancellationToken)
     {
-        var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var result = await dbContext.Guilds
-            .WhereIdIs(command.GuildId)
-            .GetModulesOfType(command.Module)
-            .Select(module => new { Module = module, module.Guild.ModChannelLog })
-            .FirstOrDefaultAsync(cancellationToken);
-        if (result is null)
-            throw new AnticipatedException("Could not find the settings for this server.");
+        var settings = await this._settingsModule.GetGuildSettings(command.GuildId, cancellationToken);
 
-        var modChannelLog = result.ModChannelLog;
-        // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-        var guildModule = result.Module ?? command.Module switch
+        if (settings is null)
+            throw new AnticipatedException("Guild settings not found.");
+
+        // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+        IModule guildModule;
+        switch (command.Module)
         {
-            Module.Leveling => new GuildLevelSettings { GuildId = command.GuildId },
-            Module.UserLog => new GuildUserLogSettings { GuildId = command.GuildId },
-            Module.Moderation => new GuildModerationSettings { GuildId = command.GuildId },
-            Module.MessageLog => new GuildMessageLogSettings { GuildId = command.GuildId },
-            Module.Commands => new GuildCommandsSettings { GuildId = command.GuildId },
-            _ => throw new NotImplementedException()
-        };
+            case Module.Leveling:
+                settings.LevelSettings ??= new GuildLevelSettings { GuildId = command.GuildId };
+                guildModule = settings.LevelSettings;
+                break;
+            case Module.UserLog:
+                settings.UserLogSettings ??= new GuildUserLogSettings { GuildId = command.GuildId };
+                guildModule = settings.UserLogSettings;
+                break;
+            case Module.Moderation:
+                settings.ModerationSettings ??= new GuildModerationSettings { GuildId = command.GuildId };
+                guildModule = settings.ModerationSettings;
+                break;
+            case Module.MessageLog:
+                settings.MessageLogSettings ??= new GuildMessageLogSettings { GuildId = command.GuildId };
+                guildModule = settings.MessageLogSettings;
+                break;
+            case Module.Commands:
+                settings.CommandsSettings ??= new GuildCommandsSettings { GuildId = command.GuildId };
+                guildModule = settings.CommandsSettings;
+                break;
+            case Module.General:
+            default:
+                throw new NotImplementedException();
+        }
+
+        // ReSharper enable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         guildModule.ModuleEnabled = command.Enable;
-        if (result.Module is null)
-            await dbContext.AddAsync(guildModule, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return new BaseResponse { LogChannelId = modChannelLog };
+
+        await this._settingsModule.UpdateGuildSettings(settings, cancellationToken);
     }
 }
 }

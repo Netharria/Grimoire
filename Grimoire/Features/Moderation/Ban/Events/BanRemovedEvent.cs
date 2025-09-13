@@ -6,12 +6,14 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Moderation.Ban.Shared;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.Ban.Events;
 
-public class BanRemovedEvent(IMediator mediator) : IEventHandler<GuildBanRemovedEventArgs>
+public class BanRemovedEvent(IMediator mediator, GuildLog guildLog) : IEventHandler<GuildBanRemovedEventArgs>
 {
     private readonly IMediator _mediator = mediator;
+    private readonly GuildLog _guildLog = guildLog;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanRemovedEventArgs args)
     {
@@ -26,15 +28,20 @@ public class BanRemovedEvent(IMediator mediator) : IEventHandler<GuildBanRemoved
         if (response.LastSin is null)
             return;
 
-        await sender.SendMessageToLoggingChannel(response.LogChannelId, builder =>
+        var embed = new DiscordEmbedBuilder()
+            .WithAuthor("Unbanned")
+            .AddField("User", args.Member.Mention, true)
+            .AddField("Sin Id", $"**{response.LastSin.SinId}**", true)
+            .WithTimestamp(DateTimeOffset.UtcNow)
+            .WithColor(GrimoireColor.Green);
+        if (response.LastSin.ModeratorId is not null)
+            embed.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
+
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            builder.WithAuthor("Unbanned")
-                .AddField("User", args.Member.Mention, true)
-                .AddField("Sin Id", $"**{response.LastSin.SinId}**", true)
-                .WithTimestamp(DateTimeOffset.UtcNow)
-                .WithColor(GrimoireColor.Green);
-            if (response.LastSin.ModeratorId is not null)
-                builder.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
+            GuildId = args.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Embed = embed
         });
     }
 }

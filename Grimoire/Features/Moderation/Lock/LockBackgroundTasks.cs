@@ -7,6 +7,7 @@
 
 using System.Runtime.CompilerServices;
 using Grimoire.Features.Moderation.Lock.Commands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +20,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
     {
         var mediator = serviceProvider.GetRequiredService<IMediator>();
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
+        var guildLog = serviceProvider.GetRequiredService<GuildLog>();
 
         await foreach (var expiredLock in mediator.CreateStream(new GetExpiredLocks.Request(), stoppingToken))
         {
@@ -47,8 +49,12 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 .WithDescription($"Lock on {channel.Mention} has expired.");
 
             await channel.SendMessageAsync(embed);
-            await discordClient.SendMessageToLoggingChannel(expiredLock.LogChannelId,
-                builder => builder.AddEmbed(embed));
+            await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+            {
+                GuildId = guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Embed = embed
+            }, stoppingToken);
         }
     }
 }
@@ -74,14 +80,13 @@ public sealed class GetExpiredLocks
                                    ChannelId = x.ChannelId,
                                    GuildId = x.GuildId,
                                    PreviouslyAllowed = x.PreviouslyAllowed,
-                                   PreviouslyDenied = x.PreviouslyDenied,
-                                   LogChannelId = x.Guild.ModChannelLog
+                                   PreviouslyDenied = x.PreviouslyDenied
                                }).AsAsyncEnumerable().WithCancellation(cancellationToken))
                 yield return lockedChannel;
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong ChannelId { get; init; }
         public ulong GuildId { get; init; }

@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 using JetBrains.Annotations;
 
@@ -73,7 +71,7 @@ internal sealed class GetAllModuleStatesForGuild
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public bool LevelingIsEnabled { get; init; }
         public bool UserLogIsEnabled { get; init; }

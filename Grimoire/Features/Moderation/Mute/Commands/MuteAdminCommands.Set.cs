@@ -5,8 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
@@ -25,28 +24,33 @@ public partial class MuteAdminCommands
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var response = await this._mediator.Send(new SetMuteRole.Request { Role = role.Id, GuildId = ctx.Guild.Id });
+        await this._mediator.Send(new SetMuteRole.Request { Role = role.Id, GuildId = ctx.Guild.Id });
 
         await ctx.EditReplyAsync(message: $"Will now use role {role.Mention} for muting users.");
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message: $"{ctx.User.Mention} updated the mute role to {role.Mention}");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        {
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Color = GrimoireColor.Purple,
+            Description = $"{ctx.User.Mention} updated the mute role to {role.Mention}"
+        });
     }
 }
 
 public sealed class SetMuteRole
 {
-    public sealed record Request : IRequest<BaseResponse>
+    public sealed record Request : IRequest
     {
         public ulong Role { get; init; }
         public ulong GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, BaseResponse>
+        : IRequestHandler<Request>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task Handle(Request command, CancellationToken cancellationToken)
         {
             var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var guildModerationSettings = await dbContext.GuildModerationSettings
@@ -57,8 +61,6 @@ public sealed class SetMuteRole
             guildModerationSettings.MuteRole = command.Role;
 
             await dbContext.SaveChangesAsync(cancellationToken);
-
-            return new BaseResponse { LogChannelId = guildModerationSettings.Guild.ModChannelLog };
         }
     }
 }

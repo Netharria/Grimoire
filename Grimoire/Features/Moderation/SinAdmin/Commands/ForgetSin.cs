@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
@@ -17,9 +16,10 @@ internal sealed class ForgetSin
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator)
+    internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         [Command("Forget")]
         [Description("Forget a user's sin. This will permanently remove the sin from the bots memory.")]
@@ -40,17 +40,17 @@ internal sealed class ForgetSin
 
             await ctx.EditReplyAsync(GrimoireColor.Green, message, "Forgot");
 
-            if (response.LogChannelId is null) return;
-
-            if (!ctx.Guild.Channels.TryGetValue(response.LogChannelId.Value,
-                    out var loggingChannel)) return;
-
-            await loggingChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor($"{ctx.Guild.CurrentMember.Nickname} has been commanded to forget.")
-                .AddField("User", response.SinnerName, true)
-                .AddField("Sin Id", response.SinId.ToString(), true)
-                .AddField("Moderator", ctx.User.Mention, true)
-                .WithColor(GrimoireColor.Green));
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Embed = new DiscordEmbedBuilder()
+                    .WithAuthor($"{ctx.Guild.CurrentMember.Nickname} has been commanded to forget.")
+                    .AddField("User", response.SinnerName, true)
+                    .AddField("Sin Id", response.SinId.ToString(), true)
+                    .AddField("Moderator", ctx.User.Mention, true)
+                    .WithColor(GrimoireColor.Green)
+            });
         }
     }
 
@@ -77,8 +77,7 @@ internal sealed class ForgetSin
                     UserName = sin.Member.User.UsernameHistories
                         .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                         .Select(usernameHistory => usernameHistory.Username)
-                        .FirstOrDefault(),
-                    sin.Guild.ModChannelLog
+                        .FirstOrDefault()
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -92,12 +91,11 @@ internal sealed class ForgetSin
             {
                 SinId = command.SinId,
                 SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId),
-                LogChannelId = result.ModChannelLog
             };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public long SinId { get; init; }
         public string SinnerName { get; init; } = string.Empty;

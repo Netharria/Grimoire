@@ -6,11 +6,10 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.ComponentModel;
 using System.Text.RegularExpressions;
 using DSharpPlus.Commands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
@@ -84,7 +83,7 @@ public sealed partial class CustomCommandSettings
             return;
         }
 
-        var response = await this._mediator.Send(new AddCustomCommand.Request
+        await this._mediator.Send(new AddCustomCommand.Request
         {
             CommandName = name,
             GuildId = ctx.Guild.Id,
@@ -95,11 +94,12 @@ public sealed partial class CustomCommandSettings
             PermissionRoles = permissionRoles
         });
 
-        await ctx.EditReplyAsync(GrimoireColor.Green, response.Message);
-        await this._channel.Writer.WriteAsync(
-            new PublishToGuildLog
+        await ctx.EditReplyAsync(GrimoireColor.Green, $"Learned new command: {name}");
+        await this._guildLog.SendLogMessageAsync(
+            new GuildLogMessage
             {
-                LogChannelId = response.LogChannelId,
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
                 Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember.Mention} to learn a new command: {name}",
                 Color = GrimoireColor.Purple
             });
@@ -108,7 +108,7 @@ public sealed partial class CustomCommandSettings
 
 public sealed class AddCustomCommand
 {
-    public sealed record Request : IRequest<BaseResponse>
+    public sealed record Request : IRequest
     {
         public required string CommandName { get; init; }
         public required ulong GuildId { get; init; }
@@ -120,11 +120,11 @@ public sealed class AddCustomCommand
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, BaseResponse>
+        : IRequestHandler<Request>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task Handle(Request command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             await dbContext.Roles.AddMissingRolesAsync(command.PermissionRoles, cancellationToken);
@@ -171,15 +171,6 @@ public sealed class AddCustomCommand
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
-            var modChannelLog = await dbContext.Guilds
-                .AsNoTracking()
-                .WhereIdIs(command.GuildId)
-                .Select(x => x.ModChannelLog)
-                .FirstOrDefaultAsync(cancellationToken);
-            return new BaseResponse
-            {
-                Message = $"Added {command.CommandName} custom command.", LogChannelId = modChannelLog
-            };
         }
     }
 }

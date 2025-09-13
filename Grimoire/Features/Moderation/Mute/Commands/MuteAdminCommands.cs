@@ -5,8 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ContextChecks;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
@@ -18,9 +18,10 @@ namespace Grimoire.Features.Moderation.Mute.Commands;
 [RequirePermissions([DiscordPermission.ManageRoles], [])]
 [Command("Mutes")]
 [Description("Manages the mute role settings.")]
-public sealed partial class MuteAdminCommands(IMediator mediator)
+public sealed partial class MuteAdminCommands(IMediator mediator, GuildLog guildLog)
 {
     private readonly IMediator _mediator = mediator;
+    private readonly GuildLog _guildLog = guildLog;
 
     private static async IAsyncEnumerable<OverwriteChannelResult> SetMuteRolePermissionsAsync(DiscordGuild guild,
         DiscordRole role)

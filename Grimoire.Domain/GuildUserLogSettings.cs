@@ -14,27 +14,28 @@ namespace Grimoire.Domain;
 public class GuildUserLogSettings : IModule
 {
     public ulong GuildId { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? JoinChannelLogId { get; set; }
 
     public virtual Channel? JoinChannelLog { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? LeaveChannelLogId { get; set; }
 
     public virtual Channel? LeaveChannelLog { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? UsernameChannelLogId { get; set; }
 
     public virtual Channel? UsernameChannelLog { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? NicknameChannelLogId { get; set; }
 
     public virtual Channel? NicknameChannelLog { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? AvatarChannelLogId { get; set; }
 
     public virtual Channel? AvatarChannelLog { get; init; }
 
     public virtual Guild Guild { get; set; } = null!;
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public bool ModuleEnabled { get; set; }
 }

@@ -37,14 +37,13 @@ public sealed class GetLastBan
                             SinId = sin.Id, ModeratorId = sin.ModeratorId, Reason = sin.Reason, SinOn = sin.SinOn
                         })
                         .FirstOrDefault(),
-                    LogChannelId = member.Guild.ModChannelLog,
                     ModerationModuleEnabled = member.Guild.ModerationSettings.ModuleEnabled
                 })
                 .FirstOrDefaultAsync(cancellationToken);
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public bool ModerationModuleEnabled { get; init; }
 

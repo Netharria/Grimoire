@@ -8,14 +8,16 @@
 using DSharpPlus.Entities.AuditLogs;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Moderation.Ban.Shared;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Ban.Events;
 
-public partial class BanAddedEvent(IMediator mediator, ILogger<BanAddedEvent> logger)
+public partial class BanAddedEvent(IMediator mediator, ILogger<BanAddedEvent> logger, GuildLog guildLog)
     : IEventHandler<GuildBanAddedEventArgs>
 {
     private readonly ILogger<BanAddedEvent> _logger = logger;
+    private readonly GuildLog _guildLog = guildLog;
     private readonly IMediator _mediator = mediator;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanAddedEventArgs args)
@@ -58,18 +60,23 @@ public partial class BanAddedEvent(IMediator mediator, ILogger<BanAddedEvent> lo
         if (response is null || !response.ModerationModuleEnabled)
             return;
 
-        await sender.SendMessageToLoggingChannel(response.LogChannelId, builder =>
-        {
-            builder.WithAuthor("Banned")
-                .AddField("User", args.Member.Mention, true)
-                .AddField("Sin Id", $"**{response.LastSin?.SinId}**", true)
-                .WithTimestamp(DateTimeOffset.UtcNow)
-                .WithColor(GrimoireColor.Red);
-            if (response.LastSin?.ModeratorId is not null)
-                builder.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
+        var builder = new DiscordEmbedBuilder()
+            .WithAuthor("Banned")
+            .AddField("User", args.Member.Mention, true)
+            .AddField("Sin Id", $"**{response.LastSin?.SinId}**", true)
+            .WithTimestamp(DateTimeOffset.UtcNow)
+            .WithColor(GrimoireColor.Red);
+        if (response.LastSin?.ModeratorId is not null)
+            builder.AddField("Mod", UserExtensions.Mention(response.LastSin.ModeratorId), true);
 
-            builder.AddField("Reason",
-                !string.IsNullOrWhiteSpace(response.LastSin?.Reason) ? response.LastSin.Reason : "None", true);
+        builder.AddField("Reason",
+            !string.IsNullOrWhiteSpace(response.LastSin?.Reason) ? response.LastSin.Reason : "None", true);
+
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        {
+            GuildId = args.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Embed = builder
         });
     }
 

@@ -6,10 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -43,15 +42,16 @@ public sealed partial class LevelSettingsCommandGroup
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var response = await this._mediator.Send(new SetLevelSettings.Request
+        await this._mediator.Send(new SetLevelSettings.Request
         {
             GuildId = ctx.Guild.Id, LevelSettings = levelSettings, Value = value.ToString()
         });
 
         await ctx.EditReplyAsync(message: $"Updated {levelSettings} level setting to {value}");
-        await this._channel.Writer.WriteAsync(new PublishToGuildLog
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            LogChannelId = response.LogChannelId,
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
             Description = $"{ctx.User.Mention} updated {levelSettings} level setting to {value}"
         });
@@ -82,37 +82,30 @@ public sealed partial class LevelSettingsCommandGroup
                     $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
         }
 
-        var response = await this._mediator.Send(new SetLevelSettings.Request
+        await this._mediator.Send(new SetLevelSettings.Request
         {
             GuildId = ctx.Guild.Id,
             LevelSettings = LevelSettings.LogChannel,
             Value = channel is null ? "0" : channel.Id.ToString()
         });
-        if (option is ChannelOption.Off)
+        await ctx.EditReplyAsync(message: option is ChannelOption.Off
+            ? "Disabled the level log."
+            : $"Updated the level log to {channel?.Mention}");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            await ctx.EditReplyAsync(message: "Disabled the level log.");
-            await this._channel.Writer.WriteAsync(new PublishToGuildLog
-            {
-                LogChannelId = response.LogChannelId,
-                Color = GrimoireColor.DarkPurple,
-                Description = $"{ctx.User.Mention} disabled the level log."
-            });
-            return;
-        }
-
-        await ctx.EditReplyAsync(message: $"Updated the level log to {channel?.Mention}");
-        await this._channel.Writer.WriteAsync(new PublishToGuildLog
-        {
-            LogChannelId = response.LogChannelId,
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
-            Description = $"{ctx.User.Mention} updated the level log to {channel?.Mention}."
+            Description = option is ChannelOption.Off
+                ? $"{ctx.User.Mention} disabled the level log."
+                : $"{ctx.User.Mention} updated the level log to {channel?.Mention}."
         });
     }
 }
 
 public sealed class SetLevelSettings
 {
-    public sealed record Request : IRequest<BaseResponse>
+    public sealed record Request : IRequest
     {
         public required ulong GuildId { get; init; }
         public required LevelSettingsCommandGroup.LevelSettings LevelSettings { get; init; }
@@ -121,16 +114,15 @@ public sealed class SetLevelSettings
 
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, BaseResponse>
+        : IRequestHandler<Request>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<BaseResponse> Handle(Request command, CancellationToken cancellationToken)
+        public async Task Handle(Request command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var levelSettings = await dbContext.GuildLevelSettings
                 .Where(x => x.GuildId == command.GuildId)
-                .Select(x => new { LevelSettings = x, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken);
             if (levelSettings == null) throw new AnticipatedException("Could not find guild level settings.");
             switch (command.LevelSettings)
@@ -138,33 +130,31 @@ public sealed class SetLevelSettings
                 case LevelSettingsCommandGroup.LevelSettings.TextTime:
                     if (!uint.TryParse(command.Value, out var textTime))
                         throw new AnticipatedException("Please give a valid number for TextTime.");
-                    levelSettings.LevelSettings.TextTime = TimeSpan.FromMinutes(textTime);
+                    levelSettings.TextTime = TimeSpan.FromMinutes(textTime);
                     break;
                 case LevelSettingsCommandGroup.LevelSettings.Base:
                     if (!int.TryParse(command.Value, out var baseXp))
                         throw new AnticipatedException("Please give a valid number for base XP.");
-                    levelSettings.LevelSettings.Base = baseXp;
+                    levelSettings.Base = baseXp;
                     break;
                 case LevelSettingsCommandGroup.LevelSettings.Modifier:
                     if (!int.TryParse(command.Value, out var modifier))
                         throw new AnticipatedException("Please give a valid number for Modifier.");
-                    levelSettings.LevelSettings.Modifier = modifier;
+                    levelSettings.Modifier = modifier;
                     break;
                 case LevelSettingsCommandGroup.LevelSettings.Amount:
                     if (!int.TryParse(command.Value, out var amount))
                         throw new AnticipatedException("Please give a valid number for Amount.");
-                    levelSettings.LevelSettings.Amount = amount;
+                    levelSettings.Amount = amount;
                     break;
                 case LevelSettingsCommandGroup.LevelSettings.LogChannel:
                     if (!ulong.TryParse(command.Value, out var value))
                         throw new AnticipatedException("Please give a valid channel for Log Channel.");
-                    levelSettings.LevelSettings.LevelChannelLogId = value == 0 ? null : value;
+                    levelSettings.LevelChannelLogId = value == 0 ? null : value;
                     break;
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
-
-            return new BaseResponse { LogChannelId = levelSettings.ModChannelLog };
         }
     }
 }

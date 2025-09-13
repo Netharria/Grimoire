@@ -5,11 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Text;
-using DSharpPlus.Commands.Processors.SlashCommands;
-using Grimoire.Features.Logging.Settings;
 
 namespace Grimoire.Features.Moderation.SpamFilter.Commands;
 [Command("SpamFilter")]

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
@@ -77,7 +78,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = string.Empty,
                 Attachments = [],
                 ParentChannelTree = []
-            }, default);
+            }, CancellationToken.None);
 
         await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Guild was not found in database.");
@@ -108,7 +109,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = string.Empty,
                 Attachments = [],
                 ParentChannelTree = []
-            }, default);
+            }, CancellationToken.None);
 
         var message = await dbContext.Messages.FindAsync(MessageId1);
         message.Should().BeNull();
@@ -132,7 +133,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = string.Empty,
                 Attachments = [],
                 ParentChannelTree = []
-            }, default);
+            }, CancellationToken.None);
 
         var channel = await dbContext.Channels.FindAsync(999UL);
         channel.Should().NotBeNull();
@@ -158,7 +159,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = string.Empty,
                 Attachments = [],
                 ParentChannelTree = []
-            }, default);
+            }, CancellationToken.None);
 
         var member = await dbContext.Members
             .Include(member => member.XpHistory)
@@ -199,7 +200,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = "Test message",
                 Attachments = [],
                 ParentChannelTree = [999UL, ChannelId] // Parent and Child Channel
-            }, default);
+            }, CancellationToken.None);
 
         var message = await dbContext.Messages
             .Include(x => x.MessageHistory)
@@ -241,7 +242,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = "Test message",
                 Attachments = [],
                 ParentChannelTree = [999UL, ChannelId] // Parent and Child Channel
-            }, default);
+            }, CancellationToken.None);
 
         var message = await dbContext.Messages
             .Include(x => x.MessageHistory)
@@ -273,7 +274,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = "Test message",
                 Attachments = [],
                 ParentChannelTree = [999UL, ChannelId] // Parent and Child Channel
-            }, default);
+            }, CancellationToken.None);
 
         var message = await dbContext.Messages
             .Include(x => x.MessageHistory)
@@ -309,7 +310,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = "Test message",
                 Attachments = [],
                 ParentChannelTree = [999UL, ChannelId] // Parent and Child Channel
-            }, default);
+            }, CancellationToken.None);
 
         var message = await dbContext.Messages
             .Include(x => x.MessageHistory)
@@ -341,7 +342,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
             ParentChannelTree = []
         };
 
-        var act = async () => await cut.Handle(command, default);
+        var act = async () => await cut.Handle(command, CancellationToken.None);
 
         await act.Should().ThrowAsync<DbUpdateException>();
     }
@@ -366,7 +367,7 @@ public class AddMessageEventTests(GrimoireCoreFactory factory) : IAsyncLifetime
                 MessageContent = "Test message with attachment",
                 Attachments = [attachment],
                 ParentChannelTree = []
-            }, default);
+            }, CancellationToken.None);
 
         var message = await dbContext.Messages
             .Include(m => m.Attachments)

@@ -32,16 +32,17 @@ using Grimoire.Features.Moderation.Lock.Commands;
 using Grimoire.Features.Moderation.Mute;
 using Grimoire.Features.Moderation.Mute.Commands;
 using Grimoire.Features.Moderation.PublishSins;
-using Grimoire.Features.Moderation.SinAdmin;
 using Grimoire.Features.Moderation.SinAdmin.Commands;
 using Grimoire.Features.Moderation.SpamFilter;
 using Grimoire.Features.Moderation.SpamFilter.Commands;
 using Grimoire.Features.Moderation.Warn;
 using Grimoire.Features.Shared;
-using Grimoire.Features.Shared.Channels;
+using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Channels.TrackerLog;
 using Grimoire.Features.Shared.Commands;
 using Grimoire.Features.Shared.Events;
 using Grimoire.Features.Shared.PluralKit;
+using Grimoire.Features.Shared.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -84,13 +85,15 @@ await Host.CreateDefaultBuilder(args)
             .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
             .AddScoped<IPluralkitService, PluralkitService>()
             .AddSingleton<SpamTrackerModule>()
-            .AddSingleton<Channel<PublishToGuildLog>>(
-                _ => Channel.CreateUnbounded<PublishToGuildLog>(new UnboundedChannelOptions
+            .AddSingleton<SettingsModule>()
+            .AddSingleton<Channel<GuildLogMessageBase>>(
+                _ => Channel.CreateUnbounded<GuildLogMessageBase>(new UnboundedChannelOptions
                 {
                     SingleReader = true,
                     SingleWriter = false
                 }))
-            .AddHostedService<PublishToGuildLogProcessor>()
+            .AddHostedService<GuildLog>()
+            .AddHostedService<TrackerLog>()
             .ConfigureEventHandlers(eventHandlerBuilder =>
                 eventHandlerBuilder
                     //Custom Commands
@@ -189,7 +192,7 @@ await Host.CreateDefaultBuilder(args)
                     => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
                 extension.CommandExecuted += (sender, eventArgs)
                     => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
-            }, new CommandsConfiguration()
+            }, new CommandsConfiguration
             {
                 UseDefaultCommandErrorHandler = false,
             })

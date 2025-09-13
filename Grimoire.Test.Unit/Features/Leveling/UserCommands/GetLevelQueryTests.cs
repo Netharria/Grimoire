@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
@@ -67,7 +68,7 @@ public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLife
         var cut = new GetLevel.Handler(this._mockDbContextFactory);
         var command = new GetLevel.Query { GuildId = GuildId, UserId = 234081234 };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
 
         response.Should().NotBeNull();
         response.Message.Should().Be("That user could not be found.");
@@ -79,7 +80,7 @@ public sealed class GetLevelQueryTests(GrimoireCoreFactory factory) : IAsyncLife
         var cut = new GetLevel.Handler(this._mockDbContextFactory);
         var command = new GetLevel.Query { GuildId = GuildId, UserId = UserId };
 
-        var response = await cut.Handle(command, default);
+        var response = await cut.Handle(command, CancellationToken.None);
 
         response.UsersXp.Should().Be(300);
         response.UsersLevel.Should().Be(8);

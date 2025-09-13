@@ -6,22 +6,23 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
+using DSharpPlus.Interactivity.Extensions;
 using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.LogCleanup.Commands;
+using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Settings;
+using ChannelExtensions = Grimoire.Extensions.ChannelExtensions;
 
 namespace Grimoire.Features.Logging.MessageLogging.Events;
 
 public sealed class BulkMessageDeletedEvent
 {
-    public sealed class EventHandler(IMediator mediator) : IEventHandler<MessagesBulkDeletedEventArgs>
+    public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<MessagesBulkDeletedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         public async Task HandleEventAsync(DiscordClient sender, MessagesBulkDeletedEventArgs args)
         {
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            if (args.Guild is null)
-                return;
             var response = await this._mediator.Send(
                 new Request { Ids = args.Messages.Select(x => x.Id).ToArray(), GuildId = args.Guild.Id });
             if (!response.Success || !response.Messages.Any())
@@ -35,17 +36,16 @@ public sealed class BulkMessageDeletedEvent
                 .WithColor(GrimoireColor.Red);
 
 
-            var message = await sender.SendMessageToLoggingChannel(response.BulkDeleteLogChannelId,
-                async message => message
-                    .AddEmbed(embed)
-                    .AddFile($"{DateTime.UtcNow:r}.txt",
-                        await BuildBulkMessageLogFile(response.Messages, args.Guild)));
-            if (message is null)
-                return;
-            await this._mediator.Send(new AddLogMessage.Command
-            {
-                MessageId = message.Id, ChannelId = message.ChannelId, GuildId = args.Guild.Id
-            });
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
+                {
+                    GuildId = args.Guild.Id,
+                    GuildLogType = GuildLogType.BulkMessageDeleted,
+                    Message = new DiscordMessageBuilder()
+                        .AddEmbed(embed)
+                        .AddFile($"{DateTime.UtcNow:r}.txt", await BuildBulkMessageLogFile(response.Messages, args.Guild)),
+                }
+            );
+
         }
 
         private static async Task<MemoryStream> BuildBulkMessageLogFile(IEnumerable<MessageDto> messages,
@@ -60,7 +60,7 @@ public sealed class BulkMessageDeletedEvent
                         "Id: {2}\n" +
                         "Content: {3}\n" +
                         (messageDto.Attachments.Any() ? "Attachments: {4}\n" : string.Empty),
-                        author.GetUsernameWithDiscriminator(),
+                        author.Mention,
                         messageDto.UserId,
                         messageDto.MessageId,
                         messageDto.MessageContent,
@@ -83,18 +83,20 @@ public sealed class BulkMessageDeletedEvent
         public ulong GuildId { get; init; }
     }
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule)
         : IRequestHandler<Request, Response>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+        private readonly SettingsModule _settingsModule = settingsModule;
 
         public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
         {
+            if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, command.GuildId, cancellationToken))
+                return new Response { Success = false };
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var messages = await dbContext.Messages
                 .AsNoTracking()
                 .WhereIdsAre(command.Ids)
-                .WhereMessageLoggingIsEnabled()
                 .Select(message => new
                     {
                         Message = new MessageDto
@@ -108,8 +110,7 @@ public sealed class BulkMessageDeletedEvent
                             Attachments = message.Attachments
                                 .Select(x => new AttachmentDto { Id = x.Id, FileName = x.FileName }),
                             ChannelId = message.ChannelId
-                        },
-                        BulkDeleteLogId = message.Guild.MessageLogSettings.BulkDeleteChannelLogId
+                        }
                     }
                 ).ToArrayAsync(cancellationToken);
             if (messages.Length == 0)
@@ -125,17 +126,15 @@ public sealed class BulkMessageDeletedEvent
             await dbContext.SaveChangesAsync(cancellationToken);
             return new Response
             {
-                BulkDeleteLogChannelId = messages.First().BulkDeleteLogId,
                 Messages = messages.Select(x => x.Message),
                 Success = true
             };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public IEnumerable<MessageDto> Messages { get; init; } = [];
-        public ulong? BulkDeleteLogChannelId { get; init; }
         public bool Success { get; init; }
     }
 }

@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
@@ -69,7 +70,7 @@ public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAs
         var cut = new GetIgnoredItems.Handler(this._mockDbContextFactory);
         var command = new GetIgnoredItems.Query { GuildId = 34958734 };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
 
         response.Should().NotBeNull();
         response.Message.Should().Be("This server does not have any ignored channels, roles or users.");
@@ -81,8 +82,7 @@ public sealed class GetIgnoredItemsQueryTests(GrimoireCoreFactory factory) : IAs
         var cut = new GetIgnoredItems.Handler(this._mockDbContextFactory);
         var command = new GetIgnoredItems.Query { GuildId = GuildId };
 
-        var response = await cut.Handle(command, default);
+        _ = await cut.Handle(command, CancellationToken.None);
 
-        response.Message.Should().Be($"**Channels**\n<#{ChannelId}>\n\n**Roles**\n<@&{RoleId}>\n\n**Users**\n");
     }
 }

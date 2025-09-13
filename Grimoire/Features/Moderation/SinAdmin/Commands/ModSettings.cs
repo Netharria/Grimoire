@@ -5,8 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ContextChecks;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
@@ -15,7 +15,8 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-internal sealed partial class ModSettings(IMediator mediator)
+internal sealed partial class ModSettings(IMediator mediator, GuildLog guildLog)
 {
     private readonly IMediator _mediator = mediator;
+    private readonly GuildLog _guildLog = guildLog;
 }

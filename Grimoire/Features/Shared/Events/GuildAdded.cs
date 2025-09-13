@@ -26,7 +26,7 @@ internal sealed class GuildAdded
                 GuildId = eventArgs.Guild.Id,
                 Users = eventArgs.Guild.Members
                     .Select(x =>
-                        new UserDto { Id = x.Key, Username = x.Value.GetUsernameWithDiscriminator() }).ToArray()
+                        new UserDto { Id = x.Key, Username = x.Value.Username }).ToArray()
                     .AsReadOnly(),
                 Members = eventArgs.Guild.Members
                     .Select(x =>
@@ -52,7 +52,7 @@ internal sealed class GuildAdded
                                 new Invite
                                 {
                                     Code = invite.Code,
-                                    Inviter = invite.Inviter.GetUsernameWithDiscriminator(),
+                                    Inviter = invite.Inviter.Username,
                                     Url = invite.ToString(),
                                     Uses = invite.Uses,
                                     MaxUses = invite.MaxUses

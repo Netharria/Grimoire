@@ -33,7 +33,6 @@ public sealed class AutoMuteUser
                 {
                     x.ActiveMute,
                     x.Guild.ModerationSettings.MuteRole,
-                    x.Guild.ModChannelLog,
                     x.Guild.ModerationSettings.ModuleEnabled,
                     MuteCount = x.UserSins
                         .Where(x => x.SinType == SinType.Mute)
@@ -62,14 +61,13 @@ public sealed class AutoMuteUser
             return new Response
             {
                 MuteRole = response.MuteRole.Value,
-                LogChannelId = response.ModChannelLog,
                 SinId = sin.Id,
                 Duration = duration
             };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong MuteRole { get; init; }
         public long SinId { get; init; }

@@ -5,9 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Channels.TrackerLog;
 
 namespace Grimoire.Features.Logging.Trackers.Commands;
 
@@ -16,9 +16,11 @@ public sealed class RemoveTracker
     [RequireGuild]
     [RequireModuleEnabled(Module.MessageLog)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator)
+    internal sealed class Command(IMediator mediator, GuildLog guildLog, TrackerLog trackerLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
+        private readonly TrackerLog _trackerLog = trackerLog;
 
         [Command("Untrack")]
         [Description("Stops the logging of the user's activity.")]
@@ -37,17 +39,22 @@ public sealed class RemoveTracker
 
             await ctx.EditReplyAsync(message: $"Tracker removed from {member.Mention}");
 
-            await ctx.Client.SendMessageToLoggingChannel(response.TrackerChannelId,
-                embed => embed
-                    .WithDescription(
-                        $"{ctx.User.GetUsernameWithDiscriminator()} removed a tracker on {member.Mention}")
-                    .WithColor(GrimoireColor.Purple));
+            await this._trackerLog.SendTrackerMessageAsync(new TrackerMessage()
+            {
+                GuildId = ctx.Guild.Id,
+                TrackerId = response.TrackerChannelId,
+                TrackerIdType = TrackerIdType.ChannelId,
+                Color = GrimoireColor.Purple,
+                Description = $"{ctx.User.Username} removed a tracker on {member.Mention}"
+            });
 
-            await ctx.Client.SendMessageToLoggingChannel(response.ModerationLogId,
-                embed => embed
-                    .WithDescription(
-                        $"{ctx.User.GetUsernameWithDiscriminator()} removed a tracker on {member.Mention}")
-                    .WithColor(GrimoireColor.Purple));
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage()
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.Purple,
+                Description = $"{ctx.User.Username} removed a tracker on {member.Mention}"
+            });
         }
     }
 
@@ -67,26 +74,22 @@ public sealed class RemoveTracker
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await dbContext.Trackers
                 .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
-                .Select(x => new
-                {
-                    Tracker = x, ModerationLogId = x.Guild.ModChannelLog, TrackerChannelId = x.LogChannelId
-                }).FirstOrDefaultAsync(cancellationToken);
-            if (result?.Tracker is null)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (result is null)
                 throw new AnticipatedException("Could not find a tracker for that user.");
 
-            dbContext.Trackers.Remove(result.Tracker);
+            dbContext.Trackers.Remove(result);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response
             {
-                ModerationLogId = result.ModerationLogId, TrackerChannelId = result.TrackerChannelId
+                TrackerChannelId = result.LogChannelId
             };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
-        public ulong? ModerationLogId { get; init; }
         public ulong TrackerChannelId { get; init; }
     }
 }

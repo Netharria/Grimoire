@@ -5,8 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
-using DSharpPlus.Commands.Processors.SlashCommands;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
@@ -26,7 +25,7 @@ public partial class MuteAdminCommands
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration.");
 
-        var response = await this._mediator.Send(new SetMuteRole.Request { Role = role.Id, GuildId = ctx.Guild.Id });
+        await this._mediator.Send(new SetMuteRole.Request { Role = role.Id, GuildId = ctx.Guild.Id });
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions");
@@ -41,8 +40,12 @@ public partial class MuteAdminCommands
             await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Successfully created role {role.Mention} but, " +
                                                            $"was not able to set permissions for the following channels. {string.Join(' ', result.Select(x => x.Channel.Mention))}");
 
-        await ctx.SendLogAsync(response, GrimoireColor.Purple,
-            message:
-            $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember} to create {role.Mention} to use as a mute role.");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        {
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Color = GrimoireColor.Purple,
+            Description = $"{ctx.User.Mention} created {role.Mention} to use as a mute role."
+        });
     }
 }

@@ -5,9 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Queries;
 
@@ -129,7 +127,7 @@ public sealed class GetLevel
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public required long UsersXp { get; init; }
         public required int UsersLevel { get; init; }

@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
@@ -18,9 +17,10 @@ public sealed class UnmuteUser
     [RequireModuleEnabled(Module.Moderation)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [RequirePermissions([DiscordPermission.ManageRoles], [])]
-    internal sealed class Command(IMediator mediator)
+    internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         [Command("Unmute")]
         [Description("Unmutes a user.")]
@@ -60,17 +60,22 @@ public sealed class UnmuteUser
             }
             catch (Exception)
             {
-                await ctx.SendLogAsync(response, GrimoireColor.Red,
-                    message: $"Was not able to send a direct message with the unmute details to {member.Mention}");
+                await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                {
+                    GuildId = ctx.Guild.Id,
+                    GuildLogType = GuildLogType.Moderation,
+                    Color = GrimoireColor.Red,
+                    Description =
+                        $"Was not able to send a direct message with the unmute details to {member.Mention}"
+                });
             }
 
-            if (response.LogChannelId is null) return;
-
-            var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
-
-            if (logChannel is null) return;
-
-            await logChannel.SendMessageAsync(embed);
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Embed = embed
+            });
         }
     }
 
@@ -90,18 +95,18 @@ public sealed class UnmuteUser
             var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var response = await dbContext.Mutes
                 .WhereMemberHasId(command.UserId, command.GuildId)
-                .Select(x => new { Mute = x, x.Guild.ModerationSettings.MuteRole, x.Guild.ModChannelLog })
+                .Select(x => new { Mute = x, x.Guild.ModerationSettings.MuteRole})
                 .FirstOrDefaultAsync(cancellationToken);
             if (response is null) throw new AnticipatedException("That user doesn't seem to be muted.");
             if (response.MuteRole is null) throw new AnticipatedException("A mute role isn't currently configured.");
             dbContext.Mutes.Remove(response.Mute);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return new Response { MuteRole = response.MuteRole.Value, LogChannelId = response.ModChannelLog };
+            return new Response { MuteRole = response.MuteRole.Value };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong MuteRole { get; init; }
     }

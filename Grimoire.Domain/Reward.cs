@@ -19,8 +19,8 @@ public class Reward
     public ulong GuildId { get; init; }
 
     public virtual Guild Guild { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public int RewardLevel { get; set; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public string? RewardMessage { get; set; }
 }

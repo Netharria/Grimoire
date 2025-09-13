@@ -54,26 +54,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Grimoire.Domain\Grimoire.Domain.csproj"/>
   </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Grimoire.Exceptions"/>
-    <Using Include="MediatR"/>
-    <Using Include="Microsoft.EntityFrameworkCore"/>
-    <Using Include="Grimoire.Responses"/>
-    <Using Include="Grimoire.Features.Shared.SharedDtos"/>
-    <Using Include="Grimoire.Domain"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Grimoire.Enums"/>
-    <Using Include="Grimoire.Features.Shared.SharedDtos"/>
-    <Using Include="Grimoire.Features.Shared.Attributes"/>
-    <Using Include="Grimoire.Extensions"/>
-    <Using Include="Grimoire.Structs"/>
-    <Using Include="Grimoire.Utilities"/>
-    <Using Include="DSharpPlus"/>
-    <Using Include="DSharpPlus.Entities"/>
-    <Using Include="DSharpPlus.EventArgs"/>
-    <Using Include="DSharpPlus.Commands"/>
-  </ItemGroup>
 </Project>

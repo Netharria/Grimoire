@@ -7,6 +7,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
@@ -91,9 +92,7 @@ public sealed class RemoveIgnoreForXpGainCommandTests(GrimoireCoreFactory factor
                 [
                     new RoleDto { Id = RoleId, GuildId = GuildId }
                 ]
-            }, default);
-
-        result.Message.Should().Be($"<@!{UserId}> <@&{RoleId}> <#{ChannelId}>  are no longer ignored for xp gain.");
+            }, CancellationToken.None);
 
         var member = await dbContext.Members
             .Where(x =>

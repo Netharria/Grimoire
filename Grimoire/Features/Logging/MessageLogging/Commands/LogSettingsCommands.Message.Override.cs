@@ -6,11 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.ComponentModel;
 // ReSharper disable once CheckNamespace
-using DSharpPlus.Commands.Processors.SlashCommands;
 
+
+using Grimoire.Features.Shared.Channels.GuildLog;
 // ReSharper disable once CheckNamespace
+using System.Diagnostics;
+
 namespace Grimoire.Features.Logging.Settings;
 
 public partial class LogSettingsCommands
@@ -31,14 +33,33 @@ public partial class LogSettingsCommands
             await ctx.DeferResponseAsync();
             channel ??= ctx.Channel;
 
-            var response = await this._mediator.Send(new UpdateMessageLogOverride.Command
+            await this._mediator.Send(new UpdateMessageLogOverride.Command
             {
                 ChannelId = channel.Id, ChannelOverrideSetting = overrideSetting, GuildId = channel.Guild.Id
             });
 
-            await ctx.EditReplyAsync(GrimoireColor.Purple, response.Message);
-            await ctx.SendLogAsync(response, GrimoireColor.Purple,
-                $"{ctx.User.GetUsernameWithDiscriminator()} updated the channel overrides", response.Message);
+
+            var message = overrideSetting switch
+            {
+                UpdateMessageLogOverride.MessageLogOverrideSetting.Always =>
+                    $"Will now always log messages from {channel.Mention} and its sub channels/threads.",
+                UpdateMessageLogOverride.MessageLogOverrideSetting.Never =>
+                    $"Will now never log messages from {channel.Mention} and its sub channels/threads.",
+                UpdateMessageLogOverride.MessageLogOverrideSetting.Inherit =>
+                    "Override was successfully removed from the channel.",
+                _ => throw new NotImplementedException(
+                    "A Message log Override option was selected that has not been implemented.")
+            };
+
+            await ctx.EditReplyAsync(GrimoireColor.Purple, message);
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = channel.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Title = $"{ctx.User.Mention} updated the channel overrides",
+                Description = message,
+                Color = GrimoireColor.Purple
+            });
         }
     }
 }
@@ -52,7 +73,7 @@ public sealed class UpdateMessageLogOverride
         Never
     }
 
-    public sealed record Command : IRequest<BaseResponse>
+    public sealed record Command : IRequest
     {
         public required ulong ChannelId { get; init; }
         public required ulong GuildId { get; init; }
@@ -60,36 +81,28 @@ public sealed class UpdateMessageLogOverride
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Command, BaseResponse>
+        : IRequestHandler<Command>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public Task<BaseResponse> Handle(Command command, CancellationToken cancellationToken)
-        {
-            if (command.ChannelOverrideSetting == MessageLogOverrideSetting.Inherit)
-                return this.DeleteOverride(command, cancellationToken);
-            return this.AddOrUpdateOverride(command, cancellationToken);
-        }
+        public Task Handle(Command command, CancellationToken cancellationToken)
+            => command.ChannelOverrideSetting == MessageLogOverrideSetting.Inherit
+                ? this.DeleteOverride(command, cancellationToken)
+                : this.AddOrUpdateOverride(command, cancellationToken);
 
-        private async Task<BaseResponse> DeleteOverride(Command command, CancellationToken cancellationToken)
+        private async Task DeleteOverride(Command command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await dbContext.MessagesLogChannelOverrides
                 .Where(x => x.ChannelId == command.ChannelId)
-                .Select(x => new { Override = x, x.Guild.ModChannelLog })
                 .FirstOrDefaultAsync(cancellationToken);
-            if (result?.Override is null)
+            if (result is null)
                 throw new AnticipatedException("That channel did not have an override.");
-            dbContext.MessagesLogChannelOverrides.Remove(result.Override);
+            dbContext.MessagesLogChannelOverrides.Remove(result);
             await dbContext.SaveChangesAsync(cancellationToken);
-
-            return new BaseResponse
-            {
-                LogChannelId = result.ModChannelLog, Message = "Override was successfully removed from the channel."
-            };
         }
 
-        private async Task<BaseResponse> AddOrUpdateOverride(Command command, CancellationToken cancellationToken)
+        private async Task AddOrUpdateOverride(Command command, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await dbContext.Guilds
@@ -111,6 +124,7 @@ public sealed class UpdateMessageLogOverride
                     {
                         MessageLogOverrideSetting.Always => MessageLogOverrideOption.AlwaysLog,
                         MessageLogOverrideSetting.Never => MessageLogOverrideOption.NeverLog,
+                        MessageLogOverrideSetting.Inherit => throw new UnreachableException("Should not be adding an inherit override."),
                         _ => throw new NotImplementedException(
                             "A Message log Override option was selected that has not been implemented.")
                     }
@@ -125,19 +139,6 @@ public sealed class UpdateMessageLogOverride
                 };
 
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new BaseResponse
-            {
-                LogChannelId = result.ModChannelLog,
-                Message = command.ChannelOverrideSetting switch
-                {
-                    MessageLogOverrideSetting.Always =>
-                        $"Will now always log messages from {ChannelExtensions.Mention(command.ChannelId)} and its sub channels/threads.",
-                    MessageLogOverrideSetting.Never =>
-                        $"Will now never log messages from {ChannelExtensions.Mention(command.ChannelId)} and its sub channels/threads.",
-                    _ => throw new NotImplementedException(
-                        "A Message log Override option was selected that has not been implemented.")
-                }
-            };
         }
     }
 }

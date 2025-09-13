@@ -5,10 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
@@ -63,7 +61,7 @@ internal sealed class SinLog
                 }
 
                 await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
-                    .WithAuthor($"Moderation log for {user.GetUsernameWithDiscriminator()}")
+                    .WithAuthor($"Moderation log for {user.Username}")
                     .AddField("Bans", modResponse.BanCount.ToString(), true)
                     .AddField("Mutes", modResponse.MuteCount.ToString(), true)
                     .AddField("Warns", modResponse.WarnCount.ToString(), true)
@@ -77,10 +75,10 @@ internal sealed class SinLog
             });
             if (response.SinList.Length == 0)
                 await ctx.EditReplyAsync(GrimoireColor.Green, "That user does not have any logs",
-                    $"Sin log for {user.GetUsernameWithDiscriminator()}");
+                    $"Sin log for {user.Username}");
             foreach (var message in response.SinList)
                 await ctx.EditReplyAsync(GrimoireColor.Green, message,
-                    $"Sin log for {user.GetUsernameWithDiscriminator()}");
+                    $"Sin log for {user.Username}");
         }
     }
 
@@ -111,7 +109,7 @@ internal sealed class SinLog
         }
     }
 
-    public sealed record GetModActionCountsQueryResponse : BaseResponse
+    public sealed record GetModActionCountsQueryResponse
     {
         public int BanCount { get; init; }
         public int MuteCount { get; init; }
@@ -141,7 +139,8 @@ internal sealed class SinLog
                 SinQueryType.Warn => queryable.Where(x => x.SinType == SinType.Warn),
                 SinQueryType.Mute => queryable.Where(x => x.SinType == SinType.Mute),
                 SinQueryType.Ban => queryable.Where(x => x.SinType == SinType.Ban),
-                _ => queryable
+                SinQueryType.All => queryable,
+                _ => throw new ArgumentOutOfRangeException(nameof(query.SinQueryType), query.SinQueryType, null)
             };
 
             var result = await queryable
@@ -154,7 +153,7 @@ internal sealed class SinLog
                     x.Reason,
                     Moderator = x.Moderator.Mention(),
                     Pardon = x.Pardon != null,
-                    PardonModerator = x.Pardon != null ? x.Pardon.Moderator.Mention() : "",
+                    PardonModerator = x.Pardon != null ? x.Pardon.Moderator.Mention() : null,
                     PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue
                 }).ToListAsync(cancellationToken);
             var stringBuilder = new StringBuilder(2048);
@@ -182,7 +181,7 @@ internal sealed class SinLog
         }
     }
 
-    public sealed record GetUserSinsQueryResponse : BaseResponse
+    public sealed record GetUserSinsQueryResponse
     {
         public string[] SinList { get; init; } = [];
     }

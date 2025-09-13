@@ -13,6 +13,7 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public class Mute : IMember
 {
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public long? SinId { get; init; }
 
     public virtual Sin? Sin { get; init; }
@@ -20,7 +21,7 @@ public class Mute : IMember
     public virtual Member Member { get; init; } = null!;
 
     public virtual Guild Guild { get; init; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public DateTimeOffset EndTime { get; init; }
 
     public ulong UserId { get; set; }

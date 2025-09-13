@@ -14,20 +14,20 @@ namespace Grimoire.Domain;
 public class GuildLevelSettings : IModule
 {
     public ulong GuildId { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public TimeSpan TextTime { get; set; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public int Base { get; set; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public int Modifier { get; set; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public int Amount { get; set; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? LevelChannelLogId { get; set; }
 
     public virtual Channel? LevelChannelLog { get; init; }
 
     public virtual Guild Guild { get; set; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public bool ModuleEnabled { get; set; }
 }

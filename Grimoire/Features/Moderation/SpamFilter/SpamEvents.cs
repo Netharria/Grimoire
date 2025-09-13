@@ -5,21 +5,24 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Features.Shared.Channels.GuildLog;
+
 namespace Grimoire.Features.Moderation.SpamFilter;
 
-internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModule) : IEventHandler<MessageCreatedEventArgs>
+internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModule, GuildLog guildLog) : IEventHandler<MessageCreatedEventArgs>
 {
     private readonly IMediator _mediator = mediator;
     private readonly SpamTrackerModule _spamModule = spamModule;
+    private readonly GuildLog _guildLog = guildLog;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
         if (args.Author.IsBot)
             return;
 
-        var checkSpamResult = this._spamModule.CheckSpam(args.Message);
+        var checkSpamResult = await this._spamModule.CheckSpam(args.Message);
 
-        if (checkSpamResult.IsSpam == false)
+        if (!checkSpamResult.IsSpam)
             return;
 
         if (args.Author is not DiscordMember member)
@@ -69,17 +72,21 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
             sentMessageToUser = false;
         }
 
-        if (response.LogChannelId is null) return;
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        {
+            GuildId = args.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Embed = embed
+        });
 
-        var logChannel = args.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
-
-        if (logChannel is null) return;
-
-        await logChannel.SendMessageAsync(embed);
-
-        if (sentMessageToUser == false)
-            await logChannel.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithDescription($"Was not able to send a direct message with the mute details to {member.Mention}")
-                .WithColor(GrimoireColor.Red));
+        if (!sentMessageToUser)
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = args.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.Red,
+                Description =
+                    $"Was not able to send a direct message with the mute details to {member.Mention}"
+            });
     }
 }

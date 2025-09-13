@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
@@ -64,7 +65,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = 12341234, LevelSettings = LevelSettingsCommandGroup.LevelSettings.TextTime, Value = "something"
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
         response.Should().NotBeNull();
         response.Message.Should().Be("Could not find guild level settings.");
     }
@@ -79,7 +80,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.TextTime, Value = "adsfas"
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
         dbContext.ChangeTracker.Clear();
         response.Should().NotBeNull();
         response.Message.Should().Be("Please give a valid number for TextTime.");
@@ -94,7 +95,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Base, Value = "adsfas"
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
         response.Should().NotBeNull();
         response.Message.Should().Be("Please give a valid number for base XP.");
     }
@@ -108,7 +109,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Modifier, Value = "adsfas"
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
         response.Should().NotBeNull();
         response.Message.Should().Be("Please give a valid number for Modifier.");
     }
@@ -122,7 +123,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Amount, Value = "adsfas"
         };
 
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
         response.Should().NotBeNull();
         response.Message.Should().Be("Please give a valid number for Amount.");
     }
@@ -135,7 +136,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
         {
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.LogChannel, Value = "Something"
         };
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, default));
+        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(command, CancellationToken.None));
 
         response.Should().NotBeNull();
         response.Message.Should().Be("Please give a valid channel for Log Channel.");
@@ -151,7 +152,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.TextTime, Value = "23"
         };
 
-        await cut.Handle(command, default);
+        await cut.Handle(command, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 
@@ -171,7 +172,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Base, Value = "23"
         };
 
-        _ = await cut.Handle(command, default);
+        await cut.Handle(command, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 
@@ -191,7 +192,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Modifier, Value = "23"
         };
 
-        _ = await cut.Handle(command, default);
+        await cut.Handle(command, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 
@@ -211,7 +212,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.Amount, Value = "23"
         };
 
-        _ = await cut.Handle(command, default);
+        await cut.Handle(command, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 
@@ -230,7 +231,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.LogChannel, Value = ChannelId.ToString()
         };
 
-        _ = await cut.Handle(command, default);
+        await cut.Handle(command, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 
@@ -250,9 +251,7 @@ public sealed class SetLevelingSettingsCommandTests(GrimoireCoreFactory factory)
             GuildId = GuildId, LevelSettings = LevelSettingsCommandGroup.LevelSettings.LogChannel, Value = "0"
         };
 
-        var response = await cut.Handle(command, default);
-
-        response.LogChannelId.Should().Be(ChannelId);
+        await cut.Handle(command, CancellationToken.None);
 
         dbContext.ChangeTracker.Clear();
 

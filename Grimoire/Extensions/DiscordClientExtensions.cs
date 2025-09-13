@@ -20,75 +20,26 @@ public static class DiscordClientExtensions
             return null;
         }
     }
-    [Obsolete("Use Publish To Guild Log Channel instead.")]
-    public static Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId,
-        Action<DiscordEmbedBuilder> discordEmbedBuilder)
-        => SendMessageToLoggingChannel(client, logChannelId,
-            builder =>
-            {
-                var embedBuilder = new DiscordEmbedBuilder();
-                discordEmbedBuilder(embedBuilder);
-                builder.AddEmbed(embedBuilder);
-            });
-    [Obsolete("Use Publish To Guild Log Channel instead.")]
-    public static async Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client,
-        ulong? logChannelId, Action<DiscordMessageBuilder> discordMessageBuilder)
-    {
-        if (logChannelId is null)
-            return null;
-        var channel = await client.GetChannelOrDefaultAsync(logChannelId.Value);
-        if (channel is null)
-            return null;
-        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-            await channel.SendMessageAsync(discordMessageBuilder));
-    }
-    [Obsolete("Use Publish To Guild Log Channel instead.")]
-    public static Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client, ulong? logChannelId,
-        Func<DiscordEmbedBuilder, Task> discordEmbedBuilder)
-        => SendMessageToLoggingChannel(client, logChannelId,
-            async builder =>
-            {
-                var embedBuilder = new DiscordEmbedBuilder();
-                await discordEmbedBuilder(embedBuilder);
-                builder.AddEmbed(embedBuilder);
-            });
-    [Obsolete("Use Publish To Guild Log Channel instead.")]
-    public static async Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client,
-        ulong? logChannelId, Func<DiscordMessageBuilder, Task> discordMessageBuilder)
-    {
-        if (logChannelId is null)
-            return null;
-        var channel = await client.GetChannelOrDefaultAsync(logChannelId.Value);
-        if (channel is null)
-            return null;
-        var builder = new DiscordMessageBuilder();
 
-        await discordMessageBuilder(builder);
-
-        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-            await channel.SendMessageAsync(builder));
-    }
-    [Obsolete("Use Publish To Guild Log Channel instead.")]
-    public static async Task<DiscordMessage?> SendMessageToLoggingChannel(this DiscordClient client,
-        ulong? logChannelId, Func<Task<DiscordMessageBuilder>> discordMessageBuilder)
+    public static async Task<DiscordUser?> GetUserOrDefaultAsync(this DiscordClient client, ulong userId)
     {
-        if (logChannelId is null)
+        try
+        {
+            return await client.GetUserAsync(userId);
+        }
+        catch (Exception)
+        {
             return null;
-        var channel = await client.GetChannelOrDefaultAsync(logChannelId.Value);
-        if (channel is null)
-            return null;
-        var builder = await discordMessageBuilder();
-
-        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-            await channel.SendMessageAsync(builder));
+        }
     }
+
+
 
     public static async Task<string?> GetUserAvatar(this DiscordClient client, ulong userId, DiscordGuild? guild = null)
     {
         if (guild?.Members.TryGetValue(userId, out var member) is true)
             return member.GetGuildAvatarUrl(MediaFormat.Auto);
-        var user = await client.GetUserAsync(userId);
-        // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+        var user = await client.GetUserOrDefaultAsync(userId);
         return user?.GetAvatarUrl(MediaFormat.Auto);
     }
 }

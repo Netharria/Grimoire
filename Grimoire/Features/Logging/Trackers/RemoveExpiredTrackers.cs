@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Channels.TrackerLog;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,20 +22,27 @@ public sealed class RemoveExpiredTrackers
         {
             var mediator = serviceProvider.GetRequiredService<IMediator>();
             var discord = serviceProvider.GetRequiredService<DiscordClient>();
+            var guildLog = serviceProvider.GetRequiredService<GuildLog>();
+            var trackerLog = serviceProvider.GetRequiredService<TrackerLog>();
             var response = await mediator.Send(new Request(), stoppingToken);
             foreach (var expiredTracker in response)
             {
-                var embed = new DiscordEmbedBuilder()
-                    .WithDescription($"Tracker on {UserExtensions.Mention(expiredTracker.UserId)} has expired.");
-                await discord.SendMessageToLoggingChannel(expiredTracker.TrackerChannelId, builder =>
-                {
-                    builder.AddEmbed(embed);
-                });
+                var user = await discord.GetUserOrDefaultAsync(expiredTracker.UserId);
 
-                await discord.SendMessageToLoggingChannel(expiredTracker.LogChannelId, builder =>
+                await trackerLog.SendTrackerMessageAsync(new TrackerMessage
                 {
-                    builder.AddEmbed(embed);
-                });
+                    GuildId = expiredTracker.GuildId,
+                    TrackerId = expiredTracker.TrackerChannelId,
+                    TrackerIdType = TrackerIdType.ChannelId,
+                    Description = $"Tracker on {user?.Mention} has expired."
+                }, stoppingToken);
+
+                await guildLog.SendLogMessageAsync(new GuildLogMessage
+                {
+                    GuildId = expiredTracker.GuildId,
+                    GuildLogType = GuildLogType.Moderation,
+                    Description = $"Tracker on {user?.Mention} has expired."
+                }, stoppingToken);
             }
         }
     }
@@ -52,28 +61,28 @@ public sealed class RemoveExpiredTrackers
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var results = await dbContext.Trackers
                 .Where(x => x.EndTime < DateTimeOffset.UtcNow)
-                .Select(x => new { Tracker = x, ModerationLogId = x.Guild.ModChannelLog })
                 .ToArrayAsync(cancellationToken);
 
             var response = results.Select(x => new Response
             {
-                UserId = x.Tracker.UserId,
-                LogChannelId = x.ModerationLogId,
-                TrackerChannelId = x.Tracker.LogChannelId
+                UserId = x.UserId,
+                GuildId = x.GuildId,
+                TrackerChannelId = x.LogChannelId
             });
             if (results.Length == 0)
                 return response;
 
-            dbContext.Trackers.RemoveRange(results.Select(x => x.Tracker));
+            dbContext.Trackers.RemoveRange(results);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return response;
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public ulong UserId { get; init; }
+        public ulong GuildId { get; init; }
         public ulong TrackerChannelId { get; init; }
     }
 }

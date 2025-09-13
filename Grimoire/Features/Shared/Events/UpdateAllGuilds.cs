@@ -27,7 +27,7 @@ internal sealed class UpdateAllGuilds
                 Users = eventArgs.Guilds.Values.SelectMany(x => x.Members)
                     .DistinctBy(x => x.Value.Id)
                     .Select(x =>
-                        new UserDto { Id = x.Key, Username = x.Value.GetUsernameWithDiscriminator() }).ToArray()
+                        new UserDto { Id = x.Key, Username = x.Value.Username }).ToArray()
                     .AsReadOnly(),
                 Members = eventArgs.Guilds.Values.SelectMany(x => x.Members)
                     .Select(x => x.Value).Select(x =>
@@ -60,7 +60,7 @@ internal sealed class UpdateAllGuilds
                         new Invite
                         {
                             Code = x.Code,
-                            Inviter = x.Inviter.GetUsernameWithDiscriminator(),
+                            Inviter = x.Inviter.Username,
                             Url = x.ToString(),
                             Uses = x.Uses,
                             MaxUses = x.MaxUses

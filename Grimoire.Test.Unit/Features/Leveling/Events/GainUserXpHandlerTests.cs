@@ -7,6 +7,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
@@ -93,12 +94,11 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
         var cut = new GainUserXp.Handler(this._mockDbContextFactory);
         var result = await cut.Handle(
             new GainUserXp.Request { UserId = UserId, GuildId = GuildId, ChannelId = ChannelId, RoleIds = [RoleId1] },
-            default);
+            CancellationToken.None);
 
         result.EarnedXp.Should().BeTrue();
         result.PreviousLevel.Should().Be(2);
         result.CurrentLevel.Should().Be(3);
-        result.LevelLogChannel.Should().Be(ChannelId);
 
         var member = await dbContext.Members.Where(x =>
             x.UserId == UserId
@@ -127,7 +127,7 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
 
         var result = await cut.Handle(
             new GainUserXp.Request { UserId = 10, GuildId = GuildId, ChannelId = ChannelId, RoleIds = [RoleId1] },
-            default);
+            CancellationToken.None);
         result.EarnedXp.Should().BeFalse();
     }
 
@@ -145,7 +145,7 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
 
         var result = await cut.Handle(
             new GainUserXp.Request { UserId = UserId, GuildId = GuildId, ChannelId = ChannelId, RoleIds = [10] },
-            default);
+            CancellationToken.None);
         result.EarnedXp.Should().BeFalse();
     }
 
@@ -163,7 +163,7 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
 
         var result = await cut.Handle(
             new GainUserXp.Request { UserId = UserId, GuildId = GuildId, ChannelId = 10, RoleIds = [RoleId1] },
-            default);
+            CancellationToken.None);
         result.EarnedXp.Should().BeFalse();
     }
 
@@ -185,7 +185,7 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
         var cut = new GainUserXp.Handler(this._mockDbContextFactory);
         var result = await cut.Handle(
             new GainUserXp.Request { UserId = UserId, GuildId = GuildId, ChannelId = ChannelId, RoleIds = [RoleId1] },
-            default);
+            CancellationToken.None);
 
         result.EarnedXp.Should().BeFalse();
     }
@@ -201,7 +201,7 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
 
         var result = await cut.Handle(
             new GainUserXp.Request { UserId = 10, GuildId = GuildId, ChannelId = ChannelId, RoleIds = [RoleId1] },
-            default);
+            CancellationToken.None);
         result.EarnedXp.Should().BeTrue();
     }
 }

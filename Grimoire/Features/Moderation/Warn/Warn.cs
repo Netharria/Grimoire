@@ -5,12 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Exceptions;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.Warn;
 
@@ -19,9 +18,10 @@ internal sealed class Warn
     [RequireGuild]
     [RequireModuleEnabled(Module.Moderation)]
     [RequirePermissions([], [DiscordPermission.ManageMessages])]
-    internal sealed class Command(IMediator mediator)
+    internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         [Command("Warn")]
         [Description("Issue a warning to the user.")]
@@ -66,17 +66,20 @@ internal sealed class Warn
             }
             catch (Exception ex) when (ex is BadRequestException or UnauthorizedException)
             {
-                await ctx.SendLogAsync(response, GrimoireColor.Red,
-                    message: $"Was not able to send a direct message with the warn details to {user.Mention}");
+                await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                {
+                    GuildId = ctx.Guild.Id,
+                    GuildLogType = GuildLogType.Moderation,
+                    Color = GrimoireColor.Red,
+                    Description =
+                        $"Was not able to send a direct message with the warn details to {user.Mention}"
+                });
             }
 
-            if (response.LogChannelId is null) return;
-
-            var logChannel = ctx.Guild.Channels.GetValueOrDefault(response.LogChannelId.Value);
-
-            if (logChannel is null) return;
-
-            await logChannel.SendMessageAsync(embed);
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+            {
+                GuildId = ctx.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            });
         }
     }
 
@@ -110,11 +113,11 @@ internal sealed class Warn
             var logChannelId = await dbcontext.Guilds
                 .WhereIdIs(command.GuildId)
                 .Select(x => x.ModChannelLog).FirstOrDefaultAsync(cancellationToken);
-            return new Response { SinId = sin.Id, LogChannelId = logChannelId };
+            return new Response { SinId = sin.Id };
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public long SinId { get; init; }
     }

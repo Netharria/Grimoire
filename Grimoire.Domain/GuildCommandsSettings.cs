@@ -16,6 +16,7 @@ public class GuildCommandsSettings : IModule
 {
     public ulong GuildId { get; init; }
 
-    public virtual Guild Guild { get; set; } = null!;
+    public virtual Guild Guild { get; init; } = null!;
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public bool ModuleEnabled { get; set; }
 }

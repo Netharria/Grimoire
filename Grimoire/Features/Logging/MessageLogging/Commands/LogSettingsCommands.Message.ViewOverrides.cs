@@ -5,10 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
-using DSharpPlus.Commands.Processors.SlashCommands;
 
 // ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;

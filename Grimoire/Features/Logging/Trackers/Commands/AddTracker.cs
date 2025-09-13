@@ -5,11 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.ComponentModel;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Logging.Trackers.Commands;
 
@@ -18,9 +17,10 @@ public sealed class AddTracker
     [RequireGuild]
     [RequireModuleEnabled(Module.MessageLog)]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator)
+    internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         [Command("Track")]
         [Description("Creates a log of a user's activity into the specified channel.")]
@@ -72,7 +72,7 @@ public sealed class AddTracker
                 throw new AnticipatedException(
                     $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
 
-            var response = await this._mediator.Send(
+            await this._mediator.Send(
                 new Request
                 {
                     UserId = user.Id,
@@ -87,16 +87,19 @@ public sealed class AddTracker
                 $"Tracker placed on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType}");
 
 
-            await ctx.Client.SendMessageToLoggingChannel(response.ModerationLogId,
-                embed  => embed
-                    .WithDescription(
-                        $"{ctx.User.GetUsernameWithDiscriminator()} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType}")
-                    .WithColor(GrimoireColor.Purple));
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Description =
+                    $"{ctx.User.Mention} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType}.",
+                Color = GrimoireColor.Purple
+            });
         }
     }
 
 
-    public sealed record Request : IRequest<Response>
+    public sealed record Request : IRequest
     {
         public ulong UserId { get; init; }
         public ulong GuildId { get; init; }
@@ -106,11 +109,11 @@ public sealed class AddTracker
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, Response>
+        : IRequestHandler<Request>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
-        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
+        public async Task Handle(Request command, CancellationToken cancellationToken)
         {
             var trackerEndTime = DateTimeOffset.UtcNow + command.Duration;
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -120,7 +123,6 @@ public sealed class AddTracker
                     new
                     {
                         Tracker = x.Trackers.FirstOrDefault(y => y.UserId == command.UserId),
-                        x.ModChannelLog,
                         MemberExist = x.Members.Any(y => y.UserId == command.UserId)
                     })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -172,13 +174,6 @@ public sealed class AddTracker
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
-
-            return new Response { ModerationLogId = result?.ModChannelLog };
         }
-    }
-
-    public sealed record Response : BaseResponse
-    {
-        public ulong? ModerationLogId { get; init; }
     }
 }

@@ -14,20 +14,20 @@ namespace Grimoire.Domain;
 public class GuildMessageLogSettings : IModule
 {
     public ulong GuildId { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? DeleteChannelLogId { get; set; }
 
     public virtual Channel? DeleteChannelLog { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? BulkDeleteChannelLogId { get; set; }
 
     public virtual Channel? BulkDeleteChannelLog { get; init; }
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public ulong? EditChannelLogId { get; set; }
 
     public virtual Channel? EditChannelLog { get; init; }
 
     public virtual Guild Guild { get; set; } = null!;
-
+    [Obsolete("Temporary to help identify where configurations are changed.")]
     public bool ModuleEnabled { get; set; }
 }

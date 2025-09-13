@@ -7,6 +7,7 @@
 
 using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using static Grimoire.Features.Leveling.Events.GainUserXp;
@@ -19,11 +20,13 @@ public partial class CheckIfUserEarnedReward
     public partial class NotificationHandler(
         IMediator mediator,
         DiscordClient client,
-        ILogger<NotificationHandler> logger) : INotificationHandler<UserGainedXpEvent>
+        ILogger<NotificationHandler> logger,
+        GuildLog guildLog) : INotificationHandler<UserGainedXpEvent>
     {
         private readonly DiscordClient _client = client;
         private readonly ILogger<NotificationHandler> _logger = logger;
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
 
         public async Task Handle(UserGainedXpEvent notification, CancellationToken cancellationToken)
         {
@@ -61,8 +64,7 @@ public partial class CheckIfUserEarnedReward
                 await this.SendErrorLogs(
                     guild.CurrentMember.DisplayName,
                     newRewards.Select(x => x.RoleId),
-                    response.LogChannelId,
-                    response.LevelLogChannel);
+                    guild.Id);
             }
 
             foreach (var reward in newRewards.Where(x => !string.IsNullOrWhiteSpace(x.Message)))
@@ -78,15 +80,16 @@ public partial class CheckIfUserEarnedReward
                 {
                     LogRewardMessageFailure(this._logger, ex, reward.RoleId, reward.Message);
                 }
-
-            await this._client.SendMessageToLoggingChannel(response.LevelLogChannel, embed =>
-                embed
-                    .WithColor(GrimoireColor.DarkPurple)
-                    .WithAuthor(member.GetUsernameWithDiscriminator())
-                    .WithDescription($"{member.Mention} has earned " +
-                                     $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x.RoleId)))}")
-                    .WithFooter($"{member.Id}")
-                    .WithTimestamp(DateTime.UtcNow));
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guild.Id,
+                GuildLogType = GuildLogType.Leveling,
+                Title = member.Username,
+                Description = $"{member.Mention} has earned " +
+                    $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x.RoleId)))}",
+                Footer = $"{member.Id}",
+                Color = GrimoireColor.DarkPurple
+            }, cancellationToken);
         }
 
         [LoggerMessage(LogLevel.Warning, "Failure to send reward message Reward: {roleId} Message: {message}")]
@@ -95,22 +98,27 @@ public partial class CheckIfUserEarnedReward
         private async Task SendErrorLogs(
             string displayName,
             IEnumerable<ulong> rewards,
-            ulong? modLogChannelId,
-            ulong? levelLogChannelId)
+            ulong guildId)
         {
             var roleString = string.Join(' ', rewards.Select(RoleExtensions.Mention));
 
-            await this._client.SendMessageToLoggingChannel(modLogChannelId,
-                embed => embed
-                    .WithColor(GrimoireColor.Red)
-                    .WithDescription($"{displayName} tried to grant roles " +
-                                     $"{roleString} but did not have sufficient permissions."));
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guildId,
+                GuildLogType = GuildLogType.Moderation,
+                Description = $"{displayName} tried to grant roles " +
+                              $"{roleString} but did not have sufficient permissions.",
+                Color = GrimoireColor.Red
+            });
 
-            await this._client.SendMessageToLoggingChannel(levelLogChannelId,
-                embed => embed
-                    .WithColor(GrimoireColor.Red)
-                    .WithDescription($"{displayName} tried to grant roles " +
-                                     $"{roleString} but did not have sufficient permissions."));
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guildId,
+                GuildLogType = GuildLogType.Leveling,
+                Description = $"{displayName} tried to grant roles " +
+                              $"{roleString} but did not have sufficient permissions.",
+                Color = GrimoireColor.Red
+            });
         }
     }
 
@@ -132,8 +140,6 @@ public partial class CheckIfUserEarnedReward
                 .Where(guild => guild.Id == request.GuildId)
                 .Select(guild => new Response
                 {
-                    LogChannelId = guild.ModChannelLog,
-                    LevelLogChannel = guild.LevelSettings.LevelChannelLogId,
                     EarnedRewards = guild.Rewards
                         .Where(reward => reward.RewardLevel <= request.UserLevel)
                         .Select(reward => new RewardDto { Message = reward.RewardMessage, RoleId = reward.RoleId })
@@ -141,10 +147,9 @@ public partial class CheckIfUserEarnedReward
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
         public required IEnumerable<RewardDto> EarnedRewards { get; init; }
-        public required ulong? LevelLogChannel { get; init; }
     }
 
     public sealed record RewardDto

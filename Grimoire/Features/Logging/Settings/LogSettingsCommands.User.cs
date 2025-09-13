@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.ComponentModel;
+using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Logging.Settings;
 
@@ -15,8 +15,9 @@ public partial class LogSettingsCommands
     [RequireModuleEnabled(Module.UserLog)]
     [Command("User")]
     [Description("View or change the User Log Module Settings.")]
-    public partial class User(IMediator mediator)
+    public partial class User(IMediator mediator, GuildLog guildLog)
     {
         private readonly IMediator _mediator = mediator;
+        private readonly GuildLog _guildLog = guildLog;
     }
 }

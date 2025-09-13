@@ -6,14 +6,16 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.Channels.TrackerLog;
 
 namespace Grimoire.Features.Logging.Trackers.Events;
 
 public class TrackerMessageUpdateEvent
 {
-    public class EventHandler(IMediator mediator) : IEventHandler<MessageUpdatedEventArgs>
+    public class EventHandler(IMediator mediator, TrackerLog trackerLog) : IEventHandler<MessageUpdatedEventArgs>
     {
         private readonly IMediator _mediator = mediator;
+        private readonly TrackerLog _trackerLog = trackerLog;
 
         public async Task HandleEventAsync(DiscordClient sender, MessageUpdatedEventArgs args)
         {
@@ -26,15 +28,20 @@ public class TrackerMessageUpdateEvent
             if (response is null)
                 return;
 
-            await sender.SendMessageToLoggingChannel(response.TrackerChannelId,
-                embed => embed
+            await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomEmbed
+            {
+                TrackerId = args.Author.Id,
+                GuildId = args.Guild.Id,
+                TrackerIdType = TrackerIdType.UserId,
+                Embed = new DiscordEmbedBuilder()
                     .AddField("User", args.Author.Mention, true)
                     .AddField("Channel", args.Channel.Mention, true)
                     .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
                     .WithFooter("Message Sent", args.Author.GetAvatarUrl(MediaFormat.Auto))
                     .WithTimestamp(DateTime.UtcNow)
                     .AddMessageTextToFields("Before", response.OldMessageContent)
-                    .AddMessageTextToFields("After", args.Message.Content));
+                    .AddMessageTextToFields("After", args.Message.Content)
+            });
         }
     }
 
@@ -58,7 +65,6 @@ public class TrackerMessageUpdateEvent
                 .WhereMemberHasId(request.UserId, request.GuildId)
                 .Select(tracker => new Response
                 {
-                    TrackerChannelId = tracker.LogChannelId,
                     OldMessageContent = tracker.Member.Messages
                         .Where(message => message.Id == request.MessageId)
                         .Select(message => message.MessageHistory
@@ -71,9 +77,8 @@ public class TrackerMessageUpdateEvent
         }
     }
 
-    public sealed record Response : BaseResponse
+    public sealed record Response
     {
-        public ulong TrackerChannelId { get; init; }
         public string OldMessageContent { get; init; } = string.Empty;
     }
 }
