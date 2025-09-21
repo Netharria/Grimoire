@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Domain.Shared;
 using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
@@ -18,30 +17,28 @@ public enum SinType
 }
 
 [UsedImplicitly]
-public class Sin : IIdentifiable<long>, IMember
+public sealed class Sin
 {
-    public virtual Member Member { get; init; } = null!;
+    public Member? Member { get; init; }
 
     public ulong? ModeratorId { get; init; }
 
-    public virtual Member? Moderator { get; init; }
+    public Member? Moderator { get; init; }
 
-    public virtual Guild Guild { get; init; } = null!;
+    public Guild? Guild { get; init; }
 
-    public string Reason { get; set; } = string.Empty;
+    public required string Reason { get; set; }
 
-    public DateTimeOffset SinOn { get; init; }
+    public DateTimeOffset SinOn { get; private init; }
 
-    public SinType SinType { get; init; }
+    public required SinType SinType { get; init; }
 
-    public virtual Mute? Mute { get; init; }
+    public Pardon? Pardon { get; set; }
 
-    public virtual Pardon? Pardon { get; set; }
+    public ICollection<PublishedMessage> PublishMessages { get; init; } = [];
+    public required long Id { get; set; }
 
-    public virtual ICollection<PublishedMessage> PublishMessages { get; init; } = [];
-    public long Id { get; set; }
+    public required ulong UserId { get; set; }
 
-    public ulong UserId { get; set; }
-
-    public ulong GuildId { get; set; }
+    public required ulong GuildId { get; set; }
 }

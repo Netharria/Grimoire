@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Entities.AuditLogs;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.PluralKit;
 using Grimoire.Features.Shared.Settings;
@@ -23,10 +22,10 @@ public sealed class DeleteMessageEvent
         GuildLog guildLog) : IEventHandler<MessageDeletedEventArgs>
     {
         private readonly IDiscordImageEmbedService _attachmentUploadService = attachmentUploadService;
+        private readonly GuildLog _guildLog = guildLog;
         private readonly IDiscordAuditLogParserService _logParserService = logParserService;
         private readonly IMediator _mediator = mediator;
         private readonly IPluralkitService _pluralKitService = pluralKitService;
-        private readonly GuildLog _guildLog = guildLog;
 
 
         public async Task HandleEventAsync(DiscordClient sender, MessageDeletedEventArgs args)
@@ -36,7 +35,7 @@ public sealed class DeleteMessageEvent
                 return;
 
 
-            if(args.Message.Author?.Id == args.Guild.CurrentMember.Id)
+            if (args.Message.Author?.Id == args.Guild.CurrentMember.Id)
                 return;
 
             var pluralkitMessage =
@@ -79,7 +78,7 @@ public sealed class DeleteMessageEvent
             {
                 GuildId = args.Guild.Id,
                 GuildLogType = GuildLogType.MessageDeleted,
-                Message = await this.BuildLogMessage(sender, args, response, auditLogEntry),
+                Message = await BuildLogMessage(sender, args, response, auditLogEntry)
             });
         }
 
@@ -114,7 +113,6 @@ public sealed class DeleteMessageEvent
                     .AddField("Member Id",
                         string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
                         true);
-
             }
 
             if (auditLogEntry?.UserResponsible is not null)
@@ -136,7 +134,7 @@ public sealed class DeleteMessageEvent
     public sealed record Command : IRequest<Response>
     {
         public ulong MessageId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public ulong? DeletedByModerator { get; init; }
     }
 

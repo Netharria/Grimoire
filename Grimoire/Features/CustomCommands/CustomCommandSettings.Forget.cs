@@ -28,10 +28,18 @@ public sealed partial class CustomCommandSettings
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        await this._mediator.Send(new RemoveCustomCommand.Request
-        {
-            CommandName = name, GuildId = ctx.Guild.Id
-        });
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+
+        var result = await dbContext.CustomCommands
+            .Include(x => x.CustomCommandRoles)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x => x.Name == name && x.GuildId == ctx.Guild.Id);
+
+        if (result is null)
+            throw new AnticipatedException($"Did not find a saved command with name {name}");
+
+        dbContext.CustomCommands.Remove(result);
+        await dbContext.SaveChangesAsync();
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Forgot command: {name}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
@@ -41,36 +49,5 @@ public sealed partial class CustomCommandSettings
             Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember} to forget command: {name}",
             Color = GrimoireColor.Purple
         });
-    }
-}
-
-public sealed class RemoveCustomCommand
-{
-    public sealed record Request : IRequest
-    {
-        public required string CommandName { get; init; }
-        public required ulong GuildId { get; init; }
-    }
-
-    [UsedImplicitly]
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Request request, CancellationToken cancellationToken)
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbContext.CustomCommands
-                .Include(x => x.CustomCommandRoles)
-                .AsSplitQuery()
-                .FirstOrDefaultAsync(x => x.Name == request.CommandName && x.GuildId == request.GuildId,
-                    cancellationToken);
-            if (result is null)
-                throw new AnticipatedException($"Did not find a saved command with name {request.CommandName}");
-
-            dbContext.CustomCommands.Remove(result);
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
     }
 }

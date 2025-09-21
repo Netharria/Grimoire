@@ -42,8 +42,8 @@ public sealed class LockedTreadEvents
 
     public sealed record GetLockQuery : IRequest<bool>
     {
-        public ulong ChannelId { get; init; }
-        public ulong GuildId { get; init; }
+        public ChannelId ChannelId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

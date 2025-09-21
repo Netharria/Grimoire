@@ -17,8 +17,6 @@ global using Grimoire.Enums;
 global using Grimoire.Features.Shared.SharedDtos;
 global using Grimoire.Features.Shared.Attributes;
 global using Grimoire.Extensions;
-global using Grimoire.Features.Shared.Channels;
 global using Grimoire.Structs;
 global using Grimoire.Utilities;
-global using MediatR;
 global using Microsoft.EntityFrameworkCore;

@@ -18,11 +18,11 @@ internal sealed class IgnoredRoleConfiguration : IEntityTypeConfiguration<Ignore
             .ValueGeneratedNever()
             .IsRequired();
         builder.HasOne(e => e.Role)
-            .WithOne(e => e.IsIgnoredRole)
+            .WithOne()
             .HasForeignKey<IgnoredRole>(e => e.RoleId)
             .IsRequired();
         builder.HasOne(e => e.Guild)
-            .WithMany(e => e.IgnoredRoles)
+            .WithMany()
             .HasForeignKey(e => e.GuildId)
             .IsRequired();
     }

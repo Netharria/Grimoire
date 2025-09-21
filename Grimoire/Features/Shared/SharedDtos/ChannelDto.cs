@@ -9,6 +9,6 @@ namespace Grimoire.Features.Shared.SharedDtos;
 
 public sealed record ChannelDto
 {
-    public ulong Id { get; init; }
-    public ulong GuildId { get; init; }
+    public required ulong Id { get; init; }
+    public required ulong GuildId { get; init; }
 }

@@ -40,12 +40,14 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             }
             catch (DiscordException)
             {
-                await guildLog.SendLogMessageAsync(new GuildLogMessage
-                {
-                    GuildId = guild.Id,
-                    GuildLogType = GuildLogType.Moderation,
-                    Description = $"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually.",
-                }, stoppingToken);
+                await guildLog.SendLogMessageAsync(
+                    new GuildLogMessage
+                    {
+                        GuildId = guild.Id,
+                        GuildLogType = GuildLogType.Moderation,
+                        Description =
+                            $"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually."
+                    }, stoppingToken);
             }
 
             _ = await mediator.Send(new UnmuteUser.Request { UserId = user.Id, GuildId = guild.Id }, stoppingToken);
@@ -55,12 +57,13 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
 
             await user.SendMessageAsync(embed);
 
-            await guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = guild.Id,
-                GuildLogType = GuildLogType.Moderation,
-                Description = $"Mute on {user.Mention} has expired.",
-            }, stoppingToken);
+            await guildLog.SendLogMessageAsync(
+                new GuildLogMessage
+                {
+                    GuildId = guild.Id,
+                    GuildLogType = GuildLogType.Moderation,
+                    Description = $"Mute on {user.Mention} has expired."
+                }, stoppingToken);
         }
     }
 }
@@ -97,7 +100,7 @@ public sealed class GetExpiredMutes
     public sealed record Response
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public ulong MuteRole { get; init; }
     }
 }

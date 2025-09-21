@@ -5,16 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Domain.Shared;
 using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class Attachment : IIdentifiable<ulong>
+public sealed class Attachment
 {
-    public ulong MessageId { get; init; }
-    public virtual Message Message { get; init; } = null!;
-    public string FileName { get; init; } = string.Empty;
-    public ulong Id { get; set; }
+    public required ulong MessageId { get; init; }
+    public Message? Message { get; init; }
+    public required string FileName { get; init; }
+    public required ulong Id { get; init; }
 }

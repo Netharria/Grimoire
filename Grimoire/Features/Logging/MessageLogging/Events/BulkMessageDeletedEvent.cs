@@ -6,8 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
-using DSharpPlus.Interactivity.Extensions;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Settings;
 using ChannelExtensions = Grimoire.Extensions.ChannelExtensions;
@@ -16,10 +14,11 @@ namespace Grimoire.Features.Logging.MessageLogging.Events;
 
 public sealed class BulkMessageDeletedEvent
 {
-    public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<MessagesBulkDeletedEventArgs>
+    public sealed class EventHandler(IMediator mediator, GuildLog guildLog)
+        : IEventHandler<MessagesBulkDeletedEventArgs>
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         public async Task HandleEventAsync(DiscordClient sender, MessagesBulkDeletedEventArgs args)
         {
@@ -42,10 +41,10 @@ public sealed class BulkMessageDeletedEvent
                     GuildLogType = GuildLogType.BulkMessageDeleted,
                     Message = new DiscordMessageBuilder()
                         .AddEmbed(embed)
-                        .AddFile($"{DateTime.UtcNow:r}.txt", await BuildBulkMessageLogFile(response.Messages, args.Guild)),
+                        .AddFile($"{DateTime.UtcNow:r}.txt",
+                            await BuildBulkMessageLogFile(response.Messages, args.Guild))
                 }
             );
-
         }
 
         private static async Task<MemoryStream> BuildBulkMessageLogFile(IEnumerable<MessageDto> messages,
@@ -80,7 +79,7 @@ public sealed class BulkMessageDeletedEvent
     public sealed record Request : IRequest<Response>
     {
         public ulong[] Ids { get; init; } = [];
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule)
@@ -124,11 +123,7 @@ public sealed class BulkMessageDeletedEvent
 
             await dbContext.MessageHistory.AddRangeAsync(messageHistory, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new Response
-            {
-                Messages = messages.Select(x => x.Message),
-                Success = true
-            };
+            return new Response { Messages = messages.Select(x => x.Message), Success = true };
         }
     }
 

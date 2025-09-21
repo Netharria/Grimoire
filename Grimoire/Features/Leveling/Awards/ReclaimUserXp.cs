@@ -8,7 +8,6 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Leveling.Awards;
@@ -17,30 +16,29 @@ public sealed class ReclaimUserXp
 {
     public enum XpOption
     {
-        [ChoiceDisplayName("Take all their xp.")]All,
-        [ChoiceDisplayName("Take a specific amount.")]Amount
+        [ChoiceDisplayName("Take all their xp.")]
+        All,
+
+        [ChoiceDisplayName("Take a specific amount.")]
+        Amount
     }
 
     [RequireGuild]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [RequireModuleEnabled(Module.Leveling)]
-    public sealed class Command(IMediator mediator, GuildLog guildLog)
+    public sealed class Command(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
         private readonly GuildLog _guildLog = guildLog;
 
         [Command("Reclaim")]
         [Description("Takes away xp from user.")]
         public async Task ReclaimAsync(CommandContext ctx,
-            [Parameter("User")]
-            [Description("The user to take xp from.")]
+            [Parameter("User")] [Description("The user to take xp from.")]
             DiscordUser user,
-            [Parameter("Option")]
-            [Description( "Select either to take all of their xp or a specific amount.")]
+            [Parameter("Option")] [Description("Select either to take all of their xp or a specific amount.")]
             XpOption option,
-            [MinMaxValue(0)]
-            [Parameter("Amount")]
-            [Description("The amount of xp to take.")]
+            [MinMaxValue(0)] [Parameter("Amount")] [Description("The amount of xp to take.")]
             int amount = 0)
         {
             await ctx.DeferResponseAsync();
@@ -48,59 +46,21 @@ public sealed class ReclaimUserXp
                 throw new AnticipatedException("This command can only be used in a server.");
             if (option == XpOption.Amount && amount == 0)
                 throw new AnticipatedException("Specify an amount greater than 0");
-            var response = await this._mediator.Send(
-                new Request
-                {
-                    UserId = user.Id,
-                    GuildId = ctx.Guild.Id,
-                    XpToTake = amount,
-                    XpOption = option,
-                    ReclaimerId = ctx.User.Id
-                });
-
-            await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
-                $"{response.XpTaken} xp has been taken from {user.Mention}.");
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = ctx.Guild.Id,
-                GuildLogType = GuildLogType.Moderation,
-                Description = $"{response.XpTaken} xp has been taken from {user.Mention} by {ctx.User.Mention}.",
-                Color = GrimoireColor.Purple
-            });
-        }
-    }
-
-    public sealed record Request : IRequest<Response>
-    {
-        public required XpOption XpOption { get; init; }
-        public required long XpToTake { get; init; }
-        public required ulong UserId { get; init; }
-        public required ulong GuildId { get; init; }
-        public ulong? ReclaimerId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, Response>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
             var member = await dbContext.Members
                 .AsNoTracking()
-                .WhereMemberHasId(command.UserId, command.GuildId)
+                .Where(member => member.UserId == user.Id && member.GuildId == ctx.Guild.Id)
                 .Select(member => new { Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp) })
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync();
             if (member is null)
                 throw new AnticipatedException(
-                    $"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
+                    $"{user.Id} was not found. Have they been on the server before?");
 
-            var xpToTake = command.XpOption switch
+            var xpToTake = option switch
             {
                 XpOption.All => member.Xp,
-                XpOption.Amount => command.XpToTake,
-                _ => throw new ArgumentOutOfRangeException(nameof(command),
+                XpOption.Amount => amount,
+                _ => throw new ArgumentOutOfRangeException(nameof(option),
                     "XpOption not implemented in switch statement.")
             };
 
@@ -109,21 +69,24 @@ public sealed class ReclaimUserXp
             await dbContext.XpHistory.AddAsync(
                 new XpHistory
                 {
-                    UserId = command.UserId,
-                    GuildId = command.GuildId,
+                    UserId = user.Id,
+                    GuildId = ctx.Guild.Id,
                     Xp = -xpToTake,
                     Type = XpHistoryType.Reclaimed,
-                    AwarderId = command.ReclaimerId,
+                    AwarderId = ctx.User.Id,
                     TimeOut = DateTimeOffset.UtcNow
-                }, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
+                });
+            await dbContext.SaveChangesAsync();
 
-            return new Response { XpTaken = xpToTake };
+            await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
+                $"{xpToTake} xp has been taken from {user.Mention}.");
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = ctx.Guild.Id,
+                GuildLogType = GuildLogType.Moderation,
+                Description = $"{xpToTake} xp has been taken from {user.Mention} by {ctx.User.Mention}.",
+                Color = GrimoireColor.Purple
+            });
         }
-    }
-
-    public sealed record Response
-    {
-        public required long XpTaken { get; init; }
     }
 }

@@ -61,7 +61,7 @@ public sealed class InviteService : IInviteService
             .FirstOrDefault();
         if (inviteUsed is not null)
         {
-            this.UpdateInvite(guildInvites.GuildId, inviteUsed);
+            UpdateInvite(guildInvites.GuildId, inviteUsed);
             return inviteUsed;
         }
 
@@ -73,7 +73,7 @@ public sealed class InviteService : IInviteService
             .FirstOrDefault();
         if (inviteUsed is null || inviteUsed.Uses + 1 != inviteUsed.MaxUses)
             return null;
-        if (!this.DeleteInvite(guildInvites.GuildId, inviteUsed.Code))
+        if (!DeleteInvite(guildInvites.GuildId, inviteUsed.Code))
             throw new Exception("Was not able to delete invite.");
         return inviteUsed;
     }
@@ -88,6 +88,6 @@ public sealed class InviteService : IInviteService
 
 public sealed record GuildInviteDto
 {
-    public ulong GuildId { get; init; }
+    public GuildId GuildId { get; init; }
     public ConcurrentDictionary<string, Invite> Invites { get; init; } = new();
 }

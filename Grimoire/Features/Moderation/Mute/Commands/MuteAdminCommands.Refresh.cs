@@ -45,7 +45,7 @@ public class GetMuteRole
 {
     public sealed record Query : IRequest<ulong>
     {
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

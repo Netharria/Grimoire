@@ -9,9 +9,9 @@ namespace Grimoire.Features.Shared.SharedDtos;
 
 public sealed record MessageDto
 {
-    public ulong UserId { get; init; }
-    public ulong ChannelId { get; init; }
-    public ulong MessageId { get; init; }
-    public string MessageContent { get; init; } = string.Empty;
-    public IEnumerable<AttachmentDto> Attachments { get; init; } = [];
+    public required ulong UserId { get; init; }
+    public required ulong ChannelId { get; init; }
+    public required ulong MessageId { get; init; }
+    public required string MessageContent { get; init; }
+    public required IEnumerable<AttachmentDto> Attachments { get; init; }
 }

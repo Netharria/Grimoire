@@ -43,7 +43,7 @@ internal sealed class GetModerationSettings
 {
     public sealed record Query : IRequest<Response>
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

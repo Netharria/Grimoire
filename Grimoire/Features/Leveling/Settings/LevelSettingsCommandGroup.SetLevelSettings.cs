@@ -12,29 +12,31 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Leveling.Settings;
 
-
-
 public sealed partial class LevelSettingsCommandGroup
 {
     public enum LevelSettings
     {
-        [ChoiceDisplayName("Timeout between xp gains in minutes")]TextTime,
-        [ChoiceDisplayName("Base - linear xp per level modifier")]Base,
-        [ChoiceDisplayName("Modifier - exponential xp per level modifier")]Modifier,
-        [ChoiceDisplayName("Amount per xp gain.")]Amount,
-        [ChoiceDisplayName("Log Channel")]LogChannel
+        [ChoiceDisplayName("Timeout between xp gains in minutes")]
+        TextTime,
+
+        [ChoiceDisplayName("Base - linear xp per level modifier")]
+        Base,
+
+        [ChoiceDisplayName("Modifier - exponential xp per level modifier")]
+        Modifier,
+
+        [ChoiceDisplayName("Amount per xp gain.")]
+        Amount,
+        [ChoiceDisplayName("Log Channel")] LogChannel
     }
 
     [Command("Set")]
     [Description("Set a leveling setting.")]
     public async Task SetAsync(
         CommandContext ctx,
-        [Parameter("Setting")]
-        [Description("The setting to change.")]
+        [Parameter("Setting")] [Description("The setting to change.")]
         LevelSettings levelSettings,
-        [MinMaxValue(1, int.MaxValue)]
-        [Parameter("Value")]
-        [Description("The value to change the setting to.")]
+        [MinMaxValue(1, int.MaxValue)] [Parameter("Value")] [Description("The value to change the setting to.")]
         int value)
     {
         await ctx.DeferResponseAsync();
@@ -64,8 +66,7 @@ public sealed partial class LevelSettingsCommandGroup
         [Parameter("Option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel")]
         ChannelOption option,
-        [Parameter("Channel")]
-        [Description("The channel to change the log to.")]
+        [Parameter("Channel")] [Description("The channel to change the log to.")]
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();
@@ -107,7 +108,7 @@ public sealed class SetLevelSettings
 {
     public sealed record Request : IRequest
     {
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
         public required LevelSettingsCommandGroup.LevelSettings LevelSettings { get; init; }
         public required string Value { get; init; }
     }

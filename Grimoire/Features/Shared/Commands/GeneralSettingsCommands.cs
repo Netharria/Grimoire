@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Settings;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -14,8 +15,8 @@ namespace Grimoire.Features.Shared.Commands;
 [Description("Change the settings of the General Module.")]
 [RequireGuild]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-internal sealed partial class GeneralSettingsCommands(IMediator mediator, GuildLog guildLog)
+internal sealed partial class GeneralSettingsCommands(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly IMediator _mediator = mediator;
+    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
 }

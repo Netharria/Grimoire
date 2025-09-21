@@ -18,15 +18,14 @@ public sealed class RemoveTracker
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator, GuildLog guildLog, TrackerLog trackerLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
         private readonly TrackerLog _trackerLog = trackerLog;
 
         [Command("Untrack")]
         [Description("Stops the logging of the user's activity.")]
         public async Task UnTrackAsync(SlashCommandContext ctx,
-            [Parameter("User")]
-            [Description("The user to stop logging.")]
+            [Parameter("User")] [Description("The user to stop logging.")]
             DiscordUser member)
         {
             await ctx.DeferResponseAsync();
@@ -39,7 +38,7 @@ public sealed class RemoveTracker
 
             await ctx.EditReplyAsync(message: $"Tracker removed from {member.Mention}");
 
-            await this._trackerLog.SendTrackerMessageAsync(new TrackerMessage()
+            await this._trackerLog.SendTrackerMessageAsync(new TrackerMessage
             {
                 GuildId = ctx.Guild.Id,
                 TrackerId = response.TrackerChannelId,
@@ -48,7 +47,7 @@ public sealed class RemoveTracker
                 Description = $"{ctx.User.Username} removed a tracker on {member.Mention}"
             });
 
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage()
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
                 GuildId = ctx.Guild.Id,
                 GuildLogType = GuildLogType.Moderation,
@@ -61,7 +60,7 @@ public sealed class RemoveTracker
     public sealed record Request : IRequest<Response>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class RemoveTrackerCommandHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -81,10 +80,7 @@ public sealed class RemoveTracker
             dbContext.Trackers.Remove(result);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return new Response
-            {
-                TrackerChannelId = result.LogChannelId
-            };
+            return new Response { TrackerChannelId = result.LogChannelId };
         }
     }
 

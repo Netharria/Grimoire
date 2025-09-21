@@ -9,12 +9,15 @@ using Grimoire.Features.Shared.Channels.TrackerLog;
 
 namespace Grimoire.Features.Logging.Trackers.Events;
 
-internal sealed class TrackerMessageCreatedEvent(IMediator mediator, IDiscordImageEmbedService imageEmbedService, TrackerLog trackerLog)
+internal sealed class TrackerMessageCreatedEvent(
+    IMediator mediator,
+    IDiscordImageEmbedService imageEmbedService,
+    TrackerLog trackerLog)
     : IEventHandler<MessageCreatedEventArgs>
 {
     private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
-    private readonly TrackerLog _trackerLog = trackerLog;
     private readonly IMediator _mediator = mediator;
+    private readonly TrackerLog _trackerLog = trackerLog;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {

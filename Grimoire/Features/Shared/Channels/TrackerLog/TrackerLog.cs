@@ -6,7 +6,8 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Threading.Channels;
-using Grimoire.Features.Shared.Settings;
+using Grimoire.Settings.Domain;
+using Grimoire.Settings.Settings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Channel = System.Threading.Channels.Channel;
@@ -22,9 +23,9 @@ public sealed partial class TrackerLog(
     private readonly Channel<TrackerMessageBase> _channel =
         Channel.CreateUnbounded<TrackerMessageBase>(new UnboundedChannelOptions
         {
-            SingleReader = true,
-            SingleWriter = false
+            SingleReader = true, SingleWriter = false
         });
+
     private readonly DiscordClient _discordClient = discordClient;
     private readonly ILogger<TrackerLog> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
@@ -36,8 +37,7 @@ public sealed partial class TrackerLog(
             {
                 var result = await this._channel.Reader.ReadAsync(stoppingToken);
 
-
-                var logChannelId = await this.GetLogChannelId(result, stoppingToken);
+                var logChannelId = await GetLogChannelId(result, stoppingToken);
 
                 if (logChannelId is null)
                     continue;
@@ -46,7 +46,7 @@ public sealed partial class TrackerLog(
 
                 if (channel is null)
                     continue;
-                var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
+                await DiscordRetryPolicy.RetryDiscordCall(async _ =>
                     await channel.SendMessageAsync(result.GetMessageBuilder()), stoppingToken);
             }
             catch (Exception e)
@@ -55,7 +55,8 @@ public sealed partial class TrackerLog(
             }
     }
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "An error occurred while processing the log message. Message: ({message})")]
+    [LoggerMessage(Level = LogLevel.Error,
+        Message = "An error occurred while processing the log message. Message: ({message})")]
     static partial void LogError(ILogger logger, Exception e, string message);
 
     private async Task<ulong?> GetLogChannelId(TrackerMessageBase trackerMessageBase, CancellationToken stoppingToken)
@@ -64,7 +65,7 @@ public sealed partial class TrackerLog(
         if (guildSettings is null)
             return null;
         if (!await this._settingsModule.IsModuleEnabled(
-                Module.MessageLog,
+                Settings.Enums.Module.MessageLog,
                 trackerMessageBase.GuildId,
                 stoppingToken))
             return null;
@@ -73,14 +74,16 @@ public sealed partial class TrackerLog(
         {
             TrackerIdType.UserId => GetUsersTrackerChannel(trackerMessageBase.TrackerId, guildSettings),
             TrackerIdType.ChannelId => trackerMessageBase.TrackerId,
-            _ => throw new ArgumentOutOfRangeException(nameof(trackerMessageBase.TrackerIdType), trackerMessageBase.TrackerIdType, "Unknown log type")
+            _ => throw new ArgumentOutOfRangeException(nameof(trackerMessageBase.TrackerIdType),
+                trackerMessageBase.TrackerIdType, "Unknown log type")
         };
     }
 
-    private ulong? GetUsersTrackerChannel(ulong userId, Guild guildSettings)
+    private static ulong? GetUsersTrackerChannel(ulong userId, GuildSettings guildSettings)
         => guildSettings.Trackers.FirstOrDefault(x => x.UserId == userId)?.LogChannelId;
 
 
-    public ValueTask SendTrackerMessageAsync(TrackerMessageBase logMessageMessage, CancellationToken cancellationToken = default)
+    public ValueTask SendTrackerMessageAsync(TrackerMessageBase logMessageMessage,
+        CancellationToken cancellationToken = default)
         => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken);
 }

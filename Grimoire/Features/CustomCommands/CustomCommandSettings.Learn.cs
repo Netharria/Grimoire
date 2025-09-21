@@ -33,12 +33,9 @@ public sealed partial class CustomCommandSettings
         [Parameter("Content")]
         [Description("The content of the command. Use %mention or %message to add a message arguments")]
         string content,
-        [Parameter("Embed")]
-        [Description("Put the message in an embed")]
+        [Parameter("Embed")] [Description("Put the message in an embed")]
         bool embed = false,
-        [MinMaxLength(maxLength: 6)]
-        [Parameter("EmbedColor")]
-        [Description("Hexadecimal color of the embed")]
+        [MinMaxLength(maxLength: 6)] [Parameter("EmbedColor")] [Description("Hexadecimal color of the embed")]
         string? embedColor = null
         // ,
         // [Parameter("RestrictedUse")]
@@ -48,7 +45,7 @@ public sealed partial class CustomCommandSettings
         // [Description("Deny roles the ability to use this command or allow roles if command is restricted use")]
         // [VariadicArgument(10)]
         // IReadOnlyList<DiscordRole>? allowedRoles = null
-        )
+    )
     {
         IReadOnlyList<DiscordRole> allowedRoles;
         const bool restrictedUse = false;
@@ -75,7 +72,7 @@ public sealed partial class CustomCommandSettings
         allowedRoles = Array.Empty<DiscordRole>();
 
         var permissionRoles = allowedRoles.Select(role =>
-            new RoleDto {Id = role.Id, GuildId = ctx.Guild.Id }).ToList();
+            new RoleDto { Id = role.Id, GuildId = ctx.Guild.Id }).ToList();
 
         if (restrictedUse && permissionRoles.Count != 0)
         {
@@ -83,16 +80,7 @@ public sealed partial class CustomCommandSettings
             return;
         }
 
-        await this._mediator.Send(new AddCustomCommand.Request
-        {
-            CommandName = name,
-            GuildId = ctx.Guild.Id,
-            Content = content,
-            IsEmbedded = embed,
-            EmbedColor = embedColor,
-            RestrictedUse = restrictedUse,
-            PermissionRoles = permissionRoles
-        });
+        SaveCommand(name, ctx.Guild.Id, content, embed, embedColor, restrictedUse, permissionRoles);
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Learned new command: {name}");
         await this._guildLog.SendLogMessageAsync(
@@ -100,77 +88,57 @@ public sealed partial class CustomCommandSettings
             {
                 GuildId = ctx.Guild.Id,
                 GuildLogType = GuildLogType.Moderation,
-                Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember.Mention} to learn a new command: {name}",
+                Description =
+                    $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember.Mention} to learn a new command: {name}",
                 Color = GrimoireColor.Purple
             });
     }
-}
 
-public sealed class AddCustomCommand
-{
-    public sealed record Request : IRequest
+    private async Task SaveCommand(string commandName, ulong guildId, string content, bool isEmbedded,
+        string? embedColor, bool restrictedUse, IReadOnlyList<RoleDto> permissionRoles,
+        CancellationToken cancellationToken = default)
     {
-        public required string CommandName { get; init; }
-        public required ulong GuildId { get; init; }
-        public required string Content { get; init; }
-        public required bool IsEmbedded { get; init; }
-        public required string? EmbedColor { get; init; }
-        public required bool RestrictedUse { get; init; }
-        public required IReadOnlyCollection<RoleDto> PermissionRoles { get; init; }
-    }
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await dbContext.Roles.AddMissingRolesAsync(permissionRoles, cancellationToken);
 
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Request command, CancellationToken cancellationToken)
+        var result = await dbContext.CustomCommands
+            .Include(x => x.CustomCommandRoles)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x => x.Name == commandName && x.GuildId == guildId,
+                cancellationToken);
+        var commandRoles = permissionRoles.Select(x =>
+            new CustomCommandRole { CustomCommandName = commandName, GuildId = guildId, RoleId = x.Id }).ToList();
+        if (result is null)
         {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            await dbContext.Roles.AddMissingRolesAsync(command.PermissionRoles, cancellationToken);
-
-            var result = await dbContext.CustomCommands
-                .Include(x => x.CustomCommandRoles)
-                .AsSplitQuery()
-                .FirstOrDefaultAsync(x => x.Name == command.CommandName && x.GuildId == command.GuildId,
-                    cancellationToken);
-            var commandRoles = command.PermissionRoles.Select(x =>
-                new CustomCommandRole
-                {
-                    CustomCommandName = command.CommandName, GuildId = command.GuildId, RoleId = x.Id
-                }).ToList();
-            if (result is null)
+            result = new CustomCommand
             {
-                result = new CustomCommand
-                {
-                    Name = command.CommandName,
-                    GuildId = command.GuildId,
-                    Content = command.Content,
-                    HasMention = command.Content.Contains("%mention", StringComparison.OrdinalIgnoreCase),
-                    HasMessage = command.Content.Contains("%message", StringComparison.OrdinalIgnoreCase),
-                    IsEmbedded = command.IsEmbedded,
-                    EmbedColor = command.EmbedColor,
-                    RestrictedUse = command.RestrictedUse,
-                    CustomCommandRoles = commandRoles
-                };
-                await dbContext.AddAsync(result, cancellationToken);
-            }
-            else
-            {
-                result.Name = command.CommandName;
-                result.GuildId = command.GuildId;
-                result.Content = command.Content;
-                result.HasMention = command.Content.Contains("%mention", StringComparison.OrdinalIgnoreCase);
-                result.HasMessage = command.Content.Contains("%message", StringComparison.OrdinalIgnoreCase);
-                result.IsEmbedded = command.IsEmbedded;
-                result.EmbedColor = command.EmbedColor;
-                result.RestrictedUse = command.RestrictedUse;
-                result.CustomCommandRoles.Clear();
-                foreach (var role in commandRoles)
-                    result.CustomCommandRoles.Add(role);
-            }
-
-            await dbContext.SaveChangesAsync(cancellationToken);
+                Name = commandName,
+                GuildId = guildId,
+                Content = content,
+                HasMention = content.Contains("%mention", StringComparison.OrdinalIgnoreCase),
+                HasMessage = content.Contains("%message", StringComparison.OrdinalIgnoreCase),
+                IsEmbedded = isEmbedded,
+                EmbedColor = embedColor,
+                RestrictedUse = restrictedUse,
+                CustomCommandRoles = commandRoles
+            };
+            await dbContext.AddAsync(result, cancellationToken);
         }
+        else
+        {
+            result.Name = commandName;
+            result.GuildId = guildId;
+            result.Content = content;
+            result.HasMention = content.Contains("%mention", StringComparison.OrdinalIgnoreCase);
+            result.HasMessage = content.Contains("%message", StringComparison.OrdinalIgnoreCase);
+            result.IsEmbedded = isEmbedded;
+            result.EmbedColor = embedColor;
+            result.RestrictedUse = restrictedUse;
+            result.CustomCommandRoles.Clear();
+            foreach (var role in commandRoles)
+                result.CustomCommandRoles.Add(role);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

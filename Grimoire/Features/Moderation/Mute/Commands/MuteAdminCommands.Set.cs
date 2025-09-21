@@ -15,8 +15,7 @@ public partial class MuteAdminCommands
     [Description("Sets the role that is used for muting users.")]
     public async Task SetMuteRoleAsync(
         SlashCommandContext ctx,
-        [Parameter("Role")]
-        [Description("The role to use for muting users.")]
+        [Parameter("Role")] [Description("The role to use for muting users.")]
         DiscordRole role)
     {
         await ctx.DeferResponseAsync();
@@ -42,7 +41,7 @@ public sealed class SetMuteRole
     public sealed record Request : IRequest
     {
         public ulong Role { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

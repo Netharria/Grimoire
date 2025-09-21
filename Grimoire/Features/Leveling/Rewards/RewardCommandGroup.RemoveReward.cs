@@ -15,8 +15,7 @@ public sealed partial class RewardCommandGroup
     [Command("Remove")]
     [Description("Removes a reward from the server.")]
     public async Task RemoveAsync(CommandContext ctx,
-        [Parameter("Role")]
-        [Description("The role to be removed as a reward.")]
+        [Parameter("Role")] [Description("The role to be removed as a reward.")]
         DiscordRole role)
     {
         if (ctx.Guild is null)
@@ -24,6 +23,7 @@ public sealed partial class RewardCommandGroup
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
             return;
         }
+
         await ctx.DeferResponseAsync();
         await this._mediator.Send(
             new RemoveReward.Request { RoleId = role.Id });
@@ -43,7 +43,7 @@ public sealed class RemoveReward
 {
     public sealed record Request : IRequest
     {
-        public required ulong RoleId { get; init; }
+        public required RoleId RoleId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Settings;
 
@@ -15,8 +14,8 @@ public sealed class UpdateMessageEvent
 {
     public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<MessageUpdatedEventArgs>
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         public async Task HandleEventAsync(DiscordClient sender, MessageUpdatedEventArgs args)
         {
@@ -24,7 +23,7 @@ public sealed class UpdateMessageEvent
             if (args.Guild is null
                 || string.IsNullOrWhiteSpace(args.Message.Content))
                 return;
-            if(args.Message.Author?.Id == args.Guild.CurrentMember.Id)
+            if (args.Message.Author?.Id == args.Guild.CurrentMember.Id)
                 return;
 
             var response = await this._mediator.Send(
@@ -62,7 +61,6 @@ public sealed class UpdateMessageEvent
                     .AddField("Member Id",
                         string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
                         true);
-
             }
             else
                 embed.AddField("Author", args.Author.Mention, true);
@@ -84,9 +82,7 @@ public sealed class UpdateMessageEvent
             foreach (var embedToSend in embeds)
                 await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
                 {
-                    GuildId = args.Guild.Id,
-                    GuildLogType = GuildLogType.MessageEdited,
-                    Embed = embedToSend
+                    GuildId = args.Guild.Id, GuildLogType = GuildLogType.MessageEdited, Embed = embedToSend
                 });
         }
     }
@@ -94,7 +90,7 @@ public sealed class UpdateMessageEvent
     public sealed record Command : IRequest<Response>
     {
         public required ulong MessageId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
         public string MessageContent { get; init; } = string.Empty;
     }
 

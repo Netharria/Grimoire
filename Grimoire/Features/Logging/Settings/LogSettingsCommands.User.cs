@@ -17,7 +17,7 @@ public partial class LogSettingsCommands
     [Description("View or change the User Log Module Settings.")]
     public partial class User(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
     }
 }

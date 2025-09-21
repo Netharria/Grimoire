@@ -18,8 +18,8 @@ public sealed class UpdatedAvatarEvent
         GuildLog guildLog)
         : IEventHandler<GuildMemberUpdatedEventArgs>
     {
-        private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
 
         private readonly IMediator _mediator = mediator;
 
@@ -59,9 +59,7 @@ public sealed class UpdatedAvatarEvent
 
             await this._mediator.Publish(new AvatarUpdatedNotification
             {
-                UserId = args.Member.Id,
-                GuildId = args.Guild.Id,
-                AfterAvatar = avatarResponse.AfterAvatar
+                UserId = args.Member.Id, GuildId = args.Guild.Id, AfterAvatar = avatarResponse.AfterAvatar
             });
         }
     }
@@ -69,7 +67,7 @@ public sealed class UpdatedAvatarEvent
     public sealed record Command : IRequest<Response?>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public string AvatarUrl { get; init; } = string.Empty;
     }
 
@@ -96,11 +94,7 @@ public sealed class UpdatedAvatarEvent
                 new Avatar { GuildId = command.GuildId, UserId = command.UserId, FileName = command.AvatarUrl },
                 cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new Response
-            {
-                BeforeAvatar = currentAvatar,
-                AfterAvatar = command.AvatarUrl,
-            };
+            return new Response { BeforeAvatar = currentAvatar, AfterAvatar = command.AvatarUrl };
         }
     }
 

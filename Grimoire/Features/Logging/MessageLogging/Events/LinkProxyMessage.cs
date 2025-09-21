@@ -17,7 +17,7 @@ public partial class LinkProxyMessage
     {
         public required ulong ProxyMessageId { get; init; }
         public required ulong OriginalMessageId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
         public string? SystemId { get; init; }
         public string? MemberId { get; init; }
     }
@@ -47,7 +47,6 @@ public partial class LinkProxyMessage
                 }, cancellationToken);
             try
             {
-
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (UniqueConstraintException)

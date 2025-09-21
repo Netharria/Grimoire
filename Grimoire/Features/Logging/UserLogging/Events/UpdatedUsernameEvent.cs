@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.DatabaseQueryHelpers;
-using Grimoire.Features.LogCleanup.Commands;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Notifications;
 
@@ -16,16 +14,14 @@ public sealed class UpdatedUsernameEvent
 {
     public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<GuildMemberUpdatedEventArgs>
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
         {
             var usernameResponse = await this._mediator.Send(new Command
             {
-                GuildId = args.Guild.Id,
-                UserId = args.Member.Id,
-                Username = args.MemberAfter.Username
+                GuildId = args.Guild.Id, UserId = args.Member.Id, Username = args.MemberAfter.Username
             });
             if (usernameResponse is null
                 || string.Equals(usernameResponse.BeforeUsername,
@@ -66,7 +62,7 @@ public sealed class UpdatedUsernameEvent
     public sealed record Command : IRequest<Response?>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public string Username { get; init; } = string.Empty;
     }
 

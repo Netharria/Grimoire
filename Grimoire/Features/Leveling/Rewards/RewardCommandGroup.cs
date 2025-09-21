@@ -7,17 +7,17 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Settings;
 
 namespace Grimoire.Features.Leveling.Rewards;
-
 
 [Command("Rewards")]
 [Description("Commands for updating and viewing the server rewards.")]
 [RequireGuild]
 [RequireModuleEnabled(Module.Leveling)]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-public sealed partial class RewardCommandGroup(IMediator mediator, GuildLog guildLog)
+public sealed partial class RewardCommandGroup(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly IMediator _mediator = mediator;
+    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
 }

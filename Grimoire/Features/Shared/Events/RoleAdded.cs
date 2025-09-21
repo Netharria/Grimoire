@@ -19,8 +19,8 @@ internal sealed class RoleAdded
 
     public sealed record Request : IRequest
     {
-        public ulong RoleId { get; init; }
-        public ulong GuildId { get; init; }
+        public RoleId RoleId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

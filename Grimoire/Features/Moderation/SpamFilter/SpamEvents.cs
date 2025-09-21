@@ -9,11 +9,12 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.SpamFilter;
 
-internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModule, GuildLog guildLog) : IEventHandler<MessageCreatedEventArgs>
+internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModule, GuildLog guildLog)
+    : IEventHandler<MessageCreatedEventArgs>
 {
+    private readonly GuildLog _guildLog = guildLog;
     private readonly IMediator _mediator = mediator;
     private readonly SpamTrackerModule _spamModule = spamModule;
-    private readonly GuildLog _guildLog = guildLog;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
@@ -74,9 +75,7 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id,
-            GuildLogType = GuildLogType.Moderation,
-            Embed = embed
+            GuildId = args.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
         });
 
         if (!sentMessageToUser)

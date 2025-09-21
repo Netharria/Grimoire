@@ -13,8 +13,8 @@ public sealed class AddBan
 {
     public sealed record Command : IRequest<Response>
     {
-        public required ulong UserId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required UserId UserId { get; init; }
+        public required GuildId GuildId { get; init; }
         public string Reason { get; set; } = string.Empty;
         public ulong? ModeratorId { get; set; }
     }

@@ -17,7 +17,7 @@ internal sealed class LockConfigurations : IEntityTypeConfiguration<Domain.Lock>
     {
         builder.HasKey(e => e.ChannelId);
         builder.HasOne(e => e.Channel)
-            .WithOne(e => e.Lock)
+            .WithOne()
             .HasForeignKey<Domain.Lock>(x => x.ChannelId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
@@ -26,12 +26,12 @@ internal sealed class LockConfigurations : IEntityTypeConfiguration<Domain.Lock>
         builder.Property(e => e.PreviouslyDenied)
             .IsRequired();
         builder.HasOne(e => e.Moderator)
-            .WithMany(e => e.ChannelsLocked)
+            .WithMany()
             .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
         builder.HasOne(e => e.Guild)
-            .WithMany(e => e.LockedChannels)
+            .WithMany()
             .HasForeignKey(e => e.GuildId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();

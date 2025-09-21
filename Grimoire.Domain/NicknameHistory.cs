@@ -5,18 +5,17 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Domain.Shared;
 using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class NicknameHistory : IMember
+public sealed class NicknameHistory
 {
-    public virtual Member Member { get; init; } = null!;
-    public string? Nickname { get; init; }
-    public DateTimeOffset Timestamp { get; init; }
-    public virtual Guild Guild { get; init; } = null!;
-    public ulong UserId { get; set; }
-    public ulong GuildId { get; set; }
+    public Member? Member { get; init; }
+    public required string? Nickname { get; init; }
+    public DateTimeOffset Timestamp { get; private init; }
+    public Guild? Guild { get; init; }
+    public required ulong UserId { get; init; }
+    public required ulong GuildId { get; init; }
 }

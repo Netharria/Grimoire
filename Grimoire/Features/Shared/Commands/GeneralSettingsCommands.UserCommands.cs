@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using JetBrains.Annotations;
 
@@ -21,8 +20,7 @@ internal sealed partial class GeneralSettingsCommands
         [Parameter("Option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel.")]
         ChannelOption option,
-        [Parameter("Channel")]
-        [Description("The channel to send the logs to.")]
+        [Parameter("Channel")] [Description("The channel to send the logs to.")]
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();
@@ -31,10 +29,11 @@ internal sealed partial class GeneralSettingsCommands
             throw new AnticipatedException("This command can only be used in a server.");
 
         channel = ctx.GetChannelOptionAsync(option, channel);
-        await this._mediator.Send(new SetUserCommandChannel.Request
-        {
-            GuildId = ctx.Guild.Id, ChannelId = channel?.Id
-        });
+
+        var guild = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        guild.UserCommandChannelId = channel?.Id;
+        await this._settingsModule.UpdateGuildSettings(guild);
+
         if (option is ChannelOption.Off)
         {
             await ctx.EditReplyAsync(message: "Disabled the User Command Channel.");
@@ -44,7 +43,6 @@ internal sealed partial class GeneralSettingsCommands
                 GuildLogType = GuildLogType.Moderation,
                 Description = $"{ctx.User.Mention} disabled the User Command Channel.",
                 Color = GrimoireColor.Purple
-
             });
             return;
         }
@@ -56,36 +54,6 @@ internal sealed partial class GeneralSettingsCommands
             GuildLogType = GuildLogType.Moderation,
             Description = $"{ctx.User.Mention} updated the User Command Channel to {channel?.Mention}.",
             Color = GrimoireColor.Purple
-
         });
-    }
-}
-
-public sealed class SetUserCommandChannel
-{
-    public sealed record Request : IRequest
-    {
-        public ulong GuildId { get; init; }
-        public ulong? ChannelId { get; init; }
-    }
-
-    [UsedImplicitly]
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Request request, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var guild = await dbContext.Guilds
-                .WhereIdIs(request.GuildId)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (guild is null)
-                throw new AnticipatedException("Could not find the settings for this server.");
-            guild.UserCommandChannelId = request.ChannelId;
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
     }
 }

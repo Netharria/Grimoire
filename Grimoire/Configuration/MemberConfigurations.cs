@@ -17,12 +17,12 @@ internal sealed class MemberConfigurations : IEntityTypeConfiguration<Member>
     {
         builder.HasKey(e => new { e.UserId, e.GuildId });
         builder.HasOne(e => e.Guild)
-            .WithMany(e => e.Members)
+            .WithMany()
             .HasForeignKey(e => e.GuildId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.HasOne(e => e.User)
-            .WithMany(e => e.MemberProfiles)
+            .WithMany()
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();

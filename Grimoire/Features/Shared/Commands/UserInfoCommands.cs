@@ -21,8 +21,7 @@ internal sealed class UserInfoCommands(IMediator mediator)
     [Command("UserInfo")]
     [Description("Get information about a user.")]
     public async Task GetUserInfo(SlashCommandContext ctx,
-        [Parameter("user")]
-        [Description("The user to get the information of.")]
+        [Parameter("user")] [Description("The user to get the information of.")]
         DiscordUser user)
     {
         await ctx.DeferResponseAsync();
@@ -39,14 +38,14 @@ internal sealed class UserInfoCommands(IMediator mediator)
             .AddField("Joined On", joinDate, true)
             .WithThumbnail(avatarUrl);
 
-        await this.GetAndAddUsernames(new GetRecentUserAndNickNames.Query { UserId = user.Id, GuildId = ctx.Guild.Id },
+        await GetAndAddUsernames(new GetRecentUserAndNickNames.Query { UserId = user.Id, GuildId = ctx.Guild.Id },
             embed);
 
-        await this.GetAndAddLevelInfo(
+        await GetAndAddLevelInfo(
             new GetUserLevelingInfo.Query { UserId = user.Id, GuildId = ctx.Guild.Id, RoleIds = roles }, embed,
             ctx.Guild);
 
-        await this.GetAndAddModerationInfo(new GetUserSinCounts.Query { UserId = user.Id, GuildId = ctx.Guild.Id },
+        await GetAndAddModerationInfo(new GetUserSinCounts.Query { UserId = user.Id, GuildId = ctx.Guild.Id },
             embed);
 
         await ctx.EditReplyAsync(embed: embed);

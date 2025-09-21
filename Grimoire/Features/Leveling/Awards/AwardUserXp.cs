@@ -7,8 +7,8 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Settings;
 
 namespace Grimoire.Features.Leveling.Awards;
 
@@ -17,9 +17,9 @@ public sealed class AwardUserXp
     [RequireGuild]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [RequireModuleEnabled(Module.Leveling)]
-    internal sealed class Command(IMediator mediator, GuildLog guildLog)
+    internal sealed class Command(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
         private readonly GuildLog _guildLog = guildLog;
 
         [Command("Award")]
@@ -34,13 +34,30 @@ public sealed class AwardUserXp
             int xpToAward)
         {
             await ctx.DeferResponseAsync();
-            if(ctx.Guild is null)
+            if (ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
-            await this._mediator.Send(
-                new Request
+
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+            var memberExists = await dbContext.Members
+                .AsNoTracking()
+                .Where(member => member.UserId == user.Id && member.GuildId == ctx.Guild.Id)
+                .AnyAsync();
+
+            if (memberExists is false)
+                    throw new AnticipatedException(
+                        $"{user.Mention} was not found. Have they been on the server before?");
+
+            await dbContext.XpHistory.AddAsync(
+                new XpHistory
                 {
-                    UserId = user.Id, GuildId = ctx.Guild.Id, XpToAward = xpToAward, AwarderId = ctx.User.Id
+                    GuildId = ctx.Guild.Id,
+                    UserId = user.Id,
+                    Xp = xpToAward,
+                    TimeOut = DateTimeOffset.UtcNow,
+                    Type = XpHistoryType.Awarded,
+                    AwarderId = ctx.User.Id
                 });
+            await dbContext.SaveChangesAsync();
 
             await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
@@ -50,45 +67,6 @@ public sealed class AwardUserXp
                 Description = $"{user.Mention} has been awarded {xpToAward} xp by {ctx.User.Mention}.",
                 Color = GrimoireColor.Purple
             });
-        }
-    }
-
-    public sealed record Request : IRequest
-    {
-        public required ulong UserId { get; init; }
-        public required ulong GuildId { get; init; }
-        public required long XpToAward { get; init; }
-        public ulong? AwarderId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Request command, CancellationToken cancellationToken)
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var member = await dbContext.Members
-                .AsNoTracking()
-                .WhereMemberHasId(command.UserId, command.GuildId)
-                .AnyAsync(cancellationToken);
-
-            if (member is false)
-                throw new AnticipatedException(
-                    $"{UserExtensions.Mention(command.UserId)} was not found. Have they been on the server before?");
-
-            await dbContext.XpHistory.AddAsync(
-                new XpHistory
-                {
-                    GuildId = command.GuildId,
-                    UserId = command.UserId,
-                    Xp = command.XpToAward,
-                    TimeOut = DateTimeOffset.UtcNow,
-                    Type = XpHistoryType.Awarded,
-                    AwarderId = command.AwarderId
-                }, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

@@ -14,8 +14,10 @@ namespace Grimoire.Features.CustomCommands;
 [RequireGuild]
 [RequireModuleEnabled(Module.Commands)]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-public sealed partial class CustomCommandSettings(IMediator mediator, GuildLog guildLog)
+public sealed partial class CustomCommandSettings(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    GuildLog guildLog)
 {
-    private readonly IMediator _mediator = mediator;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
 }

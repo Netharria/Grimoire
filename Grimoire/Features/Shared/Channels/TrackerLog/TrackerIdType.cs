@@ -11,5 +11,5 @@ namespace Grimoire.Features.Shared.Channels.TrackerLog;
 public enum TrackerIdType
 {
     UserId,
-    ChannelId,
+    ChannelId
 }

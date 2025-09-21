@@ -16,10 +16,11 @@ public sealed class GetLeaderboard
 {
     public enum LeaderboardOption
     {
-        [ChoiceDisplayName("Top")]Top,
-        [ChoiceDisplayName("Me")]Me,
-        [ChoiceDisplayName("User")]User
+        [ChoiceDisplayName("Top")] Top,
+        [ChoiceDisplayName("Me")] Me,
+        [ChoiceDisplayName("User")] User
     }
+
     [RequireGuild]
     [RequireModuleEnabled(Module.Leveling)]
     public sealed class Command(IMediator mediator)
@@ -32,8 +33,7 @@ public sealed class GetLeaderboard
             [Parameter("Option")]
             [Description("Select either to view the top users, your position, or a specific user.")]
             LeaderboardOption option,
-            [Parameter("User")]
-            [Description("The user to find on the leaderboard.")]
+            [Parameter("User")] [Description("The user to find on the leaderboard.")]
             DiscordUser? user = null)
         {
             if (ctx.Guild is null || ctx.Member is null)
@@ -56,7 +56,7 @@ public sealed class GetLeaderboard
                 await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
 
             await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                                 && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
+                                         && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
 
             var getUserCenteredLeaderboardQuery = new Request { UserId = user?.Id, GuildId = ctx.Guild.Id };
 
@@ -71,7 +71,7 @@ public sealed class GetLeaderboard
 
     public sealed record Request : IRequest<Response>
     {
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
         public ulong? UserId { get; init; }
     }
 

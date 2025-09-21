@@ -15,9 +15,8 @@ public abstract record TrackerMessageBase
     public abstract DiscordMessageBuilder GetMessageBuilder();
 }
 
-
-
-public record TrackerMessage : TrackerMessageBase {
+public record TrackerMessage : TrackerMessageBase
+{
     public string Title { get; init; } = string.Empty;
     public required string Description { get; init; } = string.Empty;
     public string Footer { get; init; } = string.Empty;
@@ -27,22 +26,27 @@ public record TrackerMessage : TrackerMessageBase {
     public override DiscordMessageBuilder GetMessageBuilder()
         => new DiscordMessageBuilder()
             .AddEmbed(new DiscordEmbedBuilder()
-                .WithAuthor(this.Title)
-                .WithDescription(this.Description)
-                .WithFooter(this.Footer)
-                .WithTimestamp(this.Timestamp ?? DateTimeOffset.UtcNow)
-                .WithColor(this.Color ?? GrimoireColor.Purple)
-                .Build()); }
+                .WithAuthor(Title)
+                .WithDescription(Description)
+                .WithFooter(Footer)
+                .WithTimestamp(Timestamp ?? DateTimeOffset.UtcNow)
+                .WithColor(Color ?? GrimoireColor.Purple)
+                .Build());
+}
 
-public record TrackerMessageCustomEmbed : TrackerMessageBase {
+public record TrackerMessageCustomEmbed : TrackerMessageBase
+{
     public required DiscordEmbed Embed { get; init; }
+
     public override DiscordMessageBuilder GetMessageBuilder()
         => new DiscordMessageBuilder()
-            .AddEmbed(Embed);}
+            .AddEmbed(Embed);
+}
 
 public record TrackerMessageCustomMessage : TrackerMessageBase
 {
     public required DiscordMessageBuilder Message { get; init; }
+
     public override DiscordMessageBuilder GetMessageBuilder()
-        => this.Message;
+        => Message;
 }

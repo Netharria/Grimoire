@@ -10,10 +10,10 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class UsernameHistory
+public sealed class UsernameHistory
 {
-    public ulong UserId { get; init; }
-    public virtual User User { get; init; } = null!;
-    public string Username { get; init; } = string.Empty;
-    public DateTimeOffset Timestamp { get; init; }
+    public required ulong UserId { get; init; }
+    public User? User { get; init; }
+    public required string Username { get; init; }
+    public DateTimeOffset Timestamp { get; private init; }
 }

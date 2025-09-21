@@ -5,12 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Threading.Channels;
 using System.Threading.RateLimiting;
 using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
+using EntityFramework.Exceptions.PostgreSQL;
 using Grimoire;
 using Grimoire.Features.CustomCommands;
 using Grimoire.Features.Leveling.Awards;
@@ -24,6 +24,7 @@ using Grimoire.Features.Logging.Settings;
 using Grimoire.Features.Logging.Trackers;
 using Grimoire.Features.Logging.Trackers.Commands;
 using Grimoire.Features.Logging.Trackers.Events;
+using Grimoire.Features.Logging.UserLogging;
 using Grimoire.Features.Logging.UserLogging.Events;
 using Grimoire.Features.Moderation.Ban.Commands;
 using Grimoire.Features.Moderation.Ban.Events;
@@ -42,13 +43,12 @@ using Grimoire.Features.Shared.Channels.TrackerLog;
 using Grimoire.Features.Shared.Commands;
 using Grimoire.Features.Shared.Events;
 using Grimoire.Features.Shared.PluralKit;
-using Grimoire.Features.Shared.Settings;
+using Grimoire.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Serilog;
-using Channel = System.Threading.Channels.Channel;
 
 var rateLimiter = new SlidingWindowRateLimiter(
     new SlidingWindowRateLimiterOptions
@@ -75,23 +75,34 @@ await Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         var token = context.Configuration.GetValue<string>("token")!;
+        var connectionString = context.Configuration.GetConnectionString("Grimoire");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            var section = context.Configuration.GetSection("ConnectionProperties");
+            var hostname = section["Hostname"];
+            var port = section["Port"];
+            var dbName = section["DbName"];
+            var username = section["Username"];
+            var password = section["Password"];
+            connectionString =
+                $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Require; Trust Server Certificate=true; Include Error Detail=true";
+        }
+
         services
             .AddSerilog(x => x.ReadFrom.Configuration(context.Configuration))
             .AddDiscordClient(
                 token,
                 DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents)
-            .AddCoreServices(context.Configuration)
+            .AddDbContextFactory<GrimoireDbContext>(options =>
+                options.UseNpgsql(connectionString,
+                        npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
+                    .UseExceptionProcessor())
+            .AddSettingsServices(connectionString)
             .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
             .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
             .AddScoped<IPluralkitService, PluralkitService>()
             .AddSingleton<SpamTrackerModule>()
-            .AddSingleton<SettingsModule>()
-            .AddSingleton<Channel<GuildLogMessageBase>>(
-                _ => Channel.CreateUnbounded<GuildLogMessageBase>(new UnboundedChannelOptions
-                {
-                    SingleReader = true,
-                    SingleWriter = false
-                }))
+            .AddSingleton<IInviteService, InviteService>()
             .AddHostedService<GuildLog>()
             .AddHostedService<TrackerLog>()
             .ConfigureEventHandlers(eventHandlerBuilder =>
@@ -140,7 +151,6 @@ await Host.CreateDefaultBuilder(args)
             {
                 if (!ulong.TryParse(context.Configuration["guildId"], out var guildId))
                 {
-
                 }
 
                 //Shared
@@ -192,11 +202,7 @@ await Host.CreateDefaultBuilder(args)
                     => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
                 extension.CommandExecuted += (sender, eventArgs)
                     => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
-            }, new CommandsConfiguration
-            {
-                UseDefaultCommandErrorHandler = false,
-            })
-            .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<Program>())
+            }, new CommandsConfiguration { UseDefaultCommandErrorHandler = false })
             .AddHostedService<CleanupLogs.BackgroundTask>()
             .AddHostedService<RemoveExpiredTrackers.BackgroundTask>()
             .AddHostedService<LockBackgroundTasks>()

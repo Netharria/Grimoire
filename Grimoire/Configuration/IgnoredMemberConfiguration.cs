@@ -15,11 +15,11 @@ internal sealed class IgnoredMemberConfiguration : IEntityTypeConfiguration<Igno
     {
         builder.HasKey(e => new { e.UserId, e.GuildId });
         builder.HasOne(e => e.Member)
-            .WithOne(e => e.IsIgnoredMember)
+            .WithOne()
             .HasForeignKey<IgnoredMember>(e => new { e.UserId, e.GuildId })
             .IsRequired();
         builder.HasOne(e => e.Guild)
-            .WithMany(e => e.IgnoredMembers)
+            .WithMany()
             .HasForeignKey(e => e.GuildId)
             .IsRequired();
     }

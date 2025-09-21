@@ -18,8 +18,7 @@ internal sealed partial class ModSettings
         [Parameter("Option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel.")]
         ChannelOption option,
-        [Parameter("Channel")]
-        [Description("The channel to send the logs to.")]
+        [Parameter("Channel")] [Description("The channel to send the logs to.")]
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync(true);
@@ -36,10 +35,7 @@ internal sealed partial class ModSettings
                     $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
         }
 
-        await this._mediator.Send(new SetBanLogChannel.Command
-        {
-            GuildId = ctx.Guild.Id, ChannelId = channel?.Id
-        });
+        await this._mediator.Send(new SetBanLogChannel.Command { GuildId = ctx.Guild.Id, ChannelId = channel?.Id });
 
         await ctx.EditReplyAsync(message: option is ChannelOption.Off
             ? "Disabled the public ban log."
@@ -60,7 +56,7 @@ internal sealed class SetBanLogChannel
 {
     public sealed record Command : IRequest
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public ulong? ChannelId { get; init; }
     }
 

@@ -52,12 +52,12 @@ public sealed class GetMessageLogOverrides
 {
     public sealed record Query : IStreamRequest<Response>
     {
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
     }
 
     public sealed record Response
     {
-        public required ulong ChannelId { get; init; }
+        public required ChannelId ChannelId { get; init; }
         public required MessageLogOverrideOption ChannelOption { get; init; }
     }
 

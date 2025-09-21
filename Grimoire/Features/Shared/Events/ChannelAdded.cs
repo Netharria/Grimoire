@@ -25,8 +25,8 @@ internal sealed class ChannelAdded
 
     public sealed record Command : IRequest
     {
-        public ulong GuildId { get; init; }
-        public ulong ChannelId { get; init; }
+        public GuildId GuildId { get; init; }
+        public ChannelId ChannelId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory) : IRequestHandler<Command>

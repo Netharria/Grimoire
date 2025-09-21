@@ -16,7 +16,7 @@ internal sealed class GuildLevelSettingsConfiguration : IEntityTypeConfiguration
     public void Configure(EntityTypeBuilder<GuildLevelSettings> builder)
     {
         builder.HasKey(x => x.GuildId);
-        builder.HasOne(e => e.Guild).WithOne(e => e.LevelSettings)
+        builder.HasOne(e => e.Guild).WithOne()
             .HasForeignKey<GuildLevelSettings>(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();

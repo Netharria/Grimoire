@@ -9,7 +9,6 @@ using System.Text;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
-using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -74,6 +73,7 @@ public sealed partial class IgnoreCommandGroup
                 continue;
             ignoredMessageBuilder.Append(user.Mention).Append('\n');
         }
+
         return ignoredMessageBuilder.ToString();
     }
 }
@@ -82,7 +82,7 @@ public sealed class GetIgnoredItems
 {
     public sealed record Query : IRequest<Response>
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -109,14 +109,12 @@ public sealed class GetIgnoredItems
                 throw new AnticipatedException("Could not find the settings for this server.");
 
 
-
             return ignoredItems;
         }
     }
 
     public sealed record Response
     {
-
         public required IEnumerable<ulong> IgnoredRoles { get; init; }
         public required IEnumerable<ulong> IgnoredChannels { get; init; }
         public required IEnumerable<ulong> IgnoredMembers { get; init; }

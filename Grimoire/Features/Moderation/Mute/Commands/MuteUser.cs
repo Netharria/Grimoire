@@ -7,7 +7,6 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
@@ -20,26 +19,20 @@ public sealed class MuteUser
     [RequirePermissions([DiscordPermission.ManageRoles], [])]
     internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         [Command("Mute")]
         [Description("Mutes a user for a specified amount of time.")]
         public async Task MuteUserAsync(
             SlashCommandContext ctx,
-            [Parameter("User")]
-            [Description("The user to mute.")]
+            [Parameter("User")] [Description("The user to mute.")]
             DiscordMember member,
-            [Parameter("DurationType")]
-            [Description("Select whether the duration will be in minutes hours or days")]
+            [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days")]
             DurationType durationType,
-            [MinMaxValue(0)]
-            [Parameter("DurationAmount")]
-            [Description("The amount of time the mute will last.")]
+            [MinMaxValue(0)] [Parameter("DurationAmount")] [Description("The amount of time the mute will last.")]
             int durationAmount,
-            [MinMaxLength(maxLength: 1000)]
-            [Parameter("Reason")]
-            [Description("The reason for the mute.")]
+            [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason for the mute.")]
             string? reason = null
         )
         {
@@ -98,9 +91,7 @@ public sealed class MuteUser
 
             await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
             {
-                GuildId = ctx.Guild.Id,
-                GuildLogType = GuildLogType.Moderation,
-                Embed = embed
+                GuildId = ctx.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
             });
         }
     }
@@ -108,7 +99,7 @@ public sealed class MuteUser
     public sealed record Request : IRequest<Response>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public DurationType DurationType { get; init; }
         public long DurationAmount { get; init; }
         public ulong ModeratorId { get; init; }
@@ -142,10 +133,7 @@ public sealed class MuteUser
             };
             await dbContext.Sins.AddAsync(sin, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new Response
-            {
-                MuteRole = response.MuteRole.Value, SinId = sin.Id
-            };
+            return new Response { MuteRole = response.MuteRole.Value, SinId = sin.Id };
         }
     }
 

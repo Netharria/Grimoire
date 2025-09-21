@@ -17,6 +17,6 @@ namespace Grimoire.Features.Leveling.Settings;
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 public sealed partial class LevelSettingsCommandGroup(IMediator mediator, GuildLog guildLog)
 {
-    private readonly IMediator _mediator = mediator;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly IMediator _mediator = mediator;
 }

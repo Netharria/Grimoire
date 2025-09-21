@@ -34,7 +34,6 @@ public static class DiscordClientExtensions
     }
 
 
-
     public static async Task<string?> GetUserAvatar(this DiscordClient client, ulong userId, DiscordGuild? guild = null)
     {
         if (guild?.Members.TryGetValue(userId, out var member) is true)

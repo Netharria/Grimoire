@@ -10,6 +10,6 @@ namespace Grimoire.Notifications;
 public sealed record AvatarUpdatedNotification : INotification
 {
     public ulong UserId { get; init; }
-    public ulong GuildId { get; init; }
+    public GuildId GuildId { get; init; }
     public string AfterAvatar { get; init; } = string.Empty;
 }

@@ -10,20 +10,20 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class Pardon
+public sealed class Pardon
 {
-    public long SinId { get; init; }
+    public long SinId { get; private init; }
 
-    public virtual Sin Sin { get; init; } = null!;
+    public Sin? Sin { get; init; }
 
-    public ulong? ModeratorId { get; init; }
+    public required ulong ModeratorId { get; init; }
 
-    public virtual Member? Moderator { get; init; }
+    public Member? Moderator { get; init; }
 
-    public ulong GuildId { get; init; }
-    public virtual Guild Guild { get; init; } = null!;
+    public required ulong GuildId { get; init; }
+    public Guild? Guild { get; init; }
 
     public DateTimeOffset PardonDate { get; init; }
 
-    public string Reason { get; set; } = string.Empty;
+    public required string Reason { get; set; }
 }

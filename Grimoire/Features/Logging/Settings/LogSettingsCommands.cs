@@ -13,4 +13,6 @@ namespace Grimoire.Features.Logging.Settings;
 [Description("View or change the settings of the Logging Modules.")]
 [RequireGuild]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-public partial class LogSettingsCommands { }
+public partial class LogSettingsCommands
+{
+}

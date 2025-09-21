@@ -18,15 +18,13 @@ internal sealed class PardonSin
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         [Command("Pardon")]
         [Description("Pardon a user's sin. This leaves the sin in the logs but marks it as pardoned.")]
         public async Task PardonAsync(SlashCommandContext ctx,
-            [MinMaxValue(0)]
-            [Parameter("SinId")]
-            [Description("The id of the sin to be pardoned.")]
+            [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be pardoned.")]
             int sinId,
             [MinMaxLength(maxLength: 1000)]
             [Parameter("Reason")]
@@ -67,7 +65,7 @@ internal sealed class PardonSin
         public long SinId { get; init; }
         public string Reason { get; init; } = string.Empty;
         public ulong ModeratorId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -109,8 +107,7 @@ internal sealed class PardonSin
 
             return new Response
             {
-                SinId = command.SinId,
-                SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId),
+                SinId = command.SinId, SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId)
             };
         }
     }

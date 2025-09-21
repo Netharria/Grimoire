@@ -17,17 +17,17 @@ internal sealed class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
     {
         builder.HasKey(e => new { e.UserId, e.GuildId });
         builder.HasOne(e => e.Member)
-            .WithMany(e => e.Trackers)
+            .WithMany()
             .HasForeignKey(e => new { e.UserId, e.GuildId })
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.HasOne(e => e.LogChannel)
-            .WithMany(e => e.Trackers)
+            .WithMany()
             .HasForeignKey(e => e.LogChannelId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.HasOne(e => e.Moderator)
-            .WithMany(e => e.TrackedUsers)
+            .WithMany()
             .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);

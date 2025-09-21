@@ -16,8 +16,7 @@ internal sealed partial class ModSettings
     [Description("Updates how long till sins are automatically pardoned.")]
     public async Task AutoPardonAsync(
         SlashCommandContext ctx,
-        [Parameter("DurationType")]
-        [Description("Select whether the duration will be in minutes hours or days")]
+        [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days")]
         Duration durationType,
         [MinMaxValue(0, int.MaxValue)]
         [Parameter("DurationAmount")]
@@ -26,7 +25,7 @@ internal sealed partial class ModSettings
     {
         await ctx.DeferResponseAsync();
 
-        if(ctx.Guild is null)
+        if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
         await this._mediator.Send(new SetAutoPardon.Command
@@ -49,7 +48,7 @@ internal sealed class SetAutoPardon
 {
     public sealed record Command : IRequest
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public TimeSpan DurationAmount { get; init; }
     }
 

@@ -25,17 +25,18 @@ public record GuildLogMessage : GuildLogMessageBase
     public override DiscordMessageBuilder GetMessageBuilder()
         => new DiscordMessageBuilder()
             .AddEmbed(new DiscordEmbedBuilder()
-                .WithAuthor(this.Title)
-                .WithDescription(this.Description)
-                .WithFooter(this.Footer)
-                .WithTimestamp(this.Timestamp ?? DateTimeOffset.UtcNow)
-                .WithColor(this.Color ?? GrimoireColor.Purple)
+                .WithAuthor(Title)
+                .WithDescription(Description)
+                .WithFooter(Footer)
+                .WithTimestamp(Timestamp ?? DateTimeOffset.UtcNow)
+                .WithColor(Color ?? GrimoireColor.Purple)
                 .Build());
 }
 
 public record GuildLogMessageCustomEmbed : GuildLogMessageBase
 {
     public required DiscordEmbed Embed { get; init; }
+
     public override DiscordMessageBuilder GetMessageBuilder()
         => new DiscordMessageBuilder()
             .AddEmbed(Embed);
@@ -44,6 +45,7 @@ public record GuildLogMessageCustomEmbed : GuildLogMessageBase
 public record GuildLogMessageCustomMessage : GuildLogMessageBase
 {
     public required DiscordMessageBuilder Message { get; init; }
+
     public override DiscordMessageBuilder GetMessageBuilder()
-        => this.Message;
+        => Message;
 }

@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.TrackerLog;
 
 namespace Grimoire.Features.Logging.Trackers.Events;
@@ -48,7 +47,7 @@ public class TrackerMessageUpdateEvent
     public sealed record Request : IRequest<Response?>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public ulong MessageId { get; init; }
     }
 

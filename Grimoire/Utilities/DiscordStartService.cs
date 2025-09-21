@@ -27,6 +27,9 @@ internal sealed partial class DiscordStartService(
         await this._discordClient.ConnectAsync();
     }
 
+    public Task StopAsync(CancellationToken cancellationToken)
+        => this._discordClient.DisconnectAsync();
+
     private async Task ApplyDatabaseMigrations(CancellationToken cancellationToken)
     {
         await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -40,9 +43,6 @@ internal sealed partial class DiscordStartService(
             LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
         }
     }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-        => this._discordClient.DisconnectAsync();
 
     [LoggerMessage(LogLevel.Warning, "Applied pending migrations in {time} ms")]
     static partial void LogMigrationDuration(ILogger<DiscordStartService> logger, long time);

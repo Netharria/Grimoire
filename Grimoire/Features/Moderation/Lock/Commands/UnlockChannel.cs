@@ -17,20 +17,19 @@ public sealed class UnlockChannel
     [RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
     internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         [Command("Unlock")]
         [Description("Unlocks a channel.")]
         public async Task UnlockChannelAsync(
             SlashCommandContext ctx,
-            [Parameter("Channel")]
-            [Description("The channel to unlock. Current channel if not specified.")]
+            [Parameter("Channel")] [Description("The channel to unlock. Current channel if not specified.")]
             DiscordChannel? channel = null)
         {
             await ctx.DeferResponseAsync();
 
-            if(ctx.Guild is null)
+            if (ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
 
             channel ??= ctx.Channel;
@@ -61,8 +60,8 @@ public sealed class UnlockChannel
 
     public sealed record Request : IRequest<Response>
     {
-        public required ulong ChannelId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required ChannelId ChannelId { get; init; }
+        public required GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -86,8 +85,7 @@ public sealed class UnlockChannel
 
             return new Response
             {
-                PreviouslyAllowed = result.Lock.PreviouslyAllowed,
-                PreviouslyDenied = result.Lock.PreviouslyDenied
+                PreviouslyAllowed = result.Lock.PreviouslyAllowed, PreviouslyDenied = result.Lock.PreviouslyDenied
             };
         }
     }

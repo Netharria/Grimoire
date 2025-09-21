@@ -86,7 +86,7 @@ public sealed class CleanupLogs
 
     public sealed record Response
     {
-        public ulong ChannelId { get; init; }
+        public ChannelId ChannelId { get; init; }
         public ulong[] MessageIds { get; init; } = [];
     }
 }

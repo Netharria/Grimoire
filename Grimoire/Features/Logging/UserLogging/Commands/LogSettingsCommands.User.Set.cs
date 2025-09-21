@@ -20,14 +20,12 @@ public partial class LogSettingsCommands
         [Description("Set a User Log setting.")]
         public async Task SetAsync(
             SlashCommandContext ctx,
-            [Parameter("Setting")]
-            [Description("The setting to change.")]
+            [Parameter("Setting")] [Description("The setting to change.")]
             SetUserLogSettings.UserLogSetting logSetting,
             [Parameter("Option")]
             [Description("Select whether to turn log off, use the current channel, or specify a channel")]
             ChannelOption option,
-            [Parameter("Value")]
-            [Description("The channel to change the log setting to.")]
+            [Parameter("Value")] [Description("The channel to change the log setting to.")]
             DiscordChannel? channel = null)
         {
             await ctx.DeferResponseAsync();
@@ -51,8 +49,8 @@ public partial class LogSettingsCommands
 
 
             await ctx.EditReplyAsync(message: option is ChannelOption.Off
-            ? $"Disabled {logSetting}"
-            : $"Updated {logSetting} to {channel?.Mention}");
+                ? $"Disabled {logSetting}"
+                : $"Updated {logSetting} to {channel?.Mention}");
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
                 GuildId = ctx.Guild.Id,
@@ -70,16 +68,23 @@ public sealed class SetUserLogSettings
 {
     public enum UserLogSetting
     {
-        [ChoiceDisplayName("Joined Server Log")]JoinLog,
-        [ChoiceDisplayName("Left Server Log")]LeaveLog,
-        [ChoiceDisplayName("Username Change Log")]UsernameLog,
-        [ChoiceDisplayName("Nickname Change Log")]NicknameLog,
-        [ChoiceDisplayName("Avatar Change Log")]AvatarLog
+        [ChoiceDisplayName("Joined Server Log")]
+        JoinLog,
+        [ChoiceDisplayName("Left Server Log")] LeaveLog,
+
+        [ChoiceDisplayName("Username Change Log")]
+        UsernameLog,
+
+        [ChoiceDisplayName("Nickname Change Log")]
+        NicknameLog,
+
+        [ChoiceDisplayName("Avatar Change Log")]
+        AvatarLog
     }
 
     public sealed record Command : IRequest
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public UserLogSetting UserLogSetting { get; init; }
         public ulong? ChannelId { get; init; }
     }

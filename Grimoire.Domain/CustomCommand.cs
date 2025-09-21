@@ -10,11 +10,11 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class CustomCommand
+public sealed class CustomCommand
 {
     public string Name { get; set; } = string.Empty;
     public ulong GuildId { get; set; }
-    public virtual Guild Guild { get; init; } = null!;
+    public Guild? Guild { get; init; }
     public string Content { get; set; } = string.Empty;
     public bool HasMention { get; set; }
     public bool HasMessage { get; set; }

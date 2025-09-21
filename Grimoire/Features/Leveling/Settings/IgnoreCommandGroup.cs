@@ -18,24 +18,22 @@ namespace Grimoire.Features.Leveling.Settings;
 [Description("Commands for updating and viewing the server ignore list.")]
 public sealed partial class IgnoreCommandGroup(IMediator mediator, GuildLog guildLog)
 {
-    private readonly IMediator _mediator = mediator;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly IMediator _mediator = mediator;
 
     [Command("Add")]
     [Description("Adds a user, channel, or role to the ignored xp list.")]
     public Task IgnoreAsync(CommandContext ctx,
-        [Parameter("items")]
-        [Description("The user, channel or role to ignore")]
+        [Parameter("items")] [Description("The user, channel or role to ignore")]
         params SnowflakeObject[] value) =>
-        this.UpdateIgnoreState(ctx, value, true);
+        UpdateIgnoreState(ctx, value, true);
 
     [Command("Remove")]
     [Description("Removes a user, channel, or role from the ignored xp list.")]
     public Task WatchAsync(CommandContext ctx,
-        [Parameter("Item")]
-        [Description("The user, channel or role to remove from the ignore xp list.")]
-        params SnowflakeObject[]  value) =>
-        this.UpdateIgnoreState(ctx, value, false);
+        [Parameter("Item")] [Description("The user, channel or role to remove from the ignore xp list.")]
+        params SnowflakeObject[] value) =>
+        UpdateIgnoreState(ctx, value, false);
 
     private async Task UpdateIgnoreState(CommandContext ctx, SnowflakeObject[] value, bool shouldIgnore)
     {
@@ -84,7 +82,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, GuildLog guil
                 .ToString();
 
         await ctx.EditReplyAsync(GrimoireColor.Green,
-            message: message);
+            message);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = ctx.Guild.Id,
@@ -111,9 +109,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, GuildLog guil
             if (user is not null)
                 return new UserDto
                 {
-                    Id = user.Id,
-                    Username = user.Username,
-                    AvatarUrl = user.GetAvatarUrl(MediaFormat.Auto)
+                    Id = user.Id, Username = user.Username, AvatarUrl = user.GetAvatarUrl(MediaFormat.Auto)
                 };
         }
         catch (Exception)
@@ -129,38 +125,35 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, GuildLog guil
         ArgumentNullException.ThrowIfNull(ctx.Guild);
         var stringBuilder = new StringBuilder();
         if (response.IgnoredMembers is not null)
-        {
             foreach (var ignorable in response.IgnoredMembers)
             {
                 var ignoredMember = await ctx.Client.GetUserOrDefaultAsync(ignorable.UserId);
                 if (ignoredMember is not null)
                     stringBuilder.Append(ignoredMember.Mention).Append(' ');
             }
-        }
+
         if (response.IgnoredRoles is not null)
-        {
             foreach (var ignorable in response.IgnoredRoles)
             {
                 var ignoredRole = await ctx.Guild.GetRoleOrDefaultAsync(ignorable.RoleId);
                 if (ignoredRole is not null)
                     stringBuilder.Append(ignoredRole.Mention).Append(' ');
             }
-        }
+
         if (response.IgnoredChannels is not null)
-        {
             foreach (var ignorable in response.IgnoredChannels)
             {
                 var ignoredChannel = await ctx.Guild.GetChannelOrDefaultAsync(ignorable.ChannelId);
                 if (ignoredChannel is not null)
                     stringBuilder.Append(ignoredChannel.Mention).Append(' ');
             }
-        }
+
         return stringBuilder;
     }
 
     public interface IUpdateIgnoreForXpGain : IRequest<Response>
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public IReadOnlyCollection<UserDto> Users { get; set; }
         public IReadOnlyCollection<RoleDto> Roles { get; set; }
         public IReadOnlyCollection<ChannelDto> Channels { get; set; }

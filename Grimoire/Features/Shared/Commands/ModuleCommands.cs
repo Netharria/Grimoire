@@ -15,6 +15,6 @@ namespace Grimoire.Features.Shared.Commands;
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 internal sealed partial class ModuleCommands(IMediator mediator, GuildLog guildLog)
 {
-    private readonly IMediator _mediator = mediator;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly IMediator _mediator = mediator;
 }

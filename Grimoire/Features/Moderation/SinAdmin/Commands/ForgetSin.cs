@@ -18,15 +18,13 @@ internal sealed class ForgetSin
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         [Command("Forget")]
         [Description("Forget a user's sin. This will permanently remove the sin from the bots memory.")]
         public async Task ForgetAsync(SlashCommandContext ctx,
-            [MinMaxValue(0)]
-            [Parameter("SinId")]
-            [Description("The id of the sin to be forgotten.")]
+            [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be forgotten.")]
             int sinId)
         {
             await ctx.DeferResponseAsync();
@@ -57,7 +55,7 @@ internal sealed class ForgetSin
     public sealed record Request : IRequest<Response>
     {
         public long SinId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -89,8 +87,7 @@ internal sealed class ForgetSin
 
             return new Response
             {
-                SinId = command.SinId,
-                SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId),
+                SinId = command.SinId, SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId)
             };
         }
     }

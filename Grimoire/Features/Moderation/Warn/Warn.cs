@@ -8,7 +8,6 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Exceptions;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Moderation.Warn;
@@ -20,18 +19,15 @@ internal sealed class Warn
     [RequirePermissions([], [DiscordPermission.ManageMessages])]
     internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         [Command("Warn")]
         [Description("Issue a warning to the user.")]
         public async Task WarnAsync(SlashCommandContext ctx,
-            [Parameter("User")]
-            [Description("The user to warn.")]
+            [Parameter("User")] [Description("The user to warn.")]
             DiscordUser user,
-            [MinMaxLength(maxLength: 1000)]
-            [Parameter("Reason")]
-            [Description("The reason for the warn.")]
+            [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason for the warn.")]
             string reason)
         {
             await ctx.DeferResponseAsync();
@@ -86,7 +82,7 @@ internal sealed class Warn
     public sealed record Request : IRequest<Response>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public string Reason { get; init; } = string.Empty;
         public ulong ModeratorId { get; init; }
     }

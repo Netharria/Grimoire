@@ -29,7 +29,7 @@ internal sealed class MemberAdded
     public sealed record Request : IRequest
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public string UserName { get; init; } = string.Empty;
         public string? Nickname { get; init; }
         public string AvatarUrl { get; init; } = string.Empty;

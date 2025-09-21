@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Queries;
 
 namespace Grimoire.Features.Leveling.UserCommands;
@@ -23,18 +22,17 @@ public sealed class GetLevel
         [Description("Gets the leveling details for the user.")]
         public async Task LevelAsync(
             SlashCommandContext ctx,
-            [Parameter("user")]
-            [Description("User to get details from. Blank will return your info.")]
+            [Parameter("user")] [Description("User to get details from. Blank will return your info.")]
             DiscordUser? user = null)
         {
-            if(ctx.Guild is null || ctx.Member is null)
+            if (ctx.Guild is null || ctx.Member is null)
                 throw new AnticipatedException("This command can only be used in a server.");
 
             var userCommandChannel =
                 await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
 
             await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                                 && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
+                                         && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
             user ??= ctx.User;
 
             var response = await this._mediator.Send(new Query { UserId = user.Id, GuildId = ctx.Guild.Id });
@@ -81,8 +79,8 @@ public sealed class GetLevel
 
     public sealed record Query : IRequest<Response>
     {
-        public required ulong UserId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required UserId UserId { get; init; }
+        public required GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

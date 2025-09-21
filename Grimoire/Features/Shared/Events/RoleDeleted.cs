@@ -19,7 +19,7 @@ internal sealed class RoleDeleted
 
     public sealed record Request : IRequest
     {
-        public ulong RoleId { get; init; }
+        public RoleId RoleId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -35,5 +35,3 @@ internal sealed class RoleDeleted
         }
     }
 }
-
-

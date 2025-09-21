@@ -17,10 +17,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Shared;
 
-
 //todo: convert these to static methods if DI is not possible
 public sealed partial class CommandHandler : IClientErrorHandler
 {
+    public async ValueTask HandleEventHandlerError(string name, Exception exception, Delegate invokedDelegate,
+        object sender,
+        object args) => await SendErrorLogToLogChannel((DiscordClient)sender, name, exception);
+
+    public ValueTask HandleGatewayError(Exception exception) => ValueTask.CompletedTask;
 
     private static void BuildCommandLogAsync(StringBuilder builder,
         IReadOnlyDictionary<CommandParameter, object?> commandParameters)
@@ -62,10 +66,6 @@ public sealed partial class CommandHandler : IClientErrorHandler
                                            $"```csharp\n{exceptionMessage}\n{shortStackTrace}\n```");
         }
     }
-    public async ValueTask HandleEventHandlerError(string name, Exception exception, Delegate invokedDelegate, object sender,
-        object args) => await SendErrorLogToLogChannel((DiscordClient) sender, name, exception);
-
-    public ValueTask HandleGatewayError(Exception exception) => ValueTask.CompletedTask;
 
     public static async Task HandleEventAsync(DiscordClient sender, CommandErroredEventArgs args)
     {
@@ -104,14 +104,12 @@ public sealed partial class CommandHandler : IClientErrorHandler
 
     private static async Task SendOrEditMessageAsync(CommandErroredEventArgs args, DiscordEmbedBuilder embed)
     {
-        if(args.Context.FollowupMessages.Count > 0)
+        if (args.Context.FollowupMessages.Count > 0)
             await args.Context.EditResponseAsync(embed);
+        else if (args.Context is SlashCommandContext slashContext)
+            await slashContext.RespondAsync(embed, true);
         else
-            if(args.Context is SlashCommandContext slashContext)
-                await slashContext.RespondAsync(embed, true);
-            else
-                await args.Context.RespondAsync(embed);
-
+            await args.Context.RespondAsync(embed);
     }
 
     [LoggerMessage(LogLevel.Error, "Error on Command: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
@@ -133,5 +131,4 @@ public sealed partial class CommandHandler : IClientErrorHandler
 
     [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
     static partial void LogCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
-
 }

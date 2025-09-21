@@ -12,8 +12,8 @@ namespace Grimoire.Features.Moderation.Ban.Events;
 
 public class BanRemovedEvent(IMediator mediator, GuildLog guildLog) : IEventHandler<GuildBanRemovedEventArgs>
 {
-    private readonly IMediator _mediator = mediator;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly IMediator _mediator = mediator;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanRemovedEventArgs args)
     {
@@ -39,9 +39,7 @@ public class BanRemovedEvent(IMediator mediator, GuildLog guildLog) : IEventHand
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id,
-            GuildLogType = GuildLogType.Moderation,
-            Embed = embed
+            GuildId = args.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
 }

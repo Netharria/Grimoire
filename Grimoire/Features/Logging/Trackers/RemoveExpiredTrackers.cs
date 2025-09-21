@@ -29,20 +29,22 @@ public sealed class RemoveExpiredTrackers
             {
                 var user = await discord.GetUserOrDefaultAsync(expiredTracker.UserId);
 
-                await trackerLog.SendTrackerMessageAsync(new TrackerMessage
-                {
-                    GuildId = expiredTracker.GuildId,
-                    TrackerId = expiredTracker.TrackerChannelId,
-                    TrackerIdType = TrackerIdType.ChannelId,
-                    Description = $"Tracker on {user?.Mention} has expired."
-                }, stoppingToken);
+                await trackerLog.SendTrackerMessageAsync(
+                    new TrackerMessage
+                    {
+                        GuildId = expiredTracker.GuildId,
+                        TrackerId = expiredTracker.TrackerChannelId,
+                        TrackerIdType = TrackerIdType.ChannelId,
+                        Description = $"Tracker on {user?.Mention} has expired."
+                    }, stoppingToken);
 
-                await guildLog.SendLogMessageAsync(new GuildLogMessage
-                {
-                    GuildId = expiredTracker.GuildId,
-                    GuildLogType = GuildLogType.Moderation,
-                    Description = $"Tracker on {user?.Mention} has expired."
-                }, stoppingToken);
+                await guildLog.SendLogMessageAsync(
+                    new GuildLogMessage
+                    {
+                        GuildId = expiredTracker.GuildId,
+                        GuildLogType = GuildLogType.Moderation,
+                        Description = $"Tracker on {user?.Mention} has expired."
+                    }, stoppingToken);
             }
         }
     }
@@ -65,9 +67,7 @@ public sealed class RemoveExpiredTrackers
 
             var response = results.Select(x => new Response
             {
-                UserId = x.UserId,
-                GuildId = x.GuildId,
-                TrackerChannelId = x.LogChannelId
+                UserId = x.UserId, GuildId = x.GuildId, TrackerChannelId = x.LogChannelId
             });
             if (results.Length == 0)
                 return response;
@@ -82,7 +82,7 @@ public sealed class RemoveExpiredTrackers
     public sealed record Response
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public ulong TrackerChannelId { get; init; }
     }
 }

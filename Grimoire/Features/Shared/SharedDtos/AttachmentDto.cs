@@ -9,6 +9,6 @@ namespace Grimoire.Features.Shared.SharedDtos;
 
 public sealed record AttachmentDto
 {
-    public ulong Id { get; init; }
-    public string FileName { get; init; } = string.Empty;
+    public required ulong Id { get; init; }
+    public required string FileName { get; init; }
 }

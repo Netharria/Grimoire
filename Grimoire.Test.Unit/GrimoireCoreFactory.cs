@@ -22,8 +22,8 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
             .WithImage("postgres:15-alpine")
             .Build();
 
-    private DbConnection _dbConnection = null!;
-    private Respawner _respawner = null!;
+    private DbConnection _dbConnection
+    private Respawner _respawner
 
 
     public string ConnectionString => this._postgreSqlContainer.GetConnectionString();

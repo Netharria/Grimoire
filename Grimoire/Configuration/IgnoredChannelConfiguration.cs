@@ -18,11 +18,11 @@ internal sealed class IgnoredChannelConfiguration : IEntityTypeConfiguration<Ign
             .ValueGeneratedNever()
             .IsRequired();
         builder.HasOne(e => e.Channel)
-            .WithOne(e => e.IsIgnoredChannel)
+            .WithOne()
             .HasForeignKey<IgnoredChannel>(e => e.ChannelId)
             .IsRequired();
         builder.HasOne(e => e.Guild)
-            .WithMany(e => e.IgnoredChannels)
+            .WithMany()
             .HasForeignKey(e => e.GuildId)
             .IsRequired();
     }

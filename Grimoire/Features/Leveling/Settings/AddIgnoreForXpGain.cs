@@ -9,13 +9,11 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Leveling.Settings;
 
-
-
 public sealed class AddIgnoreForXpGain
 {
     public sealed record Command : IgnoreCommandGroup.IUpdateIgnoreForXpGain
     {
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
         public IReadOnlyCollection<UserDto> Users { get; set; } = [];
         public IReadOnlyCollection<RoleDto> Roles { get; set; } = [];
         public IReadOnlyCollection<ChannelDto> Channels { get; set; } = [];

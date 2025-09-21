@@ -44,12 +44,12 @@ public sealed partial class AddMessageEvent
     public sealed record Command : IRequest
     {
         public required ulong MessageId { get; init; }
-        public required ulong ChannelId { get; init; }
+        public required ChannelId ChannelId { get; init; }
         public required string MessageContent { get; init; }
-        public required ulong UserId { get; init; }
+        public required UserId UserId { get; init; }
         public required AttachmentDto[] Attachments { get; init; }
         public ulong? ReferencedMessageId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
         public required IEnumerable<ulong> ParentChannelTree { get; init; }
     }
 
@@ -125,9 +125,7 @@ public sealed partial class AddMessageEvent
                 }
                 catch (UniqueConstraintException)
                 {
-
                 }
-
             }
             catch (UniqueConstraintException)
             {
@@ -139,6 +137,7 @@ public sealed partial class AddMessageEvent
                 throw;
             }
         }
+
         [LoggerMessage(LogLevel.Error,
             "Was not able to save Message due to violating a unique constraint.")]
         static partial void LogNonUniqueMessage(ILogger logger);

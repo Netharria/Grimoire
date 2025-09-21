@@ -10,12 +10,12 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class ProxiedMessageLink
+public sealed class ProxiedMessageLink
 {
-    public ulong ProxyMessageId { get; init; }
-    public virtual Message ProxyMessage { get; init; } = null!;
-    public ulong OriginalMessageId { get; init; }
-    public virtual Message OriginalMessage { get; init; } = null!;
+    public required ulong ProxyMessageId { get; init; }
+    public Message? ProxyMessage { get; init; }
+    public required ulong OriginalMessageId { get; init; }
+    public Message? OriginalMessage { get; init; }
     public string? SystemId { get; init; }
     public string? MemberId { get; init; }
 }

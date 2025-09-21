@@ -10,12 +10,12 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class CustomCommandRole
+public sealed class CustomCommandRole
 {
-    public ulong RoleId { get; init; }
-    public Role Role { get; init; } = null!;
+    public required ulong RoleId { get; init; }
+    public Role? Role { get; init; }
     public string CustomCommandName { get; init; } = string.Empty;
-    public CustomCommand CustomCommand { get; init; } = null!;
-    public ulong GuildId { get; init; }
-    public Guild Guild { get; init; } = null!;
+    public CustomCommand? CustomCommand { get; init; }
+    public required ulong GuildId { get; init; }
+    public Guild? Guild { get; init; }
 }

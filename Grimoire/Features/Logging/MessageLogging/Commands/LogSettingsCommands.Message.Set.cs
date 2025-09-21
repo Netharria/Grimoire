@@ -20,14 +20,12 @@ public partial class LogSettingsCommands
         [Description("Set a Message Log setting.")]
         public async Task SetAsync(
             SlashCommandContext ctx,
-            [Parameter("Setting")]
-            [Description("The setting to change.")]
+            [Parameter("Setting")] [Description("The setting to change.")]
             SetMessageLogSettings.MessageLogSetting logSetting,
             [Parameter("Option")]
             [Description("Select whether to turn log off, use the current channel, or specify a channel")]
             ChannelOption option,
-            [Parameter("Value")]
-            [Description("The channel to change the log setting to.")]
+            [Parameter("Value")] [Description("The channel to change the log setting to.")]
             DiscordChannel? channel = null)
         {
             await ctx.DeferResponseAsync();
@@ -71,14 +69,19 @@ public sealed class SetMessageLogSettings
 {
     public enum MessageLogSetting
     {
-        [ChoiceDisplayName("Delete Message Log")]DeleteLog,
-        [ChoiceDisplayName("Bulk Delete Message Log")]BulkDeleteLog,
-        [ChoiceDisplayName("Edit Message Log")]EditLog
+        [ChoiceDisplayName("Delete Message Log")]
+        DeleteLog,
+
+        [ChoiceDisplayName("Bulk Delete Message Log")]
+        BulkDeleteLog,
+
+        [ChoiceDisplayName("Edit Message Log")]
+        EditLog
     }
 
     public sealed record Command : IRequest
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public MessageLogSetting MessageLogSetting { get; init; }
         public ulong? ChannelId { get; init; }
     }

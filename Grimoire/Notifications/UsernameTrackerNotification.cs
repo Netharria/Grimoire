@@ -10,7 +10,7 @@ namespace Grimoire.Notifications;
 public sealed record UsernameTrackerNotification : INotification
 {
     public ulong UserId { get; init; }
-    public ulong GuildId { get; init; }
+    public GuildId GuildId { get; init; }
     public string BeforeUsername { get; init; } = string.Empty;
     public string AfterUsername { get; init; } = string.Empty;
 }

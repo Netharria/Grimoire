@@ -18,15 +18,13 @@ internal sealed class UpdateSinReason
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         [Command("Reason")]
         [Description("Update the reason for a user's sin.")]
         public async Task ReasonAsync(SlashCommandContext ctx,
-            [MinMaxValue(0)]
-            [Parameter("SinId")]
-            [Description("The id of the sin to be updated.")]
+            [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be updated.")]
             int sinId,
             [MinMaxLength(maxLength: 1000)]
             [Parameter("Reason")]
@@ -67,7 +65,7 @@ internal sealed class UpdateSinReason
     {
         public long SinId { get; init; }
         public string Reason { get; init; } = string.Empty;
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -88,7 +86,7 @@ internal sealed class UpdateSinReason
                     UserName = sin.Member.User.UsernameHistories
                         .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                         .Select(usernameHistory => usernameHistory.Username)
-                        .FirstOrDefault(),
+                        .FirstOrDefault()
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -100,8 +98,7 @@ internal sealed class UpdateSinReason
 
             return new Response
             {
-                SinId = command.SinId,
-                SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId),
+                SinId = command.SinId, SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId)
             };
         }
     }

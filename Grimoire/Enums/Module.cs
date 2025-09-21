@@ -7,6 +7,7 @@
 
 namespace Grimoire.Enums;
 
+[Obsolete("Use SettingsModule enum instead")]
 public enum Module
 {
     Leveling,

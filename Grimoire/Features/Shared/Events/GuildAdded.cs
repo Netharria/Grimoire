@@ -64,7 +64,7 @@ internal sealed class GuildAdded
 
     public sealed record Command : IRequest
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public IReadOnlyCollection<UserDto> Users { get; init; } = [];
         public IReadOnlyCollection<MemberDto> Members { get; init; } = [];
         public IReadOnlyCollection<RoleDto> Roles { get; init; } = [];

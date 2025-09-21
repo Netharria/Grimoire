@@ -18,42 +18,37 @@ public sealed class LockChannel
     [RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
     internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         [Command("Lock")]
         [Description("Locks a channel for a specified amount of time.")]
         public async Task LockChannelAsync(
             SlashCommandContext ctx,
-            [Parameter("DurationType")]
-            [Description("Select whether the duration will be in minutes hours or days.")]
+            [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days.")]
             DurationType durationType,
-            [MinMaxValue(0)]
-            [Parameter("DurationAmount")]
-            [Description("The amount of time the lock will last.")]
+            [MinMaxValue(0)] [Parameter("DurationAmount")] [Description("The amount of time the lock will last.")]
             int durationAmount,
             [ChannelTypes(DiscordChannelType.Text, DiscordChannelType.PublicThread, DiscordChannelType.PrivateThread,
                 DiscordChannelType.Category, DiscordChannelType.GuildForum)]
             [Parameter("Channel")]
             [Description("The channel to lock. Current channel if not specified.")]
             DiscordChannel? channel = null,
-            [MinMaxLength(maxLength:1000)]
-            [Parameter("Reason")]
-            [Description("The reason for the lock.")]
+            [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason for the lock.")]
             string? reason = null)
         {
             await ctx.DeferResponseAsync();
             channel ??= ctx.Channel;
 
-            if(ctx.Guild is null)
+            if (ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
 
             if (channel.IsThread)
-                await this.ThreadLockAsync(ctx.Guild, ctx.User, channel, reason, durationType, durationAmount);
+                await ThreadLockAsync(ctx.Guild, ctx.User, channel, reason, durationType, durationAmount);
             else if (channel.Type is DiscordChannelType.Text
                      or DiscordChannelType.Category
                      or DiscordChannelType.GuildForum)
-                await this.ChannelLockAsync(ctx.Guild, ctx.User, channel, reason, durationType, durationAmount);
+                await ChannelLockAsync(ctx.Guild, ctx.User, channel, reason, durationType, durationAmount);
             else
             {
                 await ctx.EditReplyAsync(message: "Channel not of valid type.");
@@ -96,7 +91,8 @@ public sealed class LockChannel
                 previousSetting.Denied.SetLockPermissions());
         }
 
-        private async Task ThreadLockAsync(DiscordGuild guild, DiscordUser moderator, DiscordChannel channel, string? reason,
+        private async Task ThreadLockAsync(DiscordGuild guild, DiscordUser moderator, DiscordChannel channel,
+            string? reason,
             DurationType durationType, long durationAmount) =>
             await this._mediator.Send(new Request
             {
@@ -111,11 +107,11 @@ public sealed class LockChannel
 
     public sealed record Request : IRequest
     {
-        public ulong ChannelId { get; init; }
+        public ChannelId ChannelId { get; init; }
         public long PreviouslyAllowed { get; init; }
         public long PreviouslyDenied { get; init; }
         public ulong ModeratorId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public string Reason { get; init; } = string.Empty;
         public DurationType DurationType { get; init; }
         public long DurationAmount { get; init; }

@@ -39,9 +39,9 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
     {
         var messageBuilder = new DiscordMessageBuilder();
 
-        var imageUrls = this.GetImageUrls(urls);
+        var imageUrls = GetImageUrls(urls);
 
-        var images = await this.GetImages(imageUrls);
+        var images = await GetImages(imageUrls);
 
         foreach (var (image, index) in images.Where(x => x.Stream is not null).Select((x, i) => (x, i)))
         {
@@ -59,7 +59,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
             messageBuilder.AddFile(fileName, image.Stream!);
         }
 
-        this.AddNonImageEmbed(urls, embed, messageBuilder);
+        AddNonImageEmbed(urls, embed, messageBuilder);
 
         AddImagesThatFailedDownload(images, embed, messageBuilder);
 
@@ -78,7 +78,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
             .ToArray();
 
     private async Task<ImageDownloadResult[]> GetImages(Uri[] uris)
-        => await Task.WhenAll(uris.Select(this.GetImage));
+        => await Task.WhenAll(uris.Select(GetImage));
 
     private async Task<ImageDownloadResult> GetImage(Uri uri)
     {

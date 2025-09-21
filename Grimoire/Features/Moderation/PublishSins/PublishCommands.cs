@@ -20,9 +20,9 @@ namespace Grimoire.Features.Moderation.PublishSins;
 public sealed partial class PublishCommands(IMediator mediator, GuildLog guildLog, ILogger<PublishCommands> logger)
 
 {
+    private readonly GuildLog _guildLog = guildLog;
     private readonly ILogger<PublishCommands> _logger = logger;
     private readonly IMediator _mediator = mediator;
-    private readonly GuildLog _guildLog = guildLog;
 
     private static async Task<DiscordMessage> SendPublicLogMessage(SlashCommandContext ctx,
         GetBanForPublish.Response response,
@@ -77,7 +77,7 @@ public sealed class PublishBan
     public sealed record Command : IRequest
     {
         public long SinId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public ulong MessageId { get; init; }
         public PublishType PublishType { get; init; }
     }

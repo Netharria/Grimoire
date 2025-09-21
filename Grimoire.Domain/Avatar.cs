@@ -5,17 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Domain.Shared;
 using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class Avatar : IMember
+public sealed class Avatar
 {
-    public virtual Member Member { get; init; } = null!;
-    public string FileName { get; init; } = string.Empty;
-    public DateTimeOffset Timestamp { get; init; }
-    public ulong UserId { get; set; }
-    public ulong GuildId { get; set; }
+    public Member? Member { get; init; }
+    public required string FileName { get; init; }
+    public DateTimeOffset Timestamp { get; private init; }
+    public required ulong UserId { get; init; }
+    public required ulong GuildId { get; init; }
 }

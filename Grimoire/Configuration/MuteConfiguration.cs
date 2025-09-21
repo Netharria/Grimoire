@@ -16,12 +16,12 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>
     public void Configure(EntityTypeBuilder<Mute> builder)
     {
         builder.HasKey(e => e.SinId);
-        builder.HasOne(e => e.Sin).WithOne(e => e.Mute)
+        builder.HasOne(e => e.Sin).WithOne()
             .HasForeignKey<Mute>(e => e.SinId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
         builder.HasOne(e => e.Member)
-            .WithOne(e => e.ActiveMute)
+            .WithOne()
             .HasForeignKey<Mute>(e => new { e.UserId, e.GuildId })
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();

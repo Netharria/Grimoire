@@ -5,16 +5,14 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.DatabaseQueryHelpers;
-
 namespace Grimoire.Features.Logging.UserLogging.Queries;
 
 public static class GetRecentUserAndNickNames
 {
     public sealed record Query : IRequest<Response?>
     {
-        public required ulong UserId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required UserId UserId { get; init; }
+        public required GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> contextFactory)

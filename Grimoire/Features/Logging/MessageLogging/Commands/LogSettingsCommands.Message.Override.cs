@@ -6,12 +6,10 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
+using System.Diagnostics;
 // ReSharper disable once CheckNamespace
-
-
 using Grimoire.Features.Shared.Channels.GuildLog;
 // ReSharper disable once CheckNamespace
-using System.Diagnostics;
 
 namespace Grimoire.Features.Logging.Settings;
 
@@ -23,8 +21,7 @@ public partial class LogSettingsCommands
         [Description("Overrides the default message logging settings. Use this to control which channels are logged.")]
         public async Task Override(
             SlashCommandContext ctx,
-            [Parameter("Option")]
-            [Description("Override option to set the channel to")]
+            [Parameter("Option")] [Description("Override option to set the channel to")]
             UpdateMessageLogOverride.MessageLogOverrideSetting overrideSetting,
             [Parameter("Channel")]
             [Description("The channel to override the message log settings of. Leave empty for current channel.")]
@@ -75,8 +72,8 @@ public sealed class UpdateMessageLogOverride
 
     public sealed record Command : IRequest
     {
-        public required ulong ChannelId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required ChannelId ChannelId { get; init; }
+        public required GuildId GuildId { get; init; }
         public required MessageLogOverrideSetting ChannelOverrideSetting { get; init; }
     }
 
@@ -87,8 +84,8 @@ public sealed class UpdateMessageLogOverride
 
         public Task Handle(Command command, CancellationToken cancellationToken)
             => command.ChannelOverrideSetting == MessageLogOverrideSetting.Inherit
-                ? this.DeleteOverride(command, cancellationToken)
-                : this.AddOrUpdateOverride(command, cancellationToken);
+                ? DeleteOverride(command, cancellationToken)
+                : AddOrUpdateOverride(command, cancellationToken);
 
         private async Task DeleteOverride(Command command, CancellationToken cancellationToken)
         {
@@ -124,7 +121,8 @@ public sealed class UpdateMessageLogOverride
                     {
                         MessageLogOverrideSetting.Always => MessageLogOverrideOption.AlwaysLog,
                         MessageLogOverrideSetting.Never => MessageLogOverrideOption.NeverLog,
-                        MessageLogOverrideSetting.Inherit => throw new UnreachableException("Should not be adding an inherit override."),
+                        MessageLogOverrideSetting.Inherit => throw new UnreachableException(
+                            "Should not be adding an inherit override."),
                         _ => throw new NotImplementedException(
                             "A Message log Override option was selected that has not been implemented.")
                     }

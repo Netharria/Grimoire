@@ -12,14 +12,16 @@ namespace Grimoire.Features.Moderation.SpamFilter;
 
 public class SpamTrackerModule(IDbContextFactory<GrimoireDbContext> dbContextFactory, IMemoryCache memoryCache)
 {
-    private readonly ConcurrentDictionary<DiscordMember, SpamTracker> _spamUsers = new();
-    private readonly IMemoryCache _memoryCache = memoryCache;
+    private const string CacheKeyPrefix = "SpamFilterOverrideChannel_{0}";
+
     private readonly MemoryCacheEntryOptions _cacheEntryOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2)
     };
-    const string CacheKeyPrefix = "SpamFilterOverrideChannel_{0}";
+
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly IMemoryCache _memoryCache = memoryCache;
+    private readonly ConcurrentDictionary<DiscordMember, SpamTracker> _spamUsers = new();
 
     private async Task<SpamFilterOverrideCacheOption> GetSpamFilterOverrideChannelAsync(ulong channelId,
         CancellationToken cancellationToken = default)
@@ -27,7 +29,7 @@ public class SpamTrackerModule(IDbContextFactory<GrimoireDbContext> dbContextFac
         var cacheKey = string.Format(CacheKeyPrefix, channelId);
         return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
         {
-            await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var spamFilterOverrideOptions = await dbContext.SpamFilterOverrides
                 .AsNoTracking()
                 .Where(x => x.ChannelId == channelId)
@@ -42,22 +44,23 @@ public class SpamTrackerModule(IDbContextFactory<GrimoireDbContext> dbContextFac
     }
 
     private void SetSpamFilterCache(ulong channelId, SpamFilterOverrideOption? overrideOption)
-    => this._memoryCache.Set(
+        => this._memoryCache.Set(
             string.Format(CacheKeyPrefix, channelId),
             overrideOption switch
             {
-                SpamFilterOverrideOption.AlwaysFilter  => SpamFilterOverrideCacheOption.AlwaysFilter,
+                SpamFilterOverrideOption.AlwaysFilter => SpamFilterOverrideCacheOption.AlwaysFilter,
                 SpamFilterOverrideOption.NeverFilter => SpamFilterOverrideCacheOption.NeverFilter,
                 _ => SpamFilterOverrideCacheOption.Default
             }, this._cacheEntryOptions);
 
-    public async Task AddOrUpdateOverride(SpamFilterOverride spamFilterOverride, CancellationToken cancellationToken = default)
+    public async Task AddOrUpdateOverride(SpamFilterOverride spamFilterOverride,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingOverride = await dbContext.SpamFilterOverrides
             .FirstOrDefaultAsync(x =>
-                x.ChannelId == spamFilterOverride.ChannelId
-                && x.GuildId == spamFilterOverride.GuildId,
+                    x.ChannelId == spamFilterOverride.ChannelId
+                    && x.GuildId == spamFilterOverride.GuildId,
                 cancellationToken);
         if (existingOverride != null)
             existingOverride.ChannelOption = spamFilterOverride.ChannelOption;

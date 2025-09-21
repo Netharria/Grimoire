@@ -16,8 +16,8 @@ internal sealed class TrackerAvatarEvent(
     TrackerLog trackerLog) : INotificationHandler<AvatarUpdatedNotification>
 {
     private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
-    private readonly TrackerLog _trackerLog = trackerLog;
     private readonly IMediator _mediator = mediator;
+    private readonly TrackerLog _trackerLog = trackerLog;
 
     public async Task Handle(AvatarUpdatedNotification notification, CancellationToken cancellationToken)
     {

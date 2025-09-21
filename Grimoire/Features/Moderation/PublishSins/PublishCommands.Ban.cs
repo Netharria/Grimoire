@@ -16,14 +16,12 @@ public sealed partial class PublishCommands
     [Description("Publish a ban reason to the public ban log.")]
     public async Task PublishBanAsync(
         SlashCommandContext ctx,
-        [MinMaxValue(0)]
-        [Parameter("SinId")]
-        [Description("The id of the sin to be published.")]
+        [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be published.")]
         int sinId)
     {
         await ctx.DeferResponseAsync();
 
-        if(ctx.Guild is null)
+        if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
         var response = await this._mediator.Send(new GetBanForPublish.Query { SinId = sinId, GuildId = ctx.Guild.Id });
@@ -51,7 +49,7 @@ public sealed class GetBanForPublish
     public sealed record Query : IRequest<Response>
     {
         public long SinId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

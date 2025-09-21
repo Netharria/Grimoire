@@ -20,8 +20,7 @@ public sealed class RemoveBanCommand
     [Description("Unbans a user from the server.")]
     public static async Task UnbanAsync(
         SlashCommandContext ctx,
-        [Parameter("User")]
-        [Description("The user to unban.")]
+        [Parameter("User")] [Description("The user to unban.")]
         DiscordUser user)
     {
         await ctx.DeferResponseAsync();

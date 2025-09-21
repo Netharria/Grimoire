@@ -20,9 +20,7 @@ internal sealed class PurgeCommands
     [Command("All")]
     [Description("Deletes all messages in the channel.")]
     public static async Task AllAsync(SlashCommandContext ctx,
-        [MinMaxValue(0, 1000)]
-        [Parameter("Count")]
-        [Description("The number of messages to delete.")]
+        [MinMaxValue(0, 1000)] [Parameter("Count")] [Description("The number of messages to delete.")]
         int count)
     {
         await ctx.DeferResponseAsync(true);
@@ -36,12 +34,9 @@ internal sealed class PurgeCommands
     [Command("User")]
     [Description("Deletes all messages that were sent by this user.")]
     public static async Task UserAsync(SlashCommandContext ctx,
-        [Parameter("User")]
-        [Description("The user to delete the messages of.")]
+        [Parameter("User")] [Description("The user to delete the messages of.")]
         DiscordUser user,
-        [MinMaxValue(0, 1000)]
-        [Parameter("Count")]
-        [Description("The number of matching messages to delete.")]
+        [MinMaxValue(0, 1000)] [Parameter("Count")] [Description("The number of matching messages to delete.")]
         int count)
     {
         await ctx.DeferResponseAsync(true);

@@ -24,11 +24,6 @@ public static class GuildDatabaseQueryHelpers
             .Select(x => new Guild
             {
                 Id = x,
-                LevelSettings = new GuildLevelSettings(),
-                ModerationSettings = new GuildModerationSettings(),
-                UserLogSettings = new GuildUserLogSettings(),
-                MessageLogSettings = new GuildMessageLogSettings(),
-                CommandsSettings = new GuildCommandsSettings()
             }).ToArray().AsReadOnly();
 
         if (guildsToAdd.Count == 0) return false;

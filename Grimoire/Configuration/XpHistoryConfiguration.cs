@@ -20,7 +20,7 @@ internal sealed class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistor
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(x => x.Guild)
-            .WithMany(x => x.XpHistory)
+            .WithMany()
             .HasForeignKey(x => x.GuildId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
@@ -31,7 +31,7 @@ internal sealed class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistor
         builder.Property(x => x.Type)
             .IsRequired();
         builder.HasOne(x => x.Awarder)
-            .WithMany(x => x.AwardRecipients)
+            .WithMany()
             .HasForeignKey(x => new { x.AwarderId, x.GuildId })
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);

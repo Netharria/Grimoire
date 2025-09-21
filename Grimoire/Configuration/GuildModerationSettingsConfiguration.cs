@@ -17,7 +17,7 @@ internal sealed class GuildModerationSettingsConfiguration : IEntityTypeConfigur
     {
         builder.HasKey(e => e.GuildId);
         builder.HasOne(e => e.Guild)
-            .WithOne(e => e.ModerationSettings)
+            .WithOne()
             .HasForeignKey<GuildModerationSettings>(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();

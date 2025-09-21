@@ -44,7 +44,7 @@ public sealed class GetLevelSettings
 {
     public sealed record Request : IRequest<Response?>
     {
-        public required ulong GuildId { get; init; }
+        public required GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

@@ -16,13 +16,13 @@ public enum PublishType
 }
 
 [UsedImplicitly]
-public class PublishedMessage
+public sealed class PublishedMessage
 {
-    public ulong MessageId { get; init; }
+    public required ulong MessageId { get; init; }
 
-    public long SinId { get; init; }
+    public required long SinId { get; init; }
 
-    public virtual Sin Sin { get; init; } = null!;
+    public Sin? Sin { get; init; }
 
-    public PublishType PublishType { get; init; }
+    public required PublishType PublishType { get; init; }
 }

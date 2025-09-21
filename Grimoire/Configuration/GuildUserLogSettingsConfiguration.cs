@@ -17,7 +17,7 @@ internal sealed class GuildUserLogSettingsConfiguration : IEntityTypeConfigurati
     {
         builder.HasKey(e => e.GuildId);
         builder.HasOne(e => e.Guild)
-            .WithOne(e => e.UserLogSettings)
+            .WithOne()
             .HasForeignKey<GuildUserLogSettings>(e => e.GuildId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();

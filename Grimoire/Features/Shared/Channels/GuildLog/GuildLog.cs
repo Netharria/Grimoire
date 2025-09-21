@@ -6,8 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Threading.Channels;
-using Grimoire.Features.LogCleanup.Commands;
-using Grimoire.Features.Shared.Settings;
+using Grimoire.Settings.Settings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Channel = System.Threading.Channels.Channel;
@@ -18,19 +17,19 @@ public sealed partial class GuildLog(
     DiscordClient discordClient,
     ILogger<GuildLog> logger,
     SettingsModule settingsModule,
-    IMediator mediator)
+    IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : BackgroundService
 {
     private readonly Channel<GuildLogMessageBase> _channel =
         Channel.CreateUnbounded<GuildLogMessageBase>(new UnboundedChannelOptions
-            {
-                SingleReader = true,
-                SingleWriter = false
-            });
+        {
+            SingleReader = true, SingleWriter = false
+        });
+
     private readonly DiscordClient _discordClient = discordClient;
     private readonly ILogger<GuildLog> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
-    private readonly IMediator _mediator = mediator;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -40,7 +39,7 @@ public sealed partial class GuildLog(
                 var result = await this._channel.Reader.ReadAsync(stoppingToken);
 
 
-                var logChannelId = await this.GetLogChannelId(result, stoppingToken);
+                var logChannelId = await GetLogChannelId(result, stoppingToken);
 
                 if (logChannelId is null)
                     continue;
@@ -52,10 +51,7 @@ public sealed partial class GuildLog(
                 var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
                     await channel.SendMessageAsync(result.GetMessageBuilder()), stoppingToken);
                 if (ShouldPurgeMessageAfterInterval(result.GuildLogType))
-                    await this._mediator.Send(new AddLogMessage.Command
-                    {
-                        MessageId = message.Id, ChannelId = message.ChannelId, GuildId = result.GuildId
-                    }, stoppingToken);
+                    await this.ScheduleMessagePurge(message.Id, channel.Id, result.GuildId, stoppingToken);
             }
             catch (Exception e)
             {
@@ -63,7 +59,8 @@ public sealed partial class GuildLog(
             }
     }
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "An error occurred while processing the log message. Message: ({message})")]
+    [LoggerMessage(Level = LogLevel.Error,
+        Message = "An error occurred while processing the log message. Message: ({message})")]
     static partial void LogError(ILogger logger, Exception e, string message);
 
     private async Task<ulong?> GetLogChannelId(GuildLogMessageBase guildLogMessageBase, CancellationToken stoppingToken)
@@ -79,7 +76,7 @@ public sealed partial class GuildLog(
 
         return guildLogMessageBase.GuildLogType switch
         {
-            GuildLogType.Moderation => guildSettings.ModChannelLog,
+            GuildLogType.Moderation => guildSettings.ModLogChannelId,
             GuildLogType.Leveling => guildSettings.LevelSettings.LevelChannelLogId,
             GuildLogType.BulkMessageDeleted => guildSettings.MessageLogSettings.BulkDeleteChannelLogId,
             GuildLogType.MessageEdited => guildSettings.MessageLogSettings.EditChannelLogId,
@@ -89,13 +86,13 @@ public sealed partial class GuildLog(
             GuildLogType.AvatarUpdated => guildSettings.UserLogSettings.AvatarChannelLogId,
             GuildLogType.NicknameUpdated => guildSettings.UserLogSettings.NicknameChannelLogId,
             GuildLogType.UsernameUpdated => guildSettings.UserLogSettings.UsernameChannelLogId,
-            _ => throw new ArgumentOutOfRangeException(nameof(guildLogMessageBase.GuildLogType), guildLogMessageBase.GuildLogType, "Unknown log type")
+            _ => throw new ArgumentOutOfRangeException(nameof(guildLogMessageBase.GuildLogType),
+                guildLogMessageBase.GuildLogType, "Unknown log type")
         };
     }
 
     private static bool ShouldPurgeMessageAfterInterval(GuildLogType guildLogType)
     {
-
         return guildLogType switch
         {
             GuildLogType.Moderation => false,
@@ -113,6 +110,18 @@ public sealed partial class GuildLog(
     }
 
 
-    public ValueTask SendLogMessageAsync(GuildLogMessageBase logMessageMessage, CancellationToken cancellationToken = default)
+    public ValueTask SendLogMessageAsync(GuildLogMessageBase logMessageMessage,
+        CancellationToken cancellationToken = default)
         => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken);
+
+    private async Task ScheduleMessagePurge(ulong messageId, ulong channelId, ulong guildId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var logMessage = new OldLogMessage
+        {
+            ChannelId = channelId, GuildId = guildId, Id = messageId
+        };
+        await dbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

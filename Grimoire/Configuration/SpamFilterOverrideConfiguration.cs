@@ -15,11 +15,11 @@ internal class SpamFilterOverideConfiguration : IEntityTypeConfiguration<SpamFil
     {
         builder.HasKey(x => x.ChannelId);
         builder.HasOne(x => x.Channel)
-            .WithOne(x => x.SpamFilterOverride)
+            .WithOne()
             .HasForeignKey<SpamFilterOverride>(x => x.ChannelId)
             .IsRequired();
         builder.HasOne(x => x.Guild)
-            .WithMany(x => x.SpamFilterOverrides)
+            .WithMany()
             .HasForeignKey(x => x.GuildId)
             .IsRequired();
         builder.Property(x => x.ChannelId)

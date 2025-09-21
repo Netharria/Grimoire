@@ -5,16 +5,14 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.DatabaseQueryHelpers;
-
 namespace Grimoire.Features.Moderation.SpamFilter;
 
 public sealed class AutoMuteUser
 {
     public sealed record Command : IRequest<Response?>
     {
-        public required ulong UserId { get; init; }
-        public required ulong GuildId { get; init; }
+        public required UserId UserId { get; init; }
+        public required GuildId GuildId { get; init; }
         public required ulong ModeratorId { get; init; }
         public required string Reason { get; init; }
     }
@@ -58,12 +56,7 @@ public sealed class AutoMuteUser
             };
             await dbContext.Sins.AddAsync(sin, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return new Response
-            {
-                MuteRole = response.MuteRole.Value,
-                SinId = sin.Id,
-                Duration = duration
-            };
+            return new Response { MuteRole = response.MuteRole.Value, SinId = sin.Id, Duration = duration };
         }
     }
 

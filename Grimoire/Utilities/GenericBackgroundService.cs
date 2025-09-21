@@ -20,7 +20,7 @@ public abstract partial class GenericBackgroundService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        LogBackgroundTaskStart(logger, this.GetType().FullName ?? this.GetType().Name);
+        LogBackgroundTaskStart(logger, GetType().FullName ?? GetType().Name);
 
         await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(5000)), stoppingToken);
 
@@ -28,7 +28,7 @@ public abstract partial class GenericBackgroundService(
             try
             {
                 using var scope = serviceProvider.CreateScope();
-                await this.RunTask(scope.ServiceProvider, stoppingToken);
+                await RunTask(scope.ServiceProvider, stoppingToken);
             }
             catch (Exception ex)
             {

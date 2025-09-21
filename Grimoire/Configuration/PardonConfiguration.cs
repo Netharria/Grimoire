@@ -22,7 +22,7 @@ internal sealed class PardonConfiguration : IEntityTypeConfiguration<Pardon>
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.HasOne(e => e.Moderator)
-            .WithMany(e => e.SinsPardoned)
+            .WithMany()
             .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);

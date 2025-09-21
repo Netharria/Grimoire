@@ -7,7 +7,6 @@
 
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
@@ -32,11 +31,9 @@ internal sealed class SinLog
         [Description("Looks up the sin logs for the provided user.")]
         public async Task SinLogAsync(
             SlashCommandContext ctx,
-            [Parameter("Type")]
-            [Description("The type of logs to look up.")]
+            [Parameter("Type")] [Description("The type of logs to look up.")]
             SinQueryType sinQueryType,
-            [Parameter("User")]
-            [Description("The user to look up the logs for. Leave blank for self.")]
+            [Parameter("User")] [Description("The user to look up the logs for. Leave blank for self.")]
             DiscordUser? user = null)
         {
             if (ctx.Guild is null || ctx.Member is null)
@@ -85,7 +82,7 @@ internal sealed class SinLog
     public sealed record GetModActionCountsQuery : IRequest<GetModActionCountsQueryResponse?>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class GetModActionCountsQueryHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -119,7 +116,7 @@ internal sealed class SinLog
     public sealed record GetUserSinsQuery : IRequest<GetUserSinsQueryResponse>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public SinQueryType SinQueryType { get; init; }
     }
 

@@ -30,101 +30,89 @@ public static partial class DiscordRegex
     [GeneratedRegex("^[\\w-]{1,32}$")]
     private static partial Regex SlashCommandNameRegex();
 
-     public static bool ContainsUserMentions(string message)
+    public static bool ContainsUserMentions(string message)
     {
-        Regex regex = UserMentionRegex();
+        var regex = UserMentionRegex();
         return regex.IsMatch(message);
     }
 
     public static bool ContainsNicknameMentions(string message)
     {
-        Regex regex = NicknameMentionRegex();
+        var regex = NicknameMentionRegex();
         return regex.IsMatch(message);
     }
 
     public static bool ContainsChannelMentions(string message)
     {
-        Regex regex = ChannelMentionRegex();
+        var regex = ChannelMentionRegex();
         return regex.IsMatch(message);
     }
 
     public static bool ContainsRoleMentions(string message)
     {
-        Regex regex = RoleMentionRegex();
+        var regex = RoleMentionRegex();
         return regex.IsMatch(message);
     }
 
     public static bool ContainsEmojis(string message)
     {
-        Regex regex = EmojiMentionRegex();
+        var regex = EmojiMentionRegex();
         return regex.IsMatch(message);
     }
 
     public static IEnumerable<ulong> GetUserMentions(DiscordMessage message)
     {
-        Regex regex = UserMentionRegex();
-        MatchCollection matches = regex.Matches(message.Content);
-        foreach (Match match in matches.Cast<Match>())
-        {
+        var regex = UserMentionRegex();
+        var matches = regex.Matches(message.Content);
+        foreach (var match in matches.Cast<Match>())
             yield return ulong.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-        }
     }
 
     public static IEnumerable<ulong> GetUserMentions(string message)
     {
-        Regex regex = UserMentionRegex();
-        MatchCollection matches = regex.Matches(message);
-        foreach (Match match in matches.Cast<Match>())
-        {
+        var regex = UserMentionRegex();
+        var matches = regex.Matches(message);
+        foreach (var match in matches.Cast<Match>())
             yield return ulong.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-        }
     }
 
     public static IEnumerable<ulong> GetRoleMentions(DiscordMessage message)
     {
-        Regex regex = RoleMentionRegex();
-        MatchCollection matches = regex.Matches(message.Content);
-        foreach (Match match in matches.Cast<Match>())
-        {
+        var regex = RoleMentionRegex();
+        var matches = regex.Matches(message.Content);
+        foreach (var match in matches.Cast<Match>())
             yield return ulong.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-        }
     }
 
     public static IEnumerable<ulong> GetRoleMentions(string message)
     {
-        Regex regex = RoleMentionRegex();
-        MatchCollection matches = regex.Matches(message);
-        foreach (Match match in matches.Cast<Match>())
-        {
+        var regex = RoleMentionRegex();
+        var matches = regex.Matches(message);
+        foreach (var match in matches.Cast<Match>())
             yield return ulong.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-        }
     }
 
     public static IEnumerable<ulong> GetChannelMentions(DiscordMessage message) => GetChannelMentions(message.Content);
 
     public static IEnumerable<ulong> GetChannelMentions(string messageContent)
     {
-        Regex regex = ChannelMentionRegex();
-        MatchCollection matches = regex.Matches(messageContent);
-        foreach (Match match in matches.Cast<Match>())
-        {
+        var regex = ChannelMentionRegex();
+        var matches = regex.Matches(messageContent);
+        foreach (var match in matches.Cast<Match>())
             yield return ulong.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-        }
     }
 
     public static IEnumerable<ulong> GetEmojis(DiscordMessage message)
     {
-        Regex regex = EmojiMentionRegex();
-        MatchCollection matches = regex.Matches(message.Content);
-        foreach (Match match in matches.Cast<Match>())
-        {
+        var regex = EmojiMentionRegex();
+        var matches = regex.Matches(message.Content);
+        foreach (var match in matches.Cast<Match>())
             yield return ulong.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
-        }
     }
 
     public static bool IsValidSlashCommandName(string name)
     {
-        Regex regex = SlashCommandNameRegex();
+        var regex = SlashCommandNameRegex();
         return regex.IsMatch(name);
     }
 }

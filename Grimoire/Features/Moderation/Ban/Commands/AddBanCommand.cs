@@ -26,24 +26,23 @@ public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanComm
     [Description("Bans a user from the server.")]
     public async Task BanAsync(
         SlashCommandContext ctx,
-        [Parameter("User")]
-        [Description("The user to ban.")]
+        [Parameter("User")] [Description("The user to ban.")]
         DiscordUser user,
-        [MinMaxLength(maxLength:1000)]
+        [MinMaxLength(maxLength: 1000)]
         [Parameter("Reason")]
         [Description("The reason for the ban. This can be updated later with the 'Reason' command.")]
         string reason = "",
         [Parameter("DeleteMessages")]
         [Description("Deletes the messages of the user of the last few days. Default is false.")]
         bool deleteMessages = false,
-        [MinMaxValue(0,7)]
+        [MinMaxValue(0, 7)]
         [Parameter("DeleteDays")]
         [Description("The number of days of messages to delete. Default is 7.")]
         int deleteDays = 7)
     {
         await ctx.DeferResponseAsync();
 
-        if(ctx.Guild is null)
+        if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
         if (!CheckIfCanBan(ctx.Guild.CurrentMember, user))

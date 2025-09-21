@@ -20,12 +20,12 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
             .ValueGeneratedNever()
             .IsRequired();
         builder.HasOne(e => e.Member)
-            .WithMany(e => e.Messages)
+            .WithMany()
             .HasForeignKey(e => new { e.UserId, e.GuildId })
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.HasOne(e => e.Channel)
-            .WithMany(e => e.Messages)
+            .WithMany()
             .HasForeignKey(e => e.ChannelId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();

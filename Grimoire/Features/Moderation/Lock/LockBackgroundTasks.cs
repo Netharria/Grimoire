@@ -49,12 +49,11 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 .WithDescription($"Lock on {channel.Mention} has expired.");
 
             await channel.SendMessageAsync(embed);
-            await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
-            {
-                GuildId = guild.Id,
-                GuildLogType = GuildLogType.Moderation,
-                Embed = embed
-            }, stoppingToken);
+            await guildLog.SendLogMessageAsync(
+                new GuildLogMessageCustomEmbed
+                {
+                    GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+                }, stoppingToken);
         }
     }
 }
@@ -88,8 +87,8 @@ public sealed class GetExpiredLocks
 
     public sealed record Response
     {
-        public ulong ChannelId { get; init; }
-        public ulong GuildId { get; init; }
+        public ChannelId ChannelId { get; init; }
+        public GuildId GuildId { get; init; }
         public long PreviouslyAllowed { get; init; }
         public long PreviouslyDenied { get; init; }
     }

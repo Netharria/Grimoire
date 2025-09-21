@@ -24,7 +24,7 @@ public sealed record ChannelDeleted
 
     public sealed record Command : IRequest
     {
-        public ulong ChannelId { get; init; }
+        public ChannelId ChannelId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

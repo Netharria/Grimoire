@@ -8,19 +8,21 @@
 using System.Text;
 
 namespace Grimoire.Features.Moderation.SpamFilter.Commands;
+
 [Command("SpamFilter")]
-internal class SpamFilterOverrideCommands(SpamTrackerModule spamTrackerModule, IDbContextFactory<GrimoireDbContext> grimoireDbContextFactory)
+internal class SpamFilterOverrideCommands(
+    SpamTrackerModule spamTrackerModule,
+    IDbContextFactory<GrimoireDbContext> grimoireDbContextFactory)
 {
-    private readonly SpamTrackerModule _spamTrackerModule = spamTrackerModule;
     private readonly IDbContextFactory<GrimoireDbContext> _grimoireDbContextFactory = grimoireDbContextFactory;
+    private readonly SpamTrackerModule _spamTrackerModule = spamTrackerModule;
 
     [Command("Override")]
     [Description("Overrides the default spam filter settings. Use this to control which channels are filtered.")]
     [RequireUserGuildPermissions(DiscordPermission.ManageChannels)]
     public async Task Override(
         SlashCommandContext ctx,
-        [Parameter("Option")]
-        [Description("Override option to set the channel to")]
+        [Parameter("Option")] [Description("Override option to set the channel to")]
         SpamFilterOverrideSetting overrideSetting,
         [Parameter("Channel")]
         [Description("The channel to override the spam filter settings of. Leave empty for current channel.")]
@@ -31,11 +33,11 @@ internal class SpamFilterOverrideCommands(SpamTrackerModule spamTrackerModule, I
 
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
-        if(!ctx.Guild.Channels.ContainsKey(channel.Id))
+        if (!ctx.Guild.Channels.ContainsKey(channel.Id))
             throw new AnticipatedException("That channel does not exist in this server.");
 
 
-        if(overrideSetting is SpamFilterOverrideSetting.Inherit)
+        if (overrideSetting is SpamFilterOverrideSetting.Inherit)
         {
             await this._spamTrackerModule.RemoveOverride(channel.Id, ctx.Guild.Id);
             await ctx.EditReplyAsync(GrimoireColor.Purple, $"Set {channel.Mention} to inherit spam filter settings.");
@@ -57,7 +59,6 @@ internal class SpamFilterOverrideCommands(SpamTrackerModule spamTrackerModule, I
             }
         };
         await this._spamTrackerModule.AddOrUpdateOverride(spamFilterOverride);
-
 
 
         await ctx.EditReplyAsync(GrimoireColor.Purple, spamFilterOverride.ChannelOption switch
@@ -101,13 +102,13 @@ internal class SpamFilterOverrideCommands(SpamTrackerModule spamTrackerModule, I
                     SpamFilterOverrideOption.NeverFilter => " - Never Filter",
                     _ => " - Inherit/Default"
                 }).AppendLine();
-
         }
 
-        await ctx.EditReplyAsync(GrimoireColor.Purple,  title: "Spam Filter Override Settings",
+        await ctx.EditReplyAsync(GrimoireColor.Purple, title: "Spam Filter Override Settings",
             message: spamFilterOverrideString.ToString());
     }
 }
+
 public enum SpamFilterOverrideSetting
 {
     Always,

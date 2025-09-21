@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Notifications;
 
@@ -15,8 +14,8 @@ public sealed class UpdatedNicknameEvent
 {
     public sealed class EventHandler(IMediator mediator, GuildLog guildLog) : IEventHandler<GuildMemberUpdatedEventArgs>
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
         {
@@ -48,7 +47,6 @@ public sealed class UpdatedNicknameEvent
                     .WithThumbnail(args.Member.GetGuildAvatarUrl(MediaFormat.Auto))
                     .WithTimestamp(DateTimeOffset.UtcNow)
                     .WithColor(GrimoireColor.Mint)
-
             });
 
             await this._mediator.Publish(new NicknameUpdatedNotification
@@ -65,7 +63,7 @@ public sealed class UpdatedNicknameEvent
     public sealed record Command : IRequest<UpdateNicknameCommandResponse?>
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public string? Nickname { get; init; }
     }
 

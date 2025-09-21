@@ -20,12 +20,12 @@ internal sealed class OldLogMessageConfiguration : IEntityTypeConfiguration<OldL
             .ValueGeneratedNever()
             .IsRequired();
         builder.HasOne(e => e.Channel)
-            .WithMany(e => e.OldMessages)
+            .WithMany()
             .HasForeignKey(x => x.ChannelId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(e => e.Guild)
-            .WithMany(e => e.OldLogMessages)
+            .WithMany()
             .HasForeignKey(x => x.GuildId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);

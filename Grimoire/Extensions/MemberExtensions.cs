@@ -39,11 +39,4 @@ public static class MemberExtensions
             _ => @base + ((long)Math.Round(@base * (modifier / 100.0) * level) * level)
         };
     }
-
-    public static string Mention(this Member? member)
-        => member switch
-        {
-            not null => $"<@!{member.UserId}>",
-            null => "Unknown User"
-        };
 }

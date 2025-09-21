@@ -10,17 +10,17 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public class MessageHistory
+public sealed class MessageHistory
 {
-    public ulong MessageId { get; init; }
-    public Message Message { get; init; } = null!;
-    public ulong GuildId { get; init; }
-    public Guild Guild { get; init; } = null!;
-    public MessageAction Action { get; init; }
-    public string MessageContent { get; init; } = string.Empty;
+    public required ulong MessageId { get; init; }
+    public Message? Message { get; init; }
+    public required ulong GuildId { get; init; }
+    public Guild? Guild { get; init; }
+    public required MessageAction Action { get; init; }
+    public required string MessageContent { get; init; }
     public ulong? DeletedByModeratorId { get; init; }
-    public virtual Member? DeletedByModerator { get; init; }
-    public DateTimeOffset TimeStamp { get; init; }
+    public Member? DeletedByModerator { get; init; }
+    public DateTimeOffset TimeStamp { get; private init; }
 }
 
 public enum MessageAction

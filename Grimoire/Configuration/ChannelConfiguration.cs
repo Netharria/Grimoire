@@ -19,8 +19,5 @@ internal sealed class ChannelConfiguration : IEntityTypeConfiguration<Channel>
         builder.Property(e => e.Id)
             .ValueGeneratedNever()
             .IsRequired();
-        builder.HasOne(e => e.Lock)
-            .WithOne(e => e.Channel)
-            .IsRequired(false);
     }
 }

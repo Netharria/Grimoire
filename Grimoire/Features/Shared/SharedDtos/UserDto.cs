@@ -9,8 +9,8 @@ namespace Grimoire.Features.Shared.SharedDtos;
 
 public sealed record UserDto
 {
-    public ulong Id { get; init; }
-    public string Username { get; init; } = string.Empty;
+    public required ulong Id { get; init; }
+    public required string Username { get; init; }
     public string? Nickname { get; init; }
-    public string AvatarUrl { get; init; } = string.Empty;
+    public required string AvatarUrl { get; init; }
 }

@@ -20,11 +20,8 @@ internal sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
             .ValueGeneratedNever()
             .IsRequired();
         builder.HasOne(e => e.Guild)
-            .WithMany(e => e.Roles)
+            .WithMany()
             .HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(e => e.Reward)
-            .WithOne(e => e.Role)
-            .IsRequired(false);
     }
 }

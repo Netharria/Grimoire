@@ -7,7 +7,6 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 
 namespace Grimoire.Features.Logging.Trackers.Commands;
@@ -19,24 +18,19 @@ public sealed class AddTracker
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     internal sealed class Command(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
 
         [Command("Track")]
         [Description("Creates a log of a user's activity into the specified channel.")]
         public async Task TrackAsync(SlashCommandContext ctx,
-            [Parameter("User")]
-            [Description("The user to log.")]
+            [Parameter("User")] [Description("The user to log.")]
             DiscordUser user,
-            [Parameter("DurationType")]
-            [Description("Select whether the duration will be in minutes hours or days.")]
+            [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days.")]
             DurationType durationType,
-            [MinMaxValue(0)]
-            [Parameter("DurationAmount")]
-            [Description("The amount of time the logging will last.")]
+            [MinMaxValue(0)] [Parameter("DurationAmount")] [Description("The amount of time the logging will last.")]
             int durationAmount,
-            [Parameter("Channel")]
-            [Description("Select the channel to log to. Current channel if left blank.")]
+            [Parameter("Channel")] [Description("Select the channel to log to. Current channel if left blank.")]
             DiscordChannel? discordChannel = null)
         {
             await ctx.DeferResponseAsync();
@@ -102,9 +96,9 @@ public sealed class AddTracker
     public sealed record Request : IRequest
     {
         public ulong UserId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
         public TimeSpan Duration { get; init; }
-        public ulong ChannelId { get; init; }
+        public ChannelId ChannelId { get; init; }
         public ulong ModeratorId { get; init; }
     }
 

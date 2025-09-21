@@ -16,9 +16,7 @@ public sealed partial class PublishCommands
     [Description("Publish an unban reason to the public ban log.")]
     public async Task PublishUnbanAsync(
         SlashCommandContext ctx,
-        [MinMaxValue(0)]
-        [Parameter("SinId")]
-        [Description("The id of the sin to be published.")]
+        [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be published.")]
         int sinId)
     {
         await ctx.DeferResponseAsync();
@@ -52,7 +50,7 @@ public sealed class GetUnbanForPublish
     public sealed record Query : IRequest<GetBanForPublish.Response>
     {
         public long SinId { get; init; }
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class GetUnbanQueryHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

@@ -16,7 +16,7 @@ public partial class LogSettingsCommands
     [RequireModuleEnabled(Module.MessageLog)]
     public partial class Message(IMediator mediator, GuildLog guildLog)
     {
-        private readonly IMediator _mediator = mediator;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly IMediator _mediator = mediator;
     }
 }

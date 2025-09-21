@@ -1,36 +1,37 @@
-﻿using Grimoire.DatabaseQueryHelpers;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
+
 internal sealed partial class GeneralSettingsCommands
 {
     [UsedImplicitly]
     [Command("View")]
     [Description("View the current general settings for this server.")]
-        public async Task ViewAsync(SlashCommandContext ctx)
-        {
-            await ctx.DeferResponseAsync(true);
+    public async Task ViewAsync(SlashCommandContext ctx)
+    {
+        await ctx.DeferResponseAsync(true);
 
-            if (ctx.Guild is null)
-                throw new AnticipatedException("This command can only be used in a server.");
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
 
-            var response = await this._mediator.Send(new GetGeneralSettings.Query { GuildId = ctx.Guild.Id });
-            var moderationLogText = response.ModLogChannel is null
-                ? "None"
-                : ChannelExtensions.Mention(response.ModLogChannel.Value);
-            var userCommandChannelText = response.UserCommandChannel is null
-                ? "None"
-                : ChannelExtensions.Mention(response.UserCommandChannel.Value);
-            await ctx.EditReplyAsync(title: "General Settings",
-                message: $"**Moderation Log:** {moderationLogText}\n**User Command Channel:** {userCommandChannelText}");
-        }
+        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+
+        var moderationLogText = guildSettings.ModLogChannelId is null
+            ? "None"
+            : ChannelExtensions.Mention(guildSettings.ModLogChannelId.Value);
+        var userCommandChannelText = guildSettings.UserCommandChannelId is null
+            ? "None"
+            : ChannelExtensions.Mention(guildSettings.UserCommandChannelId.Value);
+        await ctx.EditReplyAsync(title: "General Settings",
+            message: $"**Moderation Log:** {moderationLogText}\n**User Command Channel:** {userCommandChannelText}");
+    }
 }
 
 public sealed class GetGeneralSettings
 {
     public sealed record Query : IRequest<Response>
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

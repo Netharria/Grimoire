@@ -6,9 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-
-
 // ReSharper disable once CheckNamespace
+
 namespace Grimoire.Features.Logging.Settings;
 
 public partial class LogSettingsCommands
@@ -57,7 +56,7 @@ public sealed class GetMessageLogSettings
 {
     public sealed record Query : IRequest<Response?>
     {
-        public ulong GuildId { get; init; }
+        public GuildId GuildId { get; init; }
     }
 
     public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)

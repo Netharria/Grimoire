@@ -21,24 +21,20 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
         builder.Property(e => e.Reason)
             .HasMaxLength(1000);
         builder.HasOne(e => e.Member)
-            .WithMany(e => e.UserSins)
+            .WithMany()
             .HasForeignKey(e => new { e.UserId, e.GuildId })
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.HasOne(e => e.Moderator)
-            .WithMany(e => e.ModeratedSins)
+            .WithMany()
             .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
         builder.HasOne(e => e.Guild)
-            .WithMany(e => e.Sins)
+            .WithMany()
             .HasForeignKey(e => e.GuildId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
-        builder.HasOne(e => e.Mute)
-            .WithOne(e => e.Sin)
-            .HasForeignKey<Mute>(e => e.SinId)
-            .IsRequired(false);
         builder.HasOne(e => e.Pardon)
             .WithOne(e => e.Sin)
             .HasForeignKey<Pardon>(e => e.SinId)
