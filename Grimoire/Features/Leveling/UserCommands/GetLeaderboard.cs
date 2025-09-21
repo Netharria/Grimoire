@@ -85,10 +85,11 @@ public sealed class GetLeaderboard
         public async Task<Response> Handle(Request request, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var query = dbContext.Members
+            var query = dbContext.XpHistory
                 .AsNoTracking()
-                .Where(member => member.GuildId == request.GuildId)
-                .Select(member => new { member.UserId, Xp = member.XpHistory.Sum(xp => xp.Xp) })
+                .Where(xpHistory => xpHistory.GuildId == request.GuildId)
+                .GroupBy(xpHistory => xpHistory.UserId)
+                .Select(xpHistory => new { UserId = xpHistory.Key, Xp = xpHistory.Sum(xp => xp.Xp) })
                 .OrderByDescending(x => x.Xp);
 
             if (request.UserId is null)
