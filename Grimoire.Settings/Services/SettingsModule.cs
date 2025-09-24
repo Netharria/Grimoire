@@ -10,14 +10,14 @@ using Grimoire.Settings.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Grimoire.Settings.Settings;
+namespace Grimoire.Settings.Services;
 
 public sealed class SettingsModule(IDbContextFactory<SettingsDbContext> dbContextFactory, IMemoryCache memoryCache)
 {
     private readonly IMemoryCache _memoryCache = memoryCache;
     private readonly MemoryCacheEntryOptions _cacheEntryOptions = new()
     {
-        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2)
+        SlidingExpiration = TimeSpan.FromHours(2)
     };
     const string CacheKeyPrefix = "GuildSettings_{0}";
     private readonly IDbContextFactory<SettingsDbContext> _dbContextFactory = dbContextFactory;

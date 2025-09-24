@@ -7,6 +7,7 @@
 
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 

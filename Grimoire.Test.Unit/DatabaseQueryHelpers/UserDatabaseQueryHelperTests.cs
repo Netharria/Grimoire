@@ -38,12 +38,12 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         await this._dbContext.AddAsync(new User { Id = User1 });
         await this._dbContext.AddAsync(new UsernameHistory
         {
-            UserId = User1, Username = "User1", Timestamp = DateTime.UtcNow.AddMinutes(-2)
+            UserId = User1, Username = "User1"
         });
         await this._dbContext.AddAsync(new User { Id = User2 });
         await this._dbContext.AddAsync(new UsernameHistory
         {
-            UserId = User2, Username = "User2", Timestamp = DateTime.UtcNow.AddMinutes(-2)
+            UserId = User2, Username = "User2"
         });
         await this._dbContext.SaveChangesAsync();
     }
@@ -55,7 +55,9 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     {
         var usersToAdd = new List<UserDto>
         {
-            new() { Id = User1 }, new() { Id = User2 }, new() { Id = 45, Username = "User3" }
+            new() { Id = User1, Username = "", AvatarUrl = ""},
+            new() { Id = User2, Username = "", AvatarUrl = "" },
+            new() { Id = 45, Username = "User3", AvatarUrl = ""}
         };
         var result = await this._dbContext.Users.AddMissingUsersAsync(usersToAdd);
 
@@ -83,7 +85,7 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
     [Fact]
     public async Task WhenUserNamesAreNotInDatabase_AddThemAsync()
     {
-        var usersToAdd = new List<UserDto> { new() { Id = User1, Username = "Username2" } };
+        var usersToAdd = new List<UserDto> { new() { Id = User1, Username = "Username2", AvatarUrl = "" } };
         var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd);
 
         await this._dbContext.SaveChangesAsync();
@@ -119,7 +121,7 @@ public sealed class UserDatabaseQueryHelperTests(GrimoireCoreFactory factory) : 
         await this._dbContext.SaveChangesAsync();
         this._dbContext.ChangeTracker.Clear();
 
-        var usersToAdd = new List<UserDto> { new() { Id = User1, Username = "User1" } };
+        var usersToAdd = new List<UserDto> { new() { Id = User1, Username = "User1", AvatarUrl = "" } };
 
         // Act
         var result = await this._dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(usersToAdd);

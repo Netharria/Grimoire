@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
+using Grimoire.Domain.Obsolete;
 using Grimoire.Features.Shared.SharedDtos;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -39,11 +40,11 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
     {
         await this._dbContext.AddAsync(new Guild
         {
-            Id = GuildId, LevelSettings = new GuildLevelSettings { ModuleEnabled = true }
+            Id = GuildId
         });
         await this._dbContext.AddAsync(new Guild
         {
-            Id = GuildId2, LevelSettings = new GuildLevelSettings { ModuleEnabled = true }
+            Id = GuildId2
         });
         await this._dbContext.AddAsync(new User { Id = Member1 });
         await this._dbContext.AddAsync(new User { Id = Member2 });
@@ -59,11 +60,11 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
         });
         await this._dbContext.AddAsync(new NicknameHistory
         {
-            UserId = Member1, GuildId = GuildId, Nickname = "OldNick", Timestamp = DateTime.UtcNow.AddMinutes(-1)
+            UserId = Member1, GuildId = GuildId, Nickname = "OldNick"
         });
         await this._dbContext.AddAsync(new Avatar
         {
-            UserId = Member1, GuildId = GuildId, FileName = "OldAvatar", Timestamp = DateTime.UtcNow.AddMinutes(-1)
+            UserId = Member1, GuildId = GuildId, FileName = "OldAvatar"
         });
         await this._dbContext.AddAsync(new Role { Id = RoleId, GuildId = GuildId });
         await this._dbContext.AddAsync(new Channel { Id = ChannelId, GuildId = GuildId });
@@ -73,22 +74,11 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
     public Task DisposeAsync() => this._resetDatabase();
 
     [Fact]
-    public async Task WhereMemberHasId_WhenProvidedValidId_ReturnsResultAsync()
-    {
-        var result = await this._dbContext.Members.WhereMemberHasId(
-            Member2, GuildId2).ToArrayAsync();
-
-        result.Should().HaveCount(1);
-        result.Should().AllSatisfy(x => x.UserId.Should().Be(Member2))
-            .And.AllSatisfy(x => x.GuildId.Should().Be(GuildId2));
-    }
-
-    [Fact]
     public async Task WhenMembersAreNotInDatabase_AddThemAsync()
     {
         var membersToAdd = new List<MemberDto>
         {
-            new() { UserId = Member1, GuildId = GuildId },
+            new() { UserId = Member1, GuildId = GuildId, AvatarUrl = "" },
             new() { UserId = Member2, GuildId = GuildId, Nickname = "Nick2", AvatarUrl = "Avatar2" }
         };
         var result = await this._dbContext.Members.AddMissingMembersAsync(membersToAdd);
@@ -119,8 +109,8 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
     public async Task OnlyAddsNewEntriesWhenUserIdAndGuildIdMatch()
     {
         // Arrange
-        var existingMember = new MemberDto { UserId = Member1, GuildId = GuildId };
-        var newMember = new MemberDto { UserId = Member2, GuildId = GuildId };
+        var existingMember = new MemberDto { UserId = Member1, GuildId = GuildId, AvatarUrl = "" };
+        var newMember = new MemberDto { UserId = Member2, GuildId = GuildId, AvatarUrl = "" };
         var membersToAdd = new List<MemberDto> { existingMember, newMember };
 
         // Act
@@ -155,7 +145,7 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
     [Fact]
     public async Task WhenNickNamesAreNotInDatabase_AddThemAsync()
     {
-        var membersToAdd = new List<MemberDto> { new() { UserId = Member1, GuildId = GuildId, Nickname = "Nick" } };
+        var membersToAdd = new List<MemberDto> { new() { UserId = Member1, GuildId = GuildId, Nickname = "Nick", AvatarUrl  = ""} };
         var result = await this._dbContext.NicknameHistory.AddMissingNickNameHistoryAsync(membersToAdd);
 
         await this._dbContext.SaveChangesAsync();
@@ -181,7 +171,7 @@ public sealed class MemberDatabaseQueryHelperTests(GrimoireCoreFactory factory) 
         this._dbContext.ChangeTracker.Clear();
         var membersToAdd = new List<MemberDto>
         {
-            new() { UserId = Member1, GuildId = GuildId, Nickname = "OldNick" } // Same nickname
+            new() { UserId = Member1, GuildId = GuildId, Nickname = "OldNick", AvatarUrl = ""} // Same nickname
         };
 
         // Act

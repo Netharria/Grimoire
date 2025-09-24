@@ -25,8 +25,16 @@ public sealed partial class RewardCommandGroup
         }
 
         await ctx.DeferResponseAsync();
-        await this._mediator.Send(
-            new RemoveReward.Request { RoleId = role.Id });
+
+        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+
+        var guildReward = guildSettings.Rewards.FirstOrDefault(x => x.RoleId == role.Id);
+
+        if (guildReward is not null)
+        {
+            guildSettings.Rewards.Remove(guildReward);
+            await this._settingsModule.UpdateGuildSettings(guildSettings);
+        }
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Removed {role.Mention} reward");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
@@ -36,32 +44,5 @@ public sealed partial class RewardCommandGroup
             Color = GrimoireColor.DarkPurple,
             Description = $"{ctx.User.Mention} removed {role.Mention} reward"
         });
-    }
-}
-
-public sealed class RemoveReward
-{
-    public sealed record Request : IRequest
-    {
-        public required RoleId RoleId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Request command, CancellationToken cancellationToken)
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbContext.Rewards
-                .Include(x => x.Guild)
-                .Where(x => x.RoleId == command.RoleId)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (result is null)
-                return;
-            dbContext.Rewards.Remove(result);
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
     }
 }

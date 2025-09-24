@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Moderation.Lock.Commands;
 
@@ -145,7 +146,7 @@ public sealed class LockChannel
                 var local = dbContext.Locks.Local.FirstOrDefault(x => x.ChannelId == command.ChannelId);
                 if (local is not null)
                     dbContext.Entry(local).State = EntityState.Detached;
-                var lockToAdd = new Domain.Lock
+                var lockToAdd = new Domain.Obsolete.Lock
                 {
                     ChannelId = command.ChannelId,
                     GuildId = command.GuildId,

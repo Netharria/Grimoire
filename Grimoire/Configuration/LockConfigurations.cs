@@ -7,18 +7,19 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Lock = Grimoire.Domain.Obsolete.Lock;
 
 namespace Grimoire.Configuration;
 
 [ExcludeFromCodeCoverage]
-internal sealed class LockConfigurations : IEntityTypeConfiguration<Domain.Lock>
+internal sealed class LockConfigurations : IEntityTypeConfiguration<Lock>
 {
-    public void Configure(EntityTypeBuilder<Domain.Lock> builder)
+    public void Configure(EntityTypeBuilder<Lock> builder)
     {
         builder.HasKey(e => e.ChannelId);
         builder.HasOne(e => e.Channel)
             .WithOne()
-            .HasForeignKey<Domain.Lock>(x => x.ChannelId)
+            .HasForeignKey<Lock>(x => x.ChannelId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.Property(e => e.PreviouslyAllowed)

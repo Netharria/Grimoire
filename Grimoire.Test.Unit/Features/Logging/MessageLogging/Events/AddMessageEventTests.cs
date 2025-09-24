@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.Domain;
+using Grimoire.Domain.Obsolete;
 using Grimoire.Features.Logging.MessageLogging.Events;
 using Grimoire.Features.Shared.SharedDtos;
 using Microsoft.EntityFrameworkCore;

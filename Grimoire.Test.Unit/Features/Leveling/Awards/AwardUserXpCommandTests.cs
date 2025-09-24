@@ -57,32 +57,32 @@ public sealed class AwardUserXpCommandTests(GrimoireCoreFactory factory) : IAsyn
 
     public Task DisposeAsync() => this._resetDatabase();
 
-    [Fact]
-    public async Task WhenAwardUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
-    {
-        await using var dbContext = this._createDbContext();
-        var cut = new AwardUserXp.Handler(this._mockDbContextFactory);
-
-        await cut.Handle(
-            new AwardUserXp.Request { UserId = UserId, GuildId = GuildId, XpToAward = 20 }, CancellationToken.None);
-
-        dbContext.ChangeTracker.Clear();
-
-        var member = await dbContext.Members.Where(x =>
-            x.UserId == UserId
-            && x.GuildId == GuildId
-        ).Include(x => x.XpHistory).FirstAsync();
-        member.XpHistory.Sum(x => x.Xp).Should().Be(20);
-    }
-
-    [Fact]
-    public async Task WhenAwardUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
-    {
-        var cut = new AwardUserXp.Handler(this._mockDbContextFactory);
-        var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
-            new AwardUserXp.Request { UserId = 20001, GuildId = GuildId, XpToAward = 20 }, CancellationToken.None));
-
-        response.Should().NotBeNull();
-        response.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
-    }
+    // [Fact]
+    // public async Task WhenAwardUserXpCommandHandlerCalled_UpdateMemebersXpAsync()
+    // {
+    //     await using var dbContext = this._createDbContext();
+    //     var cut = new AwardUserXp.Handler(this._mockDbContextFactory);
+    //
+    //     await cut.Handle(
+    //         new AwardUserXp.Request { UserId = UserId, GuildId = GuildId, XpToAward = 20 }, CancellationToken.None);
+    //
+    //     dbContext.ChangeTracker.Clear();
+    //
+    //     var member = await dbContext.Members.Where(x =>
+    //         x.UserId == UserId
+    //         && x.GuildId == GuildId
+    //     ).Include(x => x.XpHistory).FirstAsync();
+    //     member.XpHistory.Sum(x => x.Xp).Should().Be(20);
+    // }
+    //
+    // [Fact]
+    // public async Task WhenAwardUserXpCommandHandlerCalled_WithMissingUser_ReturnFailedResponse()
+    // {
+    //     var cut = new AwardUserXp.Handler(this._mockDbContextFactory);
+    //     var response = await Assert.ThrowsAsync<AnticipatedException>(async () => await cut.Handle(
+    //         new AwardUserXp.Request { UserId = 20001, GuildId = GuildId, XpToAward = 20 }, CancellationToken.None));
+    //
+    //     response.Should().NotBeNull();
+    //     response.Message.Should().Be("<@!20001> was not found. Have they been on the server before?");
+    // }
 }

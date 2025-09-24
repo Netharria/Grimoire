@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Channels.TrackerLog;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Logging.Trackers.Commands;
 

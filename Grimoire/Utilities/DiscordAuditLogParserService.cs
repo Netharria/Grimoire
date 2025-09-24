@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Entities.AuditLogs;
-using Grimoire.Features.Logging.MessageLogging;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Utilities;
@@ -19,11 +18,11 @@ public interface IDiscordAuditLogParserService
 
 public sealed class DiscordAuditLogParserService(
     DiscordClient discordClient,
-    IMemoryCache memoryCache,
-    IMediator mediator) : IDiscordAuditLogParserService
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    IMemoryCache memoryCache) : IDiscordAuditLogParserService
 {
     private readonly DiscordClient _discordClient = discordClient;
-    private readonly IMediator _mediator = mediator;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly IMemoryCache _memoryCache = memoryCache;
 
     public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId,
@@ -32,8 +31,12 @@ public sealed class DiscordAuditLogParserService(
         if (!this._discordClient.Guilds.TryGetValue(guildId, out var guild)
             || !guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ViewAuditLog))
             return null;
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-        var result = await this._mediator.Send(new GetMessageAuthor.Query { MessageId = messageId });
+        var result = await dbContext.Messages
+            .Where(messages => messages.Id == messageId)
+            .Select(message => new { message.UserId })
+            .FirstOrDefaultAsync();
 
         if (result is null)
             return null;
@@ -45,7 +48,7 @@ public sealed class DiscordAuditLogParserService(
             deleteEntry = await DiscordRetryPolicy.RetryDiscordCall(
                 async token => await guild.GetAuditLogsAsync(10, actionType: DiscordAuditLogActionType.MessageDelete)
                     .OfType<DiscordAuditLogMessageEntry>()
-                    .Where(x => x.Target.Id == result && x.Channel.Id == channelId)
+                    .Where(x => x.Target.Id == result.UserId && x.Channel.Id == channelId)
                     .OrderByDescending(x => x.CreationTimestamp)
                     .FirstOrDefaultAsync(token));
         }

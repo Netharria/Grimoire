@@ -12,7 +12,7 @@ public enum SpamFilterOverrideOption
     AlwaysFilter,
     NeverFilter
 }
-public sealed class SpamFilterOverride
+public sealed class SpamFilterOverride : Shared.IGuildChannel
 {
     public required ulong ChannelId { get; init; }
     public required ulong GuildId { get; init; }

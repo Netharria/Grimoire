@@ -6,7 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.Features.Shared.Settings;
+using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Features.Shared.Attributes;

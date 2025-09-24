@@ -7,14 +7,14 @@
 
 namespace Grimoire.Settings.Domain;
 
-public sealed class Mute
+public sealed class Mute : Shared.IMember
 {
     public long? SinId { get; init; }
 
     public GuildSettings? GuildSettings { get; init; }
     public DateTimeOffset EndTime { get; init; }
 
-    public required ulong UserId { get; set; }
+    public required ulong UserId { get; init; }
 
-    public required ulong GuildId { get; set; }
+    public required ulong GuildId { get; init; }
 }

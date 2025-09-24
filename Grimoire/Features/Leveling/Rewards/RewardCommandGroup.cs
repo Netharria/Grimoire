@@ -7,7 +7,8 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Settings;
+using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -18,6 +19,6 @@ namespace Grimoire.Features.Leveling.Rewards;
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 public sealed partial class RewardCommandGroup(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 }

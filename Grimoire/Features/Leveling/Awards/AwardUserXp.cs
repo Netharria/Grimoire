@@ -8,65 +8,59 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Settings;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Awards;
 
-public sealed class AwardUserXp
+internal sealed class AwardUserXp(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
 {
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly GuildLog _guildLog = guildLog;
+
     [RequireGuild]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [RequireModuleEnabled(Module.Leveling)]
-    internal sealed class Command(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
+    [Command("Award")]
+    [Description("Awards a user some xp.")]
+    public async Task AwardAsync(CommandContext ctx,
+        [Parameter("User")] [Description("The user to award xp.")]
+        DiscordMember user,
+        [MinMaxValue(0)] [Parameter("XP")] [Description("The amount of xp to grant.")]
+        int xpToAward)
     {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-        private readonly GuildLog _guildLog = guildLog;
+        await ctx.DeferResponseAsync();
+        if (ctx.Guild is null)
+            throw new AnticipatedException("This command can only be used in a server.");
 
-        [Command("Award")]
-        [Description("Awards a user some xp.")]
-        public async Task AwardAsync(CommandContext ctx,
-            [Parameter("User")]
-            [Description("The user to award xp.")]
-            DiscordMember user,
-            [MinMaxValue(0)]
-            [Parameter("XP")]
-            [Description("The amount of xp to grant.")]
-            int xpToAward)
-        {
-            await ctx.DeferResponseAsync();
-            if (ctx.Guild is null)
-                throw new AnticipatedException("This command can only be used in a server.");
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var memberExists = await dbContext.Members
+            .AsNoTracking()
+            .Where(member => member.UserId == user.Id && member.GuildId == ctx.Guild.Id)
+            .AnyAsync();
 
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-            var memberExists = await dbContext.Members
-                .AsNoTracking()
-                .Where(member => member.UserId == user.Id && member.GuildId == ctx.Guild.Id)
-                .AnyAsync();
+        if (!memberExists)
+            throw new AnticipatedException(
+                $"{user.Mention} was not found. Have they been on the server before?");
 
-            if (memberExists is false)
-                    throw new AnticipatedException(
-                        $"{user.Mention} was not found. Have they been on the server before?");
-
-            await dbContext.XpHistory.AddAsync(
-                new XpHistory
-                {
-                    GuildId = ctx.Guild.Id,
-                    UserId = user.Id,
-                    Xp = xpToAward,
-                    TimeOut = DateTimeOffset.UtcNow,
-                    Type = XpHistoryType.Awarded,
-                    AwarderId = ctx.User.Id
-                });
-            await dbContext.SaveChangesAsync();
-
-            await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await dbContext.XpHistory.AddAsync(
+            new XpHistory
             {
                 GuildId = ctx.Guild.Id,
-                GuildLogType = GuildLogType.Moderation,
-                Description = $"{user.Mention} has been awarded {xpToAward} xp by {ctx.User.Mention}.",
-                Color = GrimoireColor.Purple
+                UserId = user.Id,
+                Xp = xpToAward,
+                TimeOut = DateTimeOffset.UtcNow,
+                Type = XpHistoryType.Awarded,
+                AwarderId = ctx.User.Id
             });
-        }
+        await dbContext.SaveChangesAsync();
+
+        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        {
+            GuildId = ctx.Guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Description = $"{user.Mention} has been awarded {xpToAward} xp by {ctx.User.Mention}.",
+            Color = GrimoireColor.Purple
+        });
     }
 }

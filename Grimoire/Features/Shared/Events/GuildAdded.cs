@@ -11,123 +11,64 @@ using Grimoire.Features.Logging.UserLogging;
 
 namespace Grimoire.Features.Shared.Events;
 
-internal sealed class GuildAdded
+internal sealed class GuildAdded(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    IInviteService inviteService)
+    : IEventHandler<GuildCreatedEventArgs>
 {
-    internal sealed class EventHandler(IMediator mediator) : IEventHandler<GuildCreatedEventArgs>
-    {
-        private readonly IMediator _mediator = mediator;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly IInviteService _inviteService = inviteService;
 
-        public async Task HandleEventAsync(DiscordClient sender, GuildCreatedEventArgs eventArgs)
-        {
-            await sender.UpdateStatusAsync(new DiscordActivity($"{sender.Guilds.Count} servers.",
-                DiscordActivityType.Watching));
-            await this._mediator.Send(new Command
+    public async Task HandleEventAsync(DiscordClient sender, GuildCreatedEventArgs eventArgs)
+    {
+        await sender.UpdateStatusAsync(new DiscordActivity($"{sender.Guilds.Count} servers.",
+            DiscordActivityType.Watching));
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+
+        var usersAdded = await dbContext.Users.AddMissingUsersAsync(eventArgs.Guild);
+
+        var guildExists = await dbContext.Guilds
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == eventArgs.Guild.Id);
+
+        if (!guildExists)
+            await dbContext.Guilds.AddAsync(new Guild { Id = eventArgs.Guild.Id });
+
+        var rolesAdded = await dbContext.Roles.AddMissingRolesAsync(eventArgs.Guild);
+
+        var channelsAdded =
+            await dbContext.Channels.AddMissingChannelsAsync(eventArgs.Guild);
+
+        var membersAdded =
+            await dbContext.Members.AddMissingMembersAsync(eventArgs.Guild);
+
+        var usernamesUpdated =
+            await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(eventArgs.Guild);
+
+        var nicknamesUpdated =
+            await dbContext.NicknameHistory.AddMissingNickNameHistoryAsync(eventArgs.Guild);
+
+        var avatarsUpdated =
+            await dbContext.Avatars.AddMissingAvatarsHistoryAsync(eventArgs.Guild);
+
+        this._inviteService.UpdateGuildInvites(
+            new GuildInviteDto
             {
                 GuildId = eventArgs.Guild.Id,
-                Users = eventArgs.Guild.Members
-                    .Select(x =>
-                        new UserDto { Id = x.Key, Username = x.Value.Username }).ToArray()
-                    .AsReadOnly(),
-                Members = eventArgs.Guild.Members
-                    .Select(x =>
-                        new MemberDto
-                        {
-                            GuildId = x.Value.Guild.Id,
-                            UserId = x.Key,
-                            Nickname = x.Value.Nickname,
-                            AvatarUrl = x.Value.GetGuildAvatarUrl(MediaFormat.Auto)
-                        }).ToArray().AsReadOnly(),
-                Roles = eventArgs.Guild.Roles
-                    .Select(x =>
-                        new RoleDto { GuildId = eventArgs.Guild.Id, Id = x.Value.Id }).ToArray().AsReadOnly(),
-                Channels = eventArgs.Guild.Channels
-                    .Select(x =>
-                        new ChannelDto { Id = x.Value.Id, GuildId = eventArgs.Guild.Id }).ToArray().AsReadOnly(),
-                Invites = eventArgs.Guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ManageGuild)
-                    ? (await DiscordRetryPolicy.RetryDiscordCall(async _ => await eventArgs.Guild
-                            .GetInvitesAsync())
-                        .AsTask()
-                        .ContinueWith(invites => invites.Result
-                            .Select(invite =>
-                                new Invite
-                                {
-                                    Code = invite.Code,
-                                    Inviter = invite.Inviter.Username,
-                                    Url = invite.ToString(),
-                                    Uses = invite.Uses,
-                                    MaxUses = invite.MaxUses
-                                }))).ToArray().AsReadOnly()
-                    : []
-            });
-        }
-    }
-
-    public sealed record Command : IRequest
-    {
-        public GuildId GuildId { get; init; }
-        public IReadOnlyCollection<UserDto> Users { get; init; } = [];
-        public IReadOnlyCollection<MemberDto> Members { get; init; } = [];
-        public IReadOnlyCollection<RoleDto> Roles { get; init; } = [];
-        public IReadOnlyCollection<ChannelDto> Channels { get; init; } = [];
-        public IReadOnlyCollection<Invite> Invites { get; init; } = [];
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory, IInviteService inviteService)
-        : IRequestHandler<Command>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-        private readonly IInviteService _inviteService = inviteService;
-
-        public async Task Handle(Command command, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var usersAdded = await dbContext.Users.AddMissingUsersAsync(command.Users, cancellationToken);
-
-            var guildExists = await dbContext.Guilds
-                .AsNoTracking()
-                .AnyAsync(x => x.Id == command.GuildId, cancellationToken);
-
-            if (!guildExists)
-                await dbContext.Guilds.AddAsync(
-                    new Guild
+                Invites = new ConcurrentDictionary<string, Invite>((await eventArgs.Guild.GetInvitesAsync())
+                    .Select(x => new Invite
                     {
-                        Id = command.GuildId,
-                        LevelSettings = new GuildLevelSettings(),
-                        ModerationSettings = new GuildModerationSettings(),
-                        UserLogSettings = new GuildUserLogSettings(),
-                        MessageLogSettings = new GuildMessageLogSettings(),
-                        CommandsSettings = new GuildCommandsSettings()
-                    }, cancellationToken);
+                        Code = x.Code,
+                        Inviter = x.Inviter.Username,
+                        Url = x.ToString(),
+                        Uses = x.Uses,
+                        MaxUses = x.MaxUses
+                    })
+                    .ToDictionary(x => x.Code))
+            });
 
-            var rolesAdded = await dbContext.Roles.AddMissingRolesAsync(command.Roles, cancellationToken);
-
-            var channelsAdded =
-                await dbContext.Channels.AddMissingChannelsAsync(command.Channels, cancellationToken);
-
-            var membersAdded =
-                await dbContext.Members.AddMissingMembersAsync(command.Members, cancellationToken);
-
-            var usernamesUpdated =
-                await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(command.Users,
-                    cancellationToken);
-
-            var nicknamesUpdated =
-                await dbContext.NicknameHistory.AddMissingNickNameHistoryAsync(command.Members,
-                    cancellationToken);
-
-            var avatarsUpdated =
-                await dbContext.Avatars.AddMissingAvatarsHistoryAsync(command.Members, cancellationToken);
-
-            this._inviteService.UpdateGuildInvites(
-                new GuildInviteDto
-                {
-                    GuildId = command.GuildId,
-                    Invites = new ConcurrentDictionary<string, Invite>(command.Invites.ToDictionary(x => x.Code))
-                });
-
-            if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded || usernamesUpdated ||
-                nicknamesUpdated || avatarsUpdated)
-                await dbContext.SaveChangesAsync(cancellationToken);
-        }
+        if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded || usernamesUpdated ||
+            nicknamesUpdated || avatarsUpdated)
+            await dbContext.SaveChangesAsync();
     }
 }

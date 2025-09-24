@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;

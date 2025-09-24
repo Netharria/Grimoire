@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Domain;
+namespace Grimoire.Domain.Obsolete;
 
 [Obsolete("Use Settings Module Instead.")]
 public enum SpamFilterOverrideOption

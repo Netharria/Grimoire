@@ -47,7 +47,7 @@ public sealed class AutoMuteUser
                 ModeratorId = command.ModeratorId,
                 Reason = command.Reason,
                 SinType = SinType.Mute,
-                Mute = new Domain.Mute
+                Mute = new Domain.Obsolete.Mute
                 {
                     GuildId = command.GuildId,
                     UserId = command.UserId,

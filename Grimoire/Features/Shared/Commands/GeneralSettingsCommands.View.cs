@@ -26,37 +26,3 @@ internal sealed partial class GeneralSettingsCommands
             message: $"**Moderation Log:** {moderationLogText}\n**User Command Channel:** {userCommandChannelText}");
     }
 }
-
-public sealed class GetGeneralSettings
-{
-    public sealed record Query : IRequest<Response>
-    {
-        public GuildId GuildId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Query, Response>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<Response> Handle(Query query, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbContext.Guilds
-                .AsNoTracking()
-                .WhereIdIs(query.GuildId)
-                .Select(x => new { x.ModChannelLog, x.UserCommandChannelId })
-                .FirstOrDefaultAsync(cancellationToken);
-            return new Response
-            {
-                ModLogChannel = result?.ModChannelLog, UserCommandChannel = result?.UserCommandChannelId
-            };
-        }
-    }
-
-    public sealed record Response
-    {
-        public ulong? ModLogChannel { get; init; }
-        public ulong? UserCommandChannel { get; init; }
-    }
-}

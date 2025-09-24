@@ -13,10 +13,13 @@ namespace Grimoire.Utilities;
 
 public abstract partial class GenericBackgroundService(
     IServiceProvider serviceProvider,
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
     ILogger<GenericBackgroundService> logger,
     TimeSpan timeSpan) : BackgroundService
 {
     private readonly PeriodicTimer _timer = new(timeSpan);
+
+    protected readonly IDbContextFactory<GrimoireDbContext> DbContextFactory = dbContextFactory;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -27,7 +30,7 @@ public abstract partial class GenericBackgroundService(
         while (await this._timer.WaitForNextTickAsync(stoppingToken))
             try
             {
-                using var scope = serviceProvider.CreateScope();
+                await using var scope = serviceProvider.CreateAsyncScope();
                 await RunTask(scope.ServiceProvider, stoppingToken);
             }
             catch (Exception ex)

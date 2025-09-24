@@ -21,61 +21,14 @@ internal sealed partial class ModuleCommands
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var response = await this._mediator.Send(new GetAllModuleStatesForGuild.Query { GuildId = ctx.Guild.Id });
-        if (response is null)
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Red, "Settings could not be found for this server.");
-            return;
-        }
+        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
 
         await ctx.EditReplyAsync(
             title: "Current states of modules.",
-            message: $"**Leveling Enabled:** {response.LevelingIsEnabled}\n" +
-                     $"**User Log Enabled:** {response.UserLogIsEnabled}\n" +
-                     $"**Message Log Enabled:** {response.MessageLogIsEnabled}\n" +
-                     $"**Moderation Enabled:** {response.ModerationIsEnabled}\n" +
-                     $"**Commands Enabled:** {response.CommandsIsEnabled}\n");
-    }
-}
-
-internal sealed class GetAllModuleStatesForGuild
-{
-    public sealed record Query : IRequest<Response?>
-    {
-        public GuildId GuildId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Query, Response?>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<Response?> Handle(Query request,
-            CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            return await dbContext.Guilds
-                .AsNoTracking()
-                .WhereIdIs(request.GuildId)
-                .Select(x => new Response
-                {
-                    // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-                    LevelingIsEnabled = x.LevelSettings != null && x.LevelSettings.ModuleEnabled,
-                    UserLogIsEnabled = x.UserLogSettings != null && x.UserLogSettings.ModuleEnabled,
-                    ModerationIsEnabled = x.ModerationSettings != null && x.ModerationSettings.ModuleEnabled,
-                    MessageLogIsEnabled = x.MessageLogSettings != null && x.MessageLogSettings.ModuleEnabled,
-                    CommandsIsEnabled = x.CommandsSettings != null && x.CommandsSettings.ModuleEnabled
-                    // ReSharper restore ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-                }).FirstOrDefaultAsync(cancellationToken);
-        }
-    }
-
-    public sealed record Response
-    {
-        public bool LevelingIsEnabled { get; init; }
-        public bool UserLogIsEnabled { get; init; }
-        public bool ModerationIsEnabled { get; init; }
-        public bool MessageLogIsEnabled { get; init; }
-        public bool CommandsIsEnabled { get; init; }
+            message: $"**Leveling Enabled:** {guildSettings.LevelSettings.ModuleEnabled}\n" +
+                     $"**User Log Enabled:** {guildSettings.UserLogSettings.ModuleEnabled}\n" +
+                     $"**Message Log Enabled:** {guildSettings.MessageLogSettings.ModuleEnabled}\n" +
+                     $"**Moderation Enabled:** {guildSettings.ModerationSettings.ModuleEnabled}\n" +
+                     $"**Commands Enabled:** {guildSettings.CommandsSettings.ModuleEnabled}\n");
     }
 }

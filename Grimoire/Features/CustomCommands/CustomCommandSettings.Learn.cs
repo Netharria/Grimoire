@@ -71,16 +71,14 @@ public sealed partial class CustomCommandSettings
 
         allowedRoles = Array.Empty<DiscordRole>();
 
-        var permissionRoles = allowedRoles.Select(role =>
-            new RoleDto { Id = role.Id, GuildId = ctx.Guild.Id }).ToList();
-
-        if (restrictedUse && permissionRoles.Count != 0)
+        if (restrictedUse && allowedRoles.Count != 0)
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "Command set as restricted but no roles allowed to use it.");
             return;
         }
 
-        SaveCommand(name, ctx.Guild.Id, content, embed, embedColor, restrictedUse, permissionRoles);
+        await SaveCommand(name, ctx.Guild.Id, content, embed, embedColor, restrictedUse,
+            allowedRoles.Select(x => x.Id).ToArray());
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Learned new command: {name}");
         await this._guildLog.SendLogMessageAsync(
@@ -95,11 +93,11 @@ public sealed partial class CustomCommandSettings
     }
 
     private async Task SaveCommand(string commandName, ulong guildId, string content, bool isEmbedded,
-        string? embedColor, bool restrictedUse, IReadOnlyList<RoleDto> permissionRoles,
+        string? embedColor, bool restrictedUse, ICollection<ulong> permissionRoles,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await dbContext.Roles.AddMissingRolesAsync(permissionRoles, cancellationToken);
+        await dbContext.Roles.AddMissingRolesAsync(permissionRoles, guildId, cancellationToken);
 
         var result = await dbContext.CustomCommands
             .Include(x => x.CustomCommandRoles)
@@ -107,7 +105,7 @@ public sealed partial class CustomCommandSettings
             .FirstOrDefaultAsync(x => x.Name == commandName && x.GuildId == guildId,
                 cancellationToken);
         var commandRoles = permissionRoles.Select(x =>
-            new CustomCommandRole { CustomCommandName = commandName, GuildId = guildId, RoleId = x.Id }).ToList();
+            new CustomCommandRole { CustomCommandName = commandName, GuildId = guildId, RoleId = x }).ToList();
         if (result is null)
         {
             result = new CustomCommand

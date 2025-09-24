@@ -110,7 +110,7 @@ await Host.CreateDefaultBuilder(args)
                     //Custom Commands
                     .AddEventHandlers<TextCustomCommand.EventHandler>()
                     //Leveling
-                    .AddEventHandlers<GainUserXp.EventHandler>()
+                    .AddEventHandlers<GainUserXp>()
                     //Message Log
                     .AddEventHandlers<AddMessageEvent.EventHandler>()
                     .AddEventHandlers<DeleteMessageEvent.EventHandler>()
@@ -132,14 +132,14 @@ await Host.CreateDefaultBuilder(args)
                     .AddEventHandlers<UserJoinedWhileMuted.EventHandler>()
                     .AddEventHandlers<SpamEvents>()
                     //General Events
-                    .AddEventHandlers<ChannelAdded.EventHandler>()
-                    .AddEventHandlers<ChannelDeleted.EventHandler>()
-                    .AddEventHandlers<GuildAdded.EventHandler>()
+                    .AddEventHandlers<ChannelAdded>()
+                    .AddEventHandlers<ChannelDeleted>()
+                    .AddEventHandlers<GuildAdded>()
                     .AddEventHandlers<InviteEvents>()
-                    .AddEventHandlers<MemberAdded.EventHandler>()
-                    .AddEventHandlers<RoleAdded.EventHandler>()
-                    .AddEventHandlers<RoleDeleted.EventHandler>()
-                    .AddEventHandlers<UpdateAllGuilds.EventHandler>()
+                    .AddEventHandlers<MemberAdded>()
+                    .AddEventHandlers<RoleAdded>()
+                    .AddEventHandlers<RoleDeleted>()
+                    .AddEventHandlers<UpdateAllGuilds>()
             )
             .AddInteractivityExtension(new InteractivityConfiguration
             {
@@ -160,8 +160,8 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<UserInfoCommands>();
 
                 // Leveling
-                extension.AddCommands<AwardUserXp.Command>();
-                extension.AddCommands<ReclaimUserXp.Command>();
+                extension.AddCommands<AwardUserXp>();
+                extension.AddCommands<ReclaimUserXp>();
                 extension.AddCommands<RewardCommandGroup>();
                 extension.AddCommands<IgnoreCommandGroup>();
                 extension.AddCommands<LevelSettingsCommandGroup>();
@@ -203,7 +203,7 @@ await Host.CreateDefaultBuilder(args)
                 extension.CommandExecuted += (sender, eventArgs)
                     => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
             }, new CommandsConfiguration { UseDefaultCommandErrorHandler = false })
-            .AddHostedService<CleanupLogs.BackgroundTask>()
+            .AddHostedService<CleanupLogsBackgroundTask>()
             .AddHostedService<RemoveExpiredTrackers.BackgroundTask>()
             .AddHostedService<LockBackgroundTasks>()
             .AddHostedService<MuteBackgroundTasks>()

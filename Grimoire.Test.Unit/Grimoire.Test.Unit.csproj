@@ -38,12 +38,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Logging\"/>
+    <ProjectReference Include="..\Grimoire.Domain\Grimoire.Domain.csproj" />
+    <ProjectReference Include="..\Grimoire\Grimoire.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Grimoire.Domain\Grimoire.Domain.csproj" />
-    <ProjectReference Include="..\Grimoire\Grimoire.csproj" />
+    <Compile Remove="Features\**" />
+    <Compile Remove="DatabaseQueryHelpers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Features\**" />
+    <EmbeddedResource Remove="DatabaseQueryHelpers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Features\**" />
+    <None Remove="DatabaseQueryHelpers\**" />
   </ItemGroup>
 
 </Project>

@@ -9,32 +9,24 @@ using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
-using Grimoire.Settings.Settings;
+using Grimoire.Settings.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Leveling.Events;
 
-public sealed partial class GainUserXpEventHandler(
+public sealed partial class GainUserXp(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule,
     DiscordClient client,
     GuildLog guildLog,
     ILogger<EventHandler> logger) : IEventHandler<MessageCreatedEventArgs>
 {
-    private static readonly Func<GrimoireDbContext, ulong, ulong, Task<QueryResult?>>
-        _getUserXpInfoQuery = EF.CompileAsyncQuery(
-            (GrimoireDbContext context, ulong userId, ulong guildId) =>
-                context.Members
-                    .AsNoTracking()
-                    .Where(member => member.UserId == userId)
-                    .Where(member => member.GuildId == guildId)
-                    .Select(member => new QueryResult
-                    {
-                        Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp),
-                        Timeout = member.XpHistory
-                            .Select(xpHistory => xpHistory.TimeOut)
-                            .Max(dateTimeOffset => dateTimeOffset)
-                    }).FirstOrDefault());
+    private static readonly Func<GrimoireDbContext, ulong, ulong, Task<DateTimeOffset?>>
+        _getUserXpInfoQuery = EF.CompileAsyncQuery((GrimoireDbContext context, ulong userId, ulong guildId) =>
+            context.XpHistory
+                .AsNoTracking()
+                .Where(xp => xp.UserId == userId && xp.GuildId == guildId)
+                .Max(history => (DateTimeOffset?)history.TimeOut));
 
     private readonly DiscordClient _client = client;
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
@@ -54,12 +46,18 @@ public sealed partial class GainUserXpEventHandler(
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var result = await _getUserXpInfoQuery(dbContext,
+        var timeOut = await _getUserXpInfoQuery(dbContext,
             member.Id,
             args.Guild.Id);
 
-        if (result is null || result.Timeout > DateTimeOffset.UtcNow)
+        if (timeOut is not null && timeOut > DateTimeOffset.UtcNow)
             return;
+
+        var xp = await dbContext.XpHistory
+            .AsNoTracking()
+            .Where(xp => xp.UserId == member.Id && xp.GuildId == args.Guild.Id)
+            .Select(xp => xp.Xp)
+            .LongCountAsync();
 
         await dbContext.XpHistory.AddAsync(
             new XpHistory
@@ -72,8 +70,8 @@ public sealed partial class GainUserXpEventHandler(
             });
         await dbContext.SaveChangesAsync();
 
-        var previousLevel = guildSettings.LevelSettings.GetLevelFromXp(result.Xp);
-        var currentLevel = guildSettings.LevelSettings.GetLevelFromXp(result.Xp + guildSettings.LevelSettings.Amount);
+        var previousLevel = guildSettings.LevelSettings.GetLevelFromXp(xp);
+        var currentLevel = guildSettings.LevelSettings.GetLevelFromXp(xp + guildSettings.LevelSettings.Amount);
 
         if (previousLevel < currentLevel)
             await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed

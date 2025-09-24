@@ -11,6 +11,7 @@ using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Domain;
+using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -36,19 +37,11 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
             new Guild
             {
                 Id = Guild1,
-                LevelSettings = new GuildLevelSettings(),
-                MessageLogSettings = new GuildMessageLogSettings(),
-                ModerationSettings = new GuildModerationSettings(),
-                UserLogSettings = new GuildUserLogSettings()
             });
         await this._dbContext.AddAsync(
             new Guild
             {
                 Id = Guild2,
-                LevelSettings = new GuildLevelSettings(),
-                MessageLogSettings = new GuildMessageLogSettings(),
-                ModerationSettings = new GuildModerationSettings(),
-                UserLogSettings = new GuildUserLogSettings()
             });
         await this._dbContext.SaveChangesAsync();
     }
@@ -64,18 +57,10 @@ public sealed class GuildDatabaseQueryHelperTests(GrimoireCoreFactory factory) :
         await this._dbContext.SaveChangesAsync();
         result.Should().BeTrue();
         var guilds = await this._dbContext.Guilds
-            .Include(x => x.LevelSettings)
-            .Include(x => x.MessageLogSettings)
-            .Include(x => x.ModerationSettings)
-            .Include(x => x.UserLogSettings)
             .ToListAsync();
         guilds.Should().HaveCount(3)
             .And.AllSatisfy(x =>
             {
-                x.LevelSettings.Should().NotBeNull();
-                x.MessageLogSettings.Should().NotBeNull();
-                x.ModerationSettings.Should().NotBeNull();
-                x.UserLogSettings.Should().NotBeNull();
                 x.Id.Should().BeOneOf(Guild1, Guild2, 3);
             });
     }

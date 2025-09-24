@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using EntityFramework.Exceptions.PostgreSQL;
 using FluentAssertions;
 using Grimoire.Domain;
+using Grimoire.Domain.Obsolete;
 using Grimoire.Features.Leveling.Settings;
 using Grimoire.Features.Shared.SharedDtos;
 using Microsoft.EntityFrameworkCore;

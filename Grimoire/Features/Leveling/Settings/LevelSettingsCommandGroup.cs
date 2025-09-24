@@ -7,6 +7,8 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -15,8 +17,8 @@ namespace Grimoire.Features.Leveling.Settings;
 [RequireGuild]
 [RequireModuleEnabled(Module.Leveling)]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-public sealed partial class LevelSettingsCommandGroup(IMediator mediator, GuildLog guildLog)
+public sealed partial class LevelSettingsCommandGroup(SettingsModule settingsModule, GuildLog guildLog)
 {
     private readonly GuildLog _guildLog = guildLog;
-    private readonly IMediator _mediator = mediator;
+    private readonly SettingsModule _settingsModule = settingsModule;
 }

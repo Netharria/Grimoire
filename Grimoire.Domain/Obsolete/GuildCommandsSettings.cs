@@ -9,7 +9,7 @@
 using Grimoire.Domain.Shared;
 using JetBrains.Annotations;
 
-namespace Grimoire.Domain;
+namespace Grimoire.Domain.Obsolete;
 
 [UsedImplicitly]
 [Obsolete("Use Settings Module Instead.")]

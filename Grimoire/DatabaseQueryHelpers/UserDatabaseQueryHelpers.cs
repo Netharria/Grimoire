@@ -10,25 +10,23 @@ namespace Grimoire.DatabaseQueryHelpers;
 public static class UserDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingUsersAsync(this DbSet<User> databaseUsers,
-        IReadOnlyCollection<UserDto> users,
+        DiscordGuild discordGuild,
         CancellationToken cancellationToken = default)
     {
-        var incomingUserIds = users
-            .Select(x => x.Id);
 
         var existingUserIds = await databaseUsers
             .AsNoTracking()
-            .Where(user => incomingUserIds.Contains(user.Id))
+            .Where(user => discordGuild.Members.Keys.Contains(user.Id))
             .Select(user => user.Id)
             .AsAsyncEnumerable()
             .ToHashSetAsync(cancellationToken);
 
-        var usersToAdd = users
-            .Where(x => !existingUserIds.Contains(x.Id))
-            .Select(x => new User { Id = x.Id })
-            .ToArray().AsReadOnly();
+        var usersToAdd = discordGuild.Members.Keys
+            .Where(x => !existingUserIds.Contains(x))
+            .Select(x => new User { Id = x })
+            .ToArray();
 
-        if (usersToAdd.Count == 0)
+        if (usersToAdd.Length == 0)
             return false;
 
         await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);
@@ -36,14 +34,12 @@ public static class UserDatabaseQueryHelpers
     }
 
     public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames,
-        IReadOnlyCollection<UserDto> users, CancellationToken cancellationToken = default)
+        DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {
-        var incomingUserIds = users
-            .Select(x => x.Id);
 
         var existingUsernames = await databaseUsernames
             .AsNoTracking()
-            .Where(user => incomingUserIds.Contains(user.UserId))
+            .Where(user => discordGuild.Members.Keys.Contains(user.UserId))
             .GroupBy(username => username.UserId)
             .Select(usernameGroup =>
                 new
@@ -55,12 +51,12 @@ public static class UserDatabaseQueryHelpers
             .Select(x => (x.UserId, x.Username))
             .ToHashSetAsync(cancellationToken);
 
-        var usernamesToAdd = users
+        var usernamesToAdd = discordGuild.Members.Values
             .Where(x => !existingUsernames.Contains((x.Id, x.Username)))
             .Select(x => new UsernameHistory { UserId = x.Id, Username = x.Username })
-            .ToArray().AsReadOnly();
+            .ToArray();
 
-        if (usernamesToAdd.Count == 0)
+        if (usernamesToAdd.Length == 0)
             return false;
 
         await databaseUsernames.AddRangeAsync(usernamesToAdd, cancellationToken);

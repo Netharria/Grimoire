@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
@@ -129,7 +130,7 @@ public sealed class MuteUser
                 ModeratorId = command.ModeratorId,
                 Reason = command.Reason,
                 SinType = SinType.Mute,
-                Mute = new Domain.Mute { GuildId = command.GuildId, UserId = command.UserId, EndTime = lockEndTime }
+                Mute = new Domain.Obsolete.Mute { GuildId = command.GuildId, UserId = command.UserId, EndTime = lockEndTime }
             };
             await dbContext.Sins.AddAsync(sin, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);

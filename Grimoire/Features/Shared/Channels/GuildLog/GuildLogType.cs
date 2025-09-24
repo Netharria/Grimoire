@@ -6,6 +6,8 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 
+using Grimoire.Settings.Enums;
+
 namespace Grimoire.Features.Shared.Channels.GuildLog;
 
 public enum GuildLogType
@@ -24,19 +26,19 @@ public enum GuildLogType
 
 public static class GuildLogTypeExtensions
 {
-    public static Settings.Enums.Module GetLogTypeModule(this GuildLogType guildLogType)
+    public static Module GetLogTypeModule(this GuildLogType guildLogType)
         => guildLogType switch
         {
-            GuildLogType.Moderation => Settings.Enums.Module.General,
-            GuildLogType.Leveling => Settings.Enums.Module.Leveling,
-            GuildLogType.BulkMessageDeleted => Settings.Enums.Module.MessageLog,
-            GuildLogType.MessageEdited => Settings.Enums.Module.MessageLog,
-            GuildLogType.MessageDeleted => Settings.Enums.Module.MessageLog,
-            GuildLogType.UserJoined => Settings.Enums.Module.UserLog,
-            GuildLogType.UserLeft => Settings.Enums.Module.UserLog,
-            GuildLogType.AvatarUpdated => Settings.Enums.Module.UserLog,
-            GuildLogType.NicknameUpdated => Settings.Enums.Module.UserLog,
-            GuildLogType.UsernameUpdated => Settings.Enums.Module.UserLog,
+            GuildLogType.Moderation => Module.General,
+            GuildLogType.Leveling => Module.Leveling,
+            GuildLogType.BulkMessageDeleted => Module.MessageLog,
+            GuildLogType.MessageEdited => Module.MessageLog,
+            GuildLogType.MessageDeleted => Module.MessageLog,
+            GuildLogType.UserJoined => Module.UserLog,
+            GuildLogType.UserLeft => Module.UserLog,
+            GuildLogType.AvatarUpdated => Module.UserLog,
+            GuildLogType.NicknameUpdated => Module.UserLog,
+            GuildLogType.UsernameUpdated => Module.UserLog,
             _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
         };
 }

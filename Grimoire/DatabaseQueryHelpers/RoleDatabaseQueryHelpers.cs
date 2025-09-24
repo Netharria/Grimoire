@@ -10,25 +10,48 @@ namespace Grimoire.DatabaseQueryHelpers;
 public static class RoleDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles,
-        IReadOnlyCollection<RoleDto> roles,
+        DiscordGuild guild,
         CancellationToken cancellationToken = default)
     {
-        var incomingRoles = roles
-            .Select(x => x.Id);
 
         var existingRoleIds = await databaseRoles
             .AsNoTracking()
-            .Where(x => incomingRoles.Contains(x.Id))
+            .Where(x => guild.Roles.Keys.Contains(x.Id))
+            .Select(x => x.Id)
+            .AsAsyncEnumerable()
+            .ToHashSetAsync(cancellationToken);
+
+        var rolesToAdd = guild.Roles.Keys
+            .Where(x => !existingRoleIds.Contains(x))
+            .Select(x => new Role { Id = x, GuildId = guild.Id })
+            .ToArray();
+
+        if (rolesToAdd.Length == 0)
+            return false;
+
+        await databaseRoles.AddRangeAsync(rolesToAdd, cancellationToken);
+        return true;
+    }
+
+    public static async Task<bool> AddMissingRolesAsync(this DbSet<Role> databaseRoles,
+        IEnumerable<ulong> roles,
+        ulong guildId,
+        CancellationToken cancellationToken = default)
+    {
+
+        var existingRoleIds = await databaseRoles
+            .AsNoTracking()
+            .Where(x => roles.Contains(x.Id))
             .Select(x => x.Id)
             .AsAsyncEnumerable()
             .ToHashSetAsync(cancellationToken);
 
         var rolesToAdd = roles
-            .Where(x => !existingRoleIds.Contains(x.Id))
-            .Select(x => new Role { Id = x.Id, GuildId = x.GuildId })
-            .ToArray().AsReadOnly();
+            .Where(x => !existingRoleIds.Contains(x))
+            .Select(x => new Role { Id = x, GuildId = guildId })
+            .ToArray();
 
-        if (rolesToAdd.Count == 0)
+        if (rolesToAdd.Length == 0)
             return false;
 
         await databaseRoles.AddRangeAsync(rolesToAdd, cancellationToken);

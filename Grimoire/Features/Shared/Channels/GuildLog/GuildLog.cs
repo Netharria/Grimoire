@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Threading.Channels;
-using Grimoire.Settings.Settings;
+using Grimoire.Settings.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Channel = System.Threading.Channels.Channel;
@@ -26,10 +26,11 @@ public sealed partial class GuildLog(
             SingleReader = true, SingleWriter = false
         });
 
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+
     private readonly DiscordClient _discordClient = discordClient;
     private readonly ILogger<GuildLog> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -51,7 +52,7 @@ public sealed partial class GuildLog(
                 var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
                     await channel.SendMessageAsync(result.GetMessageBuilder()), stoppingToken);
                 if (ShouldPurgeMessageAfterInterval(result.GuildLogType))
-                    await this.ScheduleMessagePurge(message.Id, channel.Id, result.GuildId, stoppingToken);
+                    await ScheduleMessagePurge(message.Id, channel.Id, result.GuildId, stoppingToken);
             }
             catch (Exception e)
             {
@@ -114,13 +115,11 @@ public sealed partial class GuildLog(
         CancellationToken cancellationToken = default)
         => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken);
 
-    private async Task ScheduleMessagePurge(ulong messageId, ulong channelId, ulong guildId, CancellationToken cancellationToken = default)
+    private async Task ScheduleMessagePurge(ulong messageId, ulong channelId, ulong guildId,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var logMessage = new OldLogMessage
-        {
-            ChannelId = channelId, GuildId = guildId, Id = messageId
-        };
+        var logMessage = new OldLogMessage { ChannelId = channelId, GuildId = guildId, Id = messageId };
         await dbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }

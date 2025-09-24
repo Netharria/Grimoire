@@ -27,8 +27,7 @@ public class AddCustomCommandTest : IAsyncLifetime
         this._host = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services)
                 => services.AddDbContext<GrimoireDbContext>(options =>
-                        options.UseNpgsql(factory.ConnectionString))
-                    .AddMediatR(options => options.RegisterServicesFromAssemblyContaining<AddCustomCommand.Handler>()))
+                        options.UseNpgsql(factory.ConnectionString)))
             .Build();
 
         this._dbContext = this._host.Services.GetRequiredService<GrimoireDbContext>();

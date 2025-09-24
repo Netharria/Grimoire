@@ -7,6 +7,7 @@
 
 using EntityFramework.Exceptions.Common;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Domain.Obsolete;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Logging.MessageLogging.Events;

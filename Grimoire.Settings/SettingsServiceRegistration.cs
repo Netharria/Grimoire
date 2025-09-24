@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using EntityFramework.Exceptions.PostgreSQL;
-using Grimoire.Settings.Settings;
+using Grimoire.Settings.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

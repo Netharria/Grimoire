@@ -10,23 +10,22 @@ namespace Grimoire.DatabaseQueryHelpers;
 public static class ChannelDatabaseQueryHelpers
 {
     public static async Task<bool> AddMissingChannelsAsync(this DbSet<Channel> databaseChannels,
-        IReadOnlyCollection<ChannelDto> channels, CancellationToken cancellationToken = default)
+        DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {
-        var incomingChannelIds = channels.Select(x => x.Id);
 
         var existingChannelIds = await databaseChannels
             .AsNoTracking()
-            .Where(x => incomingChannelIds.Contains(x.Id))
+            .Where(x => discordGuild.Channels.Keys.Contains(x.Id))
             .Select(x => x.Id)
             .AsAsyncEnumerable()
             .ToHashSetAsync(cancellationToken);
 
-        var channelsToAdd = channels
-            .Where(x => !existingChannelIds.Contains(x.Id))
-            .Select(x => new Channel { Id = x.Id, GuildId = x.GuildId })
-            .ToArray().AsReadOnly();
+        var channelsToAdd = discordGuild.Channels.Keys
+            .Where(x => !existingChannelIds.Contains(x))
+            .Select(x => new Channel { Id = x, GuildId = discordGuild.Id })
+            .ToArray();
 
-        if (channelsToAdd.Count == 0)
+        if (channelsToAdd.Length == 0)
             return false;
         await databaseChannels.AddRangeAsync(channelsToAdd, cancellationToken);
         return true;

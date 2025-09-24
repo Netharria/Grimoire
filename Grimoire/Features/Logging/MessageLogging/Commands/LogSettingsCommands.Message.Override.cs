@@ -7,6 +7,7 @@
 
 
 using System.Diagnostics;
+using Grimoire.Domain.Obsolete;
 // ReSharper disable once CheckNamespace
 using Grimoire.Features.Shared.Channels.GuildLog;
 // ReSharper disable once CheckNamespace

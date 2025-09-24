@@ -7,6 +7,7 @@
 
 using System.Runtime.CompilerServices;
 using System.Text;
+using Grimoire.Domain.Obsolete;
 
 // ReSharper disable once CheckNamespace
 namespace Grimoire.Features.Logging.Settings;

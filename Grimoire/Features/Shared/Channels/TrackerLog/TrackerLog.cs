@@ -7,7 +7,8 @@
 
 using System.Threading.Channels;
 using Grimoire.Settings.Domain;
-using Grimoire.Settings.Settings;
+using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Channel = System.Threading.Channels.Channel;
@@ -65,7 +66,7 @@ public sealed partial class TrackerLog(
         if (guildSettings is null)
             return null;
         if (!await this._settingsModule.IsModuleEnabled(
-                Settings.Enums.Module.MessageLog,
+                Module.MessageLog,
                 trackerMessageBase.GuildId,
                 stoppingToken))
             return null;

@@ -8,6 +8,7 @@
 using System.Text;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Settings;
+using Grimoire.Settings.Enums;
 using ChannelExtensions = Grimoire.Extensions.ChannelExtensions;
 
 namespace Grimoire.Features.Logging.MessageLogging.Events;

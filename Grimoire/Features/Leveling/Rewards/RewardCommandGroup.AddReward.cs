@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -35,7 +36,8 @@ public sealed partial class RewardCommandGroup
 
         var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
         if (guildSettings is null || !guildSettings.LevelSettings.ModuleEnabled)
-            throw new AnticipatedException("Leveling is not enabled on this server. Enable it with `/modules set` command.");
+            throw new AnticipatedException(
+                "Leveling is not enabled on this server. Enable it with `/modules set` command.");
         var reward = guildSettings.Rewards
             .FirstOrDefault(x => x.RoleId == role.Id);
 
@@ -43,10 +45,7 @@ public sealed partial class RewardCommandGroup
             ? $"Updated the reward for {role.Mention} to level {level}."
             : $"Added a new reward for {role.Mention} at level {level}.";
 
-        reward ??= new Grimoire.Settings.Domain.Reward
-        {
-            GuildId = ctx.Guild.Id, RoleId = role.Id, RewardLevel = level
-        };
+        reward ??= new Reward { GuildId = ctx.Guild.Id, RoleId = role.Id, RewardLevel = level };
         reward.RewardLevel = level;
         reward.RewardMessage = message;
 

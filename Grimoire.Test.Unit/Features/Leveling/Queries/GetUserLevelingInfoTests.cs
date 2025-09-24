@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
+using Grimoire.Domain.Obsolete;
 using Grimoire.Exceptions;
 using Grimoire.Features.Leveling.Queries;
 using Microsoft.EntityFrameworkCore;

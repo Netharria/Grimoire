@@ -6,17 +6,19 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.Features.Leveling.Queries;
-using Grimoire.Features.Logging.UserLogging.Queries;
-using Grimoire.Features.Moderation.SinAdmin;
+using Grimoire.Settings.Domain;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Shared.Commands;
 
 [RequireGuild]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-internal sealed class UserInfoCommands(IMediator mediator)
+internal sealed class UserInfoCommands(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    SettingsModule settingsModule)
 {
-    private readonly IMediator _mediator = mediator;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("UserInfo")]
     [Description("Get information about a user.")]
@@ -38,15 +40,14 @@ internal sealed class UserInfoCommands(IMediator mediator)
             .AddField("Joined On", joinDate, true)
             .WithThumbnail(avatarUrl);
 
-        await GetAndAddUsernames(new GetRecentUserAndNickNames.Query { UserId = user.Id, GuildId = ctx.Guild.Id },
-            embed);
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
 
-        await GetAndAddLevelInfo(
-            new GetUserLevelingInfo.Query { UserId = user.Id, GuildId = ctx.Guild.Id, RoleIds = roles }, embed,
-            ctx.Guild);
+        await GetAndAddUsernames(dbContext, guildSettings, user.Id, embed);
 
-        await GetAndAddModerationInfo(new GetUserSinCounts.Query { UserId = user.Id, GuildId = ctx.Guild.Id },
-            embed);
+        await GetAndAddLevelInfo(dbContext, embed, ctx.Guild, guildSettings, user.Id, roles);
+
+        await GetAndAddModerationInfo(dbContext, guildSettings, user.Id, embed);
 
         await ctx.EditReplyAsync(embed: embed);
     }
@@ -82,48 +83,105 @@ internal sealed class UserInfoCommands(IMediator mediator)
         return (color, displayName, avatarUrl, joinDate, roles);
     }
 
-    private async Task GetAndAddUsernames(GetRecentUserAndNickNames.Query query, DiscordEmbedBuilder embed)
+    private static async Task GetAndAddUsernames(
+        GrimoireDbContext dbContext,
+        GuildSettings guildSettings,
+        ulong userId,
+        DiscordEmbedBuilder embed)
     {
-        var response = await this._mediator.Send(query);
+        if (!guildSettings.UserLogSettings.ModuleEnabled)
+            return;
+        var usernames = await dbContext.UsernameHistory
+            .AsNoTracking()
+            .Where(usernameHistory => usernameHistory.UserId == userId)
+            .OrderByDescending(history => history.Timestamp)
+            .Take(3)
+            .Select(usernameHistory => usernameHistory.Username)
+            .ToArrayAsync();
 
-        if (response is not null)
-            embed.AddField("Usernames",
-                    response.Usernames.Length == 0
-                        ? "Unknown Usernames"
-                        : string.Join('\n', response.Usernames),
-                    true)
-                .AddField("Nicknames",
-                    response.Nicknames.Length == 0
-                        ? "Unknown Nicknames"
-                        : string.Join('\n', response.Nicknames),
-                    true);
+        var nicknames = await dbContext.NicknameHistory
+            .Where(nicknameHistory => nicknameHistory.UserId == userId
+                                      && nicknameHistory.GuildId == guildSettings.Id)
+            .Where(nicknameHistory => nicknameHistory.Nickname != null)
+            .OrderByDescending(nicknameHistory => nicknameHistory.Timestamp)
+            .Take(3)
+            .Select(nicknameHistory => nicknameHistory.Nickname)
+            .OfType<string>()
+            .ToArrayAsync();
+
+        embed.AddField("Usernames",
+                usernames.Length == 0
+                    ? "Unknown Usernames"
+                    : string.Join('\n', usernames),
+                true)
+            .AddField("Nicknames",
+                nicknames.Length == 0
+                    ? "Unknown Nicknames"
+                    : string.Join('\n', nicknames),
+                true);
     }
 
-    private async Task GetAndAddLevelInfo(GetUserLevelingInfo.Query query, DiscordEmbedBuilder embed,
-        DiscordGuild guild)
+    private static async Task GetAndAddLevelInfo(
+        GrimoireDbContext dbContext,
+        DiscordEmbedBuilder embed,
+        DiscordGuild guild,
+        GuildSettings guildSettings,
+        ulong userId,
+        ulong[] roleIds)
     {
-        var response = await this._mediator.Send(query);
+        if (!guildSettings.LevelSettings.ModuleEnabled)
+            return;
 
-        if (response is not null)
-            embed.AddField("Level", response.Level.ToString(), true)
-                .AddField("Can Gain Xp", response.IsXpIgnored ? "No" : "Yes", true)
-                .AddField("Earned Rewards",
-                    !response.EarnedRewards.Any()
-                        ? "None"
-                        : string.Join('\n', response.EarnedRewards
-                            .Select(x => guild.Roles.GetValueOrDefault(x))
-                            .OfType<DiscordRole>()
-                            .Select(x => x.Mention)),
-                    true);
+        var membersXp = await dbContext.XpHistory
+            .AsNoTracking()
+            .Where(member => member.UserId == userId && member.GuildId == guild.Id)
+            .GroupBy(history => new { history.UserId, history.GuildId })
+            .Select(member => member.Sum(xpHistory => xpHistory.Xp))
+            .FirstOrDefaultAsync();
+
+
+        var membersLevel = guildSettings.LevelSettings.GetLevelFromXp(membersXp);
+        var earnedRewards = guildSettings.Rewards
+            .Where(x => x.RewardLevel <= membersLevel)
+            .Select(x => x.RoleId)
+            .ToArray();
+
+        var isXpIgnored = guildSettings.IgnoredMembers.Any(x => x.UserId == userId)
+                          || guildSettings.IgnoredRoles
+                              .Any(y => roleIds.Contains(y.RoleId));
+
+        embed.AddField("Level", membersLevel.ToString(), true)
+            .AddField("Can Gain Xp", isXpIgnored ? "No" : "Yes", true)
+            .AddField("Earned Rewards",
+                earnedRewards.Length > 0
+                    ? "None"
+                    : string.Join('\n', earnedRewards
+                        .Select(x => guild.Roles.GetValueOrDefault(x))
+                        .OfType<DiscordRole>()
+                        .Select(x => x.Mention)),
+                true);
     }
 
-    private async Task GetAndAddModerationInfo(GetUserSinCounts.Query query, DiscordEmbedBuilder embed)
+    private static async Task GetAndAddModerationInfo(
+        GrimoireDbContext dbContext,
+        GuildSettings guildSettings,
+        ulong userId,
+        DiscordEmbedBuilder embed)
     {
-        var response = await this._mediator.Send(query);
+        if (!guildSettings.ModerationSettings.ModuleEnabled)
+            return;
+        var response = await dbContext.Sins
+            .AsNoTracking()
+            .Where(sin => sin.UserId == userId
+                          && sin.GuildId == guildSettings.Id
+                          && sin.SinOn > DateTimeOffset.UtcNow - guildSettings.ModerationSettings.AutoPardonAfter)
+            .GroupBy(sin => new { sin.UserId, sin.GuildId, sin.SinType })
+            .ToDictionaryAsync(
+                group => group.Key.SinType,
+                group => group.Count());
 
-        if (response is not null)
-            embed.AddField("Warns", response.WarnCount.ToString(), true)
-                .AddField("Mutes", response.MuteCount.ToString(), true)
-                .AddField("Bans", response.BanCount.ToString(), true);
+        embed.AddField("Warns", response.GetValueOrDefault(SinType.Warn, 0).ToString(), true)
+            .AddField("Mutes", response.GetValueOrDefault(SinType.Mute, 0).ToString(), true)
+            .AddField("Bans", response.GetValueOrDefault(SinType.Ban, 0).ToString(), true);
     }
 }

@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Grimoire.Domain;
+using Grimoire.Domain.Obsolete;
 using Grimoire.Features.Leveling.Events;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -45,10 +46,6 @@ public sealed class GainUserXpHandlerTests(GrimoireCoreFactory factory) : IAsync
         await dbContext.AddAsync(new Guild
         {
             Id = GuildId,
-            LevelSettings = new GuildLevelSettings
-            {
-                LevelChannelLogId = ChannelId, ModuleEnabled = true, Amount = GainAmount
-            }
         });
         await dbContext.AddAsync(new User { Id = UserId });
         await dbContext.AddAsync(new Member

@@ -7,36 +7,23 @@
 
 namespace Grimoire.Features.Shared.Events;
 
-public sealed record ChannelDeleted
+public sealed record ChannelDeleted(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+    : IEventHandler<ChannelDeletedEventArgs>,
+        IEventHandler<ThreadDeletedEventArgs>
 {
-    internal sealed class EventHandler(IMediator mediator)
-        : IEventHandler<ChannelDeletedEventArgs>,
-            IEventHandler<ThreadDeletedEventArgs>
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+
+    public Task HandleEventAsync(DiscordClient sender, ChannelDeletedEventArgs eventArgs)
+        => DeleteChannel(eventArgs.Channel.Id);
+
+    public Task HandleEventAsync(DiscordClient sender, ThreadDeletedEventArgs eventArgs)
+        => DeleteChannel(eventArgs.Thread.Id);
+
+    private async Task DeleteChannel(ulong channelId, CancellationToken cancellationToken = default)
     {
-        private readonly IMediator _mediator = mediator;
-
-        public Task HandleEventAsync(DiscordClient sender, ChannelDeletedEventArgs eventArgs)
-            => this._mediator.Send(new Command { ChannelId = eventArgs.Channel.Id });
-
-        public Task HandleEventAsync(DiscordClient sender, ThreadDeletedEventArgs eventArgs) =>
-            this._mediator.Send(new Command { ChannelId = eventArgs.Thread.Id });
-    }
-
-    public sealed record Command : IRequest
-    {
-        public ChannelId ChannelId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Command>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Command command, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            dbContext.Channels.Remove(new Channel { Id = command.ChannelId });
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await dbContext.Channels
+            .Where(channel => channel.Id == channelId)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 }

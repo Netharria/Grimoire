@@ -7,129 +7,108 @@
 
 namespace Grimoire.Features.Shared.Events;
 
-internal sealed class MemberAdded
+internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+    : IEventHandler<GuildMemberAddedEventArgs>
 {
-    internal sealed class EventHandler(IMediator mediator) : IEventHandler<GuildMemberAddedEventArgs>
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+
+    public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs eventArgs)
     {
-        private readonly IMediator _mediator = mediator;
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var userResult = await dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == eventArgs.Member.Id)
+            .Select(x => new
+            {
+                memberExists =
+                    dbContext.Members.Any(m => m.UserId == eventArgs.Member.Id && m.GuildId == eventArgs.Guild.Id),
+                dbContext.UsernameHistory.OrderByDescending(username => username.Timestamp).First().Username,
+                dbContext.NicknameHistory.OrderByDescending(nickname => nickname.Timestamp).First().Nickname,
+                dbContext.Avatars.OrderByDescending(avatar => avatar.Timestamp).First().FileName
+            })
+            .FirstOrDefaultAsync();
 
-        public Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs eventArgs)
-            => this._mediator.Send(
-                new Request
-                {
-                    Nickname =
-                        string.IsNullOrWhiteSpace(eventArgs.Member.Nickname) ? null : eventArgs.Member.Nickname,
-                    GuildId = eventArgs.Guild.Id,
-                    UserId = eventArgs.Member.Id,
-                    UserName = eventArgs.Member.Username,
-                    AvatarUrl = eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128)
-                });
-    }
+        if (userResult is null)
+            await dbContext.Users.AddAsync(new User
+            {
+                Id = eventArgs.Member.Id,
+                UsernameHistories =
+                [
+                    new UsernameHistory { Username = eventArgs.Member.Username, UserId = eventArgs.Member.Id }
+                ]
+            });
+        else if (!string.Equals(userResult.Username, eventArgs.Member.Username,
+                     StringComparison.CurrentCultureIgnoreCase))
+            await dbContext.UsernameHistory.AddAsync(
+                new UsernameHistory { Username = eventArgs.Member.Username, UserId = eventArgs.Member.Id });
 
-    public sealed record Request : IRequest
-    {
-        public ulong UserId { get; init; }
-        public GuildId GuildId { get; init; }
-        public string UserName { get; init; } = string.Empty;
-        public string? Nickname { get; init; }
-        public string AvatarUrl { get; init; } = string.Empty;
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Request command, CancellationToken cancellationToken)
+        if (!(userResult?.memberExists ?? false))
         {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var userResult = await dbContext.Users
-                .AsNoTracking()
-                .Where(x => x.Id == command.UserId)
-                .Select(x => new
-                {
-                    x.UsernameHistories.OrderByDescending(username => username.Timestamp).First().Username
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-            var memberResult = await dbContext.Members
-                .AsNoTracking()
-                .Where(x => x.UserId == command.UserId && x.GuildId == command.GuildId)
-                .Select(x => new
-                {
-                    x.NicknamesHistory.OrderByDescending(nickname => nickname.Timestamp).First().Nickname,
-                    x.AvatarHistory.OrderByDescending(avatar => avatar.Timestamp).First().FileName
-                }).FirstOrDefaultAsync(cancellationToken);
-
-            if (userResult is null)
-                await dbContext.Users.AddAsync(new User
-                {
-                    Id = command.UserId,
-                    UsernameHistories =
-                    [
-                        new UsernameHistory { Username = command.UserName, UserId = command.UserId }
-                    ]
-                }, cancellationToken);
-
-            if (userResult is not null)
-                if (!string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase))
-                    await dbContext.UsernameHistory.AddAsync(
-                        new UsernameHistory { Username = command.UserName, UserId = command.UserId },
-                        cancellationToken);
-
-            if (memberResult is null)
+            var member = new Member
             {
-                var member = new Member
-                {
-                    UserId = command.UserId,
-                    GuildId = command.GuildId,
-                    XpHistory =
-                    [
-                        new XpHistory
-                        {
-                            UserId = command.UserId,
-                            GuildId = command.GuildId,
-                            Type = XpHistoryType.Created,
-                            Xp = 0,
-                            TimeOut = DateTimeOffset.UtcNow
-                        }
-                    ],
-                    AvatarHistory =
-                    [
-                        new Avatar { UserId = command.UserId, GuildId = command.GuildId, FileName = command.AvatarUrl }
-                    ],
-                    NicknamesHistory =
-                    [
-                        new NicknameHistory
-                        {
-                            UserId = command.UserId, GuildId = command.GuildId, Nickname = command.Nickname
-                        }
-                    ]
-                };
+                UserId = eventArgs.Member.Id,
+                GuildId = eventArgs.Guild.Id,
+                XpHistory =
+                [
+                    new XpHistory
+                    {
+                        UserId = eventArgs.Member.Id,
+                        GuildId = eventArgs.Guild.Id,
+                        Type = XpHistoryType.Created,
+                        Xp = 0,
+                        TimeOut = DateTimeOffset.UtcNow
+                    }
+                ],
+                AvatarHistory =
+                [
+                    new Avatar
+                    {
+                        UserId = eventArgs.Member.Id,
+                        GuildId = eventArgs.Guild.Id,
+                        FileName = eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128)
+                    }
+                ],
+                NicknamesHistory =
+                [
+                    new NicknameHistory
+                    {
+                        UserId = eventArgs.Member.Id,
+                        GuildId = eventArgs.Guild.Id,
+                        Nickname = eventArgs.Member.Nickname
+                    }
+                ]
+            };
 
-                await dbContext.Members.AddAsync(member, cancellationToken);
-            }
-
-            if (memberResult is not null)
-            {
-                if (!string.Equals(memberResult.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase))
-                    await dbContext.NicknameHistory.AddAsync(
-                        new NicknameHistory
-                        {
-                            UserId = command.UserId, GuildId = command.GuildId, Nickname = command.Nickname
-                        }, cancellationToken);
-
-                if (!string.Equals(memberResult.FileName, command.AvatarUrl, StringComparison.Ordinal))
-                    await dbContext.Avatars.AddAsync(
-                        new Avatar { UserId = command.UserId, GuildId = command.GuildId, FileName = command.AvatarUrl },
-                        cancellationToken);
-            }
-
-            if (userResult is null
-                || memberResult is null
-                || !string.Equals(userResult.Username, command.UserName, StringComparison.CurrentCultureIgnoreCase)
-                || !string.Equals(memberResult.Nickname, command.Nickname, StringComparison.CurrentCultureIgnoreCase)
-                || !string.Equals(memberResult.FileName, command.AvatarUrl, StringComparison.Ordinal))
-                await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.Members.AddAsync(member);
         }
+        else
+        {
+            if (!string.Equals(userResult.Nickname, eventArgs.Member.Nickname,
+                    StringComparison.CurrentCultureIgnoreCase))
+                await dbContext.NicknameHistory.AddAsync(
+                    new NicknameHistory
+                    {
+                        UserId = eventArgs.Member.Id,
+                        GuildId = eventArgs.Guild.Id,
+                        Nickname = eventArgs.Member.Nickname
+                    });
+
+            if (!string.Equals(userResult.FileName, eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128),
+                    StringComparison.Ordinal))
+                await dbContext.Avatars.AddAsync(
+                    new Avatar
+                    {
+                        UserId = eventArgs.Member.Id,
+                        GuildId = eventArgs.Guild.Id,
+                        FileName = eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128)
+                    });
+        }
+
+        if (userResult is null
+            || !userResult.memberExists
+            || !string.Equals(userResult.Username, eventArgs.Member.Username, StringComparison.CurrentCultureIgnoreCase)
+            || !string.Equals(userResult.Nickname, eventArgs.Member.Nickname, StringComparison.CurrentCultureIgnoreCase)
+            || !string.Equals(userResult.FileName, eventArgs.Member.AvatarUrl, StringComparison.Ordinal))
+            await dbContext.SaveChangesAsync();
     }
 }

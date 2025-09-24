@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.PublishSins;

@@ -8,7 +8,8 @@
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using Grimoire.Features.Shared.Queries;
+using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Leveling.UserCommands;
 
@@ -23,9 +24,10 @@ public sealed class GetLeaderboard
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Leveling)]
-    public sealed class Command(IMediator mediator)
+    public sealed class Command(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule)
     {
-        private readonly IMediator _mediator = mediator;
+        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+        private readonly SettingsModule _settingsModule = settingsModule;
 
         [Command("Leaderboard")]
         [Description("Posts the leaderboard for the server.")]
@@ -52,48 +54,37 @@ public sealed class GetLeaderboard
                     break;
             }
 
-            var userCommandChannel =
-                await this._mediator.Send(new GetUserCommandChannel.Query { GuildId = ctx.Guild.Id });
+            var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
 
             await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                                         && userCommandChannel?.UserCommandChannelId != ctx.Channel.Id);
+                                         && guildSettings.UserCommandChannelId != ctx.Channel.Id);
 
             var getUserCenteredLeaderboardQuery = new Request { UserId = user?.Id, GuildId = ctx.Guild.Id };
 
-            var response = await this._mediator.Send(getUserCenteredLeaderboardQuery);
+            var response = await Handle(getUserCenteredLeaderboardQuery, CancellationToken.None);
+
             await ctx.EditReplyAsync(
                 GrimoireColor.DarkPurple,
                 title: "LeaderBoard",
                 message: response.LeaderboardText,
                 footer: $"Total Users {response.TotalUserCount}");
         }
-    }
-
-    public sealed record Request : IRequest<Response>
-    {
-        public required GuildId GuildId { get; init; }
-        public ulong? UserId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, Response>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
         public async Task<Response> Handle(Request request, CancellationToken cancellationToken)
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var query = dbContext.Members
+            var query = dbContext.XpHistory
                 .AsNoTracking()
-                .Where(member => member.GuildId == request.GuildId)
-                .Select(member => new { member.UserId, Xp = member.XpHistory.Sum(xp => xp.Xp) })
-                .OrderByDescending(x => x.Xp);
+                .Where(xpHistory => xpHistory.GuildId == request.GuildId)
+                .GroupBy(xpHistory => new { xpHistory.UserId, xpHistory.GuildId })
+                .Select(group => new { group.Key.UserId, Xp = group.Sum(xpHistory => xpHistory.Xp) })
+                .OrderByDescending(xpHistory => xpHistory.Xp);
 
             if (request.UserId is null)
             {
                 var rankedMembers = await query
                     .Take(15)
-                    .ToListAsync(cancellationToken);
+                    .ToArrayAsync(cancellationToken);
 
                 var totalMemberCount = await dbContext.Members
                     .AsNoTracking()
@@ -108,11 +99,11 @@ public sealed class GetLeaderboard
             }
             else
             {
-                var rankedMembers = await query.ToListAsync(cancellationToken);
+                var rankedMembers = await query.ToArrayAsync(cancellationToken);
 
-                var totalMemberCount = rankedMembers.Count;
+                var totalMemberCount = rankedMembers.Length;
 
-                var memberPosition = rankedMembers.FindIndex(x => x.UserId == request.UserId);
+                var memberPosition = Array.FindIndex(rankedMembers, x => x.UserId == request.UserId);
 
                 if (memberPosition == -1)
                     throw new AnticipatedException("Could not find user on leaderboard.");
@@ -129,6 +120,12 @@ public sealed class GetLeaderboard
                 return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
             }
         }
+    }
+
+    public sealed record Request
+    {
+        public required ulong GuildId { get; init; }
+        public ulong? UserId { get; init; }
     }
 
     public sealed record Response

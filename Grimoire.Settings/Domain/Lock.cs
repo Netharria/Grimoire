@@ -7,7 +7,7 @@
 
 namespace Grimoire.Settings.Domain;
 
-public sealed class Lock
+public sealed class Lock : Shared.IGuildChannel
 {
     public required ulong ChannelId { get; init; }
     public required long PreviouslyAllowed { get; init; }

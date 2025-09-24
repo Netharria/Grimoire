@@ -9,6 +9,7 @@ namespace Grimoire.Settings.Domain.Shared;
 
 public interface IModule
 {
-    bool ModuleEnabled { get; set; }
-    GuildSettings? GuildSettings { get; }
+    public ulong GuildId { get; }
+    public bool ModuleEnabled { get; set; }
+    public GuildSettings? GuildSettings { get; }
 }

@@ -9,6 +9,7 @@ using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Moderation.Ban.Shared;
+using Grimoire.Settings.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Ban.Commands;

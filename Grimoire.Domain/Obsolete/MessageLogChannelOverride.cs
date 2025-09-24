@@ -8,7 +8,7 @@
 
 using JetBrains.Annotations;
 
-namespace Grimoire.Domain;
+namespace Grimoire.Domain.Obsolete;
 
 public enum MessageLogOverrideOption
 {

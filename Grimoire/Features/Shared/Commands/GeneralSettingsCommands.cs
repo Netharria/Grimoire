@@ -7,7 +7,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Settings;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -17,6 +17,6 @@ namespace Grimoire.Features.Shared.Commands;
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 internal sealed partial class GeneralSettingsCommands(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 }

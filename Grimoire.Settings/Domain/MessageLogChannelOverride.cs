@@ -14,7 +14,7 @@ public enum MessageLogOverrideOption
     NeverLog
 }
 
-public sealed class MessageLogChannelOverride
+public sealed class MessageLogChannelOverride : Shared.IGuildChannel
 {
     public required ulong ChannelId { get; init; }
     public required ulong GuildId { get; init; }

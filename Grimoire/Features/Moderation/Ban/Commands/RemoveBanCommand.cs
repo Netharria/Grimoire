@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Exceptions;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Moderation.Ban.Commands;
 
