@@ -13,7 +13,6 @@ namespace Grimoire.Domain;
 public sealed class UsernameHistory
 {
     public required ulong UserId { get; init; }
-    public User? User { get; init; }
     public required string Username { get; init; }
     public DateTimeOffset Timestamp { get; private init; }
 }

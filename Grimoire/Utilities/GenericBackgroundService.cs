@@ -13,25 +13,23 @@ namespace Grimoire.Utilities;
 
 public abstract partial class GenericBackgroundService(
     IServiceProvider serviceProvider,
-    IDbContextFactory<GrimoireDbContext> dbContextFactory,
     ILogger<GenericBackgroundService> logger,
     TimeSpan timeSpan) : BackgroundService
 {
     private readonly PeriodicTimer _timer = new(timeSpan);
 
-    protected readonly IDbContextFactory<GrimoireDbContext> DbContextFactory = dbContextFactory;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         LogBackgroundTaskStart(logger, GetType().FullName ?? GetType().Name);
 
-        await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(5000)), stoppingToken);
+        await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(5000)), cancellationToken);
 
-        while (await this._timer.WaitForNextTickAsync(stoppingToken))
+        while (await this._timer.WaitForNextTickAsync(cancellationToken))
             try
             {
                 await using var scope = serviceProvider.CreateAsyncScope();
-                await RunTask(scope.ServiceProvider, stoppingToken);
+                await RunTask(scope.ServiceProvider, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -45,5 +43,5 @@ public abstract partial class GenericBackgroundService(
     [LoggerMessage(LogLevel.Error, "Exception was thrown when running a background task. Message: ({message})")]
     static partial void LogBackgroundTaskError(ILogger logger, Exception ex, string message);
 
-    protected abstract Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken);
+    protected abstract Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken);
 }

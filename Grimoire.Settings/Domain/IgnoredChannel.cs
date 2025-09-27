@@ -18,5 +18,4 @@ public sealed class IgnoredChannel : Shared.IGuildChannel, IIgnored
     }
     public ulong ChannelId { get; init; }
     public ulong GuildId { get; init; }
-    public GuildSettings? GuildSettings { get; init; }
 }

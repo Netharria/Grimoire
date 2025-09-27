@@ -8,7 +8,6 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Exceptions;
-using Grimoire.Features.Moderation.Ban.Shared;
 using Grimoire.Settings.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -18,10 +17,10 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [RequirePermissions([DiscordPermission.BanMembers], [])]
-public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanCommand> logger)
+public sealed partial class AddBanCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory, ILogger<AddBanCommand> logger)
 {
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly ILogger<AddBanCommand> _logger = logger;
-    private readonly IMediator _mediator = mediator;
 
     [Command("Ban")]
     [Description("Bans a user from the server.")]
@@ -58,16 +57,23 @@ public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanComm
             return;
         }
 
-        var response = await this._mediator.Send(new AddBan.Command
-        {
-            GuildId = ctx.Guild.Id, UserId = user.Id, ModeratorId = ctx.User.Id, Reason = reason
-        });
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var sin = await dbContext.Sins.AddAsync(
+            new Sin
+            {
+                GuildId = ctx.Guild.Id,
+                UserId = user.Id,
+                Reason = reason,
+                SinType = SinType.Ban,
+                ModeratorId = ctx.User.Id
+            });
+        await dbContext.SaveChangesAsync();
 
         try
         {
             if (user is DiscordMember member)
                 await member.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithAuthor($"Ban ID {response.SinId}")
+                    .WithAuthor($"Ban ID {sin.Entity.Id}")
                     .WithDescription($"You have been banned from {ctx.Guild.Name} "
                                      + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
                     .WithColor(GrimoireColor.Red));
@@ -86,7 +92,7 @@ public sealed partial class AddBanCommand(IMediator mediator, ILogger<AddBanComm
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Banned")
             .AddField("User", user.Mention, true)
-            .AddField("Sin Id", $"**{response.SinId}**", true)
+            .AddField("Sin Id", $"**{sin.Entity.Id}**", true)
             .AddField("Moderator", ctx.User.Mention, true)
             .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason)
             .WithColor(GrimoireColor.Red)

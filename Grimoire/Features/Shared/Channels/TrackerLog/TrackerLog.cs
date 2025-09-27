@@ -31,14 +31,14 @@ public sealed partial class TrackerLog(
     private readonly ILogger<TrackerLog> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        while (await this._channel.Reader.WaitToReadAsync(stoppingToken))
+        while (await this._channel.Reader.WaitToReadAsync(cancellationToken))
             try
             {
-                var result = await this._channel.Reader.ReadAsync(stoppingToken);
+                var result = await this._channel.Reader.ReadAsync(cancellationToken);
 
-                var logChannelId = await GetLogChannelId(result, stoppingToken);
+                var logChannelId = await GetLogChannelId(result, cancellationToken);
 
                 if (logChannelId is null)
                     continue;
@@ -48,7 +48,7 @@ public sealed partial class TrackerLog(
                 if (channel is null)
                     continue;
                 await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-                    await channel.SendMessageAsync(result.GetMessageBuilder()), stoppingToken);
+                    await channel.SendMessageAsync(result.GetMessageBuilder()), cancellationToken);
             }
             catch (Exception e)
             {
@@ -60,28 +60,26 @@ public sealed partial class TrackerLog(
         Message = "An error occurred while processing the log message. Message: ({message})")]
     static partial void LogError(ILogger logger, Exception e, string message);
 
-    private async Task<ulong?> GetLogChannelId(TrackerMessageBase trackerMessageBase, CancellationToken stoppingToken)
+    private async Task<ulong?> GetLogChannelId(TrackerMessageBase trackerMessageBase,
+        CancellationToken cancellationToken)
     {
-        var guildSettings = await this._settingsModule.GetGuildSettings(trackerMessageBase.GuildId, stoppingToken);
-        if (guildSettings is null)
-            return null;
         if (!await this._settingsModule.IsModuleEnabled(
                 Module.MessageLog,
                 trackerMessageBase.GuildId,
-                stoppingToken))
+                cancellationToken))
             return null;
 
         return trackerMessageBase.TrackerIdType switch
         {
-            TrackerIdType.UserId => GetUsersTrackerChannel(trackerMessageBase.TrackerId, guildSettings),
+            TrackerIdType.UserId => await this._settingsModule.GetTrackerChannelAsync(
+                trackerMessageBase.TrackerId,
+                trackerMessageBase.GuildId,
+                cancellationToken),
             TrackerIdType.ChannelId => trackerMessageBase.TrackerId,
-            _ => throw new ArgumentOutOfRangeException(nameof(trackerMessageBase.TrackerIdType),
-                trackerMessageBase.TrackerIdType, "Unknown log type")
+            _ => throw new ArgumentOutOfRangeException(nameof(trackerMessageBase),
+                trackerMessageBase, "Unknown log type")
         };
     }
-
-    private static ulong? GetUsersTrackerChannel(ulong userId, GuildSettings guildSettings)
-        => guildSettings.Trackers.FirstOrDefault(x => x.UserId == userId)?.LogChannelId;
 
 
     public ValueTask SendTrackerMessageAsync(TrackerMessageBase logMessageMessage,

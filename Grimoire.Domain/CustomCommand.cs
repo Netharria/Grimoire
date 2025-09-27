@@ -14,7 +14,6 @@ public sealed class CustomCommand
 {
     public string Name { get; set; } = string.Empty;
     public ulong GuildId { get; set; }
-    public Guild? Guild { get; init; }
     public string Content { get; set; } = string.Empty;
     public bool HasMention { get; set; }
     public bool HasMessage { get; set; }

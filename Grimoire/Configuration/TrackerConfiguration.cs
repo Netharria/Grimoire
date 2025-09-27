@@ -17,21 +17,6 @@ internal sealed class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
     public void Configure(EntityTypeBuilder<Tracker> builder)
     {
         builder.HasKey(e => new { e.UserId, e.GuildId });
-        builder.HasOne(e => e.Member)
-            .WithMany()
-            .HasForeignKey(e => new { e.UserId, e.GuildId })
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-        builder.HasOne(e => e.LogChannel)
-            .WithMany()
-            .HasForeignKey(e => e.LogChannelId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-        builder.HasOne(e => e.Moderator)
-            .WithMany()
-            .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
         builder.Property(e => e.EndTime)
             .IsRequired();
         builder.HasIndex(x => x.EndTime);

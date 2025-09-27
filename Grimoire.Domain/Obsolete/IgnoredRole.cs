@@ -14,7 +14,5 @@ namespace Grimoire.Domain.Obsolete;
 public sealed class IgnoredRole
 {
     public ulong RoleId { get; init; }
-    public Role? Role { get; init; }
     public ulong GuildId { get; init; }
-    public Guild? Guild { get; init; }
 }

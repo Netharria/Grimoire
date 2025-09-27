@@ -16,7 +16,6 @@ public sealed class IgnoredMember : Shared.IMember, IIgnored
         get => UserId;
         init => UserId = value;
     }
-    public GuildSettings? GuildSettings { get; init; }
     public ulong UserId { get; init; }
     public ulong GuildId { get; init; }
 }

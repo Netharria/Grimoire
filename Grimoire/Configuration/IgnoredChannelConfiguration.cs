@@ -18,13 +18,5 @@ internal sealed class IgnoredChannelConfiguration : IEntityTypeConfiguration<Ign
         builder.Property(e => e.ChannelId)
             .ValueGeneratedNever()
             .IsRequired();
-        builder.HasOne(e => e.Channel)
-            .WithOne()
-            .HasForeignKey<IgnoredChannel>(e => e.ChannelId)
-            .IsRequired();
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(e => e.GuildId)
-            .IsRequired();
     }
 }

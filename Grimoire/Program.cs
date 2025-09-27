@@ -19,13 +19,12 @@ using Grimoire.Features.Leveling.Rewards;
 using Grimoire.Features.Leveling.Settings;
 using Grimoire.Features.Leveling.UserCommands;
 using Grimoire.Features.LogCleanup;
-using Grimoire.Features.Logging.MessageLogging.Events;
+using Grimoire.Features.Logging.MessageLogging;
 using Grimoire.Features.Logging.Settings;
 using Grimoire.Features.Logging.Trackers;
 using Grimoire.Features.Logging.Trackers.Commands;
 using Grimoire.Features.Logging.Trackers.Events;
 using Grimoire.Features.Logging.UserLogging;
-using Grimoire.Features.Logging.UserLogging.Events;
 using Grimoire.Features.Moderation.Ban.Commands;
 using Grimoire.Features.Moderation.Ban.Events;
 using Grimoire.Features.Moderation.Lock;
@@ -49,6 +48,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Serilog;
+using AddMessageEvent = Grimoire.Features.Logging.MessageLogging.AddMessageEvent;
+using DeleteMessageEvent = Grimoire.Features.Logging.MessageLogging.DeleteMessageEvent;
 
 var rateLimiter = new SlidingWindowRateLimiter(
     new SlidingWindowRateLimiterOptions
@@ -108,37 +109,32 @@ await Host.CreateDefaultBuilder(args)
             .ConfigureEventHandlers(eventHandlerBuilder =>
                 eventHandlerBuilder
                     //Custom Commands
-                    .AddEventHandlers<TextCustomCommand.EventHandler>()
+                    .AddEventHandlers<TextCustomCommand>()
                     //Leveling
                     .AddEventHandlers<GainUserXp>()
                     //Message Log
-                    .AddEventHandlers<AddMessageEvent.EventHandler>()
-                    .AddEventHandlers<DeleteMessageEvent.EventHandler>()
-                    .AddEventHandlers<BulkMessageDeletedEvent.EventHandler>()
-                    .AddEventHandlers<UpdateMessageEvent.EventHandler>()
+                    .AddEventHandlers<AddMessageEvent>()
+                    .AddEventHandlers<DeleteMessageEvent>()
+                    .AddEventHandlers<BulkMessageDeletedEvent>()
+                    .AddEventHandlers<UpdateMessageEvent>()
                     //Trackers
                     .AddEventHandlers<TrackerMessageCreatedEvent>()
-                    .AddEventHandlers<TrackerMessageUpdateEvent.EventHandler>()
                     .AddEventHandlers<TrackerJoinedVoiceChannelEvent>()
                     //User Log
                     .AddEventHandlers<GuildMemberAddedEvent>()
                     .AddEventHandlers<GuildMemberRemovedEvent>()
-                    .AddEventHandlers<UpdatedAvatarEvent.EventHandler>()
-                    .AddEventHandlers<UpdatedNicknameEvent.EventHandler>()
-                    .AddEventHandlers<UpdatedUsernameEvent.EventHandler>()
+                    .AddEventHandlers<UpdatedAvatarEvent>()
+                    .AddEventHandlers<UpdatedNicknameEvent>()
+                    .AddEventHandlers<UpdatedUsernameEvent>()
                     //Moderation Log
                     .AddEventHandlers<BanAddedEvent>()
                     .AddEventHandlers<BanRemovedEvent>()
                     .AddEventHandlers<UserJoinedWhileMuted.EventHandler>()
                     .AddEventHandlers<SpamEvents>()
                     //General Events
-                    .AddEventHandlers<ChannelAdded>()
-                    .AddEventHandlers<ChannelDeleted>()
                     .AddEventHandlers<GuildAdded>()
                     .AddEventHandlers<InviteEvents>()
                     .AddEventHandlers<MemberAdded>()
-                    .AddEventHandlers<RoleAdded>()
-                    .AddEventHandlers<RoleDeleted>()
                     .AddEventHandlers<UpdateAllGuilds>()
             )
             .AddInteractivityExtension(new InteractivityConfiguration
@@ -172,7 +168,7 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<LogSettingsCommands>();
 
                 //Trackers
-                extension.AddCommands<AddTracker.Command>();
+                extension.AddCommands<AddTrackerCommand>();
                 extension.AddCommands<RemoveTracker.Command>();
 
                 // Moderation

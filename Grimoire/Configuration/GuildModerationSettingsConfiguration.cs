@@ -17,11 +17,6 @@ internal sealed class GuildModerationSettingsConfiguration : IEntityTypeConfigur
     public void Configure(EntityTypeBuilder<GuildModerationSettings> builder)
     {
         builder.HasKey(e => e.GuildId);
-        builder.HasOne(e => e.Guild)
-            .WithOne()
-            .HasForeignKey<GuildModerationSettings>(x => x.GuildId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
         builder.Property(e => e.PublicBanLog)
             .IsRequired(false);
         builder.Property(e => e.AutoPardonAfter)

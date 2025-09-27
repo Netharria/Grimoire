@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
@@ -19,13 +20,5 @@ internal sealed class GuildConfiguration : IEntityTypeConfiguration<Guild>
         builder.Property(e => e.Id)
             .ValueGeneratedNever()
             .IsRequired();
-        builder.HasOne(e => e.ModLogChannel)
-            .WithMany()
-            .HasForeignKey(e => e.ModChannelLog)
-            .IsRequired(false);
-        builder.HasOne(e => e.UserCommandChannel)
-            .WithMany()
-            .HasForeignKey(e => e.UserCommandChannelId)
-            .IsRequired(false);
     }
 }

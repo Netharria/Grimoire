@@ -15,14 +15,6 @@ internal class SpamFilterOverideConfiguration : IEntityTypeConfiguration<SpamFil
     public void Configure(EntityTypeBuilder<SpamFilterOverride> builder)
     {
         builder.HasKey(x => x.ChannelId);
-        builder.HasOne(x => x.Channel)
-            .WithOne()
-            .HasForeignKey<SpamFilterOverride>(x => x.ChannelId)
-            .IsRequired();
-        builder.HasOne(x => x.Guild)
-            .WithMany()
-            .HasForeignKey(x => x.GuildId)
-            .IsRequired();
         builder.Property(x => x.ChannelId)
             .ValueGeneratedNever();
         builder.Property(x => x.ChannelOption)

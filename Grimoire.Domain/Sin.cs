@@ -19,13 +19,8 @@ public enum SinType
 [UsedImplicitly]
 public sealed class Sin
 {
-    public Member? Member { get; init; }
 
     public ulong? ModeratorId { get; init; }
-
-    public Member? Moderator { get; init; }
-
-    public Guild? Guild { get; init; }
 
     public required string Reason { get; set; }
 
@@ -36,9 +31,9 @@ public sealed class Sin
     public Pardon? Pardon { get; set; }
 
     public ICollection<PublishedMessage> PublishMessages { get; init; } = [];
-    public required long Id { get; set; }
+    public long Id { get; private set; }
 
-    public required ulong UserId { get; set; }
+    public required ulong UserId { get; init; }
 
-    public required ulong GuildId { get; set; }
+    public required ulong GuildId { get; init; }
 }

@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Enums;
+
 namespace Grimoire.Features.Leveling.Settings;
 
 public sealed partial class LevelSettingsCommandGroup
@@ -18,19 +20,23 @@ public sealed partial class LevelSettingsCommandGroup
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        var moduleState = await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.Id);
+
+        var levelLogId = await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, ctx.Guild.Id);
+
+        var levelingSettings = await this._settingsModule.GetLevelingSettings(ctx.Guild.Id);
 
         var levelLogMention =
-            guildSettings.LevelSettings.LevelChannelLogId is null
+            levelLogId is null
                 ? "None"
-                : ctx.Guild.Channels.GetValueOrDefault(guildSettings.LevelSettings.LevelChannelLogId.Value)?.Mention;
+                : ctx.Guild.Channels.GetValueOrDefault(levelLogId.Value)?.Mention;
         await ctx.EditReplyAsync(
             title: "Current Level System Settings",
-            message: $"**Module Enabled:** {guildSettings.LevelSettings.ModuleEnabled}\n" +
-                     $"**Text Time:** {guildSettings.LevelSettings.TextTime.TotalMinutes} minutes.\n" +
-                     $"**Base:** {guildSettings.LevelSettings.Base}\n" +
-                     $"**Modifier:** {guildSettings.LevelSettings.Modifier}\n" +
-                     $"**Reward Amount:** {guildSettings.LevelSettings.Amount}\n" +
+            message: $"**Module Enabled:** {moduleState}\n" +
+                     $"**Text Time:** {levelingSettings.TextTime.TotalMinutes} minutes.\n" +
+                     $"**Base:** {levelingSettings.Base}\n" +
+                     $"**Modifier:** {levelingSettings.Modifier}\n" +
+                     $"**Reward Amount:** {levelingSettings.Amount}\n" +
                      $"**Log-Channel:** {levelLogMention}\n");
     }
 }

@@ -14,7 +14,5 @@ namespace Grimoire.Domain.Obsolete;
 public sealed class IgnoredChannel
 {
     public ulong ChannelId { get; init; }
-    public Channel? Channel { get; init; }
     public ulong GuildId { get; init; }
-    public Guild? Guild { get; init; }
 }

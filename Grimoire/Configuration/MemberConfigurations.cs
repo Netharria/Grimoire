@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
@@ -16,15 +17,5 @@ internal sealed class MemberConfigurations : IEntityTypeConfiguration<Member>
     public void Configure(EntityTypeBuilder<Member> builder)
     {
         builder.HasKey(e => new { e.UserId, e.GuildId });
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(e => e.GuildId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-        builder.HasOne(e => e.User)
-            .WithMany()
-            .HasForeignKey(e => e.UserId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
     }
 }

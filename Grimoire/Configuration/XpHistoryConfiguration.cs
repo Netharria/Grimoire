@@ -14,26 +14,11 @@ internal sealed class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistor
     public void Configure(EntityTypeBuilder<XpHistory> builder)
     {
         builder.HasKey(x => new { x.UserId, x.GuildId, x.TimeOut });
-        builder.HasOne(x => x.Member)
-            .WithMany(x => x.XpHistory)
-            .HasForeignKey(x => new { x.UserId, x.GuildId })
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(x => x.Guild)
-            .WithMany()
-            .HasForeignKey(x => x.GuildId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
         builder.Property(x => x.Xp)
             .IsRequired();
         builder.Property(x => x.TimeOut)
             .IsRequired();
         builder.Property(x => x.Type)
             .IsRequired();
-        builder.HasOne(x => x.Awarder)
-            .WithMany()
-            .HasForeignKey(x => new { x.AwarderId, x.GuildId })
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

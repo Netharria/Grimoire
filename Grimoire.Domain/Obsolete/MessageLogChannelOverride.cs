@@ -10,6 +10,7 @@ using JetBrains.Annotations;
 
 namespace Grimoire.Domain.Obsolete;
 
+[Obsolete("Use Settings Module Instead.")]
 public enum MessageLogOverrideOption
 {
     AlwaysLog,
@@ -21,8 +22,6 @@ public enum MessageLogOverrideOption
 public sealed class MessageLogChannelOverride
 {
     public ulong ChannelId { get; init; }
-    public Channel? Channel { get; init; }
     public ulong GuildId { get; init; }
-    public Guild? Guild { get; init; }
     public MessageLogOverrideOption ChannelOption { get; set; }
 }

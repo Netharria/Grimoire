@@ -14,14 +14,6 @@ internal sealed class CustomCommandRoleConfiguration : IEntityTypeConfiguration<
     public void Configure(EntityTypeBuilder<CustomCommandRole> builder)
     {
         builder.HasKey(e => new { e.CustomCommandName, e.GuildId, e.RoleId });
-        builder.HasOne(e => e.Role)
-            .WithMany()
-            .HasForeignKey(e => e.RoleId)
-            .IsRequired();
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(e => e.GuildId)
-            .IsRequired();
         builder.HasOne(e => e.CustomCommand)
             .WithMany(e => e.CustomCommandRoles)
             .HasForeignKey(e => new { e.CustomCommandName, e.GuildId })

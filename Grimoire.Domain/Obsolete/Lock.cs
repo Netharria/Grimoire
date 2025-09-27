@@ -14,13 +14,10 @@ namespace Grimoire.Domain.Obsolete;
 public sealed class Lock
 {
     public ulong ChannelId { get; init; }
-    public Channel? Channel { get; init; }
     public long PreviouslyAllowed { get; init; }
     public long PreviouslyDenied { get; init; }
     public ulong? ModeratorId { get; set; }
-    public Member? Moderator { get; init; }
     public ulong GuildId { get; init; }
-    public Guild? Guild { get; init; }
     public string Reason { get; set; } = string.Empty;
     public DateTimeOffset EndTime { get; set; }
 }

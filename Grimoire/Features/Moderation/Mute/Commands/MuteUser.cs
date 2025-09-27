@@ -130,7 +130,10 @@ public sealed class MuteUser
                 ModeratorId = command.ModeratorId,
                 Reason = command.Reason,
                 SinType = SinType.Mute,
-                Mute = new Domain.Obsolete.Mute { GuildId = command.GuildId, UserId = command.UserId, EndTime = lockEndTime }
+                Mute = new Domain.Obsolete.Mute
+                {
+                    GuildId = command.GuildId, UserId = command.UserId, EndTime = lockEndTime
+                }
             };
             await dbContext.Sins.AddAsync(sin, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);

@@ -12,10 +12,8 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class NicknameHistory
 {
-    public Member? Member { get; init; }
     public required string? Nickname { get; init; }
     public DateTimeOffset Timestamp { get; private init; }
-    public Guild? Guild { get; init; }
     public required ulong UserId { get; init; }
     public required ulong GuildId { get; init; }
 }

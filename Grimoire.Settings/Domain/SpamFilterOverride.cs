@@ -16,6 +16,5 @@ public sealed class SpamFilterOverride : Shared.IGuildChannel
 {
     public required ulong ChannelId { get; init; }
     public required ulong GuildId { get; init; }
-    public GuildSettings? GuildSettings { get; init; }
     public required SpamFilterOverrideOption ChannelOption { get; init; }
 }

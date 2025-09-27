@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Threading.Channels;
+using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -32,15 +33,17 @@ public sealed partial class GuildLog(
     private readonly ILogger<GuildLog> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        while (await this._channel.Reader.WaitToReadAsync(stoppingToken))
+        while (await this._channel.Reader.WaitToReadAsync(cancellationToken))
             try
             {
-                var result = await this._channel.Reader.ReadAsync(stoppingToken);
+                var result = await this._channel.Reader.ReadAsync(cancellationToken);
 
-
-                var logChannelId = await GetLogChannelId(result, stoppingToken);
+                var logChannelId = await this._settingsModule.GetLogChannelSetting(
+                    result.GuildLogType,
+                    result.GuildId,
+                    cancellationToken);
 
                 if (logChannelId is null)
                     continue;
@@ -50,9 +53,9 @@ public sealed partial class GuildLog(
                 if (channel is null)
                     continue;
                 var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-                    await channel.SendMessageAsync(result.GetMessageBuilder()), stoppingToken);
+                    await channel.SendMessageAsync(result.GetMessageBuilder()), cancellationToken);
                 if (ShouldPurgeMessageAfterInterval(result.GuildLogType))
-                    await ScheduleMessagePurge(message.Id, channel.Id, result.GuildId, stoppingToken);
+                    await ScheduleMessagePurge(message.Id, channel.Id, result.GuildId, cancellationToken);
             }
             catch (Exception e)
             {
@@ -63,34 +66,6 @@ public sealed partial class GuildLog(
     [LoggerMessage(Level = LogLevel.Error,
         Message = "An error occurred while processing the log message. Message: ({message})")]
     static partial void LogError(ILogger logger, Exception e, string message);
-
-    private async Task<ulong?> GetLogChannelId(GuildLogMessageBase guildLogMessageBase, CancellationToken stoppingToken)
-    {
-        var guildSettings = await this._settingsModule.GetGuildSettings(guildLogMessageBase.GuildId, stoppingToken);
-        if (guildSettings is null)
-            return null;
-        if (!await this._settingsModule.IsModuleEnabled(
-                guildLogMessageBase.GuildLogType.GetLogTypeModule(),
-                guildLogMessageBase.GuildId,
-                stoppingToken))
-            return null;
-
-        return guildLogMessageBase.GuildLogType switch
-        {
-            GuildLogType.Moderation => guildSettings.ModLogChannelId,
-            GuildLogType.Leveling => guildSettings.LevelSettings.LevelChannelLogId,
-            GuildLogType.BulkMessageDeleted => guildSettings.MessageLogSettings.BulkDeleteChannelLogId,
-            GuildLogType.MessageEdited => guildSettings.MessageLogSettings.EditChannelLogId,
-            GuildLogType.MessageDeleted => guildSettings.MessageLogSettings.DeleteChannelLogId,
-            GuildLogType.UserJoined => guildSettings.UserLogSettings.JoinChannelLogId,
-            GuildLogType.UserLeft => guildSettings.UserLogSettings.LeaveChannelLogId,
-            GuildLogType.AvatarUpdated => guildSettings.UserLogSettings.AvatarChannelLogId,
-            GuildLogType.NicknameUpdated => guildSettings.UserLogSettings.NicknameChannelLogId,
-            GuildLogType.UsernameUpdated => guildSettings.UserLogSettings.UsernameChannelLogId,
-            _ => throw new ArgumentOutOfRangeException(nameof(guildLogMessageBase.GuildLogType),
-                guildLogMessageBase.GuildLogType, "Unknown log type")
-        };
-    }
 
     private static bool ShouldPurgeMessageAfterInterval(GuildLogType guildLogType)
     {

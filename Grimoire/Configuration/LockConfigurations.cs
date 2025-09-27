@@ -17,24 +17,9 @@ internal sealed class LockConfigurations : IEntityTypeConfiguration<Lock>
     public void Configure(EntityTypeBuilder<Lock> builder)
     {
         builder.HasKey(e => e.ChannelId);
-        builder.HasOne(e => e.Channel)
-            .WithOne()
-            .HasForeignKey<Lock>(x => x.ChannelId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
         builder.Property(e => e.PreviouslyAllowed)
             .IsRequired();
         builder.Property(e => e.PreviouslyDenied)
-            .IsRequired();
-        builder.HasOne(e => e.Moderator)
-            .WithMany()
-            .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(e => e.GuildId)
-            .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
         builder.Property(e => e.Reason)
             .HasMaxLength(1000);

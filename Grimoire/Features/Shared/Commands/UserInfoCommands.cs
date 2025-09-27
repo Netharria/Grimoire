@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Shared.Commands;
@@ -41,13 +41,12 @@ internal sealed class UserInfoCommands(
             .WithThumbnail(avatarUrl);
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
 
-        await GetAndAddUsernames(dbContext, guildSettings, user.Id, embed);
+        await GetAndAddUsernames(dbContext, ctx.Guild.Id, user.Id, embed);
 
-        await GetAndAddLevelInfo(dbContext, embed, ctx.Guild, guildSettings, user.Id, roles);
+        await GetAndAddLevelInfo(dbContext, embed, user.Id, ctx.Guild.Id, roles);
 
-        await GetAndAddModerationInfo(dbContext, guildSettings, user.Id, embed);
+        await GetAndAddModerationInfo(dbContext, ctx.Guild.Id, user.Id, embed);
 
         await ctx.EditReplyAsync(embed: embed);
     }
@@ -83,13 +82,13 @@ internal sealed class UserInfoCommands(
         return (color, displayName, avatarUrl, joinDate, roles);
     }
 
-    private static async Task GetAndAddUsernames(
+    private async Task GetAndAddUsernames(
         GrimoireDbContext dbContext,
-        GuildSettings guildSettings,
         ulong userId,
+        ulong guildId,
         DiscordEmbedBuilder embed)
     {
-        if (!guildSettings.UserLogSettings.ModuleEnabled)
+        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, guildId))
             return;
         var usernames = await dbContext.UsernameHistory
             .AsNoTracking()
@@ -101,7 +100,7 @@ internal sealed class UserInfoCommands(
 
         var nicknames = await dbContext.NicknameHistory
             .Where(nicknameHistory => nicknameHistory.UserId == userId
-                                      && nicknameHistory.GuildId == guildSettings.Id)
+                                      && nicknameHistory.GuildId == guildId)
             .Where(nicknameHistory => nicknameHistory.Nickname != null)
             .OrderByDescending(nicknameHistory => nicknameHistory.Timestamp)
             .Take(3)
@@ -121,59 +120,57 @@ internal sealed class UserInfoCommands(
                 true);
     }
 
-    private static async Task GetAndAddLevelInfo(
+    private async Task GetAndAddLevelInfo(
         GrimoireDbContext dbContext,
         DiscordEmbedBuilder embed,
-        DiscordGuild guild,
-        GuildSettings guildSettings,
         ulong userId,
+        ulong guildId,
         ulong[] roleIds)
     {
-        if (!guildSettings.LevelSettings.ModuleEnabled)
+        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, guildId))
             return;
 
         var membersXp = await dbContext.XpHistory
             .AsNoTracking()
-            .Where(member => member.UserId == userId && member.GuildId == guild.Id)
+            .Where(member => member.UserId == userId && member.GuildId == guildId)
             .GroupBy(history => new { history.UserId, history.GuildId })
             .Select(member => member.Sum(xpHistory => xpHistory.Xp))
             .FirstOrDefaultAsync();
 
+        var levelSettings = await this._settingsModule.GetLevelingSettings(guildId);
 
-        var membersLevel = guildSettings.LevelSettings.GetLevelFromXp(membersXp);
-        var earnedRewards = guildSettings.Rewards
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId);
+
+
+        var membersLevel = levelSettings.GetLevelFromXp(membersXp);
+        var earnedRewards = rewards
             .Where(x => x.RewardLevel <= membersLevel)
             .Select(x => x.RoleId)
             .ToArray();
 
-        var isXpIgnored = guildSettings.IgnoredMembers.Any(x => x.UserId == userId)
-                          || guildSettings.IgnoredRoles
-                              .Any(y => roleIds.Contains(y.RoleId));
+        var isXpIgnored = await this._settingsModule.IsMemberIgnored(guildId, userId, roleIds);
 
         embed.AddField("Level", membersLevel.ToString(), true)
             .AddField("Can Gain Xp", isXpIgnored ? "No" : "Yes", true)
             .AddField("Earned Rewards",
                 earnedRewards.Length > 0
                     ? "None"
-                    : string.Join('\n', earnedRewards
-                        .Select(x => guild.Roles.GetValueOrDefault(x))
-                        .OfType<DiscordRole>()
-                        .Select(x => x.Mention)),
+                    : string.Join('\n', earnedRewards.Select(x => $"<@&{x}>")),
                 true);
     }
 
-    private static async Task GetAndAddModerationInfo(
+    private async Task GetAndAddModerationInfo(
         GrimoireDbContext dbContext,
-        GuildSettings guildSettings,
+        ulong guildId,
         ulong userId,
         DiscordEmbedBuilder embed)
     {
-        if (!guildSettings.ModerationSettings.ModuleEnabled)
+        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId))
             return;
         var response = await dbContext.Sins
             .AsNoTracking()
             .Where(sin => sin.UserId == userId
-                          && sin.GuildId == guildSettings.Id
+                          && sin.GuildId == guildId
                           && sin.SinOn > DateTimeOffset.UtcNow - guildSettings.ModerationSettings.AutoPardonAfter)
             .GroupBy(sin => new { sin.UserId, sin.GuildId, sin.SinType })
             .ToDictionaryAsync(

@@ -6,8 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
-using Grimoire.Settings.Domain.Shared;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -31,28 +30,18 @@ public partial class IgnoreCommandGroup
             return;
         }
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.Id).ToArray();
+        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.Id).ToArray();
+        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.Id).ToArray();
 
-        var newIgnoredUsers =
-            AddedIgnoredItems<IgnoredMember, DiscordUser>(guildSettings.IgnoredMembers, value, ctx.Guild.Id);
-        var newIgnoredRoles =
-            AddedIgnoredItems<IgnoredRole, DiscordRole>(guildSettings.IgnoredRoles, value, ctx.Guild.Id);
-        var newIgnoredChannels =
-            AddedIgnoredItems<IgnoredChannel, DiscordChannel>(guildSettings.IgnoredChannels, value, ctx.Guild.Id);
 
-        if (newIgnoredUsers.Length == 0 && newIgnoredRoles.Length == 0 && newIgnoredChannels.Length == 0)
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "All items in list provided were already ignored");
-            return;
-        }
-
-        await this._settingsModule.UpdateGuildSettings(guildSettings);
-
-        var messageBuilder = await BuildIgnoreListAsync(ctx, newIgnoredChannels, newIgnoredRoles, newIgnoredUsers);
-
-        var message = messageBuilder
-            .Append(" are now ignored for xp gain.")
-            .ToString();
+        await this._settingsModule.AddIgnoredItems(
+            ctx.Guild.Id,
+            ignoredMemberIds,
+            ignoredChannelIds,
+            ignoredRoleIds);
+        var message = BuildIgnoreListAsync(ignoredChannelIds, ignoredRoleIds, ignoredMemberIds) +
+                      " are now ignored for xp gain.";
 
         await ctx.EditReplyAsync(GrimoireColor.Green,
             message);
@@ -63,27 +52,5 @@ public partial class IgnoreCommandGroup
             Color = GrimoireColor.DarkPurple,
             Description = message
         });
-    }
-
-    private static T[] AddedIgnoredItems<T, T1>(ICollection<T> currentIgnoredItems, SnowflakeObject[] ignoredIds,
-        ulong guildId) where T : IIgnored, new() where T1 : SnowflakeObject
-    {
-        if (ignoredIds.Length == 0)
-            return [];
-        if (!ignoredIds.OfType<T1>().Any())
-            return [];
-        var existingIgnoredMemberIds = currentIgnoredItems
-            .Select(x => x.Id)
-            .ToHashSet();
-
-        var newUsersToIgnore = ignoredIds
-            .OfType<T1>()
-            .Where(x => !existingIgnoredMemberIds.Contains(x.Id))
-            .Select(x => new T { Id = x.Id, GuildId = guildId })
-            .ToArray();
-
-        foreach (var newIgnoredMember in newUsersToIgnore)
-            currentIgnoredItems.Add(newIgnoredMember);
-        return newUsersToIgnore;
     }
 }

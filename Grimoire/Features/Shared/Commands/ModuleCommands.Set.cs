@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain.Shared;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 
@@ -33,34 +32,7 @@ internal sealed partial class ModuleCommands
         if (settings is null)
             throw new AnticipatedException("Guild settings not found.");
 
-        // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-        IModule guildModule;
-        switch (module)
-        {
-            case Module.Leveling:
-                guildModule = settings.LevelSettings;
-                break;
-            case Module.UserLog:
-                guildModule = settings.UserLogSettings;
-                break;
-            case Module.Moderation:
-                guildModule = settings.ModerationSettings;
-                break;
-            case Module.MessageLog:
-                guildModule = settings.MessageLogSettings;
-                break;
-            case Module.Commands:
-                guildModule = settings.CommandsSettings;
-                break;
-            case Module.General:
-            default:
-                throw new NotImplementedException();
-        }
-
-        // ReSharper enable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-        guildModule.ModuleEnabled = enable;
-
-        await this._settingsModule.UpdateGuildSettings(settings);
+        await this._settingsModule.SetModuleState(module, ctx.Guild.Id, enable);
 
         await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module}");
 

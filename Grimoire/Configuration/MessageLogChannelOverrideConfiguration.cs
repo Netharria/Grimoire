@@ -15,14 +15,6 @@ internal sealed class MessageLogChannelOverrideConfiguration : IEntityTypeConfig
     public void Configure(EntityTypeBuilder<MessageLogChannelOverride> builder)
     {
         builder.HasKey(x => x.ChannelId);
-        builder.HasOne(x => x.Channel)
-            .WithOne()
-            .HasForeignKey<MessageLogChannelOverride>(x => x.ChannelId)
-            .IsRequired();
-        builder.HasOne(x => x.Guild)
-            .WithMany()
-            .HasForeignKey(x => x.GuildId)
-            .IsRequired();
         builder.Property(x => x.ChannelId)
             .ValueGeneratedNever();
         builder.Property(x => x.ChannelOption)

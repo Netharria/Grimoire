@@ -16,3 +16,20 @@ public enum Module
     Commands,
     General
 }
+
+internal static class ModuleExtensions
+{
+    public static string GetCacheKey(this Module ignoredType, ulong guildId)
+    {
+        return ignoredType switch
+        {
+            Module.Leveling => $"LevelingModule-{guildId}",
+            Module.UserLog => $"UserLogModule-{guildId}",
+            Module.Moderation => $"ModerationModule-{guildId}",
+            Module.MessageLog => $"MessageLogModule-{guildId}",
+            Module.Commands => $"CommandsModule-{guildId}",
+            Module.General => $"GeneralModule-{guildId}",
+            _ => throw new ArgumentOutOfRangeException(nameof(ignoredType), ignoredType, null)
+        };
+    }
+}

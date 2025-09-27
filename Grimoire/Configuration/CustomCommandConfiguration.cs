@@ -14,10 +14,6 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
     public void Configure(EntityTypeBuilder<CustomCommand> builder)
     {
         builder.HasKey(e => new { e.Name, e.GuildId });
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(e => e.GuildId)
-            .IsRequired();
         builder.Property(e => e.Name)
             .HasMaxLength(24);
         builder.Property(e => e.Content)

@@ -19,16 +19,6 @@ internal sealed class OldLogMessageConfiguration : IEntityTypeConfiguration<OldL
         builder.Property(e => e.Id)
             .ValueGeneratedNever()
             .IsRequired();
-        builder.HasOne(e => e.Channel)
-            .WithMany()
-            .HasForeignKey(x => x.ChannelId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(x => x.GuildId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
         builder.Property(e => e.CreatedAt)
             .HasDefaultValueSql("now()");
         builder.HasIndex(x => x.CreatedAt);

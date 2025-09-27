@@ -9,7 +9,6 @@ namespace Grimoire.Settings.Domain;
 
 public sealed class Tracker
 {
-    public GuildSettings? GuildSettings { get; init; }
     public required ulong LogChannelId { get; set; }
     public DateTimeOffset EndTime { get; set; }
     public required ulong ModeratorId { get; set; }

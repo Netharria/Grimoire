@@ -17,23 +17,6 @@ internal sealed class GuildMessageLogSettingsConfiguration : IEntityTypeConfigur
     public void Configure(EntityTypeBuilder<GuildMessageLogSettings> builder)
     {
         builder.HasKey(e => e.GuildId);
-        builder.HasOne(e => e.Guild)
-            .WithOne()
-            .HasForeignKey<GuildMessageLogSettings>(e => e.GuildId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-        builder.HasOne(e => e.DeleteChannelLog)
-            .WithOne()
-            .HasForeignKey<GuildMessageLogSettings>(e => e.DeleteChannelLogId)
-            .IsRequired(false);
-        builder.HasOne(e => e.BulkDeleteChannelLog)
-            .WithOne()
-            .HasForeignKey<GuildMessageLogSettings>(e => e.BulkDeleteChannelLogId)
-            .IsRequired(false);
-        builder.HasOne(e => e.EditChannelLog)
-            .WithOne()
-            .HasForeignKey<GuildMessageLogSettings>(e => e.EditChannelLogId)
-            .IsRequired(false);
         builder.Property(x => x.ModuleEnabled)
             .HasDefaultValue(false);
     }

@@ -25,23 +25,6 @@ internal sealed class GuildAdded(
             DiscordActivityType.Watching));
         var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-        var usersAdded = await dbContext.Users.AddMissingUsersAsync(eventArgs.Guild);
-
-        var guildExists = await dbContext.Guilds
-            .AsNoTracking()
-            .AnyAsync(x => x.Id == eventArgs.Guild.Id);
-
-        if (!guildExists)
-            await dbContext.Guilds.AddAsync(new Guild { Id = eventArgs.Guild.Id });
-
-        var rolesAdded = await dbContext.Roles.AddMissingRolesAsync(eventArgs.Guild);
-
-        var channelsAdded =
-            await dbContext.Channels.AddMissingChannelsAsync(eventArgs.Guild);
-
-        var membersAdded =
-            await dbContext.Members.AddMissingMembersAsync(eventArgs.Guild);
-
         var usernamesUpdated =
             await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(eventArgs.Guild);
 
@@ -67,8 +50,7 @@ internal sealed class GuildAdded(
                     .ToDictionary(x => x.Code))
             });
 
-        if (usersAdded || !guildExists || rolesAdded || channelsAdded || membersAdded || usernamesUpdated ||
-            nicknamesUpdated || avatarsUpdated)
+        if (usernamesUpdated || nicknamesUpdated || avatarsUpdated)
             await dbContext.SaveChangesAsync();
     }
 }

@@ -18,11 +18,7 @@ public sealed class Pardon
 
     public required ulong ModeratorId { get; init; }
 
-    public Member? Moderator { get; init; }
-
     public required ulong GuildId { get; init; }
-    public Guild? Guild { get; init; }
-
     public DateTimeOffset PardonDate { get; init; }
 
     public required string Reason { get; set; }

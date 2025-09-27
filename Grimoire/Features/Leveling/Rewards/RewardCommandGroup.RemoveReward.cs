@@ -7,6 +7,7 @@
 
 
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -26,15 +27,7 @@ public sealed partial class RewardCommandGroup
 
         await ctx.DeferResponseAsync();
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
-
-        var guildReward = guildSettings.Rewards.FirstOrDefault(x => x.RoleId == role.Id);
-
-        if (guildReward is not null)
-        {
-            guildSettings.Rewards.Remove(guildReward);
-            await this._settingsModule.UpdateGuildSettings(guildSettings);
-        }
+        await this._settingsModule.RemoveRewardAsync(role.Id, ctx.Guild.Id);
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Removed {role.Mention} reward");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

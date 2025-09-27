@@ -21,14 +21,14 @@ internal sealed partial class ModuleCommands
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        var guildSettings = await this._settingsModule.GetAllModuleState(ctx.Guild.Id);
 
         await ctx.EditReplyAsync(
             title: "Current states of modules.",
-            message: $"**Leveling Enabled:** {guildSettings.LevelSettings.ModuleEnabled}\n" +
-                     $"**User Log Enabled:** {guildSettings.UserLogSettings.ModuleEnabled}\n" +
-                     $"**Message Log Enabled:** {guildSettings.MessageLogSettings.ModuleEnabled}\n" +
-                     $"**Moderation Enabled:** {guildSettings.ModerationSettings.ModuleEnabled}\n" +
-                     $"**Commands Enabled:** {guildSettings.CommandsSettings.ModuleEnabled}\n");
+            message: $"**Leveling Enabled:** {guildSettings.LevelingEnabled}\n" +
+                     $"**User Log Enabled:** {guildSettings.UserLogEnabled}\n" +
+                     $"**Message Log Enabled:** {guildSettings.MessageLogEnabled}\n" +
+                     $"**Moderation Enabled:** {guildSettings.ModerationEnabled}\n" +
+                     $"**Commands Enabled:** {guildSettings.CommandsEnabled}\n");
     }
 }

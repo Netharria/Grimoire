@@ -12,7 +12,6 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class Avatar
 {
-    public Member? Member { get; init; }
     public required string FileName { get; init; }
     public DateTimeOffset Timestamp { get; private init; }
     public required ulong UserId { get; init; }

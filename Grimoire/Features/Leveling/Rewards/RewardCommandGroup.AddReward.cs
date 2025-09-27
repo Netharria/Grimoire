@@ -7,7 +7,7 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -34,24 +34,9 @@ public sealed partial class RewardCommandGroup
             throw new AnticipatedException($"{ctx.Guild.CurrentMember.DisplayName} will not be able to apply this " +
                                            $"reward role because the role has a higher rank than it does.");
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
-        if (guildSettings is null || !guildSettings.LevelSettings.ModuleEnabled)
-            throw new AnticipatedException(
-                "Leveling is not enabled on this server. Enable it with `/modules set` command.");
-        var reward = guildSettings.Rewards
-            .FirstOrDefault(x => x.RoleId == role.Id);
+        await this._settingsModule.AddOrUpdateRewardAsync(role.Id, ctx.Guild.Id, level, message);
 
-        var responseMessage = reward is not null
-            ? $"Updated the reward for {role.Mention} to level {level}."
-            : $"Added a new reward for {role.Mention} at level {level}.";
-
-        reward ??= new Reward { GuildId = ctx.Guild.Id, RoleId = role.Id, RewardLevel = level };
-        reward.RewardLevel = level;
-        reward.RewardMessage = message;
-
-        guildSettings.Rewards.Add(reward);
-
-        await this._settingsModule.UpdateGuildSettings(guildSettings);
+        var responseMessage = $"Successfully updated the rewards to include {role.Mention} at level {level}.";
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, responseMessage);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

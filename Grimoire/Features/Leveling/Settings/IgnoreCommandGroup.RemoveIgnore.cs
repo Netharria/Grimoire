@@ -6,8 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
-using Grimoire.Settings.Domain.Shared;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -31,30 +30,22 @@ public partial class IgnoreCommandGroup
             return;
         }
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.Id).ToArray();
+        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.Id).ToArray();
+        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.Id).ToArray();
 
-        var membersNoLongerIgnored =
-            RemoveIgnoredItems<IgnoredMember, DiscordUser>(guildSettings.IgnoredMembers, value, ctx.Guild.Id);
-        var rolesNoLongerIgnored =
-            RemoveIgnoredItems<IgnoredRole, DiscordRole>(guildSettings.IgnoredRoles, value, ctx.Guild.Id);
-        var channelsNoLongerIgnored =
-            RemoveIgnoredItems<IgnoredChannel, DiscordChannel>(guildSettings.IgnoredChannels, value, ctx.Guild.Id);
 
-        if (membersNoLongerIgnored.Length == 0 && rolesNoLongerIgnored.Length == 0 &&
-            channelsNoLongerIgnored.Length == 0)
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "All items in list provided were not ignored");
-            return;
-        }
+        await this._settingsModule.RemoveIgnoredItems(
+            ctx.Guild.Id,
+            ignoredMemberIds,
+            ignoredChannelIds,
+            ignoredRoleIds);
 
-        await this._settingsModule.UpdateGuildSettings(guildSettings);
-
-        var messageBuilder =
-            await BuildIgnoreListAsync(ctx, channelsNoLongerIgnored, rolesNoLongerIgnored, membersNoLongerIgnored);
-
-        var message = messageBuilder
-            .Append(" are no longer ignored for xp gain.")
-            .ToString();
+        var message = BuildIgnoreListAsync(
+                          ignoredMemberIds,
+                          ignoredChannelIds,
+                          ignoredRoleIds)
+                      + " are no longer ignored for xp gain.";
 
         await ctx.EditReplyAsync(GrimoireColor.Green,
             message);
@@ -65,26 +56,5 @@ public partial class IgnoreCommandGroup
             Color = GrimoireColor.DarkPurple,
             Description = message
         });
-    }
-
-    private static T[] RemoveIgnoredItems<T, T1>(ICollection<T> currentIgnoredItems, SnowflakeObject[] ignoredIds,
-        ulong guildId) where T : IIgnored, new() where T1 : SnowflakeObject
-    {
-        if (ignoredIds.Length == 0)
-            return [];
-        if (!ignoredIds.OfType<T1>().Any())
-            return [];
-        var itemsRequestedToRemoveIgnore = ignoredIds
-            .OfType<T1>()
-            .Select(x => x.Id)
-            .ToHashSet();
-
-        var itemsToNoLongerIgnore = currentIgnoredItems
-            .Where(x => itemsRequestedToRemoveIgnore.Contains(x.Id))
-            .ToArray();
-
-        foreach (var itemToNoLongerIgnore in itemsToNoLongerIgnore)
-            currentIgnoredItems.Remove(itemToNoLongerIgnore);
-        return itemsToNoLongerIgnore;
     }
 }

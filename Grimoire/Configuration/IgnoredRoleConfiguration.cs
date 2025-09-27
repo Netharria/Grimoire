@@ -18,13 +18,5 @@ internal sealed class IgnoredRoleConfiguration : IEntityTypeConfiguration<Ignore
         builder.Property(e => e.RoleId)
             .ValueGeneratedNever()
             .IsRequired();
-        builder.HasOne(e => e.Role)
-            .WithOne()
-            .HasForeignKey<IgnoredRole>(e => e.RoleId)
-            .IsRequired();
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(e => e.GuildId)
-            .IsRequired();
     }
 }

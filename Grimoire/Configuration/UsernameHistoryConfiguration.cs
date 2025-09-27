@@ -16,11 +16,6 @@ internal sealed class UsernameHistoryConfiguration : IEntityTypeConfiguration<Us
     public void Configure(EntityTypeBuilder<UsernameHistory> builder)
     {
         builder.HasKey(x => new { x.UserId, x.Timestamp });
-        builder.HasOne(x => x.User)
-            .WithMany(x => x.UsernameHistories)
-            .HasForeignKey(x => x.UserId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
         builder.Property(x => x.Username)
             .HasMaxLength(37)
             .IsRequired();

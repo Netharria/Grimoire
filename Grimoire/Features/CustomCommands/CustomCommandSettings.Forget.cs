@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;

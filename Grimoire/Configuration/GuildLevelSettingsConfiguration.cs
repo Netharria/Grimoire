@@ -17,10 +17,6 @@ internal sealed class GuildLevelSettingsConfiguration : IEntityTypeConfiguration
     public void Configure(EntityTypeBuilder<GuildLevelSettings> builder)
     {
         builder.HasKey(x => x.GuildId);
-        builder.HasOne(e => e.Guild).WithOne()
-            .HasForeignKey<GuildLevelSettings>(x => x.GuildId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
         builder.Property(x => x.ModuleEnabled)
             .HasDefaultValue(false);
         builder.Property(e => e.TextTime)
@@ -31,9 +27,5 @@ internal sealed class GuildLevelSettingsConfiguration : IEntityTypeConfiguration
             .HasDefaultValue(50);
         builder.Property(e => e.Amount)
             .HasDefaultValue(5);
-        builder.HasOne(x => x.LevelChannelLog)
-            .WithMany().HasForeignKey(x => x.LevelChannelLogId)
-            .OnDelete(DeleteBehavior.SetNull)
-            .IsRequired(false);
     }
 }

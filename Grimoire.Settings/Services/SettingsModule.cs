@@ -12,7 +12,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Settings.Services;
 
-public sealed class SettingsModule(IDbContextFactory<SettingsDbContext> dbContextFactory, IMemoryCache memoryCache)
+public sealed partial class SettingsModule(IDbContextFactory<SettingsDbContext> dbContextFactory, IMemoryCache memoryCache)
 {
     private readonly IMemoryCache _memoryCache = memoryCache;
     private readonly MemoryCacheEntryOptions _cacheEntryOptions = new()
@@ -31,18 +31,6 @@ public sealed class SettingsModule(IDbContextFactory<SettingsDbContext> dbContex
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             return await dbContext.GuildSettings
                 .AsSplitQuery()
-                .Where(x => x.Id == guildId)
-                .Include(x => x.ModerationSettings)
-                .Include(x => x.CommandsSettings)
-                .Include(x => x.LevelSettings)
-                .Include(x => x.MessageLogSettings)
-                .Include(x => x.UserLogSettings)
-                .Include(x => x.IgnoredChannels)
-                .Include(x => x.IgnoredMembers)
-                .Include(x => x.IgnoredRoles)
-                .Include(x => x.MessageLogChannelOverrides)
-                .Include(x => x.Rewards)
-                .Include(x => x.Trackers)
                 .FirstOrDefaultAsync(cancellationToken);
         }, this._cacheEntryOptions);
         return guildSettings ?? await this.AddNewGuildSettings(guildId, cancellationToken);
@@ -67,20 +55,5 @@ public sealed class SettingsModule(IDbContextFactory<SettingsDbContext> dbContex
         dbContext.GuildSettings.Update(guild);
         await dbContext.SaveChangesAsync(cancellationToken);
         this._memoryCache.Remove(cacheKey);
-    }
-
-    public async Task<bool> IsModuleEnabled(Module moduleType, ulong guildId, CancellationToken stoppingToken = default)
-    {
-        var guildSettings = await this.GetGuildSettings(guildId, stoppingToken);
-        return moduleType switch
-        {
-            Module.Leveling => guildSettings.LevelSettings.ModuleEnabled,
-            Module.UserLog => guildSettings.UserLogSettings.ModuleEnabled,
-            Module.Moderation => guildSettings.ModerationSettings.ModuleEnabled,
-            Module.MessageLog => guildSettings.MessageLogSettings.ModuleEnabled,
-            Module.Commands => guildSettings.CommandsSettings.ModuleEnabled,
-            Module.General => true,
-            _ => throw new ArgumentOutOfRangeException(nameof(moduleType), moduleType, "Unknown module type")
-        };
     }
 }

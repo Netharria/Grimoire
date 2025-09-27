@@ -20,21 +20,6 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
             .UseIdentityAlwaysColumn();
         builder.Property(e => e.Reason)
             .HasMaxLength(1000);
-        builder.HasOne(e => e.Member)
-            .WithMany()
-            .HasForeignKey(e => new { e.UserId, e.GuildId })
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-        builder.HasOne(e => e.Moderator)
-            .WithMany()
-            .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(e => e.GuildId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
         builder.HasOne(e => e.Pardon)
             .WithOne(e => e.Sin)
             .HasForeignKey<Pardon>(e => e.SinId)

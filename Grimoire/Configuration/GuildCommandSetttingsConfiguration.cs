@@ -15,11 +15,6 @@ internal sealed class GuildCommandSetttingsConfiguration : IEntityTypeConfigurat
     public void Configure(EntityTypeBuilder<GuildCommandsSettings> builder)
     {
         builder.HasKey(x => x.GuildId);
-        builder.HasOne(e => e.Guild)
-            .WithOne()
-            .HasForeignKey<GuildCommandsSettings>(x => x.GuildId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
         builder.Property(x => x.ModuleEnabled)
             .HasDefaultValue(false);
     }

@@ -14,10 +14,6 @@ internal sealed class AvatarConfiguration : IEntityTypeConfiguration<Avatar>
     public void Configure(EntityTypeBuilder<Avatar> builder)
     {
         builder.HasKey(x => new { x.UserId, x.GuildId, x.Timestamp });
-        builder.HasOne(x => x.Member)
-            .WithMany(x => x.AvatarHistory)
-            .HasForeignKey(x => new { x.UserId, x.GuildId })
-            .OnDelete(DeleteBehavior.Cascade);
         builder.Property(e => e.FileName)
             .HasMaxLength(2048)
             .IsRequired();

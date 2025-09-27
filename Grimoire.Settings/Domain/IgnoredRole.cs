@@ -18,5 +18,4 @@ public sealed class IgnoredRole: IRole, IIgnored
     }
     public ulong RoleId { get; init; }
     public ulong GuildId { get; init; }
-    public GuildSettings? GuildSettings { get; init; }
 }

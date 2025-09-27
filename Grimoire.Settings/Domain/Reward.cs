@@ -12,8 +12,6 @@ public sealed class Reward
     public required ulong RoleId { get; init; }
 
     public required ulong GuildId { get; init; }
-
-    public GuildSettings? GuildSettings { get; init; }
-    public required int RewardLevel { get; set; }
+    public int RewardLevel { get; set; }
     public string? RewardMessage { get; set; }
 }

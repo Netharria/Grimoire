@@ -21,11 +21,6 @@ internal sealed class PardonConfiguration : IEntityTypeConfiguration<Pardon>
             .HasForeignKey<Pardon>(e => e.SinId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
-        builder.HasOne(e => e.Moderator)
-            .WithMany()
-            .HasForeignKey(e => new { e.ModeratorId, e.GuildId })
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
         builder.Property(e => e.PardonDate)
             .HasDefaultValueSql("now()");
         builder.Property(e => e.Reason)

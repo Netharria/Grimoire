@@ -8,8 +8,8 @@
 
 using System.Text.RegularExpressions;
 using DSharpPlus.Commands.ArgumentModifiers;
-using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
@@ -97,7 +97,6 @@ public sealed partial class CustomCommandSettings
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await dbContext.Roles.AddMissingRolesAsync(permissionRoles, guildId, cancellationToken);
 
         var result = await dbContext.CustomCommands
             .Include(x => x.CustomCommandRoles)

@@ -9,42 +9,6 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class MemberDatabaseQueryHelpers
 {
-    public static async Task<bool> AddMissingMembersAsync(this DbSet<Member> databaseMembers,
-        DiscordGuild discordGuild, CancellationToken cancellationToken = default)
-    {
-
-        var existingMemberIds = await databaseMembers
-            .AsNoTracking()
-            .Where(x => x.GuildId == discordGuild.Id)
-            .Where(x => discordGuild.Members.Keys.Contains(x.UserId))
-            .Select(x => x.UserId)
-            .ToHashSetAsync(cancellationToken);
-
-
-        var membersToAdd = discordGuild.Members
-            .Where(discordMember => !existingMemberIds.Contains(discordMember.Key))
-            .Select(discordMember => new Member
-            {
-                UserId = discordMember.Key,
-                GuildId = discordGuild.Id,
-                XpHistory =
-                [
-                    new XpHistory
-                    {
-                        UserId = discordMember.Key,
-                        GuildId = discordGuild.Id,
-                        Xp = 0,
-                        Type = XpHistoryType.Created,
-                        TimeOut = DateTime.UtcNow
-                    }
-                ]
-            }).ToArray();
-
-        if (membersToAdd.Length == 0)
-            return false;
-        await databaseMembers.AddRangeAsync(membersToAdd, cancellationToken);
-        return true;
-    }
 
     public static async Task<bool> AddMissingNickNameHistoryAsync(this DbSet<NicknameHistory> databaseNicknames,
         DiscordGuild discordGuild, CancellationToken cancellationToken = default)

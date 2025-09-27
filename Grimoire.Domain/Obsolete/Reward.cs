@@ -15,11 +15,7 @@ public sealed class Reward
 {
     public ulong RoleId { get; init; }
 
-    public Role? Role { get; init; }
-
     public ulong GuildId { get; init; }
-
-    public Guild? Guild { get; init; }
     public int RewardLevel { get; set; }
     public string? RewardMessage { get; set; }
 }

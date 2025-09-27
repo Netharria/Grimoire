@@ -16,7 +16,5 @@ namespace Grimoire.Domain.Obsolete;
 public sealed class GuildCommandsSettings : IModule
 {
     public ulong GuildId { get; init; }
-
-    public Guild? Guild { get; init; }
     public bool ModuleEnabled { get; set; }
 }

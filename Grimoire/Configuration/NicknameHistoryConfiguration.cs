@@ -14,11 +14,6 @@ internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<Ni
     public void Configure(EntityTypeBuilder<NicknameHistory> builder)
     {
         builder.HasKey(x => new { x.UserId, x.GuildId, x.Timestamp });
-        builder.HasOne(x => x.Member)
-            .WithMany(x => x.NicknamesHistory)
-            .HasForeignKey(x => new { x.UserId, x.GuildId })
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
         builder.Property(x => x.Nickname)
             .HasMaxLength(32)
             .IsRequired(false);

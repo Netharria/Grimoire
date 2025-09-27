@@ -12,10 +12,7 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class Message
 {
-    public Member? Member { get; init; }
     public required ulong ChannelId { get; init; }
-    public Channel? Channel { get; init; }
-    public Guild? Guild { get; init; }
     public DateTimeOffset CreatedTimestamp { get; private init; }
     public ulong? ReferencedMessageId { get; init; }
     public ProxiedMessageLink? ProxiedMessageLink { get; init; }

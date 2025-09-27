@@ -10,18 +10,17 @@ using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Domain.Obsolete;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Logging.Trackers.Commands;
 
-public sealed class AddTracker
-{
-    [RequireGuild]
-    [RequireModuleEnabled(Module.MessageLog)]
-    [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator, GuildLog guildLog)
+[RequireGuild]
+[RequireModuleEnabled(Module.MessageLog)]
+[RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+public sealed class AddTrackerCommand(SettingsModule settingsModule, GuildLog guildLog)
     {
+        private readonly SettingsModule _settingsModule = settingsModule;
         private readonly GuildLog _guildLog = guildLog;
-        private readonly IMediator _mediator = mediator;
 
         [Command("Track")]
         [Description("Creates a log of a user's activity into the specified channel.")]
@@ -68,15 +67,12 @@ public sealed class AddTracker
                 throw new AnticipatedException(
                     $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
 
-            await this._mediator.Send(
-                new Request
-                {
-                    UserId = user.Id,
-                    GuildId = ctx.Guild.Id,
-                    Duration = durationType.GetTimeSpan(durationAmount),
-                    ChannelId = discordChannel.Id,
-                    ModeratorId = ctx.User.Id
-                });
+            await this._settingsModule.AddTracker(
+                user.Id,
+                ctx.User.Id,
+                ctx.Guild.Id,
+                discordChannel.Id,
+                durationType.GetTimeSpan(durationAmount));
 
             await ctx.EditReplyAsync(
                 message:
@@ -93,83 +89,3 @@ public sealed class AddTracker
             });
         }
     }
-
-
-    public sealed record Request : IRequest
-    {
-        public ulong UserId { get; init; }
-        public GuildId GuildId { get; init; }
-        public TimeSpan Duration { get; init; }
-        public ChannelId ChannelId { get; init; }
-        public ulong ModeratorId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Request command, CancellationToken cancellationToken)
-        {
-            var trackerEndTime = DateTimeOffset.UtcNow + command.Duration;
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbContext.Guilds
-                .Where(x => x.Id == command.GuildId)
-                .Select(x =>
-                    new
-                    {
-                        Tracker = x.Trackers.FirstOrDefault(y => y.UserId == command.UserId),
-                        MemberExist = x.Members.Any(y => y.UserId == command.UserId)
-                    })
-                .FirstOrDefaultAsync(cancellationToken);
-            if (result?.Tracker is null)
-            {
-                var local = dbContext.Trackers.Local
-                    .FirstOrDefault(x => x.UserId == command.UserId
-                                         && x.GuildId == command.GuildId);
-                if (local is not null)
-                    dbContext.Entry(local).State = EntityState.Detached;
-                if (result?.MemberExist is null || !result.MemberExist)
-                {
-                    if (!await dbContext.Users.WhereIdIs(command.UserId).AnyAsync(cancellationToken))
-                        await dbContext.Users.AddAsync(new User { Id = command.UserId },
-                            cancellationToken);
-                    await dbContext.Members.AddAsync(new Member
-                    {
-                        UserId = command.UserId,
-                        GuildId = command.GuildId,
-                        XpHistory =
-                        [
-                            new XpHistory
-                            {
-                                UserId = command.UserId,
-                                GuildId = command.GuildId,
-                                Xp = 0,
-                                Type = XpHistoryType.Created,
-                                TimeOut = DateTime.UtcNow
-                            }
-                        ]
-                    }, cancellationToken);
-                }
-
-                await dbContext.Trackers.AddAsync(
-                    new Tracker
-                    {
-                        UserId = command.UserId,
-                        GuildId = command.GuildId,
-                        EndTime = trackerEndTime,
-                        LogChannelId = command.ChannelId,
-                        ModeratorId = command.ModeratorId
-                    }, cancellationToken);
-            }
-            else
-            {
-                result.Tracker.LogChannelId = command.ChannelId;
-                result.Tracker.EndTime = trackerEndTime;
-                result.Tracker.ModeratorId = command.ModeratorId;
-            }
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-    }
-}

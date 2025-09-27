@@ -23,8 +23,8 @@ public partial class LogSettingsCommands
     [RequireModuleEnabled(Module.MessageLog)]
     public partial class Message(SettingsModule settingsModule, GuildLog guildLog)
     {
-        private readonly SettingsModule _settingsModule = settingsModule;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly SettingsModule _settingsModule = settingsModule;
     }
 
     [RequireModuleEnabled(Module.UserLog)]
@@ -32,7 +32,7 @@ public partial class LogSettingsCommands
     [Description("View or change the User Log Module Settings.")]
     public partial class User(SettingsModule settingsModule, GuildLog guildLog)
     {
-        private readonly SettingsModule _settingsModule = settingsModule;
         private readonly GuildLog _guildLog = guildLog;
+        private readonly SettingsModule _settingsModule = settingsModule;
     }
 }

@@ -13,8 +13,6 @@ namespace Grimoire.Domain.Obsolete;
 [Obsolete("Use Settings Module Instead.")]
 public sealed class IgnoredMember
 {
-    public Member? Member { get; init; }
-    public Guild? Guild { get; init; }
     public ulong UserId { get; set; }
     public ulong GuildId { get; set; }
 }

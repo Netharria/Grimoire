@@ -9,9 +9,7 @@ using Grimoire.DatabaseQueryHelpers;
 
 namespace Grimoire.Features.CustomCommands;
 
-public sealed class TextCustomCommand
-{
-    public sealed class EventHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IEventHandler<MessageCreatedEventArgs>
     {
         private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
@@ -92,4 +90,3 @@ public sealed class TextCustomCommand
             await eventArgs.Channel.SendMessageAsync(discordResponse);
         }
     }
-}

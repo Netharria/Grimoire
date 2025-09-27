@@ -88,6 +88,6 @@ public sealed class InviteService : IInviteService
 
 public sealed record GuildInviteDto
 {
-    public GuildId GuildId { get; init; }
+    public ulong GuildId { get; init; }
     public ConcurrentDictionary<string, Invite> Invites { get; init; } = new();
 }

@@ -10,5 +10,4 @@ namespace Grimoire.Domain.Shared;
 public interface IModule
 {
     bool ModuleEnabled { get; set; }
-    Guild? Guild { get; }
 }

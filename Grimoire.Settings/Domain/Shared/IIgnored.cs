@@ -12,3 +12,24 @@ public interface IIgnored
     public ulong Id { get; init;  }
     public ulong GuildId { get; init; }
 }
+
+public enum IgnoredType
+{
+    Channel,
+    Role,
+    User
+}
+
+internal static class IgnoredTypeExtensions
+{
+    public static string GetIgnoredTypeCacheKey(this IgnoredType ignoredType, ulong id, ulong guildId)
+    {
+        return ignoredType switch
+        {
+            IgnoredType.Channel => $"IgnoredChannel-{guildId}-{id}",
+            IgnoredType.Role => $"IgnoredRole-{guildId}-{id}",
+            IgnoredType.User => $"IgnoredUser-{guildId}-{id}",
+            _ => throw new ArgumentOutOfRangeException(nameof(ignoredType), ignoredType, null)
+        };
+    }
+}

@@ -17,16 +17,6 @@ internal sealed class RewardConfiguration : IEntityTypeConfiguration<Reward>
     public void Configure(EntityTypeBuilder<Reward> builder)
     {
         builder.HasKey(e => e.RoleId);
-        builder.HasOne(e => e.Role)
-            .WithOne()
-            .HasForeignKey<Reward>(e => e.RoleId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(e => e.GuildId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
         builder.Property(e => e.RewardMessage)
             .HasMaxLength(4096)
             .IsRequired(false);

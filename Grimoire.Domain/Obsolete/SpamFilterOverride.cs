@@ -18,8 +18,6 @@ public enum SpamFilterOverrideOption
 public sealed class SpamFilterOverride
 {
     public ulong ChannelId { get; init; }
-    public Channel? Channel { get; init; }
     public ulong GuildId { get; init; }
-    public Guild? Guild { get; init; }
     public SpamFilterOverrideOption ChannelOption { get; set; }
 }

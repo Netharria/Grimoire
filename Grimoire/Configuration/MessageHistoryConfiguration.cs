@@ -23,12 +23,6 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
             .IsRequired();
         builder.Property(x => x.MessageContent)
             .HasMaxLength(4000);
-        builder.HasOne(e => e.DeletedByModerator)
-            .WithMany()
-            .HasForeignKey(e => new { e.GuildId, e.DeletedByModeratorId })
-            .HasPrincipalKey(e => new { e.GuildId, e.UserId })
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
         builder.Property(e => e.TimeStamp)
             .HasDefaultValueSql("now()");
     }

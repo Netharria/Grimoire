@@ -18,6 +18,5 @@ public sealed class MessageLogChannelOverride : Shared.IGuildChannel
 {
     public required ulong ChannelId { get; init; }
     public required ulong GuildId { get; init; }
-    public GuildSettings? GuildSettings { get; init; }
     public MessageLogOverrideOption ChannelOption { get; set; }
 }

@@ -30,10 +30,13 @@ public sealed class GetLevel
             if (ctx.Guild is null || ctx.Member is null)
                 throw new AnticipatedException("This command can only be used in a server.");
 
-            var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+            if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.Id))
+                throw new AnticipatedException("The leveling module is not enabled on this server.");
+
+            var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(ctx.Guild.Id);
 
             await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                                         && guildSettings.UserCommandChannelId != ctx.Channel.Id);
+                                         && userCommandChannelId != ctx.Channel.Id);
             user ??= ctx.User;
 
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -44,11 +47,15 @@ public sealed class GetLevel
                 .Select(xpHistories => xpHistories.Sum(x => x.Xp))
                 .FirstOrDefaultAsync();
 
-            var currentLevel = guildSettings.LevelSettings.GetLevelFromXp(membersXp);
-            var currentLevelXp = guildSettings.LevelSettings.GetXpNeededForLevel(currentLevel);
-            var nextLevelXp = guildSettings.LevelSettings.GetXpNeededForLevel(currentLevel, 1);
+            var levelingSettings = await this._settingsModule.GetLevelingSettings(ctx.Guild.Id);
 
-            var nextReward = guildSettings.Rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
+            var currentLevel = levelingSettings.GetLevelFromXp(membersXp);
+            var currentLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel);
+            var nextLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel, 1);
+
+            var rewards = await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.Id);
+
+            var nextReward = rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 
             DiscordColor color;
             string displayName;

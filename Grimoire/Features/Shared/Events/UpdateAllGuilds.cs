@@ -24,21 +24,12 @@ internal sealed class UpdateAllGuilds(
             DiscordActivityType.Watching));
         var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-        var changesDetected = await dbContext.Guilds.AddMissingGuildsAsync(eventArgs.Guilds.Keys.ToList());
-
         var guildInvites = new List<GuildInviteDto>();
+
+        var changesDetected = false;
 
         foreach (var guild in eventArgs.Guilds)
         {
-            var usersAdded = await dbContext.Users.AddMissingUsersAsync(guild.Value);
-
-            var rolesAdded = await dbContext.Roles.AddMissingRolesAsync(guild.Value);
-
-            var channelsAdded =
-                await dbContext.Channels.AddMissingChannelsAsync(guild.Value);
-
-            var membersAdded =
-                await dbContext.Members.AddMissingMembersAsync(guild.Value);
 
             var usernamesUpdated =
                 await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(guild.Value);
@@ -52,7 +43,7 @@ internal sealed class UpdateAllGuilds(
             var invites = await guild.Value.GetInvitesAsync();
             guildInvites.Add(new GuildInviteDto
             {
-                GuildId = guild,
+                GuildId = guild.Key,
                 Invites = new ConcurrentDictionary<string, Invite>(
                     invites
                         .Select(x => new Invite
@@ -66,10 +57,6 @@ internal sealed class UpdateAllGuilds(
                         .ToDictionary(x => x.Code))
             });
             changesDetected = changesDetected
-                              || usersAdded
-                              || rolesAdded
-                              || channelsAdded
-                              || membersAdded
                               || usernamesUpdated
                               || nicknamesUpdated
                               || avatarsUpdated;

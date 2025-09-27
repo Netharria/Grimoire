@@ -18,11 +18,11 @@ public sealed partial class RewardCommandGroup
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.Id);
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             title: "Rewards",
-            message: string.Join('\n', guildSettings.Rewards
+            message: string.Join('\n', rewards
                 .ToAsyncEnumerable()
                 .SelectAwait(async x =>
                 {

@@ -16,15 +16,9 @@ public sealed class GuildUserLogSettings : IModule
 {
     public ulong GuildId { get; init; }
     public ulong? JoinChannelLogId { get; set; }
-    public Channel? JoinChannelLog { get; init; }
     public ulong? LeaveChannelLogId { get; set; }
-    public Channel? LeaveChannelLog { get; init; }
     public ulong? UsernameChannelLogId { get; set; }
-    public Channel? UsernameChannelLog { get; init; }
     public ulong? NicknameChannelLogId { get; set; }
-    public Channel? NicknameChannelLog { get; init; }
     public ulong? AvatarChannelLogId { get; set; }
-    public Channel? AvatarChannelLog { get; init; }
-    public Guild? Guild { get; set; }
     public bool ModuleEnabled { get; set; }
 }

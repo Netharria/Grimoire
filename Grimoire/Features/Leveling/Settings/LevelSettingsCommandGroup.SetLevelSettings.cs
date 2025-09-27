@@ -9,7 +9,7 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -44,13 +44,18 @@ public sealed partial class LevelSettingsCommandGroup
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        var levelingSettingEntry = await this._settingsModule.GetLevelingSettings(ctx.Guild.Id);
 
-        var result = SetLevelSettings(guildSettings, levelSettings, value);
-        if (!result)
-            throw new AnticipatedException("Failed to set level setting.");
+        var result = levelSettings switch
+        {
+            LevelSettings.TextTime => levelingSettingEntry with { TextTime = TimeSpan.FromMinutes(value) },
+            LevelSettings.Amount => levelingSettingEntry with { Amount = value },
+            LevelSettings.Base => levelingSettingEntry with { Base = value },
+            LevelSettings.Modifier => levelingSettingEntry with { Modifier = value },
+            _ => throw new AnticipatedException("Invalid setting.")
+        };
 
-        await this._settingsModule.UpdateGuildSettings(guildSettings);
+        await this._settingsModule.SetLevelingSettings(ctx.Guild.Id, result);
 
         await ctx.EditReplyAsync(message: $"Updated {levelSettings} level setting to {value}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
@@ -86,11 +91,7 @@ public sealed partial class LevelSettingsCommandGroup
                     $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
         }
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
-
-        guildSettings.LevelSettings.LevelChannelLogId = channel?.Id;
-
-        await this._settingsModule.UpdateGuildSettings(guildSettings);
+        await this._settingsModule.SetLogChannelSetting(GuildLogType.Leveling, ctx.Guild.Id, channel?.Id);
 
         await ctx.EditReplyAsync(message: option is ChannelOption.Off
             ? "Disabled the level log."
@@ -104,24 +105,5 @@ public sealed partial class LevelSettingsCommandGroup
                 ? $"{ctx.User.Mention} disabled the level log."
                 : $"{ctx.User.Mention} updated the level log to {channel?.Mention}."
         });
-    }
-
-    private static bool SetLevelSettings(
-        GuildSettings guildSettings,
-        LevelSettings levelSettings,
-        int value)
-        => levelSettings switch
-        {
-            LevelSettings.TextTime => Assign(() => guildSettings.LevelSettings.TextTime = TimeSpan.FromMinutes(value)),
-            LevelSettings.Base => Assign(() => guildSettings.LevelSettings.Base = value),
-            LevelSettings.Modifier => Assign(() => guildSettings.LevelSettings.Modifier = value),
-            LevelSettings.Amount => Assign(() => guildSettings.LevelSettings.Amount = value),
-            _ => false
-        };
-
-    private static bool Assign(Action action)
-    {
-        action();
-        return true;
     }
 }

@@ -20,6 +20,5 @@ public sealed class GuildModerationSettings : IModule
     public ulong? MuteRole { get; set; }
     public Role? MuteRoleNav { get; init; }
     public bool AntiSpamEnabled { get; init; }
-    public Guild? Guild { get; set; }
     public bool ModuleEnabled { get; set; }
 }

@@ -14,12 +14,14 @@ internal sealed class CleanupLogsBackgroundTask(
     IServiceProvider serviceProvider,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     ILogger<CleanupLogsBackgroundTask> logger)
-    : GenericBackgroundService(serviceProvider, dbContextFactory, logger, TimeSpan.FromMinutes(1))
+    : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromMinutes(1))
 {
-    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+
+    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
-        await using var dbContext = await this.DbContextFactory.CreateDbContextAsync(stoppingToken);
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var oldDate = DateTime.UtcNow - TimeSpan.FromDays(30);
         var oldLogMessages = await dbContext.OldLogMessages
             .AsNoTracking()
@@ -39,11 +41,11 @@ internal sealed class CleanupLogsBackgroundTask(
                 channelInfo.DatabaseChannel.MessageIds
                     .ToAsyncEnumerable()
                     .SelectAwait(async messageId =>
-                        await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, stoppingToken))
-            ).ToArrayAsync(stoppingToken);
+                        await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, cancellationToken))
+            ).ToArrayAsync(cancellationToken);
 
-        await DeleteOldMessageAndUserLogs(dbContext, stoppingToken);
-        await UpdateOldGrimoireLogEntries(dbContext, oldLogMessages, stoppingToken);
+        await DeleteOldMessageAndUserLogs(dbContext, cancellationToken);
+        await UpdateOldGrimoireLogEntries(dbContext, oldLogMessages, cancellationToken);
     }
 
     private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, ulong messageId,
@@ -96,12 +98,12 @@ internal sealed class CleanupLogsBackgroundTask(
     }
 
     private static async Task DeleteOldMessageAndUserLogs(GrimoireDbContext grimoireDbContext,
-        CancellationToken stoppingToken)
+        CancellationToken cancellationToken)
     {
         var oldDate = DateTimeOffset.UtcNow - TimeSpan.FromDays(31);
         await grimoireDbContext.Messages
             .Where(x => x.CreatedTimestamp <= oldDate)
-            .ExecuteDeleteAsync(stoppingToken);
+            .ExecuteDeleteAsync(cancellationToken);
 
         await grimoireDbContext.Avatars
             .Select(x => new { x.GuildId, x.UserId })
@@ -110,7 +112,7 @@ internal sealed class CleanupLogsBackgroundTask(
                 .Where(avatar => avatar.UserId == x.UserId && avatar.GuildId == x.GuildId)
                 .OrderByDescending(avatar => avatar.Timestamp)
                 .Skip(3).ToList())
-            .ExecuteDeleteAsync(stoppingToken);
+            .ExecuteDeleteAsync(cancellationToken);
 
         await grimoireDbContext.NicknameHistory
             .Select(x => new { x.GuildId, x.UserId })
@@ -119,7 +121,7 @@ internal sealed class CleanupLogsBackgroundTask(
                 .Where(y => y.UserId == x.UserId && y.GuildId == x.GuildId)
                 .OrderByDescending(nicknameHistory => nicknameHistory.Timestamp)
                 .Skip(3).ToList())
-            .ExecuteDeleteAsync(stoppingToken);
+            .ExecuteDeleteAsync(cancellationToken);
 
         await grimoireDbContext.UsernameHistory
             .Select(x => x.UserId)
@@ -128,7 +130,7 @@ internal sealed class CleanupLogsBackgroundTask(
                 .Where(y => y.UserId == x)
                 .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                 .Skip(3).ToList())
-            .ExecuteDeleteAsync(stoppingToken);
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     private readonly struct DeleteMessageResult

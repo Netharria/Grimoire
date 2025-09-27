@@ -19,16 +19,6 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.Property(e => e.Id)
             .ValueGeneratedNever()
             .IsRequired();
-        builder.HasOne(e => e.Member)
-            .WithMany()
-            .HasForeignKey(e => new { e.UserId, e.GuildId })
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-        builder.HasOne(e => e.Channel)
-            .WithMany()
-            .HasForeignKey(e => e.ChannelId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
         builder.Property(e => e.CreatedTimestamp)
             .HasDefaultValueSql("now()");
         builder.HasIndex(x => x.CreatedTimestamp);

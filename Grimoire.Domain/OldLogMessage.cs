@@ -14,11 +14,7 @@ public sealed class OldLogMessage
 {
     public required ulong ChannelId { get; init; }
 
-    public Channel? Channel { get; init; }
-
     public required ulong GuildId { get; init; }
-
-    public Guild? Guild { get; init; }
 
     public DateTimeOffset CreatedAt { get; private init; }
 

@@ -16,11 +16,7 @@ public sealed class GuildMessageLogSettings : IModule
 {
     public ulong GuildId { get; init; }
     public ulong? DeleteChannelLogId { get; set; }
-    public Channel? DeleteChannelLog { get; init; }
     public ulong? BulkDeleteChannelLogId { get; set; }
-    public Channel? BulkDeleteChannelLog { get; init; }
     public ulong? EditChannelLogId { get; set; }
-    public Channel? EditChannelLog { get; init; }
-    public Guild? Guild { get; set; }
     public bool ModuleEnabled { get; set; }
 }

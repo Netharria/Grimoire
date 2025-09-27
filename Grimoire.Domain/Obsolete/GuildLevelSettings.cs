@@ -20,7 +20,5 @@ public sealed class GuildLevelSettings : IModule
     public int Modifier { get; set; }
     public int Amount { get; set; }
     public ulong? LevelChannelLogId { get; set; }
-    public Channel? LevelChannelLog { get; init; }
-    public Guild? Guild { get; init; }
     public bool ModuleEnabled { get; set; }
 }

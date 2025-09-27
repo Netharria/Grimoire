@@ -8,6 +8,7 @@
 using System.Runtime.CompilerServices;
 using Grimoire.Features.Moderation.Lock.Commands;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -16,13 +17,13 @@ namespace Grimoire.Features.Moderation.Lock;
 internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILogger<LockBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
-    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
+    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var mediator = serviceProvider.GetRequiredService<IMediator>();
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
         var guildLog = serviceProvider.GetRequiredService<GuildLog>();
 
-        await foreach (var expiredLock in mediator.CreateStream(new GetExpiredLocks.Request(), stoppingToken))
+        await foreach (var expiredLock in mediator.CreateStream(new GetExpiredLocks.Request(), cancellationToken))
         {
             var guild = discordClient.Guilds.GetValueOrDefault(expiredLock.GuildId);
             if (guild is null)
@@ -43,7 +44,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
             }
 
             _ = await mediator.Send(new UnlockChannel.Request { ChannelId = channel.Id, GuildId = guild.Id },
-                stoppingToken);
+                cancellationToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Lock on {channel.Mention} has expired.");
@@ -53,7 +54,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 new GuildLogMessageCustomEmbed
                 {
                     GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
-                }, stoppingToken);
+                }, cancellationToken);
         }
     }
 }

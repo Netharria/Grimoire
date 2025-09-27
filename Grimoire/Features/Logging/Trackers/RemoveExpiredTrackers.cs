@@ -7,7 +7,8 @@
 
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Channels.TrackerLog;
-using JetBrains.Annotations;
+using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -15,17 +16,21 @@ namespace Grimoire.Features.Logging.Trackers;
 
 public sealed class RemoveExpiredTrackers
 {
-    internal sealed class BackgroundTask(IServiceProvider serviceProvider, ILogger<BackgroundTask> logger)
+    internal sealed class BackgroundTask(
+        IServiceProvider serviceProvider,
+        SettingsModule settingsModule,
+        ILogger<BackgroundTask> logger)
         : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
     {
-        protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
+        private readonly SettingsModule _settingsModule = settingsModule;
+
+        protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
-            var mediator = serviceProvider.GetRequiredService<IMediator>();
             var discord = serviceProvider.GetRequiredService<DiscordClient>();
             var guildLog = serviceProvider.GetRequiredService<GuildLog>();
             var trackerLog = serviceProvider.GetRequiredService<TrackerLog>();
-            var response = await mediator.Send(new Request(), stoppingToken);
-            foreach (var expiredTracker in response)
+            var expiredTrackers = await this._settingsModule.RemoveAllExpiredTrackers(cancellationToken);
+            foreach (var expiredTracker in expiredTrackers)
             {
                 var user = await discord.GetUserOrDefaultAsync(expiredTracker.UserId);
 
@@ -33,10 +38,10 @@ public sealed class RemoveExpiredTrackers
                     new TrackerMessage
                     {
                         GuildId = expiredTracker.GuildId,
-                        TrackerId = expiredTracker.TrackerChannelId,
+                        TrackerId = expiredTracker.LogChannelId,
                         TrackerIdType = TrackerIdType.ChannelId,
                         Description = $"Tracker on {user?.Mention} has expired."
-                    }, stoppingToken);
+                    }, cancellationToken);
 
                 await guildLog.SendLogMessageAsync(
                     new GuildLogMessage
@@ -44,45 +49,8 @@ public sealed class RemoveExpiredTrackers
                         GuildId = expiredTracker.GuildId,
                         GuildLogType = GuildLogType.Moderation,
                         Description = $"Tracker on {user?.Mention} has expired."
-                    }, stoppingToken);
+                    }, cancellationToken);
             }
         }
-    }
-
-    public sealed record Request : IRequest<IEnumerable<Response>>;
-
-    [UsedImplicitly]
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, IEnumerable<Response>>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<IEnumerable<Response>> Handle(Request command,
-            CancellationToken cancellationToken)
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var results = await dbContext.Trackers
-                .Where(x => x.EndTime < DateTimeOffset.UtcNow)
-                .ToArrayAsync(cancellationToken);
-
-            var response = results.Select(x => new Response
-            {
-                UserId = x.UserId, GuildId = x.GuildId, TrackerChannelId = x.LogChannelId
-            });
-            if (results.Length == 0)
-                return response;
-
-            dbContext.Trackers.RemoveRange(results);
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            return response;
-        }
-    }
-
-    public sealed record Response
-    {
-        public ulong UserId { get; init; }
-        public GuildId GuildId { get; init; }
-        public ulong TrackerChannelId { get; init; }
     }
 }

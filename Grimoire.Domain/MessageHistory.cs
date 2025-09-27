@@ -15,11 +15,9 @@ public sealed class MessageHistory
     public required ulong MessageId { get; init; }
     public Message? Message { get; init; }
     public required ulong GuildId { get; init; }
-    public Guild? Guild { get; init; }
     public required MessageAction Action { get; init; }
     public required string MessageContent { get; init; }
     public ulong? DeletedByModeratorId { get; init; }
-    public Member? DeletedByModerator { get; init; }
     public DateTimeOffset TimeStamp { get; private init; }
 }
 

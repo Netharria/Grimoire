@@ -9,30 +9,6 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class UserDatabaseQueryHelpers
 {
-    public static async Task<bool> AddMissingUsersAsync(this DbSet<User> databaseUsers,
-        DiscordGuild discordGuild,
-        CancellationToken cancellationToken = default)
-    {
-
-        var existingUserIds = await databaseUsers
-            .AsNoTracking()
-            .Where(user => discordGuild.Members.Keys.Contains(user.Id))
-            .Select(user => user.Id)
-            .AsAsyncEnumerable()
-            .ToHashSetAsync(cancellationToken);
-
-        var usersToAdd = discordGuild.Members.Keys
-            .Where(x => !existingUserIds.Contains(x))
-            .Select(x => new User { Id = x })
-            .ToArray();
-
-        if (usersToAdd.Length == 0)
-            return false;
-
-        await databaseUsers.AddRangeAsync(usersToAdd, cancellationToken);
-        return true;
-    }
-
     public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames,
         DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {

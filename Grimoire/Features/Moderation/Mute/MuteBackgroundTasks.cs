@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Moderation.Mute.Commands;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,13 +19,13 @@ namespace Grimoire.Features.Moderation.Mute;
 internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILogger<MuteBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
-    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken stoppingToken)
+    protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var mediator = serviceProvider.GetRequiredService<IMediator>();
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
         var guildLog = serviceProvider.GetRequiredService<GuildLog>();
 
-        await foreach (var expiredLock in mediator.CreateStream(new GetExpiredMutes.Query(), stoppingToken))
+        await foreach (var expiredLock in mediator.CreateStream(new GetExpiredMutes.Query(), cancellationToken))
         {
             var guild = discordClient.Guilds.GetValueOrDefault(expiredLock.GuildId);
             if (guild is null) continue;
@@ -47,10 +48,10 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                         GuildLogType = GuildLogType.Moderation,
                         Description =
                             $"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually."
-                    }, stoppingToken);
+                    }, cancellationToken);
             }
 
-            _ = await mediator.Send(new UnmuteUser.Request { UserId = user.Id, GuildId = guild.Id }, stoppingToken);
+            _ = await mediator.Send(new UnmuteUser.Request { UserId = user.Id, GuildId = guild.Id }, cancellationToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Mute on {user.Mention} has expired.");
@@ -63,7 +64,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                     GuildId = guild.Id,
                     GuildLogType = GuildLogType.Moderation,
                     Description = $"Mute on {user.Mention} has expired."
-                }, stoppingToken);
+                }, cancellationToken);
         }
     }
 }

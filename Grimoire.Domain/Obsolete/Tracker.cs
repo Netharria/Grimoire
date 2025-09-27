@@ -13,16 +13,9 @@ namespace Grimoire.Domain.Obsolete;
 [Obsolete("Use Settings Module Instead.")]
 public sealed class Tracker
 {
-    public Member? Member { get; init; }
-
-    public Guild? Guild { get; init; }
     public ulong LogChannelId { get; set; }
-
-    public Channel? LogChannel { get; init; }
     public DateTimeOffset EndTime { get; set; }
     public ulong? ModeratorId { get; set; }
-
-    public Member? Moderator { get; init; }
     public ulong UserId { get; set; }
 
     public ulong GuildId { get; set; }
