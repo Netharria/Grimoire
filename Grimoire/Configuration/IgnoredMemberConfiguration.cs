@@ -12,8 +12,5 @@ namespace Grimoire.Configuration;
 
 internal sealed class IgnoredMemberConfiguration : IEntityTypeConfiguration<IgnoredMember>
 {
-    public void Configure(EntityTypeBuilder<IgnoredMember> builder)
-    {
-        builder.HasKey(e => new { e.UserId, e.GuildId });
-    }
+    public void Configure(EntityTypeBuilder<IgnoredMember> builder) => builder.HasKey(e => new { e.UserId, e.GuildId });
 }

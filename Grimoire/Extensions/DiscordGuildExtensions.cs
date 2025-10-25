@@ -16,8 +16,8 @@ public static class DiscordGuildExtensions
         where T : DiscordAuditLogEntry
         => guild.GetAuditLogsAsync(1, actionType: actionType)
             .OfType<T>()
-            .FirstOrDefaultAsync(
-                x => x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
+            .FirstOrDefaultAsync(x =>
+                x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
 
     public static async Task<DiscordRole?> GetRoleOrDefaultAsync(this DiscordGuild guild, ulong roleId)
     {

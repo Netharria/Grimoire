@@ -27,9 +27,12 @@ public partial class LogSettingsCommands
 
             var joinLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserJoined, ctx.Guild.Id);
             var leaveLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserLeft, ctx.Guild.Id);
-            var usernameUpdated = await this._settingsModule.GetLogChannelSetting(GuildLogType.UsernameUpdated, ctx.Guild.Id);
-            var nicknameUpdated = await this._settingsModule.GetLogChannelSetting(GuildLogType.NicknameUpdated, ctx.Guild.Id);
-            var avatarUpdated = await this._settingsModule.GetLogChannelSetting(GuildLogType.AvatarUpdated, ctx.Guild.Id);
+            var usernameUpdated =
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.UsernameUpdated, ctx.Guild.Id);
+            var nicknameUpdated =
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.NicknameUpdated, ctx.Guild.Id);
+            var avatarUpdated =
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.AvatarUpdated, ctx.Guild.Id);
 
             var joinChannelLog =
                 joinLog is null
@@ -53,14 +56,13 @@ public partial class LogSettingsCommands
                     : (await ctx.Guild.GetChannelAsync(avatarUpdated.Value)).Mention;
             await ctx.EditReplyAsync(
                 title: "Current Logging System Settings",
-                message: $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, ctx.Guild.Id)}\n" +
-                         $"**Join Log:** {joinChannelLog}\n" +
-                         $"**Leave Log:** {leaveChannelLog}\n" +
-                         $"**Username Log:** {usernameChannelLog}\n" +
-                         $"**Nickname Log:** {nicknameChannelLog}\n" +
-                         $"**Avatar Log:** {avatarChannelLog}\n");
-
-
+                message:
+                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, ctx.Guild.Id)}\n" +
+                $"**Join Log:** {joinChannelLog}\n" +
+                $"**Leave Log:** {leaveChannelLog}\n" +
+                $"**Username Log:** {usernameChannelLog}\n" +
+                $"**Nickname Log:** {nicknameChannelLog}\n" +
+                $"**Avatar Log:** {avatarChannelLog}\n");
         }
     }
 }

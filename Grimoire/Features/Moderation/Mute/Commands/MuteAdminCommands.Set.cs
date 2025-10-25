@@ -24,7 +24,7 @@ public partial class MuteAdminCommands
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        await this._mediator.Send(new SetMuteRole.Request { Role = role.Id, GuildId = ctx.Guild.Id });
+        await this._settingsModule.SetMuteRole(role.Id, ctx.Guild.Id);
 
         await ctx.EditReplyAsync(message: $"Will now use role {role.Mention} for muting users.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
@@ -34,33 +34,5 @@ public partial class MuteAdminCommands
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} updated the mute role to {role.Mention}"
         });
-    }
-}
-
-public sealed class SetMuteRole
-{
-    public sealed record Request : IRequest
-    {
-        public ulong Role { get; init; }
-        public GuildId GuildId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Request command, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var guildModerationSettings = await dbContext.GuildModerationSettings
-                .Include(x => x.Guild)
-                .FirstOrDefaultAsync(x => x.GuildId == command.GuildId, cancellationToken);
-            if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
-
-            guildModerationSettings.MuteRole = command.Role;
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
     }
 }

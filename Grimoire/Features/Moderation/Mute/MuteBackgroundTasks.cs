@@ -10,6 +10,7 @@ using DSharpPlus.Exceptions;
 using Grimoire.Features.Moderation.Mute.Commands;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,19 +22,22 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
 {
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var settingsModule = serviceProvider.GetRequiredService<SettingsModule>();
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
         var guildLog = serviceProvider.GetRequiredService<GuildLog>();
 
-        await foreach (var expiredLock in mediator.CreateStream(new GetExpiredMutes.Query(), cancellationToken))
+        await foreach (var expiredLock in settingsModule.GetAllExpiredMutes(cancellationToken))
         {
             var guild = discordClient.Guilds.GetValueOrDefault(expiredLock.GuildId);
             if (guild is null) continue;
 
             var user = guild.Members.GetValueOrDefault(expiredLock.UserId);
 
+            var muteRole = await settingsModule.GetMuteRole(guild.Id, cancellationToken);
+
             if (user is null) continue;
-            var role = guild.Roles.GetValueOrDefault(expiredLock.MuteRole);
+            if (muteRole is null) continue;
+            var role = guild.Roles.GetValueOrDefault(muteRole.Value);
             if (role is null) continue;
             try
             {
@@ -51,7 +55,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                     }, cancellationToken);
             }
 
-            _ = await mediator.Send(new UnmuteUser.Request { UserId = user.Id, GuildId = guild.Id }, cancellationToken);
+            await settingsModule.RemoveMute(expiredLock.UserId, expiredLock.GuildId, cancellationToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Mute on {user.Mention} has expired.");
@@ -66,42 +70,5 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                     Description = $"Mute on {user.Mention} has expired."
                 }, cancellationToken);
         }
-    }
-}
-
-public sealed class GetExpiredMutes
-{
-    public sealed record Query : IStreamRequest<Response>;
-
-    [UsedImplicitly]
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IStreamRequestHandler<Query, Response>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async IAsyncEnumerable<Response> Handle(Query query,
-            [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            await foreach (var mute in dbContext.Mutes
-                               .AsNoTracking()
-                               .Where(x => x.EndTime < DateTimeOffset.UtcNow)
-                               .Where(x => x.Guild.ModerationSettings.MuteRole != null)
-                               .Select(x => new Response
-                               {
-                                   UserId = x.UserId,
-                                   GuildId = x.GuildId,
-                                   MuteRole = x.Guild.ModerationSettings.MuteRole!.Value
-                               }).AsAsyncEnumerable()
-                               .WithCancellation(cancellationToken))
-                yield return mute;
-        }
-    }
-
-    public sealed record Response
-    {
-        public ulong UserId { get; init; }
-        public GuildId GuildId { get; init; }
-        public ulong MuteRole { get; init; }
     }
 }

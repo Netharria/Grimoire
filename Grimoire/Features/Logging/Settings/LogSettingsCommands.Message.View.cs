@@ -25,9 +25,12 @@ public partial class LogSettingsCommands
             if (ctx.Guild is null)
                 throw new AnticipatedException("This command can only be used in a server.");
 
-            var deleteChannelLogId = await this._settingsModule.GetLogChannelSetting(GuildLogType.MessageDeleted, ctx.Guild.Id);
-            var bulkDeleteChannelLogId = await this._settingsModule.GetLogChannelSetting(GuildLogType.BulkMessageDeleted, ctx.Guild.Id);
-            var editChannelLogId = await this._settingsModule.GetLogChannelSetting(GuildLogType.MessageEdited, ctx.Guild.Id);
+            var deleteChannelLogId =
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.MessageDeleted, ctx.Guild.Id);
+            var bulkDeleteChannelLogId =
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.BulkMessageDeleted, ctx.Guild.Id);
+            var editChannelLogId =
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.MessageEdited, ctx.Guild.Id);
 
             var deleteChannelLog =
                 deleteChannelLogId is null
@@ -46,10 +49,11 @@ public partial class LogSettingsCommands
                     .Mention;
             await ctx.EditReplyAsync(
                 title: "Current Logging System Settings",
-                message: $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.MessageLog, ctx.Guild.Id)}\n" +
-                         $"**Delete Log:** {deleteChannelLog}\n" +
-                         $"**Bulk Delete Log:** {bulkDeleteChannelLog}\n" +
-                         $"**Edit Log:** {editChannelLog}\n");
+                message:
+                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.MessageLog, ctx.Guild.Id)}\n" +
+                $"**Delete Log:** {deleteChannelLog}\n" +
+                $"**Bulk Delete Log:** {bulkDeleteChannelLog}\n" +
+                $"**Edit Log:** {editChannelLog}\n");
         }
     }
 }

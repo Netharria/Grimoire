@@ -15,7 +15,6 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
 
     public async Task HandleEventAsync(DiscordClient sender, VoiceStateUpdatedEventArgs args)
     {
-
         if (args.Before?.Channel is null && args.After?.Channel is null)
             return;
 

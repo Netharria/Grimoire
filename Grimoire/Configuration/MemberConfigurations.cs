@@ -14,8 +14,5 @@ namespace Grimoire.Configuration;
 [ExcludeFromCodeCoverage]
 internal sealed class MemberConfigurations : IEntityTypeConfiguration<Member>
 {
-    public void Configure(EntityTypeBuilder<Member> builder)
-    {
-        builder.HasKey(e => new { e.UserId, e.GuildId });
-    }
+    public void Configure(EntityTypeBuilder<Member> builder) => builder.HasKey(e => new { e.UserId, e.GuildId });
 }

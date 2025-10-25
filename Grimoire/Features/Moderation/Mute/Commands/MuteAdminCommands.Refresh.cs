@@ -17,10 +17,15 @@ public partial class MuteAdminCommands
 
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
+        var response = await this._settingsModule.GetMuteRole(ctx.Guild.Id);
 
-        var response = await this._mediator.Send(new GetMuteRole.Query { GuildId = ctx.Guild.Id });
+        if (response is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "No mute role is configured.");
+            return;
+        }
 
-        if (!ctx.Guild.Roles.TryGetValue(response, out var role))
+        if (!ctx.Guild.Roles.TryGetValue(response.Value, out var role))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "Could not find configured mute role.");
             return;
@@ -38,31 +43,5 @@ public partial class MuteAdminCommands
             await ctx.EditReplyAsync(GrimoireColor.Yellow,
                 $"Was not able to set permissions for the following channels. " +
                 $"{string.Join(' ', result.Select(x => x.Channel.Mention))}");
-    }
-}
-
-public class GetMuteRole
-{
-    public sealed record Query : IRequest<ulong>
-    {
-        public required GuildId GuildId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Query, ulong>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<ulong> Handle(Query request, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var muteRoleId = await dbContext.GuildModerationSettings
-                .AsNoTracking()
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(x => x.MuteRole)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (muteRoleId is null) throw new AnticipatedException("No mute role is configured.");
-            return muteRoleId.Value;
-        }
     }
 }

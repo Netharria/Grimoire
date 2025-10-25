@@ -40,15 +40,13 @@ public static class DiscordChannelExtensions
         return messages.Length;
     }
 
-    public static IEnumerable<KeyValuePair<ulong, SettingsModule.ChannelNode>> BuildChannelTree(this DiscordChannel? channel)
+    public static IEnumerable<KeyValuePair<ulong, SettingsModule.ChannelNode>> BuildChannelTree(
+        this DiscordChannel? channel)
     {
         while (channel is not null)
         {
-            yield return new KeyValuePair<ulong, SettingsModule.ChannelNode>(channel.Id, new SettingsModule.ChannelNode
-            {
-                Id = channel.Id,
-                ParentChannelId = channel.ParentId
-            });
+            yield return new KeyValuePair<ulong, SettingsModule.ChannelNode>(channel.Id,
+                new SettingsModule.ChannelNode { Id = channel.Id, ParentChannelId = channel.ParentId });
             channel = channel.Parent;
         }
     }

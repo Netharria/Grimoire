@@ -12,12 +12,15 @@ using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Logging.UserLogging;
 
-internal sealed class GuildMemberAddedEvent(GuildLog guildLog, SettingsModule settingsModule, IInviteService inviteService)
+internal sealed class GuildMemberAddedEvent(
+    GuildLog guildLog,
+    SettingsModule settingsModule,
+    IInviteService inviteService)
     : IEventHandler<GuildMemberAddedEventArgs>
 {
     private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly IInviteService _inviteService = inviteService;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
@@ -62,9 +65,7 @@ internal sealed class GuildMemberAddedEvent(GuildLog guildLog, SettingsModule se
             embed.AddField("New Account", $"Created {Formatter.Timestamp(args.Member.CreationTimestamp)}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id,
-            GuildLogType = GuildLogType.UserJoined,
-            Embed = embed
+            GuildId = args.Guild.Id, GuildLogType = GuildLogType.UserJoined, Embed = embed
         });
     }
 }

@@ -7,14 +7,16 @@
 
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.SpamFilter;
 
-internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModule, GuildLog guildLog)
+internal sealed class SpamEvents(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule, SpamTrackerModule spamModule, GuildLog guildLog)
     : IEventHandler<MessageCreatedEventArgs>
 {
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
-    private readonly IMediator _mediator = mediator;
     private readonly SpamTrackerModule _spamModule = spamModule;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
@@ -30,18 +32,31 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
         if (args.Author is not DiscordMember member)
             return;
 
-        var response = await this._mediator.Send(new AutoMuteUser.Command
+        var muteRoleId = await this._settingsModule.GetMuteRole(args.Guild.Id);
+        if (muteRoleId is null)
+            return;
+
+        var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var muteCount = await dbContext.Sins
+            .Where(member1 => member1.UserId == member.Id && member1.GuildId == args.Guild.Id)
+            .Where(x => x.SinType == SinType.Mute)
+            .CountAsync(x => x.SinOn > DateTimeOffset.UtcNow.AddDays(-1));
+        var duration = TimeSpan.FromMinutes(Math.Pow(2, muteCount));
+        var muteEndTime = DateTimeOffset.UtcNow.Add(duration);
+        var sin = new Sin
         {
             UserId = member.Id,
             GuildId = args.Guild.Id,
-            ModeratorId = sender.CurrentUser.Id,
-            Reason = checkSpamResult.Reason
-        });
+            ModeratorId = args.Guild.CurrentMember.Id,
+            Reason = checkSpamResult.Reason,
+            SinType = SinType.Mute,
+        };
+        await dbContext.Sins.AddAsync(sin);
+        await dbContext.SaveChangesAsync();
 
-        if (response is null)
-            return;
+        await this._settingsModule.AddMute(member.Id, args.Guild.Id, sin.Id, muteEndTime);
 
-        var muteRole = args.Guild.Roles.GetValueOrDefault(response.MuteRole);
+        var muteRole = args.Guild.Roles.GetValueOrDefault(muteRoleId.Value);
 
         if (muteRole is null) return;
 
@@ -50,9 +65,9 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Mute")
             .AddField("User", member.Mention, true)
-            .AddField("Sin Id", $"**{response.SinId}**", true)
+            .AddField("Sin Id", $"**{sin.Id}**", true)
             .AddField("Moderator", sender.CurrentUser.Mention, true)
-            .AddField("Length", $"{response.Duration.TotalMinutes} minute(s)", true)
+            .AddField("Length", $"{duration.TotalMinutes} minute(s)", true)
             .WithColor(GrimoireColor.Red)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .AddField("Reason", checkSpamResult.Reason);
@@ -64,9 +79,9 @@ internal sealed class SpamEvents(IMediator mediator, SpamTrackerModule spamModul
         try
         {
             await member.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor($"Mute Id {response.SinId}")
+                .WithAuthor($"Mute Id {sin.Id}")
                 .WithDescription(
-                    $"You have been muted for {response.Duration.TotalMinutes} minute(s) by {sender.CurrentUser.Mention} for spamming.")
+                    $"You have been muted for {duration.TotalMinutes} minute(s) by {sender.CurrentUser.Mention} for spamming.")
                 .WithColor(GrimoireColor.Red));
         }
         catch (Exception)

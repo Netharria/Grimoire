@@ -129,7 +129,7 @@ await Host.CreateDefaultBuilder(args)
                     //Moderation Log
                     .AddEventHandlers<BanAddedEvent>()
                     .AddEventHandlers<BanRemovedEvent>()
-                    .AddEventHandlers<UserJoinedWhileMuted.EventHandler>()
+                    .AddEventHandlers<UserJoinedWhileMuted>()
                     .AddEventHandlers<SpamEvents>()
                     //General Events
                     .AddEventHandlers<GuildAdded>()
@@ -161,15 +161,15 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<RewardCommandGroup>();
                 extension.AddCommands<IgnoreCommandGroup>();
                 extension.AddCommands<LevelSettingsCommandGroup>();
-                extension.AddCommands<GetLevel.Command>();
-                extension.AddCommands<GetLeaderboard.Command>();
+                extension.AddCommands<GetLevel>();
+                extension.AddCommands<GetLeaderboard>();
 
                 // Logging
                 extension.AddCommands<LogSettingsCommands>();
 
                 //Trackers
-                extension.AddCommands<AddTrackerCommand>();
-                extension.AddCommands<RemoveTracker.Command>();
+                extension.AddCommands<AddTracker>();
+                extension.AddCommands<RemoveTracker>();
 
                 // Moderation
                 extension.AddCommands<AddBanCommand>();
@@ -177,8 +177,8 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<LockChannel>();
                 extension.AddCommands<UnlockChannel>();
                 extension.AddCommands<MuteAdminCommands>();
-                extension.AddCommands<MuteUser.Command>();
-                extension.AddCommands<UnmuteUser.Command>();
+                extension.AddCommands<MuteUser>();
+                extension.AddCommands<UnmuteUser>();
                 extension.AddCommands<PublishCommands>();
                 extension.AddCommands<ForgetSin.Command>();
                 extension.AddCommands<ModSettings>();
@@ -186,7 +186,7 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<SinLog.Command>();
                 extension.AddCommands<UpdateSinReason.Command>();
                 extension.AddCommands<SpamFilterOverrideCommands>();
-                extension.AddCommands<Warn.Command>();
+                extension.AddCommands<Warn>();
 
                 // Custom Commands
                 extension.AddCommands<CustomCommandSettings>();

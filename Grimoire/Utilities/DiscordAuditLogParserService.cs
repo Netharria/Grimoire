@@ -21,8 +21,8 @@ public sealed class DiscordAuditLogParserService(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     IMemoryCache memoryCache) : IDiscordAuditLogParserService
 {
-    private readonly DiscordClient _discordClient = discordClient;
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly DiscordClient _discordClient = discordClient;
     private readonly IMemoryCache _memoryCache = memoryCache;
 
     public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId,
@@ -45,12 +45,12 @@ public sealed class DiscordAuditLogParserService(
 
         try
         {
-            deleteEntry = await DiscordRetryPolicy.RetryDiscordCall(
-                async token => await guild.GetAuditLogsAsync(10, actionType: DiscordAuditLogActionType.MessageDelete)
-                    .OfType<DiscordAuditLogMessageEntry>()
-                    .Where(x => x.Target.Id == result.UserId && x.Channel.Id == channelId)
-                    .OrderByDescending(x => x.CreationTimestamp)
-                    .FirstOrDefaultAsync(token));
+            deleteEntry = await DiscordRetryPolicy.RetryDiscordCall(async token => await guild
+                .GetAuditLogsAsync(10, actionType: DiscordAuditLogActionType.MessageDelete)
+                .OfType<DiscordAuditLogMessageEntry>()
+                .Where(x => x.Target.Id == result.UserId && x.Channel.Id == channelId)
+                .OrderByDescending(x => x.CreationTimestamp)
+                .FirstOrDefaultAsync(token));
         }
         catch (Exception)
         {

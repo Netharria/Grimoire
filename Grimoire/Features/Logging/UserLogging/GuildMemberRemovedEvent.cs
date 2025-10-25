@@ -11,7 +11,8 @@ using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Logging.UserLogging;
 
-public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule settingsModule) : IEventHandler<GuildMemberRemovedEventArgs>
+public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule settingsModule)
+    : IEventHandler<GuildMemberRemovedEventArgs>
 {
     private readonly GuildLog _guildLog = guildLog;
     private readonly SettingsModule _settingsModule = settingsModule;
@@ -34,11 +35,9 @@ public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule se
                 args.Member.Roles.Any()
                     ? string.Join(' ', args.Member.Roles.Where(x => x.Id != args.Guild.Id).Select(x => x.Mention))
                     : "None");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed()
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id,
-            GuildLogType = GuildLogType.UserLeft,
-            Embed = embed
+            GuildId = args.Guild.Id, GuildLogType = GuildLogType.UserLeft, Embed = embed
         });
     }
 }

@@ -30,7 +30,6 @@ internal sealed class UpdateAllGuilds(
 
         foreach (var guild in eventArgs.Guilds)
         {
-
             var usernamesUpdated =
                 await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(guild.Value);
 

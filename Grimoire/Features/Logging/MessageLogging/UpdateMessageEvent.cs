@@ -21,8 +21,8 @@ public sealed class UpdateMessageEvent(
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
-    private readonly TrackerLog _trackerLog = trackerLog;
     private readonly SettingsModule _settingsModule = settingsModule;
+    private readonly TrackerLog _trackerLog = trackerLog;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageUpdatedEventArgs args)
     {

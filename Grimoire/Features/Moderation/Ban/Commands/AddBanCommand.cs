@@ -17,7 +17,9 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [RequirePermissions([DiscordPermission.BanMembers], [])]
-public sealed partial class AddBanCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory, ILogger<AddBanCommand> logger)
+public sealed partial class AddBanCommand(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    ILogger<AddBanCommand> logger)
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly ILogger<AddBanCommand> _logger = logger;

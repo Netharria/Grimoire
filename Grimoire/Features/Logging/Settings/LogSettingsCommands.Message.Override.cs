@@ -10,7 +10,6 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 
-
 namespace Grimoire.Features.Logging.Settings;
 
 public partial class LogSettingsCommands

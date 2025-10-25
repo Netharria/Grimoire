@@ -11,11 +11,14 @@ using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.Ban.Events;
 
-public class BanRemovedEvent(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule, GuildLog guildLog) : IEventHandler<GuildBanRemovedEventArgs>
+public class BanRemovedEvent(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    SettingsModule settingsModule,
+    GuildLog guildLog) : IEventHandler<GuildBanRemovedEventArgs>
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanRemovedEventArgs args)
     {
@@ -28,12 +31,7 @@ public class BanRemovedEvent(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .Where(m => m.UserId == args.Member.Id && m.GuildId == args.Guild.Id)
             .Where(sin => sin.SinType == SinType.Ban)
             .OrderByDescending(x => x.SinOn)
-            .Select(sin => new LastSin
-            {
-                SinId = sin.Id,
-                ModeratorId = sin.ModeratorId,
-                SinOn = sin.SinOn
-            })
+            .Select(sin => new LastSin { SinId = sin.Id, ModeratorId = sin.ModeratorId, SinOn = sin.SinOn })
             .FirstOrDefaultAsync();
 
         if (lastBan is null)

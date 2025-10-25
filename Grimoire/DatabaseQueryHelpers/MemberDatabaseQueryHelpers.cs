@@ -9,11 +9,9 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class MemberDatabaseQueryHelpers
 {
-
     public static async Task<bool> AddMissingNickNameHistoryAsync(this DbSet<NicknameHistory> databaseNicknames,
         DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {
-
         var existingNicknames = await databaseNicknames
             .AsNoTracking()
             .Where(x => x.GuildId == discordGuild.Id)
@@ -43,7 +41,6 @@ public static class MemberDatabaseQueryHelpers
     public static async Task<bool> AddMissingAvatarsHistoryAsync(this DbSet<Avatar> databaseAvatars,
         DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {
-
         var existingAvatars = await databaseAvatars
             .AsNoTracking()
             .Where(avatar => avatar.GuildId == discordGuild.Id)

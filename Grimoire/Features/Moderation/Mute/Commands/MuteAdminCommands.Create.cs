@@ -26,7 +26,7 @@ public partial class MuteAdminCommands
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration.");
 
-        await this._mediator.Send(new SetMuteRole.Request { Role = role.Id, GuildId = ctx.Guild.Id });
+        await this._settingsModule.SetMuteRole(role.Id, ctx.Guild.Id);
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions");

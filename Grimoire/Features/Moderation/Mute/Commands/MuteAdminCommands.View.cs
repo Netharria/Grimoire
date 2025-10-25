@@ -18,12 +18,13 @@ public partial class MuteAdminCommands
         if (ctx.Guild is null)
             throw new AnticipatedException("This command can only be used in a server.");
 
-        var response = await this._mediator.Send(new GetAllActiveMutes.Query { GuildId = ctx.Guild.Id });
-
+        var muteRole = await this._settingsModule.GetMuteRole(ctx.Guild.Id);
         DiscordRole? role = null;
-        if (response.MuteRole is not null) role = ctx.Guild.Roles.GetValueOrDefault(response.MuteRole.Value);
-        var users = ctx.Guild.Members.Where(x => response.MutedUsers.Contains(x.Key))
-            .Select(x => x.Value).ToArray();
+        if (muteRole is not null) role = ctx.Guild.Roles.GetValueOrDefault(muteRole.Value);
+        var users = await this._settingsModule.GetAllMutes(ctx.Guild.Id)
+            .Select(mute => ctx.Guild.Members.GetValueOrDefault(mute.UserId))
+            .OfType<DiscordMember>()
+            .ToArrayAsync();
         var embed = new DiscordEmbedBuilder();
 
         embed.AddField("Mute Role", role?.Mention ?? "None");
@@ -35,42 +36,5 @@ public partial class MuteAdminCommands
 
 
         await ctx.EditReplyAsync(embed: embed);
-    }
-}
-
-public sealed class GetAllActiveMutes
-{
-    public sealed record Query : IRequest<Response>
-    {
-        public GuildId GuildId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Query, Response>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<Response> Handle(Query request,
-            CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbContext.GuildModerationSettings
-                .AsNoTracking()
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(guildModerationSettings => new Response
-                {
-                    MuteRole = guildModerationSettings.MuteRole,
-                    MutedUsers = guildModerationSettings.Guild.ActiveMutes.Select(mute => mute.UserId).ToArray()
-                }).FirstOrDefaultAsync(cancellationToken);
-            if (result is null)
-                throw new AnticipatedException("Could not find the settings for this server.");
-            return result;
-        }
-    }
-
-    public sealed record Response
-    {
-        public ulong? MuteRole { get; init; }
-        public ulong[] MutedUsers { get; init; } = [];
     }
 }

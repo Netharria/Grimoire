@@ -134,7 +134,7 @@ public sealed partial class SettingsModule
         Inherit
     }
 
-    public record ChannelNode
+    public sealed record ChannelNode
     {
         public ulong Id { get; init; }
         public ulong? ParentChannelId { get; init; }

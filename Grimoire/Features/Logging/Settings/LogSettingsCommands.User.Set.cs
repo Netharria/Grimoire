@@ -19,11 +19,18 @@ public partial class LogSettingsCommands
     {
         public enum UserLogSetting
         {
-            [ChoiceDisplayName("Joined Server Log")] JoinLog,
+            [ChoiceDisplayName("Joined Server Log")]
+            JoinLog,
             [ChoiceDisplayName("Left Server Log")] LeaveLog,
-            [ChoiceDisplayName("Username Change Log")] UsernameLog,
-            [ChoiceDisplayName("Nickname Change Log")] NicknameLog,
-            [ChoiceDisplayName("Avatar Change Log")] AvatarLog
+
+            [ChoiceDisplayName("Username Change Log")]
+            UsernameLog,
+
+            [ChoiceDisplayName("Nickname Change Log")]
+            NicknameLog,
+
+            [ChoiceDisplayName("Avatar Change Log")]
+            AvatarLog
         }
 
         [Command("Set")]

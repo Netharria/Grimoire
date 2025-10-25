@@ -19,9 +19,14 @@ public partial class LogSettingsCommands
     {
         public enum MessageLogSetting
         {
-            [ChoiceDisplayName("Delete Message Log")] DeleteLog,
-            [ChoiceDisplayName("Bulk Delete Message Log")] BulkDeleteLog,
-            [ChoiceDisplayName("Edit Message Log")] EditLog
+            [ChoiceDisplayName("Delete Message Log")]
+            DeleteLog,
+
+            [ChoiceDisplayName("Bulk Delete Message Log")]
+            BulkDeleteLog,
+
+            [ChoiceDisplayName("Edit Message Log")]
+            EditLog
         }
 
         [Command("Set")]

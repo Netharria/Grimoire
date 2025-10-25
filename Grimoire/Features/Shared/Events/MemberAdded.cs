@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Domain.Obsolete;
-
 namespace Grimoire.Features.Shared.Events;
 
 internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -29,7 +27,7 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
             .FirstOrDefaultAsync();
 
         if (!string.Equals(userResult?.Username, eventArgs.Member.Username,
-                     StringComparison.CurrentCultureIgnoreCase))
+                StringComparison.CurrentCultureIgnoreCase))
             await dbContext.UsernameHistory.AddAsync(
                 new UsernameHistory { Username = eventArgs.Member.Username, UserId = eventArgs.Member.Id });
 
@@ -38,9 +36,7 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
             await dbContext.NicknameHistory.AddAsync(
                 new NicknameHistory
                 {
-                    UserId = eventArgs.Member.Id,
-                    GuildId = eventArgs.Guild.Id,
-                    Nickname = eventArgs.Member.Nickname
+                    UserId = eventArgs.Member.Id, GuildId = eventArgs.Guild.Id, Nickname = eventArgs.Member.Nickname
                 });
 
         if (!string.Equals(userResult?.FileName, eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128),

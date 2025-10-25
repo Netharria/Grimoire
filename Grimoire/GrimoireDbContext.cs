@@ -28,39 +28,39 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<Guild> Guilds { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<GuildCommandsSettings> GuildCommandsSettings { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<GuildLevelSettings> GuildLevelSettings { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<GuildUserLogSettings> GuildUserLogSettings { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<GuildMessageLogSettings> GuildMessageLogSettings { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<GuildModerationSettings> GuildModerationSettings { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<IgnoredChannel> IgnoredChannels { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<IgnoredMember> IgnoredMembers { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<IgnoredRole> IgnoredRoles { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<Lock> Locks { get; init; }
 
     public DbSet<Member> Members { get; init; }
@@ -68,13 +68,13 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<Message> Messages { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; init; }
 
     public DbSet<MessageHistory> MessageHistory { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<Mute> Mutes { get; init; }
 
     public DbSet<NicknameHistory> NicknameHistory { get; init; }
@@ -88,7 +88,7 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<PublishedMessage> PublishedMessages { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<Reward> Rewards { get; init; }
 
     public DbSet<Role> Roles { get; init; }
@@ -96,11 +96,11 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<Sin> Sins { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; }
 
 
-[Obsolete("Use Settings Module Instead.")]
+    [Obsolete("Use Settings Module Instead.")]
     public DbSet<Tracker> Trackers { get; init; }
 
     public DbSet<User> Users { get; init; }

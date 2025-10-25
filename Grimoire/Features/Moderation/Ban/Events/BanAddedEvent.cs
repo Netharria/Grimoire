@@ -14,13 +14,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Ban.Events;
 
-public partial class BanAddedEvent(IDbContextFactory<GrimoireDbContext> dbContextFactory,SettingsModule settingsModule, GuildLog guildLog, ILogger<BanAddedEvent> logger)
+public partial class BanAddedEvent(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    SettingsModule settingsModule,
+    GuildLog guildLog,
+    ILogger<BanAddedEvent> logger)
     : IEventHandler<GuildBanAddedEventArgs>
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
     private readonly ILogger<BanAddedEvent> _logger = logger;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanAddedEventArgs args)
     {
@@ -35,14 +39,10 @@ public partial class BanAddedEvent(IDbContextFactory<GrimoireDbContext> dbContex
             .OrderByDescending(x => x.SinOn)
             .Select(sin => new LastSin
             {
-                SinId = sin.Id,
-                ModeratorId = sin.ModeratorId,
-                Reason = sin.Reason,
-                SinOn = sin.SinOn
+                SinId = sin.Id, ModeratorId = sin.ModeratorId, Reason = sin.Reason, SinOn = sin.SinOn
             })
             .FirstOrDefaultAsync();
         if (lastBan is null || lastBan.SinOn < DateTimeOffset.UtcNow.AddSeconds(-30))
-        {
             try
             {
                 var banAuditLog =
@@ -56,11 +56,11 @@ public partial class BanAddedEvent(IDbContextFactory<GrimoireDbContext> dbContex
                         UserId = args.Member.Id,
                         Reason = banAuditLog?.Target.Id != args.Member.Id
                             ? string.Empty
-                            :  banAuditLog?.Reason ?? string.Empty,
+                            : banAuditLog?.Reason ?? string.Empty,
                         SinType = SinType.Ban,
                         ModeratorId = banAuditLog?.Target.Id != args.Member.Id
                             ? null
-                            :banAuditLog?.UserResponsible?.Id
+                            : banAuditLog?.UserResponsible?.Id
                     });
                 await dbContext.SaveChangesAsync();
 
@@ -76,7 +76,6 @@ public partial class BanAddedEvent(IDbContextFactory<GrimoireDbContext> dbContex
             {
                 LogAuditException(this._logger, ex);
             }
-        }
 
         if (lastBan is null)
             return;
