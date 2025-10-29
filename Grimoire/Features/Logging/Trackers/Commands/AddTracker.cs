@@ -23,7 +23,7 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
 
     [Command("Track")]
     [Description("Creates a log of a user's activity into the specified channel.")]
-    public async Task TrackAsync(SlashCommandContext ctx,
+    public async Task TrackAsync(CommandContext ctx,
         [Parameter("User")] [Description("The user to log.")]
         DiscordUser user,
         [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days.")]
@@ -35,8 +35,7 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
         if (user.Id == ctx.Client.CurrentUser.Id)
         {
@@ -44,7 +43,7 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
             return;
         }
 
-        if (ctx.Guild.Members.TryGetValue(user.Id, out var member))
+        if (guild.Members.TryGetValue(user.Id, out var member))
             if (member.Permissions.HasPermission(DiscordPermission.ManageGuild))
             {
                 await ctx.EditReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
@@ -54,22 +53,25 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
 
         discordChannel ??= ctx.Channel;
 
-        if (!ctx.Guild.Channels.ContainsKey(discordChannel.Id))
+        if (!guild.Channels.ContainsKey(discordChannel.Id))
         {
             await ctx.EditReplyAsync(
                 message: "<_<\n>_>\nThat channel is not on this server.\n Try a different one.");
             return;
         }
 
-        var permissions = discordChannel.PermissionsFor(ctx.Guild.CurrentMember);
+        var permissions = discordChannel.PermissionsFor(guild.CurrentMember);
         if (!permissions.HasPermission(DiscordPermission.SendMessages))
-            throw new AnticipatedException(
-                $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+                $"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+            return;
+        }
 
         await this._settingsModule.AddTracker(
             user.Id,
             ctx.User.Id,
-            ctx.Guild.Id,
+            guild.Id,
             discordChannel.Id,
             durationType.GetTimeSpan(durationAmount));
 
@@ -80,7 +82,7 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Description =
                 $"{ctx.User.Mention} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType}.",

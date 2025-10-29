@@ -17,23 +17,22 @@ namespace Grimoire.Features.Moderation.Lock.Commands;
 [RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
 public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("Unlock")]
     [Description("Unlocks a channel.")]
     public async Task UnlockChannelAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("Channel")] [Description("The channel to unlock. Current channel if not specified.")]
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
         channel ??= ctx.Channel;
-        var response = await this._settingsModule.RemoveLock(channel.Id, ctx.Guild.Id);
+        var response = await this._settingsModule.RemoveLock(channel.Id, guild.Id);
 
         if (response is null)
         {
@@ -43,9 +42,9 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
 
         if (!channel.IsThread)
         {
-            var permissions = ctx.Guild.Channels[channel.Id].PermissionOverwrites
-                .First(x => x.Id == ctx.Guild.EveryoneRole.Id);
-            await channel.AddOverwriteAsync(ctx.Guild.EveryoneRole,
+            var permissions = guild.Channels[channel.Id].PermissionOverwrites
+                .First(x => x.Id == guild.EveryoneRole.Id);
+            await channel.AddOverwriteAsync(guild.EveryoneRole,
                 permissions.Allowed.RevertLockPermissions(response.PreviouslyAllowed)
                 , permissions.Denied.RevertLockPermissions(response.PreviouslyDenied));
         }
@@ -54,7 +53,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} unlocked {channel.Mention}"

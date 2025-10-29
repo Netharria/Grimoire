@@ -17,7 +17,7 @@ internal sealed partial class GeneralSettingsCommands
     [Command("ModLogChannel")]
     [Description("Set the moderation log channel.")]
     public async Task SetAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("Option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel.")]
         ChannelOption option,
@@ -26,30 +26,39 @@ internal sealed partial class GeneralSettingsCommands
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
 
-        channel = ctx.GetChannelOptionAsync(option, channel);
-        if (channel is not null)
+        var guild = ctx.Guild!;
+
+        var channelOption = ctx.GetChannelOption(option, channel);
+
+        if (channelOption.IsLeft)
         {
-            var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
-            if (!permissions.HasPermission(DiscordPermission.SendMessages))
-                throw new AnticipatedException(
-                    $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+            await ctx.EditReplyAsync(DiscordColor.Red, $"");
+            return;
         }
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        channelOption.Match(
+            success => channel = success,
+            error => { });
 
-        guildSettings.ModLogChannelId = channel?.Id;
+        if (channel is not null)
+        {
+            var permissions = channel.PermissionsFor(guild.CurrentMember);
+            if (!permissions.HasPermission(DiscordPermission.SendMessages))
+            {
+                await ctx.EditReplyAsync(DiscordColor.Red, $"{guild.CurrentMember.Mention} don't have permission to send messages in that channel.");
+                return;
+            }
+        }
 
-        await this._settingsModule.UpdateGuildSettings(guildSettings);
+        await this._settingsModule.SetLogChannelSetting(GuildLogType.Moderation, guild.Id, channel?.Id);
 
         await ctx.EditReplyAsync(message: option is ChannelOption.Off
             ? $"{ctx.User.Mention} disabled the moderation log to {channel?.Mention}"
             : $"Updated the moderation log to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Description = option is ChannelOption.Off
                 ? $"{ctx.User.Mention} disabled the moderation log."

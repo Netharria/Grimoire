@@ -13,7 +13,7 @@ namespace Grimoire.Domain;
 public sealed class Message
 {
     public required ulong ChannelId { get; init; }
-    public DateTimeOffset CreatedTimestamp { get; private init; }
+    public DateTimeOffset CreatedTimestamp { get; } = DateTimeOffset.UtcNow;
     public ulong? ReferencedMessageId { get; init; }
     public ProxiedMessageLink? ProxiedMessageLink { get; init; }
     public ProxiedMessageLink? OriginalMessageLink { get; init; }

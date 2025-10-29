@@ -11,10 +11,10 @@ namespace Grimoire.Settings.Domain;
 
 public sealed class ModerationSettings : IModule
 {
-    public ulong GuildId { get; init; }
     public ulong? PublicBanLog { get; set; }
     public TimeSpan AutoPardonAfter { get; set; }
     public ulong? MuteRole { get; set; }
     public bool AntiSpamEnabled { get; init; }
+    public ulong GuildId { get; init; }
     public bool ModuleEnabled { get; set; }
 }

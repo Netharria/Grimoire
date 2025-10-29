@@ -22,3 +22,6 @@ using System.Diagnostics.CodeAnalysis;
 [assembly:
     SuppressMessage("Style", "IDE0300:Simplify collection initialization", Justification = "Generated Code",
         Scope = "namespaceanddescendants", Target = "~N:Grimoire.Migrations")]
+//todo: Remove once DSP analyzer is fixed
+[assembly:
+    SuppressMessage("Design", "DSP0007:Use \'DiscordChannel#ModifyAsync\'", Justification = "False Positive")]

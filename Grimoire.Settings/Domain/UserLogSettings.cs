@@ -11,11 +11,11 @@ namespace Grimoire.Settings.Domain;
 
 public sealed class UserLogSettings : IModule
 {
-    public ulong GuildId { get; init; }
     public ulong? JoinChannelLogId { get; set; }
     public ulong? LeaveChannelLogId { get; set; }
     public ulong? UsernameChannelLogId { get; set; }
     public ulong? NicknameChannelLogId { get; set; }
     public ulong? AvatarChannelLogId { get; set; }
+    public ulong GuildId { get; init; }
     public bool ModuleEnabled { get; set; }
 }

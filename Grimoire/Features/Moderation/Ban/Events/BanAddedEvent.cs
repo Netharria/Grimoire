@@ -56,11 +56,11 @@ public partial class BanAddedEvent(
                         UserId = args.Member.Id,
                         Reason = banAuditLog?.Target.Id != args.Member.Id
                             ? string.Empty
-                            : banAuditLog?.Reason ?? string.Empty,
+                            : banAuditLog.Reason ?? string.Empty,
                         SinType = SinType.Ban,
                         ModeratorId = banAuditLog?.Target.Id != args.Member.Id
                             ? null
-                            : banAuditLog?.UserResponsible?.Id
+                            : banAuditLog.UserResponsible?.Id
                     });
                 await dbContext.SaveChangesAsync();
 

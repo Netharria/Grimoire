@@ -19,5 +19,7 @@ internal sealed class LockConfigurations : IEntityTypeConfiguration<Lock>
     {
         builder.HasKey(e => e.ChannelId);
         builder.HasIndex(x => x.EndTime);
+        builder.Property(e => e.Reason)
+            .HasMaxLength(4096);
     }
 }

@@ -14,14 +14,13 @@ internal sealed partial class ModuleCommands
     [UsedImplicitly]
     [Command("View")]
     [Description("View the current states of the modules.")]
-    public async Task ViewAsync(SlashCommandContext ctx)
+    public async Task ViewAsync(CommandContext ctx)
     {
-        await ctx.DeferResponseAsync(true);
+        await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var guildSettings = await this._settingsModule.GetAllModuleState(ctx.Guild.Id);
+        var guildSettings = await this._settingsModule.GetAllModuleState(guild.Id);
 
         await ctx.EditReplyAsync(
             title: "Current states of modules.",

@@ -15,16 +15,15 @@ namespace Grimoire.Settings.Services;
 
 public partial class SettingsModule
 {
-
-    const string MuteRoleCacheKeyPrefix = "MuteRole_{0}";
+    private const string MuteRoleCacheKeyPrefix = "MuteRole_{0}";
 
     public async Task<ulong?> GetMuteRole(
         ulong guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!await this.IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
+        if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
             return null;
-        var cacheEntry =  await this.GetMuteRoleCacheEntry(guildId, cancellationToken);
+        var cacheEntry = await GetMuteRoleCacheEntry(guildId, cancellationToken);
         return cacheEntry?.Id;
     }
 
@@ -37,12 +36,12 @@ public partial class SettingsModule
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await dbContext
-                .GuildModerationSettings
+                .ModerationSettings
                 .AsNoTracking()
                 .Where(reward => reward.GuildId == guildId)
                 .Select(reward => reward.MuteRole)
                 .FirstOrDefaultAsync(cancellationToken);
-            return new MuteCacheEntry{ Id = result };
+            return new MuteCacheEntry { Id = result };
         }, this._cacheEntryOptions);
     }
 
@@ -50,7 +49,7 @@ public partial class SettingsModule
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var result = await dbContext
-            .GuildModerationSettings
+            .ModerationSettings
             .AsNoTracking()
             .Where(reward => reward.GuildId == guildId)
             .FirstOrDefaultAsync(cancellationToken) ?? new ModerationSettings { GuildId = guildId };
@@ -89,16 +88,11 @@ public partial class SettingsModule
             .Where(x => x.UserId == userId && x.GuildId == guildId)
             .FirstOrDefaultAsync(cancellationToken);
         if (existingLock is not null) dbContext.Mutes.Remove(existingLock);
-        var newLock = new Mute
-        {
-            UserId = userId,
-            GuildId = guildId,
-            EndTime = muteEndTime,
-            SinId = sinId
-        };
+        var newLock = new Mute { UserId = userId, GuildId = guildId, EndTime = muteEndTime, SinId = sinId };
         dbContext.Mutes.Add(newLock);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
     public async Task<Mute?> RemoveMute(ulong userId, ulong guildId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -112,7 +106,8 @@ public partial class SettingsModule
         return existingMute;
     }
 
-    public async IAsyncEnumerable<Mute> GetAllExpiredMutes([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<Mute> GetAllExpiredMutes(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         await foreach (var expiredMutes in dbContext.Mutes
@@ -123,7 +118,8 @@ public partial class SettingsModule
             yield return expiredMutes;
     }
 
-    public async IAsyncEnumerable<Mute> GetAllMutes(ulong guildId, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<Mute> GetAllMutes(ulong guildId,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         await foreach (var expiredMutes in dbContext.Mutes

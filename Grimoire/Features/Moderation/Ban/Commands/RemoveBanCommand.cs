@@ -20,18 +20,17 @@ public sealed class RemoveBanCommand
     [Command("Unban")]
     [Description("Unbans a user from the server.")]
     public static async Task UnbanAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("User")] [Description("The user to unban.")]
         DiscordUser user)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
         try
         {
-            await ctx.Guild.UnbanMemberAsync(user.Id);
+            await guild.UnbanMemberAsync(user.Id);
             await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
                 .WithAuthor("Unbanned")
                 .AddField("User", user.Mention, true)

@@ -10,8 +10,8 @@ using Grimoire.Settings.Services;
 namespace Grimoire.Features.Moderation.Lock;
 
 public sealed class LockedTreadEvents(SettingsModule settingsModule)
-        : IEventHandler<MessageCreatedEventArgs>
-            , IEventHandler<MessageReactionAddedEventArgs>
+    : IEventHandler<MessageCreatedEventArgs>
+        , IEventHandler<MessageReactionAddedEventArgs>
 {
     private readonly SettingsModule _settingsModule = settingsModule;
 

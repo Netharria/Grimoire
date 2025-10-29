@@ -14,24 +14,38 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs eventArgs)
     {
-        var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var userResult = await dbContext.Users
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+
+        var userId = eventArgs.Member.Id;
+        var guildId = eventArgs.Guild.Id;
+
+        var latestUsername = await dbContext.UsernameHistory
             .AsNoTracking()
-            .Where(x => x.Id == eventArgs.Member.Id)
-            .Select(x => new
-            {
-                dbContext.UsernameHistory.OrderByDescending(username => username.Timestamp).First().Username,
-                dbContext.NicknameHistory.OrderByDescending(nickname => nickname.Timestamp).First().Nickname,
-                dbContext.Avatars.OrderByDescending(avatar => avatar.Timestamp).First().FileName
-            })
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.Timestamp)
+            .Select(x => x.Username)
             .FirstOrDefaultAsync();
 
-        if (!string.Equals(userResult?.Username, eventArgs.Member.Username,
+        var latestNickname = await dbContext.NicknameHistory
+            .AsNoTracking()
+            .Where(x => x.UserId == userId && x.GuildId == guildId)
+            .OrderByDescending(x => x.Timestamp)
+            .Select(x => x.Nickname)
+            .FirstOrDefaultAsync();
+
+        var latestAvatar = await dbContext.Avatars
+            .AsNoTracking()
+            .Where(x => x.UserId == userId && x.GuildId == guildId)
+            .OrderByDescending(x => x.Timestamp)
+            .Select(x => x.FileName)
+            .FirstOrDefaultAsync();
+
+        if (!string.Equals(latestUsername, eventArgs.Member.Username,
                 StringComparison.CurrentCultureIgnoreCase))
             await dbContext.UsernameHistory.AddAsync(
                 new UsernameHistory { Username = eventArgs.Member.Username, UserId = eventArgs.Member.Id });
 
-        if (!string.Equals(userResult?.Nickname, eventArgs.Member.Nickname,
+        if (!string.Equals(latestNickname, eventArgs.Member.Nickname,
                 StringComparison.CurrentCultureIgnoreCase))
             await dbContext.NicknameHistory.AddAsync(
                 new NicknameHistory
@@ -39,7 +53,7 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
                     UserId = eventArgs.Member.Id, GuildId = eventArgs.Guild.Id, Nickname = eventArgs.Member.Nickname
                 });
 
-        if (!string.Equals(userResult?.FileName, eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128),
+        if (!string.Equals(latestAvatar, eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128),
                 StringComparison.Ordinal))
             await dbContext.Avatars.AddAsync(
                 new Avatar
@@ -49,10 +63,9 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
                     FileName = eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128)
                 });
 
-        if (userResult is null
-            || !string.Equals(userResult.Username, eventArgs.Member.Username, StringComparison.CurrentCultureIgnoreCase)
-            || !string.Equals(userResult.Nickname, eventArgs.Member.Nickname, StringComparison.CurrentCultureIgnoreCase)
-            || !string.Equals(userResult.FileName, eventArgs.Member.AvatarUrl, StringComparison.Ordinal))
+        if (!string.Equals(latestUsername, eventArgs.Member.Username, StringComparison.CurrentCultureIgnoreCase)
+            || !string.Equals(latestNickname, eventArgs.Member.Nickname, StringComparison.CurrentCultureIgnoreCase)
+            || !string.Equals(latestAvatar, eventArgs.Member.AvatarUrl, StringComparison.Ordinal))
             await dbContext.SaveChangesAsync();
     }
 }

@@ -14,9 +14,7 @@ namespace Grimoire.Features.Leveling.Rewards;
 
 [Command("Rewards")]
 [Description("Commands for updating and viewing the server rewards.")]
-[RequireGuild]
-[RequireModuleEnabled(Module.Leveling)]
-[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+
 public sealed partial class RewardCommandGroup(SettingsModule settingsModule, GuildLog guildLog)
 {
     private readonly GuildLog _guildLog = guildLog;

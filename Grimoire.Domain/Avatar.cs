@@ -13,7 +13,7 @@ namespace Grimoire.Domain;
 public sealed class Avatar
 {
     public required string FileName { get; init; }
-    public DateTimeOffset Timestamp { get; private init; }
+    public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
     public required ulong UserId { get; init; }
     public required ulong GuildId { get; init; }
 }

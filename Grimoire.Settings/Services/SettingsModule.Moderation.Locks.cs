@@ -7,7 +7,6 @@
 
 using System.Collections.Frozen;
 using System.Runtime.CompilerServices;
-using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Lock = Grimoire.Settings.Domain.Lock;
@@ -16,7 +15,7 @@ namespace Grimoire.Settings.Services;
 
 public partial class SettingsModule
 {
-    const string LocksCacheKeyPrefix = "Locks_{0}";
+    private const string LocksCacheKeyPrefix = "Locks_{0}";
 
     public async Task<bool> IsChannelLocked(ulong channel, ulong guildId, CancellationToken cancellationToken = default)
     {
@@ -68,10 +67,12 @@ public partial class SettingsModule
             };
             dbContext.Locks.Add(newLock);
         }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
         this._memoryCache.Remove(cacheKey);
     }
+
     public async Task<Lock?> RemoveLock(ulong channelId, ulong guildId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -87,7 +88,8 @@ public partial class SettingsModule
         return existingLocks;
     }
 
-    public async IAsyncEnumerable<Lock> GetAllExpiredLocks([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<Lock> GetAllExpiredLocks(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         await foreach (var expiredLocks in dbContext.Locks

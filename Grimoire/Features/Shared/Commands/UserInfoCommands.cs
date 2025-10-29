@@ -22,14 +22,13 @@ internal sealed class UserInfoCommands(
 
     [Command("UserInfo")]
     [Description("Get information about a user.")]
-    public async Task GetUserInfo(SlashCommandContext ctx,
+    public async Task GetUserInfo(CommandContext ctx,
         [Parameter("user")] [Description("The user to get the information of.")]
         DiscordUser user)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
         var (color, displayName, avatarUrl, joinDate, roles) = GetUserInfo(user);
 
@@ -42,11 +41,11 @@ internal sealed class UserInfoCommands(
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-        await GetAndAddUsernames(dbContext, ctx.Guild.Id, user.Id, embed);
+        await GetAndAddUsernames(dbContext, guild.Id, user.Id, embed);
 
-        await GetAndAddLevelInfo(dbContext, embed, user.Id, ctx.Guild.Id, roles);
+        await GetAndAddLevelInfo(dbContext, embed, user.Id, guild.Id, roles);
 
-        await GetAndAddModerationInfo(dbContext, ctx.Guild.Id, user.Id, embed);
+        await GetAndAddModerationInfo(dbContext, guild.Id, user.Id, embed);
 
         await ctx.EditReplyAsync(embed: embed);
     }
@@ -61,7 +60,7 @@ internal sealed class UserInfoCommands(
 
         if (user is DiscordMember member)
         {
-            color = member.Color;
+            color = member.Color.PrimaryColor;
             displayName = member.DisplayName;
             avatarUrl = member.GetGuildAvatarUrl(MediaFormat.Auto);
             joinDate = Formatter.Timestamp(member.JoinedAt);
@@ -167,11 +166,12 @@ internal sealed class UserInfoCommands(
     {
         if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId))
             return;
+        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guildId);
         var response = await dbContext.Sins
             .AsNoTracking()
             .Where(sin => sin.UserId == userId
                           && sin.GuildId == guildId
-                          && sin.SinOn > DateTimeOffset.UtcNow - guildSettings.ModerationSettings.AutoPardonAfter)
+                          && sin.SinOn > DateTimeOffset.UtcNow - autoPardonAfter)
             .GroupBy(sin => new { sin.UserId, sin.GuildId, sin.SinType })
             .ToDictionaryAsync(
                 group => group.Key.SinType,

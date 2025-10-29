@@ -12,7 +12,7 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class Pardon
 {
-    public long SinId { get; private init; }
+    public long SinId { get; init; }
 
     public Sin? Sin { get; init; }
 

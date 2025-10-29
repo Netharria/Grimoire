@@ -14,9 +14,6 @@ namespace Grimoire.Features.Leveling.Settings;
 
 [Command("LevelSettings")]
 [Description("Commands for updating and viewing the server leveling settings.")]
-[RequireGuild]
-[RequireModuleEnabled(Module.Leveling)]
-[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 public sealed partial class LevelSettingsCommandGroup(SettingsModule settingsModule, GuildLog guildLog)
 {
     private readonly GuildLog _guildLog = guildLog;

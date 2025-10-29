@@ -12,9 +12,6 @@ using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Leveling.Settings;
 
-[RequireGuild]
-[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-[RequireModuleEnabled(Module.Leveling)]
 [Command("Ignore")]
 [Description("Commands for updating and viewing the server ignore list.")]
 public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, GuildLog guildLog)

@@ -21,9 +21,12 @@ public abstract partial class GenericBackgroundService(
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        LogBackgroundTaskStart(logger, GetType().FullName ?? GetType().Name);
 
-        await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(5000)), cancellationToken);
+        var randomTicks = Random.Shared.NextInt64(0, timeSpan.Ticks);
+        var timeSpanDelay = TimeSpan.FromTicks(randomTicks);
+        LogBackgroundTaskStart(logger, GetType().FullName ?? GetType().Name, timeSpanDelay);
+
+        await Task.Delay(timeSpanDelay, cancellationToken);
 
         while (await this._timer.WaitForNextTickAsync(cancellationToken))
             try
@@ -37,8 +40,8 @@ public abstract partial class GenericBackgroundService(
             }
     }
 
-    [LoggerMessage(LogLevel.Information, "Starting Background task {type}")]
-    static partial void LogBackgroundTaskStart(ILogger logger, string type);
+    [LoggerMessage(LogLevel.Information, "Starting Background task {type} with delay {timeSpan}")]
+    static partial void LogBackgroundTaskStart(ILogger logger, string type, TimeSpan timeSpan);
 
     [LoggerMessage(LogLevel.Error, "Exception was thrown when running a background task. Message: ({message})")]
     static partial void LogBackgroundTaskError(ILogger logger, Exception ex, string message);

@@ -6,6 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.RateLimiting;
+using DSharpPlus.Commands.Processors.TextCommands;
+using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Extensions;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
@@ -13,6 +15,7 @@ using DSharpPlus.Interactivity.Extensions;
 using EntityFramework.Exceptions.PostgreSQL;
 using Grimoire;
 using Grimoire.Features.CustomCommands;
+using Grimoire.Features.Leveling;
 using Grimoire.Features.Leveling.Awards;
 using Grimoire.Features.Leveling.Events;
 using Grimoire.Features.Leveling.Rewards;
@@ -104,8 +107,6 @@ await Host.CreateDefaultBuilder(args)
             .AddScoped<IPluralkitService, PluralkitService>()
             .AddSingleton<SpamTrackerModule>()
             .AddSingleton<IInviteService, InviteService>()
-            .AddHostedService<GuildLog>()
-            .AddHostedService<TrackerLog>()
             .ConfigureEventHandlers(eventHandlerBuilder =>
                 eventHandlerBuilder
                     //Custom Commands
@@ -180,17 +181,17 @@ await Host.CreateDefaultBuilder(args)
                 extension.AddCommands<MuteUser>();
                 extension.AddCommands<UnmuteUser>();
                 extension.AddCommands<PublishCommands>();
-                extension.AddCommands<ForgetSin.Command>();
+                extension.AddCommands<ForgetSin>();
                 extension.AddCommands<ModSettings>();
-                extension.AddCommands<PardonSin.Command>();
-                extension.AddCommands<SinLog.Command>();
-                extension.AddCommands<UpdateSinReason.Command>();
+                extension.AddCommands<PardonSin>();
+                extension.AddCommands<SinLog>();
+                extension.AddCommands<UpdateSinReason>();
                 extension.AddCommands<SpamFilterOverrideCommands>();
                 extension.AddCommands<Warn>();
 
                 // Custom Commands
                 extension.AddCommands<CustomCommandSettings>();
-                extension.AddCommands<GetCustomCommand.Command>();
+                extension.AddCommands<GetCustomCommand>();
 
                 extension.AddCheck<RequireModuleEnabledCheck>();
                 extension.AddCheck<RequireUserGuildPermissionsCheck>();
@@ -198,12 +199,27 @@ await Host.CreateDefaultBuilder(args)
                     => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
                 extension.CommandExecuted += (sender, eventArgs)
                     => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
-            }, new CommandsConfiguration { UseDefaultCommandErrorHandler = false })
+
+                TextCommandProcessor textCommandProcessor = new(new TextCommandConfiguration
+                {
+                    PrefixResolver = new DefaultPrefixResolver(true, "!").ResolvePrefixAsync,
+                });
+
+                extension.AddProcessor(textCommandProcessor);
+            }, new CommandsConfiguration
+            {
+                UseDefaultCommandErrorHandler = false
+            })
+            .AddSingleton<GuildLog>()
+            .AddHostedService<GuildLog>()
+            .AddSingleton<TrackerLog>()
+            .AddHostedService<TrackerLog>()
             .AddHostedService<CleanupLogsBackgroundTask>()
             .AddHostedService<RemoveExpiredTrackers.BackgroundTask>()
             .AddHostedService<LockBackgroundTasks>()
             .AddHostedService<MuteBackgroundTasks>()
             .AddHostedService<DiscordStartService>()
+            .AddHostedService<LeaderboardRefreshBackgroundTask>()
             .AddMemoryCache()
             .AddHttpClient("Default")
             .AddStandardResilienceHandler();

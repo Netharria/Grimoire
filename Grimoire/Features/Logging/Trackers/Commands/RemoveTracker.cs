@@ -24,16 +24,15 @@ public sealed class RemoveTracker(SettingsModule settingsModule, GuildLog guildL
 
     [Command("Untrack")]
     [Description("Stops the logging of the user's activity.")]
-    public async Task UnTrackAsync(SlashCommandContext ctx,
+    public async Task UnTrackAsync(CommandContext ctx,
         [Parameter("User")] [Description("The user to stop logging.")]
         DiscordUser member)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var tracker = await this._settingsModule.RemoveTracker(member.Id, ctx.Guild.Id);
+        var tracker = await this._settingsModule.RemoveTracker(member.Id, guild.Id);
 
 
         await ctx.EditReplyAsync(message: $"Tracker removed from {member.Mention}");
@@ -41,7 +40,7 @@ public sealed class RemoveTracker(SettingsModule settingsModule, GuildLog guildL
         if (tracker is not null)
             await this._trackerLog.SendTrackerMessageAsync(new TrackerMessage
             {
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.Id,
                 TrackerId = tracker.LogChannelId,
                 TrackerIdType = TrackerIdType.ChannelId,
                 Color = GrimoireColor.Purple,
@@ -50,7 +49,7 @@ public sealed class RemoveTracker(SettingsModule settingsModule, GuildLog guildL
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Username} removed a tracker on {member.Mention}"

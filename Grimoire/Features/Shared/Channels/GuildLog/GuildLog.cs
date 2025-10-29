@@ -81,6 +81,7 @@ public sealed partial class GuildLog(
             GuildLogType.AvatarUpdated => false,
             GuildLogType.NicknameUpdated => false,
             GuildLogType.UsernameUpdated => false,
+            GuildLogType.BanLog => false,
             _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, "Unknown log type")
         };
     }

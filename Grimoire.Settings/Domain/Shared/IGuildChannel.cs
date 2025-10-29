@@ -9,6 +9,6 @@ namespace Grimoire.Settings.Domain.Shared;
 
 public interface IGuildChannel
 {
-    public ulong ChannelId { get; init; }
-    public ulong GuildId { get; init; }
+    ulong ChannelId { get; init; }
+    ulong GuildId { get; init; }
 }

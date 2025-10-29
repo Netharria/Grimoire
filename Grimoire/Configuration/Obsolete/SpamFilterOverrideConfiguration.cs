@@ -8,8 +8,9 @@
 using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Configuration;
+namespace Grimoire.Configuration.Obsolete;
 
+[Obsolete("Table To be Dropped Soon.")]
 internal class SpamFilterOverideConfiguration : IEntityTypeConfiguration<SpamFilterOverride>
 {
     public void Configure(EntityTypeBuilder<SpamFilterOverride> builder)

@@ -18,7 +18,7 @@ public sealed class MessageHistory
     public required MessageAction Action { get; init; }
     public required string MessageContent { get; init; }
     public ulong? DeletedByModeratorId { get; init; }
-    public DateTimeOffset TimeStamp { get; private init; }
+    public DateTimeOffset TimeStamp { get; } = DateTimeOffset.UtcNow;
 }
 
 public enum MessageAction

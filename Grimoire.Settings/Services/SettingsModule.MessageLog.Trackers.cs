@@ -14,10 +14,10 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
+    private const string TrackersCacheKeyPrefix = "Trackers_{0}";
 
-    const string TrackersCacheKeyPrefix = "Trackers_{0}";
-
-    public async Task<ulong?> GetTrackerChannelAsync(ulong memberId, ulong guildId, CancellationToken cancellationToken = default)
+    public async Task<ulong?> GetTrackerChannelAsync(ulong memberId, ulong guildId,
+        CancellationToken cancellationToken = default)
     {
         var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
         var trackers = await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
@@ -27,7 +27,7 @@ public sealed partial class SettingsModule
                 .AsNoTracking()
                 .Where(x => x.GuildId == guildId)
                 .ToDictionaryAsync(
-                    tracker =>  tracker.UserId,
+                    tracker => tracker.UserId,
                     tracker => tracker.LogChannelId,
                     cancellationToken);
             return results.ToFrozenDictionary();
@@ -66,11 +66,14 @@ public sealed partial class SettingsModule
             };
             dbContext.Trackers.Add(newTracker);
         }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
         this._memoryCache.Remove(cacheKey);
     }
-    public async Task<Tracker?> RemoveTracker(ulong memberId, ulong guildId, CancellationToken cancellationToken = default)
+
+    public async Task<Tracker?> RemoveTracker(ulong memberId, ulong guildId,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingTracker = await dbContext.Trackers
@@ -99,6 +102,7 @@ public sealed partial class SettingsModule
             var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
             this._memoryCache.Remove(cacheKey);
         }
+
         return expiredTrackers;
     }
 }

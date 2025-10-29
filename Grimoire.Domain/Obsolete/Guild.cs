@@ -18,5 +18,6 @@ public sealed class Guild
 
     [Obsolete("Use Settings Module Instead.")]
     public ulong? UserCommandChannelId { get; set; }
+
     public required ulong Id { get; init; }
 }

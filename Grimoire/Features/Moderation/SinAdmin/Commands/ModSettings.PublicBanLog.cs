@@ -15,67 +15,55 @@ internal sealed partial class ModSettings
     [Command("PublicBanLog")]
     [Description("Set the public channel to publish ban and unbans to.")]
     public async Task BanLogAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("Option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel.")]
         ChannelOption option,
         [Parameter("Channel")] [Description("The channel to send the logs to.")]
         DiscordChannel? channel = null)
     {
-        await ctx.DeferResponseAsync(true);
+        if (ctx is SlashCommandContext slashContext)
+            await slashContext.DeferResponseAsync(true);
+        else
+            await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        channel = ctx.GetChannelOptionAsync(option, channel);
-        if (channel is not null)
+        var channelOption = ctx.GetChannelOption(option, channel);
+
+        if (channelOption.IsLeft)
         {
-            var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
-            if (!permissions.HasPermission(DiscordPermission.SendMessages))
-                throw new AnticipatedException(
-                    $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+            await ctx.EditReplyAsync(DiscordColor.Red, $"");
+            return;
         }
 
-        await this._mediator.Send(new SetBanLogChannel.Command { GuildId = ctx.Guild.Id, ChannelId = channel?.Id });
+        channelOption.Match(
+            success => channel = success,
+            error => { });
+
+        if (channel is not null)
+        {
+            var permissions = channel.PermissionsFor(guild.CurrentMember);
+            if (!permissions.HasPermission(DiscordPermission.SendMessages))
+            {
+                await ctx.EditReplyAsync(DiscordColor.Red, $"{guild.CurrentMember.Mention} don't have permission to send messages in that channel.");
+                return;
+            }
+        }
+
+        await this._settingsModule.SetLogChannelSetting(GuildLogType.BanLog, guild.Id, channel?.Id);
 
         await ctx.EditReplyAsync(message: option is ChannelOption.Off
             ? "Disabled the public ban log."
             : $"Updated the public ban log to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description = option is ChannelOption.Off
                 ? $"{ctx.User.Mention} disabled the public ban log."
                 : $"{ctx.User.Mention} updated the public ban log to {channel?.Mention}."
         });
-    }
-}
-
-internal sealed class SetBanLogChannel
-{
-    public sealed record Command : IRequest
-    {
-        public GuildId GuildId { get; init; }
-        public ulong? ChannelId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Command>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task Handle(Command command, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var guildModerationSettings = await dbContext.GuildModerationSettings
-                .FirstOrDefaultAsync(x => x.GuildId.Equals(command.GuildId), cancellationToken);
-            if (guildModerationSettings is null) throw new AnticipatedException("Could not find the Servers settings.");
-
-            guildModerationSettings.PublicBanLog = command.ChannelId;
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
     }
 }

@@ -16,5 +16,6 @@ internal sealed class IgnoredMemberConfiguration : IEntityTypeConfiguration<Igno
     public void Configure(EntityTypeBuilder<IgnoredMember> builder)
     {
         builder.HasKey(e => new { e.UserId, e.GuildId });
+        builder.Ignore(member => member.Id);
     }
 }

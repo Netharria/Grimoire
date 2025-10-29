@@ -19,5 +19,6 @@ internal sealed class IgnoredChannelConfiguration : IEntityTypeConfiguration<Ign
         builder.Property(e => e.ChannelId)
             .ValueGeneratedNever()
             .IsRequired();
+        builder.Ignore(channel => channel.Id);
     }
 }

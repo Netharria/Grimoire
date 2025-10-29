@@ -21,20 +21,33 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
     [Command("Level")]
     [Description("Gets the leveling details for the user.")]
     public async Task LevelAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("user")] [Description("User to get details from. Blank will return your info.")]
         DiscordUser? user = null)
     {
         if (ctx.Guild is null || ctx.Member is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
+            return;
+        }
 
         if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.Id))
-            throw new AnticipatedException("The leveling module is not enabled on this server.");
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "The leveling module is not enabled on this server.");
+            return;
+        }
 
         var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(ctx.Guild.Id);
 
-        await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                                     && userCommandChannelId != ctx.Channel.Id);
+        if (ctx is SlashCommandContext slashContext)
+            await slashContext.DeferResponseAsync(
+                !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+                && userCommandChannelId != ctx.Channel.Id);
+        else if (!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+                 && userCommandChannelId != ctx.Channel.Id)
+            return;
+
+
         user ??= ctx.User;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -61,7 +74,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         if (user is DiscordMember member)
         {
-            color = member.Color;
+            color = member.Color.PrimaryColor;
             displayName = member.DisplayName;
             avatarUrl = member.GetGuildAvatarUrl(MediaFormat.Auto);
         }
@@ -85,7 +98,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .WithTitle($"Level and EXP for {displayName}")
             .AddField("XP", $"{membersXp}", true)
             .AddField("Level", $"{currentLevel}", true)
-            .AddField("Progress", $"{membersXp - currentLevelXp}/{currentLevelXp - nextLevelXp}", true)
+            .AddField("Progress", $"{membersXp - currentLevelXp}/{nextLevelXp - currentLevelXp}", true)
             .AddField("Next Reward",
                 roleReward is null ? "None" : $"{roleReward.Mention}\n at level {nextLevelXp}", true)
             .WithThumbnail(avatarUrl)

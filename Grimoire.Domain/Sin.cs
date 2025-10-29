@@ -19,18 +19,20 @@ public enum SinType
 [UsedImplicitly]
 public sealed class Sin
 {
-
     public ulong? ModeratorId { get; init; }
 
     public required string Reason { get; set; }
 
-    public DateTimeOffset SinOn { get; private init; }
+    public DateTimeOffset SinOn { get; } = DateTimeOffset.UtcNow;
 
     public required SinType SinType { get; init; }
 
     public Pardon? Pardon { get; set; }
 
     public ICollection<PublishedMessage> PublishMessages { get; init; } = [];
+
+
+    // ReSharper disable once UnusedAutoPropertyAccessor.Local
     public long Id { get; private set; }
 
     public required ulong UserId { get; init; }

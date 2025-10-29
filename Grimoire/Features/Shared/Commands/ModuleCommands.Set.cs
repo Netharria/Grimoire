@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
@@ -13,35 +14,51 @@ namespace Grimoire.Features.Shared.Commands;
 
 internal sealed partial class ModuleCommands
 {
+    private static Module MapToModule(ModuleArguments moduleArgument)
+    {
+        return moduleArgument switch
+        {
+            ModuleArguments.Leveling => Module.Leveling,
+            ModuleArguments.UserLog => Module.UserLog,
+            ModuleArguments.Moderation => Module.Moderation,
+            ModuleArguments.MessageLog => Module.MessageLog,
+            ModuleArguments.Commands => Module.Commands,
+            _ => throw new UnreachableException("Invalid module argument.")
+        };
+    }
+
     [UsedImplicitly]
     [Command("Set")]
     [Description("Enable or Disable a module.")]
-    public async Task SetAsync(SlashCommandContext ctx,
+    public async Task SetAsync(CommandContext ctx,
         [Parameter("Module")] [Description("The module to enable or disable.")]
-        Module module,
+        ModuleArguments module,
         [Parameter("Enable")] [Description("Whether to enable or disable the module.")]
         bool enable)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var settings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
-
-        if (settings is null)
-            throw new AnticipatedException("Guild settings not found.");
-
-        await this._settingsModule.SetModuleState(module, ctx.Guild.Id, enable);
+        await this._settingsModule.SetModuleState(MapToModule(module), guild.Id, enable);
 
         await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module}");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Description = $"{ctx.User.Username} {(enable ? "Enabled" : "Disabled")} {module}",
             Color = GrimoireColor.Purple
         });
+    }
+
+    internal enum ModuleArguments
+    {
+        Leveling,
+        UserLog,
+        Moderation,
+        MessageLog,
+        Commands
     }
 }

@@ -19,5 +19,6 @@ internal sealed class IgnoredRoleConfiguration : IEntityTypeConfiguration<Ignore
         builder.Property(e => e.RoleId)
             .ValueGeneratedNever()
             .IsRequired();
+        builder.Ignore(role => role.Id);
     }
 }

@@ -9,13 +9,14 @@ using Grimoire.Settings.Domain.Shared;
 
 namespace Grimoire.Settings.Domain;
 
-public sealed class IgnoredChannel : Shared.IGuildChannel, IIgnored
+public sealed class IgnoredChannel : IGuildChannel, IIgnored
 {
+    public ulong ChannelId { get; init; }
+    public ulong GuildId { get; init; }
+
     public ulong Id
     {
         get => ChannelId;
         init => ChannelId = value;
     }
-    public ulong ChannelId { get; init; }
-    public ulong GuildId { get; init; }
 }

@@ -16,22 +16,24 @@ public sealed partial class IgnoreCommandGroup
 {
     [Command("View")]
     [Description("Displays all ignored users, channels and roles on this server.")]
-    public async Task ShowIgnoredAsync(SlashCommandContext ctx)
+    public async Task ShowIgnoredAsync(CommandContext ctx)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
 
         var embed = new DiscordEmbedBuilder()
             .WithTitle("Ignored Channels Roles and Users.")
             .WithTimestamp(DateTime.UtcNow);
         var embedPages = InteractivityExtension.GeneratePagesInEmbed(
-            await BuildMessageAsync(ctx.Guild.Id),
+            await BuildMessageAsync(guild.Id),
             SplitType.Line,
             embed);
-        await ctx.Interaction.SendPaginatedResponseAsync(false, ctx.User, embedPages);
+        if (ctx is SlashCommandContext slashContext)
+            await slashContext.Interaction.SendPaginatedResponseAsync(false, ctx.User, embedPages);
+        else
+            await ctx.Channel.SendPaginatedMessageAsync(ctx.User, embedPages);
     }
 
     private async Task<string> BuildMessageAsync(ulong guildId)

@@ -37,6 +37,7 @@ public sealed class BulkMessageDeletedEvent(
             .Select(historyGroup => new MessageDto
                 {
                     MessageId = historyGroup.Key.MessageId,
+                    // ReSharper disable AccessToDisposedClosure
                     UserId = dbContext.Messages
                         .Where(attachment => attachment.Id == historyGroup.Key.MessageId)
                         .Select(attachment => attachment.UserId)
@@ -46,6 +47,7 @@ public sealed class BulkMessageDeletedEvent(
                         .Where(attachment => attachment.MessageId == historyGroup.Key.MessageId)
                         .Select(x =>
                             new AttachmentDto { Id = x.Id, FileName = x.FileName })
+                    // ReSharper restore AccessToDisposedClosure
                 }
             ).ToArrayAsync();
         if (messages.Length == 0)

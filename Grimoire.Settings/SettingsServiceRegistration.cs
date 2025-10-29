@@ -5,14 +5,16 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
 using EntityFramework.Exceptions.PostgreSQL;
 using Grimoire.Settings.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Settings;
 
-public static class SettingsServiceRegistration
+public static partial class SettingsServiceRegistration
 {
     public static IServiceCollection AddSettingsServices(
         this IServiceCollection services,
@@ -20,9 +22,28 @@ public static class SettingsServiceRegistration
     {
         services.AddDbContextFactory<SettingsDbContext>(options =>
             options.UseNpgsql(connectionString,
-                npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
+                    npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
                 .UseExceptionProcessor());
         services.AddSingleton<SettingsModule>();
+
         return services;
     }
+
+    public static async Task MigrateSettingsDb(IDbContextFactory<SettingsDbContext> settingsDbContext, ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await settingsDbContext.CreateDbContextAsync(cancellationToken);
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
+        if (pendingMigrations.Any())
+        {
+            Stopwatch sw = new();
+            sw.Start();
+            await context.Database.MigrateAsync(cancellationToken);
+            sw.Stop();
+            LogMigrationDuration(logger, sw.ElapsedMilliseconds);
+        }
+    }
+
+    [LoggerMessage(LogLevel.Warning, "Applied pending settings migrations in {time} ms")]
+    static partial void LogMigrationDuration(ILogger logger, long time);
 }

@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Settings.Services;
-
 namespace Grimoire.Extensions;
 
 public static class DiscordChannelExtensions
@@ -40,13 +38,12 @@ public static class DiscordChannelExtensions
         return messages.Length;
     }
 
-    public static IEnumerable<KeyValuePair<ulong, SettingsModule.ChannelNode>> BuildChannelTree(
+    public static IEnumerable<KeyValuePair<ulong, ulong?>> BuildChannelTree(
         this DiscordChannel? channel)
     {
         while (channel is not null)
         {
-            yield return new KeyValuePair<ulong, SettingsModule.ChannelNode>(channel.Id,
-                new SettingsModule.ChannelNode { Id = channel.Id, ParentChannelId = channel.ParentId });
+            yield return new KeyValuePair<ulong, ulong?>(channel.Id, channel.ParentId);
             channel = channel.Parent;
         }
     }

@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 
@@ -12,6 +13,9 @@ namespace Grimoire.Features.Leveling.Settings;
 
 public partial class IgnoreCommandGroup
 {
+    [RequireGuild]
+    [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+    [RequireModuleEnabled(Module.Leveling)]
     [Command("Remove")]
     [Description("Removes a user, channel, or role from the ignored xp list.")]
     public async Task WatchAsync(CommandContext ctx,
@@ -19,9 +23,7 @@ public partial class IgnoreCommandGroup
         params SnowflakeObject[] value)
     {
         await ctx.DeferResponseAsync();
-
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
 
         if (value.Length == 0)
@@ -36,7 +38,7 @@ public partial class IgnoreCommandGroup
 
 
         await this._settingsModule.RemoveIgnoredItems(
-            ctx.Guild.Id,
+            guild.Id,
             ignoredMemberIds,
             ignoredChannelIds,
             ignoredRoleIds);
@@ -51,7 +53,7 @@ public partial class IgnoreCommandGroup
             message);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
             Description = message

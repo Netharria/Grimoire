@@ -11,12 +11,16 @@ using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.SpamFilter;
 
-internal sealed class SpamEvents(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule, SpamTrackerModule spamModule, GuildLog guildLog)
+internal sealed class SpamEvents(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    SettingsModule settingsModule,
+    SpamTrackerModule spamModule,
+    GuildLog guildLog)
     : IEventHandler<MessageCreatedEventArgs>
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly SpamTrackerModule _spamModule = spamModule;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
@@ -36,7 +40,7 @@ internal sealed class SpamEvents(IDbContextFactory<GrimoireDbContext> dbContextF
         if (muteRoleId is null)
             return;
 
-        var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var muteCount = await dbContext.Sins
             .Where(member1 => member1.UserId == member.Id && member1.GuildId == args.Guild.Id)
             .Where(x => x.SinType == SinType.Mute)
@@ -49,14 +53,14 @@ internal sealed class SpamEvents(IDbContextFactory<GrimoireDbContext> dbContextF
             GuildId = args.Guild.Id,
             ModeratorId = args.Guild.CurrentMember.Id,
             Reason = checkSpamResult.Reason,
-            SinType = SinType.Mute,
+            SinType = SinType.Mute
         };
         await dbContext.Sins.AddAsync(sin);
         await dbContext.SaveChangesAsync();
 
         await this._settingsModule.AddMute(member.Id, args.Guild.Id, sin.Id, muteEndTime);
 
-        var muteRole = args.Guild.Roles.GetValueOrDefault(muteRoleId.Value);
+        var muteRole = await args.Guild.GetRoleOrDefaultAsync(muteRoleId.Value);
 
         if (muteRole is null) return;
 

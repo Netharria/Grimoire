@@ -11,28 +11,29 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02469"/>
-    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02469"/>
-    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02469"/>
+    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02554"/>
+    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02554"/>
+    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02554"/>
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.3"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.6"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.6"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.6"/>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6"/>
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.10"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.10"/>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10"/>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.6">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.10">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <TreatAsUsed>true</TreatAsUsed>
     </PackageReference>
     <PackageReference Include="System.Linq.Async" Version="6.0.3"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <TreatAsUsed>true</TreatAsUsed>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.6"/>
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.6.0"/>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10"/>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0"/>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1"/>
     <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0"/>
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2"/>

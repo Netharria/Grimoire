@@ -18,18 +18,18 @@ namespace Grimoire.Features.Moderation.Mute.Commands;
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [RequirePermissions([DiscordPermission.ManageRoles], [])]
 public sealed class MuteUser(
-        IDbContextFactory<GrimoireDbContext> dbContextFactory,
-        SettingsModule settingsModule,
-        GuildLog guildLog)
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    SettingsModule settingsModule,
+    GuildLog guildLog)
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("Mute")]
     [Description("Mutes a user for a specified amount of time.")]
     public async Task MuteUserAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("User")] [Description("The user to mute.")]
         DiscordMember member,
         [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days")]
@@ -42,23 +42,30 @@ public sealed class MuteUser(
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        if (ctx.Guild.Id != member.Guild.Id) throw new AnticipatedException("That user is not on the server.");
+        if (guild.Id != member.Guild.Id)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
+            return;
+        }
 
 
-        var muteRoleId = await this._settingsModule.GetMuteRole(ctx.Guild.Id);
+        var muteRoleId = await this._settingsModule.GetMuteRole(guild.Id);
 
         if (muteRoleId is null)
-            throw new AnticipatedException("A mute role is not configured for this server.");
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+                "The mute role is not configured. Please configure it before using this command.");
+            return;
+        }
 
-        var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var muteEndTime = durationType.GetDateTimeOffset(durationAmount);
         var sin = new Sin
         {
             UserId = member.Id,
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             ModeratorId = ctx.User.Id,
             Reason = reason ?? string.Empty,
             SinType = SinType.Mute
@@ -67,10 +74,15 @@ public sealed class MuteUser(
         await dbContext.Sins.AddAsync(sin);
         await dbContext.SaveChangesAsync();
 
-        await this._settingsModule.AddMute(member.Id, ctx.Guild.Id, sin.Id, muteEndTime);
+        await this._settingsModule.AddMute(member.Id, guild.Id, sin.Id, muteEndTime);
 
-        var muteRole = ctx.Guild.Roles.GetValueOrDefault(muteRoleId.Value);
-        if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
+        var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
+        if (muteRole is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+                "The configured mute role does not exist. Please configure it again before using this command.");
+            return;
+        }
         await member.GrantRoleAsync(muteRole, reason!);
 
 
@@ -100,7 +112,7 @@ public sealed class MuteUser(
         {
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.Id,
                 GuildLogType = GuildLogType.Moderation,
                 Description =
                     $"Was not able to send a direct message with the mute details to {member.Mention}.",
@@ -110,7 +122,7 @@ public sealed class MuteUser(
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = ctx.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
 }

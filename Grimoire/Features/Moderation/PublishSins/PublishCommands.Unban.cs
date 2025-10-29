@@ -16,86 +16,76 @@ public sealed partial class PublishCommands
     [Command("Unban")]
     [Description("Publish an unban reason to the public ban log.")]
     public async Task PublishUnbanAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be published.")]
         int sinId)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var response =
-            await this._mediator.Send(new GetUnbanForPublish.Query { SinId = sinId, GuildId = ctx.Guild.Id });
-
-        var banLogMessage = await SendPublicLogMessage(ctx, response, PublishType.Unban, this._logger);
-        if (response.PublishedMessage is null)
-            await this._mediator.Send(new PublishBan.Command
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var result = await dbContext.Sins
+            .AsNoTracking()
+            .Where(x => x.SinType == SinType.Ban)
+            .Where(x => x.Id == sinId)
+            .Where(x => x.GuildId == guild.Id)
+            .Select(x => new
             {
-                SinId = sinId, MessageId = banLogMessage.Id, PublishType = PublishType.Unban
+                // ReSharper disable AccessToDisposedClosure
+                x.UserId,
+                dbContext.UsernameHistory
+                    .Where(history => history.UserId == x.UserId)
+                    .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
+                    .First().Username,
+                x.Pardon,
+                UnbanMessageId = (ulong?)x.PublishMessages
+                    .First(publishedMessage => publishedMessage.PublishType == PublishType.Unban)
+                    .MessageId
+                // ReSharper restore AccessToDisposedClosure
+            })
+            .FirstOrDefaultAsync();
+
+        if (result is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Could not find a ban with Sin Id: {sinId}");
+            return;
+        }
+
+        if (result.Pardon is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "The ban must be pardoned first before the unban can be published.");
+            return;
+        }
+
+        var banLogMessage = await SendPublicLogMessage(ctx, result.UserId, result.Username, result.Pardon.Reason,
+            result.UnbanMessageId, result.Pardon.PardonDate, PublishType.Unban);
+
+        await banLogMessage.Match(
+            async message =>
+            {
+                if (result.UnbanMessageId is null)
+                {
+                    await dbContext.PublishedMessages.AddAsync(
+                        new PublishedMessage { MessageId = message.Id, SinId = sinId, PublishType = PublishType.Unban });
+                    await dbContext.SaveChangesAsync();
+                }
+
+
+                await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
+                await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                {
+                    GuildId = guild.Id,
+                    GuildLogType = GuildLogType.Moderation,
+                    Color = GrimoireColor.Purple,
+                    Description = $"{ctx.User.Mention} published unban reason of sin {sinId}"
+                });
+            },
+            async error =>
+            {
+                await ctx.EditReplyAsync(GrimoireColor.Red, $"Failed to publish unban reason: {error.Message}");
             });
 
-        await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = ctx.Guild.Id,
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.Purple,
-            Description = $"{ctx.User.Mention} published unban reason of sin {sinId}"
-        });
-    }
-}
 
-public sealed class GetUnbanForPublish
-{
-    public sealed record Query : IRequest<GetBanForPublish.Response>
-    {
-        public long SinId { get; init; }
-        public GuildId GuildId { get; init; }
-    }
-
-    public sealed class GetUnbanQueryHandler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Query, GetBanForPublish.Response>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<GetBanForPublish.Response> Handle(Query request, CancellationToken cancellationToken)
-        {
-            var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbContext.Sins
-                .AsNoTracking()
-                .Where(x => x.SinType == SinType.Ban)
-                .Where(x => x.Id == request.SinId)
-                .Where(x => x.GuildId == request.GuildId)
-                .Select(x => new
-                {
-                    x.UserId,
-                    UsernameHistory = x.Member.User.UsernameHistories
-                        .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
-                        .First(),
-                    x.Guild.ModerationSettings.PublicBanLog,
-                    x.Pardon,
-                    PublishedUnban = x.PublishMessages
-                        .FirstOrDefault(publishedMessage => publishedMessage.PublishType == PublishType.Unban)
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (result is null)
-                throw new AnticipatedException("Could not find a ban with that Sin Id");
-            if (result.PublicBanLog is null)
-                throw new AnticipatedException("No Public Ban Log is configured.");
-            if (result.Pardon is null)
-                throw new AnticipatedException("The ban must be pardoned first before the unban can be published.");
-
-            return new GetBanForPublish.Response
-            {
-                UserId = result.UserId,
-                Username = result.UsernameHistory.Username,
-                BanLogId = result.PublicBanLog.Value,
-                Date = result.Pardon.PardonDate,
-                Reason = result.Pardon.Reason,
-                PublishedMessage = result.PublishedUnban?.MessageId
-            };
-        }
     }
 }

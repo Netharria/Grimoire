@@ -12,7 +12,6 @@ global using DSharpPlus.Entities;
 global using DSharpPlus.EventArgs;
 global using DSharpPlus.Commands;
 global using Grimoire.Domain;
-global using Grimoire.Exceptions;
 global using Grimoire.Enums;
 global using Grimoire.Features.Shared.SharedDtos;
 global using Grimoire.Features.Shared.Attributes;

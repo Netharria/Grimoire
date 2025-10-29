@@ -9,13 +9,14 @@ using Grimoire.Settings.Domain.Shared;
 
 namespace Grimoire.Settings.Domain;
 
-public sealed class IgnoredRole: IRole, IIgnored
+public sealed class IgnoredRole : IRole, IIgnored
 {
     public ulong Id
     {
         get => RoleId;
         init => RoleId = value;
     }
+
     public ulong RoleId { get; init; }
     public ulong GuildId { get; init; }
 }

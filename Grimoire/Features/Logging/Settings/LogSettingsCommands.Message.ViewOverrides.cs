@@ -17,19 +17,17 @@ public partial class LogSettingsCommands
     {
         [Command("ViewOverrides")]
         [Description("View the currently Configured log overrides")]
-        public async Task ViewOverrides(SlashCommandContext ctx)
+        public async Task ViewOverrides(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
 
-            if (ctx.Guild is null)
-                throw new AnticipatedException("This command can only be used in a server.");
+            var guild = ctx.Guild!;
 
             var channelOverrideString = new StringBuilder();
 
-            await foreach (var channelOverride in this._settingsModule.GetAllOverriddenChannels(ctx.Guild.Id))
+            await foreach (var channelOverride in this._settingsModule.GetAllOverriddenChannels(guild.Id))
             {
-                var channel = ctx.Guild.Channels.GetValueOrDefault(channelOverride.ChannelId)
-                              ?? ctx.Guild.Threads.GetValueOrDefault(channelOverride.ChannelId);
+                var channel = await ctx.Client.GetChannelOrDefaultAsync(channelOverride.ChannelId);
                 if (channel is null)
                     continue;
 

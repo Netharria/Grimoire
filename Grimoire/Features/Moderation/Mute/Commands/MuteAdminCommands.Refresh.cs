@@ -11,13 +11,12 @@ public partial class MuteAdminCommands
 {
     [Command("Refresh")]
     [Description("Refreshes the permissions of the currently configured mute role.")]
-    public async Task RefreshMuteRoleAsync(SlashCommandContext ctx)
+    public async Task RefreshMuteRoleAsync(CommandContext ctx)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
-        var response = await this._settingsModule.GetMuteRole(ctx.Guild.Id);
+        var guild = ctx.Guild!;
+        var response = await this._settingsModule.GetMuteRole(guild.Id);
 
         if (response is null)
         {
@@ -25,14 +24,14 @@ public partial class MuteAdminCommands
             return;
         }
 
-        if (!ctx.Guild.Roles.TryGetValue(response.Value, out var role))
+        if (!guild.Roles.TryGetValue(response.Value, out var role))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "Could not find configured mute role.");
             return;
         }
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Refreshing permissions for {role.Mention} role.");
-        var result = await SetMuteRolePermissionsAsync(ctx.Guild, role)
+        var result = await SetMuteRolePermissionsAsync(guild, role)
             .Where(x => !x.WasSuccessful)
             .ToArrayAsync();
 

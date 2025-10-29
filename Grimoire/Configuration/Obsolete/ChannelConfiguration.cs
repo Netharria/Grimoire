@@ -9,16 +9,17 @@ using System.Diagnostics.CodeAnalysis;
 using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Configuration;
+namespace Grimoire.Configuration.Obsolete;
 
 [ExcludeFromCodeCoverage]
-internal sealed class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
+[Obsolete("Table To be Dropped Soon.")]
+internal sealed class ChannelConfiguration : IEntityTypeConfiguration<Channel>
 {
-    public void Configure(EntityTypeBuilder<Tracker> builder)
+    public void Configure(EntityTypeBuilder<Channel> builder)
     {
-        builder.HasKey(e => new { e.UserId, e.GuildId });
-        builder.Property(e => e.EndTime)
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
+            .ValueGeneratedNever()
             .IsRequired();
-        builder.HasIndex(x => x.EndTime);
     }
 }

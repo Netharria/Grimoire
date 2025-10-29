@@ -11,11 +11,11 @@ namespace Grimoire.Settings.Domain;
 
 public sealed class LevelingSettings : IModule
 {
-    public ulong GuildId { get; init; }
     public TimeSpan TextTime { get; set; }
     public int Base { get; set; }
     public int Modifier { get; set; }
     public int Amount { get; set; }
     public ulong? LevelChannelLogId { get; set; }
+    public ulong GuildId { get; init; }
     public bool ModuleEnabled { get; set; }
 }

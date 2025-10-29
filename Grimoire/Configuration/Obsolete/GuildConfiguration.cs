@@ -5,17 +5,20 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Configuration;
+namespace Grimoire.Configuration.Obsolete;
 
-internal sealed class IgnoredRoleConfiguration : IEntityTypeConfiguration<IgnoredRole>
+[ExcludeFromCodeCoverage]
+[Obsolete("Table To be Dropped Soon.")]
+internal sealed class GuildConfiguration : IEntityTypeConfiguration<Guild>
 {
-    public void Configure(EntityTypeBuilder<IgnoredRole> builder)
+    public void Configure(EntityTypeBuilder<Guild> builder)
     {
-        builder.HasKey(e => e.RoleId);
-        builder.Property(e => e.RoleId)
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id)
             .ValueGeneratedNever()
             .IsRequired();
     }

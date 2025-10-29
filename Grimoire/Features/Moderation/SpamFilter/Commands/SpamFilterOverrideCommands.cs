@@ -16,14 +16,14 @@ internal class SpamFilterOverrideCommands(
     SpamTrackerModule spamTrackerModule,
     SettingsModule settingsModule)
 {
-    private readonly SpamTrackerModule _spamTrackerModule = spamTrackerModule;
     private readonly SettingsModule _settingsModule = settingsModule;
+    private readonly SpamTrackerModule _spamTrackerModule = spamTrackerModule;
 
     [Command("Override")]
     [Description("Overrides the default spam filter settings. Use this to control which channels are filtered.")]
     [RequireUserGuildPermissions(DiscordPermission.ManageChannels)]
     public async Task Override(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("Option")] [Description("Override option to set the channel to")]
         SpamFilterOverrideSetting overrideSetting,
         [Parameter("Channel")]
@@ -33,21 +33,24 @@ internal class SpamFilterOverrideCommands(
         await ctx.DeferResponseAsync();
         channel ??= ctx.Channel;
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
-        if (!ctx.Guild.Channels.ContainsKey(channel.Id))
-            throw new AnticipatedException("That channel does not exist in this server.");
+        var guild = ctx.Guild!;
+        if (!guild.Channels.ContainsKey(channel.Id))
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "That channel does not exist in this server.");
+            return;
+        }
 
 
         if (overrideSetting is SpamFilterOverrideSetting.Inherit)
         {
-            await this._spamTrackerModule.RemoveOverride(channel.Id, ctx.Guild.Id);
+            await this._spamTrackerModule.RemoveOverride(channel.Id, guild.Id);
             await ctx.EditReplyAsync(GrimoireColor.Purple, $"Set {channel.Mention} to inherit spam filter settings.");
             return;
         }
+
         await this._spamTrackerModule.AddOrUpdateOverride(
             channel.Id,
-            ctx.Guild.Id,
+            guild.Id,
             overrideSetting switch
             {
                 SpamFilterOverrideSetting.Always => SpamFilterOverrideOption.AlwaysFilter,
@@ -75,19 +78,17 @@ internal class SpamFilterOverrideCommands(
     [Command("View")]
     [Description("Views spam filter settings.")]
     [RequireUserGuildPermissions(DiscordPermission.ManageChannels)]
-    public async Task View(SlashCommandContext ctx)
+    public async Task View(CommandContext ctx)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
         var spamFilterOverrideString = new StringBuilder();
 
-        await foreach (var spamFilterOverride in this._settingsModule.GetAllSpamFilterOverrideAsync(ctx.Guild.Id))
+        await foreach (var spamFilterOverride in this._settingsModule.GetAllSpamFilterOverrideAsync(guild.Id))
         {
-            var channel = ctx.Guild.Channels.GetValueOrDefault(spamFilterOverride.ChannelId)
-                          ?? ctx.Guild.Threads.GetValueOrDefault(spamFilterOverride.ChannelId);
+            var channel = await guild.GetChannelOrDefaultAsync(spamFilterOverride.ChannelId);
             if (channel is null)
                 continue;
 

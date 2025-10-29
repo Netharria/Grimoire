@@ -6,7 +6,10 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Domain.Obsolete;
+#pragma warning disable CS0618 // Type or member is obsolete
 using Lock = Grimoire.Domain.Obsolete.Lock;
+
+#pragma warning restore CS0618 // Type or member is obsolete
 
 namespace Grimoire;
 
@@ -20,11 +23,14 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<Avatar> Avatars { get; init; }
 
+    [Obsolete("Table To be Dropped Soon.")]
     public DbSet<Channel> Channels { get; init; }
 
     public DbSet<CustomCommand> CustomCommands { get; init; }
 
     public DbSet<CustomCommandRole> CustomCommandsRole { get; init; }
+
+    [Obsolete("Table To be Dropped Soon.")]
     public DbSet<Guild> Guilds { get; init; }
 
 
@@ -59,10 +65,13 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     [Obsolete("Use Settings Module Instead.")]
     public DbSet<IgnoredRole> IgnoredRoles { get; init; }
 
+    public DbSet<LeaderboardView> LeaderboardView { get; init; }
+
 
     [Obsolete("Use Settings Module Instead.")]
     public DbSet<Lock> Locks { get; init; }
 
+    [Obsolete("Table to be deleted soon.")]
     public DbSet<Member> Members { get; init; }
 
     public DbSet<Message> Messages { get; init; }
@@ -91,6 +100,7 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     [Obsolete("Use Settings Module Instead.")]
     public DbSet<Reward> Rewards { get; init; }
 
+    [Obsolete("Table to be deleted soon.")]
     public DbSet<Role> Roles { get; init; }
 
     public DbSet<Sin> Sins { get; init; }
@@ -103,6 +113,7 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     [Obsolete("Use Settings Module Instead.")]
     public DbSet<Tracker> Trackers { get; init; }
 
+    [Obsolete("Table to be deleted soon.")]
     public DbSet<User> Users { get; init; }
 
     public DbSet<UsernameHistory> UsernameHistory { get; init; }

@@ -14,23 +14,22 @@ public partial class MuteAdminCommands
 {
     [Command("Create")]
     [Description("Creates a new role to be use for muting users and set permissions in all channels.")]
-    public async Task CreateMuteRoleAsync(SlashCommandContext ctx)
+    public async Task CreateMuteRoleAsync(CommandContext ctx)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var role = await ctx.Guild.CreateRoleAsync("Muted");
+        var role = await guild.CreateRoleAsync("Muted");
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration.");
 
-        await this._settingsModule.SetMuteRole(role.Id, ctx.Guild.Id);
+        await this._settingsModule.SetMuteRole(role.Id, guild.Id);
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions");
-        var result = await SetMuteRolePermissionsAsync(ctx.Guild, role)
+        var result = await SetMuteRolePermissionsAsync(guild, role)
             .Where(x => !x.WasSuccessful)
             .ToArrayAsync();
 
@@ -43,7 +42,7 @@ public partial class MuteAdminCommands
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} created {role.Mention} to use as a mute role."

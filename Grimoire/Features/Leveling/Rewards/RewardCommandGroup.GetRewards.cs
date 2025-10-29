@@ -6,19 +6,24 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
+using DSharpPlus.Commands.ContextChecks;
+using Grimoire.Settings.Enums;
+
 namespace Grimoire.Features.Leveling.Rewards;
 
 public sealed partial class RewardCommandGroup
 {
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Leveling)]
+    [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
     [Command("View")]
     [Description("Displays all rewards on this server.")]
     public async Task ViewAsync(CommandContext ctx)
     {
         await ctx.DeferResponseAsync();
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.Id);
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.Id);
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
             title: "Rewards",
@@ -26,7 +31,7 @@ public sealed partial class RewardCommandGroup
                 .ToAsyncEnumerable()
                 .SelectAwait(async x =>
                 {
-                    var role = await ctx.Guild.GetRoleOrDefaultAsync(x.RoleId);
+                    var role = await guild.GetRoleOrDefaultAsync(x.RoleId);
                     return
                         $"Level:{x.RewardLevel} Role:{role?.Mention} {(x.RewardMessage == null ? "" : $"Reward Message: {x.RewardMessage}")}";
                 })));

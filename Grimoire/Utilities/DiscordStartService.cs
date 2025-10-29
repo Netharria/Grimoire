@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using Grimoire.Settings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -14,11 +15,13 @@ namespace Grimoire.Utilities;
 internal sealed partial class DiscordStartService(
     DiscordClient discordClient,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    IDbContextFactory<SettingsDbContext> settingsDbContextFactory,
     ILogger<DiscordStartService> logger) : IHostedService
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly DiscordClient _discordClient = discordClient;
     private readonly ILogger<DiscordStartService> _logger = logger;
+    private readonly IDbContextFactory<SettingsDbContext> _settingsDbContextFactory = settingsDbContextFactory;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -42,6 +45,9 @@ internal sealed partial class DiscordStartService(
             sw.Stop();
             LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
         }
+
+        await SettingsServiceRegistration.MigrateSettingsDb(this._settingsDbContextFactory, this._logger,
+            cancellationToken);
     }
 
     [LoggerMessage(LogLevel.Warning, "Applied pending migrations in {time} ms")]

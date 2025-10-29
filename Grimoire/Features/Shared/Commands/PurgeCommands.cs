@@ -19,11 +19,14 @@ internal sealed class PurgeCommands
     [UsedImplicitly]
     [Command("All")]
     [Description("Deletes all messages in the channel.")]
-    public static async Task AllAsync(SlashCommandContext ctx,
+    public static async Task AllAsync(CommandContext ctx,
         [MinMaxValue(0, 1000)] [Parameter("Count")] [Description("The number of messages to delete.")]
         int count)
     {
-        await ctx.DeferResponseAsync(true);
+        if (ctx is SlashCommandContext slashContext)
+            await slashContext.DeferResponseAsync(true);
+        else
+            await ctx.DeferResponseAsync();
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync(count, $"{ctx.User.Username} purged these messages.");
         await ctx.EditReplyAsync(GrimoireColor.Green,
@@ -33,13 +36,16 @@ internal sealed class PurgeCommands
     [UsedImplicitly]
     [Command("User")]
     [Description("Deletes all messages that were sent by this user.")]
-    public static async Task UserAsync(SlashCommandContext ctx,
+    public static async Task UserAsync(CommandContext ctx,
         [Parameter("User")] [Description("The user to delete the messages of.")]
         DiscordUser user,
         [MinMaxValue(0, 1000)] [Parameter("Count")] [Description("The number of matching messages to delete.")]
         int count)
     {
-        await ctx.DeferResponseAsync(true);
+        if (ctx is SlashCommandContext slashContext)
+            await slashContext.DeferResponseAsync(true);
+        else
+            await ctx.DeferResponseAsync();
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync(count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
                 messages => messages.Author is not null && messages.Author == user);

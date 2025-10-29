@@ -13,7 +13,7 @@ namespace Grimoire.Domain;
 public sealed class NicknameHistory
 {
     public required string? Nickname { get; init; }
-    public DateTimeOffset Timestamp { get; private init; }
+    public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
     public required ulong UserId { get; init; }
     public required ulong GuildId { get; init; }
 }

@@ -11,18 +11,19 @@ public partial class MuteAdminCommands
 {
     [Command("View")]
     [Description("View the current configured mute role and any active mutes.")]
-    public async Task ViewMutesAsync(SlashCommandContext ctx)
+    public async Task ViewMutesAsync(CommandContext ctx)
     {
-        await ctx.DeferResponseAsync(true);
+        if (ctx is SlashCommandContext slashContext)
+            await slashContext.DeferResponseAsync(true);
+        else
+            await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var muteRole = await this._settingsModule.GetMuteRole(ctx.Guild.Id);
-        DiscordRole? role = null;
-        if (muteRole is not null) role = ctx.Guild.Roles.GetValueOrDefault(muteRole.Value);
-        var users = await this._settingsModule.GetAllMutes(ctx.Guild.Id)
-            .Select(mute => ctx.Guild.Members.GetValueOrDefault(mute.UserId))
+        var muteRole = await this._settingsModule.GetMuteRole(guild.Id);
+        var role = await guild.GetRoleOrDefaultAsync(muteRole);
+        var users = await this._settingsModule.GetAllMutes(guild.Id)
+            .Select(mute => guild.GetMemberOrDefaultAsync(mute.UserId))
             .OfType<DiscordMember>()
             .ToArrayAsync();
         var embed = new DiscordEmbedBuilder();

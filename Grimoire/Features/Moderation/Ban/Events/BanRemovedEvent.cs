@@ -31,7 +31,7 @@ public class BanRemovedEvent(
             .Where(m => m.UserId == args.Member.Id && m.GuildId == args.Guild.Id)
             .Where(sin => sin.SinType == SinType.Ban)
             .OrderByDescending(x => x.SinOn)
-            .Select(sin => new LastSin { SinId = sin.Id, ModeratorId = sin.ModeratorId, SinOn = sin.SinOn })
+            .Select(sin => new { SinId = sin.Id, sin.ModeratorId })
             .FirstOrDefaultAsync();
 
         if (lastBan is null)
@@ -50,12 +50,5 @@ public class BanRemovedEvent(
         {
             GuildId = args.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
         });
-    }
-
-    private sealed record LastSin
-    {
-        public long SinId { get; init; }
-        public ulong? ModeratorId { get; init; }
-        public DateTimeOffset SinOn { get; init; }
     }
 }

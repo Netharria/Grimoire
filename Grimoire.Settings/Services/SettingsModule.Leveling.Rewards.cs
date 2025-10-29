@@ -15,14 +15,13 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-
-    const string RewardsCacheKeyPrefix = "LevelingRewards_{0}";
+    private const string RewardsCacheKeyPrefix = "LevelingRewards_{0}";
 
     public async Task<IReadOnlySet<RewardEntry>> GetLevelingRewardsAsync(
         ulong guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!await this.IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
+        if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
             return FrozenSet<RewardEntry>.Empty;
         var cacheKey = string.Format(RewardsCacheKeyPrefix, guildId);
         return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
@@ -33,9 +32,7 @@ public sealed partial class SettingsModule
                 .Where(reward => reward.GuildId == guildId)
                 .Select(reward => new RewardEntry
                 {
-                    RoleId = reward.RoleId,
-                    RewardLevel = reward.RewardLevel,
-                    RewardMessage = reward.RewardMessage
+                    RoleId = reward.RoleId, RewardLevel = reward.RewardLevel, RewardMessage = reward.RewardMessage
                 })
                 .ToHashSetAsync(cancellationToken);
             return results.ToFrozenSet();
@@ -52,11 +49,7 @@ public sealed partial class SettingsModule
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var reward = await dbContext.Rewards
             .Where(reward => reward.RoleId == roleId && reward.GuildId == guildId)
-            .FirstOrDefaultAsync(cancellationToken) ?? new Reward
-        {
-            RoleId = roleId,
-            GuildId = guildId
-        };
+            .FirstOrDefaultAsync(cancellationToken) ?? new Reward { RoleId = roleId, GuildId = guildId };
 
         reward.RewardLevel = level;
         reward.RewardMessage = rewardMessage;
@@ -87,13 +80,10 @@ public sealed partial class SettingsModule
     }
 
 
-
     public sealed record RewardEntry
     {
         public ulong RoleId { get; init; }
         public int RewardLevel { get; init; }
         public string? RewardMessage { get; init; }
     }
-
-
 }

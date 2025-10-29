@@ -22,7 +22,7 @@ internal sealed class UpdateAllGuilds(
     {
         await sender.UpdateStatusAsync(new DiscordActivity($"{sender.Guilds.Count} servers.",
             DiscordActivityType.Watching));
-        var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         var guildInvites = new List<GuildInviteDto>();
 

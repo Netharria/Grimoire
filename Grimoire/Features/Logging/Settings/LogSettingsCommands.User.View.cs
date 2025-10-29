@@ -18,46 +18,48 @@ public partial class LogSettingsCommands
     {
         [Command("View")]
         [Description("View the current settings for the User Log module.")]
-        public async Task ViewAsync(SlashCommandContext ctx)
+        public async Task ViewAsync(CommandContext ctx)
         {
-            await ctx.DeferResponseAsync(true);
+            if (ctx is SlashCommandContext slashContext)
+                await slashContext.DeferResponseAsync(true);
+            else
+                await ctx.DeferResponseAsync();
 
-            if (ctx.Guild is null)
-                throw new AnticipatedException("This command can only be used in a server.");
+            var guild = ctx.Guild!;
 
-            var joinLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserJoined, ctx.Guild.Id);
-            var leaveLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserLeft, ctx.Guild.Id);
+            var joinLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserJoined, guild.Id);
+            var leaveLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserLeft, guild.Id);
             var usernameUpdated =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.UsernameUpdated, ctx.Guild.Id);
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.UsernameUpdated, guild.Id);
             var nicknameUpdated =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.NicknameUpdated, ctx.Guild.Id);
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.NicknameUpdated, guild.Id);
             var avatarUpdated =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.AvatarUpdated, ctx.Guild.Id);
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.AvatarUpdated, guild.Id);
 
             var joinChannelLog =
                 joinLog is null
                     ? "None"
-                    : (await ctx.Guild.GetChannelAsync(joinLog.Value)).Mention;
+                    : (await guild.GetChannelAsync(joinLog.Value)).Mention;
             var leaveChannelLog =
                 leaveLog is null
                     ? "None"
-                    : (await ctx.Guild.GetChannelAsync(leaveLog.Value)).Mention;
+                    : (await guild.GetChannelAsync(leaveLog.Value)).Mention;
             var usernameChannelLog =
                 usernameUpdated is null
                     ? "None"
-                    : (await ctx.Guild.GetChannelAsync(usernameUpdated.Value)).Mention;
+                    : (await guild.GetChannelAsync(usernameUpdated.Value)).Mention;
             var nicknameChannelLog =
                 nicknameUpdated is null
                     ? "None"
-                    : (await ctx.Guild.GetChannelAsync(nicknameUpdated.Value)).Mention;
+                    : (await guild.GetChannelAsync(nicknameUpdated.Value)).Mention;
             var avatarChannelLog =
                 avatarUpdated is null
                     ? "None"
-                    : (await ctx.Guild.GetChannelAsync(avatarUpdated.Value)).Mention;
+                    : (await guild.GetChannelAsync(avatarUpdated.Value)).Mention;
             await ctx.EditReplyAsync(
                 title: "Current Logging System Settings",
                 message:
-                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, ctx.Guild.Id)}\n" +
+                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, guild.Id)}\n" +
                 $"**Join Log:** {joinChannelLog}\n" +
                 $"**Leave Log:** {leaveChannelLog}\n" +
                 $"**Username Log:** {usernameChannelLog}\n" +

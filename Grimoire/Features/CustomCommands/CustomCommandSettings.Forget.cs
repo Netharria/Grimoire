@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
@@ -15,10 +16,13 @@ namespace Grimoire.Features.CustomCommands;
 public sealed partial class CustomCommandSettings
 {
     [UsedImplicitly]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Commands)]
+    [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
     [Command("Forget")]
     [Description("Forget a command that you have saved.")]
     public async Task Forget(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
         [Parameter("Name")]
         [Description("The name of the command to forget.")]
@@ -26,28 +30,20 @@ public sealed partial class CustomCommandSettings
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-        var result = await dbContext.CustomCommands
-            .Include(x => x.CustomCommandRoles)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(x => x.Name == name && x.GuildId == ctx.Guild.Id);
-
-        if (result is null)
-            throw new AnticipatedException($"Did not find a saved command with name {name}");
-
-        dbContext.CustomCommands.Remove(result);
-        await dbContext.SaveChangesAsync();
+        await dbContext.CustomCommands
+            .Where(x => x.Name == name && x.GuildId == guild.Id)
+            .ExecuteDeleteAsync();
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Forgot command: {name}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
-            Description = $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember} to forget command: {name}",
+            Description = $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command: {name}",
             Color = GrimoireColor.Purple
         });
     }

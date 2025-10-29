@@ -13,30 +13,29 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Settings.Services;
 
-
 public sealed partial class SettingsModule
 {
-
-    public async Task SetModuleState(Module moduleType, ulong guildId, bool enableModule, CancellationToken cancellationToken = default)
+    public async Task SetModuleState(Module moduleType, ulong guildId, bool enableModule,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         IModule? module = moduleType switch
         {
-            Module.Leveling => await dbContext.GuildLevelSettings
+            Module.Leveling => await dbContext.LevelingSettings
                 .Where(settings => settings.GuildId == guildId)
-                .FirstOrDefaultAsync(cancellationToken) ?? new LevelingSettings{ GuildId = guildId },
-            Module.UserLog => await dbContext.GuildUserLogSettings
+                .FirstOrDefaultAsync(cancellationToken) ?? new LevelingSettings { GuildId = guildId },
+            Module.UserLog => await dbContext.UserLogSettings
                 .Where(settings => settings.GuildId == guildId)
-                .FirstOrDefaultAsync(cancellationToken) ?? new UserLogSettings{ GuildId = guildId },
-            Module.Moderation => await dbContext.GuildModerationSettings
+                .FirstOrDefaultAsync(cancellationToken) ?? new UserLogSettings { GuildId = guildId },
+            Module.Moderation => await dbContext.ModerationSettings
                 .Where(settings => settings.GuildId == guildId)
-                .FirstOrDefaultAsync(cancellationToken) ?? new ModerationSettings{ GuildId = guildId },
-            Module.MessageLog => await dbContext.GuildMessageLogSettings
+                .FirstOrDefaultAsync(cancellationToken) ?? new ModerationSettings { GuildId = guildId },
+            Module.MessageLog => await dbContext.MessageLogSettings
                 .Where(settings => settings.GuildId == guildId)
-                .FirstOrDefaultAsync(cancellationToken) ?? new MessageLogSettings{ GuildId = guildId },
-            Module.Commands => await dbContext.GuildCommandsSettings
+                .FirstOrDefaultAsync(cancellationToken) ?? new MessageLogSettings { GuildId = guildId },
+            Module.Commands => await dbContext.CustomCommandsSettings
                 .Where(settings => settings.GuildId == guildId)
-                .FirstOrDefaultAsync(cancellationToken) ?? new CustomCommandsSettings{ GuildId = guildId },
+                .FirstOrDefaultAsync(cancellationToken) ?? new CustomCommandsSettings { GuildId = guildId },
             Module.General => null,
             _ => throw new ArgumentOutOfRangeException(nameof(moduleType), moduleType, "Unknown module type")
         };
@@ -51,7 +50,8 @@ public sealed partial class SettingsModule
         this._memoryCache.Remove(moduleType.GetCacheKey(guildId));
     }
 
-    public async Task<bool> IsModuleEnabled(Module moduleType, ulong guildId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsModuleEnabled(Module moduleType, ulong guildId,
+        CancellationToken cancellationToken = default)
     {
         return await this._memoryCache.GetOrCreateAsync(moduleType.GetCacheKey(guildId),
             async _ =>
@@ -59,23 +59,23 @@ public sealed partial class SettingsModule
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
                 return moduleType switch
                 {
-                    Module.Leveling => await dbContext.GuildLevelSettings
+                    Module.Leveling => await dbContext.LevelingSettings
                         .Where(settings => settings.GuildId == guildId)
                         .Select(settings => settings.ModuleEnabled)
                         .FirstOrDefaultAsync(cancellationToken),
-                    Module.UserLog => await dbContext.GuildUserLogSettings
+                    Module.UserLog => await dbContext.UserLogSettings
                         .Where(settings => settings.GuildId == guildId)
                         .Select(settings => settings.ModuleEnabled)
                         .FirstOrDefaultAsync(cancellationToken),
-                    Module.Moderation => await dbContext.GuildModerationSettings
+                    Module.Moderation => await dbContext.ModerationSettings
                         .Where(settings => settings.GuildId == guildId)
                         .Select(settings => settings.ModuleEnabled)
                         .FirstOrDefaultAsync(cancellationToken),
-                    Module.MessageLog => await dbContext.GuildMessageLogSettings
+                    Module.MessageLog => await dbContext.MessageLogSettings
                         .Where(settings => settings.GuildId == guildId)
                         .Select(settings => settings.ModuleEnabled)
                         .FirstOrDefaultAsync(cancellationToken),
-                    Module.Commands => await dbContext.GuildCommandsSettings
+                    Module.Commands => await dbContext.CustomCommandsSettings
                         .Where(settings => settings.GuildId == guildId)
                         .Select(settings => settings.ModuleEnabled)
                         .FirstOrDefaultAsync(cancellationToken),
@@ -87,34 +87,35 @@ public sealed partial class SettingsModule
 
     public async Task<GuildModuleState> GetAllModuleState(ulong guildId, CancellationToken cancellationToken = default)
     {
-
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        return await dbContext.GuildLevelSettings
+        return await dbContext.LevelingSettings
             .Where(settings => settings.GuildId == guildId)
             .Select(settings => new GuildModuleState
             {
                 LevelingEnabled = settings.ModuleEnabled,
-                UserLogEnabled = dbContext.GuildUserLogSettings
+                // ReSharper disable AccessToDisposedClosure
+                UserLogEnabled = dbContext.UserLogSettings
                     .Where(x => x.GuildId == guildId)
-                    .Select(x=> x.ModuleEnabled).First(),
-                ModerationEnabled = dbContext.GuildUserLogSettings
+                    .Select(x => x.ModuleEnabled).First(),
+                ModerationEnabled = dbContext.UserLogSettings
                     .Where(x => x.GuildId == guildId)
-                    .Select(x=> x.ModuleEnabled).First(),
-                MessageLogEnabled = dbContext.GuildUserLogSettings
+                    .Select(x => x.ModuleEnabled).First(),
+                MessageLogEnabled = dbContext.UserLogSettings
                     .Where(x => x.GuildId == guildId)
-                    .Select(x=> x.ModuleEnabled).First(),
-                CommandsEnabled= dbContext.GuildUserLogSettings
+                    .Select(x => x.ModuleEnabled).First(),
+                CommandsEnabled = dbContext.UserLogSettings
                     .Where(x => x.GuildId == guildId)
-                    .Select(x=> x.ModuleEnabled).First(),
+                    .Select(x => x.ModuleEnabled).First()
+                // ReSharper restore AccessToDisposedClosure
             })
             .FirstOrDefaultAsync(cancellationToken) ?? new GuildModuleState
-            {
-                LevelingEnabled = false,
-                UserLogEnabled = false,
-                ModerationEnabled = false,
-                MessageLogEnabled = false,
-                CommandsEnabled = false,
-            };
+        {
+            LevelingEnabled = false,
+            UserLogEnabled = false,
+            ModerationEnabled = false,
+            MessageLogEnabled = false,
+            CommandsEnabled = false
+        };
     }
 
     public record GuildModuleState

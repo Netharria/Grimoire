@@ -9,20 +9,17 @@ using System.Diagnostics.CodeAnalysis;
 using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Configuration;
+namespace Grimoire.Configuration.Obsolete;
 
 [ExcludeFromCodeCoverage]
-internal sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
+[Obsolete("Table To be Dropped Soon.")]
+internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
-    public void Configure(EntityTypeBuilder<Role> builder)
+    public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id)
             .ValueGeneratedNever()
             .IsRequired();
-        builder.HasOne(e => e.Guild)
-            .WithMany()
-            .HasForeignKey(x => x.GuildId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

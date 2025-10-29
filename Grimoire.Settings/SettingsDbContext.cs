@@ -14,11 +14,11 @@ namespace Grimoire.Settings;
 public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> options) : DbContext(options)
 {
     internal DbSet<GuildSettings> GuildSettings { get; init; }
-    internal DbSet<CustomCommandsSettings> GuildCommandsSettings { get; init; }
-    internal DbSet<LevelingSettings> GuildLevelSettings { get; init; }
-    internal DbSet<UserLogSettings> GuildUserLogSettings { get; init; }
-    internal DbSet<MessageLogSettings> GuildMessageLogSettings { get; init; }
-    internal DbSet<ModerationSettings> GuildModerationSettings { get; init; }
+    internal DbSet<CustomCommandsSettings> CustomCommandsSettings { get; init; }
+    internal DbSet<LevelingSettings> LevelingSettings { get; init; }
+    internal DbSet<UserLogSettings> UserLogSettings { get; init; }
+    internal DbSet<MessageLogSettings> MessageLogSettings { get; init; }
+    internal DbSet<ModerationSettings> ModerationSettings { get; init; }
     internal DbSet<IgnoredChannel> IgnoredChannels { get; init; }
     internal DbSet<IgnoredMember> IgnoredMembers { get; init; }
     internal DbSet<IgnoredRole> IgnoredRoles { get; init; }
@@ -28,4 +28,10 @@ public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> option
     internal DbSet<Reward> Rewards { get; init; }
     internal DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; }
     internal DbSet<Tracker> Trackers { get; init; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasDefaultSchema("Settings");
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SettingsDbContext).Assembly);
+    }
 }

@@ -23,7 +23,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
 
     [Command("Warn")]
     [Description("Issue a warning to the user.")]
-    public async Task WarnAsync(SlashCommandContext ctx,
+    public async Task WarnAsync(CommandContext ctx,
         [Parameter("User")] [Description("The user to warn.")]
         DiscordUser user,
         [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason for the warn.")]
@@ -31,16 +31,18 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
         if (ctx.User == user)
-            throw new AnticipatedException("You cannot warn yourself.");
-        var dbcontext = await this._dbContextFactory.CreateDbContextAsync();
+        {
+            await ctx.SendErrorResponseAsync("You cannot warn yourself.");
+            return;
+        }
+        await using var dbcontext = await this._dbContextFactory.CreateDbContextAsync();
         var sin = new Sin
         {
             UserId = user.Id,
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             ModeratorId = ctx.User.Id,
             Reason = reason,
             SinType = SinType.Warn
@@ -71,7 +73,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         {
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.Id,
                 GuildLogType = GuildLogType.Moderation,
                 Color = GrimoireColor.Red,
                 Description =
@@ -81,7 +83,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = ctx.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
 }

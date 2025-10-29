@@ -9,9 +9,10 @@ using System.Diagnostics.CodeAnalysis;
 using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Configuration;
+namespace Grimoire.Configuration.Obsolete;
 
 [ExcludeFromCodeCoverage]
+[Obsolete("Table To be Dropped Soon.")]
 internal sealed class MemberConfigurations : IEntityTypeConfiguration<Member>
 {
     public void Configure(EntityTypeBuilder<Member> builder) => builder.HasKey(e => new { e.UserId, e.GuildId });

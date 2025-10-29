@@ -15,13 +15,14 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    const string LogOverridesCacheKeyPrefix = "LogOverides_{0}";
+    private const string LogOverridesCacheKeyPrefix = "LogOverides_{0}";
+
     public async Task<bool> ShouldLogMessage(ulong channelId,
         ulong guildId,
-        IReadOnlyDictionary<ulong, ChannelNode> channelNodes,
+        IReadOnlyDictionary<ulong, ulong?> channelNodes,
         CancellationToken cancellationToken = default)
     {
-        if(!await this.IsModuleEnabled(Module.MessageLog, guildId, cancellationToken))
+        if (!await IsModuleEnabled(Module.MessageLog, guildId, cancellationToken))
             return false;
 
         ulong? currentChannelId = channelId;
@@ -37,7 +38,7 @@ public sealed partial class SettingsModule
                 case MessageLogOverrideCacheOption.Inherit:
                 default:
                     if (channelNodes.TryGetValue(currentChannelId.Value, out var node))
-                        currentChannelId = node.ParentChannelId;
+                        currentChannelId = node;
                     break;
             }
         }
@@ -49,7 +50,7 @@ public sealed partial class SettingsModule
         ulong guildId,
         CancellationToken cancellationToken)
     {
-        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, guildId);
+        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, channelId);
         return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -74,20 +75,16 @@ public sealed partial class SettingsModule
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingOverride = await dbContext.MessagesLogChannelOverrides
-            .Where(ovr => ovr.GuildId == guildId && ovr.ChannelId == channelId)
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? new MessageLogChannelOverride
-            {
-                GuildId = guildId,
-                ChannelId = channelId
-            };
+                                   .Where(ovr => ovr.GuildId == guildId && ovr.ChannelId == channelId)
+                                   .FirstOrDefaultAsync(cancellationToken)
+                               ?? new MessageLogChannelOverride { GuildId = guildId, ChannelId = channelId };
 
         existingOverride.ChannelOption = option;
 
         dbContext.MessagesLogChannelOverrides.Add(existingOverride);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, guildId);
+        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, channelId);
         this._memoryCache.Remove(cacheKey);
     }
 
@@ -106,7 +103,7 @@ public sealed partial class SettingsModule
         dbContext.MessagesLogChannelOverrides.Remove(existingOverride);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, guildId);
+        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, channelId);
         this._memoryCache.Remove(cacheKey);
     }
 
@@ -119,12 +116,8 @@ public sealed partial class SettingsModule
             .Where(ovr => ovr.GuildId == guildId)
             .AsAsyncEnumerable();
 
-        await foreach (var channelId in overrides.WithCancellation(cancellationToken))
-        {
-            yield return channelId;
-        }
+        await foreach (var channelId in overrides.WithCancellation(cancellationToken)) yield return channelId;
     }
-
 
 
     private enum MessageLogOverrideCacheOption
@@ -132,11 +125,5 @@ public sealed partial class SettingsModule
         NeverLog,
         AlwaysLog,
         Inherit
-    }
-
-    public sealed record ChannelNode
-    {
-        public ulong Id { get; init; }
-        public ulong? ParentChannelId { get; init; }
     }
 }

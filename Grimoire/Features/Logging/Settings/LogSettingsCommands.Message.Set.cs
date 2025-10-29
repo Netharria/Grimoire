@@ -32,7 +32,7 @@ public partial class LogSettingsCommands
         [Command("Set")]
         [Description("Set a Message Log setting.")]
         public async Task SetAsync(
-            SlashCommandContext ctx,
+            CommandContext ctx,
             [Parameter("Setting")] [Description("The setting to change.")]
             MessageLogSetting logSetting,
             [Parameter("Option")]
@@ -43,16 +43,29 @@ public partial class LogSettingsCommands
         {
             await ctx.DeferResponseAsync();
 
-            if (ctx.Guild is null)
-                throw new AnticipatedException("This command can only be used in a server.");
+            var guild = ctx.Guild!;
 
-            channel = ctx.GetChannelOptionAsync(option, channel);
+            var channelOption = ctx.GetChannelOption(option, channel);
+
+            if (channelOption.IsLeft)
+            {
+                await ctx.EditReplyAsync(DiscordColor.Red, $"");
+                return;
+            }
+
+            channelOption.Match(
+                success => channel = success,
+                error => { });
+
+
             if (channel is not null)
             {
-                var permissions = channel.PermissionsFor(ctx.Guild.CurrentMember);
+                var permissions = channel.PermissionsFor(guild.CurrentMember);
                 if (!permissions.HasPermission(DiscordPermission.SendMessages))
-                    throw new AnticipatedException(
-                        $"{ctx.Guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+                {
+                    await ctx.EditReplyAsync(DiscordColor.Red, $"{guild.CurrentMember.Mention} don't have permission to send messages in that channel.");
+                    return;
+                }
             }
 
             await this._settingsModule.SetLogChannelSetting(
@@ -63,7 +76,7 @@ public partial class LogSettingsCommands
                     MessageLogSetting.EditLog => GuildLogType.MessageEdited,
                     _ => throw new ArgumentOutOfRangeException(nameof(logSetting), logSetting, null)
                 },
-                ctx.Guild.Id,
+                guild.Id,
                 option is ChannelOption.Off ? null : channel?.Id);
 
             await ctx.EditReplyAsync(message: option is ChannelOption.Off
@@ -72,7 +85,7 @@ public partial class LogSettingsCommands
 
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.Id,
                 GuildLogType = GuildLogType.Moderation,
                 Description = option is ChannelOption.Off
                     ? $"{ctx.User.Mention} disabled {logSetting}."

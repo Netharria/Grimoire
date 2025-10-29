@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Runtime.CompilerServices;
-using Grimoire.Features.Moderation.Lock.Commands;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
@@ -26,20 +24,18 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
 
         await foreach (var expiredLock in settingsModule.GetAllExpiredLocks(cancellationToken))
         {
-            var guild = discordClient.Guilds.GetValueOrDefault(expiredLock.GuildId);
-            if (guild is null)
-                continue;
-
-            var channel = guild.Channels.GetValueOrDefault(expiredLock.ChannelId);
-            channel ??= guild.Threads.GetValueOrDefault(expiredLock.ChannelId);
+            var channel = await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId);
 
             if (channel is null)
                 continue;
 
             if (!channel.IsThread)
             {
-                var permissions = channel.PermissionOverwrites.First(x => x.Id == guild.EveryoneRole.Id);
-                await channel.AddOverwriteAsync(guild.EveryoneRole,
+                var everyoneRole = channel.Guild?.EveryoneRole;
+                if (everyoneRole is null)
+                    continue;
+                var permissions = channel.PermissionOverwrites.First(x => x.Id == expiredLock.GuildId);
+                await channel.AddOverwriteAsync(everyoneRole,
                     permissions.Allowed.RevertLockPermissions(expiredLock.PreviouslyAllowed)
                     , permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied));
             }
@@ -51,7 +47,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
             await guildLog.SendLogMessageAsync(
                 new GuildLogMessageCustomEmbed
                 {
-                    GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+                    GuildId = expiredLock.GuildId, GuildLogType = GuildLogType.Moderation, Embed = embed
                 }, cancellationToken);
 
             await channel.SendMessageAsync(embed);

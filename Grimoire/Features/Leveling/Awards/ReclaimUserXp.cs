@@ -41,19 +41,29 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
         int amount = 0)
     {
         await ctx.DeferResponseAsync();
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+
+
         if (option == XpOption.Amount && amount == 0)
-            throw new AnticipatedException("Specify an amount greater than 0");
+        {
+            await ctx.SendErrorResponseAsync("Specify an amount greater than 0");
+            return;
+        }
+
+
+        var guild = ctx.Guild!;
+
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var member = await dbContext.Members
+        var member = await dbContext.XpHistory
             .AsNoTracking()
-            .Where(member => member.UserId == user.Id && member.GuildId == ctx.Guild.Id)
-            .Select(member => new { Xp = member.XpHistory.Sum(xpHistory => xpHistory.Xp) })
+            .GroupBy(history => new { history.UserId, history.GuildId })
+            .Select(historyGroup => new { Xp = historyGroup.Sum(xpHistory => xpHistory.Xp) })
             .FirstOrDefaultAsync();
         if (member is null)
-            throw new AnticipatedException(
-                $"{user.Id} was not found. Have they been on the server before?");
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+                $"{user.Mention} has no xp to take.");
+            return;
+        }
 
         var xpToTake = option switch
         {
@@ -69,7 +79,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             new XpHistory
             {
                 UserId = user.Id,
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.Id,
                 Xp = -xpToTake,
                 Type = XpHistoryType.Reclaimed,
                 AwarderId = ctx.User.Id,
@@ -81,7 +91,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             $"{xpToTake} xp has been taken from {user.Mention}.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Description = $"{xpToTake} xp has been taken from {user.Mention} by {ctx.User.Mention}.",
             Color = GrimoireColor.Purple

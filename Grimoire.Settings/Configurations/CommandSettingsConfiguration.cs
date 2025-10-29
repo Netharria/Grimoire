@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Settings.Configurations;
 
-internal sealed class CommandSetttingsConfiguration : IEntityTypeConfiguration<CustomCommandsSettings>
+internal sealed class CommandSettingsConfiguration : IEntityTypeConfiguration<CustomCommandsSettings>
 {
     public void Configure(EntityTypeBuilder<CustomCommandsSettings> builder)
     {

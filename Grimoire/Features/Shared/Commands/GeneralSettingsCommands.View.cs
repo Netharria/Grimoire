@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using Grimoire.Settings.Enums;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -7,21 +8,24 @@ internal sealed partial class GeneralSettingsCommands
     [UsedImplicitly]
     [Command("View")]
     [Description("View the current general settings for this server.")]
-    public async Task ViewAsync(SlashCommandContext ctx)
+    public async Task ViewAsync(CommandContext ctx)
     {
-        await ctx.DeferResponseAsync(true);
+        if (ctx is SlashCommandContext slashContext)
+            await slashContext.DeferResponseAsync(true);
+        else
+            await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        var modLogChannelId = await this._settingsModule.GetLogChannelSetting(GuildLogType.Moderation, guild.Id);
+        var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(guild.Id);
 
-        var moderationLogText = guildSettings.ModLogChannelId is null
+        var moderationLogText = modLogChannelId is null
             ? "None"
-            : ChannelExtensions.Mention(guildSettings.ModLogChannelId.Value);
-        var userCommandChannelText = guildSettings.UserCommandChannelId is null
+            : ChannelExtensions.Mention(modLogChannelId.Value);
+        var userCommandChannelText = userCommandChannelId is null
             ? "None"
-            : ChannelExtensions.Mention(guildSettings.UserCommandChannelId.Value);
+            : ChannelExtensions.Mention(userCommandChannelId.Value);
         await ctx.EditReplyAsync(title: "General Settings",
             message: $"**Moderation Log:** {moderationLogText}\n**User Command Channel:** {userCommandChannelText}");
     }

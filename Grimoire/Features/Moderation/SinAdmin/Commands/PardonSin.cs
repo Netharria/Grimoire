@@ -12,110 +12,74 @@ using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
-internal sealed class PardonSin
+[RequireGuild]
+[RequireModuleEnabled(Module.Moderation)]
+[RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
+internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
 {
-    [RequireGuild]
-    [RequireModuleEnabled(Module.Moderation)]
-    [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
-    internal sealed class Command(IMediator mediator, GuildLog guildLog)
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private readonly GuildLog _guildLog = guildLog;
+
+    [Command("Pardon")]
+    [Description("Pardon a user's sin. This leaves the sin in the logs but marks it as pardoned.")]
+    public async Task PardonAsync(CommandContext ctx,
+        [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be pardoned.")]
+        int sinId,
+        [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason the sin is getting pardoned.")]
+        string reason = "")
     {
-        private readonly GuildLog _guildLog = guildLog;
-        private readonly IMediator _mediator = mediator;
+        await ctx.DeferResponseAsync();
 
-        [Command("Pardon")]
-        [Description("Pardon a user's sin. This leaves the sin in the logs but marks it as pardoned.")]
-        public async Task PardonAsync(SlashCommandContext ctx,
-            [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be pardoned.")]
-            int sinId,
-            [MinMaxLength(maxLength: 1000)]
-            [Parameter("Reason")]
-            [Description("The reason the sin is getting pardoned.")]
-            string reason = "")
+        var guild = ctx.Guild!;
+
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var result = await dbContext.Sins
+            .Where(sin => sin.Id == sinId)
+            .Where(sin => sin.GuildId == guild.Id)
+            .Include(sin => sin.Pardon)
+            .Select(sin => new
+            {
+                // ReSharper disable AccessToDisposedClosure
+                // ReSharper enable AccessToDisposedClosure
+                Sin = sin,
+                UserName = dbContext.UsernameHistory
+                    .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
+                    .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
+                    .Select(usernameHistory => usernameHistory.Username)
+                    .FirstOrDefault()
+            })
+            .FirstOrDefaultAsync();
+
+        if (result is null)
         {
-            await ctx.DeferResponseAsync();
-
-            if (ctx.Guild is null)
-                throw new AnticipatedException("This command can only be used in a server.");
-
-            var response = await this._mediator.Send(new Request
-            {
-                SinId = sinId, GuildId = ctx.Guild.Id, ModeratorId = ctx.User.Id, Reason = reason
-            });
-
-            var message = $"**ID:** {response.SinId} **User:** {response.SinnerName}";
-
-            await ctx.EditReplyAsync(GrimoireColor.Green, message, "Pardoned");
-
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
-            {
-                GuildId = ctx.Guild.Id,
-                GuildLogType = GuildLogType.Moderation,
-                Embed = new DiscordEmbedBuilder()
-                    .WithAuthor("Pardon")
-                    .AddField("User", response.SinnerName, true)
-                    .AddField("Sin Id", response.SinId.ToString(), true)
-                    .AddField("Moderator", ctx.User.Mention, true)
-                    .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason, true)
-                    .WithColor(GrimoireColor.Green)
-            });
+            await ctx.EditReplyAsync(GrimoireColor.Red, "Could not find a sin with that ID.");
+            return;
         }
-    }
 
-    public sealed record Request : IRequest<Response>
-    {
-        public long SinId { get; init; }
-        public string Reason { get; init; } = string.Empty;
-        public ulong ModeratorId { get; init; }
-        public GuildId GuildId { get; init; }
-    }
-
-    public sealed class Handler(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IRequestHandler<Request, Response>
-    {
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
-        public async Task<Response> Handle(Request command, CancellationToken cancellationToken)
-        {
-            var dbcontext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbcontext.Sins
-                .Where(sin => sin.Id == command.SinId)
-                .Where(sin => sin.GuildId == command.GuildId)
-                .Include(sin => sin.Pardon)
-                .Select(sin => new
-                {
-                    Sin = sin,
-                    UserName = sin.Member.User.UsernameHistories
-                        .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
-                        .Select(usernameHistory => usernameHistory.Username)
-                        .FirstOrDefault()
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (result is null)
-                throw new AnticipatedException("Could not find a sin with that ID.");
-
-            if (result.Sin.Pardon is not null)
-                result.Sin.Pardon.Reason = command.Reason;
-            else
-                result.Sin.Pardon = new Pardon
-                {
-                    SinId = command.SinId,
-                    GuildId = command.GuildId,
-                    ModeratorId = command.ModeratorId,
-                    Reason = command.Reason
-                };
-            await dbcontext.SaveChangesAsync(cancellationToken);
-
-            return new Response
+        if (result.Sin.Pardon is not null)
+            result.Sin.Pardon.Reason = reason;
+        else
+            result.Sin.Pardon = new Pardon
             {
-                SinId = command.SinId, SinnerName = result.UserName ?? UserExtensions.Mention(result.Sin.UserId)
+                SinId = sinId, GuildId = guild.Id, ModeratorId = ctx.User.Id, Reason = reason
             };
-        }
-    }
+        await dbContext.SaveChangesAsync();
 
-    public sealed record Response
-    {
-        public long SinId { get; init; }
-        public string SinnerName { get; init; } = string.Empty;
+        var message = $"**ID:** {sinId} **User:** {result.UserName}";
+
+        await ctx.EditReplyAsync(GrimoireColor.Green, message, "Pardoned");
+
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        {
+            GuildId = guild.Id,
+            GuildLogType = GuildLogType.Moderation,
+            Embed = new DiscordEmbedBuilder()
+                .WithAuthor("Pardon")
+                .AddField("User", result.UserName ?? "Unknown", true)
+                .AddField("Sin Id", sinId.ToString(), true)
+                .AddField("Moderator", ctx.User.Mention, true)
+                .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason, true)
+                .WithColor(GrimoireColor.Green)
+        });
     }
 }

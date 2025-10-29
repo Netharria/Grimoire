@@ -5,18 +5,17 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Configuration;
+namespace Grimoire.Configuration.Obsolete;
 
-[ExcludeFromCodeCoverage]
-internal sealed class GuildUserLogSettingsConfiguration : IEntityTypeConfiguration<GuildUserLogSettings>
+[Obsolete("Table To be Dropped Soon.")]
+internal sealed class GuildCommandSettingsConfiguration : IEntityTypeConfiguration<GuildCommandsSettings>
 {
-    public void Configure(EntityTypeBuilder<GuildUserLogSettings> builder)
+    public void Configure(EntityTypeBuilder<GuildCommandsSettings> builder)
     {
-        builder.HasKey(e => e.GuildId);
+        builder.HasKey(x => x.GuildId);
         builder.Property(x => x.ModuleEnabled)
             .HasDefaultValue(false);
     }

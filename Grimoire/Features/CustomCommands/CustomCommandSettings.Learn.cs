@@ -8,6 +8,7 @@
 
 using System.Text.RegularExpressions;
 using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
@@ -21,6 +22,9 @@ public sealed partial class CustomCommandSettings
 
     //todo: fix this when variadic arguments are fixed
     [UsedImplicitly]
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Commands)]
+    [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
     [Command("Learn")]
     [Description("Learn a new command or update an existing one")]
     public async Task Learn(

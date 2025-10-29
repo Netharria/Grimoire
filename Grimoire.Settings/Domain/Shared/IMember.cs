@@ -9,6 +9,6 @@ namespace Grimoire.Settings.Domain.Shared;
 
 public interface IMember
 {
-    public ulong UserId { get; init; }
-    public ulong GuildId { get; init; }
+    ulong UserId { get; init; }
+    ulong GuildId { get; init; }
 }

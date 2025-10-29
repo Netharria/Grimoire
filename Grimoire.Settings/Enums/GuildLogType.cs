@@ -19,7 +19,8 @@ public enum GuildLogType
     UserLeft,
     AvatarUpdated,
     NicknameUpdated,
-    UsernameUpdated
+    UsernameUpdated,
+    BanLog
 }
 
 public static class GuildLogTypeExtensions
@@ -37,6 +38,7 @@ public static class GuildLogTypeExtensions
             GuildLogType.AvatarUpdated => Module.UserLog,
             GuildLogType.NicknameUpdated => Module.UserLog,
             GuildLogType.UsernameUpdated => Module.UserLog,
+            GuildLogType.BanLog => Module.Moderation,
             _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
         };
 
@@ -54,6 +56,7 @@ public static class GuildLogTypeExtensions
             GuildLogType.AvatarUpdated => $"AvatarUpdatedLog-{guildId}",
             GuildLogType.NicknameUpdated => $"NicknameUpdatedLog-{guildId}",
             GuildLogType.UsernameUpdated => $"UsernameUpdatedLog-{guildId}",
+            GuildLogType.BanLog => $"BanLog-{guildId}",
             _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
         };
     }

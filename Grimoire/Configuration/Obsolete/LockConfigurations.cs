@@ -7,11 +7,15 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+#pragma warning disable CS0618 // Type or member is obsolete
 using Lock = Grimoire.Domain.Obsolete.Lock;
 
-namespace Grimoire.Configuration;
+#pragma warning restore CS0618 // Type or member is obsolete
+
+namespace Grimoire.Configuration.Obsolete;
 
 [ExcludeFromCodeCoverage]
+[Obsolete("Table To be Dropped Soon.")]
 internal sealed class LockConfigurations : IEntityTypeConfiguration<Lock>
 {
     public void Configure(EntityTypeBuilder<Lock> builder)

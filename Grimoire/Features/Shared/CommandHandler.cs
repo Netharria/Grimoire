@@ -8,6 +8,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using DSharpPlus.Commands.EventArgs;
+using DSharpPlus.Commands.Exceptions;
 using DSharpPlus.Commands.Trees;
 using DSharpPlus.Exceptions;
 using EntityFramework.Exceptions.Common;
@@ -69,37 +70,36 @@ public sealed partial class CommandHandler : IClientErrorHandler
 
     public static async Task HandleEventAsync(DiscordClient sender, CommandErroredEventArgs args)
     {
-        if (args.Exception is AnticipatedException)
-            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
-                .WithColor(GrimoireColor.Yellow)
-                .WithDescription(args.Exception.Message));
-        else if (args.Exception is UnauthorizedException)
-            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
-                .WithColor(GrimoireColor.Yellow)
-                .WithDescription(
-                    $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        else if (args.Exception is not null)
+        switch (args.Exception)
         {
-            var errorHexString = RandomNumberGenerator.GetHexString(10);
-            var commandOptions = args.Context.Arguments;
-            var log = new StringBuilder();
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            if (commandOptions is not null)
-                BuildCommandLogAsync(log.Append(' '), commandOptions);
-            LogCommandError(sender.Logger,
-                args.Exception,
-                errorHexString,
-                args.Context.Command.Name,
-                log.ToString());
-
-            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
-                .WithColor(GrimoireColor.Yellow)
-                .WithDescription(
-                    $"Encountered exception while executing {args.Context.Command.Name} [ID {errorHexString}]"));
-            await SendErrorLogToLogChannel(sender, args.Context.Command.Name, args.Exception,
-                errorHexString);
+            case UnauthorizedException:
+                await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                    .WithColor(GrimoireColor.Yellow)
+                    .WithDescription(
+                        $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
+                return;
+            case ChecksFailedException checksFailedException:
+                await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                    .WithColor(GrimoireColor.Yellow)
+                    .WithDescription(checksFailedException.Message));
+                return;
         }
+        var errorHexString = RandomNumberGenerator.GetHexString(10);
+        var commandOptions = args.Context.Arguments;
+        var log = new StringBuilder();
+        BuildCommandLogAsync(log.Append(' '), commandOptions);
+        LogCommandError(sender.Logger,
+            args.Exception,
+            errorHexString,
+            args.Context.Command.FullName,
+            log.ToString());
+
+        await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+            .WithColor(GrimoireColor.Yellow)
+            .WithDescription(
+                $"Encountered exception while executing {args.Context.Command.FullName} [ID {errorHexString}]"));
+        await SendErrorLogToLogChannel(sender, args.Context.Command.FullName, args.Exception,
+            errorHexString);
     }
 
     private static async Task SendOrEditMessageAsync(CommandErroredEventArgs args, DiscordEmbedBuilder embed)
@@ -124,7 +124,7 @@ public sealed partial class CommandHandler : IClientErrorHandler
         if (commandOptions.Count > 0)
             BuildCommandLogAsync(log.Append(' '), commandOptions);
         LogCommandInvoked(sender.Logger,
-            args.Context.Command.Name,
+            args.Context.Command.FullName,
             log.ToString());
         return Task.CompletedTask;
     }

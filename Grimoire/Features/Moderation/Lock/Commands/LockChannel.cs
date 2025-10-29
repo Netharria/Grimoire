@@ -13,19 +13,18 @@ using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.Lock.Commands;
 
-
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
 public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("Lock")]
     [Description("Locks a channel for a specified amount of time.")]
     public async Task LockChannelAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days.")]
         DurationType durationType,
         [MinMaxValue(0)] [Parameter("DurationAmount")] [Description("The amount of time the lock will last.")]
@@ -41,15 +40,14 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         await ctx.DeferResponseAsync();
         channel ??= ctx.Channel;
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
         if (channel.IsThread)
-            await ThreadLockAsync(ctx.Guild, ctx.User, channel, reason, durationType, durationAmount);
+            await ThreadLockAsync(guild, ctx.User, channel, reason, durationType, durationAmount);
         else if (channel.Type is DiscordChannelType.Text
                  or DiscordChannelType.Category
                  or DiscordChannelType.GuildForum)
-            await ChannelLockAsync(ctx.Guild, ctx.User, channel, reason, durationType, durationAmount);
+            await ChannelLockAsync(guild, ctx.User, channel, reason, durationType, durationAmount);
         else
         {
             await ctx.EditReplyAsync(message: "Channel not of valid type.");
@@ -61,7 +59,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description =

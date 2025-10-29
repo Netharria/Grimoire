@@ -27,7 +27,7 @@ public sealed partial class AddBanCommand(
     [Command("Ban")]
     [Description("Bans a user from the server.")]
     public async Task BanAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("User")] [Description("The user to ban.")]
         DiscordUser user,
         [MinMaxLength(maxLength: 1000)]
@@ -44,10 +44,9 @@ public sealed partial class AddBanCommand(
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        if (!CheckIfCanBan(ctx.Guild.CurrentMember, user))
+        if (!CheckIfCanBan(guild.CurrentMember, user))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
             return;
@@ -63,7 +62,7 @@ public sealed partial class AddBanCommand(
         var sin = await dbContext.Sins.AddAsync(
             new Sin
             {
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.Id,
                 UserId = user.Id,
                 Reason = reason,
                 SinType = SinType.Ban,
@@ -76,7 +75,7 @@ public sealed partial class AddBanCommand(
             if (user is DiscordMember member)
                 await member.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithAuthor($"Ban ID {sin.Entity.Id}")
-                    .WithDescription($"You have been banned from {ctx.Guild.Name} "
+                    .WithDescription($"You have been banned from {guild.Name} "
                                      + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
                     .WithColor(GrimoireColor.Red));
         }
@@ -86,7 +85,7 @@ public sealed partial class AddBanCommand(
                 LogFailedDirectMessage(this._logger, ex);
         }
 
-        await ctx.Guild.BanMemberAsync(
+        await guild.BanMemberAsync(
             user,
             deleteMessages ? TimeSpan.FromDays(deleteDays) : TimeSpan.Zero,
             reason);

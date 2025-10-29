@@ -22,8 +22,8 @@ namespace Grimoire.Features.Moderation.Mute.Commands;
 [Description("Manages the mute role settings.")]
 public sealed partial class MuteAdminCommands(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     private static async IAsyncEnumerable<OverwriteChannelResult> SetMuteRolePermissionsAsync(DiscordGuild guild,
         DiscordRole role)

@@ -23,7 +23,7 @@ internal sealed class GuildAdded(
     {
         await sender.UpdateStatusAsync(new DiscordActivity($"{sender.Guilds.Count} servers.",
             DiscordActivityType.Watching));
-        var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         var usernamesUpdated =
             await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(eventArgs.Guild);

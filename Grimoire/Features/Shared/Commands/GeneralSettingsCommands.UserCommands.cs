@@ -17,7 +17,7 @@ internal sealed partial class GeneralSettingsCommands
     [Command("UserCommands")]
     [Description("Set the channel where some commands are visible for non moderators.")]
     public async Task SetUserCommandChannelAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("Option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel.")]
         ChannelOption option,
@@ -26,21 +26,28 @@ internal sealed partial class GeneralSettingsCommands
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        channel = ctx.GetChannelOptionAsync(option, channel);
+        var channelOption = ctx.GetChannelOption(option, channel);
 
-        var guild = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
-        guild.UserCommandChannelId = channel?.Id;
-        await this._settingsModule.UpdateGuildSettings(guild);
+        if (channelOption.IsLeft)
+        {
+            await ctx.EditReplyAsync(DiscordColor.Red, $"");
+            return;
+        }
+
+        channelOption.Match(
+            success => channel = success,
+            error => { });
+
+        await this._settingsModule.SetUserCommandChannelSetting(guild.Id, channel?.Id);
 
         if (option is ChannelOption.Off)
         {
             await ctx.EditReplyAsync(message: "Disabled the User Command Channel.");
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.Id,
                 GuildLogType = GuildLogType.Moderation,
                 Description = $"{ctx.User.Mention} disabled the User Command Channel.",
                 Color = GrimoireColor.Purple
@@ -51,7 +58,7 @@ internal sealed partial class GeneralSettingsCommands
         await ctx.EditReplyAsync(message: $"Updated the User Command Channel to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Description = $"{ctx.User.Mention} updated the User Command Channel to {channel?.Mention}.",
             Color = GrimoireColor.Purple

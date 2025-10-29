@@ -13,8 +13,7 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-
-    const string LevelingCacheKeyPrefix = "LevelingSettings_{0}";
+    private const string LevelingCacheKeyPrefix = "LevelingSettings_{0}";
 
     public async Task<LevelingSettingEntry> GetLevelingSettings(ulong guildId,
         CancellationToken cancellationToken = default)
@@ -23,7 +22,7 @@ public sealed partial class SettingsModule
         return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
                {
                    await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-                   return await dbContext.GuildLevelSettings
+                   return await dbContext.LevelingSettings
                               .AsNoTracking()
                               .Where(settings => settings.GuildId == guildId)
                               .Select(settings => new LevelingSettingEntry
@@ -35,19 +34,10 @@ public sealed partial class SettingsModule
                               }).FirstOrDefaultAsync(cancellationToken) ??
                           new LevelingSettingEntry
                           {
-                              Amount = 5,
-                              Base = 15,
-                              Modifier = 50,
-                              TextTime = TimeSpan.FromMinutes(3)
+                              Amount = 5, Base = 15, Modifier = 50, TextTime = TimeSpan.FromMinutes(3)
                           };
                }, this._cacheEntryOptions) ??
-               new LevelingSettingEntry
-               {
-                   Amount = 5,
-                   Base = 15,
-                   Modifier = 50,
-                   TextTime = TimeSpan.FromMinutes(3)
-               };
+               new LevelingSettingEntry { Amount = 5, Base = 15, Modifier = 50, TextTime = TimeSpan.FromMinutes(3) };
     }
 
     public async Task SetLevelingSettings(
@@ -56,17 +46,17 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var existingSettings = await dbContext.GuildLevelSettings
-            .Where(settings => settings.GuildId == guildId)
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? new LevelingSettings { GuildId = guildId };
+        var existingSettings = await dbContext.LevelingSettings
+                                   .Where(settings => settings.GuildId == guildId)
+                                   .FirstOrDefaultAsync(cancellationToken)
+                               ?? new LevelingSettings { GuildId = guildId };
 
         existingSettings.Amount = levelingSettings.Amount;
         existingSettings.Base = levelingSettings.Base;
         existingSettings.Modifier = levelingSettings.Modifier;
         existingSettings.TextTime = levelingSettings.TextTime;
 
-        await dbContext.GuildLevelSettings.AddAsync(existingSettings, cancellationToken);
+        await dbContext.LevelingSettings.AddAsync(existingSettings, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         this._memoryCache.Remove(string.Format(LevelingCacheKeyPrefix, guildId));

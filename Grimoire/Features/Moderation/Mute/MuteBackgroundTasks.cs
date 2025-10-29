@@ -5,13 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Runtime.CompilerServices;
 using DSharpPlus.Exceptions;
-using Grimoire.Features.Moderation.Mute.Commands;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
-using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -26,18 +23,17 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
         var guildLog = serviceProvider.GetRequiredService<GuildLog>();
 
-        await foreach (var expiredLock in settingsModule.GetAllExpiredMutes(cancellationToken))
+        await foreach (var expiredMute in settingsModule.GetAllExpiredMutes(cancellationToken))
         {
-            var guild = discordClient.Guilds.GetValueOrDefault(expiredLock.GuildId);
+            var guild = await discordClient.GetGuildOrDefaultAsync(expiredMute.GuildId);
             if (guild is null) continue;
 
-            var user = guild.Members.GetValueOrDefault(expiredLock.UserId);
+            var user = await guild.GetMemberOrDefaultAsync(expiredMute.UserId);
 
             var muteRole = await settingsModule.GetMuteRole(guild.Id, cancellationToken);
 
             if (user is null) continue;
-            if (muteRole is null) continue;
-            var role = guild.Roles.GetValueOrDefault(muteRole.Value);
+            var role = await guild.GetRoleOrDefaultAsync(muteRole);
             if (role is null) continue;
             try
             {
@@ -55,7 +51,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                     }, cancellationToken);
             }
 
-            await settingsModule.RemoveMute(expiredLock.UserId, expiredLock.GuildId, cancellationToken);
+            await settingsModule.RemoveMute(expiredMute.UserId, expiredMute.GuildId, cancellationToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Mute on {user.Mention} has expired.");

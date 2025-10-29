@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
@@ -16,8 +17,8 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-internal sealed partial class ModSettings(IMediator mediator, GuildLog guildLog)
+internal sealed partial class ModSettings(SettingsModule settingsModule, GuildLog guildLog)
 {
     private readonly GuildLog _guildLog = guildLog;
-    private readonly IMediator _mediator = mediator;
+    private readonly SettingsModule _settingsModule = settingsModule;
 }

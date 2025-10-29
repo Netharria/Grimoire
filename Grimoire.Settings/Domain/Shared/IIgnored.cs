@@ -9,8 +9,8 @@ namespace Grimoire.Settings.Domain.Shared;
 
 public interface IIgnored
 {
-    public ulong Id { get; init;  }
-    public ulong GuildId { get; init; }
+    ulong Id { get; init; }
+    ulong GuildId { get; init; }
 }
 
 public enum IgnoredType

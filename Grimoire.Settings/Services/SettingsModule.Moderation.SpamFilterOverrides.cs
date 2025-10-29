@@ -13,7 +13,8 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<SpamFilterOverrideOption?> GetSpamFilterOverrideAsync(ulong channelId, CancellationToken cancellationToken = default)
+    public async Task<SpamFilterOverrideOption?> GetSpamFilterOverrideAsync(ulong channelId,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.SpamFilterOverrides
@@ -23,36 +24,34 @@ public sealed partial class SettingsModule
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async IAsyncEnumerable<SpamFilterOverride> GetAllSpamFilterOverrideAsync(ulong guildId, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<SpamFilterOverride> GetAllSpamFilterOverrideAsync(ulong guildId,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        await foreach(var spamFilterOverride in dbContext.SpamFilterOverrides
-                          .AsNoTracking()
-                          .Where(x => x.GuildId == guildId)
-                          .AsAsyncEnumerable()
-                          .WithCancellation(cancellationToken))
-        {
+        await foreach (var spamFilterOverride in dbContext.SpamFilterOverrides
+                           .AsNoTracking()
+                           .Where(x => x.GuildId == guildId)
+                           .AsAsyncEnumerable()
+                           .WithCancellation(cancellationToken))
             yield return spamFilterOverride;
-        }
     }
 
-    public async Task SetSpamFilterOverrideAsync(ulong channelId, ulong guildId, SpamFilterOverrideOption option, CancellationToken cancellationToken = default)
+    public async Task SetSpamFilterOverrideAsync(ulong channelId, ulong guildId, SpamFilterOverrideOption option,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var spamFilterOverride = await dbContext.SpamFilterOverrides
-            .FirstOrDefaultAsync(x => x.ChannelId == channelId && x.GuildId == guildId, cancellationToken)
-            ?? new SpamFilterOverride
-            {
-                ChannelId = channelId,
-                GuildId = guildId
-            };
+                                     .FirstOrDefaultAsync(x => x.ChannelId == channelId && x.GuildId == guildId,
+                                         cancellationToken)
+                                 ?? new SpamFilterOverride { ChannelId = channelId, GuildId = guildId };
         spamFilterOverride.ChannelOption = option;
         await dbContext.SpamFilterOverrides.AddAsync(spamFilterOverride, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task RemoveSpamFilterOverrideAsync(ulong channelId, ulong guildId, CancellationToken cancellationToken = default)
+    public async Task RemoveSpamFilterOverrideAsync(ulong channelId, ulong guildId,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var spamFilterOverride = await dbContext.SpamFilterOverrides

@@ -18,30 +18,43 @@ namespace Grimoire.Features.Moderation.Mute.Commands;
 [RequirePermissions([DiscordPermission.ManageRoles], [])]
 internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly SettingsModule _settingsModule = settingsModule;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("Unmute")]
     [Description("Unmutes a user.")]
     public async Task UnmuteUserAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("User")] [Description("The user to unmute.")]
         DiscordMember member)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
 
-        if (ctx.Guild.Id != member.Guild.Id) throw new AnticipatedException("That user is not on the server.");
+        var guild = ctx.Guild!;
 
-        await this._settingsModule.RemoveMute(member.Id, ctx.Guild.Id);
+        if (guild.Id != member.Guild.Id)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
+            return;
+        }
 
-        var muteRoleId = await this._settingsModule.GetMuteRole(ctx.Guild.Id);
+        await this._settingsModule.RemoveMute(member.Id, guild.Id);
+
+        var muteRoleId = await this._settingsModule.GetMuteRole(guild.Id);
         if (muteRoleId is null)
-            throw new AnticipatedException("A mute role is not currently configured for this server.");
-        var muteRole = ctx.Guild.Roles.GetValueOrDefault(muteRoleId.Value);
-        if (muteRole is null) throw new AnticipatedException("Did not find the configured mute role.");
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+                "The mute role is not configured. Please configure it before using this command.");
+            return;
+        }
+        var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
+        if (muteRole is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+                "The configured mute role does not exist. Please configure it again before using this command.");
+            return;
+        }
         await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.User.Mention}");
 
         var embed = new DiscordEmbedBuilder()
@@ -65,7 +78,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         {
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.Id,
                 GuildLogType = GuildLogType.Moderation,
                 Color = GrimoireColor.Red,
                 Description =
@@ -75,7 +88,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = ctx.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
 }

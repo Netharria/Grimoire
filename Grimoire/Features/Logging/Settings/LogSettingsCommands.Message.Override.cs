@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
+using System.Diagnostics;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
@@ -26,7 +27,7 @@ public partial class LogSettingsCommands
         [Command("Override")]
         [Description("Overrides the default message logging settings. Use this to control which channels are logged.")]
         public async Task Override(
-            SlashCommandContext ctx,
+            CommandContext ctx,
             [Parameter("Option")] [Description("Override option to set the channel to")]
             MessageLogOverrideSetting overrideSetting,
             [Parameter("Channel")]
@@ -35,21 +36,20 @@ public partial class LogSettingsCommands
         {
             await ctx.DeferResponseAsync();
             channel ??= ctx.Channel;
-
-            if (ctx.Guild is null)
-                throw new AnticipatedException("This command can only be used in a server.");
+            var guild = ctx.Guild!;
 
             if (overrideSetting is MessageLogOverrideSetting.Inherit)
-                await this._settingsModule.RemoveChannelLogOverride(channel.Id, ctx.Guild.Id);
+                await this._settingsModule.RemoveChannelLogOverride(channel.Id, guild.Id);
             else
                 await this._settingsModule.SetChannelLogOverride(channel.Id,
-                    ctx.Guild.Id,
+                    guild.Id,
                     overrideSetting switch
                     {
                         MessageLogOverrideSetting.Always =>
                             MessageLogOverrideOption.AlwaysLog,
                         MessageLogOverrideSetting.Never =>
                             MessageLogOverrideOption.NeverLog,
+                        MessageLogOverrideSetting.Inherit => throw new UnreachableException(),
                         _ => throw new NotImplementedException(
                             "A Message log Override option was selected that has not been implemented.")
                     });

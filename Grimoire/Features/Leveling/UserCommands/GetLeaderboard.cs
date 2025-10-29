@@ -5,11 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
+using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
+using LanguageExt.Common;
 
 namespace Grimoire.Features.Leveling.UserCommands;
 
@@ -29,92 +33,106 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
 
     [Command("Leaderboard")]
     [Description("Posts the leaderboard for the server.")]
-    public async Task LeaderboardAsync(SlashCommandContext ctx,
+    public async Task LeaderboardAsync(CommandContext ctx,
         [Parameter("Option")] [Description("Select either to view the top users, your position, or a specific user.")]
         LeaderboardOption option,
         [Parameter("User")] [Description("The user to find on the leaderboard.")]
         DiscordUser? user = null)
     {
-        if (ctx.Guild is null || ctx.Member is null)
-            throw new AnticipatedException("This command can only be used in a server.");
-        switch (option)
+        var guild = ctx.Guild!;
+        var member = ctx.Member!;
+        var targetUser = option switch
         {
-            case LeaderboardOption.Top:
-                user = null;
-                break;
-            case LeaderboardOption.Me:
-                user = ctx.User;
-                break;
-            case LeaderboardOption.User:
-                if (user is null)
-                    throw new AnticipatedException("Must provide a user for this option.");
-                break;
+            LeaderboardOption.Top => null,
+            LeaderboardOption.Me => ctx.User,
+            LeaderboardOption.User => user,
+            _ => throw new UnreachableException()
+        };
+
+        if (option == LeaderboardOption.User && user is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "You must specify a user when selecting the 'User' option.");
+            return;
         }
 
-        var guildSettings = await this._settingsModule.GetGuildSettings(ctx.Guild.Id);
+        var userCommandChannel = await this._settingsModule.GetUserCommandChannel(guild.Id);
 
-        await ctx.DeferResponseAsync(!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                                     && guildSettings.UserCommandChannelId != ctx.Channel.Id);
+        if (ctx is SlashCommandContext slashContext)
+            await slashContext.DeferResponseAsync(
+                !member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+                && userCommandChannel != ctx.Channel.Id);
+        else if (!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+                 && userCommandChannel != ctx.Channel.Id)
+            return;
 
-        var getUserCenteredLeaderboardQuery = new Request { UserId = user?.Id, GuildId = ctx.Guild.Id };
+        var getUserCenteredLeaderboardQuery = new Request { UserId = targetUser?.Id, GuildId = guild.Id };
 
         var response = await Handle(getUserCenteredLeaderboardQuery, CancellationToken.None);
 
-        await ctx.EditReplyAsync(
-            GrimoireColor.DarkPurple,
-            title: "LeaderBoard",
-            message: response.LeaderboardText,
-            footer: $"Total Users {response.TotalUserCount}");
+        await response.Match(
+            async success =>
+                await ctx.EditReplyAsync(
+                    GrimoireColor.DarkPurple,
+                    title: "LeaderBoard",
+                    message: success.LeaderboardText,
+                    footer: $"Total Users {success.TotalUserCount}"),
+             async error => await ctx.EditReplyAsync(GrimoireColor.Yellow, error.Message));
+
+
     }
 
-    private async Task<Response> Handle(Request request, CancellationToken cancellationToken)
+    private async Task<Either<Error, Response>> Handle(Request request, CancellationToken cancellationToken)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var query = dbContext.XpHistory
-            .AsNoTracking()
-            .Where(xpHistory => xpHistory.GuildId == request.GuildId)
-            .GroupBy(xpHistory => new { xpHistory.UserId, xpHistory.GuildId })
-            .Select(group => new { group.Key.UserId, Xp = group.Sum(xpHistory => xpHistory.Xp) })
-            .OrderByDescending(xpHistory => xpHistory.Xp);
 
         if (request.UserId is null)
         {
-            var rankedMembers = await query
+            var rankedMembers = await dbContext.LeaderboardView
+                .AsNoTracking()
+                .Where(x => x.GuildId == request.GuildId)
+                .OrderBy(x => x.Rank)
                 .Take(15)
                 .ToArrayAsync(cancellationToken);
 
-            var totalMemberCount = await dbContext.Members
-                .AsNoTracking()
+            var totalMemberCount = await dbContext.LeaderboardView
                 .Where(x => x.GuildId == request.GuildId)
                 .CountAsync(cancellationToken);
 
             var leaderboardText = new StringBuilder();
-            for (var i = 0; i < 15 && i < totalMemberCount; i++)
-                leaderboardText.Append(
-                    $"**{i + 1}** {UserExtensions.Mention(rankedMembers[i].UserId)} **XP:** {rankedMembers[i].Xp}\n");
+            foreach (var rankedMember in rankedMembers)
+                leaderboardText.AppendLine(
+                    $"**{rankedMember.Rank}** {UserExtensions.Mention(rankedMember.UserId)} **XP:** {rankedMember.TotalXp}");
             return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
         }
         else
         {
-            var rankedMembers = await query.ToArrayAsync(cancellationToken);
+            var userEntry = await dbContext.Set<LeaderboardView>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.GuildId == request.GuildId && x.UserId == request.UserId,
+                    cancellationToken);
 
-            var totalMemberCount = rankedMembers.Length;
+            if (userEntry is null)
+                return Error.New("User not found on the leaderboard.");
 
-            var memberPosition = Array.FindIndex(rankedMembers, x => x.UserId == request.UserId);
+            var surroundingUsers = await dbContext.Set<LeaderboardView>()
+                .AsNoTracking()
+                .Where(x => x.GuildId == request.GuildId &&
+                            x.Rank >= userEntry.Rank - 5 &&
+                            x.Rank <= userEntry.Rank + 9)
+                .OrderBy(x => x.Rank)
+                .ToArrayAsync(cancellationToken);
 
-            if (memberPosition == -1)
-                throw new AnticipatedException("Could not find user on leaderboard.");
+            var totalCount = await dbContext.Set<LeaderboardView>()
+                .Where(x => x.GuildId == request.GuildId)
+                .CountAsync(cancellationToken);
 
-            var startIndex = Math.Max(0, memberPosition - 5);
-            startIndex = Math.Min(startIndex, totalMemberCount - 15);
-            startIndex = Math.Max(0, startIndex);
 
             var leaderboardText = new StringBuilder();
-            for (var i = 0; i < 15 && startIndex < totalMemberCount; i++, startIndex++)
-                leaderboardText.Append(
-                    $"**{startIndex + 1}** <@!{rankedMembers[startIndex].UserId}> **XP:** {rankedMembers[startIndex].Xp}\n");
+            foreach (var member in surroundingUsers)
+                leaderboardText.AppendLine(
+                    $"**{member.Rank}** {UserExtensions.Mention(member.UserId)} **XP:** {member.TotalXp}");
 
-            return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
+            return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalCount };
         }
     }
 

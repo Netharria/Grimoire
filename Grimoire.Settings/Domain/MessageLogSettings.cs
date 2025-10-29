@@ -11,9 +11,9 @@ namespace Grimoire.Settings.Domain;
 
 public sealed class MessageLogSettings : IModule
 {
-    public ulong GuildId { get; init; }
     public ulong? DeleteChannelLogId { get; set; }
     public ulong? BulkDeleteChannelLogId { get; set; }
     public ulong? EditChannelLogId { get; set; }
+    public ulong GuildId { get; init; }
     public bool ModuleEnabled { get; set; }
 }

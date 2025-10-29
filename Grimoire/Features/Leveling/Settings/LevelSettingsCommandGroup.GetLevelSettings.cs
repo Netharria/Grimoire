@@ -5,31 +5,36 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Settings;
 
 public sealed partial class LevelSettingsCommandGroup
 {
+    [RequireGuild]
+    [RequireModuleEnabled(Module.Leveling)]
+    [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
     [Command("View")]
     [Description("View the current settings for the leveling module.")]
     public async Task ViewAsync(CommandContext ctx)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        var moduleState = await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.Id);
+        var moduleState = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.Id);
 
-        var levelLogId = await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, ctx.Guild.Id);
+        var levelLogId = await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.Id);
 
-        var levelingSettings = await this._settingsModule.GetLevelingSettings(ctx.Guild.Id);
+        var levelingSettings = await this._settingsModule.GetLevelingSettings(guild.Id);
+
+        var levelingChannel = await ctx.Client.GetChannelOrDefaultAsync(levelLogId);
 
         var levelLogMention =
-            levelLogId is null
+            levelingChannel is null
                 ? "None"
-                : ctx.Guild.Channels.GetValueOrDefault(levelLogId.Value)?.Mention;
+                : levelingChannel.Mention;
         await ctx.EditReplyAsync(
             title: "Current Level System Settings",
             message: $"**Module Enabled:** {moduleState}\n" +

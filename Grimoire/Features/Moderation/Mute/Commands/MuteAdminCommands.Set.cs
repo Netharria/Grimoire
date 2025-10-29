@@ -15,21 +15,20 @@ public partial class MuteAdminCommands
     [Command("Set")]
     [Description("Sets the role that is used for muting users.")]
     public async Task SetMuteRoleAsync(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [Parameter("Role")] [Description("The role to use for muting users.")]
         DiscordRole role)
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is null)
-            throw new AnticipatedException("This command can only be used in a server.");
+        var guild = ctx.Guild!;
 
-        await this._settingsModule.SetMuteRole(role.Id, ctx.Guild.Id);
+        await this._settingsModule.SetMuteRole(role.Id, guild.Id);
 
         await ctx.EditReplyAsync(message: $"Will now use role {role.Mention} for muting users.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.Id,
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} updated the mute role to {role.Mention}"

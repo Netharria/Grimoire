@@ -19,6 +19,11 @@ public static class DiscordGuildExtensions
             .FirstOrDefaultAsync(x =>
                 x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
 
+    public static Task<DiscordRole?> GetRoleOrDefaultAsync(this DiscordGuild guild, ulong? roleId)
+        => roleId is { } id
+            ? GetRoleOrDefaultAsync(guild, id)
+            : Task.FromResult<DiscordRole?>(null);
+
     public static async Task<DiscordRole?> GetRoleOrDefaultAsync(this DiscordGuild guild, ulong roleId)
     {
         try
@@ -31,11 +36,33 @@ public static class DiscordGuildExtensions
         }
     }
 
+    public static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordGuild guild, ulong? channelId)
+        => channelId is { } id
+            ? GetChannelOrDefaultAsync(guild, id)
+            : Task.FromResult<DiscordChannel?>(null);
+
     public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordGuild guild, ulong channelId)
     {
         try
         {
             return await guild.GetChannelAsync(channelId);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    public static Task<DiscordMember?> GetMemberOrDefaultAsync(this DiscordGuild guild, ulong? userId)
+        => userId is { } id
+            ? GetMemberOrDefaultAsync(guild, id)
+            : Task.FromResult<DiscordMember?>(null);
+
+    public static async Task<DiscordMember?> GetMemberOrDefaultAsync(this DiscordGuild guild, ulong userId)
+    {
+        try
+        {
+            return await guild.GetMemberAsync(userId);
         }
         catch (Exception)
         {

@@ -13,6 +13,5 @@ namespace Grimoire.Domain.Obsolete;
 [Obsolete("Table To be Dropped Soon.")]
 public sealed class User
 {
-    public ICollection<UsernameHistory> UsernameHistories { get; init; } = [];
     public required ulong Id { get; init; }
 }

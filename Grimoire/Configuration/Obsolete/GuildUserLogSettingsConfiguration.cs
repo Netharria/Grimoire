@@ -9,12 +9,13 @@ using System.Diagnostics.CodeAnalysis;
 using Grimoire.Domain.Obsolete;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Grimoire.Configuration;
+namespace Grimoire.Configuration.Obsolete;
 
 [ExcludeFromCodeCoverage]
-internal sealed class GuildMessageLogSettingsConfiguration : IEntityTypeConfiguration<GuildMessageLogSettings>
+[Obsolete("Table To be Dropped Soon.")]
+internal sealed class GuildUserLogSettingsConfiguration : IEntityTypeConfiguration<GuildUserLogSettings>
 {
-    public void Configure(EntityTypeBuilder<GuildMessageLogSettings> builder)
+    public void Configure(EntityTypeBuilder<GuildUserLogSettings> builder)
     {
         builder.HasKey(e => e.GuildId);
         builder.Property(x => x.ModuleEnabled)
