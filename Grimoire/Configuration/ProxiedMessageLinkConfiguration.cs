@@ -21,8 +21,10 @@ internal sealed class ProxiedMessageLinkConfiguration : IEntityTypeConfiguration
             .WithOne(x => x.OriginalMessageLink)
             .HasForeignKey<ProxiedMessageLink>(x => x.OriginalMessageId);
         builder.Property(x => x.ProxyMessageId)
+            .HasConversion(e => e.Value, value => new MessageId(value))
             .IsRequired();
         builder.Property(x => x.OriginalMessageId)
+            .HasConversion(e => e.Value, value => new MessageId(value))
             .IsRequired();
         builder.Property(x => x.SystemId)
             .IsRequired(false)
@@ -30,5 +32,6 @@ internal sealed class ProxiedMessageLinkConfiguration : IEntityTypeConfiguration
         builder.Property(x => x.MemberId)
             .IsRequired(false)
             .HasMaxLength(256);
+
     }
 }

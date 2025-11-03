@@ -18,6 +18,9 @@ internal sealed class AttachmentConfiguration : IEntityTypeConfiguration<Attachm
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id)
             .ValueGeneratedNever()
+            .HasConversion(
+                id => id.Value,
+                value => new AttachmentId(value))
             .IsRequired();
         builder.HasOne(e => e.Message)
             .WithMany(x => x.Attachments)

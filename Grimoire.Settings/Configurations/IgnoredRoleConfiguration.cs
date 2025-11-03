@@ -20,5 +20,11 @@ internal sealed class IgnoredRoleConfiguration : IEntityTypeConfiguration<Ignore
             .ValueGeneratedNever()
             .IsRequired();
         builder.Ignore(role => role.Id);
+
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.RoleId)
+            .HasConversion(e => e.Value, value => new RoleId(value));
     }
 }

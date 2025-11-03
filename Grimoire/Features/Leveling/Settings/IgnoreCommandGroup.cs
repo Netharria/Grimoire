@@ -20,9 +20,9 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
     private readonly SettingsModule _settingsModule = settingsModule;
 
     private static string BuildIgnoreListAsync(
-        IEnumerable<ulong> ignoredChannelIds,
-        IEnumerable<ulong> ignoredRoleIds,
-        IEnumerable<ulong> ignoredMemberIds)
+        IEnumerable<ChannelId> ignoredChannelIds,
+        IEnumerable<RoleId> ignoredRoleIds,
+        IEnumerable<UserId> ignoredMemberIds)
     {
         return string.Join(' ',
                    ignoredMemberIds.Select(x => $"<@{x}>")) +

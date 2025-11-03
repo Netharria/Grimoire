@@ -30,7 +30,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
 
             var user = await guild.GetMemberOrDefaultAsync(expiredMute.UserId);
 
-            var muteRole = await settingsModule.GetMuteRole(guild.Id, cancellationToken);
+            var muteRole = await settingsModule.GetMuteRole(guild.GetGuildId(), cancellationToken);
 
             if (user is null) continue;
             var role = await guild.GetRoleOrDefaultAsync(muteRole);
@@ -44,7 +44,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                 await guildLog.SendLogMessageAsync(
                     new GuildLogMessage
                     {
-                        GuildId = guild.Id,
+                        GuildId = guild.GetGuildId(),
                         GuildLogType = GuildLogType.Moderation,
                         Description =
                             $"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually."
@@ -61,7 +61,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             await guildLog.SendLogMessageAsync(
                 new GuildLogMessage
                 {
-                    GuildId = guild.Id,
+                    GuildId = guild.GetGuildId(),
                     GuildLogType = GuildLogType.Moderation,
                     Description = $"Mute on {user.Mention} has expired."
                 }, cancellationToken);

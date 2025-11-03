@@ -12,17 +12,17 @@ namespace Grimoire.Features.Logging.UserLogging;
 public interface IInviteService
 {
     Invite? CalculateInviteUsed(GuildInviteDto guildInvites);
-    void UpdateInvite(ulong guildId, Invite invite);
+    void UpdateInvite(GuildId guildId, Invite invite);
     void UpdateGuildInvites(GuildInviteDto guildInvites);
     void UpdateAllInvites(List<GuildInviteDto> guildInvites);
-    bool DeleteInvite(ulong guildId, string inviteCode);
+    bool DeleteInvite(GuildId guildId, InviteCode inviteCode);
 }
 
 public sealed class InviteService : IInviteService
 {
-    private readonly ConcurrentDictionary<ulong, GuildInviteDto> _guilds = new();
+    private readonly ConcurrentDictionary<GuildId, GuildInviteDto> _guilds = new();
 
-    public void UpdateInvite(ulong guildId, Invite invite)
+    public void UpdateInvite(GuildId guildId, Invite invite)
     {
         if (!this._guilds.TryGetValue(guildId, out var guild))
             throw new ArgumentException("Could not find guild.");
@@ -78,7 +78,7 @@ public sealed class InviteService : IInviteService
         return inviteUsed;
     }
 
-    public bool DeleteInvite(ulong guildId, string inviteCode)
+    public bool DeleteInvite(GuildId guildId, InviteCode inviteCode)
     {
         if (!this._guilds.TryGetValue(guildId, out var guild))
             throw new ArgumentException("Could not find guild.");
@@ -88,6 +88,6 @@ public sealed class InviteService : IInviteService
 
 public sealed record GuildInviteDto
 {
-    public ulong GuildId { get; init; }
-    public ConcurrentDictionary<string, Invite> Invites { get; init; } = new();
+    public GuildId GuildId { get; init; }
+    public ConcurrentDictionary<InviteCode, Invite> Invites { get; init; } = new();
 }

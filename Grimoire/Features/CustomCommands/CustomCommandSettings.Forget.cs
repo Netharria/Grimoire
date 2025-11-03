@@ -26,7 +26,7 @@ public sealed partial class CustomCommandSettings
         [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
         [Parameter("Name")]
         [Description("The name of the command to forget.")]
-        string name)
+        CustomCommandName name)
     {
         await ctx.DeferResponseAsync();
 
@@ -35,13 +35,13 @@ public sealed partial class CustomCommandSettings
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         await dbContext.CustomCommands
-            .Where(x => x.Name == name && x.GuildId == guild.Id)
+            .Where(x => x.Name == name && x.GuildId == guild.GetGuildId())
             .ExecuteDeleteAsync();
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Forgot command: {name}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Description = $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command: {name}",
             Color = GrimoireColor.Purple

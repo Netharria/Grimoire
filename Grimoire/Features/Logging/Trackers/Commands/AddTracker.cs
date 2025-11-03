@@ -69,10 +69,10 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
         }
 
         await this._settingsModule.AddTracker(
-            user.Id,
-            ctx.User.Id,
-            guild.Id,
-            discordChannel.Id,
+            user.GetUserId(),
+            ctx.GetModeratorId(),
+            guild.GetGuildId(),
+            discordChannel.GetChannelId(),
             durationType.GetTimeSpan(durationAmount));
 
         await ctx.EditReplyAsync(
@@ -82,7 +82,7 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Description =
                 $"{ctx.User.Mention} placed a tracker on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType}.",

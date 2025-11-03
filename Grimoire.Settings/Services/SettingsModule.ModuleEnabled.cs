@@ -15,7 +15,7 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task SetModuleState(Module moduleType, ulong guildId, bool enableModule,
+    public async Task SetModuleState(Module moduleType, GuildId guildId, bool enableModule,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -50,7 +50,7 @@ public sealed partial class SettingsModule
         this._memoryCache.Remove(moduleType.GetCacheKey(guildId));
     }
 
-    public async Task<bool> IsModuleEnabled(Module moduleType, ulong guildId,
+    public async Task<bool> IsModuleEnabled(Module moduleType, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         return await this._memoryCache.GetOrCreateAsync(moduleType.GetCacheKey(guildId),
@@ -85,7 +85,7 @@ public sealed partial class SettingsModule
             }, this._cacheEntryOptions);
     }
 
-    public async Task<GuildModuleState> GetAllModuleState(ulong guildId, CancellationToken cancellationToken = default)
+    public async Task<GuildModuleState> GetAllModuleState(GuildId guildId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.LevelingSettings

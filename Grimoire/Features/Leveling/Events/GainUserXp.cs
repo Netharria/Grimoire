@@ -21,8 +21,8 @@ public sealed partial class GainUserXp(
     GuildLog guildLog,
     ILogger<EventHandler> logger) : IEventHandler<MessageCreatedEventArgs>
 {
-    private static readonly Func<GrimoireDbContext, ulong, ulong, Task<DateTimeOffset?>>
-        _getUserXpInfoQuery = EF.CompileAsyncQuery((GrimoireDbContext context, ulong userId, ulong guildId) =>
+    private static readonly Func<GrimoireDbContext, UserId, GuildId, Task<DateTimeOffset?>>
+        _getUserXpInfoQuery = EF.CompileAsyncQuery((GrimoireDbContext context, UserId userId, GuildId guildId) =>
             context.XpHistory
                 .AsNoTracking()
                 .Where(xp => xp.UserId == userId && xp.GuildId == guildId)
@@ -37,42 +37,41 @@ public sealed partial class GainUserXp(
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
         if (args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply
-            || args.Guild is null
             || args.Author is not DiscordMember member
             || member.IsBot)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, args.Guild.Id))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, member.GetGuildId()))
             return;
 
         if (!await this._settingsModule.IsMessageIgnored(
-                args.Guild.Id,
-                args.Author.Id,
-                member.Roles.Select(x => x.Id).ToArray(),
-                args.Channel.Id))
+                member.GetGuildId(),
+                args.GetAuthorUserId(),
+                member.Roles.Select(x => x.GetRoleId()).ToArray(),
+                args.GetChannelId()))
             return;
 
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var timeOut = await _getUserXpInfoQuery(dbContext, member.Id, args.Guild.Id);
+        var timeOut = await _getUserXpInfoQuery(dbContext, member.GetUserId(), member.GetGuildId());
 
         if (timeOut is not null && timeOut > DateTimeOffset.UtcNow)
             return;
 
         var xp = await dbContext.XpHistory
             .AsNoTracking()
-            .Where(xp => xp.UserId == member.Id && xp.GuildId == args.Guild.Id)
+            .Where(xp => xp.UserId == member.GetUserId() && xp.GuildId == member.GetGuildId())
             .Select(xp => xp.Xp)
             .LongCountAsync();
 
-        var levelingSettingEntry = await this._settingsModule.GetLevelingSettings(args.Guild.Id);
+        var levelingSettingEntry = await this._settingsModule.GetLevelingSettings(member.GetGuildId());
 
         await dbContext.XpHistory.AddAsync(
             new XpHistory
             {
                 Xp = levelingSettingEntry.Amount,
-                UserId = args.Author.Id,
-                GuildId = args.Guild.Id,
+                UserId = args.GetAuthorUserId(),
+                GuildId = member.GetGuildId(),
                 TimeOut = DateTimeOffset.UtcNow + levelingSettingEntry.TextTime,
                 Type = XpHistoryType.Earned
             });
@@ -84,7 +83,7 @@ public sealed partial class GainUserXp(
         if (previousLevel < currentLevel)
             await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
             {
-                GuildId = args.Guild.Id,
+                GuildId = member.GetGuildId(),
                 GuildLogType = GuildLogType.Leveling,
                 Embed = new DiscordEmbedBuilder()
                     .WithColor(GrimoireColor.Purple)
@@ -94,30 +93,34 @@ public sealed partial class GainUserXp(
                     .WithTimestamp(DateTime.UtcNow)
             });
 
-        await ApplyRewards(args.Guild.Id, args.Author.Id, currentLevel);
+        await ApplyRewards(member.GetGuildId(), args.GetAuthorUserId(), currentLevel);
     }
 
     private async Task ApplyRewards(
-        ulong guildId,
-        ulong userId,
+        GuildId guildId,
+        UserId userId,
         int userLevel,
         CancellationToken cancellationToken = default)
     {
-        var guild = await this._client.GetGuildAsync(guildId);
-        var member = await guild.GetMemberAsync(userId);
+        var guild = await this._client.GetGuildOrDefaultAsync(guildId);
+        if (guild is null)
+            return;
+        var member = await guild.GetMemberOrDefaultAsync(userId);
+        if (member is null)
+            return;
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.Id, cancellationToken);
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken);
 
 
         var newRewards = rewards
             .Where(reward => reward.RewardLevel <= userLevel)
-            .Where(reward => member.Roles.All(role => role.Id != reward.RoleId))
+            .Where(reward => member.Roles.All(role => role.GetRoleId() != reward.RoleId))
             .ToArray();
 
         var rolesToAdd = newRewards
             .Join(guild.Roles,
                 reward => reward.RoleId,
-                role => role.Key,
+                role => role.Value.GetRoleId(),
                 (_, role) => role.Value)
             .Concat(member.Roles)
             .Distinct()
@@ -135,13 +138,13 @@ public sealed partial class GainUserXp(
             await SendErrorLogs(
                 guild.CurrentMember.DisplayName,
                 newRewards.Select(x => x.RoleId),
-                guild.Id);
+                guild.GetGuildId());
         }
 
         foreach (var reward in newRewards.Where(reward => !string.IsNullOrWhiteSpace(reward.RewardMessage)))
             try
             {
-                if (guild.Roles.TryGetValue(reward.RoleId, out var role))
+                if (guild.Roles.TryGetValue(reward.RoleId.Value, out var role))
                     await member.SendMessageAsync(new DiscordEmbedBuilder()
                         .WithAuthor($"Congratulations on earning {role.Name}!", iconUrl: guild.IconUrl)
                         .WithFooter($"Message from the moderators of {guild.Name}.")
@@ -154,7 +157,7 @@ public sealed partial class GainUserXp(
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Leveling,
             Title = member.Username,
             Description = $"{member.Mention} has earned " +
@@ -165,12 +168,12 @@ public sealed partial class GainUserXp(
     }
 
     [LoggerMessage(LogLevel.Warning, "Failure to send reward message Reward: {roleId} Message: {message}")]
-    static partial void LogRewardMessageFailure(ILogger logger, Exception ex, ulong roleId, string? message);
+    static partial void LogRewardMessageFailure(ILogger logger, Exception ex, RoleId roleId, string? message);
 
     private async Task SendErrorLogs(
         string displayName,
-        IEnumerable<ulong> rewards,
-        ulong guildId)
+        IEnumerable<RoleId> rewards,
+        GuildId guildId)
     {
         var roleString = string.Join(' ', rewards.Select(RoleExtensions.Mention));
 
@@ -191,11 +194,5 @@ public sealed partial class GainUserXp(
                           $"{roleString} but did not have sufficient permissions.",
             Color = GrimoireColor.Red
         });
-    }
-
-    public sealed record QueryResult
-    {
-        public required long Xp { get; init; }
-        public required DateTimeOffset? Timeout { get; init; }
     }
 }

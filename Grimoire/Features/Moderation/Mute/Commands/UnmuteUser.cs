@@ -33,15 +33,15 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         var guild = ctx.Guild!;
 
-        if (guild.Id != member.Guild.Id)
+        if (guild.GetGuildId() != member.Guild.GetGuildId())
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
             return;
         }
 
-        await this._settingsModule.RemoveMute(member.Id, guild.Id);
+        await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId());
 
-        var muteRoleId = await this._settingsModule.GetMuteRole(guild.Id);
+        var muteRoleId = await this._settingsModule.GetMuteRole(guild.GetGuildId());
         if (muteRoleId is null)
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow,
@@ -78,7 +78,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         {
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = guild.Id,
+                GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Color = GrimoireColor.Red,
                 Description =
@@ -88,7 +88,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
 }

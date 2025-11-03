@@ -33,7 +33,7 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
 
         var response = await dbContext.CustomCommands
             .AsNoTracking()
-            .GetCustomCommandQuery(eventArgs.Guild.Id, messageArgs[0])
+            .GetCustomCommandQuery(member.GetGuildId(), new CustomCommandName(messageArgs[0]))
             .FirstOrDefaultAsync();
 
         if (response is null ||
@@ -81,7 +81,7 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
             var discordEmbed = new DiscordEmbedBuilder()
                 .WithDescription(content);
             if (response.EmbedColor is not null)
-                discordEmbed.WithColor(new DiscordColor(response.EmbedColor));
+                discordEmbed.WithColor(GrimoireColor.FromCustomCommandEmbedColor(response.EmbedColor.Value));
             discordResponse.AddEmbed(discordEmbed);
         }
         else

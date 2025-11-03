@@ -25,7 +25,7 @@ public partial class LogSettingsCommands
 
             var channelOverrideString = new StringBuilder();
 
-            await foreach (var channelOverride in this._settingsModule.GetAllOverriddenChannels(guild.Id))
+            await foreach (var channelOverride in this._settingsModule.GetAllOverriddenChannels(guild.GetGuildId()))
             {
                 var channel = await ctx.Client.GetChannelOrDefaultAsync(channelOverride.ChannelId);
                 if (channel is null)

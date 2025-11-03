@@ -7,6 +7,7 @@
 
 using System.Collections.Frozen;
 using System.Runtime.CompilerServices;
+using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Lock = Grimoire.Settings.Domain.Lock;
@@ -17,7 +18,7 @@ public partial class SettingsModule
 {
     private const string LocksCacheKeyPrefix = "Locks_{0}";
 
-    public async Task<bool> IsChannelLocked(ulong channel, ulong guildId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsChannelLocked(ChannelId channelId, GuildId guildId, CancellationToken cancellationToken = default)
     {
         var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
         var locks = await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
@@ -31,15 +32,15 @@ public partial class SettingsModule
             return results.ToFrozenSet();
         }, this._cacheEntryOptions);
 
-        return locks?.Contains(channel) ?? false;
+        return locks?.Contains(channelId) ?? false;
     }
 
     public async Task AddLock(
-        ulong moderatorId,
-        ulong guildId,
-        ulong channelId,
-        long previouslyAllowed,
-        long previouslyDenied,
+        ModeratorId moderatorId,
+        GuildId guildId,
+        ChannelId channelId,
+        PreviouslyAllowedPermissions previouslyAllowed,
+        PreviouslyDeniedPermissions previouslyDenied,
         string reason,
         DateTimeOffset lockEndTime,
         CancellationToken cancellationToken = default)
@@ -73,7 +74,7 @@ public partial class SettingsModule
         this._memoryCache.Remove(cacheKey);
     }
 
-    public async Task<Lock?> RemoveLock(ulong channelId, ulong guildId, CancellationToken cancellationToken = default)
+    public async Task<Lock?> RemoveLock(ChannelId channelId, GuildId guildId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingLocks = await dbContext.Locks

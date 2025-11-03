@@ -12,12 +12,12 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class OldLogMessage
 {
-    public required ulong ChannelId { get; init; }
+    public required ChannelId ChannelId { get; init; }
 
-    public required ulong GuildId { get; init; }
+    public required GuildId GuildId { get; init; }
 
     public DateTimeOffset CreatedAt { get; } = DateTimeOffset.UtcNow;
 
     public int TimesTried { get; init; }
-    public required ulong Id { get; init; }
+    public required MessageId Id { get; init; }
 }

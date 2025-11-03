@@ -23,5 +23,11 @@ internal sealed class RewardConfiguration : IEntityTypeConfiguration<Reward>
             .IsRequired(false);
         builder.Property(e => e.RewardLevel).IsRequired();
         builder.HasIndex(e => new { e.GuildId, e.RewardLevel });
+
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.RoleId)
+            .HasConversion(e => e.Value, value => new RoleId(value));
     }
 }

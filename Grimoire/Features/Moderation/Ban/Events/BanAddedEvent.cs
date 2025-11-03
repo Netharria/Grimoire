@@ -28,13 +28,13 @@ public partial class BanAddedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanAddedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.Id))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId()))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var lastBan = await dbContext.Sins
             .AsNoTracking()
-            .Where(m => m.UserId == args.Member.Id && m.GuildId == args.Guild.Id)
+            .Where(m => m.UserId == args.Member.GetUserId() && m.GuildId == args.Guild.GetGuildId())
             .Where(sin => sin.SinType == SinType.Ban)
             .OrderByDescending(x => x.SinOn)
             .Select(sin => new LastSin
@@ -52,15 +52,17 @@ public partial class BanAddedEvent(
                 var sin = await dbContext.Sins.AddAsync(
                     new Sin
                     {
-                        GuildId = args.Guild.Id,
-                        UserId = args.Member.Id,
+                        GuildId = args.Guild.GetGuildId(),
+                        UserId = args.Member.GetUserId(),
                         Reason = banAuditLog?.Target.Id != args.Member.Id
                             ? string.Empty
                             : banAuditLog.Reason ?? string.Empty,
                         SinType = SinType.Ban,
                         ModeratorId = banAuditLog?.Target.Id != args.Member.Id
                             ? null
-                            : banAuditLog.UserResponsible?.Id
+                            : banAuditLog.UserResponsible?.Id is not null
+                                ? new ModeratorId(banAuditLog.UserResponsible.Id)
+                                : null
                     });
                 await dbContext.SaveChangesAsync();
 
@@ -94,7 +96,7 @@ public partial class BanAddedEvent(
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = builder
+            GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = builder
         });
     }
 
@@ -103,8 +105,8 @@ public partial class BanAddedEvent(
 
     private sealed record LastSin
     {
-        public long SinId { get; init; }
-        public ulong? ModeratorId { get; init; }
+        public SinId SinId { get; init; }
+        public ModeratorId? ModeratorId { get; init; }
         public string Reason { get; init; } = string.Empty;
         public DateTimeOffset SinOn { get; init; }
     }

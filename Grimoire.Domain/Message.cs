@@ -12,14 +12,14 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class Message
 {
-    public required ulong ChannelId { get; init; }
+    public required ChannelId ChannelId { get; init; }
     public DateTimeOffset CreatedTimestamp { get; } = DateTimeOffset.UtcNow;
-    public ulong? ReferencedMessageId { get; init; }
+    public MessageId? ReferencedMessageId { get; init; }
     public ProxiedMessageLink? ProxiedMessageLink { get; init; }
     public ProxiedMessageLink? OriginalMessageLink { get; init; }
     public ICollection<Attachment> Attachments { get; init; } = [];
     public ICollection<MessageHistory> MessageHistory { get; init; } = [];
-    public required ulong Id { get; init; }
-    public required ulong UserId { get; init; }
-    public required ulong GuildId { get; init; }
+    public required MessageId Id { get; init; }
+    public required UserId UserId { get; init; }
+    public required GuildId GuildId { get; init; }
 }

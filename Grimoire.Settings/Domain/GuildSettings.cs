@@ -5,11 +5,13 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Domain;
+
 namespace Grimoire.Settings.Domain;
 
 public sealed class GuildSettings
 {
-    public required ulong Id { get; init; }
-    public ulong? ModLogChannelId { get; set; }
-    public ulong? UserCommandChannelId { get; set; }
+    public required GuildId Id { get; init; }
+    public ChannelId? ModLogChannelId { get; set; }
+    public ChannelId? UserCommandChannelId { get; set; }
 }

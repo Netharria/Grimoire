@@ -32,7 +32,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         var guild = ctx.Guild!;
 
         channel ??= ctx.Channel;
-        var response = await this._settingsModule.RemoveLock(channel.Id, guild.Id);
+        var response = await this._settingsModule.RemoveLock(channel.GetChannelId(), guild.GetGuildId());
 
         if (response is null)
         {
@@ -45,15 +45,15 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
             var permissions = guild.Channels[channel.Id].PermissionOverwrites
                 .First(x => x.Id == guild.EveryoneRole.Id);
             await channel.AddOverwriteAsync(guild.EveryoneRole,
-                permissions.Allowed.RevertLockPermissions(response.PreviouslyAllowed)
-                , permissions.Denied.RevertLockPermissions(response.PreviouslyDenied));
+                permissions.Allowed.RevertLockPermissions(response.PreviouslyAllowed.Permissions)
+                , permissions.Denied.RevertLockPermissions(response.PreviouslyDenied.Permissions));
         }
 
         await ctx.EditReplyAsync(message: $"{channel.Mention} has been unlocked");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} unlocked {channel.Mention}"

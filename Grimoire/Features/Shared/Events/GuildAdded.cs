@@ -37,13 +37,13 @@ internal sealed class GuildAdded(
         this._inviteService.UpdateGuildInvites(
             new GuildInviteDto
             {
-                GuildId = eventArgs.Guild.Id,
-                Invites = new ConcurrentDictionary<string, Invite>((await eventArgs.Guild.GetInvitesAsync())
+                GuildId = eventArgs.Guild.GetGuildId(),
+                Invites = new ConcurrentDictionary<InviteCode, Invite>((await eventArgs.Guild.GetInvitesAsync())
                     .Select(x => new Invite
                     {
-                        Code = x.Code,
-                        Inviter = x.Inviter.Username,
-                        Url = x.ToString(),
+                        Code = x.GetInviteCode(),
+                        Inviter = x.Inviter.GetUsername(),
+                        Url = x.GetInviteUrl(),
                         Uses = x.Uses,
                         MaxUses = x.MaxUses
                     })

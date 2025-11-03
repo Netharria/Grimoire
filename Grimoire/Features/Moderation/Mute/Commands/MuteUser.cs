@@ -44,14 +44,14 @@ public sealed class MuteUser(
 
         var guild = ctx.Guild!;
 
-        if (guild.Id != member.Guild.Id)
+        if (guild.GetGuildId() != member.Guild.GetGuildId())
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
             return;
         }
 
 
-        var muteRoleId = await this._settingsModule.GetMuteRole(guild.Id);
+        var muteRoleId = await this._settingsModule.GetMuteRole(guild.GetGuildId());
 
         if (muteRoleId is null)
         {
@@ -64,9 +64,9 @@ public sealed class MuteUser(
         var muteEndTime = durationType.GetDateTimeOffset(durationAmount);
         var sin = new Sin
         {
-            UserId = member.Id,
-            GuildId = guild.Id,
-            ModeratorId = ctx.User.Id,
+            UserId = member.GetUserId(),
+            GuildId = guild.GetGuildId(),
+            ModeratorId = ctx.GetModeratorId(),
             Reason = reason ?? string.Empty,
             SinType = SinType.Mute
         };
@@ -74,7 +74,7 @@ public sealed class MuteUser(
         await dbContext.Sins.AddAsync(sin);
         await dbContext.SaveChangesAsync();
 
-        await this._settingsModule.AddMute(member.Id, guild.Id, sin.Id, muteEndTime);
+        await this._settingsModule.AddMute(member.GetUserId(), guild.GetGuildId(), sin.Id, muteEndTime);
 
         var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
         if (muteRole is null)
@@ -112,7 +112,7 @@ public sealed class MuteUser(
         {
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = guild.Id,
+                GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Description =
                     $"Was not able to send a direct message with the mute details to {member.Mention}.",
@@ -122,7 +122,7 @@ public sealed class MuteUser(
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
 }

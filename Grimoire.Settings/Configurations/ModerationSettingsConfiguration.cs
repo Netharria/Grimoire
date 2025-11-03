@@ -24,5 +24,14 @@ internal sealed class ModerationSettingsConfiguration : IEntityTypeConfiguration
             .HasDefaultValue(TimeSpan.FromDays(30 * 365));
         builder.Property(x => x.ModuleEnabled)
             .HasDefaultValue(false);
+
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.PublicBanLog)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
+        builder.Property(e => e.MuteRole)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new RoleId(value));
+
     }
 }

@@ -12,8 +12,21 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class Avatar
 {
-    public required string FileName { get; init; }
+    public required AvatarFileName FileName { get; init; }
     public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
-    public required ulong UserId { get; init; }
-    public required ulong GuildId { get; init; }
+    public required UserId UserId { get; init; }
+    public required GuildId GuildId { get; init; }
 }
+
+public readonly record struct AvatarFileName(string Value)
+{
+    public override string ToString() => Value;
+    [Pure]
+    public static bool Equals(AvatarFileName? a, AvatarFileName? b)
+        => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value);
+
+    [Pure]
+    public static bool Equals(AvatarFileName? a, AvatarFileName? b, StringComparison stringComparison)
+        => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value, stringComparison);
+}
+

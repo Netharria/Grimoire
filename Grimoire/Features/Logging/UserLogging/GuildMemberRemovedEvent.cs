@@ -19,7 +19,7 @@ public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule se
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberRemovedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.Id))
+        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()))
             return;
 
         var embed = new DiscordEmbedBuilder()
@@ -37,7 +37,7 @@ public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule se
                     : "None");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id, GuildLogType = GuildLogType.UserLeft, Embed = embed
+            GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.UserLeft, Embed = embed
         });
     }
 }

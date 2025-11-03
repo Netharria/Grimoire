@@ -38,7 +38,7 @@ public sealed class RemoveExpiredTrackers
                     new TrackerMessage
                     {
                         GuildId = expiredTracker.GuildId,
-                        TrackerId = expiredTracker.LogChannelId,
+                        TrackerId = expiredTracker.LogChannelId.Value,
                         TrackerIdType = TrackerIdType.ChannelId,
                         Description = $"Tracker on {user?.Mention} has expired."
                     }, cancellationToken);

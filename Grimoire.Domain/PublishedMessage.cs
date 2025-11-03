@@ -18,9 +18,9 @@ public enum PublishType
 [UsedImplicitly]
 public sealed class PublishedMessage
 {
-    public required ulong MessageId { get; init; }
+    public required MessageId MessageId { get; init; }
 
-    public required long SinId { get; init; }
+    public required SinId SinId { get; init; }
 
     public Sin? Sin { get; init; }
 

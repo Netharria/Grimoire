@@ -32,7 +32,7 @@ public sealed class RemoveTracker(SettingsModule settingsModule, GuildLog guildL
 
         var guild = ctx.Guild!;
 
-        var tracker = await this._settingsModule.RemoveTracker(member.Id, guild.Id);
+        var tracker = await this._settingsModule.RemoveTracker(member.GetUserId(), guild.GetGuildId());
 
 
         await ctx.EditReplyAsync(message: $"Tracker removed from {member.Mention}");
@@ -40,8 +40,8 @@ public sealed class RemoveTracker(SettingsModule settingsModule, GuildLog guildL
         if (tracker is not null)
             await this._trackerLog.SendTrackerMessageAsync(new TrackerMessage
             {
-                GuildId = guild.Id,
-                TrackerId = tracker.LogChannelId,
+                GuildId = guild.GetGuildId(),
+                TrackerId = tracker.LogChannelId.Value,
                 TrackerIdType = TrackerIdType.ChannelId,
                 Color = GrimoireColor.Purple,
                 Description = $"{ctx.User.Username} removed a tracker on {member.Mention}"
@@ -49,7 +49,7 @@ public sealed class RemoveTracker(SettingsModule settingsModule, GuildLog guildL
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Username} removed a tracker on {member.Mention}"

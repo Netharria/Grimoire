@@ -36,29 +36,29 @@ internal sealed class SpamEvents(
         if (args.Author is not DiscordMember member)
             return;
 
-        var muteRoleId = await this._settingsModule.GetMuteRole(args.Guild.Id);
+        var muteRoleId = await this._settingsModule.GetMuteRole(args.Guild.GetGuildId());
         if (muteRoleId is null)
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var muteCount = await dbContext.Sins
-            .Where(member1 => member1.UserId == member.Id && member1.GuildId == args.Guild.Id)
+            .Where(member1 => member1.UserId == member.GetUserId() && member1.GuildId == args.Guild.GetGuildId())
             .Where(x => x.SinType == SinType.Mute)
             .CountAsync(x => x.SinOn > DateTimeOffset.UtcNow.AddDays(-1));
         var duration = TimeSpan.FromMinutes(Math.Pow(2, muteCount));
         var muteEndTime = DateTimeOffset.UtcNow.Add(duration);
         var sin = new Sin
         {
-            UserId = member.Id,
-            GuildId = args.Guild.Id,
-            ModeratorId = args.Guild.CurrentMember.Id,
+            UserId = member.GetUserId(),
+            GuildId = args.Guild.GetGuildId(),
+            ModeratorId = new ModeratorId(args.Guild.CurrentMember.Id),
             Reason = checkSpamResult.Reason,
             SinType = SinType.Mute
         };
         await dbContext.Sins.AddAsync(sin);
         await dbContext.SaveChangesAsync();
 
-        await this._settingsModule.AddMute(member.Id, args.Guild.Id, sin.Id, muteEndTime);
+        await this._settingsModule.AddMute(member.GetUserId(), args.Guild.GetGuildId(), sin.Id, muteEndTime);
 
         var muteRole = await args.Guild.GetRoleOrDefaultAsync(muteRoleId.Value);
 
@@ -95,13 +95,13 @@ internal sealed class SpamEvents(
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
 
         if (!sentMessageToUser)
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = args.Guild.Id,
+                GuildId = args.Guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Color = GrimoireColor.Red,
                 Description =

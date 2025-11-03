@@ -9,8 +9,8 @@ namespace Grimoire.Domain;
 
 public class LeaderboardView
 {
-    public ulong GuildId { get; init; }
-    public ulong UserId { get; init; }
-    public long TotalXp { get; init; }
-    public long Rank { get; init; }
+    public required GuildId GuildId { get; init; }
+    public required UserId UserId { get; init; }
+    public required long TotalXp { get; init; }
+    public required long Rank { get; init; }
 }

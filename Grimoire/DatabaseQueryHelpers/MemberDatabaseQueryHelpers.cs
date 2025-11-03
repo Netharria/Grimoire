@@ -14,8 +14,8 @@ public static class MemberDatabaseQueryHelpers
     {
         var existingNicknames = await databaseNicknames
             .AsNoTracking()
-            .Where(x => x.GuildId == discordGuild.Id)
-            .Where(x => discordGuild.Members.Keys.Contains(x.UserId))
+            .Where(x => x.GuildId == discordGuild.GetGuildId())
+            .Where(x => discordGuild.Members.Keys.Contains(x.UserId.Value))
             .GroupBy(nickname => new { nickname.UserId, nickname.GuildId })
             .Select(nicknameGroup => new
             {
@@ -28,8 +28,8 @@ public static class MemberDatabaseQueryHelpers
             .ToHashSetAsync(cancellationToken);
 
         var nicknamesToAdd = discordGuild.Members.Values
-            .Where(x => !existingNicknames.Contains((x.Id, x.Guild.Id, x.Nickname)))
-            .Select(x => new NicknameHistory { GuildId = x.Guild.Id, UserId = x.Id, Nickname = x.Nickname })
+            .Where(x => !existingNicknames.Contains((x.GetUserId(), x.GetGuildId(), x.GetNickname())))
+            .Select(x => new NicknameHistory { GuildId = x.GetGuildId(), UserId = x.GetUserId(), Nickname = x.GetNickname() })
             .ToArray();
 
         if (nicknamesToAdd.Length == 0)
@@ -43,8 +43,8 @@ public static class MemberDatabaseQueryHelpers
     {
         var existingAvatars = await databaseAvatars
             .AsNoTracking()
-            .Where(avatar => avatar.GuildId == discordGuild.Id)
-            .Where(avatar => discordGuild.Members.Keys.Contains(avatar.UserId))
+            .Where(avatar => avatar.GuildId == discordGuild.GetGuildId())
+            .Where(avatar => discordGuild.Members.Keys.Contains(avatar.UserId.Value))
             .GroupBy(avatar => new { avatar.UserId, avatar.GuildId })
             .Select(avatarGroup
                 => new
@@ -58,8 +58,8 @@ public static class MemberDatabaseQueryHelpers
             .ToHashSetAsync(cancellationToken);
 
         var avatarsToAdd = discordGuild.Members.Values
-            .Where(x => !existingAvatars.Contains((x.Id, x.Guild.Id, x.AvatarUrl)))
-            .Select(x => new Avatar { UserId = x.Id, GuildId = x.Guild.Id, FileName = x.AvatarUrl })
+            .Where(x => !existingAvatars.Contains((x.GetUserId(), x.GetGuildId(), x.GetAvatarFileName())))
+            .Select(x => new Avatar { UserId = x.GetUserId(), GuildId = x.GetGuildId(), FileName = x.GetAvatarFileName() })
             .ToArray();
 
         if (avatarsToAdd.Length == 0)

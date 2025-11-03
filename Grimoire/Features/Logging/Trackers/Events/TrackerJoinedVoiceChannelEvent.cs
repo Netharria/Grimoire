@@ -21,7 +21,7 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
             return;
 
         var embed = new DiscordEmbedBuilder()
-            .AddField("User", UserExtensions.Mention(args.UserId), true)
+            .AddField("User", UserExtensions.Mention(new UserId(args.UserId)), true)
             .WithTimestamp(DateTime.UtcNow);
 
         if (args.Before.ChannelId is null)
@@ -29,7 +29,7 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
             await this._trackerLog.SendTrackerMessageAsync(
                 new TrackerMessageCustomEmbed
                 {
-                    GuildId = args.GuildId.Value,
+                    GuildId = new GuildId(args.GuildId.Value),
                     TrackerId = args.UserId,
                     TrackerIdType = TrackerIdType.UserId,
                     Embed = embed
@@ -44,7 +44,7 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
             await this._trackerLog.SendTrackerMessageAsync(
                 new TrackerMessageCustomEmbed
                 {
-                    GuildId = args.GuildId.Value,
+                    GuildId = new GuildId(args.GuildId.Value),
                     TrackerId = args.UserId,
                     TrackerIdType = TrackerIdType.UserId,
                     Embed = embed
@@ -58,7 +58,7 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
             await this._trackerLog.SendTrackerMessageAsync(
                 new TrackerMessageCustomEmbed
                 {
-                    GuildId = args.GuildId.Value,
+                    GuildId = new GuildId(args.GuildId.Value),
                     TrackerId = args.UserId,
                     TrackerIdType = TrackerIdType.UserId,
                     Embed = embed

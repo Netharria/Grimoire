@@ -14,13 +14,13 @@ public sealed class GetCustomCommandOptions
     internal sealed class AutocompleteProvider(IDbContextFactory<GrimoireDbContext> dbContextFactory)
         : IAutoCompleteProvider
     {
-        private static readonly Func<GrimoireDbContext, ulong, string, IAsyncEnumerable<DiscordAutoCompleteChoice>>
+        private static readonly Func<GrimoireDbContext, GuildId, string, IAsyncEnumerable<DiscordAutoCompleteChoice>>
             _getCommandsAsync =
-                EF.CompileAsyncQuery((GrimoireDbContext context, ulong guildId, string cleanedText) =>
+                EF.CompileAsyncQuery((GrimoireDbContext context, GuildId guildId, string cleanedText) =>
                     context.CustomCommands
                         .AsNoTracking()
                         .Where(x => x.GuildId == guildId)
-                        .OrderBy(x => EF.Functions.FuzzyStringMatchLevenshtein(x.Name, cleanedText))
+                        .OrderBy(x => EF.Functions.FuzzyStringMatchLevenshtein(x.Name.Value, cleanedText))
                         .Take(5)
                         .Select(x => new DiscordAutoCompleteChoice(
                             x.Name + " " +
@@ -33,14 +33,12 @@ public sealed class GetCustomCommandOptions
 
         public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            if (context.Guild is null)
-                return [];
-            if (string.IsNullOrWhiteSpace(context.UserInput))
+            if (context.Guild is null || string.IsNullOrWhiteSpace(context.UserInput))
                 return [];
             var cleanedText = context.UserInput.Split(' ').FirstOrDefault(string.Empty);
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-            return await _getCommandsAsync(dbContext, context.Guild.Id, cleanedText)
+            return await _getCommandsAsync(dbContext, new GuildId(context.Guild.Id), cleanedText)
                 .ToListAsync();
         }
     }

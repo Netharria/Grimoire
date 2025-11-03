@@ -20,5 +20,18 @@ internal sealed class UserLogSettingsConfiguration : IEntityTypeConfiguration<Us
         builder.HasKey(e => e.GuildId);
         builder.Property(x => x.ModuleEnabled)
             .HasDefaultValue(false);
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.JoinChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
+        builder.Property(e => e.LeaveChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
+        builder.Property(e => e.UsernameChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
+        builder.Property(e => e.NicknameChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
+        builder.Property(e => e.AvatarChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
     }
 }

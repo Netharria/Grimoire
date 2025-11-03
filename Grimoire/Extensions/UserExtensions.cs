@@ -9,7 +9,12 @@ namespace Grimoire.Extensions;
 
 public static class UserExtensions
 {
-    public static string Mention(ulong? id)
+    public static string Mention(UserId? id)
+        => id is not null
+            ? $"<@!{id}>"
+            : "Unknown User";
+
+    public static string Mention(ModeratorId? id)
         => id is not null
             ? $"<@!{id}>"
             : "Unknown User";

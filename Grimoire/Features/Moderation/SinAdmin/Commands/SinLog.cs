@@ -61,7 +61,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         {
             var modResponse = await dbContext.Sins
                 .AsNoTracking()
-                .Where(sin => sin.ModeratorId == user.Id && sin.GuildId == guild.Id)
+                .Where(sin => sin.ModeratorId == ctx.GetModeratorId() && sin.GuildId == guild.GetGuildId())
                 .GroupBy(sin => sin.SinType)
                 .ToDictionaryAsync(sinGroup => sinGroup.Key, sinGroup => sinGroup.Count());
 
@@ -76,7 +76,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         var queryable = dbContext.Sins
             .AsNoTracking()
-            .Where(sin => sin.ModeratorId == user.Id && sin.GuildId == guild.Id);
+            .Where(sin => sin.UserId == user.GetUserId() && sin.GuildId == guild.GetGuildId());
 
         queryable = sinQueryType switch
         {
@@ -88,7 +88,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
             _ => throw new ArgumentOutOfRangeException(nameof(sinQueryType), sinQueryType, null)
         };
 
-        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.Id);
+        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId());
 
         var result = await queryable
             .Where(x => x.SinOn > DateTimeOffset.UtcNow - autoPardonAfter)
@@ -100,7 +100,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
                 x.Reason,
                 x.ModeratorId,
                 Pardon = x.Pardon != null,
-                PardonModeratorId = (ulong?)(x.Pardon != null ? x.Pardon.ModeratorId : null),
+                PardonModeratorId = (ModeratorId?)(x.Pardon != null ? x.Pardon.ModeratorId : null),
                 PardonDate = x.Pardon != null ? x.Pardon.PardonDate : DateTimeOffset.MinValue
             }).ToListAsync();
         var stringBuilder = new StringBuilder(2048);

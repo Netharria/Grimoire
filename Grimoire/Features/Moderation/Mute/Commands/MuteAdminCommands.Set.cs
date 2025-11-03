@@ -23,12 +23,12 @@ public partial class MuteAdminCommands
 
         var guild = ctx.Guild!;
 
-        await this._settingsModule.SetMuteRole(role.Id, guild.Id);
+        await this._settingsModule.SetMuteRole(role.GetRoleId(), guild.GetGuildId());
 
         await ctx.EditReplyAsync(message: $"Will now use role {role.Mention} for muting users.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} updated the mute role to {role.Mention}"

@@ -55,4 +55,8 @@ public static partial class DiscordEmbedBuilderExtensions
 
         return embedBuilder;
     }
+
+    public static DiscordEmbedBuilder WithThumbnail(this DiscordEmbedBuilder embedBuilder,
+        AvatarFileName avatarFileName)
+        => embedBuilder.WithThumbnail(avatarFileName.Value);
 }

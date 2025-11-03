@@ -24,7 +24,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
     [Description("Pardon a user's sin. This leaves the sin in the logs but marks it as pardoned.")]
     public async Task PardonAsync(CommandContext ctx,
         [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be pardoned.")]
-        int sinId,
+        SinId sinId,
         [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason the sin is getting pardoned.")]
         string reason = "")
     {
@@ -35,14 +35,14 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var result = await dbContext.Sins
             .Where(sin => sin.Id == sinId)
-            .Where(sin => sin.GuildId == guild.Id)
+            .Where(sin => sin.GuildId == guild.GetGuildId())
             .Include(sin => sin.Pardon)
             .Select(sin => new
             {
                 // ReSharper disable AccessToDisposedClosure
                 // ReSharper enable AccessToDisposedClosure
                 Sin = sin,
-                UserName = dbContext.UsernameHistory
+                UserName = (Username?) dbContext.UsernameHistory
                     .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
                     .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                     .Select(usernameHistory => usernameHistory.Username)
@@ -61,7 +61,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
         else
             result.Sin.Pardon = new Pardon
             {
-                SinId = sinId, GuildId = guild.Id, ModeratorId = ctx.User.Id, Reason = reason
+                SinId = sinId, GuildId = guild.GetGuildId(), ModeratorId = ctx.GetModeratorId(), Reason = reason
             };
         await dbContext.SaveChangesAsync();
 
@@ -71,11 +71,11 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor("Pardon")
-                .AddField("User", result.UserName ?? "Unknown", true)
+                .AddField("User", result.UserName?.Value ?? "Unknown", true)
                 .AddField("Sin Id", sinId.ToString(), true)
                 .AddField("Moderator", ctx.User.Mention, true)
                 .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason, true)

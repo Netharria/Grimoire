@@ -18,7 +18,7 @@ public sealed partial class SettingsModule
     private const string RewardsCacheKeyPrefix = "LevelingRewards_{0}";
 
     public async Task<IReadOnlySet<RewardEntry>> GetLevelingRewardsAsync(
-        ulong guildId,
+        GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
@@ -40,8 +40,8 @@ public sealed partial class SettingsModule
     }
 
     public async Task AddOrUpdateRewardAsync(
-        ulong roleId,
-        ulong guildId,
+        RoleId roleId,
+        GuildId guildId,
         int level,
         string? rewardMessage,
         CancellationToken cancellationToken = default)
@@ -62,8 +62,8 @@ public sealed partial class SettingsModule
     }
 
     public async Task RemoveRewardAsync(
-        ulong roleId,
-        ulong guildId,
+        RoleId roleId,
+        GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -82,7 +82,7 @@ public sealed partial class SettingsModule
 
     public sealed record RewardEntry
     {
-        public ulong RoleId { get; init; }
+        public RoleId RoleId { get; init; }
         public int RewardLevel { get; init; }
         public string? RewardMessage { get; init; }
     }

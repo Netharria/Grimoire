@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain;
+
 namespace Grimoire.Extensions;
 
 public static class PermissionsExtensions
@@ -34,6 +36,9 @@ public static class PermissionsExtensions
     public static DiscordPermissions RevokeVoiceLockPermissions(this DiscordPermissions permissions)
         => permissions & ~PermissionValues.VoiceLockPermissions;
 
-    public static long ToLong(this DiscordPermissions permissions)
-        => long.Parse(permissions.ToString());
+    public static PreviouslyAllowedPermissions GetPreviouslyAllowedPermissions(this DiscordOverwrite permissions)
+        => new (long.Parse(permissions.Allowed.ToString())) ;
+
+    public static PreviouslyDeniedPermissions GetPreviouslyDeniedPermissions(this DiscordOverwrite permissions)
+        => new (long.Parse(permissions.Denied.ToString())) ;
 }

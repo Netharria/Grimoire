@@ -59,7 +59,7 @@ public sealed partial class TrackerLog(
         Message = "An error occurred while processing the log message. Message: ({message})")]
     static partial void LogError(ILogger logger, Exception e, string message);
 
-    private async Task<ulong?> GetLogChannelId(TrackerMessageBase trackerMessageBase,
+    private async Task<ChannelId?> GetLogChannelId(TrackerMessageBase trackerMessageBase,
         CancellationToken cancellationToken)
     {
         if (!await this._settingsModule.IsModuleEnabled(
@@ -71,10 +71,10 @@ public sealed partial class TrackerLog(
         return trackerMessageBase.TrackerIdType switch
         {
             TrackerIdType.UserId => await this._settingsModule.GetTrackerChannelAsync(
-                trackerMessageBase.TrackerId,
+                new UserId(trackerMessageBase.TrackerId),
                 trackerMessageBase.GuildId,
                 cancellationToken),
-            TrackerIdType.ChannelId => trackerMessageBase.TrackerId,
+            TrackerIdType.ChannelId => new ChannelId(trackerMessageBase.TrackerId),
             _ => throw new ArgumentOutOfRangeException(nameof(trackerMessageBase),
                 trackerMessageBase, "Unknown log type")
         };

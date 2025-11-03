@@ -5,18 +5,19 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Domain;
 using Grimoire.Settings.Domain.Shared;
 
 namespace Grimoire.Settings.Domain;
 
-public sealed class IgnoredRole : IRole, IIgnored
+public sealed class IgnoredRole : IIgnored
 {
     public ulong Id
     {
-        get => RoleId;
-        init => RoleId = value;
+        get => RoleId.Value;
+        init => RoleId = new RoleId(value);
     }
 
-    public ulong RoleId { get; init; }
-    public ulong GuildId { get; init; }
+    public RoleId RoleId { get; init; }
+    public GuildId GuildId { get; init; }
 }

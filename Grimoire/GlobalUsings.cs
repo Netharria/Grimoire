@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 global using System.ComponentModel;
+global using System.Diagnostics.Contracts;
 global using DSharpPlus.Commands.Processors.SlashCommands;
 global using DSharpPlus;
 global using DSharpPlus.Entities;

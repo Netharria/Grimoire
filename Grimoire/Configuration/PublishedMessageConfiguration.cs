@@ -23,5 +23,12 @@ internal sealed class PublishedMessageConfiguration : IEntityTypeConfiguration<P
             .IsRequired();
         builder.Property(e => e.PublishType)
             .IsRequired();
+
+
+        builder.Property(e => e.MessageId)
+            .HasConversion(e => e.Value, value => new MessageId(value));
+
+        builder.Property(e => e.SinId)
+            .HasConversion(e => e.Value, value => new SinId(value));
     }
 }

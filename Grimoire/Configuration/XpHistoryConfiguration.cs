@@ -28,5 +28,15 @@ internal sealed class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistor
         // For user-specific queries: Filter by UserId + GuildId, then aggregate Xp
         builder.HasIndex(x => new { x.UserId, x.GuildId, x.Xp })
             .HasDatabaseName("IX_XpHistory_UserId_GuildId_Xp");
+
+
+        builder.Property(e => e.AwarderId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ModeratorId(value));
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+
+        builder.Property(e => e.UserId)
+            .HasConversion(e => e.Value, value => new UserId(value));
     }
 }

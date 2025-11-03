@@ -20,5 +20,15 @@ internal sealed class MessageLogSettingsConfiguration : IEntityTypeConfiguration
         builder.HasKey(e => e.GuildId);
         builder.Property(x => x.ModuleEnabled)
             .HasDefaultValue(false);
+
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.DeleteChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
+        builder.Property(e => e.BulkDeleteChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
+        builder.Property(e => e.EditChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
     }
 }

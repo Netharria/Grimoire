@@ -25,5 +25,19 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
             .HasMaxLength(4000);
         builder.Property(e => e.TimeStamp)
             .HasDefaultValueSql("now()");
+
+
+        builder.Property(e => e.DeletedByModeratorId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ModeratorId(value));
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+
+        builder.Property(e => e.MessageId)
+            .HasConversion(e => e.Value, value => new MessageId(value));
+
+
+        builder.Property(e => e.MessageContent)
+            .HasConversion(e => e.GetValueOrDefault().Content, value => new MessageContent(value));
     }
 }

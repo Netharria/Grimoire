@@ -13,7 +13,7 @@ namespace Grimoire.Utilities;
 
 public interface IDiscordImageEmbedService
 {
-    Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed,
+    Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, UserId userId, DiscordEmbed embed,
         bool displayFileNames = true);
 }
 
@@ -34,7 +34,7 @@ public sealed partial class DiscordImageEmbedService : IDiscordImageEmbedService
         this._logger = logger;
     }
 
-    public async Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, ulong userId, DiscordEmbed embed,
+    public async Task<DiscordMessageBuilder> BuildImageEmbedAsync(string[] urls, UserId userId, DiscordEmbed embed,
         bool displayFileNames = true)
     {
         var messageBuilder = new DiscordMessageBuilder();

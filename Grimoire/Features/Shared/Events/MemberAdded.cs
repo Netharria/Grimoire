@@ -16,8 +16,8 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-        var userId = eventArgs.Member.Id;
-        var guildId = eventArgs.Guild.Id;
+        var userId = eventArgs.Member.GetUserId();
+        var guildId = eventArgs.Guild.GetGuildId();
 
         var latestUsername = await dbContext.UsernameHistory
             .AsNoTracking()
@@ -40,32 +40,32 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
             .Select(x => x.FileName)
             .FirstOrDefaultAsync();
 
-        if (!string.Equals(latestUsername, eventArgs.Member.Username,
+        if (!Username.Equals(latestUsername, eventArgs.Member.GetUsername(),
                 StringComparison.CurrentCultureIgnoreCase))
             await dbContext.UsernameHistory.AddAsync(
-                new UsernameHistory { Username = eventArgs.Member.Username, UserId = eventArgs.Member.Id });
+                new UsernameHistory { Username = eventArgs.Member.GetUsername(), UserId = eventArgs.Member.GetUserId() });
 
-        if (!string.Equals(latestNickname, eventArgs.Member.Nickname,
+        if (!Nickname.Equals(latestNickname, eventArgs.Member.GetNickname(),
                 StringComparison.CurrentCultureIgnoreCase))
             await dbContext.NicknameHistory.AddAsync(
                 new NicknameHistory
                 {
-                    UserId = eventArgs.Member.Id, GuildId = eventArgs.Guild.Id, Nickname = eventArgs.Member.Nickname
+                    UserId = eventArgs.Member.GetUserId(), GuildId = eventArgs.Guild.GetGuildId(), Nickname = eventArgs.Member.GetNickname()
                 });
 
-        if (!string.Equals(latestAvatar, eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128),
+        if (!AvatarFileName.Equals(latestAvatar, eventArgs.Member.GetAvatarFileName(MediaFormat.Auto, 128),
                 StringComparison.Ordinal))
             await dbContext.Avatars.AddAsync(
                 new Avatar
                 {
-                    UserId = eventArgs.Member.Id,
-                    GuildId = eventArgs.Guild.Id,
-                    FileName = eventArgs.Member.GetGuildAvatarUrl(MediaFormat.Auto, 128)
+                    UserId = eventArgs.Member.GetUserId(),
+                    GuildId = eventArgs.Guild.GetGuildId(),
+                    FileName = eventArgs.Member.GetAvatarFileName(MediaFormat.Auto, 128)
                 });
 
-        if (!string.Equals(latestUsername, eventArgs.Member.Username, StringComparison.CurrentCultureIgnoreCase)
-            || !string.Equals(latestNickname, eventArgs.Member.Nickname, StringComparison.CurrentCultureIgnoreCase)
-            || !string.Equals(latestAvatar, eventArgs.Member.AvatarUrl, StringComparison.Ordinal))
+        if (!Username.Equals(latestUsername, eventArgs.Member.GetUsername(), StringComparison.CurrentCultureIgnoreCase)
+            || !Nickname.Equals(latestNickname, eventArgs.Member.GetNickname(), StringComparison.CurrentCultureIgnoreCase)
+            || !AvatarFileName.Equals(latestAvatar, eventArgs.Member.GetAvatarFileName(MediaFormat.Auto, 128), StringComparison.Ordinal))
             await dbContext.SaveChangesAsync();
     }
 }

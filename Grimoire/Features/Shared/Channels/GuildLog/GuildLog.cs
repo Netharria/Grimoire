@@ -8,6 +8,7 @@
 using System.Threading.Channels;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Channel = System.Threading.Channels.Channel;
@@ -55,7 +56,7 @@ public sealed partial class GuildLog(
                 var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
                     await channel.SendMessageAsync(result.GetMessageBuilder()), cancellationToken);
                 if (ShouldPurgeMessageAfterInterval(result.GuildLogType))
-                    await ScheduleMessagePurge(message.Id, channel.Id, result.GuildId, cancellationToken);
+                    await ScheduleMessagePurge(message.GetMessageId(), channel.GetChannelId(), result.GuildId, cancellationToken);
             }
             catch (Exception e)
             {
@@ -87,11 +88,11 @@ public sealed partial class GuildLog(
     }
 
 
-    public ValueTask SendLogMessageAsync(GuildLogMessageBase logMessageMessage,
+    public Task SendLogMessageAsync(GuildLogMessageBase logMessageMessage,
         CancellationToken cancellationToken = default)
-        => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken);
+        => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken).AsTask();
 
-    private async Task ScheduleMessagePurge(ulong messageId, ulong channelId, ulong guildId,
+    private async Task ScheduleMessagePurge(MessageId messageId, ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);

@@ -14,7 +14,7 @@ public static class UserDatabaseQueryHelpers
     {
         var existingUsernames = await databaseUsernames
             .AsNoTracking()
-            .Where(user => discordGuild.Members.Keys.Contains(user.UserId))
+            .Where(user => discordGuild.Members.Keys.Contains(user.UserId.Value))
             .GroupBy(username => username.UserId)
             .Select(usernameGroup =>
                 new
@@ -27,8 +27,8 @@ public static class UserDatabaseQueryHelpers
             .ToHashSetAsync(cancellationToken);
 
         var usernamesToAdd = discordGuild.Members.Values
-            .Where(x => !existingUsernames.Contains((x.Id, x.Username)))
-            .Select(x => new UsernameHistory { UserId = x.Id, Username = x.Username })
+            .Where(x => !existingUsernames.Contains((x.GetUserId(), x.GetUsername())))
+            .Select(x => new UsernameHistory { UserId = x.GetUserId(), Username = x.GetUsername() })
             .ToArray();
 
         if (usernamesToAdd.Length == 0)

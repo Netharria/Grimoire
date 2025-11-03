@@ -31,7 +31,7 @@ internal sealed partial class GeneralSettingsCommands
 
         var channelOption = ctx.GetChannelOption(option, channel);
 
-        if (channelOption.IsLeft)
+        if (channelOption.IsFail)
         {
             await ctx.EditReplyAsync(DiscordColor.Red, $"");
             return;
@@ -51,14 +51,14 @@ internal sealed partial class GeneralSettingsCommands
             }
         }
 
-        await this._settingsModule.SetLogChannelSetting(GuildLogType.Moderation, guild.Id, channel?.Id);
+        await this._settingsModule.SetLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId(), channel?.GetChannelId());
 
         await ctx.EditReplyAsync(message: option is ChannelOption.Off
             ? $"{ctx.User.Mention} disabled the moderation log to {channel?.Mention}"
             : $"Updated the moderation log to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Description = option is ChannelOption.Off
                 ? $"{ctx.User.Mention} disabled the moderation log."

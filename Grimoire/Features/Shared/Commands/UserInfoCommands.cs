@@ -41,11 +41,11 @@ internal sealed class UserInfoCommands(
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-        await GetAndAddUsernames(dbContext, guild.Id, user.Id, embed);
+        await GetAndAddUsernames(dbContext, user.GetUserId(), guild.GetGuildId(), embed);
 
-        await GetAndAddLevelInfo(dbContext, embed, user.Id, guild.Id, roles);
+        await GetAndAddLevelInfo(dbContext, embed, user.GetUserId(), guild.GetGuildId(), roles.Select(x => new RoleId(x)).ToArray());
 
-        await GetAndAddModerationInfo(dbContext, guild.Id, user.Id, embed);
+        await GetAndAddModerationInfo(dbContext, guild.GetGuildId(), user.GetUserId(), embed);
 
         await ctx.EditReplyAsync(embed: embed);
     }
@@ -83,8 +83,8 @@ internal sealed class UserInfoCommands(
 
     private async Task GetAndAddUsernames(
         GrimoireDbContext dbContext,
-        ulong userId,
-        ulong guildId,
+        UserId userId,
+        GuildId guildId,
         DiscordEmbedBuilder embed)
     {
         if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, guildId))
@@ -122,9 +122,9 @@ internal sealed class UserInfoCommands(
     private async Task GetAndAddLevelInfo(
         GrimoireDbContext dbContext,
         DiscordEmbedBuilder embed,
-        ulong userId,
-        ulong guildId,
-        ulong[] roleIds)
+        UserId userId,
+        GuildId guildId,
+        RoleId[] roleIds)
     {
         if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, guildId))
             return;
@@ -160,8 +160,8 @@ internal sealed class UserInfoCommands(
 
     private async Task GetAndAddModerationInfo(
         GrimoireDbContext dbContext,
-        ulong guildId,
-        ulong userId,
+        GuildId guildId,
+        UserId userId,
         DiscordEmbedBuilder embed)
     {
         if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId))

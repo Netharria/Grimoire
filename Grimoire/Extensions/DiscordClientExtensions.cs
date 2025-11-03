@@ -11,16 +11,16 @@ namespace Grimoire.Extensions;
 
 public static class DiscordClientExtensions
 {
-    public static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ulong? channelId)
+    public static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ChannelId? channelId)
         => channelId is not { } id
             ? Task.FromResult<DiscordChannel?>(null)
             : GetChannelOrDefaultAsync(client, id);
 
-    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ulong channelId)
+    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ChannelId channelId)
     {
         try
         {
-            return await client.GetChannelAsync(channelId);
+            return await client.GetChannelAsync(channelId.Value);
         }
         catch (NotFoundException)
         {
@@ -28,16 +28,16 @@ public static class DiscordClientExtensions
         }
     }
 
-    public static Task<DiscordUser?> GetUserOrDefaultAsync(this DiscordClient client, ulong? userId)
+    public static Task<DiscordUser?> GetUserOrDefaultAsync(this DiscordClient client, UserId? userId)
         => userId is not { } id
             ? Task.FromResult<DiscordUser?>(null)
             : GetUserOrDefaultAsync(client, id);
 
-    public static async Task<DiscordUser?> GetUserOrDefaultAsync(this DiscordClient client, ulong userId)
+    public static async Task<DiscordUser?> GetUserOrDefaultAsync(this DiscordClient client, UserId userId)
     {
         try
         {
-            return await client.GetUserAsync(userId);
+            return await client.GetUserAsync(userId.Value);
         }
         catch (NotFoundException)
         {
@@ -45,16 +45,16 @@ public static class DiscordClientExtensions
         }
     }
 
-    public static Task<DiscordGuild?> GetGuildOrDefaultAsync(this DiscordClient client, ulong? guildId)
+    public static Task<DiscordGuild?> GetGuildOrDefaultAsync(this DiscordClient client, GuildId? guildId)
         => guildId is not { } id
             ? Task.FromResult<DiscordGuild?>(null)
             : GetGuildOrDefaultAsync(client, id);
 
-    public static async Task<DiscordGuild?> GetGuildOrDefaultAsync(this DiscordClient client, ulong guildId)
+    public static async Task<DiscordGuild?> GetGuildOrDefaultAsync(this DiscordClient client, GuildId guildId)
     {
         try
         {
-            return await client.GetGuildAsync(guildId);
+            return await client.GetGuildAsync(guildId.Value);
         }
         catch (NotFoundException)
         {
@@ -62,13 +62,13 @@ public static class DiscordClientExtensions
         }
     }
 
-    public static Task<string?> GetUserAvatar(this DiscordClient client, ulong? userId, DiscordGuild? guild = null)
+    public static Task<string?> GetUserAvatar(this DiscordClient client, UserId? userId, DiscordGuild? guild = null)
         => userId is not { } id
             ? Task.FromResult<string?>(null)
             : GetUserAvatar(client, id, guild);
 
 
-    public static async Task<string?> GetUserAvatar(this DiscordClient client, ulong userId, DiscordGuild? guild = null)
+    public static async Task<string?> GetUserAvatar(this DiscordClient client, UserId userId, DiscordGuild? guild = null)
     {
         if (guild is not null)
         {
@@ -81,4 +81,7 @@ public static class DiscordClientExtensions
         var user = await client.GetUserOrDefaultAsync(userId);
         return user?.GetAvatarUrl(MediaFormat.Auto);
     }
+
+    public static Task<DiscordUser> GetUserAsync(this DiscordClient client, UserId userId, bool updateCache = false)
+    => client.GetUserAsync(userId.Value, updateCache);
 }

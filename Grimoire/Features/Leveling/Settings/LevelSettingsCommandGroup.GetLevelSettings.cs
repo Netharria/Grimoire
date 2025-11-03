@@ -23,11 +23,11 @@ public sealed partial class LevelSettingsCommandGroup
 
         var guild = ctx.Guild!;
 
-        var moduleState = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.Id);
+        var moduleState = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId());
 
-        var levelLogId = await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.Id);
+        var levelLogId = await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
 
-        var levelingSettings = await this._settingsModule.GetLevelingSettings(guild.Id);
+        var levelingSettings = await this._settingsModule.GetLevelingSettings(guild.GetGuildId());
 
         var levelingChannel = await ctx.Client.GetChannelOrDefaultAsync(levelLogId);
 

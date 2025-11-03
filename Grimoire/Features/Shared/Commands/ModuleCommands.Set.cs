@@ -40,13 +40,13 @@ internal sealed partial class ModuleCommands
 
         var guild = ctx.Guild!;
 
-        await this._settingsModule.SetModuleState(MapToModule(module), guild.Id, enable);
+        await this._settingsModule.SetModuleState(MapToModule(module), guild.GetGuildId(), enable);
 
         await ctx.EditReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module}");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Description = $"{ctx.User.Username} {(enable ? "Enabled" : "Disabled")} {module}",
             Color = GrimoireColor.Purple

@@ -27,39 +27,39 @@ public partial class LogSettingsCommands
 
             var guild = ctx.Guild!;
 
-            var joinLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserJoined, guild.Id);
-            var leaveLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserLeft, guild.Id);
+            var joinLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserJoined, guild.GetGuildId());
+            var leaveLog = await this._settingsModule.GetLogChannelSetting(GuildLogType.UserLeft, guild.GetGuildId());
             var usernameUpdated =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.UsernameUpdated, guild.Id);
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.UsernameUpdated, guild.GetGuildId());
             var nicknameUpdated =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.NicknameUpdated, guild.Id);
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.NicknameUpdated, guild.GetGuildId());
             var avatarUpdated =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.AvatarUpdated, guild.Id);
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.AvatarUpdated, guild.GetGuildId());
 
             var joinChannelLog =
                 joinLog is null
                     ? "None"
-                    : (await guild.GetChannelAsync(joinLog.Value)).Mention;
+                    : (await guild.GetChannelOrDefaultAsync(joinLog))?.Mention ?? "Deleted Channel";
             var leaveChannelLog =
                 leaveLog is null
                     ? "None"
-                    : (await guild.GetChannelAsync(leaveLog.Value)).Mention;
+                    : (await guild.GetChannelOrDefaultAsync(leaveLog))?.Mention ?? "Deleted Channel";
             var usernameChannelLog =
                 usernameUpdated is null
                     ? "None"
-                    : (await guild.GetChannelAsync(usernameUpdated.Value)).Mention;
+                    : (await guild.GetChannelOrDefaultAsync(usernameUpdated))?.Mention ?? "Deleted Channel";
             var nicknameChannelLog =
                 nicknameUpdated is null
                     ? "None"
-                    : (await guild.GetChannelAsync(nicknameUpdated.Value)).Mention;
+                    : (await guild.GetChannelOrDefaultAsync(nicknameUpdated))?.Mention ?? "Deleted Channel";
             var avatarChannelLog =
                 avatarUpdated is null
                     ? "None"
-                    : (await guild.GetChannelAsync(avatarUpdated.Value)).Mention;
+                    : (await guild.GetChannelOrDefaultAsync(avatarUpdated))?.Mention ?? "Deleted Channel";
             await ctx.EditReplyAsync(
                 title: "Current Logging System Settings",
                 message:
-                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, guild.Id)}\n" +
+                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, guild.GetGuildId())}\n" +
                 $"**Join Log:** {joinChannelLog}\n" +
                 $"**Leave Log:** {leaveChannelLog}\n" +
                 $"**Username Log:** {usernameChannelLog}\n" +

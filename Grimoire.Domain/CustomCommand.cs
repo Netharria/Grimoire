@@ -12,15 +12,25 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class CustomCommand
 {
-    public string Name { get; set; } = string.Empty;
-    public ulong GuildId { get; set; }
-    public string Content { get; set; } = string.Empty;
-    public bool HasMention { get; set; }
-    public bool HasMessage { get; set; }
-    public bool IsEmbedded { get; set; }
-    public string? EmbedColor { get; set; }
-
-    public bool RestrictedUse { get; set; }
+    public required CustomCommandName Name { get; set; }
+    public required GuildId GuildId { get; set; }
+    public required string Content { get; set; }
+    public required bool HasMention { get; set; }
+    public required bool HasMessage { get; set; }
+    public required bool IsEmbedded { get; set; }
+    public CustomCommandEmbedColor? EmbedColor { get; set; }
+    public required bool RestrictedUse { get; set; }
 
     public ICollection<CustomCommandRole> CustomCommandRoles { get; init; } = [];
+}
+
+public readonly record struct CustomCommandName(string Value)
+{
+    public override string ToString() => Value;
+}
+
+
+public readonly record struct CustomCommandEmbedColor(string Value)
+{
+    public override string ToString() => Value;
 }

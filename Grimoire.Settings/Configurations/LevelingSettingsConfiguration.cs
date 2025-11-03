@@ -23,10 +23,25 @@ internal sealed class LevelingSettingsConfiguration : IEntityTypeConfiguration<L
         builder.Property(e => e.TextTime)
             .HasDefaultValue(TimeSpan.FromMinutes(3));
         builder.Property(e => e.Base)
+            .HasConversion(
+                e => e.Value,
+                value => new LevelScalingBase(value))
             .HasDefaultValue(15);
         builder.Property(e => e.Modifier)
+            .HasConversion(
+                e => e.Value,
+                value => new LevelScalingModifier(value))
             .HasDefaultValue(50);
         builder.Property(e => e.Amount)
+            .HasConversion(
+                e => e.Value,
+                value => new XpGainAmount(value))
             .HasDefaultValue(5);
+
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.LevelChannelLogId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ChannelId(value));
     }
 }

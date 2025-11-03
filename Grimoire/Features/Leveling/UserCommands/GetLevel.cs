@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Leveling.UserCommands;
 
@@ -31,20 +32,20 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             return;
         }
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.Id))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.GetGuildId()))
         {
             await ctx.EditReplyAsync(GrimoireColor.Yellow, "The leveling module is not enabled on this server.");
             return;
         }
 
-        var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(ctx.Guild.Id);
+        var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(ctx.Guild.GetGuildId());
 
         if (ctx is SlashCommandContext slashContext)
             await slashContext.DeferResponseAsync(
                 !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                && userCommandChannelId != ctx.Channel.Id);
+                && userCommandChannelId != ctx.GetChannelId());
         else if (!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                 && userCommandChannelId != ctx.Channel.Id)
+                 && userCommandChannelId != ctx.GetChannelId())
             return;
 
 
@@ -53,18 +54,18 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var membersXp = await dbContext.XpHistory
             .AsNoTracking()
-            .Where(x => x.UserId == user.Id && x.GuildId == ctx.Guild.Id)
+            .Where(x => x.UserId == user.GetUserId() && x.GuildId == ctx.Guild.GetGuildId())
             .GroupBy(x => new { x.UserId, x.GuildId })
             .Select(xpHistories => xpHistories.Sum(x => x.Xp))
             .FirstOrDefaultAsync();
 
-        var levelingSettings = await this._settingsModule.GetLevelingSettings(ctx.Guild.Id);
+        var levelingSettings = await this._settingsModule.GetLevelingSettings(ctx.Guild.GetGuildId());
 
         var currentLevel = levelingSettings.GetLevelFromXp(membersXp);
         var currentLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel);
         var nextLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel, 1);
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.Id);
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.GetGuildId());
 
         var nextReward = rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 
@@ -91,7 +92,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         DiscordRole? roleReward = null;
         if (nextReward is not null)
-            roleReward = await ctx.Guild.GetRoleAsync(nextReward.RoleId);
+            roleReward = await ctx.Guild.GetRoleOrDefaultAsync(nextReward.RoleId);
 
         var embed = new DiscordEmbedBuilder()
             .WithColor(color)

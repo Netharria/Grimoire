@@ -28,22 +28,21 @@ public sealed class UpdatedAvatarEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.Id))
+        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var currentAvatar = await dbContext.Avatars
             .AsNoTracking()
-            .Where(x => x.UserId == args.Member.Id && x.GuildId == args.Guild.Id)
+            .Where(x => x.UserId == args.Member.GetUserId() && x.GuildId == args.Guild.GetGuildId())
             .OrderByDescending(x => x.Timestamp)
             .Select(x => x.FileName)
             .FirstOrDefaultAsync();
-        if (currentAvatar is null
-            || string.Equals(currentAvatar, args.MemberAfter.AvatarUrl, StringComparison.Ordinal))
+        if ( string.Equals(currentAvatar.Value, args.MemberAfter.AvatarUrl, StringComparison.Ordinal))
             return;
 
         await dbContext.Avatars.AddAsync(
-            new Avatar { GuildId = args.Guild.Id, UserId = args.Member.Id, FileName = args.MemberAfter.AvatarUrl });
+            new Avatar { GuildId = args.Guild.GetGuildId(), UserId = args.Member.GetUserId(), FileName = args.MemberAfter.GetAvatarFileName() });
         await dbContext.SaveChangesAsync();
 
         var embed = new DiscordEmbedBuilder()
@@ -56,27 +55,27 @@ public sealed class UpdatedAvatarEvent(
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
         {
-            GuildId = args.Guild.Id,
+            GuildId = args.Guild.GetGuildId(),
             GuildLogType = GuildLogType.AvatarUpdated,
             Message = await this._imageEmbedService
                 .BuildImageEmbedAsync(
                     [args.MemberAfter.AvatarUrl],
-                    args.Member.Id,
+                    args.Member.GetUserId(),
                     embed,
                     false)
         });
 
         await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomMessage
         {
-            GuildId = args.Guild.Id,
+            GuildId = args.Guild.GetGuildId(),
             TrackerId = args.Member.Id,
             TrackerIdType = TrackerIdType.UserId,
             Message = await this._imageEmbedService.BuildImageEmbedAsync(
                 [args.MemberAfter.AvatarUrl],
-                args.Member.Id,
+                args.Member.GetUserId(),
                 new DiscordEmbedBuilder()
                     .WithAuthor("Avatar Updated")
-                    .AddField("User", UserExtensions.Mention(args.Member.Id))
+                    .AddField("User", UserExtensions.Mention(args.Member.GetUserId()))
                     .WithThumbnail(args.MemberAfter.AvatarUrl)
                     .WithTimestamp(DateTimeOffset.UtcNow)
                     .WithColor(GrimoireColor.Purple),

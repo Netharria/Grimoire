@@ -19,7 +19,7 @@ public enum Module
 
 internal static class ModuleExtensions
 {
-    public static string GetCacheKey(this Module ignoredType, ulong guildId)
+    public static string GetCacheKey(this Module ignoredType, GuildId guildId)
     {
         return ignoredType switch
         {

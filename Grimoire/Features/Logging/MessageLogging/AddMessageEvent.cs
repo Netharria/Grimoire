@@ -28,12 +28,14 @@ public sealed partial class AddMessageEvent(
             || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.Id))
+        var guild = args.Guild!;
+
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()))
             return;
 
         if (!await this._settingsModule.ShouldLogMessage(
-                args.Channel.Id,
-                args.Guild.Id,
+                args.GetChannelId(),
+                guild.GetGuildId(),
                 args.Channel.BuildChannelTree().ToDictionary()))
             return;
 
@@ -42,23 +44,23 @@ public sealed partial class AddMessageEvent(
 
         var message = new Message
         {
-            Id = args.Message.Id,
-            UserId = args.Author.Id,
+            Id = args.GetMessageId(),
+            UserId = args.GetAuthorUserId(),
             Attachments = args.Message.Attachments
                 .Where(x => !string.IsNullOrWhiteSpace(x.FileName))
                 .Select(x =>
-                    new Attachment { Id = x.Id, MessageId = args.Message.Id, FileName = x.FileName ?? string.Empty })
+                    new Attachment { Id = new AttachmentId(x.Id), MessageId = new MessageId(args.Message.Id), FileName = x.FileName ?? string.Empty })
                 .ToArray(),
-            ChannelId = args.Channel.Id,
-            ReferencedMessageId = args.Message.ReferencedMessage?.Id,
-            GuildId = args.Guild.Id,
+            ChannelId = args.GetChannelId(),
+            ReferencedMessageId = args.Message.ReferencedMessage?.GetMessageId(),
+            GuildId = guild.GetGuildId(),
             MessageHistory =
             [
                 new MessageHistory
                 {
-                    MessageId = args.Message.Id,
-                    MessageContent = args.Message.Content,
-                    GuildId = args.Guild.Id,
+                    MessageId = args.GetMessageId(),
+                    MessageContent = args.Message.GetMessageContent(),
+                    GuildId = guild.GetGuildId(),
                     Action = MessageAction.Created
                 }
             ]

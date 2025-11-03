@@ -18,7 +18,7 @@ public sealed partial class PublishCommands
     public async Task PublishUnbanAsync(
         CommandContext ctx,
         [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be published.")]
-        int sinId)
+        SinId sinId)
     {
         await ctx.DeferResponseAsync();
 
@@ -29,7 +29,7 @@ public sealed partial class PublishCommands
             .AsNoTracking()
             .Where(x => x.SinType == SinType.Ban)
             .Where(x => x.Id == sinId)
-            .Where(x => x.GuildId == guild.Id)
+            .Where(x => x.GuildId == guild.GetGuildId())
             .Select(x => new
             {
                 // ReSharper disable AccessToDisposedClosure
@@ -39,7 +39,7 @@ public sealed partial class PublishCommands
                     .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                     .First().Username,
                 x.Pardon,
-                UnbanMessageId = (ulong?)x.PublishMessages
+                UnbanMessageId = (MessageId?)x.PublishMessages
                     .First(publishedMessage => publishedMessage.PublishType == PublishType.Unban)
                     .MessageId
                 // ReSharper restore AccessToDisposedClosure
@@ -62,12 +62,16 @@ public sealed partial class PublishCommands
             result.UnbanMessageId, result.Pardon.PardonDate, PublishType.Unban);
 
         await banLogMessage.Match(
+            async error =>
+            {
+                await ctx.EditReplyAsync(GrimoireColor.Red, $"Failed to publish unban reason: {error.Message}");
+            },
             async message =>
             {
                 if (result.UnbanMessageId is null)
                 {
                     await dbContext.PublishedMessages.AddAsync(
-                        new PublishedMessage { MessageId = message.Id, SinId = sinId, PublishType = PublishType.Unban });
+                        new PublishedMessage { MessageId = message.GetMessageId(), SinId = sinId, PublishType = PublishType.Unban });
                     await dbContext.SaveChangesAsync();
                 }
 
@@ -75,15 +79,11 @@ public sealed partial class PublishCommands
                 await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
                 await this._guildLog.SendLogMessageAsync(new GuildLogMessage
                 {
-                    GuildId = guild.Id,
+                    GuildId = guild.GetGuildId(),
                     GuildLogType = GuildLogType.Moderation,
                     Color = GrimoireColor.Purple,
                     Description = $"{ctx.User.Mention} published unban reason of sin {sinId}"
                 });
-            },
-            async error =>
-            {
-                await ctx.EditReplyAsync(GrimoireColor.Red, $"Failed to publish unban reason: {error.Message}");
             });
 
 

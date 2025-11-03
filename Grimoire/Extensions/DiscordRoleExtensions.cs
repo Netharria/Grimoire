@@ -5,10 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Settings.Domain.Shared;
 
-public interface IMember
+namespace Grimoire.Extensions;
+
+public static class DiscordRoleExtensions
 {
-    ulong UserId { get; init; }
-    ulong GuildId { get; init; }
+
+    public static RoleId GetRoleId(this DiscordRole role) => new (role.Id);
+
 }

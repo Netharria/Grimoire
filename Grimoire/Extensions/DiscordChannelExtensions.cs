@@ -38,13 +38,38 @@ public static class DiscordChannelExtensions
         return messages.Length;
     }
 
-    public static IEnumerable<KeyValuePair<ulong, ulong?>> BuildChannelTree(
+    public static IEnumerable<KeyValuePair<ChannelId, ChannelId?>> BuildChannelTree(
         this DiscordChannel? channel)
     {
         while (channel is not null)
         {
-            yield return new KeyValuePair<ulong, ulong?>(channel.Id, channel.ParentId);
+            yield return new KeyValuePair<ChannelId, ChannelId?>(channel.GetChannelId(), channel.GetParentChannelId());
             channel = channel.Parent;
         }
     }
+
+    public static Task<DiscordMessage?> GetMessageOrDefaultAsync(this DiscordChannel channel, MessageId? messageId)
+        => messageId is { } id
+            ? GetMessageOrDefaultAsync(channel, id)
+            : Task.FromResult<DiscordMessage?>(null);
+
+    public static async Task<DiscordMessage?> GetMessageOrDefaultAsync(this DiscordChannel channel, MessageId messageId)
+    {
+        try
+        {
+            return await channel.GetMessageAsync(messageId.Value);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    [Pure]
+    public static ChannelId GetChannelId(this DiscordChannel channel) => new (channel.Id);
+    [Pure]
+    public static ChannelId? GetParentChannelId(this DiscordChannel channel) => channel.ParentId is not null ? new ChannelId(channel.ParentId.Value) : null;
+
+    public static Task<DiscordMessage> GetMessageAsync(this DiscordChannel discordChannel, MessageId id, bool skipCache = false)
+        => discordChannel.GetMessageAsync(id.Value, skipCache);
 }

@@ -10,7 +10,7 @@ namespace Grimoire.DatabaseQueryHelpers;
 public static class CustomCommandDatabaseQueryHelpers
 {
     public static IQueryable<GetCustomCommandQueryResult> GetCustomCommandQuery(
-        this IQueryable<CustomCommand> customCommands, ulong guildId, string commandName)
+        this IQueryable<CustomCommand> customCommands, GuildId guildId, CustomCommandName commandName)
         =>
             customCommands
                 .AsSplitQuery()
@@ -32,8 +32,8 @@ public static class CustomCommandDatabaseQueryHelpers
         public required bool HasMention { get; init; }
         public required bool HasMessage { get; init; }
         public required bool IsEmbedded { get; init; }
-        public string? EmbedColor { get; init; }
+        public CustomCommandEmbedColor? EmbedColor { get; init; }
         public required bool RestrictedUse { get; init; }
-        public required ulong[] PermissionRoles { get; init; }
+        public required RoleId[] PermissionRoles { get; init; }
     }
 }

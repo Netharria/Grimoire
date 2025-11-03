@@ -12,8 +12,11 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class Attachment
 {
-    public required ulong MessageId { get; init; }
+    public required MessageId MessageId { get; init; }
     public Message? Message { get; init; }
     public required string FileName { get; init; }
-    public required ulong Id { get; init; }
+    public required AttachmentId Id { get; init; }
 }
+
+
+public readonly record struct AttachmentId(ulong Value);

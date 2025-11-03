@@ -19,7 +19,7 @@ public enum SinType
 [UsedImplicitly]
 public sealed class Sin
 {
-    public ulong? ModeratorId { get; init; }
+    public ModeratorId? ModeratorId { get; init; }
 
     public required string Reason { get; set; }
 
@@ -33,9 +33,12 @@ public sealed class Sin
 
 
     // ReSharper disable once UnusedAutoPropertyAccessor.Local
-    public long Id { get; private set; }
+    public SinId Id { get; private set; }
 
-    public required ulong UserId { get; init; }
+    public required UserId UserId { get; init; }
 
-    public required ulong GuildId { get; init; }
+    public required GuildId GuildId { get; init; }
 }
+
+
+public readonly record struct SinId(long Value);

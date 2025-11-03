@@ -18,5 +18,11 @@ internal sealed class CustomCommandRoleConfiguration : IEntityTypeConfiguration<
             .WithMany(e => e.CustomCommandRoles)
             .HasForeignKey(e => new { e.CustomCommandName, e.GuildId })
             .IsRequired();
+
+        builder.Property(e => e.RoleId)
+            .HasConversion(e => e.Value, value => new RoleId(value));
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
     }
 }

@@ -15,12 +15,19 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
     {
         builder.HasKey(e => new { e.Name, e.GuildId });
         builder.Property(e => e.Name)
+            .HasConversion(
+                name => name.Value,
+                value => new CustomCommandName(value))
             .HasMaxLength(24);
         builder.Property(e => e.Content)
             .HasMaxLength(2000)
             .IsRequired();
         builder.Property(e => e.EmbedColor)
             .HasMaxLength(6)
+            .HasConversion(
+                color => color.GetValueOrDefault().Value,
+                color => new CustomCommandEmbedColor(color))
             .IsRequired(false);
+
     }
 }

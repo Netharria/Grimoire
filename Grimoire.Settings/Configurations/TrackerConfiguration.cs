@@ -21,5 +21,16 @@ internal sealed class TrackerConfiguration : IEntityTypeConfiguration<Tracker>
         builder.Property(e => e.EndTime)
             .IsRequired();
         builder.HasIndex(x => x.EndTime);
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.LogChannelId)
+            .HasConversion(e => e.Value, value => new ChannelId(value));
+
+
+        builder.Property(e => e.UserId)
+            .HasConversion(e => e.Value, value => new UserId(value));
+        builder.Property(e => e.ModeratorId)
+            .HasConversion(e => e.Value, value => new ModeratorId(value));
     }
 }

@@ -41,9 +41,9 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         await using var dbcontext = await this._dbContextFactory.CreateDbContextAsync();
         var sin = new Sin
         {
-            UserId = user.Id,
-            GuildId = guild.Id,
-            ModeratorId = ctx.User.Id,
+            UserId = user.GetUserId(),
+            GuildId = guild.GetGuildId(),
+            ModeratorId = ctx.GetModeratorId(),
             Reason = reason,
             SinType = SinType.Warn
         };
@@ -73,7 +73,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         {
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = guild.Id,
+                GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Color = GrimoireColor.Red,
                 Description =
@@ -83,7 +83,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
 }

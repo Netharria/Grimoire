@@ -42,7 +42,7 @@ public static class GuildLogTypeExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
         };
 
-    public static string GetCacheKey(this GuildLogType guildLogType, ulong guildId)
+    public static string GetCacheKey(this GuildLogType guildLogType, GuildId guildId)
     {
         return guildLogType switch
         {

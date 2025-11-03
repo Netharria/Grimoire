@@ -37,5 +37,17 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
         // For single sin lookups: Filter by Id + GuildId
         builder.HasIndex(sin => new { sin.Id, sin.GuildId })
             .HasDatabaseName("IX_Sin_Id_GuildId");
+
+
+        builder.Property(e => e.ModeratorId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new ModeratorId(value));
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+
+        builder.Property(e => e.Id)
+            .HasConversion(e => e.Value, value => new SinId(value));
+        builder.Property(e => e.UserId)
+            .HasConversion(e => e.Value, value => new UserId(value));
     }
 }

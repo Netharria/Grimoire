@@ -30,13 +30,13 @@ public class SpamTrackerModule(SettingsModule settingsModule, IMemoryCache memor
 
     private readonly SettingsModule _settingsModule = settingsModule;
 
-    private static string GetSpamFilterCacheKey(ulong channelId)
+    private static string GetSpamFilterCacheKey(ChannelId channelId)
         => $"SpamFilterOverrideChannel_{channelId}";
 
-    private static string GetSpamUserCacheKey(ulong guildId, ulong memberId)
+    private static string GetSpamUserCacheKey(GuildId guildId, ulong memberId)
         => $"SpamUser_{guildId}_{memberId}";
 
-    private async Task<SpamFilterOverrideCacheOption> GetSpamFilterOverrideChannelAsync(ulong channelId,
+    private async Task<SpamFilterOverrideCacheOption> GetSpamFilterOverrideChannelAsync(ChannelId channelId,
         CancellationToken cancellationToken = default)
     {
         return await this._memoryCache.GetOrCreateAsync(GetSpamFilterCacheKey(channelId), async _ =>
@@ -52,7 +52,7 @@ public class SpamTrackerModule(SettingsModule settingsModule, IMemoryCache memor
         }, this._cacheEntryOptions);
     }
 
-    private void SetSpamFilterCache(ulong channelId, SpamFilterOverrideOption? overrideOption)
+    private void SetSpamFilterCache(ChannelId channelId, SpamFilterOverrideOption? overrideOption)
         => this._memoryCache.Set(GetSpamFilterCacheKey(channelId),
             overrideOption switch
             {
@@ -61,14 +61,14 @@ public class SpamTrackerModule(SettingsModule settingsModule, IMemoryCache memor
                 _ => SpamFilterOverrideCacheOption.Default
             }, this._cacheEntryOptions);
 
-    public async Task AddOrUpdateOverride(ulong channelId, ulong guildId, SpamFilterOverrideOption option,
+    public async Task AddOrUpdateOverride(ChannelId channelId, GuildId guildId, SpamFilterOverrideOption option,
         CancellationToken cancellationToken = default)
     {
         await this._settingsModule.SetSpamFilterOverrideAsync(channelId, guildId, option, cancellationToken);
         SetSpamFilterCache(channelId, option);
     }
 
-    public async Task RemoveOverride(ulong channelId, ulong guildId, CancellationToken cancellationToken = default)
+    public async Task RemoveOverride(ChannelId channelId, GuildId guildId, CancellationToken cancellationToken = default)
     {
         await this._settingsModule.RemoveSpamFilterOverrideAsync(channelId, guildId, cancellationToken);
         SetSpamFilterCache(channelId, null);
@@ -86,7 +86,7 @@ public class SpamTrackerModule(SettingsModule settingsModule, IMemoryCache memor
         while (currentChannel is not null)
         {
             var spamFilterOverrideOption =
-                await GetSpamFilterOverrideChannelAsync(currentChannel.Id, cancellationToken);
+                await GetSpamFilterOverrideChannelAsync(currentChannel.GetChannelId(), cancellationToken);
 
             if (spamFilterOverrideOption == SpamFilterOverrideCacheOption.AlwaysFilter)
                 break;
@@ -97,7 +97,7 @@ public class SpamTrackerModule(SettingsModule settingsModule, IMemoryCache memor
         }
 
         var spamTracker = this._memoryCache.GetOrCreate(
-            GetSpamUserCacheKey(member.Guild.Id, member.Id),
+            GetSpamUserCacheKey(member.Guild.GetGuildId(), member.Id),
             entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromMinutes(30);

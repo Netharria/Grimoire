@@ -12,9 +12,9 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class ProxiedMessageLink
 {
-    public required ulong ProxyMessageId { get; init; }
+    public required MessageId ProxyMessageId { get; init; }
     public Message? ProxyMessage { get; init; }
-    public required ulong OriginalMessageId { get; init; }
+    public required MessageId OriginalMessageId { get; init; }
     public Message? OriginalMessage { get; init; }
     public string? SystemId { get; init; }
     public string? MemberId { get; init; }

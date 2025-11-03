@@ -19,20 +19,16 @@ public sealed partial class RewardCommandGroup
         [Parameter("Role")] [Description("The role to be removed as a reward.")]
         DiscordRole role)
     {
-        if (ctx.Guild is null)
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
-            return;
-        }
+        var guild = ctx.Guild!;
 
         await ctx.DeferResponseAsync();
 
-        await this._settingsModule.RemoveRewardAsync(role.Id, ctx.Guild.Id);
+        await this._settingsModule.RemoveRewardAsync(role.GetRoleId(), guild.GetGuildId());
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Removed {role.Mention} reward");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = ctx.Guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
             Description = $"{ctx.User.Mention} removed {role.Mention} reward"

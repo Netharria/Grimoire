@@ -32,13 +32,13 @@ public partial class IgnoreCommandGroup
             return;
         }
 
-        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.Id).ToArray();
-        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.Id).ToArray();
-        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.Id).ToArray();
+        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.GetUserId()).ToArray();
+        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.GetChannelId()).ToArray();
+        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.GetRoleId()).ToArray();
 
 
         await this._settingsModule.AddIgnoredItems(
-            guild.Id,
+            guild.GetGuildId(),
             ignoredMemberIds,
             ignoredChannelIds,
             ignoredRoleIds);
@@ -49,7 +49,7 @@ public partial class IgnoreCommandGroup
             message);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
             Description = message

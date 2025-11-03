@@ -24,7 +24,7 @@ public sealed class XpHistory
     public required long Xp { get; init; }
     public required DateTimeOffset TimeOut { get; init; }
     public required XpHistoryType Type { get; init; }
-    public ulong? AwarderId { get; init; }
-    public required ulong UserId { get; init; }
-    public required ulong GuildId { get; init; }
+    public ModeratorId? AwarderId { get; init; }
+    public required UserId UserId { get; init; }
+    public required GuildId GuildId { get; init; }
 }

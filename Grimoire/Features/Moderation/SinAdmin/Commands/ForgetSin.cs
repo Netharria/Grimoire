@@ -25,7 +25,7 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
     [Description("Forget a user's sin. This will permanently remove the sin from the bots memory.")]
     public async Task ForgetAsync(CommandContext ctx,
         [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be forgotten.")]
-        int sinId)
+        SinId sinId)
     {
         await ctx.DeferResponseAsync();
 
@@ -34,12 +34,12 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var result = await dbContext.Sins
             .Where(sin => sin.Id == sinId)
-            .Where(sin => sin.GuildId == guild.Id)
+            .Where(sin => sin.GuildId == guild.GetGuildId())
             .Select(sin => new
             {
                 // ReSharper disable AccessToDisposedClosure
                 Sin = sin,
-                UserName = dbContext.UsernameHistory
+                UserName = (Username?) dbContext.UsernameHistory
                     .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
                     .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                     .Select(usernameHistory => usernameHistory.Username)
@@ -64,11 +64,11 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor($"{guild.CurrentMember.Nickname} has been commanded to forget.")
-                .AddField("User", result.UserName ?? "Unknown", true)
+                .AddField("User", result.UserName.ToString() ?? "Unknown", true)
                 .AddField("Sin Id", result.Sin.Id.ToString(), true)
                 .AddField("Moderator", ctx.User.Mention, true)
                 .WithColor(GrimoireColor.Green)

@@ -24,19 +24,19 @@ internal sealed class GuildMemberAddedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.Id))
+        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()))
             return;
         var invites = await args.Guild.GetInvitesAsync();
         var inviteUsed = this._inviteService.CalculateInviteUsed(new GuildInviteDto
         {
-            GuildId = args.Guild.Id,
-            Invites = new ConcurrentDictionary<string, Invite>(
+            GuildId = args.Guild.GetGuildId(),
+            Invites = new ConcurrentDictionary<InviteCode, Invite>(
                 invites.Select(x =>
                     new Invite
                     {
-                        Code = x.Code,
-                        Inviter = x.Inviter.Username,
-                        Url = x.ToString(),
+                        Code = x.GetInviteCode(),
+                        Inviter = x.Inviter.GetUsername(),
+                        Url = x.GetInviteUrl(),
                         Uses = x.Uses,
                         MaxUses = x.MaxUses
                     }).ToDictionary(x => x.Code))
@@ -65,7 +65,7 @@ internal sealed class GuildMemberAddedEvent(
             embed.AddField("New Account", $"Created {Formatter.Timestamp(args.Member.CreationTimestamp)}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id, GuildLogType = GuildLogType.UserJoined, Embed = embed
+            GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.UserJoined, Embed = embed
         });
     }
 }

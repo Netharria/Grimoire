@@ -34,13 +34,14 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 var everyoneRole = channel.Guild?.EveryoneRole;
                 if (everyoneRole is null)
                     continue;
-                var permissions = channel.PermissionOverwrites.First(x => x.Id == expiredLock.GuildId);
+                var permissions = channel.PermissionOverwrites
+                    .First(x => x.Id == expiredLock.GuildId.Value);
                 await channel.AddOverwriteAsync(everyoneRole,
-                    permissions.Allowed.RevertLockPermissions(expiredLock.PreviouslyAllowed)
-                    , permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied));
+                    permissions.Allowed.RevertLockPermissions(expiredLock.PreviouslyAllowed.Permissions)
+                    , permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied.Permissions));
             }
 
-            await settingsModule.RemoveLock(expiredLock.GuildId, expiredLock.ChannelId, cancellationToken);
+            await settingsModule.RemoveLock(expiredLock.ChannelId, expiredLock.GuildId,  cancellationToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Lock on {channel.Mention} has expired.");

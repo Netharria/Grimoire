@@ -14,7 +14,7 @@ namespace Grimoire.Extensions;
 
 public static class CommandContextExtension
 {
-    public static async Task EditReplyAsync(
+    public static async Task<DiscordMessage> EditReplyAsync(
         this CommandContext ctx,
         DiscordColor? color = null,
         string message = "",
@@ -32,7 +32,7 @@ public static class CommandContextExtension
             .WithTimestamp(timeStamp)
             .Build();
 
-        await DiscordRetryPolicy.RetryDiscordCall(async _ =>
+        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
             await ctx.EditResponseAsync(
                 new DiscordWebhookBuilder().AddEmbed(embed)));
     }
@@ -51,7 +51,8 @@ public static class CommandContextExtension
                 new DiscordWebhookBuilder().AddEmbed(embed)));
     }
 
-    public static Either<Error, DiscordChannel?> GetChannelOption(this CommandContext ctx, ChannelOption channelOption,
+    [Pure]
+    public static Fin<DiscordChannel?> GetChannelOption(this CommandContext ctx, ChannelOption channelOption,
         DiscordChannel? selectedChannel)
     {
         switch (channelOption)
@@ -68,4 +69,16 @@ public static class CommandContextExtension
                 return Error.New(new UnreachableException("Invalid ChannelOption value."));
         }
     }
+    [Pure]
+    public static ModeratorId GetModeratorId(this CommandContext context) => new(context.User.Id);
+
+    [Pure]
+    public static UserId GetUserId(this CommandContext context) => new(context.User.Id);
+    [Pure]
+    public static GuildId? GetGuildId(this CommandContext context) =>
+        context.Guild is not null ?
+        new GuildId(context.Guild.Id) :
+        null;
+    [Pure]
+    public static ChannelId GetChannelId(this CommandContext ctx) => new (ctx.Channel.Id);
 }

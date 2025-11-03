@@ -25,36 +25,35 @@ public sealed class UpdatedUsernameEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.Id))
+        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var currentUsername = await dbContext.UsernameHistory
             .AsNoTracking()
-            .Where(member => member.UserId == args.MemberAfter.Id)
+            .Where(member => member.UserId == args.MemberAfter.GetUserId())
             .Where(usernameHistory => usernameHistory.Timestamp < DateTime.UtcNow.AddSeconds(-2))
             .OrderByDescending(x => x.Timestamp)
             .Select(member => member.Username)
             .FirstOrDefaultAsync();
-        if (currentUsername is null
-            || string.Equals(currentUsername, args.UsernameAfter, StringComparison.CurrentCultureIgnoreCase))
+        if (Username.Equals(currentUsername, new Username(args.UsernameAfter), StringComparison.CurrentCultureIgnoreCase))
             return;
 
         await dbContext.UsernameHistory.AddAsync(
-            new UsernameHistory { UserId = args.Member.Id, Username = args.UsernameAfter });
+            new UsernameHistory { UserId = args.Member.GetUserId(), Username = new Username(args.UsernameAfter) });
         await dbContext.SaveChangesAsync();
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id,
+            GuildId = args.Guild.GetGuildId(),
             GuildLogType = GuildLogType.UsernameUpdated,
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor("Username Updated")
                 .AddField("User", args.MemberAfter.Mention)
                 .AddField("Before",
-                    string.IsNullOrWhiteSpace(currentUsername)
+                    Username.IsNullOrWhiteSpace(currentUsername)
                         ? "`Unknown`"
-                        : currentUsername, true)
+                        : currentUsername.Value, true)
                 .AddField("After",
                     string.IsNullOrWhiteSpace(args.UsernameAfter)
                         ? "`Unknown`"
@@ -66,14 +65,14 @@ public sealed class UpdatedUsernameEvent(
 
         await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomEmbed
         {
-            GuildId = args.Guild.Id,
+            GuildId = args.Guild.GetGuildId(),
             TrackerId = args.Member.Id,
             TrackerIdType = TrackerIdType.UserId,
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor("Username Updated")
-                .AddField("User", UserExtensions.Mention(args.Member.Id))
+                .AddField("User", UserExtensions.Mention(args.Member.GetUserId()))
                 .AddField("Before",
-                    string.IsNullOrWhiteSpace(currentUsername) ? "`Unknown`" : currentUsername,
+                    Username.IsNullOrWhiteSpace(currentUsername) ? "`Unknown`" : currentUsername.Value,
                     true)
                 .AddField("After",
                     string.IsNullOrWhiteSpace(args.UsernameAfter) ? "`Unknown`" : args.UsernameAfter,

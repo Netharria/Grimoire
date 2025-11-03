@@ -48,14 +48,16 @@ internal sealed class CleanupLogsBackgroundTask(
         await UpdateOldGrimoireLogEntries(dbContext, oldLogMessages, cancellationToken);
     }
 
-    private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, ulong messageId,
+    private static async Task<DeleteMessageResult> DeleteMessageAsync(DiscordChannel? channel, MessageId messageId,
         CancellationToken cancellationToken = default)
     {
         try
         {
             if (channel is null)
                 return new DeleteMessageResult { WasSuccessful = false, MessageId = messageId };
-            var message = await channel.GetMessageAsync(messageId).WaitAsync(cancellationToken);
+            var message = await channel.GetMessageOrDefaultAsync(messageId).WaitAsync(cancellationToken);
+            if (message is null)
+                return new DeleteMessageResult { WasSuccessful = false, MessageId = messageId };
             await message.DeleteAsync().WaitAsync(cancellationToken);
             return new DeleteMessageResult { WasSuccessful = true, MessageId = messageId };
         }
@@ -136,6 +138,6 @@ internal sealed class CleanupLogsBackgroundTask(
     private readonly struct DeleteMessageResult
     {
         public bool WasSuccessful { get; init; }
-        public ulong MessageId { get; init; }
+        public MessageId MessageId { get; init; }
     }
 }

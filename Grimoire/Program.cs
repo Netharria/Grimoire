@@ -200,12 +200,18 @@ await Host.CreateDefaultBuilder(args)
                 extension.CommandExecuted += (sender, eventArgs)
                     => CommandHandler.HandleEventAsync(sender.Client, eventArgs);
 
-                TextCommandProcessor textCommandProcessor = new(new TextCommandConfiguration
+                var textCommandProcessor = new TextCommandProcessor(new TextCommandConfiguration
                 {
                     PrefixResolver = new DefaultPrefixResolver(true, "!").ResolvePrefixAsync,
                 });
 
+                var slashCommandProcessor = new SlashCommandProcessor();
+                slashCommandProcessor.AddConverters(typeof(Program).Assembly);
+
+                textCommandProcessor.AddConverters(typeof(Program).Assembly);
+
                 extension.AddProcessor(textCommandProcessor);
+                extension.AddProcessor(slashCommandProcessor);
             }, new CommandsConfiguration
             {
                 UseDefaultCommandErrorHandler = false

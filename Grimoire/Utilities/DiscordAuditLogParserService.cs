@@ -12,8 +12,8 @@ namespace Grimoire.Utilities;
 
 public interface IDiscordAuditLogParserService
 {
-    Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId,
-        ulong targetId);
+    Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(GuildId guildId, ChannelId channelId,
+        MessageId messageId);
 }
 
 public sealed class DiscordAuditLogParserService(
@@ -25,10 +25,10 @@ public sealed class DiscordAuditLogParserService(
     private readonly DiscordClient _discordClient = discordClient;
     private readonly IMemoryCache _memoryCache = memoryCache;
 
-    public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(ulong guildId, ulong channelId,
-        ulong messageId)
+    public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(GuildId guildId, ChannelId channelId,
+        MessageId messageId)
     {
-        if (!this._discordClient.Guilds.TryGetValue(guildId, out var guild)
+        if (!this._discordClient.Guilds.TryGetValue(guildId.Value, out var guild)
             || !guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ViewAuditLog))
             return null;
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -48,7 +48,7 @@ public sealed class DiscordAuditLogParserService(
             deleteEntry = await DiscordRetryPolicy.RetryDiscordCall(async token => await guild
                 .GetAuditLogsAsync(10, actionType: DiscordAuditLogActionType.MessageDelete)
                 .OfType<DiscordAuditLogMessageEntry>()
-                .Where(x => x.Target.Id == result.UserId && x.Channel.Id == channelId)
+                .Where(x => x.Target.GetUserId() == result.UserId && x.Channel.GetChannelId() == channelId)
                 .OrderByDescending(x => x.CreationTimestamp)
                 .FirstOrDefaultAsync(token));
         }

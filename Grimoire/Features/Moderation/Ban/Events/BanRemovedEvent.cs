@@ -22,13 +22,13 @@ public class BanRemovedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanRemovedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.Id))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId()))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var lastBan = await dbContext.Sins
             .AsNoTracking()
-            .Where(m => m.UserId == args.Member.Id && m.GuildId == args.Guild.Id)
+            .Where(m => m.UserId == args.Member.GetUserId() && m.GuildId == args.Guild.GetGuildId())
             .Where(sin => sin.SinType == SinType.Ban)
             .OrderByDescending(x => x.SinOn)
             .Select(sin => new { SinId = sin.Id, sin.ModeratorId })
@@ -48,7 +48,7 @@ public class BanRemovedEvent(
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
-            GuildId = args.Guild.Id, GuildLogType = GuildLogType.Moderation, Embed = embed
+            GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
 }

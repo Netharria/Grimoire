@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -43,11 +44,11 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         var guild = ctx.Guild!;
 
         if (channel.IsThread)
-            await ThreadLockAsync(guild, ctx.User, channel, reason, durationType, durationAmount);
+            await ThreadLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount);
         else if (channel.Type is DiscordChannelType.Text
                  or DiscordChannelType.Category
                  or DiscordChannelType.GuildForum)
-            await ChannelLockAsync(guild, ctx.User, channel, reason, durationType, durationAmount);
+            await ChannelLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount);
         else
         {
             await ctx.EditReplyAsync(message: "Channel not of valid type.");
@@ -59,7 +60,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description =
@@ -68,7 +69,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         });
     }
 
-    private async Task ChannelLockAsync(DiscordGuild guild, DiscordUser moderator, DiscordChannel channel,
+    private async Task ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount)
     {
@@ -76,11 +77,11 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
             .First(x => x.Id == guild.EveryoneRole.Id);
         var lockEndTime = durationType.GetDateTimeOffset(durationAmount);
         await this._settingsModule.AddLock(
-            moderator.Id,
-            guild.Id,
-            channel.Id,
-            previousSetting.Allowed.ToLong(),
-            previousSetting.Denied.ToLong(),
+            moderatorId,
+            guild.GetGuildId(),
+            channel.GetChannelId(),
+            previousSetting.GetPreviouslyAllowedPermissions(),
+            previousSetting.GetPreviouslyDeniedPermissions(),
             reason ?? string.Empty,
             lockEndTime
         );
@@ -89,15 +90,15 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
             previousSetting.Denied.SetLockPermissions());
     }
 
-    private async Task ThreadLockAsync(DiscordGuild guild, DiscordUser moderator, DiscordChannel channel,
+    private async Task ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount) =>
         await this._settingsModule.AddLock(
-            moderator.Id,
-            guild.Id,
-            channel.Id,
-            0,
-            0,
+            moderatorId,
+            guild.GetGuildId(),
+            channel.GetChannelId(),
+            new PreviouslyAllowedPermissions(),
+            new PreviouslyDeniedPermissions(),
             reason ?? string.Empty,
             durationType.GetDateTimeOffset(durationAmount)
         );

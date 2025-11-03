@@ -38,7 +38,7 @@ public sealed partial class DeleteMessageEvent(
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null
             || args.Message.Author?.Id == args.Guild.CurrentMember.Id
-            || await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.Id))
+            || await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()))
             return;
 
         var pluralkitMessage =
@@ -55,8 +55,8 @@ public sealed partial class DeleteMessageEvent(
             await dbContext.AddAsync(
                 new ProxiedMessageLink
                 {
-                    ProxyMessageId = proxyMessageId,
-                    OriginalMessageId = originalMessageId,
+                    ProxyMessageId = new MessageId(proxyMessageId) ,
+                    OriginalMessageId = new MessageId(originalMessageId),
                     SystemId = pluralkitMessage.PluralKitSystem?.Id,
                     MemberId = pluralkitMessage.Member?.Id
                 });
@@ -82,11 +82,11 @@ public sealed partial class DeleteMessageEvent(
         }
 
         var auditLogEntry =
-            await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.Id, args.Channel.Id,
-                args.Message.Id);
+            await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.GetGuildId(), args.Channel.GetChannelId(),
+                args.Message.GetMessageId());
         var message = await dbContext.Messages
             .AsNoTracking()
-            .Where(message => message.Id == args.Message.Id)
+            .Where(message => message.Id == args.Message.GetMessageId())
             .Select(message => new Response
             {
                 UserId = message.UserId,
@@ -107,18 +107,20 @@ public sealed partial class DeleteMessageEvent(
         await dbContext.MessageHistory.AddAsync(
             new MessageHistory
             {
-                MessageId = args.Message.Id,
+                MessageId = args.Message.GetMessageId(),
                 Action = MessageAction.Deleted,
-                MessageContent = message.MessageContent ?? string.Empty,
-                GuildId = args.Guild.Id,
-                DeletedByModeratorId = auditLogEntry?.UserResponsible?.Id
+                MessageContent = message.MessageContent,
+                GuildId = args.Guild.GetGuildId(),
+                DeletedByModeratorId = auditLogEntry?.UserResponsible?.Id is not null
+                    ? new ModeratorId(auditLogEntry.UserResponsible.Id)
+                    : null,
             });
         await dbContext.SaveChangesAsync();
 
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
         {
-            GuildId = args.Guild.Id,
+            GuildId = args.Guild.GetGuildId(),
             GuildLogType = GuildLogType.MessageDeleted,
             Message = await BuildLogMessage(sender, args, message, auditLogEntry)
         });
@@ -164,7 +166,7 @@ public sealed partial class DeleteMessageEvent(
             embed.WithDescription(
                 $"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
 
-        embed.AddMessageTextToFields("**Content**", response.MessageContent, false);
+        embed.AddMessageTextToFields("**Content**", response.MessageContent.ToString() ?? string.Empty, false);
 
         return await this._attachmentUploadService.BuildImageEmbedAsync(
             response.Attachments.Select(x => x.FileName).ToArray(),
@@ -180,11 +182,11 @@ public sealed partial class DeleteMessageEvent(
 
     public sealed record Response
     {
-        public ulong UserId { get; init; }
-        public string? MessageContent { get; init; }
-        public ulong? ReferencedMessage { get; init; }
+        public UserId UserId { get; init; }
+        public MessageContent? MessageContent { get; init; }
+        public MessageId? ReferencedMessage { get; init; }
         public AttachmentDto[] Attachments { get; init; } = [];
-        public ulong? OriginalUserId { get; init; }
+        public UserId? OriginalUserId { get; init; }
         public string? SystemId { get; init; }
         public string? MemberId { get; init; }
     }

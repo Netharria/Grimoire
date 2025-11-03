@@ -32,28 +32,28 @@ public partial class IgnoreCommandGroup
             return;
         }
 
-        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.Id).ToArray();
-        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.Id).ToArray();
-        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.Id).ToArray();
+        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.GetUserId()).ToArray();
+        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.GetChannelId()).ToArray();
+        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.GetRoleId()).ToArray();
 
 
         await this._settingsModule.RemoveIgnoredItems(
-            guild.Id,
+            guild.GetGuildId(),
             ignoredMemberIds,
             ignoredChannelIds,
             ignoredRoleIds);
 
         var message = BuildIgnoreListAsync(
-                          ignoredMemberIds,
                           ignoredChannelIds,
-                          ignoredRoleIds)
+                          ignoredRoleIds,
+                          ignoredMemberIds)
                       + " are no longer ignored for xp gain.";
 
         await ctx.EditReplyAsync(GrimoireColor.Green,
             message);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
             Description = message

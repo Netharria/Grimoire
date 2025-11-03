@@ -42,14 +42,14 @@ internal sealed class UpdateAllGuilds(
             var invites = await guild.Value.GetInvitesAsync();
             guildInvites.Add(new GuildInviteDto
             {
-                GuildId = guild.Key,
-                Invites = new ConcurrentDictionary<string, Invite>(
+                GuildId = guild.Value.GetGuildId(),
+                Invites = new ConcurrentDictionary<InviteCode, Invite>(
                     invites
                         .Select(x => new Invite
                         {
-                            Code = x.Code,
-                            Inviter = x.Inviter.Username,
-                            Url = x.ToString(),
+                            Code = x.GetInviteCode(),
+                            Inviter = x.Inviter.GetUsername(),
+                            Url = x.GetInviteUrl(),
                             Uses = x.Uses,
                             MaxUses = x.MaxUses
                         })

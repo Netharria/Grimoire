@@ -27,7 +27,7 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
         [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
         [Parameter("CommandName")]
         [Description("The name of the command to call.")]
-        string name,
+        CustomCommandName name,
         [Parameter("Mention")] [Description("The person to mention if the command has one.")]
         SnowflakeObject? snowflakeObject = null,
         [Parameter("Message")] [Description("The custom message to add if the command has one.")]
@@ -40,7 +40,7 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         var response = await dbContext.CustomCommands
-            .GetCustomCommandQuery(guild.Id, name)
+            .GetCustomCommandQuery(guild.GetGuildId(), name)
             .FirstOrDefaultAsync();
 
         if (response is null || !IsUserAuthorized(ctx.Member, response.RestrictedUse, response.PermissionRoles))
@@ -70,7 +70,7 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
             var discordEmbed = new DiscordEmbedBuilder()
                 .WithDescription(content);
             if (response.EmbedColor is not null)
-                discordEmbed.WithColor(new DiscordColor(response.EmbedColor));
+                discordEmbed.WithColor(GrimoireColor.FromCustomCommandEmbedColor(response.EmbedColor.Value));
             discordResponse.AddEmbed(discordEmbed);
         }
         else
@@ -80,9 +80,9 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
     }
 
     public static bool IsUserAuthorized(DiscordMember? member, bool restrictedUse,
-        IReadOnlyCollection<ulong> permissionRoles) =>
+        IReadOnlyCollection<RoleId> permissionRoles) =>
         (restrictedUse
-            ? member?.Roles.Any(x => permissionRoles.Contains(x.Id))
-            : member?.Roles.All(x => !permissionRoles.Contains(x.Id))
+            ? member?.Roles.Any(x => permissionRoles.Contains(x.GetRoleId()))
+            : member?.Roles.All(x => !permissionRoles.Contains(x.GetRoleId()))
         ) ?? false;
 }

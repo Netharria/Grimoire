@@ -20,9 +20,9 @@ public partial class MuteAdminCommands
 
         var guild = ctx.Guild!;
 
-        var muteRole = await this._settingsModule.GetMuteRole(guild.Id);
+        var muteRole = await this._settingsModule.GetMuteRole(guild.GetGuildId());
         var role = await guild.GetRoleOrDefaultAsync(muteRole);
-        var users = await this._settingsModule.GetAllMutes(guild.Id)
+        var users = await this._settingsModule.GetAllMutes(guild.GetGuildId())
             .Select(mute => guild.GetMemberOrDefaultAsync(mute.UserId))
             .OfType<DiscordMember>()
             .ToArrayAsync();

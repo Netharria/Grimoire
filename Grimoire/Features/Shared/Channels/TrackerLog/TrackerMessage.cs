@@ -11,7 +11,7 @@ public abstract record TrackerMessageBase
 {
     public required ulong TrackerId { get; init; }
     public required TrackerIdType TrackerIdType { get; init; }
-    public required ulong GuildId { get; init; }
+    public required GuildId GuildId { get; init; }
     public abstract DiscordMessageBuilder GetMessageBuilder();
 }
 

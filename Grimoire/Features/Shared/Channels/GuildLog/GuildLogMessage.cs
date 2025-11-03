@@ -11,7 +11,7 @@ namespace Grimoire.Features.Shared.Channels.GuildLog;
 
 public abstract record GuildLogMessageBase
 {
-    public required ulong GuildId { get; init; }
+    public required GuildId GuildId { get; init; }
     public required GuildLogType GuildLogType { get; init; }
     public abstract DiscordMessageBuilder GetMessageBuilder();
 }

@@ -22,12 +22,12 @@ public sealed partial class InviteEvents(
 
     public Task HandleEventAsync(DiscordClient sender, InviteCreatedEventArgs args)
     {
-        this._inviteService.UpdateInvite(args.Guild.Id,
+        this._inviteService.UpdateInvite(args.Guild.GetGuildId(),
             new Invite
             {
-                Code = args.Invite.Code,
-                Inviter = args.Invite.Inviter.Username,
-                Url = args.Invite.ToString(),
+                Code = args.Invite.GetInviteCode(),
+                Inviter = args.Invite.Inviter.GetUsername(),
+                Url = args.Invite.GetInviteUrl(),
                 Uses = args.Invite.Uses,
                 MaxUses = args.Invite.MaxUses
             });
@@ -38,7 +38,7 @@ public sealed partial class InviteEvents(
     {
         if (args.Invite.ExpiresAt < DateTime.UtcNow)
         {
-            if (this._inviteService.DeleteInvite(args.Guild.Id, args.Invite.Code))
+            if (this._inviteService.DeleteInvite(args.Guild.GetGuildId(), args.Invite.GetInviteCode()))
                 return;
             throw new Exception("Was not able to delete expired invite");
         }
@@ -54,7 +54,7 @@ public sealed partial class InviteEvents(
         }
 
         if (deletedInviteEntry.Target.Code == args.Invite.Code)
-            if (!this._inviteService.DeleteInvite(args.Guild.Id, args.Invite.Code))
+            if (!this._inviteService.DeleteInvite(args.Guild.GetGuildId(), args.Invite.GetInviteCode()))
                 throw new Exception("Was not able to delete expired invite");
     }
 

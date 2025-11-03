@@ -47,7 +47,7 @@ public partial class LogSettingsCommands
 
             var channelOption = ctx.GetChannelOption(option, channel);
 
-            if (channelOption.IsLeft)
+            if (channelOption.IsFail)
             {
                 await ctx.EditReplyAsync(DiscordColor.Red, $"");
                 return;
@@ -76,8 +76,8 @@ public partial class LogSettingsCommands
                     MessageLogSetting.EditLog => GuildLogType.MessageEdited,
                     _ => throw new ArgumentOutOfRangeException(nameof(logSetting), logSetting, null)
                 },
-                guild.Id,
-                option is ChannelOption.Off ? null : channel?.Id);
+                guild.GetGuildId(),
+                option is ChannelOption.Off ? null : channel?.GetChannelId());
 
             await ctx.EditReplyAsync(message: option is ChannelOption.Off
                 ? $"Disabled {logSetting}"
@@ -85,7 +85,7 @@ public partial class LogSettingsCommands
 
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = guild.Id,
+                GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Description = option is ChannelOption.Off
                     ? $"{ctx.User.Mention} disabled {logSetting}."

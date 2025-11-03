@@ -62,11 +62,11 @@ public sealed partial class AddBanCommand(
         var sin = await dbContext.Sins.AddAsync(
             new Sin
             {
-                GuildId = guild.Id,
-                UserId = user.Id,
+                GuildId = guild.GetGuildId(),
+                UserId = user.GetUserId(),
                 Reason = reason,
                 SinType = SinType.Ban,
-                ModeratorId = ctx.User.Id
+                ModeratorId = ctx.GetModeratorId()
             });
         await dbContext.SaveChangesAsync();
 

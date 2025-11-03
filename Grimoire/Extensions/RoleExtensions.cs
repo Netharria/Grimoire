@@ -9,5 +9,5 @@ namespace Grimoire.Extensions;
 
 public static class RoleExtensions
 {
-    public static string Mention(ulong roleId) => $"<@&{roleId}>";
+    public static string Mention(RoleId roleId) => $"<@&{roleId}>";
 }

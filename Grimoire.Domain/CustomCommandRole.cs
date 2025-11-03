@@ -12,8 +12,8 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class CustomCommandRole
 {
-    public required ulong RoleId { get; init; }
-    public string CustomCommandName { get; init; } = string.Empty;
+    public required RoleId RoleId { get; init; }
+    public required CustomCommandName CustomCommandName { get; init; }
     public CustomCommand? CustomCommand { get; init; }
-    public required ulong GuildId { get; init; }
+    public required GuildId GuildId { get; init; }
 }

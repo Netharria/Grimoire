@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Domain;
 using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -20,5 +21,10 @@ internal sealed class IgnoredChannelConfiguration : IEntityTypeConfiguration<Ign
             .ValueGeneratedNever()
             .IsRequired();
         builder.Ignore(channel => channel.Id);
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.ChannelId)
+            .HasConversion(e => e.Value, value => new ChannelId(value));
     }
 }

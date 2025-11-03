@@ -15,4 +15,5 @@ public readonly struct GrimoireColor
     public static readonly DiscordColor Yellow = new(255, 186, 8);
     public static readonly DiscordColor Green = new(0, 128, 0);
     public static readonly DiscordColor Mint = new(34, 255, 194);
+    public static DiscordColor FromCustomCommandEmbedColor(CustomCommandEmbedColor color) => new(color.Value);
 }

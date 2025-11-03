@@ -15,15 +15,18 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    private const string IgnoredChannelsCacheKeyPrefix = "IgnoredChannels_{0}";
-    private const string IgnoredMembersCacheKeyPrefix = "IgnoredMembers_{0}";
-    private const string IgnoredRolesCacheKeyPrefix = "IgnoredRoles_{0}";
+    private static string GetIgnoredMembersCacheKey(GuildId guildId) =>
+        $"IgnoredMembers_{guildId}";
+    private static string GetIgnoredChannelsCacheKey(GuildId guildId) =>
+        $"IgnoredChannels_{guildId}";
+    private static string GetIgnoredRolesCacheKey(GuildId guildId) =>
+        $"IgnoredRoles_{guildId}";
 
     public async Task<bool> IsMessageIgnored(
-        ulong guildId,
-        ulong userId,
-        IReadOnlyList<ulong> userRoleIds,
-        ulong channelId,
+        GuildId guildId,
+        UserId userId,
+        IReadOnlyList<RoleId> userRoleIds,
+        ChannelId channelId,
         CancellationToken cancellationToken = default)
     {
         if (await IsMemberIgnored(guildId, userId, cancellationToken))
@@ -34,9 +37,9 @@ public sealed partial class SettingsModule
     }
 
     public async Task<bool> IsMemberIgnored(
-        ulong guildId,
-        ulong userId,
-        IReadOnlyList<ulong> userRoleIds,
+        GuildId guildId,
+        UserId userId,
+        IReadOnlyList<RoleId> userRoleIds,
         CancellationToken cancellationToken = default)
     {
         if (await IsMemberIgnored(guildId, userId, cancellationToken))
@@ -45,8 +48,8 @@ public sealed partial class SettingsModule
     }
 
     private async Task<bool> IsMemberIgnored(
-        ulong guildId,
-        ulong userId,
+        GuildId guildId,
+        UserId userId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
@@ -57,32 +60,33 @@ public sealed partial class SettingsModule
         return ignoredMembers.Contains(userId);
     }
 
-    private async Task<IReadOnlySet<ulong>> GetAllIgnoredMembers(
-        ulong guildId,
+    private async Task<IReadOnlySet<UserId>> GetAllIgnoredMembers(
+        GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
-            return FrozenSet<ulong>.Empty;
-        var cacheKey = string.Format(IgnoredMembersCacheKeyPrefix, guildId);
+            return FrozenSet<UserId>.Empty;
 
-        var ignoredMembers = await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var results = await dbContext
-                .IgnoredMembers
-                .AsNoTracking()
-                .Where(reward => reward.GuildId == guildId)
-                .Select(reward => reward.Id)
-                .ToHashSetAsync(cancellationToken);
-            return results.ToFrozenSet();
-        }, this._cacheEntryOptions) ?? [];
+        var ignoredMembers = await this._memoryCache.GetOrCreateAsync(
+            GetIgnoredMembersCacheKey(guildId),
+            async _ =>
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+                var results = await dbContext
+                    .IgnoredMembers
+                    .AsNoTracking()
+                    .Where(reward => reward.GuildId == guildId)
+                    .Select(reward => reward.UserId)
+                    .ToHashSetAsync(cancellationToken);
+                return results.ToFrozenSet();
+            }, this._cacheEntryOptions) ?? [];
 
         return ignoredMembers;
     }
 
     private async Task<bool> IsChannelIgnored(
-        ulong guildId,
-        ulong channelId,
+        GuildId guildId,
+        ChannelId channelId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
@@ -93,28 +97,29 @@ public sealed partial class SettingsModule
         return ignoredChannels.Contains(channelId);
     }
 
-    private async Task<IReadOnlySet<ulong>> GetAllIgnoredChannels(ulong guildId,
+    private async Task<IReadOnlySet<ChannelId>> GetAllIgnoredChannels(GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
-            return FrozenSet<ulong>.Empty;
-        var cacheKey = string.Format(IgnoredChannelsCacheKeyPrefix, guildId);
-        return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var results = await dbContext
-                .IgnoredChannels
-                .AsNoTracking()
-                .Where(reward => reward.GuildId == guildId)
-                .Select(reward => reward.Id)
-                .ToHashSetAsync(cancellationToken);
-            return results.ToFrozenSet();
-        }, this._cacheEntryOptions) ?? [];
+            return FrozenSet<ChannelId>.Empty;
+        return await this._memoryCache.GetOrCreateAsync(
+            GetIgnoredChannelsCacheKey(guildId),
+            async _ =>
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+                var results = await dbContext
+                    .IgnoredChannels
+                    .AsNoTracking()
+                    .Where(reward => reward.GuildId == guildId)
+                    .Select(reward => reward.ChannelId)
+                    .ToHashSetAsync(cancellationToken);
+                return results.ToFrozenSet();
+            }, this._cacheEntryOptions) ?? [];
     }
 
     private async Task<bool> AreRolesIgnored(
-        ulong guildId,
-        IReadOnlyList<ulong> roleIds,
+        GuildId guildId,
+        IReadOnlyList<RoleId> roleIds,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
@@ -125,30 +130,31 @@ public sealed partial class SettingsModule
         return ignoredRoles.Overlaps(roleIds);
     }
 
-    private async Task<IReadOnlySet<ulong>> GetAllIgnoredRoles(ulong guildId,
+    private async Task<IReadOnlySet<RoleId>> GetAllIgnoredRoles(GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
-            return FrozenSet<ulong>.Empty;
-        var cacheKey = string.Format(IgnoredRolesCacheKeyPrefix, guildId);
-        return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var results = await dbContext
-                .IgnoredRoles
-                .AsNoTracking()
-                .Where(reward => reward.GuildId == guildId)
-                .Select(reward => reward.Id)
-                .ToHashSetAsync(cancellationToken);
-            return results.ToFrozenSet();
-        }, this._cacheEntryOptions) ?? [];
+            return FrozenSet<RoleId>.Empty;
+        return await this._memoryCache.GetOrCreateAsync(
+            GetIgnoredRolesCacheKey(guildId),
+            async _ =>
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+                var results = await dbContext
+                    .IgnoredRoles
+                    .AsNoTracking()
+                    .Where(reward => reward.GuildId == guildId)
+                    .Select(reward => reward.RoleId)
+                    .ToHashSetAsync(cancellationToken);
+                return results.ToFrozenSet();
+            }, this._cacheEntryOptions) ?? [];
     }
 
     public async Task AddIgnoredItems(
-        ulong guildId,
-        IReadOnlyList<ulong> ignoredMemberIds,
-        IReadOnlyList<ulong> ignoredChannelIds,
-        IReadOnlyList<ulong> ignoredRoleIds,
+        GuildId guildId,
+        IReadOnlyList<UserId> ignoredMemberIds,
+        IReadOnlyList<ChannelId> ignoredChannelIds,
+        IReadOnlyList<RoleId> ignoredRoleIds,
         CancellationToken cancellationToken = default)
     {
         if (ignoredMemberIds.Count == 0 && ignoredChannelIds.Count == 0 && ignoredRoleIds.Count == 0)
@@ -162,11 +168,11 @@ public sealed partial class SettingsModule
                 .Where(x => x.GuildId == guildId)
                 .ToListAsync(cancellationToken);
 
-            var newIgnoredMembers = AddIgnoredItems(currentIgnoredMembers, ignoredMemberIds, guildId);
+            var newIgnoredMembers = AddIgnoredItems(currentIgnoredMembers, ignoredMemberIds.Select(x => x.Value).ToList(), guildId);
             await dbContext.IgnoredMembers.AddRangeAsync(newIgnoredMembers, cancellationToken);
 
             await dbContext.IgnoredMembers.AddRangeAsync(newIgnoredMembers, cancellationToken);
-            this._memoryCache.Remove(string.Format(IgnoredMembersCacheKeyPrefix, guildId));
+            this._memoryCache.Remove(GetIgnoredMembersCacheKey(guildId));
         }
 
         if (ignoredChannelIds.Count > 0)
@@ -176,9 +182,9 @@ public sealed partial class SettingsModule
                 .Where(x => x.GuildId == guildId)
                 .ToListAsync(cancellationToken);
 
-            var newIgnoredChannels = AddIgnoredItems(currentIgnoredChannels, ignoredChannelIds, guildId);
+            var newIgnoredChannels = AddIgnoredItems(currentIgnoredChannels, ignoredChannelIds.Select(x => x.Value).ToList(), guildId);
             await dbContext.IgnoredChannels.AddRangeAsync(newIgnoredChannels, cancellationToken);
-            this._memoryCache.Remove(string.Format(IgnoredChannelsCacheKeyPrefix, guildId));
+            this._memoryCache.Remove(GetIgnoredChannelsCacheKey(guildId));
         }
 
         if (ignoredRoleIds.Count > 0)
@@ -188,9 +194,9 @@ public sealed partial class SettingsModule
                 .Where(x => x.GuildId == guildId)
                 .ToListAsync(cancellationToken);
 
-            var newIgnoredRoles = AddIgnoredItems(currentIgnoredRoles, ignoredRoleIds, guildId);
+            var newIgnoredRoles = AddIgnoredItems(currentIgnoredRoles, ignoredRoleIds.Select(x => x.Value).ToList(), guildId);
             await dbContext.IgnoredRoles.AddRangeAsync(newIgnoredRoles, cancellationToken);
-            this._memoryCache.Remove(string.Format(IgnoredRolesCacheKeyPrefix, guildId));
+            this._memoryCache.Remove(GetIgnoredRolesCacheKey(guildId));
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -198,7 +204,7 @@ public sealed partial class SettingsModule
 
 
     private static T[] AddIgnoredItems<T>(IList<T> currentIgnoredItems, IReadOnlyList<ulong> ignoredIds,
-        ulong guildId) where T : IIgnored, new()
+        GuildId guildId) where T : IIgnored, new()
     {
         if (ignoredIds.Count > 0)
             return [];
@@ -217,10 +223,10 @@ public sealed partial class SettingsModule
     }
 
     public async Task RemoveIgnoredItems(
-        ulong guildId,
-        IReadOnlyList<ulong> ignoredMemberIds,
-        IReadOnlyList<ulong> ignoredChannelIds,
-        IReadOnlyList<ulong> ignoredRoleIds,
+        GuildId guildId,
+        IReadOnlyList<UserId> ignoredMemberIds,
+        IReadOnlyList<ChannelId> ignoredChannelIds,
+        IReadOnlyList<RoleId> ignoredRoleIds,
         CancellationToken cancellationToken = default)
     {
         if (ignoredMemberIds.Count == 0 && ignoredChannelIds.Count == 0 && ignoredRoleIds.Count == 0)
@@ -234,9 +240,9 @@ public sealed partial class SettingsModule
                 .Where(x => x.GuildId == guildId)
                 .ToListAsync(cancellationToken);
 
-            var newIgnoredMembers = RemoveIgnoredItems(currentIgnoredMembers, ignoredMemberIds);
+            var newIgnoredMembers = RemoveIgnoredItems(currentIgnoredMembers, ignoredMemberIds.Select(x => x.Value).ToList());
             dbContext.IgnoredMembers.RemoveRange(newIgnoredMembers);
-            this._memoryCache.Remove(string.Format(IgnoredMembersCacheKeyPrefix, guildId));
+            this._memoryCache.Remove(GetIgnoredMembersCacheKey(guildId));
         }
 
         if (ignoredChannelIds.Count > 0)
@@ -246,9 +252,9 @@ public sealed partial class SettingsModule
                 .Where(x => x.GuildId == guildId)
                 .ToListAsync(cancellationToken);
 
-            var newIgnoredChannels = RemoveIgnoredItems(currentIgnoredChannels, ignoredChannelIds);
+            var newIgnoredChannels = RemoveIgnoredItems(currentIgnoredChannels, ignoredChannelIds.Select(x => x.Value).ToList());
             dbContext.IgnoredChannels.RemoveRange(newIgnoredChannels);
-            this._memoryCache.Remove(string.Format(IgnoredChannelsCacheKeyPrefix, guildId));
+            this._memoryCache.Remove(GetIgnoredChannelsCacheKey(guildId));
         }
 
         if (ignoredRoleIds.Count > 0)
@@ -258,9 +264,9 @@ public sealed partial class SettingsModule
                 .Where(x => x.GuildId == guildId)
                 .ToListAsync(cancellationToken);
 
-            var newIgnoredRoles = RemoveIgnoredItems(currentIgnoredRoles, ignoredRoleIds);
+            var newIgnoredRoles = RemoveIgnoredItems(currentIgnoredRoles, ignoredRoleIds.Select(x => x.Value).ToList());
             dbContext.IgnoredRoles.RemoveRange(newIgnoredRoles);
-            this._memoryCache.Remove(string.Format(IgnoredRolesCacheKeyPrefix, guildId));
+            this._memoryCache.Remove(GetIgnoredRolesCacheKey(guildId));
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -284,7 +290,7 @@ public sealed partial class SettingsModule
     }
 
     public async Task<AllIgnoredItems> GetAllIgnoredItems(
-        ulong guildId,
+        GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         var ignoredMembersTask = GetAllIgnoredMembers(guildId, cancellationToken);
@@ -303,8 +309,8 @@ public sealed partial class SettingsModule
     }
 
     public record AllIgnoredItems(
-        ulong GuildId,
-        IReadOnlySet<ulong> IgnoredMemberIds,
-        IReadOnlySet<ulong> IgnoredChannelIds,
-        IReadOnlySet<ulong> IgnoredRoleIds);
+        GuildId GuildId,
+        IReadOnlySet<UserId> IgnoredMemberIds,
+        IReadOnlySet<ChannelId> IgnoredChannelIds,
+        IReadOnlySet<RoleId> IgnoredRoleIds);
 }

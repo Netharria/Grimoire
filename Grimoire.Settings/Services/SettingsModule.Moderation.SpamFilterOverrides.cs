@@ -13,7 +13,7 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<SpamFilterOverrideOption?> GetSpamFilterOverrideAsync(ulong channelId,
+    public async Task<SpamFilterOverrideOption?> GetSpamFilterOverrideAsync(ChannelId channelId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -24,7 +24,7 @@ public sealed partial class SettingsModule
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async IAsyncEnumerable<SpamFilterOverride> GetAllSpamFilterOverrideAsync(ulong guildId,
+    public async IAsyncEnumerable<SpamFilterOverride> GetAllSpamFilterOverrideAsync(GuildId guildId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -37,7 +37,7 @@ public sealed partial class SettingsModule
             yield return spamFilterOverride;
     }
 
-    public async Task SetSpamFilterOverrideAsync(ulong channelId, ulong guildId, SpamFilterOverrideOption option,
+    public async Task SetSpamFilterOverrideAsync(ChannelId channelId, GuildId guildId, SpamFilterOverrideOption option,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -50,7 +50,7 @@ public sealed partial class SettingsModule
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task RemoveSpamFilterOverrideAsync(ulong channelId, ulong guildId,
+    public async Task RemoveSpamFilterOverrideAsync(ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);

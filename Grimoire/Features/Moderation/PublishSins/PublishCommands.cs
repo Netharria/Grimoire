@@ -13,7 +13,6 @@ using Grimoire.Settings.Services;
 using LanguageExt;
 using LanguageExt.Common;
 using Microsoft.Extensions.Logging;
-using Optional = LanguageExt.Optional;
 
 namespace Grimoire.Features.Moderation.PublishSins;
 
@@ -35,15 +34,15 @@ public sealed partial class PublishCommands(
     private readonly SettingsModule _settingsModule = settingsModule;
 
     private async Task<Either<Error, DiscordMessage>> SendPublicLogMessage(CommandContext ctx,
-        ulong userId,
-        string username,
+        UserId userId,
+        Username username,
         string reason,
-        ulong? publishedMessageId,
+        MessageId? publishedMessageId,
         DateTimeOffset actionDate,
         PublishType publish)
     {
         var guild = ctx.Guild!;
-        var banLogChannelId = await this._settingsModule.GetLogChannelSetting(GuildLogType.BanLog, guild.Id);
+        var banLogChannelId = await this._settingsModule.GetLogChannelSetting(GuildLogType.BanLog, guild.GetGuildId());
 
         if (banLogChannelId is null)
             return Error.New("The public ban log channel is not set up. Please set it up and try again.");
@@ -52,10 +51,10 @@ public sealed partial class PublishCommands(
         if (banLogChannel is null)
             return Error.New("The public ban log channel is invalid. Please set it up and try again.");
 
-        if (string.IsNullOrWhiteSpace(username))
+        if (Username.IsNullOrWhiteSpace(username))
         {
             var user = await ctx.Client.GetUserAsync(userId);
-            username = user.Username;
+            username = user.GetUsername();
         }
 
         if (publishedMessageId is not null)
@@ -72,7 +71,7 @@ public sealed partial class PublishCommands(
             }
             catch (NotFoundException ex)
             {
-                LogPublishedMessageNotFound(this._logger, ex, publishedMessageId);
+                LogPublishedMessageNotFound(this._logger, ex, publishedMessageId.Value);
             }
 
         return await banLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
@@ -84,5 +83,5 @@ public sealed partial class PublishCommands(
     }
 
     [LoggerMessage(LogLevel.Warning, "Could not find published message {id}")]
-    static partial void LogPublishedMessageNotFound(ILogger<PublishCommands> logger, Exception ex, ulong? id);
+    static partial void LogPublishedMessageNotFound(ILogger<PublishCommands> logger, Exception ex, MessageId? id);
 }

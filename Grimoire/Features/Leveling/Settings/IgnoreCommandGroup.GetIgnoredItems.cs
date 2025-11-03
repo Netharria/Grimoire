@@ -27,7 +27,7 @@ public sealed partial class IgnoreCommandGroup
             .WithTitle("Ignored Channels Roles and Users.")
             .WithTimestamp(DateTime.UtcNow);
         var embedPages = InteractivityExtension.GeneratePagesInEmbed(
-            await BuildMessageAsync(guild.Id),
+            await BuildMessageAsync(guild.GetGuildId()),
             SplitType.Line,
             embed);
         if (ctx is SlashCommandContext slashContext)
@@ -36,7 +36,7 @@ public sealed partial class IgnoreCommandGroup
             await ctx.Channel.SendPaginatedMessageAsync(ctx.User, embedPages);
     }
 
-    private async Task<string> BuildMessageAsync(ulong guildId)
+    private async Task<string> BuildMessageAsync(GuildId guildId)
     {
         var ignoredItems = await this._settingsModule.GetAllIgnoredItems(guildId);
         var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
@@ -50,7 +50,7 @@ public sealed partial class IgnoreCommandGroup
 
         ignoredMessageBuilder.Append("\n**Users**\n");
         ignoredMessageBuilder.Append(string.Join(' ',
-            ignoredItems.IgnoredRoleIds.Select(x => $"<@&{x}>"))).Append('\n');
+            ignoredItems.IgnoredMemberIds.Select(x => $"<@&{x}>"))).Append('\n');
         return ignoredMessageBuilder.ToString();
     }
 }

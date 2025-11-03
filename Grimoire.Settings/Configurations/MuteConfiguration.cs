@@ -20,5 +20,14 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>
         builder.HasKey(e => e.SinId);
         builder.Property(e => e.EndTime).IsRequired();
         builder.HasIndex(x => x.EndTime);
+
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.UserId)
+            .HasConversion(e => e.Value, value => new UserId(value));
+
+        builder.Property(e => e.SinId)
+            .HasConversion(e => e.GetValueOrDefault().Value, value => new SinId(value));
     }
 }

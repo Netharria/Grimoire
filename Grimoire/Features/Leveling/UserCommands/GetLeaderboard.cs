@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
-using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
@@ -55,33 +54,30 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
             return;
         }
 
-        var userCommandChannel = await this._settingsModule.GetUserCommandChannel(guild.Id);
+        var userCommandChannel = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId());
 
         if (ctx is SlashCommandContext slashContext)
             await slashContext.DeferResponseAsync(
                 !member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                && userCommandChannel != ctx.Channel.Id);
+                && userCommandChannel != ctx.GetChannelId());
         else if (!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                 && userCommandChannel != ctx.Channel.Id)
+                 && userCommandChannel != ctx.GetChannelId())
             return;
 
-        var getUserCenteredLeaderboardQuery = new Request { UserId = targetUser?.Id, GuildId = guild.Id };
+        var getUserCenteredLeaderboardQuery = new Request { UserId = targetUser?.GetUserId(), GuildId = guild.GetGuildId() };
 
         var response = await Handle(getUserCenteredLeaderboardQuery, CancellationToken.None);
-
-        await response.Match(
-            async success =>
-                await ctx.EditReplyAsync(
-                    GrimoireColor.DarkPurple,
-                    title: "LeaderBoard",
-                    message: success.LeaderboardText,
-                    footer: $"Total Users {success.TotalUserCount}"),
-             async error => await ctx.EditReplyAsync(GrimoireColor.Yellow, error.Message));
-
-
+        await response
+            .Match(
+                success => ctx.EditReplyAsync(
+                        GrimoireColor.DarkPurple,
+                        title: "LeaderBoard",
+                        message: success.LeaderboardText,
+                        footer: $"Total Users {success.TotalUserCount}"),
+             error => ctx.EditReplyAsync(GrimoireColor.Yellow, error.Message));
     }
 
-    private async Task<Either<Error, Response>> Handle(Request request, CancellationToken cancellationToken)
+    private async Task<Fin<Response>> Handle(Request request, CancellationToken cancellationToken)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -138,8 +134,8 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
 
     private sealed record Request
     {
-        public required ulong GuildId { get; init; }
-        public ulong? UserId { get; init; }
+        public required GuildId GuildId { get; init; }
+        public UserId? UserId { get; init; }
     }
 
     private sealed record Response

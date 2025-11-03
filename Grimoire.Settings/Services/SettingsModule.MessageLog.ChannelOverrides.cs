@@ -17,15 +17,15 @@ public sealed partial class SettingsModule
 {
     private const string LogOverridesCacheKeyPrefix = "LogOverides_{0}";
 
-    public async Task<bool> ShouldLogMessage(ulong channelId,
-        ulong guildId,
-        IReadOnlyDictionary<ulong, ulong?> channelNodes,
+    public async Task<bool> ShouldLogMessage(ChannelId channelId,
+        GuildId guildId,
+        IReadOnlyDictionary<ChannelId, ChannelId?> channelNodes,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.MessageLog, guildId, cancellationToken))
             return false;
 
-        ulong? currentChannelId = channelId;
+        ChannelId? currentChannelId = channelId;
         while (currentChannelId is not null)
         {
             var overrideOption = await GetChannelLogOverride(currentChannelId.Value, guildId, cancellationToken);
@@ -46,8 +46,8 @@ public sealed partial class SettingsModule
         return true;
     }
 
-    private async Task<MessageLogOverrideCacheOption> GetChannelLogOverride(ulong channelId,
-        ulong guildId,
+    private async Task<MessageLogOverrideCacheOption> GetChannelLogOverride(ChannelId channelId,
+        GuildId guildId,
         CancellationToken cancellationToken)
     {
         var cacheKey = string.Format(LogOverridesCacheKeyPrefix, channelId);
@@ -68,8 +68,8 @@ public sealed partial class SettingsModule
         }, this._cacheEntryOptions);
     }
 
-    public async Task SetChannelLogOverride(ulong channelId,
-        ulong guildId,
+    public async Task SetChannelLogOverride(ChannelId channelId,
+        GuildId guildId,
         MessageLogOverrideOption option,
         CancellationToken cancellationToken = default)
     {
@@ -88,8 +88,8 @@ public sealed partial class SettingsModule
         this._memoryCache.Remove(cacheKey);
     }
 
-    public async Task RemoveChannelLogOverride(ulong channelId,
-        ulong guildId,
+    public async Task RemoveChannelLogOverride(ChannelId channelId,
+        GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -107,7 +107,7 @@ public sealed partial class SettingsModule
         this._memoryCache.Remove(cacheKey);
     }
 
-    public async IAsyncEnumerable<MessageLogChannelOverride> GetAllOverriddenChannels(ulong guildId,
+    public async IAsyncEnumerable<MessageLogChannelOverride> GetAllOverriddenChannels(GuildId guildId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);

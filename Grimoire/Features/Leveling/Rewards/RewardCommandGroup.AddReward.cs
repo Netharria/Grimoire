@@ -40,14 +40,14 @@ public sealed partial class RewardCommandGroup
                              $"reward role because the role has a higher rank than it does.");
             return;
         }
-        await this._settingsModule.AddOrUpdateRewardAsync(role.Id, guild.Id, level, message);
+        await this._settingsModule.AddOrUpdateRewardAsync(role.GetRoleId(), guild.GetGuildId(), level, message);
 
         var responseMessage = $"Successfully updated the rewards to include {role.Mention} at level {level}.";
 
         await ctx.EditReplyAsync(GrimoireColor.DarkPurple, responseMessage);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Leveling,
             Color = GrimoireColor.DarkPurple,
             Description = responseMessage

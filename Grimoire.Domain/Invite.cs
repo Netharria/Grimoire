@@ -9,9 +9,19 @@ namespace Grimoire.Domain;
 
 public sealed record Invite
 {
-    public string Code { get; init; } = string.Empty;
-    public string Inviter { get; init; } = string.Empty;
-    public int Uses { get; init; }
-    public int MaxUses { get; init; }
-    public string Url { get; init; } = string.Empty;
+    public required InviteCode Code { get; init; }
+    public required Username Inviter { get; init; }
+    public required int Uses { get; init; }
+    public required int MaxUses { get; init; }
+    public required InviteUrl Url { get; init; }
+}
+
+public readonly record struct InviteCode(string Value)
+{
+    public override string ToString() => Value;
+}
+
+public readonly record struct InviteUrl(string Value)
+{
+    public override string ToString() => Value;
 }

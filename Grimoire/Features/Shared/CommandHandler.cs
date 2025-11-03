@@ -43,7 +43,7 @@ public sealed partial class CommandHandler : IClientErrorHandler
         if (exception is UniqueConstraintException)
             return;
         var configuration = client.ServiceProvider.GetRequiredService<IConfiguration>();
-        if (!ulong.TryParse(configuration.GetSection("channelId").Value, out var channelId))
+        if (!ChannelId.TryParse(configuration.GetSection("channelId").Value, out var channelId))
             return;
         var channel = await client.GetChannelOrDefaultAsync(channelId);
         if (channel is not null)

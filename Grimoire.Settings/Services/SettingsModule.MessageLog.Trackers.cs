@@ -16,7 +16,7 @@ public sealed partial class SettingsModule
 {
     private const string TrackersCacheKeyPrefix = "Trackers_{0}";
 
-    public async Task<ulong?> GetTrackerChannelAsync(ulong memberId, ulong guildId,
+    public async Task<ChannelId?> GetTrackerChannelAsync(UserId memberId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
@@ -37,10 +37,10 @@ public sealed partial class SettingsModule
     }
 
     public async Task AddTracker(
-        ulong memberId,
-        ulong moderatorId,
-        ulong guildId,
-        ulong channelId,
+        UserId memberId,
+        ModeratorId moderatorId,
+        GuildId guildId,
+        ChannelId channelId,
         TimeSpan duration,
         CancellationToken cancellationToken = default)
     {
@@ -72,7 +72,7 @@ public sealed partial class SettingsModule
         this._memoryCache.Remove(cacheKey);
     }
 
-    public async Task<Tracker?> RemoveTracker(ulong memberId, ulong guildId,
+    public async Task<Tracker?> RemoveTracker(UserId memberId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);

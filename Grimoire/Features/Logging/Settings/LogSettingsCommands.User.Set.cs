@@ -51,7 +51,7 @@ public partial class LogSettingsCommands
 
             var channelOption = ctx.GetChannelOption(option, channel);
 
-            if (channelOption.IsLeft)
+            if (channelOption.IsFail)
             {
                 await ctx.EditReplyAsync(GrimoireColor.Yellow,
                     "Selected channel cannot be empty when ChannelOption is SelectChannel.");
@@ -83,8 +83,8 @@ public partial class LogSettingsCommands
                     UserLogSetting.AvatarLog => GuildLogType.AvatarUpdated,
                     _ => throw new ArgumentOutOfRangeException(nameof(logSetting), logSetting, null)
                 },
-                guild.Id,
-                option is ChannelOption.Off ? null : channel?.Id);
+                guild.GetGuildId(),
+                option is ChannelOption.Off ? null : channel?.GetChannelId());
 
 
             await ctx.EditReplyAsync(message: option is ChannelOption.Off
@@ -92,7 +92,7 @@ public partial class LogSettingsCommands
                 : $"Updated {logSetting} to {channel?.Mention}");
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = guild.Id,
+                GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Description = option is ChannelOption.Off
                     ? $"{ctx.User.Mention} disabled {logSetting}."

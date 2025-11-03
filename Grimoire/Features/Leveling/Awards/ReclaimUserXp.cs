@@ -78,11 +78,11 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
         await dbContext.XpHistory.AddAsync(
             new XpHistory
             {
-                UserId = user.Id,
-                GuildId = guild.Id,
+                UserId = user.GetUserId(),
+                GuildId = guild.GetGuildId(),
                 Xp = -xpToTake,
                 Type = XpHistoryType.Reclaimed,
-                AwarderId = ctx.User.Id,
+                AwarderId = ctx.GetModeratorId(),
                 TimeOut = DateTimeOffset.UtcNow
             });
         await dbContext.SaveChangesAsync();
@@ -91,7 +91,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             $"{xpToTake} xp has been taken from {user.Mention}.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Description = $"{xpToTake} xp has been taken from {user.Mention} by {ctx.User.Mention}.",
             Color = GrimoireColor.Purple

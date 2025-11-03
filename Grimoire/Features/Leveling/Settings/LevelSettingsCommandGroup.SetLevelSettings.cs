@@ -11,11 +11,12 @@ using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using LanguageExt;
 using LanguageExt.Common;
-using LanguageExt.SomeHelp;
+using static LanguageExt.Prelude;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -52,38 +53,28 @@ public sealed partial class LevelSettingsCommandGroup
 
         var guild = ctx.Guild!;
 
-        await this._settingsModule.GetLevelingSettings(guild.Id)
-                .Map(entry => UpdateSetting(entry, levelSettings, value))
-                .BindAsync(async entry  => await PersistSettings(guild.Id, entry, this._settingsModule))
-                .ToAsync()
-                .MatchAsync(
-                    async _ => await HandleSettingSuccess(ctx, guild, levelSettings, value, this._guildLog),
-                    async error => await ctx.SendErrorResponseAsync(error.Message));
+        await this._settingsModule.GetLevelingSettingsTest(guild.GetGuildId())
+            .Map(settings => UpdateSetting(settings, levelSettings, value))
+            .Bind(newSettings => liftIO(() => this._settingsModule.SetLevelingSettings(guild.GetGuildId(), newSettings)))
+            .Match(
+                _ => HandleSettingSuccess(ctx, guild, levelSettings, value, this._guildLog),
+                error => ctx.SendErrorResponseAsync(error.Message)).RunAsync();
     }
 
 
 
-    private static Either<Error, SettingsModule.LevelingSettingEntry> UpdateSetting(
+    private static SettingsModule.LevelingSettingEntry UpdateSetting(
         SettingsModule.LevelingSettingEntry settings,
         LevelSettings levelSettings,
         int value) =>
         levelSettings switch
         {
             LevelSettings.TextTime => settings with { TextTime = TimeSpan.FromMinutes(value) },
-            LevelSettings.Amount => settings with { Amount = value },
-            LevelSettings.Base => settings with { Base = value },
-            LevelSettings.Modifier => settings with { Modifier = value },
-            _ => Error.New(new UnreachableException("Invalid setting."))
+            LevelSettings.Amount => settings with { Amount = new XpGainAmount(value) },
+            LevelSettings.Base => settings with { Base = new LevelScalingBase(value) },
+            LevelSettings.Modifier => settings with { Modifier = new LevelScalingModifier(value) },
+            _ => throw new UnreachableException("Invalid setting.")
         };
-
-    private static async Task<Either<Error, SettingsModule.LevelingSettingEntry>> PersistSettings(
-        ulong guildId,
-        SettingsModule.LevelingSettingEntry settings,
-        SettingsModule settingsModule)
-    {
-        await settingsModule.SetLevelingSettings(guildId, settings);
-        return settings;
-    }
 
     private static async Task HandleSettingSuccess(
         CommandContext ctx,
@@ -93,10 +84,9 @@ public sealed partial class LevelSettingsCommandGroup
         GuildLog guildLog)
     {
         await ctx.EditReplyAsync(message: $"Updated {levelSettings} level setting to {value}");
-
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
             Description = $"{ctx.User.Mention} updated {levelSettings} level setting to {value}"
@@ -123,18 +113,17 @@ public sealed partial class LevelSettingsCommandGroup
 
         await ctx.GetChannelOption(option, channel)
             .Bind(ch => ValidateChannelPermissions(guild, ch))
-            .Match(
-                Right: async ch => await HandleSuccess(
+            .Match(ch => HandleSuccess(
                     ctx, guild, option, ch, this._settingsModule, guildLog),
-                Left: async error => await ctx.SendErrorResponseAsync(error.Message));
+                error => ctx.SendErrorResponseAsync(error.Message));
     }
 
-    private static Either<Error, DiscordChannel?> ValidateChannelPermissions(
+    private static  Fin<DiscordChannel?> ValidateChannelPermissions(
         DiscordGuild guild,
         DiscordChannel? channel)
     {
         if (channel is null)
-            return (DiscordChannel?)null;
+            return (DiscordChannel?) null;
 
         var permissions = channel.PermissionsFor(guild.CurrentMember);
 
@@ -151,7 +140,7 @@ public sealed partial class LevelSettingsCommandGroup
         SettingsModule settingsModule,
         GuildLog guildLog)
     {
-        await settingsModule.SetLogChannelSetting(GuildLogType.Leveling, guild.Id, channel?.Id);
+        await settingsModule.SetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId(), channel?.GetChannelId());
 
         await ctx.EditReplyAsync(message: option is ChannelOption.Off
             ? "Disabled the level log."
@@ -159,7 +148,7 @@ public sealed partial class LevelSettingsCommandGroup
 
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
             Description = option is ChannelOption.Off

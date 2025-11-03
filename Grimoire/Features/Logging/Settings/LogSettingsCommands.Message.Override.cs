@@ -39,10 +39,10 @@ public partial class LogSettingsCommands
             var guild = ctx.Guild!;
 
             if (overrideSetting is MessageLogOverrideSetting.Inherit)
-                await this._settingsModule.RemoveChannelLogOverride(channel.Id, guild.Id);
+                await this._settingsModule.RemoveChannelLogOverride(channel.GetChannelId(), guild.GetGuildId());
             else
-                await this._settingsModule.SetChannelLogOverride(channel.Id,
-                    guild.Id,
+                await this._settingsModule.SetChannelLogOverride(channel.GetChannelId(),
+                    guild.GetGuildId(),
                     overrideSetting switch
                     {
                         MessageLogOverrideSetting.Always =>
@@ -70,7 +70,7 @@ public partial class LogSettingsCommands
             await ctx.EditReplyAsync(GrimoireColor.Purple, message);
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = channel.Guild.Id,
+                GuildId = channel.Guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Title = $"{ctx.User.Mention} updated the channel overrides",
                 Description = message,

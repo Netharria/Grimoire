@@ -24,5 +24,15 @@ internal sealed class OldLogMessageConfiguration : IEntityTypeConfiguration<OldL
         builder.HasIndex(x => x.CreatedAt);
         builder.Property(e => e.TimesTried)
             .HasDefaultValue(0);
+
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+
+        builder.Property(e => e.Id)
+            .HasConversion(e => e.Value, value => new MessageId(value));
+
+
+        builder.Property(e => e.ChannelId)
+            .HasConversion(e => e.Value, value => new ChannelId(value));
     }
 }

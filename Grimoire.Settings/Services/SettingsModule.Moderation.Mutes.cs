@@ -17,8 +17,8 @@ public partial class SettingsModule
 {
     private const string MuteRoleCacheKeyPrefix = "MuteRole_{0}";
 
-    public async Task<ulong?> GetMuteRole(
-        ulong guildId,
+    public async Task<RoleId?> GetMuteRole(
+        GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
@@ -28,7 +28,7 @@ public partial class SettingsModule
     }
 
     private async Task<MuteCacheEntry?> GetMuteRoleCacheEntry(
-        ulong guildId,
+        GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         var cacheKey = string.Format(MuteRoleCacheKeyPrefix, guildId);
@@ -45,7 +45,7 @@ public partial class SettingsModule
         }, this._cacheEntryOptions);
     }
 
-    public async Task SetMuteRole(ulong muteRoleId, ulong guildId, CancellationToken cancellationToken = default)
+    public async Task SetMuteRole(RoleId muteRoleId, GuildId guildId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var result = await dbContext
@@ -62,8 +62,8 @@ public partial class SettingsModule
     }
 
     public async Task<bool> IsMemberMuted(
-        ulong userId,
-        ulong guildId,
+        UserId userId,
+        GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -77,9 +77,9 @@ public partial class SettingsModule
     }
 
     public async Task AddMute(
-        ulong userId,
-        ulong guildId,
-        long sinId,
+        UserId userId,
+        GuildId guildId,
+        SinId sinId,
         DateTimeOffset muteEndTime,
         CancellationToken cancellationToken = default)
     {
@@ -93,7 +93,7 @@ public partial class SettingsModule
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<Mute?> RemoveMute(ulong userId, ulong guildId, CancellationToken cancellationToken = default)
+    public async Task<Mute?> RemoveMute(UserId userId, GuildId guildId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingMute = await dbContext.Mutes
@@ -118,7 +118,7 @@ public partial class SettingsModule
             yield return expiredMutes;
     }
 
-    public async IAsyncEnumerable<Mute> GetAllMutes(ulong guildId,
+    public async IAsyncEnumerable<Mute> GetAllMutes(GuildId guildId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -132,6 +132,6 @@ public partial class SettingsModule
 
     private record struct MuteCacheEntry
     {
-        public ulong? Id { get; init; }
+        public RoleId? Id { get; init; }
     }
 }

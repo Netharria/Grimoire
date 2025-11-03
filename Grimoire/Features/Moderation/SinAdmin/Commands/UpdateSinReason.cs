@@ -24,7 +24,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
     [Description("Update the reason for a user's sin.")]
     public async Task ReasonAsync(CommandContext ctx,
         [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be updated.")]
-        int sinId,
+        SinId sinId,
         [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason the sin will be updated to.")]
         string reason)
     {
@@ -36,12 +36,12 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var result = await dbContext.Sins
             .Where(sin => sin.Id == sinId)
-            .Where(sin => sin.GuildId == guild.Id)
+            .Where(sin => sin.GuildId == guild.GetGuildId())
             .Select(sin => new
             {
                 // ReSharper disable AccessToDisposedClosure
                 Sin = sin,
-                UserName = dbContext.UsernameHistory
+                UserName = (Username?) dbContext.UsernameHistory
                     .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
                     .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                     .Select(usernameHistory => usernameHistory.Username)
@@ -65,14 +65,14 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
         await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
             .WithAuthor("Reason Updated")
             .AddField("Id", sinId.ToString(), true)
-            .AddField("User", result.UserName ?? "Unknown", true)
+            .AddField("User", result.UserName?.Value ?? "Unknown", true)
             .AddField("Reason", reason)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green));
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Green,
             Description = $"{ctx.User.Mention} updated reason to {reason} for {message}"

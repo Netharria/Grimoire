@@ -23,7 +23,7 @@ public sealed class LockedTreadEvents(SettingsModule settingsModule)
             return;
         if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermission.ManageMessages))
             return;
-        if (await this._settingsModule.IsChannelLocked(args.Guild.Id, args.Channel.Id))
+        if (await this._settingsModule.IsChannelLocked(args.GetChannelId(), args.Guild.GetGuildId()))
             await args.Message.DeleteAsync("Thread is locked.");
     }
 
@@ -35,7 +35,7 @@ public sealed class LockedTreadEvents(SettingsModule settingsModule)
             return;
         if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermission.ManageMessages))
             return;
-        if (await this._settingsModule.IsChannelLocked(args.Guild.Id, args.Channel.Id))
+        if (await this._settingsModule.IsChannelLocked(args.Channel.GetChannelId(), args.Guild.GetGuildId()))
             await args.Message.DeleteReactionAsync(args.Emoji, args.User, "Thread is locked.");
     }
 }

@@ -30,7 +30,7 @@ internal sealed partial class GeneralSettingsCommands
 
         var channelOption = ctx.GetChannelOption(option, channel);
 
-        if (channelOption.IsLeft)
+        if (channelOption.IsFail)
         {
             await ctx.EditReplyAsync(DiscordColor.Red, $"");
             return;
@@ -40,14 +40,14 @@ internal sealed partial class GeneralSettingsCommands
             success => channel = success,
             error => { });
 
-        await this._settingsModule.SetUserCommandChannelSetting(guild.Id, channel?.Id);
+        await this._settingsModule.SetUserCommandChannelSetting(guild.GetGuildId(), channel?.GetChannelId());
 
         if (option is ChannelOption.Off)
         {
             await ctx.EditReplyAsync(message: "Disabled the User Command Channel.");
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = guild.Id,
+                GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Description = $"{ctx.User.Mention} disabled the User Command Channel.",
                 Color = GrimoireColor.Purple
@@ -58,7 +58,7 @@ internal sealed partial class GeneralSettingsCommands
         await ctx.EditReplyAsync(message: $"Updated the User Command Channel to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
-            GuildId = guild.Id,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Description = $"{ctx.User.Mention} updated the User Command Channel to {channel?.Mention}.",
             Color = GrimoireColor.Purple

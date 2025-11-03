@@ -19,3 +19,4 @@ public sealed partial class SettingsModule(
     private readonly IDbContextFactory<SettingsDbContext> _dbContextFactory = dbContextFactory;
     private readonly IMemoryCache _memoryCache = memoryCache;
 }
+

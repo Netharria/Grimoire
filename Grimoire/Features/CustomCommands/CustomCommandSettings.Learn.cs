@@ -17,8 +17,6 @@ namespace Grimoire.Features.CustomCommands;
 
 public sealed partial class CustomCommandSettings
 {
-    [GeneratedRegex(@"[0-9A-Fa-f]{6}\b", RegexOptions.None, 1000)]
-    private static partial Regex ValidHexColor();
 
     //todo: fix this when variadic arguments are fixed
     [UsedImplicitly]
@@ -32,7 +30,7 @@ public sealed partial class CustomCommandSettings
         [MinMaxLength(0, 24)]
         [Parameter("Name")]
         [Description("The name that the command will be called. This is used to activate the command.")]
-        string name,
+        CustomCommandName name,
         [MinMaxLength(maxLength: 2000)]
         [Parameter("Content")]
         [Description("The content of the command. Use %mention or %message to add a message arguments")]
@@ -40,7 +38,7 @@ public sealed partial class CustomCommandSettings
         [Parameter("Embed")] [Description("Put the message in an embed")]
         bool embed = false,
         [MinMaxLength(maxLength: 6)] [Parameter("EmbedColor")] [Description("Hexadecimal color of the embed")]
-        string? embedColor = null
+        CustomCommandEmbedColor? embedColor = null
         // ,
         // [Parameter("RestrictedUse")]
         // [Description("Only explicitly allowed roles can use this command")]
@@ -55,25 +53,10 @@ public sealed partial class CustomCommandSettings
         const bool restrictedUse = false;
         await ctx.DeferResponseAsync();
 
-        if (name.Contains(' '))
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "No spaces are allowed in command name.");
-            return;
-        }
 
-        if (!string.IsNullOrWhiteSpace(embedColor) && !ValidHexColor().IsMatch(embedColor))
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Embed Color provided but is not a valid hex color code.");
-            return;
-        }
+        var guild = ctx.Guild!;
 
-        if (ctx.Guild is null)
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
-            return;
-        }
-
-        allowedRoles = Array.Empty<DiscordRole>();
+        allowedRoles = [];
 
         if (restrictedUse && allowedRoles.Count != 0)
         {
@@ -81,23 +64,23 @@ public sealed partial class CustomCommandSettings
             return;
         }
 
-        await SaveCommand(name, ctx.Guild.Id, content, embed, embedColor, restrictedUse,
-            allowedRoles.Select(x => x.Id).ToArray());
+        await SaveCommand(name, guild.GetGuildId(), content, embed, embedColor, restrictedUse,
+            allowedRoles.Select(x => x.GetRoleId()).ToArray());
 
         await ctx.EditReplyAsync(GrimoireColor.Green, $"Learned new command: {name}");
         await this._guildLog.SendLogMessageAsync(
             new GuildLogMessage
             {
-                GuildId = ctx.Guild.Id,
+                GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,
                 Description =
-                    $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember.Mention} to learn a new command: {name}",
+                    $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to learn a new command: {name}",
                 Color = GrimoireColor.Purple
             });
     }
 
-    private async Task SaveCommand(string commandName, ulong guildId, string content, bool isEmbedded,
-        string? embedColor, bool restrictedUse, ICollection<ulong> permissionRoles,
+    private async Task SaveCommand(CustomCommandName commandName, GuildId guildId, string content, bool isEmbedded,
+        CustomCommandEmbedColor? embedColor, bool restrictedUse, ICollection<RoleId> permissionRoles,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);

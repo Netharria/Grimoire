@@ -43,14 +43,14 @@ internal class SpamFilterOverrideCommands(
 
         if (overrideSetting is SpamFilterOverrideSetting.Inherit)
         {
-            await this._spamTrackerModule.RemoveOverride(channel.Id, guild.Id);
+            await this._spamTrackerModule.RemoveOverride(channel.GetChannelId(), guild.GetGuildId());
             await ctx.EditReplyAsync(GrimoireColor.Purple, $"Set {channel.Mention} to inherit spam filter settings.");
             return;
         }
 
         await this._spamTrackerModule.AddOrUpdateOverride(
-            channel.Id,
-            guild.Id,
+            channel.GetChannelId(),
+            guild.GetGuildId(),
             overrideSetting switch
             {
                 SpamFilterOverrideSetting.Always => SpamFilterOverrideOption.AlwaysFilter,
@@ -86,7 +86,7 @@ internal class SpamFilterOverrideCommands(
 
         var spamFilterOverrideString = new StringBuilder();
 
-        await foreach (var spamFilterOverride in this._settingsModule.GetAllSpamFilterOverrideAsync(guild.Id))
+        await foreach (var spamFilterOverride in this._settingsModule.GetAllSpamFilterOverrideAsync(guild.GetGuildId()))
         {
             var channel = await guild.GetChannelOrDefaultAsync(spamFilterOverride.ChannelId);
             if (channel is null)

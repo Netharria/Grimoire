@@ -18,7 +18,7 @@ public sealed partial class PublishCommands
     public async Task PublishBanAsync(
         CommandContext ctx,
         [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be published.")]
-        int sinId)
+        SinId sinId)
     {
         await ctx.DeferResponseAsync();
 
@@ -29,7 +29,7 @@ public sealed partial class PublishCommands
             .AsNoTracking()
             .Where(sin => sin.SinType == SinType.Ban)
             .Where(sin => sin.Id == sinId)
-            .Where(sin => sin.GuildId == guild.Id)
+            .Where(sin => sin.GuildId == guild.GetGuildId())
             .Select(sin => new
             {
                 // ReSharper disable AccessToDisposedClosure
@@ -40,7 +40,7 @@ public sealed partial class PublishCommands
                     .First().Username,
                 sin.SinOn,
                 sin.Reason,
-                PublishedBanId = (ulong?)sin.PublishMessages.First(x => x.PublishType == PublishType.Ban).MessageId
+                PublishedBanId = (MessageId?)sin.PublishMessages.First(x => x.PublishType == PublishType.Ban).MessageId
                 // ReSharper restore AccessToDisposedClosure
             })
             .FirstOrDefaultAsync();
@@ -55,25 +55,26 @@ public sealed partial class PublishCommands
             result.PublishedBanId, result.SinOn, PublishType.Ban);
 
         await banLogMessage.Match(
+            async err => await ctx.EditReplyAsync(GrimoireColor.Red, $"Failed to publish ban reason: {err.Message}"),
             async msg =>
             {
                 if (result.PublishedBanId is null)
                 {
                     await dbContext.PublishedMessages.AddAsync(
-                        new PublishedMessage { MessageId = msg.Id, SinId = sinId, PublishType = PublishType.Ban });
+                        new PublishedMessage { MessageId = msg.GetMessageId(), SinId = sinId, PublishType = PublishType.Ban });
                     await dbContext.SaveChangesAsync();
                 }
 
                 await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published ban : {sinId}");
                 await this._guildLog.SendLogMessageAsync(new GuildLogMessage
                 {
-                    GuildId = guild.Id,
+                    GuildId = guild.GetGuildId(),
                     GuildLogType = GuildLogType.Moderation,
                     Color = GrimoireColor.Purple,
                     Description = $"{ctx.User.Mention} published ban reason of sin {sinId}"
                 });
-            },
-            async err => await ctx.EditReplyAsync(GrimoireColor.Red, $"Failed to publish ban reason: {err.Message}")
+            }
+
         );
 
 

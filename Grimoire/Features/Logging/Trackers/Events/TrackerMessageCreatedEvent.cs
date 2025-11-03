@@ -24,12 +24,12 @@ internal sealed class TrackerMessageCreatedEvent(
 
         await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomMessage
         {
-            GuildId = args.Guild.Id,
+            GuildId = args.Guild.GetGuildId(),
             TrackerId = args.Author.Id,
             TrackerIdType = TrackerIdType.UserId,
             Message = await this._imageEmbedService.BuildImageEmbedAsync(
                 args.Message.Attachments.Select(x => x.Url).OfType<string>().ToArray(),
-                args.Author.Id,
+                args.GetAuthorUserId(),
                 new DiscordEmbedBuilder()
                     .AddField("User", args.Author.Mention, true)
                     .AddField("Channel", args.Channel.Mention, true)

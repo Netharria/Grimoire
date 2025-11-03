@@ -25,13 +25,17 @@ public sealed class BulkMessageDeletedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, MessagesBulkDeletedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.Id))
+        if(args.Guild is null) return;
+
+        var guild = args.Guild!;
+
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()))
             return;
-        var messageIds = args.Messages.Select(x => x.Id).ToHashSet();
+        var messageIds = args.Messages.Select(x => x.GetMessageId()).ToHashSet();
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var messages = await dbContext.MessageHistory
             .AsNoTracking()
-            .Where(history => history.GuildId == args.Guild.Id)
+            .Where(history => history.GuildId == guild.GetGuildId())
             .Where(history => messageIds.Contains(history.MessageId))
             .GroupBy(history => new { history.MessageId, history.GuildId })
             .Select(historyGroup => new MessageDto
@@ -58,7 +62,7 @@ public sealed class BulkMessageDeletedEvent(
             {
                 MessageId = x.MessageId,
                 Action = MessageAction.Deleted,
-                GuildId = args.Guild.Id,
+                GuildId = guild.GetGuildId(),
                 MessageContent = x.MessageContent
             });
 
@@ -68,14 +72,14 @@ public sealed class BulkMessageDeletedEvent(
         var embed = new DiscordEmbedBuilder()
             .WithTitle("Bulk Message Delete")
             .WithDescription($"**Message Count:** {messages.Length}\n" +
-                             $"**Channel:** {ChannelExtensions.Mention(args.Channel.Id)}\n" +
+                             $"**Channel:** {args.Channel.Mention}\n" +
                              "Full message dump attached.")
             .WithColor(GrimoireColor.Red);
 
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
             {
-                GuildId = args.Guild.Id,
+                GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.BulkMessageDeleted,
                 Message = new DiscordMessageBuilder()
                     .AddEmbed(embed)
@@ -91,13 +95,13 @@ public sealed class BulkMessageDeletedEvent(
         var stringBuilder = new StringBuilder();
         foreach (var messageDto in messages)
         {
-            var author = await guild.GetMemberAsync(messageDto.UserId);
+            var author = await guild.GetMemberOrDefaultAsync(messageDto.UserId);
             stringBuilder.AppendFormat(
                     "Author: {0} ({1})\n" +
                     "Id: {2}\n" +
                     "Content: {3}\n" +
                     (messageDto.Attachments.Any() ? "Attachments: {4}\n" : string.Empty),
-                    author.Mention,
+                    author?.Mention ?? "Unknown User",
                     messageDto.UserId,
                     messageDto.MessageId,
                     messageDto.MessageContent,
@@ -115,9 +119,9 @@ public sealed class BulkMessageDeletedEvent(
 
     private sealed record MessageDto
     {
-        public required ulong UserId { get; init; }
-        public required ulong MessageId { get; init; }
-        public required string MessageContent { get; init; }
+        public required UserId UserId { get; init; }
+        public required MessageId MessageId { get; init; }
+        public required MessageContent? MessageContent { get; init; }
         public required IEnumerable<AttachmentDto> Attachments { get; init; }
     }
 }

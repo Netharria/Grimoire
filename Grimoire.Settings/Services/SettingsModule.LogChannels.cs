@@ -14,7 +14,7 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<ulong?> GetLogChannelSetting(GuildLogType guildLogType, ulong guildId,
+    public async Task<ChannelId?> GetLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(guildLogType.GetLogTypeModule(), guildId, cancellationToken))
@@ -79,8 +79,8 @@ public sealed partial class SettingsModule
         return logChannelSetting?.ChannelId;
     }
 
-    public async Task SetLogChannelSetting(GuildLogType guildLogType, ulong guildId,
-        ulong? channelId,
+    public async Task SetLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
+        ChannelId? channelId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -180,7 +180,7 @@ public sealed partial class SettingsModule
         this._memoryCache.Remove(guildLogType.GetCacheKey(guildId));
     }
 
-    public async Task<ulong?> GetUserCommandChannel(ulong guildId, CancellationToken cancellationToken = default)
+    public async Task<ChannelId?> GetUserCommandChannel(GuildId guildId, CancellationToken cancellationToken = default)
     {
         var cacheKey = $"UserCommandChannel-{guildId}";
 
@@ -199,7 +199,7 @@ public sealed partial class SettingsModule
         return logChannelSetting?.ChannelId;
     }
 
-    public async Task SetUserCommandChannelSetting(ulong guildId, ulong? channelId,
+    public async Task SetUserCommandChannelSetting(GuildId guildId, ChannelId? channelId,
         CancellationToken cancellationToken = default)
     {
         var cacheKey = $"UserCommandChannel-{guildId}";
@@ -217,6 +217,6 @@ public sealed partial class SettingsModule
 
     private record GuildLogCacheEntry
     {
-        public required ulong? ChannelId { get; init; }
+        public required ChannelId? ChannelId { get; init; }
     }
 }

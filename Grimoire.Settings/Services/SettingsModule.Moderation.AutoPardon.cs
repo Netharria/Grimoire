@@ -13,10 +13,10 @@ namespace Grimoire.Settings.Services;
 
 public partial class SettingsModule
 {
-    private static string GetAutoPardonCacheKey(ulong guildId)
+    private static string GetAutoPardonCacheKey(GuildId guildId)
         => $"AutoPardon-{guildId}";
 
-    public async Task<TimeSpan> GetAutoPardonDuration(ulong guildId, CancellationToken cancellationToken = default)
+    public async Task<TimeSpan> GetAutoPardonDuration(GuildId guildId, CancellationToken cancellationToken = default)
     {
         return await this._memoryCache.GetOrCreateAsync(GetAutoPardonCacheKey(guildId), async entry =>
         {
@@ -32,7 +32,7 @@ public partial class SettingsModule
     }
 
     public async Task SetAutoPardonDuration(
-        ulong guildId,
+        GuildId guildId,
         TimeSpan autoPardonAfter,
         CancellationToken cancellationToken = default)
     {

@@ -12,14 +12,15 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed class Pardon
 {
-    public long SinId { get; init; }
+    public SinId SinId { get; init; }
 
     public Sin? Sin { get; init; }
 
-    public required ulong ModeratorId { get; init; }
+    public required ModeratorId ModeratorId { get; init; }
 
-    public required ulong GuildId { get; init; }
+    public required GuildId GuildId { get; init; }
     public DateTimeOffset PardonDate { get; init; }
 
     public required string Reason { get; set; }
 }
+
