@@ -10,6 +10,7 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -21,30 +22,32 @@ public sealed partial class CustomCommandSettings
     [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
     [Command("Forget")]
     [Description("Forget a command that you have saved.")]
-    public async Task Forget(
+    public Task Forget(
         CommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
         [Parameter("Name")]
         [Description("The name of the command to forget.")]
-        CustomCommandName name)
-    {
-        await ctx.DeferResponseAsync();
-
-        var guild = ctx.Guild!;
-
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-
-        await dbContext.CustomCommands
-            .Where(x => x.Name == name && x.GuildId == guild.GetGuildId())
-            .ExecuteDeleteAsync();
-
-        await ctx.EditReplyAsync(GrimoireColor.Green, $"Forgot command: {name}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Description = $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command: {name}",
-            Color = GrimoireColor.Purple
-        });
-    }
+        CustomCommandName name) =>
+        (
+            from guild in convert<DiscordGuild>(ctx.Guild).ToEff()
+            from _1 in ctx.DeferResponse()
+            from _2 in this._dbContextFactory.StartTransaction(
+                (dbContext, cancellationToken) =>
+                            dbContext.CustomCommands
+                            .Where(x => x.Name == name && x.GuildId == guild.GetGuildId())
+                            .ExecuteDeleteAsync(cancellationToken)
+                            .ToUnit())
+            from _3 in ctx.EditReply(GrimoireColor.Green, $"Forgot command: {name}")
+            from _4 in this._guildLog.SendLogMessage(new GuildLogMessage
+                {
+                    GuildId = guild.GetGuildId(),
+                    GuildLogType = GuildLogType.Moderation,
+                    Description = $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command: {name}",
+                    Color = GrimoireColor.Purple
+                })
+            select unit)
+        .Run()
+        .Match(
+            succes => succes.AsTask(),
+            error => ctx.SendErrorResponseAsync(error.Message));
 }

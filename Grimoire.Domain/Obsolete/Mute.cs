@@ -14,7 +14,6 @@ namespace Grimoire.Domain.Obsolete;
 public sealed class Mute
 {
     public long? SinId { get; init; }
-    public Sin? Sin { get; init; }
     public DateTimeOffset EndTime { get; init; }
     public ulong UserId { get; set; }
     public ulong GuildId { get; set; }

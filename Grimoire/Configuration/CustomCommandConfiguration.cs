@@ -29,5 +29,10 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
                 color => new CustomCommandEmbedColor(color))
             .IsRequired(false);
 
+        builder.Property(e => e.GuildId)
+            .HasConversion(
+                guildId => guildId.Value,
+                id => new GuildId(id));
+
     }
 }

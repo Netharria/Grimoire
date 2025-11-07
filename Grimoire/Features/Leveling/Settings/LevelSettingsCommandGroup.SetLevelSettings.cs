@@ -22,7 +22,7 @@ namespace Grimoire.Features.Leveling.Settings;
 
 public sealed partial class LevelSettingsCommandGroup
 {
-    public enum LevelSettings
+    public enum LevelSettingsOptions
     {
         [ChoiceDisplayName("Timeout between xp gains in minutes")]
         TextTime,
@@ -35,7 +35,19 @@ public sealed partial class LevelSettingsCommandGroup
 
         [ChoiceDisplayName("Amount per xp gain.")]
         Amount
+
+
     }
+
+    public static SettingsModule.LevelSettings ToLevelSettings(LevelSettingsOptions levelSettingsOptions)
+        => levelSettingsOptions switch
+        {
+            LevelSettingsOptions.Amount => SettingsModule.LevelSettings.Amount,
+            LevelSettingsOptions.Base => SettingsModule.LevelSettings.Base,
+            LevelSettingsOptions.Modifier => SettingsModule.LevelSettings.Modifier,
+            LevelSettingsOptions.TextTime => SettingsModule.LevelSettings.TextTime,
+            _ => throw new UnreachableException("Invalid setting.")
+        };
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Leveling)]
@@ -45,7 +57,7 @@ public sealed partial class LevelSettingsCommandGroup
     public async Task SetAsync(
         CommandContext ctx,
         [Parameter("Setting")] [Description("The setting to change.")]
-        LevelSettings levelSettings,
+        LevelSettingsOptions levelSettingsOptions,
         [MinMaxValue(1, int.MaxValue)] [Parameter("Value")] [Description("The value to change the setting to.")]
         int value)
     {
@@ -53,43 +65,27 @@ public sealed partial class LevelSettingsCommandGroup
 
         var guild = ctx.Guild!;
 
-        await this._settingsModule.GetLevelingSettingsTest(guild.GetGuildId())
-            .Map(settings => UpdateSetting(settings, levelSettings, value))
-            .Bind(newSettings => liftIO(() => this._settingsModule.SetLevelingSettings(guild.GetGuildId(), newSettings)))
+        await this._settingsModule.SetLevelingSettings(ToLevelSettings(levelSettingsOptions), value, guild.GetGuildId())
+            .Run()
             .Match(
-                _ => HandleSettingSuccess(ctx, guild, levelSettings, value, this._guildLog),
-                error => ctx.SendErrorResponseAsync(error.Message)).RunAsync();
+                _ => HandleSettingSuccess(ctx, guild, levelSettingsOptions, value, this._guildLog),
+                error => ctx.SendErrorResponseAsync(error.Message));
     }
-
-
-
-    private static SettingsModule.LevelingSettingEntry UpdateSetting(
-        SettingsModule.LevelingSettingEntry settings,
-        LevelSettings levelSettings,
-        int value) =>
-        levelSettings switch
-        {
-            LevelSettings.TextTime => settings with { TextTime = TimeSpan.FromMinutes(value) },
-            LevelSettings.Amount => settings with { Amount = new XpGainAmount(value) },
-            LevelSettings.Base => settings with { Base = new LevelScalingBase(value) },
-            LevelSettings.Modifier => settings with { Modifier = new LevelScalingModifier(value) },
-            _ => throw new UnreachableException("Invalid setting.")
-        };
 
     private static async Task HandleSettingSuccess(
         CommandContext ctx,
         DiscordGuild guild,
-        LevelSettings levelSettings,
+        LevelSettingsOptions levelSettingsOptions,
         int value,
         GuildLog guildLog)
     {
-        await ctx.EditReplyAsync(message: $"Updated {levelSettings} level setting to {value}");
+        await ctx.EditReplyAsync(message: $"Updated {levelSettingsOptions} level setting to {value}");
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
-            Description = $"{ctx.User.Mention} updated {levelSettings} level setting to {value}"
+            Description = $"{ctx.User.Mention} updated {levelSettingsOptions} level setting to {value}"
         });
     }
 
@@ -114,7 +110,7 @@ public sealed partial class LevelSettingsCommandGroup
         await ctx.GetChannelOption(option, channel)
             .Bind(ch => ValidateChannelPermissions(guild, ch))
             .Match(ch => HandleSuccess(
-                    ctx, guild, option, ch, this._settingsModule, guildLog),
+                    ctx, guild, option, ch, this._settingsModule, this._guildLog),
                 error => ctx.SendErrorResponseAsync(error.Message));
     }
 

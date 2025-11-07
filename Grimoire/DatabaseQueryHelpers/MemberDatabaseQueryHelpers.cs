@@ -12,10 +12,12 @@ public static class MemberDatabaseQueryHelpers
     public static async Task<bool> AddMissingNickNameHistoryAsync(this DbSet<NicknameHistory> databaseNicknames,
         DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {
+        var discordMembers = discordGuild.Members.Select(member => member.Value.GetUserId());
+
         var existingNicknames = await databaseNicknames
             .AsNoTracking()
             .Where(x => x.GuildId == discordGuild.GetGuildId())
-            .Where(x => discordGuild.Members.Keys.Contains(x.UserId.Value))
+            .Where(x => discordMembers.Contains(x.UserId))
             .GroupBy(nickname => new { nickname.UserId, nickname.GuildId })
             .Select(nicknameGroup => new
             {
@@ -41,10 +43,12 @@ public static class MemberDatabaseQueryHelpers
     public static async Task<bool> AddMissingAvatarsHistoryAsync(this DbSet<Avatar> databaseAvatars,
         DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {
+        var discordMembers = discordGuild.Members.Select(member => member.Value.GetUserId());
+
         var existingAvatars = await databaseAvatars
             .AsNoTracking()
             .Where(avatar => avatar.GuildId == discordGuild.GetGuildId())
-            .Where(avatar => discordGuild.Members.Keys.Contains(avatar.UserId.Value))
+            .Where(avatar => discordMembers.Contains(avatar.UserId))
             .GroupBy(avatar => new { avatar.UserId, avatar.GuildId })
             .Select(avatarGroup
                 => new

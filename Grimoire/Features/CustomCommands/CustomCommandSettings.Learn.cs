@@ -6,18 +6,19 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.Text.RegularExpressions;
+using System.Runtime.InteropServices.JavaScript;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
+using LanguageExt.Common;
 
 namespace Grimoire.Features.CustomCommands;
 
 public sealed partial class CustomCommandSettings
 {
-
     //todo: fix this when variadic arguments are fixed
     [UsedImplicitly]
     [RequireGuild]
@@ -51,78 +52,69 @@ public sealed partial class CustomCommandSettings
     {
         IReadOnlyList<DiscordRole> allowedRoles;
         const bool restrictedUse = false;
-        await ctx.DeferResponseAsync();
-
-
-        var guild = ctx.Guild!;
-
         allowedRoles = [];
 
-        if (restrictedUse && allowedRoles.Count != 0)
-        {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Command set as restricted but no roles allowed to use it.");
-            return;
-        }
 
-        await SaveCommand(name, guild.GetGuildId(), content, embed, embedColor, restrictedUse,
-            allowedRoles.Select(x => x.GetRoleId()).ToArray());
-
-        await ctx.EditReplyAsync(GrimoireColor.Green, $"Learned new command: {name}");
-        await this._guildLog.SendLogMessageAsync(
-            new GuildLogMessage
-            {
-                GuildId = guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Description =
-                    $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to learn a new command: {name}",
-                Color = GrimoireColor.Purple
-            });
+        await (
+            from _1 in ctx.DeferResponse()
+            from _2 in guard(restrictedUse && allowedRoles.Count == 0, Error.New("Command set as restricted but no roles allowed to use it."))
+            from guild in convert<DiscordGuild>(ctx.Guild).ToEff()
+            from _3 in SaveCommand(name, guild.GetGuildId(), content, embed, embedColor, restrictedUse,
+                allowedRoles.Select(x => x.GetRoleId()).ToArray())
+            from _4 in ctx.EditReply(GrimoireColor.Green, $"Learned new command: {name}")
+            from _5 in this._guildLog.SendLogMessage(
+                new GuildLogMessage
+                {
+                    GuildId = guild.GetGuildId(),
+                    GuildLogType = GuildLogType.Moderation,
+                    Description =
+                        $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to learn a new command: {name}",
+                    Color = GrimoireColor.Purple
+                })
+            select _5
+            )
+            .Run()
+            .Match(
+                Succ: result => result.AsTask(),
+                Fail: err => ctx.SendErrorResponseAsync(err.Message)
+            );
     }
 
-    private async Task SaveCommand(CustomCommandName commandName, GuildId guildId, string content, bool isEmbedded,
-        CustomCommandEmbedColor? embedColor, bool restrictedUse, ICollection<RoleId> permissionRoles,
-        CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+    private Eff<Unit> SaveCommand(
+        CustomCommandName commandName,
+        GuildId guildId,
+        string content,
+        bool isEmbedded,
+        CustomCommandEmbedColor? embedColor,
+        bool restrictedUse,
+        ICollection<RoleId> permissionRoles,
+        CancellationToken cancellationToken = default) =>
+        this._dbContextFactory.StartTransaction(
+            (dbContext, token) =>
+                from _1 in liftEff(() => dbContext.CustomCommands
+                    .Where(x => x.Name == commandName && x.GuildId == guildId)
+                    .ExecuteDeleteAsync(token))
+                from _2 in liftEff(() => dbContext.AddAsync(
+                    new CustomCommand
+                    {
+                        Name = commandName,
+                        GuildId = guildId,
+                        Content = content,
+                        HasMention = content.Contains("%mention", StringComparison.OrdinalIgnoreCase),
+                        HasMessage = content.Contains("%message", StringComparison.OrdinalIgnoreCase),
+                        IsEmbedded = isEmbedded,
+                        EmbedColor = embedColor,
+                        RestrictedUse = restrictedUse,
+                        CustomCommandRoles = permissionRoles.Select(x =>
+                                new CustomCommandRole
+                                    {
+                                        CustomCommandName = commandName, GuildId = guildId, RoleId = x
+                                    })
+                            .ToList()
+                    }, token))
+                from _3 in liftEff(() => dbContext.SaveChangesAsync(token))
+                select unit, cancellationToken
+        );
 
-        var result = await dbContext.CustomCommands
-            .Include(x => x.CustomCommandRoles)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(x => x.Name == commandName && x.GuildId == guildId,
-                cancellationToken);
-        var commandRoles = permissionRoles.Select(x =>
-            new CustomCommandRole { CustomCommandName = commandName, GuildId = guildId, RoleId = x }).ToList();
-        if (result is null)
-        {
-            result = new CustomCommand
-            {
-                Name = commandName,
-                GuildId = guildId,
-                Content = content,
-                HasMention = content.Contains("%mention", StringComparison.OrdinalIgnoreCase),
-                HasMessage = content.Contains("%message", StringComparison.OrdinalIgnoreCase),
-                IsEmbedded = isEmbedded,
-                EmbedColor = embedColor,
-                RestrictedUse = restrictedUse,
-                CustomCommandRoles = commandRoles
-            };
-            await dbContext.AddAsync(result, cancellationToken);
-        }
-        else
-        {
-            result.Name = commandName;
-            result.GuildId = guildId;
-            result.Content = content;
-            result.HasMention = content.Contains("%mention", StringComparison.OrdinalIgnoreCase);
-            result.HasMessage = content.Contains("%message", StringComparison.OrdinalIgnoreCase);
-            result.IsEmbedded = isEmbedded;
-            result.EmbedColor = embedColor;
-            result.RestrictedUse = restrictedUse;
-            result.CustomCommandRoles.Clear();
-            foreach (var role in commandRoles)
-                result.CustomCommandRoles.Add(role);
-        }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
 }

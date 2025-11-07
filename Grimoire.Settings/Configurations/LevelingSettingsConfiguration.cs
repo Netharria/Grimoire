@@ -26,17 +26,17 @@ internal sealed class LevelingSettingsConfiguration : IEntityTypeConfiguration<L
             .HasConversion(
                 e => e.Value,
                 value => new LevelScalingBase(value))
-            .HasDefaultValue(15);
+            .HasDefaultValue(new LevelScalingBase(15));
         builder.Property(e => e.Modifier)
             .HasConversion(
                 e => e.Value,
                 value => new LevelScalingModifier(value))
-            .HasDefaultValue(50);
+            .HasDefaultValue(new LevelScalingModifier(50));
         builder.Property(e => e.Amount)
             .HasConversion(
                 e => e.Value,
                 value => new XpGainAmount(value))
-            .HasDefaultValue(5);
+            .HasDefaultValue(new XpGainAmount(5));
 
 
         builder.Property(e => e.GuildId)

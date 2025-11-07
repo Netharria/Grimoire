@@ -9,6 +9,7 @@
 using System.Diagnostics;
 using LanguageExt;
 using LanguageExt.Common;
+using static LanguageExt.Prelude;
 
 namespace Grimoire.Extensions;
 
@@ -35,6 +36,29 @@ public static class CommandContextExtension
         return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
             await ctx.EditResponseAsync(
                 new DiscordWebhookBuilder().AddEmbed(embed)));
+    }
+
+    public static Eff<DiscordMessage> EditReply(
+        this CommandContext ctx,
+        DiscordColor? color = null,
+        string message = "",
+        string title = "",
+        string footer = "",
+        DiscordEmbed? embed = null,
+        DateTime? timeStamp = null)
+    {
+        timeStamp ??= DateTime.UtcNow;
+        embed ??= new DiscordEmbedBuilder()
+            .WithColor(color ?? GrimoireColor.Purple)
+            .WithAuthor(title)
+            .WithDescription(message)
+            .WithFooter(footer)
+            .WithTimestamp(timeStamp)
+            .Build();
+
+        return liftEff(() => DiscordRetryPolicy.RetryDiscordCall(async _ =>
+            await ctx.EditResponseAsync(
+                new DiscordWebhookBuilder().AddEmbed(embed))).AsTask());
     }
 
     public static async Task SendErrorResponseAsync(
@@ -81,4 +105,13 @@ public static class CommandContextExtension
         null;
     [Pure]
     public static ChannelId GetChannelId(this CommandContext ctx) => new (ctx.Channel.Id);
+
+    public static Eff<Unit> DeferResponse(this CommandContext ctx, bool ephemeral = false)
+    {
+        if (ctx is SlashCommandContext slashContext)
+            return liftIO(() => slashContext.DeferResponseAsync(ephemeral).AsTask()) ;
+        return ephemeral
+            ? Error.New("Can only send ephemeral messages in slash commands.")
+            : liftIO(() => ctx.DeferResponseAsync().AsTask());
+    }
 }

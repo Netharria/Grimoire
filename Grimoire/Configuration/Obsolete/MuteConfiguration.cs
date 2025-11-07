@@ -18,10 +18,7 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>
     public void Configure(EntityTypeBuilder<Mute> builder)
     {
         builder.HasKey(e => e.SinId);
-        builder.HasOne(e => e.Sin).WithOne()
-            .HasForeignKey<Mute>(e => e.SinId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+        builder.Property(e => e.SinId).ValueGeneratedNever();
         builder.Property(e => e.EndTime).IsRequired();
         builder.HasIndex(x => x.EndTime);
     }

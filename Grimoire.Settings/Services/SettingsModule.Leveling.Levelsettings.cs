@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.Contracts;
 using Grimoire.Settings.Domain;
 using LanguageExt;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,13 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
+    public enum LevelSettings
+    {
+        TextTime,
+        Base,
+        Modifier,
+        Amount
+    }
 
     private readonly LevelingSettingEntry _defaultLevelingSettings = new()
     {
@@ -36,100 +44,92 @@ public sealed partial class SettingsModule
 
     private static string GetLevelingCacheKey(GuildId guildId) => $"LevelingSettings_{guildId}";
 
-    public async Task<LevelingSettingEntry> GetLevelingSettings(GuildId guildId,
+    public Eff<LevelingSettingEntry> GetLevelingSettings(GuildId guildId,
         CancellationToken cancellationToken = default) =>
-        await this._memoryCache.GetOrCreateAsync(GetLevelingCacheKey(guildId), async cacheEntry =>
-        {
-            cacheEntry.SetOptions(this._cacheEntryOptions);
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            return await dbContext.LevelingSettings
-                       .AsNoTracking()
-                       .Where(settings => settings.GuildId == guildId)
-                       .Select(settings => new LevelingSettingEntry
-                       {
-                           Amount = settings.Amount,
-                           Base = settings.Base,
-                           Modifier = settings.Modifier,
-                           TextTime = settings.TextTime
-                       }).FirstOrDefaultAsync(cancellationToken) ?? this._defaultLevelingSettings;
-        }) ?? this._defaultLevelingSettings;
-
-    public IO<LevelingSettingEntry> GetLevelingSettingsTest(GuildId guildId,
-        CancellationToken cancellationToken = default) =>
-        liftIO(() => this._memoryCache.GetOrCreateAsync(GetLevelingCacheKey(guildId),
-            async cacheEntry =>
-            {
-                cacheEntry.SetOptions(this._cacheEntryOptions);
-                return await GetLevelingSettingsDb(guildId, cancellationToken).RunAsync().AsTask();
-            }))
+        liftEff(() => this._memoryCache.GetOrCreate(GetLevelingCacheKey(guildId),
+                cacheEntry =>
+                {
+                    cacheEntry.SetOptions(this._cacheEntryOptions);
+                    return GetLevelingSettingsCacheEntry(guildId, cancellationToken)
+                        .Run()
+                        .Match(Succ: entry => entry,
+                            Fail: _ => this._defaultLevelingSettings);
+                }))
             .Map(result => result ?? this._defaultLevelingSettings);
 
-    private IO<LevelingSettingEntry> GetLevelingSettingsDb(
+    private Eff<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
         GuildId guildId,
         CancellationToken cancellationToken = default) =>
-        from dbContext in useAsync(liftIO(() => this._dbContextFactory.CreateDbContextAsync(cancellationToken)))
-        from settings in liftIO(() =>
+        from settingsOption in GetLevelingSettingsDb(guildId, cancellationToken)
+        select settingsOption.Match(
+            settings => new LevelingSettingEntry
+            {
+                Amount = settings.Amount,
+                Base = settings.Base,
+                Modifier = settings.Modifier,
+                TextTime = settings.TextTime
+            }, () => this._defaultLevelingSettings);
+
+    private Eff<Option<LevelingSettings>> GetLevelingSettingsDb(
+        GuildId guildId,
+        CancellationToken cancellationToken = default) =>
+        from result in DbOperation(dbContext =>
+            liftIO(() =>
                 dbContext.LevelingSettings
                     .Where(settings => settings.GuildId == guildId)
                     .FirstOrDefaultAsync(cancellationToken)
-                    .Map(result =>
-                        result ?? GetDefaultLevelingSettings(guildId)))
-            .Map(settings => new LevelingSettingEntry
-                {
-                    Amount = settings.Amount,
-                    Base = settings.Base,
-                    Modifier = settings.Modifier,
-                    TextTime = settings.TextTime
-                })
-        from _ in release(dbContext)
-        select settings;
+                    .Map(Optional)), cancellationToken)
+        select result;
 
-    public async Task SetLevelingSettings(
+    public Eff<Unit> SetLevelingSettings(
+        LevelSettings levelingSettings,
+        int value,
         GuildId guildId,
-        LevelingSettingEntry levelingSettings,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        from result in DbOperation(dbContext =>
+                liftIO(() =>
+                        dbContext.LevelingSettings
+                            .Where(settings => settings.GuildId == guildId)
+                            .FirstOrDefaultAsync(cancellationToken))
+                    .Bind(settings => liftIO(() => AddLevelSettingsIfNull(settings, dbContext, guildId)))
+                    .Map(settings => UpdateLevelSettings(settings, levelingSettings, value))
+                    .Action(liftIO(() => dbContext.SaveChangesAsync(cancellationToken))), cancellationToken)
+            .Bind(_ => liftEff(() => this._memoryCache.Remove(GetLevelingCacheKey(guildId))))
+            .As()
+        select result;
+
+    private static async Task<LevelingSettings> AddLevelSettingsIfNull(LevelingSettings? levelingSettings,
+        SettingsDbContext dbContext, GuildId guildId)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var existingSettings = await dbContext.LevelingSettings
-                                   .Where(settings => settings.GuildId == guildId)
-                                   .FirstOrDefaultAsync(cancellationToken)
-                               ?? new LevelingSettings { GuildId = guildId };
+        if (levelingSettings is not null)
+            return levelingSettings;
 
-        existingSettings.Amount = levelingSettings.Amount;
-        existingSettings.Base = levelingSettings.Base;
-        existingSettings.Modifier = levelingSettings.Modifier;
-        existingSettings.TextTime = levelingSettings.TextTime;
-
-        await dbContext.LevelingSettings.AddAsync(existingSettings, cancellationToken);
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        this._memoryCache.Remove(GetLevelingCacheKey(guildId));
+        levelingSettings = GetDefaultLevelingSettings(guildId);
+        await dbContext.LevelingSettings.AddAsync(levelingSettings);
+        return levelingSettings;
     }
 
-    public Eff<Unit> SetLevelingSettingsTest(
-        GuildId guildId,
-        LevelingSettingEntry levelingSettings,
-        CancellationToken cancellationToken = default) =>
-        from dbContext in useAsync(liftIO(() => this._dbContextFactory.CreateDbContextAsync(cancellationToken)))
-        from io in liftIO(() =>
-                dbContext.LevelingSettings
-                    .Where(settings => settings.GuildId == guildId)
-                    .FirstOrDefaultAsync(cancellationToken))
-                .Map(settings => settings ?? GetDefaultLevelingSettings(guildId))
-                .Map(settings =>
-                    {
-                        settings.Amount = levelingSettings.Amount;
-                        settings.Base = levelingSettings.Base;
-                        settings.Modifier = levelingSettings.Modifier;
-                        settings.TextTime = levelingSettings.TextTime;
-                        return settings;
-                    })
-                .Bind(settings => liftIO(() => dbContext.LevelingSettings.AddAsync(settings, cancellationToken).AsTask()))
-                .Action(liftIO(() => dbContext.SaveChangesAsync(cancellationToken)))
-                .Bind(_ => liftEff(() => this._memoryCache.Remove(GetLevelingCacheKey(guildId))))
-                .As()
-        from _ in release(dbContext)
-        select io;
+    private static LevelingSettings UpdateLevelSettings(
+        LevelingSettings levelingSettings,
+        LevelSettings levelSettings,
+        int value)
+    {
+        GetLevelSettingUpdater(levelSettings, value)(levelingSettings);
+        return levelingSettings;
+    }
+
+    [Pure]
+    private static Action<LevelingSettings> GetLevelSettingUpdater(
+        LevelSettings levelSettings,
+        int value) =>
+        levelSettings switch
+        {
+            LevelSettings.Amount => settings => settings.Amount = new XpGainAmount(value),
+            LevelSettings.Base => settings => settings.Base = new LevelScalingBase(value),
+            LevelSettings.Modifier => settings => settings.Modifier = new LevelScalingModifier(value),
+            LevelSettings.TextTime => settings => settings.TextTime = TimeSpan.FromMinutes(value),
+            _ => _ => { }
+        };
 
     public sealed record LevelingSettingEntry
     {

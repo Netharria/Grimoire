@@ -44,7 +44,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         if (ctx is SlashCommandContext slashContext)
             await slashContext.DeferResponseAsync(!member.Permissions.HasPermission(DiscordPermission.ManageMessages));
-        else if (!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages))
+        else if (!member.Permissions.HasPermission(DiscordPermission.ManageMessages))
             return;
         else
             await ctx.DeferResponseAsync();

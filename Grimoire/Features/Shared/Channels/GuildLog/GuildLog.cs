@@ -12,6 +12,7 @@ using LanguageExt;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Channel = System.Threading.Channels.Channel;
+using static LanguageExt.Prelude;
 
 namespace Grimoire.Features.Shared.Channels.GuildLog;
 
@@ -91,6 +92,10 @@ public sealed partial class GuildLog(
     public Task SendLogMessageAsync(GuildLogMessageBase logMessageMessage,
         CancellationToken cancellationToken = default)
         => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken).AsTask();
+
+    public Eff<Unit> SendLogMessage(GuildLogMessageBase logMessageMessage,
+        CancellationToken cancellationToken = default)
+        => liftEff(() => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken).AsTask().ToUnit());
 
     private async Task ScheduleMessagePurge(MessageId messageId, ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)

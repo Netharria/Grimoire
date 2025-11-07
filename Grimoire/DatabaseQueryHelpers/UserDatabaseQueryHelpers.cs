@@ -12,9 +12,11 @@ public static class UserDatabaseQueryHelpers
     public static async Task<bool> AddMissingUsernameHistoryAsync(this DbSet<UsernameHistory> databaseUsernames,
         DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {
+        var discordMembers = discordGuild.Members.Select(member => member.Value.GetUserId());
+
         var existingUsernames = await databaseUsernames
             .AsNoTracking()
-            .Where(user => discordGuild.Members.Keys.Contains(user.UserId.Value))
+            .Where(user => discordMembers.Contains(user.UserId))
             .GroupBy(username => username.UserId)
             .Select(usernameGroup =>
                 new

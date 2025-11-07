@@ -20,3 +20,4 @@ global using Grimoire.Extensions;
 global using Grimoire.Structs;
 global using Grimoire.Utilities;
 global using Microsoft.EntityFrameworkCore;
+global using static LanguageExt.Prelude;

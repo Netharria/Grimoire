@@ -7,35 +7,36 @@
 
 using DSharpPlus.Commands.Converters;
 using DSharpPlus.Commands.Processors.TextCommands;
+using JetBrains.Annotations;
+using LanguageExt;
+using LanguageExt.Common;
 using Microsoft.Extensions.Logging;
+using static DSharpPlus.Entities.Optional;
+using static LanguageExt.Prelude;
 
 namespace Grimoire.Features.CustomCommands;
 
-public class CommandNameArgumentConverter(ILogger<CommandNameArgumentConverter> logger)
+[UsedImplicitly]
+public partial class CommandNameArgumentConverter(ILogger<CommandNameArgumentConverter> logger)
     : ITextArgumentConverter<CustomCommandName>, ISlashArgumentConverter<CustomCommandName>
 {
+    private readonly ILogger<CommandNameArgumentConverter> _logger = logger;
     public DiscordApplicationCommandOptionType ParameterType => DiscordApplicationCommandOptionType.String;
     public string ReadableName => "Command Name";
     public ConverterInputType RequiresText => ConverterInputType.Always;
 
-    private readonly ILogger<CommandNameArgumentConverter> _logger = logger;
+    public Task<Optional<CustomCommandName>> ConvertAsync(ConverterContext context) =>
+        (
+            from value in convert<string>(context.Argument)
+                .ToFin(Error.New("Argument is not a string."))
+            from _1 in guardnot(value.Contains(' '),
+                Error.New("Command Name cannot have spaces."))
+            select new CustomCommandName(value))
+            .Match(
+                Succ: name => FromValue(name).AsTask(),
+                Fail: _ => FromNoValue<CustomCommandName>().AsTask());
 
-    public Task<Optional<CustomCommandName>> ConvertAsync(ConverterContext context)
-    {
-        // This should always be a string since `ISlashArgumentConverter<Ulid>.ParameterType` is
-        // `DiscordApplicationCommandOptionType.String`, however we type check here as a safety measure
-        // and to provide a more informative log message.
-        if (context.Argument is not string value)
-        {
-            this._logger.LogInformation("Argument is not a string.");
-            return Task.FromResult(Optional.FromNoValue<CustomCommandName>());
-        }
 
-        if (!value.Contains(' '))
-            return Task.FromResult(Optional.FromValue(new CustomCommandName(value)));
-        this._logger.LogInformation("Command Name cannot have spaces.");
-        return Task.FromResult(Optional.FromNoValue<CustomCommandName>());
-
-    }
-
+    [LoggerMessage(LogLevel.Information, "Was not able to convert text to Embed Color: {message}")]
+    public static partial void LogConversionError(ILogger logger, string message);
 }

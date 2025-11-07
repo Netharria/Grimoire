@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -136,7 +137,7 @@ internal sealed class UserInfoCommands(
             .Select(member => member.Sum(xpHistory => xpHistory.Xp))
             .FirstOrDefaultAsync();
 
-        var levelSettings = await this._settingsModule.GetLevelingSettings(guildId);
+        var levelSettings = this._settingsModule.GetLevelingSettings(guildId).Run().ThrowIfFail();
 
         var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId);
 

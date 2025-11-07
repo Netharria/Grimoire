@@ -10,6 +10,7 @@ using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Leveling.Events;
@@ -64,7 +65,7 @@ public sealed partial class GainUserXp(
             .Select(xp => xp.Xp)
             .LongCountAsync();
 
-        var levelingSettingEntry = await this._settingsModule.GetLevelingSettings(member.GetGuildId());
+        var levelingSettingEntry = this._settingsModule.GetLevelingSettings(member.GetGuildId()).Run().ThrowIfFail();
 
         await dbContext.XpHistory.AddAsync(
             new XpHistory

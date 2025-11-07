@@ -59,7 +59,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .Select(xpHistories => xpHistories.Sum(x => x.Xp))
             .FirstOrDefaultAsync();
 
-        var levelingSettings = await this._settingsModule.GetLevelingSettings(ctx.Guild.GetGuildId());
+        var levelingSettings = this._settingsModule.GetLevelingSettings(ctx.Guild.GetGuildId()).Run().ThrowIfFail();
 
         var currentLevel = levelingSettings.GetLevelFromXp(membersXp);
         var currentLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel);
