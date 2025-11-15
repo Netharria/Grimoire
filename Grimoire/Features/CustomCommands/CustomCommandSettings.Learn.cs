@@ -50,15 +50,13 @@ public sealed partial class CustomCommandSettings
         // IReadOnlyList<DiscordRole>? allowedRoles = null
     )
     {
-        IReadOnlyList<DiscordRole> allowedRoles;
+        IReadOnlyList<DiscordRole> allowedRoles = [];
         const bool restrictedUse = false;
-        allowedRoles = [];
-
 
         await (
             from _1 in ctx.DeferResponse()
             from _2 in guard(restrictedUse && allowedRoles.Count == 0, Error.New("Command set as restricted but no roles allowed to use it."))
-            from guild in convert<DiscordGuild>(ctx.Guild).ToEff()
+            from guild in Optional(ctx.Guild).ToEff(Error.New("This command can only be used in a server."))
             from _3 in SaveCommand(name, guild.GetGuildId(), content, embed, embedColor, restrictedUse,
                 allowedRoles.Select(x => x.GetRoleId()).ToArray())
             from _4 in ctx.EditReply(GrimoireColor.Green, $"Learned new command: {name}")

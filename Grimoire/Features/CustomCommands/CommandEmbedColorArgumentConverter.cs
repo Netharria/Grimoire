@@ -11,32 +11,40 @@ using DSharpPlus.Commands.Processors.TextCommands;
 using JetBrains.Annotations;
 using LanguageExt;
 using LanguageExt.Common;
-using Microsoft.Extensions.Logging;
 using static DSharpPlus.Entities.Optional;
-using static LanguageExt.Prelude;
 
 namespace Grimoire.Features.CustomCommands;
 
 [UsedImplicitly]
-public partial class CommandEmbedColorArgumentConverter(ILogger<CommandEmbedColorArgumentConverter> logger)
+public partial class CommandEmbedColorArgumentConverter
     : ITextArgumentConverter<CustomCommandEmbedColor>, ISlashArgumentConverter<CustomCommandEmbedColor>
 {
-    private readonly ILogger<CommandEmbedColorArgumentConverter> _logger = logger;
     public DiscordApplicationCommandOptionType ParameterType => DiscordApplicationCommandOptionType.String;
     public string ReadableName => "Embed Color";
     public ConverterInputType RequiresText => ConverterInputType.Always;
 
     public Task<Optional<CustomCommandEmbedColor>> ConvertAsync(ConverterContext context) =>
-        (
-            from value in convert<string>(context.Argument)
-                .Map(value => value.TrimStart('#'))
-                .ToFin(Error.New("Argument is not a string"))
-            from _1 in guard(ValidHexColor().IsMatch(value),
-                Error.New("Argument is not a valid Hex code. Verify it is a 6 digit hex code."))
-            select new CustomCommandEmbedColor(value))
-        .Match(
-            color => FromValue(color).AsTask(),
-            _ => FromNoValue<CustomCommandEmbedColor>().AsTask());
+        ConvertToString(context.Argument)
+            .Map(value => value.TrimStart('#'))
+            .Bind(ValidateHexColor)
+            .Map(value => new CustomCommandEmbedColor(value))
+            .Map(FromValue)
+            .IfFail(FromNoValue<CustomCommandEmbedColor>)
+            .AsTask();
+
+    [System.Diagnostics.Contracts.Pure]
+    private static Validation<Error, string> ConvertToString(object? value) =>
+        value switch
+        {
+            string s => Success<Error, string>(s),
+            _ => Fail<Error, string>(Error.New("Argument is not a valid string."))
+        };
+
+    [System.Diagnostics.Contracts.Pure]
+    private static Validation<Error, string> ValidateHexColor(string hexColor) =>
+        ValidHexColor().IsMatch(hexColor)
+            ? Success<Error, string>(hexColor)
+            : Fail<Error, string>(Error.New("Argument is not a valid Hex code. Verify it is a 6 digit hex code."));
 
 
     [GeneratedRegex(@"[0-9A-Fa-f]{6}\b", RegexOptions.None, 1000)]
