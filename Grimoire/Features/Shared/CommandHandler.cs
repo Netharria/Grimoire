@@ -8,6 +8,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using DSharpPlus.Commands.EventArgs;
+using DSharpPlus.Commands.Exceptions;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Trees;
 using DSharpPlus.Exceptions;
@@ -18,10 +19,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Shared;
 
-
 //todo: convert these to static methods if DI is not possible
 public sealed partial class CommandHandler : IClientErrorHandler
 {
+    public async ValueTask HandleEventHandlerError(string name, Exception exception, Delegate invokedDelegate,
+        object sender,
+        object args) => await SendErrorLogToLogChannel((DiscordClient)sender, name, exception);
+
+    public ValueTask HandleGatewayError(Exception exception) => ValueTask.CompletedTask;
 
     private static void BuildCommandLogAsync(StringBuilder builder,
         IReadOnlyDictionary<CommandParameter, object?> commandParameters)
@@ -63,56 +68,54 @@ public sealed partial class CommandHandler : IClientErrorHandler
                                            $"```csharp\n{exceptionMessage}\n{shortStackTrace}\n```");
         }
     }
-    public async ValueTask HandleEventHandlerError(string name, Exception exception, Delegate invokedDelegate, object sender,
-        object args) => await SendErrorLogToLogChannel((DiscordClient) sender, name, exception);
-
-    public ValueTask HandleGatewayError(Exception exception) => ValueTask.CompletedTask;
 
     public static async Task HandleEventAsync(DiscordClient sender, CommandErroredEventArgs args)
     {
-        if (args.Exception is AnticipatedException)
-            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
-                .WithColor(GrimoireColor.Yellow)
-                .WithDescription(args.Exception.Message));
-        else if (args.Exception is UnauthorizedException)
-            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
-                .WithColor(GrimoireColor.Yellow)
-                .WithDescription(
-                    $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        else if (args.Exception is not null)
+        switch (args.Exception)
         {
-            var errorHexString = RandomNumberGenerator.GetHexString(10);
-            var commandOptions = args.Context.Arguments;
-            var log = new StringBuilder();
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            if (commandOptions is not null)
-                BuildCommandLogAsync(log.Append(' '), commandOptions);
-            LogCommandError(sender.Logger,
-                args.Exception,
-                errorHexString,
-                args.Context.Command.Name,
-                log.ToString());
-
-            await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
-                .WithColor(GrimoireColor.Yellow)
-                .WithDescription(
-                    $"Encountered exception while executing {args.Context.Command.Name} [ID {errorHexString}]"));
-            await SendErrorLogToLogChannel(sender, args.Context.Command.Name, args.Exception,
-                errorHexString);
+            case UnauthorizedException:
+                await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                    .WithColor(GrimoireColor.Yellow)
+                    .WithDescription(
+                        $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
+                return;
+            case ChecksFailedException checksFailedException:
+                await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                    .WithColor(GrimoireColor.Yellow)
+                    .WithDescription(checksFailedException.Message));
+                return;
+            case ArgumentParseException argumentParseException:
+                await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                    .WithColor(GrimoireColor.Yellow)
+                    .WithDescription(argumentParseException.Message));
+                return;
         }
+        var errorHexString = RandomNumberGenerator.GetHexString(10);
+        var commandOptions = args.Context.Arguments;
+        var log = new StringBuilder();
+        BuildCommandLogAsync(log.Append(' '), commandOptions);
+        LogCommandError(sender.Logger,
+            args.Exception,
+            errorHexString,
+            args.Context.Command.FullName,
+            log.ToString());
+
+        await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+            .WithColor(GrimoireColor.Yellow)
+            .WithDescription(
+                $"Encountered exception while executing {args.Context.Command.FullName} [ID {errorHexString}]"));
+        await SendErrorLogToLogChannel(sender, args.Context.Command.FullName, args.Exception,
+            errorHexString);
     }
 
     private static async Task SendOrEditMessageAsync(CommandErroredEventArgs args, DiscordEmbedBuilder embed)
     {
-        if(args.Context.FollowupMessages.Count > 0)
+        if (args.Context.FollowupMessages.Count > 0)
             await args.Context.EditResponseAsync(embed);
+        else if (args.Context is SlashCommandContext slashContext)
+            await slashContext.RespondAsync(embed, true);
         else
-            if(args.Context is SlashCommandContext slashContext)
-                await slashContext.RespondAsync(embed, true);
-            else
-                await args.Context.RespondAsync(embed);
-
+            await args.Context.RespondAsync(embed);
     }
 
     [LoggerMessage(LogLevel.Error, "Error on Command: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
@@ -127,12 +130,11 @@ public sealed partial class CommandHandler : IClientErrorHandler
         if (commandOptions.Count > 0)
             BuildCommandLogAsync(log.Append(' '), commandOptions);
         LogCommandInvoked(sender.Logger,
-            args.Context.Command.Name,
+            args.Context.Command.FullName,
             log.ToString());
         return Task.CompletedTask;
     }
 
     [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
     static partial void LogCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
-
 }
