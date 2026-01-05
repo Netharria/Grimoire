@@ -86,6 +86,7 @@ public sealed partial class CommandHandler : IClientErrorHandler
                         checksFailedException
                             .Errors
                             .Select(error => error.ErrorMessage)
+                            .Distinct()
                             .ToArray())));
                 return;
             case ArgumentParseException argumentParseException:
