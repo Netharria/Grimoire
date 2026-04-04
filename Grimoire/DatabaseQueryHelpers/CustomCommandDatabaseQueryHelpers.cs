@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Collections.Frozen;
+
 namespace Grimoire.DatabaseQueryHelpers;
 
 public static class CustomCommandDatabaseQueryHelpers
@@ -13,7 +15,6 @@ public static class CustomCommandDatabaseQueryHelpers
         this IQueryable<CustomCommand> customCommands, GuildId guildId, CustomCommandName commandName)
         =>
             customCommands
-                .AsSplitQuery()
                 .Where(command => command.GuildId == guildId && command.Name == commandName)
                 .Select(command => new GetCustomCommandQueryResult
                 {

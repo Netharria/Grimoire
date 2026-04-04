@@ -54,38 +54,39 @@ public sealed partial class PublishCommands
 
         if (result.Pardon is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "The ban must be pardoned first before the unban can be published.");
+            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+                "The ban must be pardoned first before the unban can be published.");
             return;
         }
 
         var banLogMessage = await SendPublicLogMessage(ctx, result.UserId, result.Username, result.Pardon.Reason,
             result.UnbanMessageId, result.Pardon.PardonDate, PublishType.Unban);
 
-        await banLogMessage.Match(
-            async error =>
-            {
-                await ctx.EditReplyAsync(GrimoireColor.Red, $"Failed to publish unban reason: {error.Message}");
-            },
-            async message =>
-            {
-                if (result.UnbanMessageId is null)
-                {
-                    await dbContext.PublishedMessages.AddAsync(
-                        new PublishedMessage { MessageId = message.GetMessageId(), SinId = sinId, PublishType = PublishType.Unban });
-                    await dbContext.SaveChangesAsync();
-                }
+        if (banLogMessage is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Red,
+                $"Failed to publish unban reason. Verify {ctx.Guild?.CurrentMember.Mention} has access to send messages in the public ban log channel.");
+            return;
+        }
 
-
-                await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
-                await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        if (result.UnbanMessageId is null)
+        {
+            await dbContext.PublishedMessages.AddAsync(
+                new PublishedMessage
                 {
-                    GuildId = guild.GetGuildId(),
-                    GuildLogType = GuildLogType.Moderation,
-                    Color = GrimoireColor.Purple,
-                    Description = $"{ctx.User.Mention} published unban reason of sin {sinId}"
+                    MessageId = banLogMessage.GetMessageId(), SinId = sinId, PublishType = PublishType.Unban
                 });
-            });
+            await dbContext.SaveChangesAsync();
+        }
 
 
+        await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        {
+            GuildId = guild.GetGuildId(),
+            GuildLogType = GuildLogType.Moderation,
+            Color = GrimoireColor.Purple,
+            Description = $"{ctx.User.Mention} published unban reason of sin {sinId}"
+        });
     }
 }

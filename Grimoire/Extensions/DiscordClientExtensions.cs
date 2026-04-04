@@ -11,12 +11,14 @@ namespace Grimoire.Extensions;
 
 public static class DiscordClientExtensions
 {
-    public static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ChannelId? channelId)
+    public static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ChannelId? channelId,
+        CancellationToken ct = default)
         => channelId is not { } id
             ? Task.FromResult<DiscordChannel?>(null)
-            : GetChannelOrDefaultAsync(client, id);
+            : client.GetChannelOrDefaultAsync(id, ct);
 
-    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ChannelId channelId)
+    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ChannelId channelId,
+        CancellationToken ct = default)
     {
         try
         {
@@ -31,7 +33,7 @@ public static class DiscordClientExtensions
     public static Task<DiscordUser?> GetUserOrDefaultAsync(this DiscordClient client, UserId? userId)
         => userId is not { } id
             ? Task.FromResult<DiscordUser?>(null)
-            : GetUserOrDefaultAsync(client, id);
+            : client.GetUserOrDefaultAsync(id);
 
     public static async Task<DiscordUser?> GetUserOrDefaultAsync(this DiscordClient client, UserId userId)
     {
@@ -48,7 +50,7 @@ public static class DiscordClientExtensions
     public static Task<DiscordGuild?> GetGuildOrDefaultAsync(this DiscordClient client, GuildId? guildId)
         => guildId is not { } id
             ? Task.FromResult<DiscordGuild?>(null)
-            : GetGuildOrDefaultAsync(client, id);
+            : client.GetGuildOrDefaultAsync(id);
 
     public static async Task<DiscordGuild?> GetGuildOrDefaultAsync(this DiscordClient client, GuildId guildId)
     {
@@ -65,10 +67,11 @@ public static class DiscordClientExtensions
     public static Task<string?> GetUserAvatar(this DiscordClient client, UserId? userId, DiscordGuild? guild = null)
         => userId is not { } id
             ? Task.FromResult<string?>(null)
-            : GetUserAvatar(client, id, guild);
+            : client.GetUserAvatar(id, guild);
 
 
-    public static async Task<string?> GetUserAvatar(this DiscordClient client, UserId userId, DiscordGuild? guild = null)
+    public static async Task<string?> GetUserAvatar(this DiscordClient client, UserId userId,
+        DiscordGuild? guild = null)
     {
         if (guild is not null)
         {
@@ -83,5 +86,5 @@ public static class DiscordClientExtensions
     }
 
     public static Task<DiscordUser> GetUserAsync(this DiscordClient client, UserId userId, bool updateCache = false)
-    => client.GetUserAsync(userId.Value, updateCache);
+        => client.GetUserAsync(userId.Value, updateCache);
 }

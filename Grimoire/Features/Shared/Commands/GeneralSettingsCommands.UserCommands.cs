@@ -28,17 +28,7 @@ internal sealed partial class GeneralSettingsCommands
 
         var guild = ctx.Guild!;
 
-        var channelOption = ctx.GetChannelOption(option, channel);
-
-        if (channelOption.IsFail)
-        {
-            await ctx.EditReplyAsync(DiscordColor.Red, $"");
-            return;
-        }
-
-        channelOption.Match(
-            success => channel = success,
-            error => { });
+        channel = ctx.GetChannelOption(option, channel);
 
         await this._settingsModule.SetUserCommandChannelSetting(guild.GetGuildId(), channel?.GetChannelId());
 

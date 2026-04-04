@@ -25,7 +25,8 @@ public sealed class DiscordAuditLogParserService(
     private readonly DiscordClient _discordClient = discordClient;
     private readonly IMemoryCache _memoryCache = memoryCache;
 
-    public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(GuildId guildId, ChannelId channelId,
+    public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(GuildId guildId,
+        ChannelId channelId,
         MessageId messageId)
     {
         if (!this._discordClient.Guilds.TryGetValue(guildId.Value, out var guild)

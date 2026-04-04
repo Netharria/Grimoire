@@ -41,7 +41,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
             {
                 // ReSharper disable AccessToDisposedClosure
                 Sin = sin,
-                UserName = (Username?) dbContext.UsernameHistory
+                UserName = (Username?)dbContext.UsernameHistory
                     .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
                     .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                     .Select(usernameHistory => usernameHistory.Username)

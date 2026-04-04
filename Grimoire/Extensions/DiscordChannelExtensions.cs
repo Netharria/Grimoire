@@ -29,9 +29,8 @@ public static class DiscordChannelExtensions
                 await messages.First().DeleteAsync(reason);
                 break;
             case > 1:
-                await messages.Chunk(100).ToAsyncEnumerable()
-                    .ForEachAwaitAsync(async messageChunk
-                        => await channel.DeleteMessagesAsync(messageChunk, reason));
+                await foreach (var messageChunk in messages.Chunk(100).ToAsyncEnumerable())
+                    await channel.DeleteMessagesAsync(messageChunk, reason);
                 break;
         }
 
@@ -50,7 +49,7 @@ public static class DiscordChannelExtensions
 
     public static Task<DiscordMessage?> GetMessageOrDefaultAsync(this DiscordChannel channel, MessageId? messageId)
         => messageId is { } id
-            ? GetMessageOrDefaultAsync(channel, id)
+            ? channel.GetMessageOrDefaultAsync(id)
             : Task.FromResult<DiscordMessage?>(null);
 
     public static async Task<DiscordMessage?> GetMessageOrDefaultAsync(this DiscordChannel channel, MessageId messageId)
@@ -66,10 +65,13 @@ public static class DiscordChannelExtensions
     }
 
     [Pure]
-    public static ChannelId GetChannelId(this DiscordChannel channel) => new (channel.Id);
-    [Pure]
-    public static ChannelId? GetParentChannelId(this DiscordChannel channel) => channel.ParentId is not null ? new ChannelId(channel.ParentId.Value) : null;
+    public static ChannelId GetChannelId(this DiscordChannel channel) => new(channel.Id);
 
-    public static Task<DiscordMessage> GetMessageAsync(this DiscordChannel discordChannel, MessageId id, bool skipCache = false)
+    [Pure]
+    public static ChannelId? GetParentChannelId(this DiscordChannel channel) =>
+        channel.ParentId is not null ? new ChannelId(channel.ParentId.Value) : null;
+
+    public static Task<DiscordMessage> GetMessageAsync(this DiscordChannel discordChannel, MessageId id,
+        bool skipCache = false)
         => discordChannel.GetMessageAsync(id.Value, skipCache);
 }

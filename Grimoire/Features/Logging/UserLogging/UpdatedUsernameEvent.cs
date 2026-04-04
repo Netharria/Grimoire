@@ -36,7 +36,8 @@ public sealed class UpdatedUsernameEvent(
             .OrderByDescending(x => x.Timestamp)
             .Select(member => member.Username)
             .FirstOrDefaultAsync();
-        if (Username.Equals(currentUsername, new Username(args.UsernameAfter), StringComparison.CurrentCultureIgnoreCase))
+        if (Username.Equals(currentUsername, new Username(args.UsernameAfter),
+                StringComparison.CurrentCultureIgnoreCase))
             return;
 
         await dbContext.UsernameHistory.AddAsync(

@@ -49,7 +49,12 @@ public sealed partial class AddMessageEvent(
             Attachments = args.Message.Attachments
                 .Where(x => !string.IsNullOrWhiteSpace(x.FileName))
                 .Select(x =>
-                    new Attachment { Id = new AttachmentId(x.Id), MessageId = new MessageId(args.Message.Id), FileName = x.FileName ?? string.Empty })
+                    new Attachment
+                    {
+                        Id = new AttachmentId(x.Id),
+                        MessageId = new MessageId(args.Message.Id),
+                        FileName = x.FileName ?? string.Empty
+                    })
                 .ToArray(),
             ChannelId = args.GetChannelId(),
             ReferencedMessageId = args.Message.ReferencedMessage?.GetMessageId(),

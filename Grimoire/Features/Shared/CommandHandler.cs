@@ -89,6 +89,7 @@ public sealed partial class CommandHandler : IClientErrorHandler
                     .WithDescription(argumentParseException.Message));
                 return;
         }
+
         var errorHexString = RandomNumberGenerator.GetHexString(10);
         var commandOptions = args.Context.Arguments;
         var log = new StringBuilder();

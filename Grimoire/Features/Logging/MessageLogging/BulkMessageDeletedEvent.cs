@@ -9,7 +9,6 @@ using System.Text;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
-using ChannelExtensions = Grimoire.Extensions.ChannelExtensions;
 
 namespace Grimoire.Features.Logging.MessageLogging;
 
@@ -25,7 +24,7 @@ public sealed class BulkMessageDeletedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, MessagesBulkDeletedEventArgs args)
     {
-        if(args.Guild is null) return;
+        if (args.Guild is null) return;
 
         var guild = args.Guild!;
 

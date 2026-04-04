@@ -38,6 +38,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
             await ctx.SendErrorResponseAsync("You cannot warn yourself.");
             return;
         }
+
         await using var dbcontext = await this._dbContextFactory.CreateDbContextAsync();
         var sin = new Sin
         {

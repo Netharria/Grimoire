@@ -41,7 +41,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                     , permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied.Permissions));
             }
 
-            await settingsModule.RemoveLock(expiredLock.ChannelId, expiredLock.GuildId,  cancellationToken);
+            await settingsModule.RemoveLock(expiredLock.ChannelId, expiredLock.GuildId, cancellationToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Lock on {channel.Mention} has expired.");

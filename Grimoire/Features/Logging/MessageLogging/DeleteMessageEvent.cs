@@ -55,7 +55,7 @@ public sealed partial class DeleteMessageEvent(
             await dbContext.AddAsync(
                 new ProxiedMessageLink
                 {
-                    ProxyMessageId = new MessageId(proxyMessageId) ,
+                    ProxyMessageId = new MessageId(proxyMessageId),
                     OriginalMessageId = new MessageId(originalMessageId),
                     SystemId = pluralkitMessage.PluralKitSystem?.Id,
                     MemberId = pluralkitMessage.Member?.Id
@@ -82,7 +82,8 @@ public sealed partial class DeleteMessageEvent(
         }
 
         var auditLogEntry =
-            await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.GetGuildId(), args.Channel.GetChannelId(),
+            await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.GetGuildId(),
+                args.Channel.GetChannelId(),
                 args.Message.GetMessageId());
         var message = await dbContext.Messages
             .AsNoTracking()
@@ -113,7 +114,7 @@ public sealed partial class DeleteMessageEvent(
                 GuildId = args.Guild.GetGuildId(),
                 DeletedByModeratorId = auditLogEntry?.UserResponsible?.Id is not null
                     ? new ModeratorId(auditLogEntry.UserResponsible.Id)
-                    : null,
+                    : null
             });
         await dbContext.SaveChangesAsync();
 

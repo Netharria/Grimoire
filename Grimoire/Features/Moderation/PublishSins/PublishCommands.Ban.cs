@@ -54,29 +54,30 @@ public sealed partial class PublishCommands
         var banLogMessage = await SendPublicLogMessage(ctx, result.UserId, result.Username, result.Reason,
             result.PublishedBanId, result.SinOn, PublishType.Ban);
 
-        await banLogMessage.Match(
-            async err => await ctx.EditReplyAsync(GrimoireColor.Red, $"Failed to publish ban reason: {err.Message}"),
-            async msg =>
-            {
-                if (result.PublishedBanId is null)
-                {
-                    await dbContext.PublishedMessages.AddAsync(
-                        new PublishedMessage { MessageId = msg.GetMessageId(), SinId = sinId, PublishType = PublishType.Ban });
-                    await dbContext.SaveChangesAsync();
-                }
+        if (banLogMessage is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Red,
+                $"Failed to publish ban reason. Verify {ctx.Guild?.CurrentMember.Mention} has access to send messages in the public ban log channel.");
+            return;
+        }
 
-                await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published ban : {sinId}");
-                await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        if (result.PublishedBanId is null)
+        {
+            await dbContext.PublishedMessages.AddAsync(
+                new PublishedMessage
                 {
-                    GuildId = guild.GetGuildId(),
-                    GuildLogType = GuildLogType.Moderation,
-                    Color = GrimoireColor.Purple,
-                    Description = $"{ctx.User.Mention} published ban reason of sin {sinId}"
+                    MessageId = banLogMessage.GetMessageId(), SinId = sinId, PublishType = PublishType.Ban
                 });
-            }
+            await dbContext.SaveChangesAsync();
+        }
 
-        );
-
-
+        await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published ban : {sinId}");
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        {
+            GuildId = guild.GetGuildId(),
+            GuildLogType = GuildLogType.Moderation,
+            Color = GrimoireColor.Purple,
+            Description = $"{ctx.User.Mention} published ban reason of sin {sinId}"
+        });
     }
 }

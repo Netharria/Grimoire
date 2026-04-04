@@ -7,8 +7,6 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Enums;
-using LanguageExt;
-using static LanguageExt.Prelude;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -21,35 +19,30 @@ public sealed partial class LevelSettingsCommandGroup
     [Description("View the current settings for the leveling module.")]
     public async Task ViewAsync(CommandContext ctx)
     {
-        var guild = ctx.Guild!;
+        await ctx.DeferResponseAsync();
 
-        var result =
-                from _ in liftIO(() => ctx.DeferResponseAsync().AsTask())
-                from ModuleState in liftIO(() =>
-                    this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId()))
-                from levelLogId in liftIO(() =>
-                    this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId()))
-                from LevelingSettingEntry in this._settingsModule.GetLevelingSettings(guild.GetGuildId())
-                from LevelingChannel in liftIO(() => ctx.Client.GetChannelOrDefaultAsync(levelLogId))
-                    .Map(channel => channel is null
-                        ? "None"
-                        : channel.Mention)
-                select new { LevelingSettingEntry, LevelingChannel, ModuleState };
+        if (ctx.Guild is not { } guild)
+        {
+            await ctx.EditReplyAsync(message: "You need to be in a guild to use this command.");
+            return;
+        }
 
-    await result
-            .Run()
-            .Match(
-                Succ: resultItems =>
-                ctx.EditReplyAsync(
-                        title: "Current Level System Settings",
-                        message: $"""
-                                   **Module Enabled:** {resultItems.ModuleState}
-                                   **Text Time:** {resultItems.LevelingSettingEntry.TextTime.TotalMinutes} minutes.
-                                   **Base:** {resultItems.LevelingSettingEntry.Base}
-                                   **Modifier:** {resultItems.LevelingSettingEntry.Modifier}
-                                   **Reward Amount:** {resultItems.LevelingSettingEntry.Amount}
-                                   **Log-Channel:** {resultItems.LevelingChannel}
-                                   """),
-                Fail: error => ctx.SendErrorResponseAsync(error.Message));
+        var response = await this._settingsModule.GetLevelingSettings(guild.GetGuildId());
+        var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId());
+        var levelChannelLog =
+            await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
+
+        var levelLogMention =
+            levelChannelLog is null
+                ? "None"
+                : ctx.Guild.Channels.GetValueOrDefault(levelChannelLog.Value.Value)?.Mention;
+        await ctx.EditReplyAsync(
+            title: "Current Level System Settings",
+            message: $"**Module Enabled:** {moduleEnabled}\n" +
+                     $"**Text Time:** {response.TextTime.TotalMinutes} minutes.\n" +
+                     $"**Base:** {response.Base}\n" +
+                     $"**Modifier:** {response.Modifier}\n" +
+                     $"**Reward Amount:** {response.Amount}\n" +
+                     $"**Log-Channel:** {levelLogMention}\n");
     }
 }

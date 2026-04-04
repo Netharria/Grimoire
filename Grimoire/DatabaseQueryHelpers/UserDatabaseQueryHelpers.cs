@@ -26,7 +26,7 @@ public static class UserDatabaseQueryHelpers
                 })
             .AsAsyncEnumerable()
             .Select(x => (x.UserId, x.Username))
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var usernamesToAdd = discordGuild.Members.Values
             .Where(x => !existingUsernames.Contains((x.GetUserId(), x.GetUsername())))

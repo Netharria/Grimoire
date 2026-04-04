@@ -7,22 +7,21 @@
 
 
 using System.Diagnostics;
-using LanguageExt;
-using LanguageExt.Common;
-using static LanguageExt.Prelude;
+using DSharpPlus.Commands.Processors.TextCommands;
 
 namespace Grimoire.Extensions;
 
 public static class CommandContextExtension
 {
-    public static async Task<DiscordMessage> EditReplyAsync(
+    public static ValueTask EditReplyAsync(
         this CommandContext ctx,
         DiscordColor? color = null,
         string message = "",
         string title = "",
         string footer = "",
         DiscordEmbed? embed = null,
-        DateTime? timeStamp = null)
+        DateTime? timeStamp = null,
+        bool ephemeral = false)
     {
         timeStamp ??= DateTime.UtcNow;
         embed ??= new DiscordEmbedBuilder()
@@ -33,85 +32,46 @@ public static class CommandContextExtension
             .WithTimestamp(timeStamp)
             .Build();
 
-        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-            await ctx.EditResponseAsync(
-                new DiscordWebhookBuilder().AddEmbed(embed)));
+        return ctx switch
+        {
+            SlashCommandContext
+                {
+                    Interaction.ResponseState: DiscordInteractionResponseState.Unacknowledged
+                } slashCommandContext
+                => DiscordRetryPolicy.RetryDiscordCall(async _ =>
+                    await slashCommandContext.RespondAsync(embed, ephemeral)),
+            TextCommandContext { Response: null }
+                => DiscordRetryPolicy.RetryDiscordCall(async _ => await ctx.RespondAsync(embed)),
+            _ => DiscordRetryPolicy.RetryDiscordCall(async _ => { await ctx.EditResponseAsync(embed); })
+        };
     }
 
-    public static Eff<DiscordMessage> EditReply(
+    public static ValueTask SendErrorResponseAsync(
         this CommandContext ctx,
-        DiscordColor? color = null,
-        string message = "",
-        string title = "",
-        string footer = "",
-        DiscordEmbed? embed = null,
-        DateTime? timeStamp = null)
-    {
-        timeStamp ??= DateTime.UtcNow;
-        embed ??= new DiscordEmbedBuilder()
-            .WithColor(color ?? GrimoireColor.Purple)
-            .WithAuthor(title)
-            .WithDescription(message)
-            .WithFooter(footer)
-            .WithTimestamp(timeStamp)
-            .Build();
+        string message) => ctx.EditReplyAsync(GrimoireColor.Red, message);
 
-        return liftEff(() => DiscordRetryPolicy.RetryDiscordCall(async _ =>
-            await ctx.EditResponseAsync(
-                new DiscordWebhookBuilder().AddEmbed(embed))).AsTask());
-    }
-
-    public static async Task SendErrorResponseAsync(
+    public static ValueTask SendWarningResponseAsync(
         this CommandContext ctx,
-        string message = "")
-    {
-        var embed = new DiscordEmbedBuilder()
-            .WithColor(GrimoireColor.Red)
-            .WithDescription(message)
-            .Build();
+        string message) => ctx.EditReplyAsync(GrimoireColor.Yellow, message);
 
-        await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-            await ctx.EditResponseAsync(
-                new DiscordWebhookBuilder().AddEmbed(embed)));
-    }
 
     [Pure]
-    public static Fin<DiscordChannel?> GetChannelOption(this CommandContext ctx, ChannelOption channelOption,
+    public static DiscordChannel? GetChannelOption(this CommandContext ctx, ChannelOption channelOption,
         DiscordChannel? selectedChannel)
     {
-        switch (channelOption)
+        return channelOption switch
         {
-            case ChannelOption.Off:
-                return (DiscordChannel?) null;
-            case ChannelOption.CurrentChannel:
-                return ctx.Channel;
-            case ChannelOption.SelectChannel:
-                if (selectedChannel is not null)
-                    return selectedChannel;
-                return Error.New(new ArgumentNullException(nameof(selectedChannel), "Selected channel cannot be empty when ChannelOption is SelectChannel."));
-            default:
-                return Error.New(new UnreachableException("Invalid ChannelOption value."));
-        }
+            ChannelOption.Off => null,
+            ChannelOption.CurrentChannel => ctx.Channel,
+            ChannelOption.SelectChannel => selectedChannel ?? throw new ArgumentNullException(nameof(selectedChannel),
+                "Selected channel cannot be empty when ChannelOption is SelectChannel."),
+            _ => throw new UnreachableException("Invalid ChannelOption value.")
+        };
     }
+
     [Pure]
     public static ModeratorId GetModeratorId(this CommandContext context) => new(context.User.Id);
 
     [Pure]
-    public static UserId GetUserId(this CommandContext context) => new(context.User.Id);
-    [Pure]
-    public static GuildId? GetGuildId(this CommandContext context) =>
-        context.Guild is not null ?
-        new GuildId(context.Guild.Id) :
-        null;
-    [Pure]
-    public static ChannelId GetChannelId(this CommandContext ctx) => new (ctx.Channel.Id);
-
-    public static Eff<Unit> DeferResponse(this CommandContext ctx, bool ephemeral = false)
-    {
-        if (ctx is SlashCommandContext slashContext)
-            return liftIO(() => slashContext.DeferResponseAsync(ephemeral).AsTask()) ;
-        return ephemeral
-            ? Error.New("Can only send ephemeral messages in slash commands.")
-            : liftIO(() => ctx.DeferResponseAsync().AsTask());
-    }
+    public static ChannelId GetChannelId(this CommandContext ctx) => new(ctx.Channel.Id);
 }

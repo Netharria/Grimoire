@@ -36,10 +36,11 @@ public sealed partial class RewardCommandGroup
         if (guild.CurrentMember.Hierarchy < role.Position)
         {
             await ctx.SendErrorResponseAsync(
-                    $"{guild.CurrentMember.DisplayName} will not be able to apply this " +
-                             $"reward role because the role has a higher rank than it does.");
+                $"{guild.CurrentMember.DisplayName} will not be able to apply this " +
+                $"reward role because the role has a higher rank than it does.");
             return;
         }
+
         await this._settingsModule.AddOrUpdateRewardAsync(role.GetRoleId(), guild.GetGuildId(), level, message);
 
         var responseMessage = $"Successfully updated the rewards to include {role.Mention} at level {level}.";

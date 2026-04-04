@@ -17,6 +17,7 @@ internal sealed class CustomCommandRoleConfiguration : IEntityTypeConfiguration<
         builder.HasOne(e => e.CustomCommand)
             .WithMany(e => e.CustomCommandRoles)
             .HasForeignKey(e => new { e.CustomCommandName, e.GuildId })
+            .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
 
         builder.Property(e => e.RoleId)

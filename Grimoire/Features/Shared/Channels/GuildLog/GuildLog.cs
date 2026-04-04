@@ -8,11 +8,9 @@
 using System.Threading.Channels;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
-using LanguageExt;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Channel = System.Threading.Channels.Channel;
-using static LanguageExt.Prelude;
 
 namespace Grimoire.Features.Shared.Channels.GuildLog;
 
@@ -50,14 +48,15 @@ public sealed partial class GuildLog(
                 if (logChannelId is null)
                     continue;
 
-                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannelId.Value);
+                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannelId.Value, cancellationToken);
 
                 if (channel is null)
                     continue;
                 var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
                     await channel.SendMessageAsync(result.GetMessageBuilder()), cancellationToken);
                 if (ShouldPurgeMessageAfterInterval(result.GuildLogType))
-                    await ScheduleMessagePurge(message.GetMessageId(), channel.GetChannelId(), result.GuildId, cancellationToken);
+                    await ScheduleMessagePurge(message.GetMessageId(), channel.GetChannelId(), result.GuildId,
+                        cancellationToken);
             }
             catch (Exception e)
             {
@@ -92,10 +91,6 @@ public sealed partial class GuildLog(
     public Task SendLogMessageAsync(GuildLogMessageBase logMessageMessage,
         CancellationToken cancellationToken = default)
         => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken).AsTask();
-
-    public Eff<Unit> SendLogMessage(GuildLogMessageBase logMessageMessage,
-        CancellationToken cancellationToken = default)
-        => liftEff(() => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken).AsTask().ToUnit());
 
     private async Task ScheduleMessagePurge(MessageId messageId, ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)

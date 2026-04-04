@@ -42,7 +42,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
                 // ReSharper disable AccessToDisposedClosure
                 // ReSharper enable AccessToDisposedClosure
                 Sin = sin,
-                UserName = (Username?) dbContext.UsernameHistory
+                UserName = (Username?)dbContext.UsernameHistory
                     .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
                     .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                     .Select(usernameHistory => usernameHistory.Username)

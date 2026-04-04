@@ -49,18 +49,7 @@ public partial class LogSettingsCommands
 
             var guild = ctx.Guild!;
 
-            var channelOption = ctx.GetChannelOption(option, channel);
-
-            if (channelOption.IsFail)
-            {
-                await ctx.EditReplyAsync(GrimoireColor.Yellow,
-                    "Selected channel cannot be empty when ChannelOption is SelectChannel.");
-                return;
-            }
-
-            channelOption.Match(
-                success => channel = success,
-                failure => { }); // Handled above
+            channel = ctx.GetChannelOption(option, channel);
 
             if (channel is not null)
             {

@@ -13,6 +13,8 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
     : IEventHandler<MessageCreatedEventArgs>
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private const int MaxMessageLength = 2000;
+    private const int MaxEmbedDescriptionLength = 4096;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs eventArgs)
     {
@@ -48,14 +50,14 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
                 var userIdMatches = DiscordRegex.GetUserMentions(messageArgs[1])
                     .ToArray();
                 if (userIdMatches.Length > 0)
-                    snowflakeObject = await sender.GetUserAsync(userIdMatches[0]);
+                    snowflakeObject = await sender.GetUserOrDefaultAsync(new UserId(userIdMatches[0]));
             }
             else if (DiscordRegex.ContainsRoleMentions(messageArgs[1]))
             {
                 var roleIdMatches = DiscordRegex.GetRoleMentions(messageArgs[1])
                     .ToArray();
                 if (roleIdMatches.Length > 0)
-                    snowflakeObject = await eventArgs.Guild.GetRoleAsync(roleIdMatches[0]);
+                    snowflakeObject = await eventArgs.Guild.GetRoleOrDefaultAsync(new RoleId(roleIdMatches[0]));
             }
 
 
@@ -64,15 +66,22 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
                 snowflakeObject switch
                 {
                     DiscordUser user => user.Mention,
+                    DiscordRole { Id: var roleId } when roleId == member.Guild.Id => "@ everyone",
                     DiscordRole role => role.Mention,
                     _ => string.Empty
                 }, StringComparison.OrdinalIgnoreCase);
         }
 
         if (response.HasMessage)
-            content = content.Replace("%Message",
-                string.Join(' ', messageArgs
-                    .Skip(response.HasMention ? 2 : 1)), StringComparison.OrdinalIgnoreCase);
+        {
+            var rawMessage = string.Join(' ', messageArgs.Skip(response.HasMention ? 2 : 1));
+            var sanitizedMessage = GetCustomCommand.SanitizeUserMessageMentions(rawMessage, eventArgs.Guild.Id);
+            content = content.Replace("%Message", sanitizedMessage, StringComparison.OrdinalIgnoreCase);
+        }
+
+        content = GetCustomCommand.TruncateForDiscord(
+            content,
+            response.IsEmbedded ? MaxEmbedDescriptionLength : MaxMessageLength);
 
         var discordResponse = new DiscordMessageBuilder();
 

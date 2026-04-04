@@ -83,6 +83,7 @@ public sealed class MuteUser(
                 "The configured mute role does not exist. Please configure it again before using this command.");
             return;
         }
+
         await member.GrantRoleAsync(muteRole, reason!);
 
 

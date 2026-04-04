@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using CommunityToolkit.HighPerformance.Helpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Channels.TrackerLog;
 using Grimoire.Settings.Enums;
@@ -36,11 +35,17 @@ public sealed class UpdatedNicknameEvent(
             .Select(y => y.Nickname)
             .FirstOrDefaultAsync();
         if (currentNickname is null
-            || Nickname.Equals(currentNickname, new Nickname(args.NicknameAfter), StringComparison.CurrentCultureIgnoreCase))
+            || Nickname.Equals(currentNickname, new Nickname(args.NicknameAfter),
+                StringComparison.CurrentCultureIgnoreCase))
             return;
 
         await dbContext.NicknameHistory.AddAsync(
-            new NicknameHistory { GuildId = args.Guild.GetGuildId(), UserId = args.Member.GetUserId(), Nickname = new Nickname(args.NicknameAfter) });
+            new NicknameHistory
+            {
+                GuildId = args.Guild.GetGuildId(),
+                UserId = args.Member.GetUserId(),
+                Nickname = new Nickname(args.NicknameAfter)
+            });
         await dbContext.SaveChangesAsync();
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed

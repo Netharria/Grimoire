@@ -48,6 +48,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
                 "The mute role is not configured. Please configure it before using this command.");
             return;
         }
+
         var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
         if (muteRole is null)
         {
@@ -55,6 +56,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
                 "The configured mute role does not exist. Please configure it again before using this command.");
             return;
         }
+
         await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.User.Mention}");
 
         var embed = new DiscordEmbedBuilder()

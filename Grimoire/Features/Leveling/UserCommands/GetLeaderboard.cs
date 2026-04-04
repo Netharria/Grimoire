@@ -11,8 +11,6 @@ using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
-using LanguageExt;
-using LanguageExt.Common;
 
 namespace Grimoire.Features.Leveling.UserCommands;
 
@@ -64,20 +62,25 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
                  && userCommandChannel != ctx.GetChannelId())
             return;
 
-        var getUserCenteredLeaderboardQuery = new Request { UserId = targetUser?.GetUserId(), GuildId = guild.GetGuildId() };
+        var getUserCenteredLeaderboardQuery =
+            new Request { UserId = targetUser?.GetUserId(), GuildId = guild.GetGuildId() };
 
         var response = await Handle(getUserCenteredLeaderboardQuery, CancellationToken.None);
-        await response
-            .Match(
-                success => ctx.EditReplyAsync(
-                        GrimoireColor.DarkPurple,
-                        title: "LeaderBoard",
-                        message: success.LeaderboardText,
-                        footer: $"Total Users {success.TotalUserCount}"),
-             error => ctx.EditReplyAsync(GrimoireColor.Yellow, error.Message));
+
+        if (response is null)
+        {
+            await ctx.EditReplyAsync(GrimoireColor.Yellow, "User not found on the leaderboard");
+            return;
+        }
+
+        await ctx.EditReplyAsync(
+            GrimoireColor.DarkPurple,
+            title: "LeaderBoard",
+            message: response.LeaderboardText,
+            footer: $"Total Users {response.TotalUserCount}");
     }
 
-    private async Task<Fin<Response>> Handle(Request request, CancellationToken cancellationToken)
+    private async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -108,7 +111,7 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
                     cancellationToken);
 
             if (userEntry is null)
-                return Error.New("User not found on the leaderboard.");
+                return null;
 
             var surroundingUsers = await dbContext.Set<LeaderboardView>()
                 .AsNoTracking()

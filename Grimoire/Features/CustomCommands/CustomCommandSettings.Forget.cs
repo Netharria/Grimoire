@@ -10,9 +10,6 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
-using LanguageExt;
-using LanguageExt.Common;
-using LanguageExt.Traits;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -24,68 +21,49 @@ public sealed partial class CustomCommandSettings
     [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
     [Command("Forget")]
     [Description("Forget a command that you have saved.")]
-    public Task Forget(
+    public async Task Forget(
         CommandContext ctx,
-        [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
+        [SlashAutoCompleteProvider<GetCustomCommandOptions>]
         [Parameter("Name")]
         [Description("The name of the command to forget.")]
-        CustomCommandName name) =>
-        (
-            from guild in Optional(ctx.Guild).ToEff(Error.New("This command can only be used in a server."))
-            from _1 in ctx.DeferResponse()
-            from _2 in this._dbContextFactory.StartTransaction(
-                (dbContext, cancellationToken) =>
-                            dbContext.CustomCommands
-                            .Where(x => x.Name == name && x.GuildId == guild.GetGuildId())
-                            .ExecuteDeleteAsync(cancellationToken)
-                            .ToUnit())
-            from _3 in ctx.EditReply(GrimoireColor.Green, $"Forgot command: {name}")
-            from _4 in this._guildLog.SendLogMessage(new GuildLogMessage
-                {
-                    GuildId = guild.GetGuildId(),
-                    GuildLogType = GuildLogType.Moderation,
-                    Description = $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command: {name}",
-                    Color = GrimoireColor.Purple
-                })
-            select unit)
-        .Run()
-        .Match(
-            success => success.AsTask(),
-            error => ctx.SendErrorResponseAsync(error.Message));
+        CustomCommandName name)
+    {
+        await ctx.DeferResponseAsync();
 
-    [UsedImplicitly]
-    [RequireGuild]
-    [RequireModuleEnabled(Module.Commands)]
-    [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
-    [Command("Forget")]
-    [Description("Forget a command that you have saved.")]
-    public Task Forget2(
-        CommandContext ctx,
-        [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
-        [Parameter("Name")]
-        [Description("The name of the command to forget.")]
-        CustomCommandName name) =>
-        (
-            from guild in OptionT.lift<Eff, DiscordGuild>(Optional(ctx.Guild))
-            from _1 in ctx.DeferResponse()
-            from _2 in this._dbContextFactory.StartTransaction(
-                (dbContext, cancellationToken) =>
-                    dbContext.CustomCommands
-                        .Where(x => x.Name == name && x.GuildId == guild.GetGuildId())
-                        .ExecuteDeleteAsync(cancellationToken)
-                        .ToUnit())
-            from _3 in ctx.EditReply(GrimoireColor.Green, $"Forgot command: {name}")
-            from _4 in this._guildLog.SendLogMessage(new GuildLogMessage
+        if (ctx.Guild is not { } guild)
+        {
+            await ctx.SendWarningResponseAsync("You need to be in a guild to use this command.");
+            return;
+        }
+
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var guildId = guild.GetGuildId();
+        try
+        {
+            var deletedCount = await dbContext.CustomCommands
+                .Where(x => x.Name == name && x.GuildId == guildId)
+                .ExecuteDeleteAsync();
+
+            var alreadyForgotten = deletedCount == 0;
+
+            await ctx.EditReplyAsync(GrimoireColor.Green,
+                alreadyForgotten
+                    ? $"Command `{name}` was already forgotten."
+                    : $"Removed command {name}");
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                GuildId = guild.GetGuildId(),
+                GuildId = guildId,
                 GuildLogType = GuildLogType.Moderation,
-                Description = $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command: {name}",
+                Description = alreadyForgotten
+                    ? $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command `{name}` (already absent)."
+                    : $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command `{name}`.",
                 Color = GrimoireColor.Purple
-            })
-            select unit)
-        .Run()
-        .Run()
-        .Match(
-            success => success.AsTask(),
-            error => ctx.SendErrorResponseAsync(error.Message));
+            });
+        }
+        catch (DbUpdateException)
+        {
+            await ctx.SendErrorResponseAsync(
+                "Could not forget that command right now due to a database error. Please try again.");
+        }
+    }
 }

@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Diagnostics;
 using Grimoire.Settings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -36,15 +35,16 @@ internal sealed partial class DiscordStartService(
     private async Task ApplyDatabaseMigrations(CancellationToken cancellationToken)
     {
         await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
-        if (pendingMigrations.Any())
-        {
-            Stopwatch sw = new();
-            sw.Start();
-            await context.Database.MigrateAsync(cancellationToken);
-            sw.Stop();
-            LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
-        }
+        await context.Database.MigrateAsync(cancellationToken);
+        // var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
+        // if (pendingMigrations.Any())
+        // {
+        //     Stopwatch sw = new();
+        //     sw.Start();
+        //     await context.Database.MigrateAsync(cancellationToken);
+        //     sw.Stop();
+        //     LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
+        // }
 
         await SettingsServiceRegistration.MigrateSettingsDb(this._settingsDbContextFactory, this._logger,
             cancellationToken);

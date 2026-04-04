@@ -11,12 +11,8 @@ using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
-using LanguageExt;
-using LanguageExt.Common;
-using static LanguageExt.Prelude;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -35,8 +31,6 @@ public sealed partial class LevelSettingsCommandGroup
 
         [ChoiceDisplayName("Amount per xp gain.")]
         Amount
-
-
     }
 
     public static SettingsModule.LevelSettings ToLevelSettings(LevelSettingsOptions levelSettingsOptions)
@@ -65,11 +59,16 @@ public sealed partial class LevelSettingsCommandGroup
 
         var guild = ctx.Guild!;
 
-        await this._settingsModule.SetLevelingSettings(ToLevelSettings(levelSettingsOptions), value, guild.GetGuildId())
-            .Run()
-            .Match(
-                _ => HandleSettingSuccess(ctx, guild, levelSettingsOptions, value, this._guildLog),
-                error => ctx.SendErrorResponseAsync(error.Message));
+        try
+        {
+            await this._settingsModule.SetLevelingSettings(ToLevelSettings(levelSettingsOptions), value,
+                guild.GetGuildId());
+            await HandleSettingSuccess(ctx, guild, levelSettingsOptions, value, this._guildLog);
+        }
+        catch (Exception e)
+        {
+            await ctx.EditReplyAsync(message: e.Message);
+        }
     }
 
     private static async Task HandleSettingSuccess(
@@ -107,42 +106,28 @@ public sealed partial class LevelSettingsCommandGroup
 
         var guild = ctx.Guild!;
 
-        await ctx.GetChannelOption(option, channel)
-            .Bind(ch => ValidateChannelPermissions(guild, ch))
-            .Match(ch => HandleSuccess(
-                    ctx, guild, option, ch, this._settingsModule, this._guildLog),
-                error => ctx.SendErrorResponseAsync(error.Message));
-    }
+        channel = ctx.GetChannelOption(option, channel);
 
-    private static  Fin<DiscordChannel?> ValidateChannelPermissions(
-        DiscordGuild guild,
-        DiscordChannel? channel)
-    {
-        if (channel is null)
-            return (DiscordChannel?) null;
+        if (channel is not null)
+        {
+            var permissions = channel.PermissionsFor(guild.CurrentMember);
+            if (!permissions.HasPermission(DiscordPermission.SendMessages))
+            {
+                await ctx.EditReplyAsync(
+                    message:
+                    $"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
+                return;
+            }
+        }
 
-        var permissions = channel.PermissionsFor(guild.CurrentMember);
-
-        return permissions.HasPermission(DiscordPermission.SendMessages)
-            ? channel
-            : Error.New($"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
-    }
-
-    private static async Task HandleSuccess(
-        CommandContext ctx,
-        DiscordGuild guild,
-        ChannelOption option,
-        DiscordChannel? channel,
-        SettingsModule settingsModule,
-        GuildLog guildLog)
-    {
-        await settingsModule.SetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId(), channel?.GetChannelId());
+        await this._settingsModule.SetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId(),
+            channel?.GetChannelId());
 
         await ctx.EditReplyAsync(message: option is ChannelOption.Off
             ? "Disabled the level log."
             : $"Updated the level log to {channel?.Mention}");
 
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

@@ -10,7 +10,5 @@ namespace Grimoire.Extensions;
 
 public static class DiscordRoleExtensions
 {
-
-    public static RoleId GetRoleId(this DiscordRole role) => new (role.Id);
-
+    public static RoleId GetRoleId(this DiscordRole role) => new(role.Id);
 }

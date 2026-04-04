@@ -8,6 +8,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -29,7 +30,7 @@ public sealed partial class RewardCommandGroup
             title: "Rewards",
             message: string.Join('\n', rewards
                 .ToAsyncEnumerable()
-                .SelectAwait(async x =>
+                .Select(async (SettingsModule.RewardEntry x, CancellationToken token) =>
                 {
                     var role = await guild.GetRoleOrDefaultAsync(x.RoleId);
                     return

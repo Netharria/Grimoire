@@ -43,14 +43,19 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
         if (!Username.Equals(latestUsername, eventArgs.Member.GetUsername(),
                 StringComparison.CurrentCultureIgnoreCase))
             await dbContext.UsernameHistory.AddAsync(
-                new UsernameHistory { Username = eventArgs.Member.GetUsername(), UserId = eventArgs.Member.GetUserId() });
+                new UsernameHistory
+                {
+                    Username = eventArgs.Member.GetUsername(), UserId = eventArgs.Member.GetUserId()
+                });
 
         if (!Nickname.Equals(latestNickname, eventArgs.Member.GetNickname(),
                 StringComparison.CurrentCultureIgnoreCase))
             await dbContext.NicknameHistory.AddAsync(
                 new NicknameHistory
                 {
-                    UserId = eventArgs.Member.GetUserId(), GuildId = eventArgs.Guild.GetGuildId(), Nickname = eventArgs.Member.GetNickname()
+                    UserId = eventArgs.Member.GetUserId(),
+                    GuildId = eventArgs.Guild.GetGuildId(),
+                    Nickname = eventArgs.Member.GetNickname()
                 });
 
         if (!AvatarFileName.Equals(latestAvatar, eventArgs.Member.GetAvatarFileName(MediaFormat.Auto, 128),
@@ -64,8 +69,10 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
                 });
 
         if (!Username.Equals(latestUsername, eventArgs.Member.GetUsername(), StringComparison.CurrentCultureIgnoreCase)
-            || !Nickname.Equals(latestNickname, eventArgs.Member.GetNickname(), StringComparison.CurrentCultureIgnoreCase)
-            || !AvatarFileName.Equals(latestAvatar, eventArgs.Member.GetAvatarFileName(MediaFormat.Auto, 128), StringComparison.Ordinal))
+            || !Nickname.Equals(latestNickname, eventArgs.Member.GetNickname(),
+                StringComparison.CurrentCultureIgnoreCase)
+            || !AvatarFileName.Equals(latestAvatar, eventArgs.Member.GetAvatarFileName(MediaFormat.Auto, 128),
+                StringComparison.Ordinal))
             await dbContext.SaveChangesAsync();
     }
 }

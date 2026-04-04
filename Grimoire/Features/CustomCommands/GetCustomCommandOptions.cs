@@ -6,40 +6,43 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
-public sealed class GetCustomCommandOptions
+
+[UsedImplicitly]
+internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+    : IAutoCompleteProvider
 {
-    internal sealed class AutocompleteProvider(IDbContextFactory<GrimoireDbContext> dbContextFactory)
-        : IAutoCompleteProvider
+    private static readonly Func<GrimoireDbContext, GuildId, string, IAsyncEnumerable<DiscordAutoCompleteChoice>>
+        _getCommandsAsync =
+            EF.CompileAsyncQuery((GrimoireDbContext context, GuildId guildId, string cleanedText) =>
+                context.CustomCommands
+                    .AsNoTracking()
+                    .Where(x => x.GuildId == guildId)
+                    .OrderBy(x => EF.Functions.FuzzyStringMatchLevenshtein(x.Name.Value.ToLower(), cleanedText.ToLower()))
+                    .Take(5)
+                    .Select(x => new DiscordAutoCompleteChoice(
+                        x.Name
+                        + (x.HasMention ? " <Mention>" : string.Empty)
+                        + (x.HasMessage ? " <Message>" : string.Empty),
+                        x.Name.Value))
+            );
+
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+
+    public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
     {
-        private static readonly Func<GrimoireDbContext, GuildId, string, IAsyncEnumerable<DiscordAutoCompleteChoice>>
-            _getCommandsAsync =
-                EF.CompileAsyncQuery((GrimoireDbContext context, GuildId guildId, string cleanedText) =>
-                    context.CustomCommands
-                        .AsNoTracking()
-                        .Where(x => x.GuildId == guildId)
-                        .OrderBy(x => EF.Functions.FuzzyStringMatchLevenshtein(x.Name.Value, cleanedText))
-                        .Take(5)
-                        .Select(x => new DiscordAutoCompleteChoice(
-                            x.Name + " " +
-                            (x.HasMention ? "<Mention> " : string.Empty) +
-                            (x.HasMessage ? "<Message>" : string.Empty),
-                            x.Name))
-                );
+        if (context.Guild is null || context.UserInput is null)
+            return [];
+        var cleanedText = context.UserInput.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
 
-        private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+        if (string.IsNullOrEmpty(cleanedText))
+            return [];
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-        public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
-        {
-            if (context.Guild is null || string.IsNullOrWhiteSpace(context.UserInput))
-                return [];
-            var cleanedText = context.UserInput.Split(' ').FirstOrDefault(string.Empty);
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-
-            return await _getCommandsAsync(dbContext, new GuildId(context.Guild.Id), cleanedText)
-                .ToListAsync();
-        }
+        return await _getCommandsAsync(dbContext, new GuildId(context.Guild.Id), cleanedText)
+            .ToListAsync();
     }
 }

@@ -17,6 +17,8 @@ public sealed class LockedTreadEvents(SettingsModule settingsModule)
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
+        if (args.Guild is null)
+            return;
         if (!args.Channel.IsThread)
             return;
         if (args.Author is not DiscordMember member)
@@ -29,6 +31,8 @@ public sealed class LockedTreadEvents(SettingsModule settingsModule)
 
     public async Task HandleEventAsync(DiscordClient sender, MessageReactionAddedEventArgs args)
     {
+        if (args.Guild is null)
+            return;
         if (!args.Channel.IsThread)
             return;
         if (args.User is not DiscordMember member)

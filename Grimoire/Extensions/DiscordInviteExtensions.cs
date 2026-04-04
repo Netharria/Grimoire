@@ -10,7 +10,8 @@ namespace Grimoire.Extensions;
 public static class DiscordInviteExtensions
 {
     [Pure]
-    public static InviteUrl GetInviteUrl(this DiscordInvite invite) => new (invite.ToString());
+    public static InviteUrl GetInviteUrl(this DiscordInvite invite) => new(invite.ToString());
+
     [Pure]
-    public static InviteCode GetInviteCode(this DiscordInvite invite) => new (invite.Code);
+    public static InviteCode GetInviteCode(this DiscordInvite invite) => new(invite.Code);
 }

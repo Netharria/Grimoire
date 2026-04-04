@@ -38,7 +38,6 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         [Parameter("User")] [Description("The user to look up the logs for. Leave blank for self.")]
         DiscordUser? user = null)
     {
-
         var guild = ctx.Guild!;
         var member = ctx.Member!;
 
@@ -56,6 +55,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
             await ctx.EditReplyAsync(GrimoireColor.Red, "You do not have permission to view other users' logs.");
             return;
         }
+
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         if (sinQueryType == SinQueryType.Mod)
         {

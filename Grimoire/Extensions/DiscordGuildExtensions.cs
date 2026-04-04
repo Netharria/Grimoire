@@ -21,7 +21,7 @@ public static class DiscordGuildExtensions
 
     public static Task<DiscordRole?> GetRoleOrDefaultAsync(this DiscordGuild guild, RoleId? roleId)
         => roleId is { } id
-            ? GetRoleOrDefaultAsync(guild, id)
+            ? guild.GetRoleOrDefaultAsync(id)
             : Task.FromResult<DiscordRole?>(null);
 
     public static async Task<DiscordRole?> GetRoleOrDefaultAsync(this DiscordGuild guild, RoleId roleId)
@@ -38,7 +38,7 @@ public static class DiscordGuildExtensions
 
     public static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordGuild guild, ChannelId? channelId)
         => channelId is { } id
-            ? GetChannelOrDefaultAsync(guild, id)
+            ? guild.GetChannelOrDefaultAsync(id)
             : Task.FromResult<DiscordChannel?>(null);
 
     public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordGuild guild, ChannelId channelId)
@@ -55,7 +55,7 @@ public static class DiscordGuildExtensions
 
     public static Task<DiscordMember?> GetMemberOrDefaultAsync(this DiscordGuild guild, UserId? userId)
         => userId is { } id
-            ? GetMemberOrDefaultAsync(guild, id)
+            ? guild.GetMemberOrDefaultAsync(id)
             : Task.FromResult<DiscordMember?>(null);
 
     public static async Task<DiscordMember?> GetMemberOrDefaultAsync(this DiscordGuild guild, UserId userId)
@@ -71,5 +71,5 @@ public static class DiscordGuildExtensions
     }
 
     [Pure]
-    public static GuildId GetGuildId(this DiscordGuild guild) => new (guild.Id);
+    public static GuildId GetGuildId(this DiscordGuild guild) => new(guild.Id);
 }

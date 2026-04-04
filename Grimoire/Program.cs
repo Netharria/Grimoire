@@ -202,7 +202,7 @@ await Host.CreateDefaultBuilder(args)
 
                 var textCommandProcessor = new TextCommandProcessor(new TextCommandConfiguration
                 {
-                    PrefixResolver = new DefaultPrefixResolver(true, "!").ResolvePrefixAsync,
+                    PrefixResolver = new DefaultPrefixResolver(true, "!").ResolvePrefixAsync
                 });
 
                 var slashCommandProcessor = new SlashCommandProcessor();
@@ -212,10 +212,7 @@ await Host.CreateDefaultBuilder(args)
 
                 extension.AddProcessor(textCommandProcessor);
                 extension.AddProcessor(slashCommandProcessor);
-            }, new CommandsConfiguration
-            {
-                UseDefaultCommandErrorHandler = false
-            })
+            }, new CommandsConfiguration { UseDefaultCommandErrorHandler = false })
             .AddSingleton<GuildLog>()
             .AddHostedService<GuildLog>()
             .AddSingleton<TrackerLog>()
@@ -236,7 +233,7 @@ await Host.CreateDefaultBuilder(args)
             var userAgent = context.Configuration["pluralkitUserAgent"];
             var pluralkitToken = context.Configuration["pluralkitToken"];
 
-            ArgumentException.ThrowIfNullOrEmpty(endpoint, nameof(endpoint));
+            ArgumentException.ThrowIfNullOrEmpty(endpoint);
 
             x.BaseAddress = new Uri(endpoint);
             x.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);

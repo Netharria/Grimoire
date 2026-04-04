@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Frozen;
+using System.Text.RegularExpressions;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
@@ -13,9 +15,11 @@ using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
-public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private const int MaxMessageLength = 2000;
+    private const int MaxEmbedDescriptionLength = 4096;
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Commands)]
@@ -24,7 +28,7 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
     [UsedImplicitly]
     public async Task CallCommand(
         SlashCommandContext ctx,
-        [SlashAutoCompleteProvider<GetCustomCommandOptions.AutocompleteProvider>]
+        [SlashAutoCompleteProvider<GetCustomCommandOptions>]
         [Parameter("CommandName")]
         [Description("The name of the command to call.")]
         CustomCommandName name,
@@ -35,15 +39,21 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        if (ctx.Guild is not { } guild)
+        {
+            await ctx.SendWarningResponseAsync("This command can only be used in a server.");
+            return;
+        }
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         var response = await dbContext.CustomCommands
+            .AsNoTracking()
             .GetCustomCommandQuery(guild.GetGuildId(), name)
             .FirstOrDefaultAsync();
 
-        if (response is null || !IsUserAuthorized(ctx.Member, response.RestrictedUse, response.PermissionRoles))
+        if (response is null
+            || !IsUserAuthorized(ctx.Member, response.RestrictedUse, response.PermissionRoles))
         {
             await ctx.DeleteResponseAsync();
             return;
@@ -57,11 +67,18 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
                 snowflakeObject switch
                 {
                     DiscordUser user => user.Mention,
+                    DiscordRole { Id: var roleId } when roleId == guild.Id => "@ everyone",
                     DiscordRole role => role.Mention,
                     _ => string.Empty
                 }, StringComparison.OrdinalIgnoreCase);
         if (response.HasMessage)
-            content = content.Replace("%Message", message, StringComparison.OrdinalIgnoreCase);
+        {
+            var sanitizedMessage = SanitizeUserMessageMentions(message, guild.Id);
+            content = content.Replace("%Message", sanitizedMessage, StringComparison.OrdinalIgnoreCase);
+        }
+        content = TruncateForDiscord(
+            content,
+            response.IsEmbedded ? MaxEmbedDescriptionLength : MaxMessageLength);
 
         var discordResponse = new DiscordWebhookBuilder();
 
@@ -76,13 +93,73 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
         else
             discordResponse.WithContent(content);
 
+
         await ctx.EditResponseAsync(discordResponse);
     }
 
-    public static bool IsUserAuthorized(DiscordMember? member, bool restrictedUse,
-        IReadOnlyCollection<RoleId> permissionRoles) =>
-        (restrictedUse
-            ? member?.Roles.Any(x => permissionRoles.Contains(x.GetRoleId()))
-            : member?.Roles.All(x => !permissionRoles.Contains(x.GetRoleId()))
-        ) ?? false;
+    internal static string SanitizeUserMessageMentions(string input, ulong guildId)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+
+        // Neutralize raw @everyone / @here while preserving readable text.
+        var sanitized = EveryoneHereRegex().Replace(input, static match =>
+            string.Concat("@ ", match.Value.AsSpan(1)));
+
+        // Neutralize only the @everyone role mention form: <@&guildId>.
+        // Keep all other role mentions intact.
+        sanitized = RoleMentionRegex().Replace(sanitized, match =>
+        {
+            var roleIdText = match.Groups[1].Value;
+
+            if (!ulong.TryParse(roleIdText, out var roleId) || roleId != guildId)
+                return match.Value;
+
+            // Break mention syntax but keep it readable.
+            return "@ everyone";
+        });
+
+        return sanitized;
+    }
+
+    public static bool IsUserAuthorized(
+        DiscordMember? member,
+        bool restrictedUse,
+        IReadOnlyCollection<RoleId> permissionRoles)
+    {
+        if (member is null)
+            return false;
+
+        if (permissionRoles.Count == 0)
+            return !restrictedUse;
+
+        var memberRoleIds = member.Roles.Select(static role => role.GetRoleId());
+
+        var permissionsRolesSet = permissionRoles.ToFrozenSet();
+
+        return restrictedUse
+            ? memberRoleIds.Any(permissionsRolesSet.Contains)
+            : memberRoleIds.All(roleId => !permissionsRolesSet.Contains(roleId));
+    }
+
+    internal static string TruncateForDiscord(string input, int maxLength)
+    {
+        if (string.IsNullOrEmpty(input) || input.Length <= maxLength)
+            return input;
+
+        const string ellipsis = "…";
+
+        var truncated = input[..(maxLength - ellipsis.Length)];
+        // Roll back if we split a surrogate pair
+        if (truncated.Length > 0 && char.IsHighSurrogate(truncated[^1]))
+            truncated = truncated[..^1];
+        return string.Concat(truncated, ellipsis);
+    }
+
+    [GeneratedRegex(@"@(everyone|here)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex EveryoneHereRegex();
+
+    [GeneratedRegex("<@&(\\d+)>", RegexOptions.CultureInvariant)]
+    private static partial Regex RoleMentionRegex();
+
 }

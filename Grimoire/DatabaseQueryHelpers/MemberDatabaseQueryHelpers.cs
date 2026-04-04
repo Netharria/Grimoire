@@ -27,11 +27,12 @@ public static class MemberDatabaseQueryHelpers
             })
             .AsAsyncEnumerable()
             .Select(nickname => (nickname.UserId, nickname.GuildId, nickname.Nickname))
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var nicknamesToAdd = discordGuild.Members.Values
             .Where(x => !existingNicknames.Contains((x.GetUserId(), x.GetGuildId(), x.GetNickname())))
-            .Select(x => new NicknameHistory { GuildId = x.GetGuildId(), UserId = x.GetUserId(), Nickname = x.GetNickname() })
+            .Select(x =>
+                new NicknameHistory { GuildId = x.GetGuildId(), UserId = x.GetUserId(), Nickname = x.GetNickname() })
             .ToArray();
 
         if (nicknamesToAdd.Length == 0)
@@ -59,11 +60,12 @@ public static class MemberDatabaseQueryHelpers
                 })
             .AsAsyncEnumerable()
             .Select(avatar => (avatar.UserId, avatar.GuildId, avatar.FileName))
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var avatarsToAdd = discordGuild.Members.Values
             .Where(x => !existingAvatars.Contains((x.GetUserId(), x.GetGuildId(), x.GetAvatarFileName())))
-            .Select(x => new Avatar { UserId = x.GetUserId(), GuildId = x.GetGuildId(), FileName = x.GetAvatarFileName() })
+            .Select(x =>
+                new Avatar { UserId = x.GetUserId(), GuildId = x.GetGuildId(), FileName = x.GetAvatarFileName() })
             .ToArray();
 
         if (avatarsToAdd.Length == 0)

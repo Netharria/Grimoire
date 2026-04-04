@@ -8,35 +8,27 @@
 using DSharpPlus.Commands.Converters;
 using DSharpPlus.Commands.Processors.TextCommands;
 using JetBrains.Annotations;
-using LanguageExt;
-using LanguageExt.Common;
-using Microsoft.Extensions.Logging;
 using static DSharpPlus.Entities.Optional;
-using static LanguageExt.Prelude;
 
 namespace Grimoire.Features.CustomCommands;
 
 [UsedImplicitly]
-public partial class CommandNameArgumentConverter(ILogger<CommandNameArgumentConverter> logger)
+public class CommandNameArgumentConverter
     : ITextArgumentConverter<CustomCommandName>, ISlashArgumentConverter<CustomCommandName>
 {
-    private readonly ILogger<CommandNameArgumentConverter> _logger = logger;
     public DiscordApplicationCommandOptionType ParameterType => DiscordApplicationCommandOptionType.String;
     public string ReadableName => "Command Name";
     public ConverterInputType RequiresText => ConverterInputType.Always;
 
-    public Task<Optional<CustomCommandName>> ConvertAsync(ConverterContext context) =>
-        (
-            from value in convert<string>(context.Argument)
-                .ToFin(Error.New("Argument is not a string."))
-            from _1 in guardnot(value.Contains(' '),
-                Error.New("Command Name cannot have spaces."))
-            select new CustomCommandName(value))
-            .Match(
-                Succ: name => FromValue(name).AsTask(),
-                Fail: _ => FromNoValue<CustomCommandName>().AsTask());
+    public Task<Optional<CustomCommandName>> ConvertAsync(ConverterContext context)
+    {
+        if (context.Argument is not string str || string.IsNullOrWhiteSpace(str))
+            return Task.FromResult(FromNoValue<CustomCommandName>());
+        str = str.Trim();
 
+        if (str.Any(char.IsWhiteSpace) || str.Length > 24)
+            return Task.FromResult(FromNoValue<CustomCommandName>());
 
-    [LoggerMessage(LogLevel.Information, "Was not able to convert text to Embed Color: {message}")]
-    public static partial void LogConversionError(ILogger logger, string message);
+        return Task.FromResult(FromValue(new CustomCommandName(str)));
+    }
 }

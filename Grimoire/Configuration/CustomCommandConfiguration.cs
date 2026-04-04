@@ -34,5 +34,6 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
                 guildId => guildId.Value,
                 id => new GuildId(id));
 
+        builder.HasIndex(e => e.GuildId);
     }
 }

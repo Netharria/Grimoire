@@ -37,8 +37,8 @@ public static class PermissionsExtensions
         => permissions & ~PermissionValues.VoiceLockPermissions;
 
     public static PreviouslyAllowedPermissions GetPreviouslyAllowedPermissions(this DiscordOverwrite permissions)
-        => new (long.Parse(permissions.Allowed.ToString())) ;
+        => new(long.Parse(permissions.Allowed.ToString()));
 
     public static PreviouslyDeniedPermissions GetPreviouslyDeniedPermissions(this DiscordOverwrite permissions)
-        => new (long.Parse(permissions.Denied.ToString())) ;
+        => new(long.Parse(permissions.Denied.ToString()));
 }

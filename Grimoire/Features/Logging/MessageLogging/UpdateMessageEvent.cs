@@ -48,13 +48,14 @@ public sealed class UpdateMessageEvent(
                         .First(messageHistory => messageHistory.Action != MessageAction.Deleted)
                         .MessageContent,
                     Success = true,
-                    OriginalUserId = (UserId?) message.ProxiedMessageLink!.OriginalMessage!.UserId,
+                    OriginalUserId = (UserId?)message.ProxiedMessageLink!.OriginalMessage!.UserId,
                     message.ProxiedMessageLink.SystemId,
                     message.ProxiedMessageLink.MemberId
                 }
             ).FirstOrDefaultAsync();
         if (message is null
-            || MessageContent.Equals(message.MessageContent, args.Message.GetMessageContent(), StringComparison.CurrentCultureIgnoreCase))
+            || MessageContent.Equals(message.MessageContent, args.Message.GetMessageContent(),
+                StringComparison.CurrentCultureIgnoreCase))
             return;
 
         await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomEmbed

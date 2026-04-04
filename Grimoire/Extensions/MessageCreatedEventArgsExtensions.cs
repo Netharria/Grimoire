@@ -10,12 +10,16 @@ namespace Grimoire.Extensions;
 public static class MessageCreatedEventArgsExtensions
 {
     [Pure]
-    public static UserId GetAuthorUserId(this MessageCreatedEventArgs args) => new (args.Author.Id);
+    public static UserId GetAuthorUserId(this MessageCreatedEventArgs args) => new(args.Author.Id);
+
     [Pure]
     // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-    public static GuildId? GetGuildId(this MessageCreatedEventArgs args) => args.Guild is not null ? new GuildId(args.Guild.Id) : null;
+    public static GuildId? GetGuildId(this MessageCreatedEventArgs args) =>
+        args.Guild is not null ? new GuildId(args.Guild.Id) : null;
+
     [Pure]
-    public static MessageId GetMessageId(this MessageCreatedEventArgs args) => new (args.Message.Id);
+    public static MessageId GetMessageId(this MessageCreatedEventArgs args) => new(args.Message.Id);
+
     [Pure]
-    public static ChannelId GetChannelId(this MessageCreatedEventArgs args) => new (args.Channel.Id);
+    public static ChannelId GetChannelId(this MessageCreatedEventArgs args) => new(args.Channel.Id);
 }

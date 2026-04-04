@@ -68,7 +68,8 @@ public class SpamTrackerModule(SettingsModule settingsModule, IMemoryCache memor
         SetSpamFilterCache(channelId, option);
     }
 
-    public async Task RemoveOverride(ChannelId channelId, GuildId guildId, CancellationToken cancellationToken = default)
+    public async Task RemoveOverride(ChannelId channelId, GuildId guildId,
+        CancellationToken cancellationToken = default)
     {
         await this._settingsModule.RemoveSpamFilterOverrideAsync(channelId, guildId, cancellationToken);
         SetSpamFilterCache(channelId, null);

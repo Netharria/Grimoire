@@ -10,8 +10,6 @@ using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
-using LanguageExt;
-using LanguageExt.Common;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.PublishSins;
@@ -33,7 +31,7 @@ public sealed partial class PublishCommands(
     private readonly ILogger<PublishCommands> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
 
-    private async Task<Either<Error, DiscordMessage>> SendPublicLogMessage(CommandContext ctx,
+    private async Task<DiscordMessage?> SendPublicLogMessage(CommandContext ctx,
         UserId userId,
         Username username,
         string reason,
@@ -45,11 +43,11 @@ public sealed partial class PublishCommands(
         var banLogChannelId = await this._settingsModule.GetLogChannelSetting(GuildLogType.BanLog, guild.GetGuildId());
 
         if (banLogChannelId is null)
-            return Error.New("The public ban log channel is not set up. Please set it up and try again.");
+            return null;
         var banLogChannel = await ctx.Client.GetChannelOrDefaultAsync(banLogChannelId.Value);
 
         if (banLogChannel is null)
-            return Error.New("The public ban log channel is invalid. Please set it up and try again.");
+            return null;
 
         if (Username.IsNullOrWhiteSpace(username))
         {

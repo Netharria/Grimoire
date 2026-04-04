@@ -31,17 +31,17 @@ internal sealed class CleanupLogsBackgroundTask(
             {
                 oldLogMessages.Key.ChannelId, MessageIds = oldLogMessages.Select(x => x.Id).ToArray()
             }).AsAsyncEnumerable()
-            .SelectAwait(async channel =>
+            .Select(async (channel, token) =>
                 new
                 {
-                    DiscordChannel = await discordClient.GetChannelOrDefaultAsync(channel.ChannelId),
+                    DiscordChannel = await discordClient.GetChannelOrDefaultAsync(channel.ChannelId, token),
                     DatabaseChannel = channel
                 })
             .SelectMany(channelInfo =>
                 channelInfo.DatabaseChannel.MessageIds
                     .ToAsyncEnumerable()
-                    .SelectAwait(async messageId =>
-                        await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, cancellationToken))
+                    .Select(async (messageId, token) =>
+                        await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, token))
             ).ToArrayAsync(cancellationToken);
 
         await DeleteOldMessageAndUserLogs(dbContext, cancellationToken);

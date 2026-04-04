@@ -8,7 +8,6 @@
 using System.Globalization;
 using DSharpPlus.Commands.Converters;
 using DSharpPlus.Commands.Processors.TextCommands;
-using LanguageExt;
 using Microsoft.Extensions.Logging;
 using static DSharpPlus.Entities.Optional;
 
@@ -17,16 +16,14 @@ namespace Grimoire.Features.Moderation;
 public class SinIdArgumentConverter(ILogger<SinIdArgumentConverter> logger)
     : ITextArgumentConverter<SinId>, ISlashArgumentConverter<SinId>
 {
+    private readonly ILogger<SinIdArgumentConverter> _logger = logger;
     public DiscordApplicationCommandOptionType ParameterType => DiscordApplicationCommandOptionType.String;
     public string ReadableName => "Command Name";
     public ConverterInputType RequiresText => ConverterInputType.Always;
 
-    private readonly ILogger<SinIdArgumentConverter> _logger = logger;
-
     public Task<Optional<SinId>> ConvertAsync(ConverterContext context) =>
-    long.TryParse(context.Argument?.ToString(), CultureInfo.InvariantCulture, out var result)
+        long.TryParse(context.Argument?.ToString(), CultureInfo.InvariantCulture, out var result)
         && result > 0
-    ? FromValue(new SinId(result)).AsTask()
-    : FromNoValue<SinId>().AsTask();
-
+            ? Task.FromResult(FromValue(new SinId(result)))
+            : Task.FromResult(FromNoValue<SinId>());
 }

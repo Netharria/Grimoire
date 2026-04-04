@@ -21,7 +21,6 @@ public abstract partial class GenericBackgroundService(
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-
         var randomTicks = Random.Shared.NextInt64(0, timeSpan.Ticks);
         var timeSpanDelay = TimeSpan.FromTicks(randomTicks);
         LogBackgroundTaskStart(logger, GetType().FullName ?? GetType().Name, timeSpanDelay);

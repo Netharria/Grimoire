@@ -32,6 +32,5 @@ internal sealed class ProxiedMessageLinkConfiguration : IEntityTypeConfiguration
         builder.Property(x => x.MemberId)
             .IsRequired(false)
             .HasMaxLength(256);
-
     }
 }

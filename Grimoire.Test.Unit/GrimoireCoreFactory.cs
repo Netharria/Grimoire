@@ -18,8 +18,7 @@ namespace Grimoire.Test.Unit;
 public sealed class GrimoireCoreFactory : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgreSqlContainer =
-        new PostgreSqlBuilder()
-            .WithImage("postgres:15-alpine")
+        new PostgreSqlBuilder(image:"postgres:15-alpine")
             .Build();
 
     private DbConnection _dbConnection = null!;

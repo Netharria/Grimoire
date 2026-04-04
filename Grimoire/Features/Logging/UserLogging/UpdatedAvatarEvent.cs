@@ -38,11 +38,16 @@ public sealed class UpdatedAvatarEvent(
             .OrderByDescending(x => x.Timestamp)
             .Select(x => x.FileName)
             .FirstOrDefaultAsync();
-        if ( string.Equals(currentAvatar.Value, args.MemberAfter.AvatarUrl, StringComparison.Ordinal))
+        if (string.Equals(currentAvatar.Value, args.MemberAfter.AvatarUrl, StringComparison.Ordinal))
             return;
 
         await dbContext.Avatars.AddAsync(
-            new Avatar { GuildId = args.Guild.GetGuildId(), UserId = args.Member.GetUserId(), FileName = args.MemberAfter.GetAvatarFileName() });
+            new Avatar
+            {
+                GuildId = args.Guild.GetGuildId(),
+                UserId = args.Member.GetUserId(),
+                FileName = args.MemberAfter.GetAvatarFileName()
+            });
         await dbContext.SaveChangesAsync();
 
         var embed = new DiscordEmbedBuilder()
