@@ -17,9 +17,9 @@ namespace Grimoire.Features.CustomCommands;
 
 public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private const int MaxMessageLength = 2000;
     private const int MaxEmbedDescriptionLength = 4096;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Commands)]
@@ -76,6 +76,7 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             var sanitizedMessage = SanitizeUserMessageMentions(message, guild.Id);
             content = content.Replace("%Message", sanitizedMessage, StringComparison.OrdinalIgnoreCase);
         }
+
         content = TruncateForDiscord(
             content,
             response.IsEmbedded ? MaxEmbedDescriptionLength : MaxMessageLength);
@@ -161,5 +162,4 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
 
     [GeneratedRegex("<@&(\\d+)>", RegexOptions.CultureInvariant)]
     private static partial Regex RoleMentionRegex();
-
 }

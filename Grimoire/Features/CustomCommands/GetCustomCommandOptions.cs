@@ -10,7 +10,6 @@ using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
-
 [UsedImplicitly]
 internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IAutoCompleteProvider
@@ -21,7 +20,8 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
                 context.CustomCommands
                     .AsNoTracking()
                     .Where(x => x.GuildId == guildId)
-                    .OrderBy(x => EF.Functions.FuzzyStringMatchLevenshtein(x.Name.Value.ToLower(), cleanedText.ToLower()))
+                    .OrderBy(x =>
+                        EF.Functions.FuzzyStringMatchLevenshtein(x.Name.Value.ToLower(), cleanedText.ToLower()))
                     .Take(5)
                     .Select(x => new DiscordAutoCompleteChoice(
                         x.Name

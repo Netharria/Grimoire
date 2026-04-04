@@ -12,9 +12,9 @@ namespace Grimoire.Features.CustomCommands;
 public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IEventHandler<MessageCreatedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private const int MaxMessageLength = 2000;
     private const int MaxEmbedDescriptionLength = 4096;
+    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs eventArgs)
     {

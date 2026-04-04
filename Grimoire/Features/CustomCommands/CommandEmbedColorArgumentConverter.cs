@@ -27,7 +27,7 @@ public partial class CommandEmbedColorArgumentConverter
             return Task.FromResult(FromNoValue<CustomCommandEmbedColor>());
         var str = raw.Trim();
 
-        if(str.StartsWith('#'))
+        if (str.StartsWith('#'))
             str = str[1..];
         if (!ValidHexColor().IsMatch(str))
             return Task.FromResult(FromNoValue<CustomCommandEmbedColor>());

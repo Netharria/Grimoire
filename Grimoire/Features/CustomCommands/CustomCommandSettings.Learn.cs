@@ -33,14 +33,11 @@ public sealed partial class CustomCommandSettings
         [Parameter("Content")]
         [Description("The content of the command. Use %mention or %message to add a message arguments")]
         string content,
-        [Parameter("Embed")]
-        [Description("Put the message in an embed")]
+        [Parameter("Embed")] [Description("Put the message in an embed")]
         bool embed = false,
-        [Parameter("EmbedColor")]
-        [Description("Hexadecimal color of the embed")]
+        [Parameter("EmbedColor")] [Description("Hexadecimal color of the embed")]
         CustomCommandEmbedColor? embedColor = null,
-        [Parameter("RestrictedUse")]
-        [Description("Only explicitly allowed roles can use this command")]
+        [Parameter("RestrictedUse")] [Description("Only explicitly allowed roles can use this command")]
         bool restrictedUse = false,
         [Parameter("PermissionRole_1")] DiscordRole? permissionRole1 = null,
         [Parameter("PermissionRole_2")] DiscordRole? permissionRole2 = null,
@@ -61,6 +58,7 @@ public sealed partial class CustomCommandSettings
             await ctx.SendWarningResponseAsync("This command can only be used in a server.");
             return;
         }
+
         var guildId = guild.GetGuildId();
         var hasMention = content.Contains("%mention", StringComparison.OrdinalIgnoreCase);
         var hasMessage = content.Contains("%message", StringComparison.OrdinalIgnoreCase);
@@ -82,13 +80,7 @@ public sealed partial class CustomCommandSettings
         }
 
         var commandRoles = roleIds.Select(roleId =>
-            new CustomCommandRole
-            {
-                CustomCommandName = name,
-                GuildId = guildId,
-                RoleId = roleId
-            }).ToList();
-
+            new CustomCommandRole { CustomCommandName = name, GuildId = guildId, RoleId = roleId }).ToList();
 
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -105,7 +97,7 @@ public sealed partial class CustomCommandSettings
                 GuildId = guildId,
                 Content = content,
                 HasMention = hasMention,
-                HasMessage =  hasMessage,
+                HasMessage = hasMessage,
                 IsEmbedded = embed,
                 EmbedColor = embedColor,
                 RestrictedUse = restrictedUse,
