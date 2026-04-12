@@ -40,7 +40,8 @@ public sealed partial class PublishCommands(
         PublishType publish)
     {
         var guild = ctx.Guild!;
-        var banLogChannelId = await this._settingsModule.GetEffectiveLogChannelSetting(GuildLogType.PublicModeration, guild.GetGuildId());
+        var banLogChannelId =
+            await this._settingsModule.GetEffectiveLogChannelSetting(GuildLogType.PublicModeration, guild.GetGuildId());
 
         if (banLogChannelId is null)
             return null;

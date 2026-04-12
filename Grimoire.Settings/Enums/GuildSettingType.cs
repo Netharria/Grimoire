@@ -11,9 +11,11 @@ public enum GuildSettingType
 {
     //Custom Command Settings
     CustomCommandsModuleEnabled,
+
     //General Settings
     ModerationLogChannel,
     UserCommandChannel,
+
     //Leveling Settings
     TextTime,
     LevelScalingBase,
@@ -21,22 +23,25 @@ public enum GuildSettingType
     XpGainAmount,
     LevelingLogChannel,
     LevelingModuleEnabled,
+
     //Message Log Settings
     DeleteLogChannel,
     BulkDeleteLogChannel,
     EditLogChannel,
     MessageLogModuleEnabled,
+
     //Moderation Settings
     PublicModerationLogChannel,
     SinAutoPardonDuration,
     MuteRole,
     AntiSpamModuleEnabled,
     ModerationModuleEnabled,
+
     //User Log Settings
     JoinLogChannel,
     LeaveLogChannel,
     UsernameLogChannel,
     NicknameLogChannel,
     AvatarLogChannel,
-    UserLogModuleEnabled,
+    UserLogModuleEnabled
 }

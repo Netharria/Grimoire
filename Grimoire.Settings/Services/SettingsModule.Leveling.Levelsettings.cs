@@ -5,11 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.Collections.Frozen;
 using System.Globalization;
 using Grimoire.Settings.Domain;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Settings.Services;
 
@@ -59,12 +56,11 @@ public sealed partial class SettingsModule
     {
         var latestByKey =
             await GetGuildSettings(guildId, _levelingSettingKeys, cancellationToken)
-            .ToDictionaryAsync(x => x.Type, x => x switch
-            {
-                GuildSettingCustomValue customValue => customValue.Value,
-                _ => null,
-
-            }, cancellationToken: cancellationToken);
+                .ToDictionaryAsync(x => x.Type, x => x switch
+                {
+                    GuildSettingCustomValue customValue => customValue.Value,
+                    _ => null
+                }, cancellationToken: cancellationToken);
 
         return new LevelingSettingEntry
         {
@@ -138,11 +134,11 @@ public sealed partial class SettingsModule
                 SetBy = setBy,
                 Value = settingToChange switch
                 {
-                    LevelSettings.TextTime => TimeSpan.FromSeconds(newValue).ToString("c", CultureInfo.InvariantCulture),
+                    LevelSettings.TextTime => TimeSpan.FromSeconds(newValue)
+                        .ToString("c", CultureInfo.InvariantCulture),
                     _ => newValue.ToString(CultureInfo.InvariantCulture)
                 }
             }, cancellationToken);
-
 
 
         await this._cache.RemoveAsync(GetLevelingCacheKey(guildId), cancellationToken);

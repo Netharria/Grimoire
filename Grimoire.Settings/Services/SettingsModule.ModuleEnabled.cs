@@ -7,13 +7,11 @@
 
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
-using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-
     private static readonly List<GuildSettingType> _moduleSettingKeys =
     [
         GuildSettingType.CustomCommandsModuleEnabled,
@@ -44,6 +42,7 @@ public sealed partial class SettingsModule
                 }, cancellationToken);
             return;
         }
+
         await SetGuildSetting(
             new GuildSettingDisabled { Type = settingType, GuildId = guildId, SetBy = moderatorId },
             cancellationToken);
@@ -64,12 +63,13 @@ public sealed partial class SettingsModule
         return bool.TryParse(customValue.Value, out var isEnabled) && isEnabled;
     }
 
-    public async Task<GuildModuleState> GetAllModuleState(GuildId guildId, CancellationToken cancellationToken = default)
+    public async Task<GuildModuleState> GetAllModuleState(GuildId guildId,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var latestByKey =
             await GetGuildSettings(guildId, _moduleSettingKeys, cancellationToken)
-            .ToDictionaryAsync(x => x.Type, x => x, cancellationToken: cancellationToken);
+                .ToDictionaryAsync(x => x.Type, x => x, cancellationToken: cancellationToken);
 
         var levelingSettingType = latestByKey.GetValueOrDefault(GuildSettingType.LevelingModuleEnabled);
         var userLogSetting = latestByKey.GetValueOrDefault(GuildSettingType.UserLogModuleEnabled);
@@ -88,8 +88,8 @@ public sealed partial class SettingsModule
                              && userLogEnabled,
             UserLogModuleSetBy = userLogSetting?.SetBy,
             ModerationEnabled = moderationSetting is GuildSettingCustomValue moderationCustomValue
-                                    && bool.TryParse(moderationCustomValue.Value, out var moderationEnabled)
-                                    && moderationEnabled,
+                                && bool.TryParse(moderationCustomValue.Value, out var moderationEnabled)
+                                && moderationEnabled,
             ModerationModuleSetBy = moderationSetting?.SetBy,
             MessageLogEnabled = messageLogSetting is GuildSettingCustomValue messageLogCustomValue
                                 && bool.TryParse(messageLogCustomValue.Value, out var messageLogEnabled)

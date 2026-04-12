@@ -27,7 +27,6 @@ public sealed partial class SettingsModule
     public async Task<ChannelId?> GetConfiguredLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-
         var result = await GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken);
 
         if (result is not CachedCustomSetting setting)

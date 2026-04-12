@@ -30,7 +30,8 @@ internal sealed partial class GeneralSettingsCommands
 
         channel = ctx.GetChannelOption(option, channel);
 
-        await this._settingsModule.SetUserCommandChannelSetting(guild.GetGuildId(), ctx.GetModeratorId(), channel?.GetChannelId());
+        await this._settingsModule.SetUserCommandChannelSetting(guild.GetGuildId(), ctx.GetModeratorId(),
+            channel?.GetChannelId());
 
         if (option is ChannelOption.Off)
         {

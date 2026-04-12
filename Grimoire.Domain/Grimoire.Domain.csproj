@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="10.4.0" />
+    <PackageReference Include="JetBrains.Annotations" Version="2025.2.4"/>
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="10.4.0"/>
   </ItemGroup>
 
 </Project>

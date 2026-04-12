@@ -22,13 +22,15 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
     private const double MentionMultiplier = 2.5;
     private const double DuplicateMessageMultiplier = 10.0;
 
-    private readonly HybridCacheEntryOptions _spamFilterCacheEntryOptions = new() { Expiration = TimeSpan.FromHours(2) };
-
-    private readonly HybridCacheEntryOptions _spamTrackerCacheEntryOptions = new () { Expiration = TimeSpan.FromHours(30) };
-
     private readonly HybridCache _memoryCache = memoryCache;
 
     private readonly SettingsModule _settingsModule = settingsModule;
+
+    private readonly HybridCacheEntryOptions
+        _spamFilterCacheEntryOptions = new() { Expiration = TimeSpan.FromHours(2) };
+
+    private readonly HybridCacheEntryOptions _spamTrackerCacheEntryOptions =
+        new() { Expiration = TimeSpan.FromHours(30) };
 
     private static string GetSpamFilterCacheKey(ChannelId channelId)
         => $"SpamFilterOverrideChannel_{channelId}";
@@ -43,16 +45,16 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
             GetSpamFilterCacheKey(channelId),
             channelId,
             async (channelIdState, ct) =>
-        {
-            var spamFilterOverrideOption =
-                await this._settingsModule.GetSpamFilterOverrideAsync(channelIdState, ct);
-            return spamFilterOverrideOption switch
             {
-                SpamFilterOverrideOption.AlwaysFilter => SpamFilterOverrideCacheOption.AlwaysFilter,
-                SpamFilterOverrideOption.NeverFilter => SpamFilterOverrideCacheOption.NeverFilter,
-                _ => SpamFilterOverrideCacheOption.Default
-            };
-        }, this._spamFilterCacheEntryOptions,
+                var spamFilterOverrideOption =
+                    await this._settingsModule.GetSpamFilterOverrideAsync(channelIdState, ct);
+                return spamFilterOverrideOption switch
+                {
+                    SpamFilterOverrideOption.AlwaysFilter => SpamFilterOverrideCacheOption.AlwaysFilter,
+                    SpamFilterOverrideOption.NeverFilter => SpamFilterOverrideCacheOption.NeverFilter,
+                    _ => SpamFilterOverrideCacheOption.Default
+                };
+            }, this._spamFilterCacheEntryOptions,
             cancellationToken: cancellationToken);
     }
 
@@ -103,8 +105,7 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
 
         var spamTracker = await this._memoryCache.GetOrCreateAsync(
             GetSpamUserCacheKey(member.Guild.GetGuildId(), member.Id),
-             _ => ValueTask.FromResult(new SpamTracker()),
-             _spamTrackerCacheEntryOptions,
+            _ => ValueTask.FromResult(new SpamTracker()), this._spamTrackerCacheEntryOptions,
             cancellationToken: cancellationToken);
 
         if (message.Id == spamTracker.LastMessageId)

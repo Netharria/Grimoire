@@ -12,7 +12,6 @@ namespace Grimoire.Settings.Services;
 
 public partial class SettingsModule
 {
-
     private static TimeSpan GetDefaultAutoPardonDuration() => TimeSpan.FromMinutes(3);
 
     public async Task<TimeSpan> GetAutoPardonDuration(GuildId guildId, CancellationToken cancellationToken = default)
@@ -36,14 +35,14 @@ public partial class SettingsModule
         ModeratorId moderatorId,
         TimeSpan autoPardonAfter,
         CancellationToken cancellationToken = default)
-    => SetGuildSetting(
-    new GuildSettingCustomValue
-    {
-        GuildId = guildId,
-        Type = GuildSettingType.SinAutoPardonDuration,
-        SetBy = moderatorId,
-        Value = autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)
-    }, cancellationToken);
+        => SetGuildSetting(
+            new GuildSettingCustomValue
+            {
+                GuildId = guildId,
+                Type = GuildSettingType.SinAutoPardonDuration,
+                SetBy = moderatorId,
+                Value = autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)
+            }, cancellationToken);
 
     public Task ResetAutoPardonDuration(
         GuildId guildId,

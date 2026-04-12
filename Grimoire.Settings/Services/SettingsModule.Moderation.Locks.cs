@@ -9,7 +9,6 @@ using System.Collections.Frozen;
 using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Lock = Grimoire.Settings.Domain.Lock;
 
 namespace Grimoire.Settings.Services;
@@ -18,21 +17,22 @@ public partial class SettingsModule
 {
     private const string LocksCacheKeyPrefix = "Locks_{0}";
 
-    public async Task<bool> IsChannelLocked(ChannelId channelId, GuildId guildId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsChannelLocked(ChannelId channelId, GuildId guildId,
+        CancellationToken cancellationToken = default)
     {
         var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
         var locks = await this._cache.GetOrCreateAsync(cacheKey,
             guildId,
             async (guildIdState, ct) =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-            var results = await dbContext.Locks
-                .AsNoTracking()
-                .Where(x => x.GuildId == guildIdState)
-                .Select(@lock => @lock.ChannelId)
-                .ToHashSetAsync(ct);
-            return results.ToFrozenSet();
-        }, this._cacheEntryOptions,
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                var results = await dbContext.Locks
+                    .AsNoTracking()
+                    .Where(x => x.GuildId == guildIdState)
+                    .Select(@lock => @lock.ChannelId)
+                    .ToHashSetAsync(ct);
+                return results.ToFrozenSet();
+            }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
 
         return locks?.Contains(channelId) ?? false;
@@ -77,7 +77,8 @@ public partial class SettingsModule
         await this._cache.RemoveAsync(cacheKey, cancellationToken);
     }
 
-    public async Task<Lock?> RemoveLock(ChannelId channelId, GuildId guildId, CancellationToken cancellationToken = default)
+    public async Task<Lock?> RemoveLock(ChannelId channelId, GuildId guildId,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingLocks = await dbContext.Locks
