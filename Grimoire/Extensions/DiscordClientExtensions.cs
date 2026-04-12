@@ -9,7 +9,7 @@ namespace Grimoire.Extensions;
 
 public static class DiscordClientExtensions
 {
-    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ulong channelId)
+    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordClient client, ulong channelId, CancellationToken ct = default)
     {
         try
         {

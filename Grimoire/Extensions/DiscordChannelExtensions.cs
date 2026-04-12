@@ -29,9 +29,8 @@ public static class DiscordChannelExtensions
                 await messages.First().DeleteAsync(reason);
                 break;
             case > 1:
-                await messages.Chunk(100).ToAsyncEnumerable()
-                    .ForEachAwaitAsync(async messageChunk
-                        => await channel.DeleteMessagesAsync(messageChunk, reason));
+                await foreach (var messageChunk in messages.Chunk(100).ToAsyncEnumerable())
+                    await channel.DeleteMessagesAsync(messageChunk, reason);
                 break;
         }
 

@@ -27,7 +27,7 @@ public static class MemberDatabaseQueryHelpers
             .Where(x => userIds.Contains(x.UserId) && guildIds.Contains(x.GuildId))
             .Select(x => new { x.UserId, x.GuildId })
             .AsAsyncEnumerable()
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
 
         var membersToAdd = members
@@ -74,7 +74,7 @@ public static class MemberDatabaseQueryHelpers
             })
             .AsAsyncEnumerable()
             .Select(nickname => (nickname.UserId, nickname.GuildId, nickname.Nickname))
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var nicknamesToAdd = users
             .Where(x => !existingNicknames.Contains((x.UserId, x.GuildId, x.Nickname)))
@@ -105,8 +105,8 @@ public static class MemberDatabaseQueryHelpers
                     avatarGroup.OrderByDescending(x => x.Timestamp).First().FileName
                 })
             .AsAsyncEnumerable()
-            .Select(avatar => (avatar.UserId, avatar.GuildId, avatar.FileName))
-            .ToHashSetAsync(cancellationToken);
+            .Select((avatar, _) => (avatar.UserId, avatar.GuildId, avatar.FileName))
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var avatarsToAdd = users
             .Where(x => !existingAvatars.Contains((x.UserId, x.GuildId, x.AvatarUrl)))

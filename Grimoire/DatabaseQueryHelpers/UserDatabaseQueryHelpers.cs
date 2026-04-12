@@ -21,7 +21,7 @@ public static class UserDatabaseQueryHelpers
             .Where(user => incomingUserIds.Contains(user.Id))
             .Select(user => user.Id)
             .AsAsyncEnumerable()
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var usersToAdd = users
             .Where(x => !existingUserIds.Contains(x.Id))
@@ -53,7 +53,7 @@ public static class UserDatabaseQueryHelpers
                 })
             .AsAsyncEnumerable()
             .Select(x => (x.UserId, x.Username))
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var usernamesToAdd = users
             .Where(x => !existingUsernames.Contains((x.Id, x.Username)))

@@ -59,7 +59,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, Channel<Publi
         command.Users = await value
             .OfType<DiscordUser>()
             .ToAsyncEnumerable()
-            .SelectAwait(async user => await BuildUserDto(ctx.Client, user.Id, ctx.Guild.Id))
+            .Select(async (user, ct) => await BuildUserDto(ctx.Client, user.Id, ctx.Guild.Id, ct))
             .OfType<UserDto>()
             .ToArrayAsync();
 
@@ -89,7 +89,7 @@ public sealed partial class IgnoreCommandGroup(IMediator mediator, Channel<Publi
         });
     }
 
-    private static async ValueTask<UserDto?> BuildUserDto(DiscordClient client, ulong id, ulong guildId)
+    private static async ValueTask<UserDto?> BuildUserDto(DiscordClient client, ulong id, ulong guildId, CancellationToken cancellationToken = default)
     {
         if (client.Guilds[guildId].Members.TryGetValue(id, out var member))
             return new UserDto
