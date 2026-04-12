@@ -60,7 +60,7 @@ public sealed class AddIgnoreForXpGain
                     .Where(x => incomingIgnoreUserIds.Contains(x.UserId))
                     .Select(x => x.UserId)
                     .AsAsyncEnumerable()
-                    .ToHashSetAsync(cancellationToken);
+                    .ToHashSetAsync(cancellationToken: cancellationToken);
 
                 var allUsersToIgnore = command.Users
                     .Where(x => !existingIgnoredUsersIds.Contains(x.Id))
@@ -81,7 +81,7 @@ public sealed class AddIgnoreForXpGain
                     .Where(x => incomingIgnoreRoleIds.Contains(x.RoleId))
                     .Select(x => x.RoleId)
                     .AsAsyncEnumerable()
-                    .ToHashSetAsync(cancellationToken);
+                    .ToHashSetAsync(cancellationToken: cancellationToken);
 
                 var allRolesToIgnore = command.Roles
                     .Where(x => !existingIgnoredRoleIds.Contains(x.Id))
@@ -104,7 +104,7 @@ public sealed class AddIgnoreForXpGain
                     .Where(x => incomingIgnoreChannelIds.Contains(x.ChannelId))
                     .Select(x => x.ChannelId)
                     .AsAsyncEnumerable()
-                    .ToHashSetAsync(cancellationToken);
+                    .ToHashSetAsync(cancellationToken: cancellationToken);
 
                 var allChannelsToIgnore = command.Channels
                     .Where(x => !existingIgnoreChannelIds.Contains(x.Id))

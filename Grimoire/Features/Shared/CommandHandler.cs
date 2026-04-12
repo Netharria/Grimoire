@@ -94,6 +94,11 @@ public sealed partial class CommandHandler : IClientErrorHandler
                     .WithColor(GrimoireColor.Yellow)
                     .WithDescription(argumentParseException.Message));
                 return;
+            case AnticipatedException anticipatedException:
+                await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
+                    .WithColor(GrimoireColor.Yellow)
+                    .WithDescription(anticipatedException.Message));
+                return;
         }
         var errorHexString = RandomNumberGenerator.GetHexString(10);
         var commandOptions = args.Context.Arguments;

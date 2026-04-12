@@ -19,7 +19,7 @@ public static class ChannelDatabaseQueryHelpers
             .Where(x => incomingChannelIds.Contains(x.Id))
             .Select(x => x.Id)
             .AsAsyncEnumerable()
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var channelsToAdd = channels
             .Where(x => !existingChannelIds.Contains(x.Id))

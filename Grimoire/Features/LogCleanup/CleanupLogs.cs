@@ -22,17 +22,17 @@ public sealed class CleanupLogs
             var mediator = serviceProvider.GetRequiredService<IMediator>();
             var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
             var oldLogMessages = await mediator.CreateStream(new Query(), stoppingToken)
-                .SelectAwait(async channel =>
+                .Select(async (channel, ct) =>
                     new
                     {
-                        DiscordChannel = await discordClient.GetChannelOrDefaultAsync(channel.ChannelId),
+                        DiscordChannel = await discordClient.GetChannelOrDefaultAsync(channel.ChannelId, ct),
                         DatabaseChannel = channel
                     })
                 .SelectMany(channelInfo =>
                     channelInfo.DatabaseChannel.MessageIds
                         .ToAsyncEnumerable()
-                        .SelectAwait(async messageId =>
-                            await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, stoppingToken))
+                        .Select(async (messageId, ct) =>
+                            await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, ct))
                 ).ToArrayAsync(stoppingToken);
 
             await mediator.Send(new DeleteOldLogsCommand(), stoppingToken);

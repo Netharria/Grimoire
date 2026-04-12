@@ -21,7 +21,7 @@ public static class RoleDatabaseQueryHelpers
             .Where(x => incomingRoles.Contains(x.Id))
             .Select(x => x.Id)
             .AsAsyncEnumerable()
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var rolesToAdd = roles
             .Where(x => !existingRoleIds.Contains(x.Id))

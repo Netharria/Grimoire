@@ -53,9 +53,8 @@ internal sealed class UpdateAllGuilds
                 Invites = await eventArgs.Guilds.Values
                     .ToAsyncEnumerable()
                     .Where(x => x.CurrentMember.Permissions.HasPermission(DiscordPermission.ManageGuild))
-                    .SelectManyAwait(async guild =>
-                        (await DiscordRetryPolicy.RetryDiscordCall(async _ => await guild.GetInvitesAsync()))
-                        .ToAsyncEnumerable())
+                    .SelectMany<DiscordGuild, DiscordInvite>(async (guild, ct) =>
+                        (await DiscordRetryPolicy.RetryDiscordCall(async _ => await guild.GetInvitesAsync(), ct)))
                     .Select(x =>
                         new Invite
                         {

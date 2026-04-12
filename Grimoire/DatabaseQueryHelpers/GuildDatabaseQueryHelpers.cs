@@ -17,7 +17,7 @@ public static class GuildDatabaseQueryHelpers
             .Where(x => guilds.Contains(x.Id))
             .Select(x => x.Id)
             .AsAsyncEnumerable()
-            .ToHashSetAsync(cancellationToken);
+            .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var guildsToAdd = guilds
             .Where(x => !existingGuildIds.Contains(x))
