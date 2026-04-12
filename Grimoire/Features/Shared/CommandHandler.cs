@@ -81,7 +81,12 @@ public sealed partial class CommandHandler : IClientErrorHandler
             case ChecksFailedException checksFailedException:
                 await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
                     .WithColor(GrimoireColor.Yellow)
-                    .WithDescription(checksFailedException.Message));
+                    .WithDescription(string.Join('\n',
+                        checksFailedException
+                            .Errors
+                            .Select(error => error.ErrorMessage)
+                            .Distinct()
+                            .ToArray())));
                 return;
             case ArgumentParseException argumentParseException:
                 await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
@@ -89,7 +94,6 @@ public sealed partial class CommandHandler : IClientErrorHandler
                     .WithDescription(argumentParseException.Message));
                 return;
         }
-
         var errorHexString = RandomNumberGenerator.GetHexString(10);
         var commandOptions = args.Context.Arguments;
         var log = new StringBuilder();
