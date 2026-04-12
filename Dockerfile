@@ -7,6 +7,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["Grimoire/Grimoire.csproj", "Grimoire/"]
 COPY ["Grimoire.Domain/Grimoire.Domain.csproj", "Grimoire.Domain/"]
+COPY ["Grimoire.Settings/Grimoire.Settings.csproj", "Grimoire.Settings/"]
 RUN dotnet restore "Grimoire/Grimoire.csproj"
 COPY . .
 WORKDIR "/src/Grimoire"
