@@ -51,6 +51,7 @@ internal class SpamFilterOverrideCommands(
         await this._spamTrackerModule.AddOrUpdateOverride(
             channel.GetChannelId(),
             guild.GetGuildId(),
+            ctx.GetModeratorId(),
             overrideSetting switch
             {
                 SpamFilterOverrideSetting.Always => SpamFilterOverrideOption.AlwaysFilter,

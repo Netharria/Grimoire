@@ -43,6 +43,7 @@ public partial class LogSettingsCommands
             else
                 await this._settingsModule.SetChannelLogOverride(channel.GetChannelId(),
                     guild.GetGuildId(),
+                    ctx.GetModeratorId(),
                     overrideSetting switch
                     {
                         MessageLogOverrideSetting.Always =>

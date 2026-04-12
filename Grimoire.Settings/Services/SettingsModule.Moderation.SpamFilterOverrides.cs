@@ -37,14 +37,14 @@ public sealed partial class SettingsModule
             yield return spamFilterOverride;
     }
 
-    public async Task SetSpamFilterOverrideAsync(ChannelId channelId, GuildId guildId, SpamFilterOverrideOption option,
+    public async Task SetSpamFilterOverrideAsync(ChannelId channelId, GuildId guildId, ModeratorId setBy, SpamFilterOverrideOption option,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var spamFilterOverride = await dbContext.SpamFilterOverrides
                                      .FirstOrDefaultAsync(x => x.ChannelId == channelId && x.GuildId == guildId,
                                          cancellationToken)
-                                 ?? new SpamFilterOverride { ChannelId = channelId, GuildId = guildId };
+                                 ?? new SpamFilterOverride { ChannelId = channelId, GuildId = guildId, SetBy = setBy};
         spamFilterOverride.ChannelOption = option;
         await dbContext.SpamFilterOverrides.AddAsync(spamFilterOverride, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);

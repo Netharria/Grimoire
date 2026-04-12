@@ -20,6 +20,8 @@ internal sealed class MessageLogChannelOverrideConfiguration : IEntityTypeConfig
             .ValueGeneratedNever();
         builder.Property(x => x.ChannelOption)
             .IsRequired();
+        builder.Property(e => e.SetBy)
+            .HasConversion(e => e.Value, value => new ModeratorId(value));
 
         builder.Property(e => e.GuildId)
             .HasConversion(e => e.Value, value => new GuildId(value));

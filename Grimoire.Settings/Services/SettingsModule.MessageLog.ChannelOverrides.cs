@@ -70,6 +70,7 @@ public sealed partial class SettingsModule
 
     public async Task SetChannelLogOverride(ChannelId channelId,
         GuildId guildId,
+        ModeratorId setBy,
         MessageLogOverrideOption option,
         CancellationToken cancellationToken = default)
     {
@@ -77,7 +78,7 @@ public sealed partial class SettingsModule
         var existingOverride = await dbContext.MessagesLogChannelOverrides
                                    .Where(ovr => ovr.GuildId == guildId && ovr.ChannelId == channelId)
                                    .FirstOrDefaultAsync(cancellationToken)
-                               ?? new MessageLogChannelOverride { GuildId = guildId, ChannelId = channelId };
+                               ?? new MessageLogChannelOverride { GuildId = guildId, ChannelId = channelId, SetBy = setBy };
 
         existingOverride.ChannelOption = option;
 

@@ -41,7 +41,7 @@ public sealed partial class RewardCommandGroup
             return;
         }
 
-        await this._settingsModule.AddOrUpdateRewardAsync(role.GetRoleId(), guild.GetGuildId(), level, message);
+        await this._settingsModule.AddOrUpdateRewardAsync(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), level, message);
 
         var responseMessage = $"Successfully updated the rewards to include {role.Mention} at level {level}.";
 

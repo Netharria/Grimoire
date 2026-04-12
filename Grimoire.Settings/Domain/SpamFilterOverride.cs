@@ -10,12 +10,15 @@ namespace Grimoire.Settings.Domain;
 public enum SpamFilterOverrideOption
 {
     AlwaysFilter,
-    NeverFilter
+    NeverFilter,
+    Inherit
 }
 
 public sealed record SpamFilterOverride
 {
-    public SpamFilterOverrideOption ChannelOption { get; set; }
+    public required SpamFilterOverrideOption ChannelOption { get; set; }
     public required ChannelId ChannelId { get; init; }
     public required GuildId GuildId { get; init; }
+    public required ModeratorId SetBy { get; init; }
+    public required DateTimeOffset SetAt { get; init; }
 }

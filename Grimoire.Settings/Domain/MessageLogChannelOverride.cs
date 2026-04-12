@@ -11,12 +11,15 @@ namespace Grimoire.Settings.Domain;
 public enum MessageLogOverrideOption
 {
     AlwaysLog,
-    NeverLog
+    NeverLog,
+    Inherit
 }
 
 public sealed record MessageLogChannelOverride
 {
-    public MessageLogOverrideOption ChannelOption { get; set; }
+    public required MessageLogOverrideOption ChannelOption { get; set; }
     public required ChannelId ChannelId { get; init; }
     public required GuildId GuildId { get; init; }
+    public required ModeratorId SetBy { get; init; }
+    public required DateTimeOffset SetAt { get; init; }
 }

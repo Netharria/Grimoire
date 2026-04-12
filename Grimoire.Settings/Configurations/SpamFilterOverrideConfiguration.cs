@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Settings.Configurations;
 
-internal class SpamFilterOverideConfiguration : IEntityTypeConfiguration<SpamFilterOverride>
+internal class SpamFilterOverrideConfiguration : IEntityTypeConfiguration<SpamFilterOverride>
 {
     public void Configure(EntityTypeBuilder<SpamFilterOverride> builder)
     {
@@ -24,5 +24,8 @@ internal class SpamFilterOverideConfiguration : IEntityTypeConfiguration<SpamFil
             .HasConversion(e => e.Value, value => new GuildId(value));
         builder.Property(e => e.ChannelId)
             .HasConversion(e => e.Value, value => new ChannelId(value));
+        builder.Property(e => e.SetBy)
+            .HasConversion(e => e.Value, value => new ModeratorId(value));
+
     }
 }

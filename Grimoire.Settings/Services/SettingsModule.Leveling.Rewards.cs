@@ -46,6 +46,7 @@ public sealed partial class SettingsModule
     public async Task AddOrUpdateRewardAsync(
         RoleId roleId,
         GuildId guildId,
+        ModeratorId moderatorId,
         int level,
         string? rewardMessage,
         CancellationToken cancellationToken = default)
@@ -53,7 +54,7 @@ public sealed partial class SettingsModule
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var reward = await dbContext.Rewards
             .Where(reward => reward.RoleId == roleId && reward.GuildId == guildId)
-            .FirstOrDefaultAsync(cancellationToken) ?? new Reward { RoleId = roleId, GuildId = guildId };
+            .FirstOrDefaultAsync(cancellationToken) ?? new Reward { RoleId = roleId, GuildId = guildId, SetBy = moderatorId };
 
         reward.RewardLevel = level;
         reward.RewardMessage = rewardMessage;
