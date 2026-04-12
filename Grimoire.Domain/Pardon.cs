@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed class Pardon
+public sealed record Pardon
 {
     public SinId SinId { get; init; }
 
@@ -23,4 +23,3 @@ public sealed class Pardon
 
     public required string Reason { get; set; }
 }
-

@@ -44,11 +44,11 @@ internal sealed class UserInfoCommands(
         await GetAndAddUsernames(dbContext, user.GetUserId(), guild.GetGuildId(), embed);
 
         await GetAndAddLevelInfo(dbContext, embed, user.GetUserId(), guild.GetGuildId(),
-            roles.Select(x => new RoleId(x)).ToArray());
+            roles.Select(x => new RoleId(x)).ToHashSet());
 
         await GetAndAddModerationInfo(dbContext, guild.GetGuildId(), user.GetUserId(), embed);
 
-        await ctx.EditReplyAsync(embed: embed);
+        await ctx.ReplyAsync(embed: embed);
     }
 
     private static (DiscordColor, string, string, string, ulong[]) GetUserInfo(DiscordUser user)
@@ -125,7 +125,7 @@ internal sealed class UserInfoCommands(
         DiscordEmbedBuilder embed,
         UserId userId,
         GuildId guildId,
-        RoleId[] roleIds)
+        IReadOnlySet<RoleId> roleIds)
     {
         if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, guildId))
             return;

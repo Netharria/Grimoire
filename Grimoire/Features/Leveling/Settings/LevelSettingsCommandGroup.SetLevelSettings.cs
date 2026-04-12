@@ -61,13 +61,16 @@ public sealed partial class LevelSettingsCommandGroup
 
         try
         {
-            await this._settingsModule.SetLevelingSettings(ToLevelSettings(levelSettingsOptions), value,
-                guild.GetGuildId());
+            await this._settingsModule.SetLevelingSettings(
+                guild.GetGuildId(),
+                ctx.GetModeratorId(),
+                ToLevelSettings(levelSettingsOptions),
+                value);
             await HandleSettingSuccess(ctx, guild, levelSettingsOptions, value, this._guildLog);
         }
         catch (Exception e)
         {
-            await ctx.EditReplyAsync(message: e.Message);
+            await ctx.ReplyAsync(message: e.Message);
         }
     }
 
@@ -78,7 +81,7 @@ public sealed partial class LevelSettingsCommandGroup
         int value,
         GuildLog guildLog)
     {
-        await ctx.EditReplyAsync(message: $"Updated {levelSettingsOptions} level setting to {value}");
+        await ctx.ReplyAsync(message: $"Updated {levelSettingsOptions} level setting to {value}");
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
@@ -113,17 +116,20 @@ public sealed partial class LevelSettingsCommandGroup
             var permissions = channel.PermissionsFor(guild.CurrentMember);
             if (!permissions.HasPermission(DiscordPermission.SendMessages))
             {
-                await ctx.EditReplyAsync(
+                await ctx.ReplyAsync(
                     message:
                     $"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
                 return;
             }
         }
 
-        await this._settingsModule.SetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId(),
+        await this._settingsModule.SetLogChannelSetting(
+            GuildLogType.Leveling,
+            guild.GetGuildId(),
+            ctx.GetModeratorId(),
             channel?.GetChannelId());
 
-        await ctx.EditReplyAsync(message: option is ChannelOption.Off
+        await ctx.ReplyAsync(message: option is ChannelOption.Off
             ? "Disabled the level log."
             : $"Updated the level log to {channel?.Mention}");
 

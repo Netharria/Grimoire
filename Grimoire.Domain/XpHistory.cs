@@ -19,7 +19,7 @@ public enum XpHistoryType
 }
 
 [UsedImplicitly]
-public sealed class XpHistory
+public sealed record XpHistory
 {
     public required long Xp { get; init; }
     public required DateTimeOffset TimeOut { get; init; }

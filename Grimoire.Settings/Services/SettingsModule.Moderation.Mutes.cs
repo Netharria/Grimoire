@@ -5,61 +5,62 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Globalization;
 using System.Runtime.CompilerServices;
+using EntityFramework.Exceptions.Common;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Settings.Services;
 
 public partial class SettingsModule
 {
-    private const string MuteRoleCacheKeyPrefix = "MuteRole_{0}";
-
-    public async Task<RoleId?> GetMuteRole(
+    public async Task<RoleId?> GetEffectiveMuteRole(
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
+        if (!await IsModuleEnabled(Module.Moderation, guildId, cancellationToken))
             return null;
-        var cacheEntry = await GetMuteRoleCacheEntry(guildId, cancellationToken);
-        return cacheEntry?.Id;
+        return await GetConfiguredMuteRole(guildId, cancellationToken);
     }
 
-    private async Task<MuteCacheEntry?> GetMuteRoleCacheEntry(
+    public async Task<RoleId?> GetConfiguredMuteRole(
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        var cacheKey = string.Format(MuteRoleCacheKeyPrefix, guildId);
-        return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await dbContext
-                .ModerationSettings
-                .AsNoTracking()
-                .Where(reward => reward.GuildId == guildId)
-                .Select(reward => reward.MuteRole)
-                .FirstOrDefaultAsync(cancellationToken);
-            return new MuteCacheEntry { Id = result };
-        }, this._cacheEntryOptions);
+        var result = await GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken);
+
+        if (result is not CachedCustomSetting setting)
+            return null;
+        if (ulong.TryParse(setting.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var roleId)
+            && roleId != 0)
+            return new RoleId(roleId);
+
+        return null;
     }
 
-    public async Task SetMuteRole(RoleId muteRoleId, GuildId guildId, CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var result = await dbContext
-            .ModerationSettings
-            .AsNoTracking()
-            .Where(reward => reward.GuildId == guildId)
-            .FirstOrDefaultAsync(cancellationToken) ?? new ModerationSettings { GuildId = guildId };
+    public Task DisableMuteRole(
+        GuildId guildId,
+        ModeratorId moderatorId,
+        CancellationToken cancellationToken = default)
+        => SetGuildSetting(
+            new GuildSettingDisabled { GuildId = guildId, Type = GuildSettingType.MuteRole, SetBy = moderatorId },
+            cancellationToken);
 
-        result.MuteRole = muteRoleId;
-        await dbContext.AddAsync(result, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var cacheKey = string.Format(MuteRoleCacheKeyPrefix, guildId);
-        this._memoryCache.Remove(cacheKey);
-    }
+    public Task SetMuteRole(
+        GuildId guildId,
+        ModeratorId moderatorId,
+        RoleId muteRoleId,
+        CancellationToken cancellationToken = default)
+        => SetGuildSetting(
+            new GuildSettingCustomValue
+            {
+                GuildId = guildId,
+                Type = GuildSettingType.MuteRole,
+                SetBy = moderatorId,
+                Value = muteRoleId.Value.ToString(CultureInfo.InvariantCulture)
+            }, cancellationToken);
 
     public async Task<bool> IsMemberMuted(
         UserId userId,
@@ -84,25 +85,47 @@ public partial class SettingsModule
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var existingLock = await dbContext.Mutes
+
+        var updated = await dbContext.Mutes
             .Where(x => x.UserId == userId && x.GuildId == guildId)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (existingLock is not null) dbContext.Mutes.Remove(existingLock);
-        var newLock = new Mute { UserId = userId, GuildId = guildId, EndTime = muteEndTime, SinId = sinId };
-        dbContext.Mutes.Add(newLock);
-        await dbContext.SaveChangesAsync(cancellationToken);
+            .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.EndTime, muteEndTime)
+                    .SetProperty(x => x.SinId, sinId),
+                cancellationToken);
+
+        if (updated > 0)
+            return;
+
+        dbContext.Mutes.Add(new Mute { UserId = userId, GuildId = guildId, EndTime = muteEndTime, SinId = sinId });
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintException)
+        {
+            await dbContext.Mutes
+                .Where(x => x.UserId == userId && x.GuildId == guildId)
+                .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(x => x.EndTime, muteEndTime)
+                        .SetProperty(x => x.SinId, sinId),
+                    cancellationToken);
+        }
     }
 
     public async Task<Mute?> RemoveMute(UserId userId, GuildId guildId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingMute = await dbContext.Mutes
+            .AsNoTracking()
             .Where(x => x.UserId == userId && x.GuildId == guildId)
+            .OrderByDescending(x => x.EndTime)
             .FirstOrDefaultAsync(cancellationToken);
         if (existingMute is null)
             return null;
-        dbContext.Mutes.Remove(existingMute);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.Mutes
+            .Where(x => x.UserId == userId && x.GuildId == guildId)
+            .ExecuteDeleteAsync(cancellationToken);
         return existingMute;
     }
 
@@ -110,28 +133,23 @@ public partial class SettingsModule
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await foreach (var expiredMutes in dbContext.Mutes
+        await foreach (var expiredMute in dbContext.Mutes
                            .AsNoTracking()
-                           .Where(x => x.EndTime <= DateTime.UtcNow)
+                           .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
                            .AsAsyncEnumerable()
                            .WithCancellation(cancellationToken))
-            yield return expiredMutes;
+            yield return expiredMute;
     }
 
     public async IAsyncEnumerable<Mute> GetAllMutes(GuildId guildId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await foreach (var expiredMutes in dbContext.Mutes
+        await foreach (var mute in dbContext.Mutes
                            .AsNoTracking()
                            .Where(mute => mute.GuildId == guildId)
                            .AsAsyncEnumerable()
                            .WithCancellation(cancellationToken))
-            yield return expiredMutes;
-    }
-
-    private record struct MuteCacheEntry
-    {
-        public RoleId? Id { get; init; }
+            yield return mute;
     }
 }

@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed class OldLogMessage
+public sealed record OldLogMessage
 {
     public required ChannelId ChannelId { get; init; }
 

@@ -67,7 +67,7 @@ public partial class LogSettingsCommands
                     "A Message log Override option was selected that has not been implemented.")
             };
 
-            await ctx.EditReplyAsync(GrimoireColor.Purple, message);
+            await ctx.ReplyAsync(GrimoireColor.Purple, message);
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
                 GuildId = channel.Guild.GetGuildId(),

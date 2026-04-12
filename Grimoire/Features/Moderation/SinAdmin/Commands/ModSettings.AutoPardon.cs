@@ -28,9 +28,9 @@ internal sealed partial class ModSettings
 
         var guild = ctx.Guild!;
 
-        await this._settingsModule.SetAutoPardonDuration(guild.GetGuildId(), durationType.GetTimeSpan(durationAmount));
+        await this._settingsModule.SetAutoPardonDuration(guild.GetGuildId(), ctx.GetModeratorId(), durationType.GetTimeSpan(durationAmount));
 
-        await ctx.EditReplyAsync(message: $"Will now auto pardon sins after {durationAmount} {durationType}");
+        await ctx.ReplyAsync(message: $"Will now auto pardon sins after {durationAmount} {durationType}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),

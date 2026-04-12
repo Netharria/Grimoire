@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain;
+
 namespace Grimoire.Settings.Enums;
 
 public enum Module
@@ -19,17 +21,15 @@ public enum Module
 
 internal static class ModuleExtensions
 {
-    public static string GetCacheKey(this Module ignoredType, GuildId guildId)
-    {
-        return ignoredType switch
+    public static GuildSettingType? ToGuildSettingType(this Module module)
+        => module switch
         {
-            Module.Leveling => $"LevelingModule-{guildId}",
-            Module.UserLog => $"UserLogModule-{guildId}",
-            Module.Moderation => $"ModerationModule-{guildId}",
-            Module.MessageLog => $"MessageLogModule-{guildId}",
-            Module.Commands => $"CommandsModule-{guildId}",
-            Module.General => $"GeneralModule-{guildId}",
-            _ => throw new ArgumentOutOfRangeException(nameof(ignoredType), ignoredType, null)
+            Module.Commands => GuildSettingType.CustomCommandsModuleEnabled,
+            Module.Leveling => GuildSettingType.LevelingModuleEnabled,
+            Module.MessageLog => GuildSettingType.MessageLogModuleEnabled,
+            Module.Moderation => GuildSettingType.ModerationModuleEnabled,
+            Module.UserLog => GuildSettingType.UserLogModuleEnabled,
+            Module.General => null,
+            _ => throw new ArgumentOutOfRangeException(nameof(module), module, null)
         };
-    }
 }

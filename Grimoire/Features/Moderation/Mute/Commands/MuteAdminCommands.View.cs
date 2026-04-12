@@ -20,7 +20,7 @@ public partial class MuteAdminCommands
 
         var guild = ctx.Guild!;
 
-        var muteRole = await this._settingsModule.GetMuteRole(guild.GetGuildId());
+        var muteRole = await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId());
         var role = await guild.GetRoleOrDefaultAsync(muteRole);
         var users = await this._settingsModule.GetAllMutes(guild.GetGuildId())
             .Select(mute => guild.GetMemberOrDefaultAsync(mute.UserId))
@@ -36,6 +36,6 @@ public partial class MuteAdminCommands
             embed.AddField("Muted Users", "None");
 
 
-        await ctx.EditReplyAsync(embed: embed);
+        await ctx.ReplyAsync(embed: embed);
     }
 }

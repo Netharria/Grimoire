@@ -21,16 +21,19 @@ public partial class SettingsModule
     public async Task<bool> IsChannelLocked(ChannelId channelId, GuildId guildId, CancellationToken cancellationToken = default)
     {
         var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
-        var locks = await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
+        var locks = await this._cache.GetOrCreateAsync(cacheKey,
+            guildId,
+            async (guildIdState, ct) =>
         {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
             var results = await dbContext.Locks
                 .AsNoTracking()
-                .Where(x => x.GuildId == guildId)
+                .Where(x => x.GuildId == guildIdState)
                 .Select(@lock => @lock.ChannelId)
-                .ToHashSetAsync(cancellationToken);
+                .ToHashSetAsync(ct);
             return results.ToFrozenSet();
-        }, this._cacheEntryOptions);
+        }, this._cacheEntryOptions,
+            cancellationToken: cancellationToken);
 
         return locks?.Contains(channelId) ?? false;
     }
@@ -71,7 +74,7 @@ public partial class SettingsModule
 
         await dbContext.SaveChangesAsync(cancellationToken);
         var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
-        this._memoryCache.Remove(cacheKey);
+        await this._cache.RemoveAsync(cacheKey, cancellationToken);
     }
 
     public async Task<Lock?> RemoveLock(ChannelId channelId, GuildId guildId, CancellationToken cancellationToken = default)
@@ -85,7 +88,7 @@ public partial class SettingsModule
         dbContext.Locks.Remove(existingLocks);
         await dbContext.SaveChangesAsync(cancellationToken);
         var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
-        this._memoryCache.Remove(cacheKey);
+        await this._cache.RemoveAsync(cacheKey, cancellationToken);
         return existingLocks;
     }
 

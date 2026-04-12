@@ -36,7 +36,7 @@ internal sealed class SpamEvents(
         if (args.Author is not DiscordMember member)
             return;
 
-        var muteRoleId = await this._settingsModule.GetMuteRole(args.Guild.GetGuildId());
+        var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(args.Guild.GetGuildId());
         if (muteRoleId is null)
             return;
 

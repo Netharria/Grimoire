@@ -36,7 +36,7 @@ internal class SpamFilterOverrideCommands(
         var guild = ctx.Guild!;
         if (!guild.Channels.ContainsKey(channel.Id))
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "That channel does not exist in this server.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "That channel does not exist in this server.");
             return;
         }
 
@@ -44,7 +44,7 @@ internal class SpamFilterOverrideCommands(
         if (overrideSetting is SpamFilterOverrideSetting.Inherit)
         {
             await this._spamTrackerModule.RemoveOverride(channel.GetChannelId(), guild.GetGuildId());
-            await ctx.EditReplyAsync(GrimoireColor.Purple, $"Set {channel.Mention} to inherit spam filter settings.");
+            await ctx.ReplyAsync(GrimoireColor.Purple, $"Set {channel.Mention} to inherit spam filter settings.");
             return;
         }
 
@@ -62,7 +62,7 @@ internal class SpamFilterOverrideCommands(
             });
 
 
-        await ctx.EditReplyAsync(GrimoireColor.Purple, overrideSetting switch
+        await ctx.ReplyAsync(GrimoireColor.Purple, overrideSetting switch
         {
             SpamFilterOverrideSetting.Always =>
                 $"Will now always filter spam messages from {channel.Mention} and its sub channels/threads.",
@@ -101,7 +101,7 @@ internal class SpamFilterOverrideCommands(
                 }).AppendLine();
         }
 
-        await ctx.EditReplyAsync(GrimoireColor.Purple, title: "Spam Filter Override Settings",
+        await ctx.ReplyAsync(GrimoireColor.Purple, title: "Spam Filter Override Settings",
             message: spamFilterOverrideString.ToString());
     }
 }

@@ -46,16 +46,16 @@ public sealed class MuteUser(
 
         if (guild.GetGuildId() != member.Guild.GetGuildId())
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
             return;
         }
 
 
-        var muteRoleId = await this._settingsModule.GetMuteRole(guild.GetGuildId());
+        var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
 
         if (muteRoleId is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The mute role is not configured. Please configure it before using this command.");
             return;
         }
@@ -79,7 +79,7 @@ public sealed class MuteUser(
         var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
         if (muteRole is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The configured mute role does not exist. Please configure it again before using this command.");
             return;
         }
@@ -99,7 +99,7 @@ public sealed class MuteUser(
         if (!string.IsNullOrWhiteSpace(reason))
             embed.AddField("Reason", reason);
 
-        await ctx.EditReplyAsync(embed: embed);
+        await ctx.ReplyAsync(embed: embed);
 
         try
         {

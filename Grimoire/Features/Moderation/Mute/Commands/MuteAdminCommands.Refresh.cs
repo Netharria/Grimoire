@@ -16,30 +16,30 @@ public partial class MuteAdminCommands
         await ctx.DeferResponseAsync();
 
         var guild = ctx.Guild!;
-        var response = await this._settingsModule.GetMuteRole(guild.GetGuildId());
+        var response = await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId());
 
         if (response is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "No mute role is configured.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "No mute role is configured.");
             return;
         }
 
         if (!guild.Roles.TryGetValue(response.Value.Value, out var role))
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Could not find configured mute role.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not find configured mute role.");
             return;
         }
 
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"Refreshing permissions for {role.Mention} role.");
+        await ctx.ReplyAsync(GrimoireColor.DarkPurple, $"Refreshing permissions for {role.Mention} role.");
         var result = await SetMuteRolePermissionsAsync(guild, role)
             .Where(x => !x.WasSuccessful)
             .ToArrayAsync();
 
         if (result.Length == 0)
-            await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple,
                 $"Succussfully refreshed permissions for {role.Mention} role.");
         else
-            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
                 $"Was not able to set permissions for the following channels. " +
                 $"{string.Join(' ', result.Select(x => x.Channel.Mention))}");
     }

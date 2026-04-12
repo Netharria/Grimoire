@@ -138,7 +138,7 @@ public sealed partial class CustomCommandSettings
             return;
         }
 
-        await ctx.EditReplyAsync(GrimoireColor.Green, $"Added {name} custom command.");
+        await ctx.ReplyAsync(GrimoireColor.Green, $"Added {name} custom command.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             Color = GrimoireColor.Purple,

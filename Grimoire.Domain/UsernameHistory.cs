@@ -11,7 +11,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed class UsernameHistory
+public sealed record UsernameHistory
 {
     public required UserId UserId { get; init; }
     public required Username Username { get; init; }

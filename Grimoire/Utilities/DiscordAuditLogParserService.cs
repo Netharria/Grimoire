@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Entities.AuditLogs;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace Grimoire.Utilities;
 
@@ -19,11 +19,12 @@ public interface IDiscordAuditLogParserService
 public sealed class DiscordAuditLogParserService(
     DiscordClient discordClient,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
-    IMemoryCache memoryCache) : IDiscordAuditLogParserService
+    HybridCache cache) : IDiscordAuditLogParserService
 {
+    private static readonly HybridCacheEntryOptions _entryOptions = new() { Expiration = TimeSpan.FromMinutes(10) };
+    private readonly HybridCache _cache = cache;
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly DiscordClient _discordClient = discordClient;
-    private readonly IMemoryCache _memoryCache = memoryCache;
 
     public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(GuildId guildId,
         ChannelId channelId,
@@ -62,12 +63,19 @@ public sealed class DiscordAuditLogParserService(
             || deleteEntry.CreationTimestamp < DateTime.UtcNow.AddMinutes(-10))
             return null;
 
-        if (this._memoryCache.TryGetValue(deleteEntry.Id, out DiscordAuditLogMessageEntry? cachedEntry))
-            if (cachedEntry is null
-                || deleteEntry.MessageCount <= cachedEntry.MessageCount)
-                return null;
+        var key = GetDeleteAuditCacheKey(deleteEntry.Id);
 
-        this._memoryCache.Set(deleteEntry.Id, deleteEntry, TimeSpan.FromMinutes(10));
+        var cachedMessageCount = await this._cache.GetOrCreateAsync(
+            key,
+            static _ => ValueTask.FromResult(0),
+            _entryOptions);
+
+        if (deleteEntry.MessageCount <= cachedMessageCount)
+            return null;
+
+        await this._cache.SetAsync(key, deleteEntry.MessageCount, _entryOptions);
         return deleteEntry;
     }
+
+    private static string GetDeleteAuditCacheKey(ulong auditEntryId) => $"audit-delete:{auditEntryId}";
 }

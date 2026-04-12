@@ -5,10 +5,11 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.Diagnostics.Contracts;
+using System.Collections.Frozen;
+using System.Globalization;
 using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Settings.Services;
 
@@ -22,6 +23,16 @@ public sealed partial class SettingsModule
         Amount
     }
 
+    private const string LevelingCacheKeyPrefix = "LevelingSettings_";
+
+    private static readonly List<GuildSettingType> _levelingSettingKeys =
+    [
+        GuildSettingType.TextTime,
+        GuildSettingType.LevelScalingBase,
+        GuildSettingType.LevelScalingModifier,
+        GuildSettingType.XpGainAmount
+    ];
+
     private readonly LevelingSettingEntry _defaultLevelingSettings = new()
     {
         Amount = new XpGainAmount(5),
@@ -30,99 +41,121 @@ public sealed partial class SettingsModule
         TextTime = TimeSpan.FromMinutes(3)
     };
 
-    private static LevelingSettings GetDefaultLevelingSettings(GuildId guildId) =>
-        new()
-        {
-            GuildId = guildId,
-            Amount = new XpGainAmount(5),
-            Base = new LevelScalingBase(15),
-            Modifier = new LevelScalingModifier(15),
-            TextTime = TimeSpan.FromMinutes(3)
-        };
+    private static string GetLevelingCacheKey(GuildId guildId) => $"{LevelingCacheKeyPrefix}{guildId}";
 
-    private static string GetLevelingCacheKey(GuildId guildId) => $"LevelingSettings_{guildId}";
-
-    public async Task<LevelingSettingEntry> GetLevelingSettings(GuildId guildId,
+    public async Task<LevelingSettingEntry> GetLevelingSettings(
+        GuildId guildId,
         CancellationToken cancellationToken = default) =>
-        await this._memoryCache.GetOrCreateAsync(GetLevelingCacheKey(guildId),
-                cacheEntry =>
-                {
-                    cacheEntry.SetOptions(this._cacheEntryOptions);
-                    return GetLevelingSettingsCacheEntry(guildId, cancellationToken);
-                })
-        ?? this._defaultLevelingSettings;
+        await this._cache.GetOrCreateAsync(
+            GetLevelingCacheKey(guildId),
+            guildId,
+            async (guildIdState, ct) => await GetLevelingSettingsCacheEntry(guildIdState, ct),
+            this._cacheEntryOptions,
+            cancellationToken: cancellationToken);
 
     private async Task<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var settingsOption = await dbContext.LevelingSettings
-            .Where(settings => settings.GuildId == guildId)
-            .FirstOrDefaultAsync(cancellationToken);
-        return settingsOption switch
-        {
-            not null => new LevelingSettingEntry
+        var latestByKey =
+            await GetGuildSettings(guildId, _levelingSettingKeys, cancellationToken)
+            .ToDictionaryAsync(x => x.Type, x => x switch
             {
-                Amount = settingsOption.Amount,
-                Base = settingsOption.Base,
-                Modifier = settingsOption.Modifier,
-                TextTime = settingsOption.TextTime
-            },
-            _ => this._defaultLevelingSettings
+                GuildSettingCustomValue customValue => customValue.Value,
+                _ => null,
+
+            }, cancellationToken: cancellationToken);
+
+        return new LevelingSettingEntry
+        {
+            Amount = TryReadPositiveInt(latestByKey, GuildSettingType.XpGainAmount, out var amount)
+                ? new XpGainAmount(amount)
+                : this._defaultLevelingSettings.Amount,
+            Base = TryReadPositiveInt(latestByKey, GuildSettingType.LevelScalingBase, out var @base)
+                ? new LevelScalingBase(@base)
+                : this._defaultLevelingSettings.Base,
+            Modifier = TryReadPositiveInt(latestByKey, GuildSettingType.LevelScalingModifier, out var modifier)
+                ? new LevelScalingModifier(modifier)
+                : this._defaultLevelingSettings.Modifier,
+            TextTime = TryReadValidTextTime(latestByKey, CultureInfo.InvariantCulture, out var timeSpan)
+                ? timeSpan
+                : this._defaultLevelingSettings.TextTime
         };
+
+        static bool TryReadValidTextTime(
+            IReadOnlyDictionary<GuildSettingType, string?> map,
+            CultureInfo cultureInfo,
+            out TimeSpan value)
+        {
+            if (!map.TryGetValue(GuildSettingType.TextTime, out var timeSpanStr)
+                || !TimeSpan.TryParse(timeSpanStr, cultureInfo, out var timeSpan)
+                || timeSpan <= TimeSpan.Zero
+                || timeSpan.TotalMinutes > 60)
+            {
+                value = TimeSpan.Zero;
+                return false;
+            }
+
+            value = timeSpan;
+            return true;
+        }
+
+        static bool TryReadPositiveInt(
+            IReadOnlyDictionary<GuildSettingType, string?> map,
+            GuildSettingType key,
+            out int value)
+        {
+            value = 0;
+            return map.TryGetValue(key, out var str)
+                   && str is not null
+                   && int.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out value)
+                   && value >= 1;
+        }
     }
-
-
 
     public async Task SetLevelingSettings(
-        LevelSettings levelingSettings,
-        int value,
         GuildId guildId,
-        CancellationToken cancellationToken = default) {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var settingsResult = await dbContext.LevelingSettings
-            .Where(settings => settings.GuildId == guildId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var settings = await AddLevelSettingsIfNull(settingsResult, dbContext, guildId);
-        settings = UpdateLevelSettings(settings, levelingSettings, value);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        this._memoryCache.Remove(GetLevelingCacheKey(guildId));
-    }
-
-
-    private static async Task<LevelingSettings> AddLevelSettingsIfNull(LevelingSettings? levelingSettings,
-        SettingsDbContext dbContext, GuildId guildId)
+        ModeratorId setBy,
+        LevelSettings settingToChange,
+        int newValue,
+        CancellationToken cancellationToken = default)
     {
-        if (levelingSettings is not null)
-            return levelingSettings;
+        if (!LevelingConfigValid(settingToChange, newValue))
+            return;
 
-        levelingSettings = GetDefaultLevelingSettings(guildId);
-        await dbContext.LevelingSettings.AddAsync(levelingSettings);
-        return levelingSettings;
+        await SetGuildSetting(
+            new GuildSettingCustomValue
+            {
+                GuildId = guildId,
+                Type = settingToChange switch
+                {
+                    LevelSettings.TextTime => GuildSettingType.TextTime,
+                    LevelSettings.Base => GuildSettingType.LevelScalingBase,
+                    LevelSettings.Modifier => GuildSettingType.LevelScalingModifier,
+                    LevelSettings.Amount => GuildSettingType.XpGainAmount,
+                    _ => throw new ArgumentOutOfRangeException(nameof(settingToChange), settingToChange, null)
+                },
+                SetBy = setBy,
+                Value = settingToChange switch
+                {
+                    LevelSettings.TextTime => TimeSpan.FromSeconds(newValue).ToString("c", CultureInfo.InvariantCulture),
+                    _ => newValue.ToString(CultureInfo.InvariantCulture)
+                }
+            }, cancellationToken);
+
+
+
+        await this._cache.RemoveAsync(GetLevelingCacheKey(guildId), cancellationToken);
     }
 
-    private static LevelingSettings UpdateLevelSettings(
-        LevelingSettings levelingSettings,
-        LevelSettings levelSettings,
-        int value)
-    {
-        GetLevelSettingUpdater(levelSettings, value)(levelingSettings);
-        return levelingSettings;
-    }
-
-    [Pure]
-    private static Action<LevelingSettings> GetLevelSettingUpdater(
-        LevelSettings levelSettings,
-        int value) =>
-        levelSettings switch
+    private static bool LevelingConfigValid(LevelSettings settingToValidate, int setting)
+        => settingToValidate switch
         {
-            LevelSettings.Amount => settings => settings.Amount = new XpGainAmount(value),
-            LevelSettings.Base => settings => settings.Base = new LevelScalingBase(value),
-            LevelSettings.Modifier => settings => settings.Modifier = new LevelScalingModifier(value),
-            LevelSettings.TextTime => settings => settings.TextTime = TimeSpan.FromMinutes(value),
-            _ => _ => { }
+            LevelSettings.Amount => setting is >= 1 and <= 100,
+            LevelSettings.Base => setting is >= 1 and <= 500,
+            LevelSettings.Modifier => setting is >= 1 and <= 200,
+            LevelSettings.TextTime => setting is >= 1 and <= 60,
+            _ => false
         };
 
     public sealed record LevelingSettingEntry

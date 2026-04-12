@@ -13,12 +13,7 @@ namespace Grimoire.Settings;
 
 public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> options) : DbContext(options)
 {
-    internal DbSet<GuildSettings> GuildSettings { get; init; }
-    internal DbSet<CustomCommandsSettings> CustomCommandsSettings { get; init; }
-    internal DbSet<LevelingSettings> LevelingSettings { get; init; }
-    internal DbSet<UserLogSettings> UserLogSettings { get; init; }
-    internal DbSet<MessageLogSettings> MessageLogSettings { get; init; }
-    internal DbSet<ModerationSettings> ModerationSettings { get; init; }
+    internal DbSet<GuildSetting> GuildSettings { get; init; }
     internal DbSet<IgnoredChannel> IgnoredChannels { get; init; }
     internal DbSet<IgnoredMember> IgnoredMembers { get; init; }
     internal DbSet<IgnoredRole> IgnoredRoles { get; init; }

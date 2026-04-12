@@ -37,16 +37,17 @@ internal sealed partial class GeneralSettingsCommands
             var permissions = channel.PermissionsFor(guild.CurrentMember);
             if (!permissions.HasPermission(DiscordPermission.SendMessages))
             {
-                await ctx.EditReplyAsync(DiscordColor.Red,
+                await ctx.ReplyAsync(DiscordColor.Red,
                     $"{guild.CurrentMember.Mention} doesn't have permission to send messages in that channel.");
                 return;
             }
         }
 
         await this._settingsModule.SetLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId(),
+            ctx.GetModeratorId(),
             channel?.GetChannelId());
 
-        await ctx.EditReplyAsync(message: option is ChannelOption.Off
+        await ctx.ReplyAsync(message: option is ChannelOption.Off
             ? $"{ctx.User.Mention} disabled the moderation log to {channel?.Mention}"
             : $"Updated the moderation log to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

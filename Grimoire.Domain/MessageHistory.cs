@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed class MessageHistory
+public sealed record MessageHistory
 {
     public required MessageId MessageId { get; init; }
     public Message? Message { get; init; }
@@ -40,4 +40,3 @@ public readonly record struct MessageContent(string Content)
     public static bool Equals(MessageContent? a, MessageContent? b, StringComparison stringComparison)
         => a is { } aObj && b is { } bObj && string.Equals(aObj.Content, bObj.Content, stringComparison);
 }
-

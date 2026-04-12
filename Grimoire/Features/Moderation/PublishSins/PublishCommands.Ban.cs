@@ -47,7 +47,7 @@ public sealed partial class PublishCommands
 
         if (result is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Could not find a ban with that Sin Id.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not find a ban with that Sin Id.");
             return;
         }
 
@@ -56,7 +56,7 @@ public sealed partial class PublishCommands
 
         if (banLogMessage is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Red,
+            await ctx.ReplyAsync(GrimoireColor.Red,
                 $"Failed to publish ban reason. Verify {ctx.Guild?.CurrentMember.Mention} has access to send messages in the public ban log channel.");
             return;
         }
@@ -71,7 +71,7 @@ public sealed partial class PublishCommands
             await dbContext.SaveChangesAsync();
         }
 
-        await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published ban : {sinId}");
+        await ctx.ReplyAsync(GrimoireColor.Green, $"Successfully published ban : {sinId}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),

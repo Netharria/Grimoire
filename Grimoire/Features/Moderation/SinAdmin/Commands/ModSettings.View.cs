@@ -23,7 +23,8 @@ internal sealed partial class ModSettings
         var guild = ctx.Guild!;
 
         var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId());
-        var banLogChannel = await this._settingsModule.GetLogChannelSetting(GuildLogType.BanLog, guild.GetGuildId());
+        var banLogChannel = await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.PublicModeration,
+            guild.GetGuildId());
         var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Moderation, guild.GetGuildId());
 
         var banLog = banLogChannel is null
@@ -37,7 +38,7 @@ internal sealed partial class ModSettings
                     ? $"{autoPardonAfter.Days / 30} months"
                     : $"{autoPardonAfter.Days} days";
 
-        await ctx.EditReplyAsync(
+        await ctx.ReplyAsync(
             title: "Current moderation System Settings",
             message: $"**Module Enabled:** {moduleEnabled}\n" +
                      $"**Auto Pardon Duration:** {autoPardonString}\n" +

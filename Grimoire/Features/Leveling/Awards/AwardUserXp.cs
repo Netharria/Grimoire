@@ -46,7 +46,7 @@ internal sealed class AwardUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             });
         await dbContext.SaveChangesAsync();
 
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
+        await ctx.ReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),

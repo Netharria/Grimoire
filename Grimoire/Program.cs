@@ -223,9 +223,11 @@ await Host.CreateDefaultBuilder(args)
             .AddHostedService<MuteBackgroundTasks>()
             .AddHostedService<DiscordStartService>()
             .AddHostedService<LeaderboardRefreshBackgroundTask>()
-            .AddMemoryCache()
             .AddHttpClient("Default")
             .AddStandardResilienceHandler();
+        services.AddHttpClient();
+
+        services.AddHybridCache();
 
         services.AddHttpClient("Pluralkit", x =>
         {

@@ -60,7 +60,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             .FirstOrDefaultAsync();
         if (member is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
                 $"{user.Mention} has no xp to take.");
             return;
         }
@@ -87,7 +87,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             });
         await dbContext.SaveChangesAsync();
 
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
+        await ctx.ReplyAsync(GrimoireColor.DarkPurple,
             $"{xpToTake} xp has been taken from {user.Mention}.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {

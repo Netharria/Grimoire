@@ -28,13 +28,13 @@ public partial class IgnoreCommandGroup
 
         if (value.Length == 0)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Could not parse any ids from the submitted values.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not parse any ids from the submitted values.");
             return;
         }
 
-        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.GetUserId()).ToArray();
-        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.GetChannelId()).ToArray();
-        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.GetRoleId()).ToArray();
+        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.GetUserId()).ToHashSet();
+        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.GetChannelId()).ToHashSet();
+        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.GetRoleId()).ToHashSet();
 
 
         await this._settingsModule.AddIgnoredItems(
@@ -45,7 +45,7 @@ public partial class IgnoreCommandGroup
         var message = BuildIgnoreListAsync(ignoredChannelIds, ignoredRoleIds, ignoredMemberIds) +
                       " are now ignored for xp gain.";
 
-        await ctx.EditReplyAsync(GrimoireColor.Green,
+        await ctx.ReplyAsync(GrimoireColor.Green,
             message);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {

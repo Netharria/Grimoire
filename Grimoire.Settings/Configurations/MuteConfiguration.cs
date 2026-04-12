@@ -17,11 +17,12 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>
 {
     public void Configure(EntityTypeBuilder<Mute> builder)
     {
-        builder.HasKey(e => e.SinId);
+        builder.HasKey(e => new { e.SinId });
 
         builder.Property(e => e.SinId).ValueGeneratedNever();
         builder.Property(e => e.EndTime).IsRequired();
-        builder.HasIndex(x => x.EndTime);
+        builder.HasIndex(x => new { x.UserId, x.GuildId })
+            .IsUnique();
 
 
         builder.Property(e => e.GuildId)

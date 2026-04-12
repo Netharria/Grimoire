@@ -18,7 +18,7 @@ internal sealed partial class GeneralSettingsCommands
         var guild = ctx.Guild!;
 
         var modLogChannelId =
-            await this._settingsModule.GetLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId());
+            await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId());
         var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId());
 
         var moderationLogText = modLogChannelId is null
@@ -27,7 +27,7 @@ internal sealed partial class GeneralSettingsCommands
         var userCommandChannelText = userCommandChannelId is null
             ? "None"
             : ChannelExtensions.Mention(userCommandChannelId.Value);
-        await ctx.EditReplyAsync(title: "General Settings",
+        await ctx.ReplyAsync(title: "General Settings",
             message: $"**Moderation Log:** {moderationLogText}\n**User Command Channel:** {userCommandChannelText}");
     }
 }

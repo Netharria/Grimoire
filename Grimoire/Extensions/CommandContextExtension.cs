@@ -13,7 +13,7 @@ namespace Grimoire.Extensions;
 
 public static class CommandContextExtension
 {
-    public static ValueTask EditReplyAsync(
+    public static ValueTask ReplyAsync(
         this CommandContext ctx,
         DiscordColor? color = null,
         string message = "",
@@ -48,11 +48,11 @@ public static class CommandContextExtension
 
     public static ValueTask SendErrorResponseAsync(
         this CommandContext ctx,
-        string message) => ctx.EditReplyAsync(GrimoireColor.Red, message);
+        string message) => ctx.ReplyAsync(GrimoireColor.Red, message, ephemeral: true);
 
     public static ValueTask SendWarningResponseAsync(
         this CommandContext ctx,
-        string message) => ctx.EditReplyAsync(GrimoireColor.Yellow, message);
+        string message) => ctx.ReplyAsync(GrimoireColor.Yellow, message, ephemeral: true);
 
 
     [Pure]

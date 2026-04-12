@@ -60,7 +60,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
             .WithColor(GrimoireColor.Yellow)
             .WithTimestamp(DateTimeOffset.UtcNow);
 
-        await ctx.EditReplyAsync(embed: embed);
+        await ctx.ReplyAsync(embed: embed);
 
         try
         {

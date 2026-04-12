@@ -25,6 +25,7 @@ public static class DiscordRetryPolicy
 
     private static readonly ResiliencePipeline _resiliencePipeline =
         new ResiliencePipelineBuilder().AddRetry(_retryStrategyOptions).Build();
+
     public static ValueTask RetryDiscordCall(Func<CancellationToken, ValueTask> function,
         CancellationToken cancellationToken = default)
         => _resiliencePipeline.ExecuteAsync(function, cancellationToken);

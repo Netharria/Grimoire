@@ -30,11 +30,11 @@ internal sealed partial class GeneralSettingsCommands
 
         channel = ctx.GetChannelOption(option, channel);
 
-        await this._settingsModule.SetUserCommandChannelSetting(guild.GetGuildId(), channel?.GetChannelId());
+        await this._settingsModule.SetUserCommandChannelSetting(guild.GetGuildId(), ctx.GetModeratorId(), channel?.GetChannelId());
 
         if (option is ChannelOption.Off)
         {
-            await ctx.EditReplyAsync(message: "Disabled the User Command Channel.");
+            await ctx.ReplyAsync(message: "Disabled the User Command Channel.");
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
                 GuildId = guild.GetGuildId(),
@@ -45,7 +45,7 @@ internal sealed partial class GeneralSettingsCommands
             return;
         }
 
-        await ctx.EditReplyAsync(message: $"Updated the User Command Channel to {channel?.Mention}");
+        await ctx.ReplyAsync(message: $"Updated the User Command Channel to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),

@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Settings.Services;
 
@@ -49,24 +48,25 @@ public sealed partial class SettingsModule
     private async Task<MessageLogOverrideCacheOption> GetChannelLogOverride(ChannelId channelId,
         GuildId guildId,
         CancellationToken cancellationToken)
-    {
-        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, channelId);
-        return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var channelOverride = await dbContext.MessagesLogChannelOverrides
-                .AsNoTracking()
-                .Where(ovr => ovr.GuildId == guildId && ovr.ChannelId == channelId)
-                .Select(ovr => ovr.ChannelOption)
-                .FirstOrDefaultAsync(cancellationToken);
-            return channelOverride switch
-            {
-                MessageLogOverrideOption.AlwaysLog => MessageLogOverrideCacheOption.AlwaysLog,
-                MessageLogOverrideOption.NeverLog => MessageLogOverrideCacheOption.NeverLog,
-                _ => MessageLogOverrideCacheOption.Inherit
-            };
-        }, this._cacheEntryOptions);
-    }
+        =>
+            await this._cache.GetOrCreateAsync(string.Format(LogOverridesCacheKeyPrefix, channelId),
+                new { channelId, guildId },
+                async (state, ct) =>
+                {
+                    await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                    var channelOverride = await dbContext.MessagesLogChannelOverrides
+                        .AsNoTracking()
+                        .Where(ovr => ovr.GuildId == state.guildId && ovr.ChannelId == state.channelId)
+                        .Select(ovr => ovr.ChannelOption)
+                        .FirstOrDefaultAsync(ct);
+                    return channelOverride switch
+                    {
+                        MessageLogOverrideOption.AlwaysLog => MessageLogOverrideCacheOption.AlwaysLog,
+                        MessageLogOverrideOption.NeverLog => MessageLogOverrideCacheOption.NeverLog,
+                        _ => MessageLogOverrideCacheOption.Inherit
+                    };
+                }, this._cacheEntryOptions,
+                cancellationToken: cancellationToken);
 
     public async Task SetChannelLogOverride(ChannelId channelId,
         GuildId guildId,
@@ -84,8 +84,14 @@ public sealed partial class SettingsModule
         dbContext.MessagesLogChannelOverrides.Add(existingOverride);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, channelId);
-        this._memoryCache.Remove(cacheKey);
+        await this._cache.SetAsync(string.Format(LogOverridesCacheKeyPrefix, channelId),
+            option switch
+            {
+                MessageLogOverrideOption.AlwaysLog => MessageLogOverrideCacheOption.AlwaysLog,
+                MessageLogOverrideOption.NeverLog => MessageLogOverrideCacheOption.NeverLog,
+                _ => MessageLogOverrideCacheOption.Inherit
+            }, this._cacheEntryOptions,
+            cancellationToken: cancellationToken);
     }
 
     public async Task RemoveChannelLogOverride(ChannelId channelId,
@@ -103,8 +109,10 @@ public sealed partial class SettingsModule
         dbContext.MessagesLogChannelOverrides.Remove(existingOverride);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var cacheKey = string.Format(LogOverridesCacheKeyPrefix, channelId);
-        this._memoryCache.Remove(cacheKey);
+        await this._cache.SetAsync(string.Format(LogOverridesCacheKeyPrefix, channelId),
+            MessageLogOverrideCacheOption.Inherit,
+            this._cacheEntryOptions,
+            cancellationToken: cancellationToken);
     }
 
     public async IAsyncEnumerable<MessageLogChannelOverride> GetAllOverriddenChannels(GuildId guildId,

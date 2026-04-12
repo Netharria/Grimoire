@@ -49,7 +49,7 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         if (result is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "Could not find a sin with that ID.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not find a sin with that ID.");
             return;
         }
 
@@ -59,7 +59,7 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         var message = $"**ID:** {result.Sin.Id} **User:** {result.UserName}";
 
-        await ctx.EditReplyAsync(GrimoireColor.Green, message, "Forgot");
+        await ctx.ReplyAsync(GrimoireColor.Green, message, "Forgot");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {

@@ -42,7 +42,7 @@ public sealed partial class TrackerLog(
                 if (logChannelId is null)
                     continue;
 
-                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannelId.Value);
+                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannelId.Value, cancellationToken);
 
                 if (channel is null)
                     continue;

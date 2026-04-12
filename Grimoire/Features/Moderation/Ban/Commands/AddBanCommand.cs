@@ -48,13 +48,13 @@ public sealed partial class AddBanCommand(
 
         if (!CheckIfCanBan(guild.CurrentMember, user))
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
             return;
         }
 
         if (ctx.User.Id == user.Id)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "You can't ban yourself.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "You can't ban yourself.");
             return;
         }
 
@@ -99,7 +99,7 @@ public sealed partial class AddBanCommand(
             .WithColor(GrimoireColor.Red)
             .WithTimestamp(DateTimeOffset.UtcNow);
 
-        await ctx.EditReplyAsync(embed: embed);
+        await ctx.ReplyAsync(embed: embed);
     }
 
     [LoggerMessage(LogLevel.Warning, "Was not able to send a direct message to user.")]

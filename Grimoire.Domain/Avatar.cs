@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed class Avatar
+public sealed record Avatar
 {
     public required AvatarFileName FileName { get; init; }
     public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
@@ -21,6 +21,7 @@ public sealed class Avatar
 public readonly record struct AvatarFileName(string Value)
 {
     public override string ToString() => Value;
+
     [Pure]
     public static bool Equals(AvatarFileName? a, AvatarFileName? b)
         => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value);
@@ -29,4 +30,3 @@ public readonly record struct AvatarFileName(string Value)
     public static bool Equals(AvatarFileName? a, AvatarFileName? b, StringComparison stringComparison)
         => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value, stringComparison);
 }
-

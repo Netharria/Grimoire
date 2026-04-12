@@ -7,7 +7,6 @@
 
 namespace Grimoire.Domain;
 
-
 public readonly record struct MessageId(ulong Value)
 {
     public static bool TryParse(string? value, out MessageId messageId) =>
@@ -43,4 +42,3 @@ public readonly record struct RoleId(ulong Value)
     public static bool TryParse(string? value, out RoleId messageId) =>
         (messageId = ulong.TryParse(value, out var id) ? new RoleId(id) : default) != default;
 }
-

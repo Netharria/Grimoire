@@ -52,7 +52,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         if (result is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Red, "Could not find a sin with that ID.");
+            await ctx.ReplyAsync(GrimoireColor.Red, "Could not find a sin with that ID.");
             return;
         }
 
@@ -67,7 +67,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         var message = $"**ID:** {sinId} **User:** {result.UserName}";
 
-        await ctx.EditReplyAsync(GrimoireColor.Green, message, "Pardoned");
+        await ctx.ReplyAsync(GrimoireColor.Green, message, "Pardoned");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {

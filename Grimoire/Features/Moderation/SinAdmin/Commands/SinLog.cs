@@ -52,7 +52,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         if (!member.Permissions.HasPermission(DiscordPermission.ManageMessages) && ctx.User != user)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Red, "You do not have permission to view other users' logs.");
+            await ctx.ReplyAsync(GrimoireColor.Red, "You do not have permission to view other users' logs.");
             return;
         }
 
@@ -65,7 +65,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
                 .GroupBy(sin => sin.SinType)
                 .ToDictionaryAsync(sinGroup => sinGroup.Key, sinGroup => sinGroup.Count());
 
-            await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
+            await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
                 .WithAuthor($"Moderation log for {user.Username}")
                 .AddField("Bans", modResponse.GetValueOrDefault(SinType.Ban, 0).ToString(), true)
                 .AddField("Mutes", modResponse.GetValueOrDefault(SinType.Mute, 0).ToString(), true)
@@ -124,10 +124,10 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         if (stringBuilder.Length > 0)
             resultStrings.Add(stringBuilder.ToString());
         if (resultStrings.Count == 0)
-            await ctx.EditReplyAsync(GrimoireColor.Green, "That user does not have any logs",
+            await ctx.ReplyAsync(GrimoireColor.Green, "That user does not have any logs",
                 $"Sin log for {user.Username}");
         foreach (var message in resultStrings)
-            await ctx.EditReplyAsync(GrimoireColor.Green, message,
+            await ctx.ReplyAsync(GrimoireColor.Green, message,
                 $"Sin log for {user.Username}");
     }
 }

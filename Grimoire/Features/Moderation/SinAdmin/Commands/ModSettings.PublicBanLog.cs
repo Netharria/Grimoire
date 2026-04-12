@@ -36,16 +36,17 @@ internal sealed partial class ModSettings
             var permissions = channel.PermissionsFor(guild.CurrentMember);
             if (!permissions.HasPermission(DiscordPermission.SendMessages))
             {
-                await ctx.EditReplyAsync(DiscordColor.Red,
+                await ctx.ReplyAsync(DiscordColor.Red,
                     $"{guild.CurrentMember.Mention} don't have permission to send messages in that channel.");
                 return;
             }
         }
 
-        await this._settingsModule.SetLogChannelSetting(GuildLogType.BanLog, guild.GetGuildId(),
+        await this._settingsModule.SetLogChannelSetting(GuildLogType.PublicModeration, guild.GetGuildId(),
+            ctx.GetModeratorId(),
             channel?.GetChannelId());
 
-        await ctx.EditReplyAsync(message: option is ChannelOption.Off
+        await ctx.ReplyAsync(message: option is ChannelOption.Off
             ? "Disabled the public ban log."
             : $"Updated the public ban log to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

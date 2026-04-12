@@ -31,7 +31,7 @@ public sealed class RemoveBanCommand
         try
         {
             await guild.UnbanMemberAsync(user.Id);
-            await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
+            await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
                 .WithAuthor("Unbanned")
                 .AddField("User", user.Mention, true)
                 .AddField("Moderator", ctx.User.Mention, true)
@@ -42,7 +42,7 @@ public sealed class RemoveBanCommand
             var errorMessage = ex is NotFoundException
                 ? "user could not be found."
                 : "error when communicating with discord. Try again before asking for help.";
-            await ctx.EditReplyAsync(
+            await ctx.ReplyAsync(
                 GrimoireColor.Yellow,
                 title: "Error",
                 message: $"{user.Username} was not unbanned because {errorMessage}");

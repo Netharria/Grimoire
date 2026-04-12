@@ -17,7 +17,7 @@ public enum SinType
 }
 
 [UsedImplicitly]
-public sealed class Sin
+public sealed record Sin
 {
     public ModeratorId? ModeratorId { get; init; }
 
@@ -39,6 +39,5 @@ public sealed class Sin
 
     public required GuildId GuildId { get; init; }
 }
-
 
 public readonly record struct SinId(long Value);

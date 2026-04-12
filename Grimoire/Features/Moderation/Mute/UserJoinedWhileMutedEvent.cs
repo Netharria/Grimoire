@@ -17,7 +17,7 @@ public sealed class UserJoinedWhileMuted(SettingsModule settingsModule) : IEvent
     {
         if (!await this._settingsModule.IsMemberMuted(args.Member.GetUserId(), args.Guild.GetGuildId()))
             return;
-        var muteRole = await this._settingsModule.GetMuteRole(args.Member.GetGuildId());
+        var muteRole = await this._settingsModule.GetEffectiveMuteRole(args.Member.GetGuildId());
         var role = await args.Guild.GetRoleOrDefaultAsync(muteRole);
         if (role is null) return;
         await args.Member.GrantRoleAsync(role, "Rejoined while muted");

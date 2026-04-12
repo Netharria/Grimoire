@@ -48,7 +48,7 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
 
         if (option == LeaderboardOption.User && user is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "You must specify a user when selecting the 'User' option.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "You must specify a user when selecting the 'User' option.");
             return;
         }
 
@@ -69,11 +69,11 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
 
         if (response is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "User not found on the leaderboard");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "User not found on the leaderboard");
             return;
         }
 
-        await ctx.EditReplyAsync(
+        await ctx.ReplyAsync(
             GrimoireColor.DarkPurple,
             title: "LeaderBoard",
             message: response.LeaderboardText,

@@ -16,7 +16,7 @@ public enum PublishType
 }
 
 [UsedImplicitly]
-public sealed class PublishedMessage
+public sealed record PublishedMessage
 {
     public required MessageId MessageId { get; init; }
 

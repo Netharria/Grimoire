@@ -36,7 +36,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
 
         if (response is null)
         {
-            await ctx.EditReplyAsync(message: $"{channel.Mention} is not locked.");
+            await ctx.ReplyAsync(message: $"{channel.Mention} is not locked.");
             return;
         }
 
@@ -49,7 +49,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
                 , permissions.Denied.RevertLockPermissions(response.PreviouslyDenied.Permissions));
         }
 
-        await ctx.EditReplyAsync(message: $"{channel.Mention} has been unlocked");
+        await ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {

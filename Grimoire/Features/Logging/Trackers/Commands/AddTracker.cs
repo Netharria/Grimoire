@@ -39,14 +39,14 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
 
         if (user.Id == ctx.Client.CurrentUser.Id)
         {
-            await ctx.EditReplyAsync(message: "Why would I track myself?");
+            await ctx.ReplyAsync(message: "Why would I track myself?");
             return;
         }
 
         if (guild.Members.TryGetValue(user.Id, out var member))
             if (member.Permissions.HasPermission(DiscordPermission.ManageGuild))
             {
-                await ctx.EditReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
+                await ctx.ReplyAsync(message: "<_<\n>_>\nI can't track a mod.\n Try someone else");
                 return;
             }
 
@@ -55,7 +55,7 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
 
         if (!guild.Channels.ContainsKey(discordChannel.Id))
         {
-            await ctx.EditReplyAsync(
+            await ctx.ReplyAsync(
                 message: "<_<\n>_>\nThat channel is not on this server.\n Try a different one.");
             return;
         }
@@ -63,7 +63,7 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
         var permissions = discordChannel.PermissionsFor(guild.CurrentMember);
         if (!permissions.HasPermission(DiscordPermission.SendMessages))
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
                 $"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
             return;
         }
@@ -75,7 +75,7 @@ public sealed class AddTracker(SettingsModule settingsModule, GuildLog guildLog)
             discordChannel.GetChannelId(),
             durationType.GetTimeSpan(durationAmount));
 
-        await ctx.EditReplyAsync(
+        await ctx.ReplyAsync(
             message:
             $"Tracker placed on {user.Mention} in {discordChannel.Mention} for {durationAmount} {durationType}");
 

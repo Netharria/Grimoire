@@ -23,20 +23,20 @@ public sealed partial class LevelSettingsCommandGroup
 
         if (ctx.Guild is not { } guild)
         {
-            await ctx.EditReplyAsync(message: "You need to be in a guild to use this command.");
+            await ctx.ReplyAsync(message: "You need to be in a guild to use this command.");
             return;
         }
 
         var response = await this._settingsModule.GetLevelingSettings(guild.GetGuildId());
         var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId());
         var levelChannelLog =
-            await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
+            await this._settingsModule.GetEffectiveLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
 
         var levelLogMention =
             levelChannelLog is null
                 ? "None"
                 : ctx.Guild.Channels.GetValueOrDefault(levelChannelLog.Value.Value)?.Mention;
-        await ctx.EditReplyAsync(
+        await ctx.ReplyAsync(
             title: "Current Level System Settings",
             message: $"**Module Enabled:** {moduleEnabled}\n" +
                      $"**Text Time:** {response.TextTime.TotalMinutes} minutes.\n" +

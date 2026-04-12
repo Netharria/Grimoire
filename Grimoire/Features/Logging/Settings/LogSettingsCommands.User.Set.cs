@@ -56,7 +56,7 @@ public partial class LogSettingsCommands
                 var permissions = channel.PermissionsFor(guild.CurrentMember);
                 if (!permissions.HasPermission(DiscordPermission.SendMessages))
                 {
-                    await ctx.EditReplyAsync(GrimoireColor.Yellow,
+                    await ctx.ReplyAsync(GrimoireColor.Yellow,
                         $"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
                     return;
                 }
@@ -73,10 +73,11 @@ public partial class LogSettingsCommands
                     _ => throw new ArgumentOutOfRangeException(nameof(logSetting), logSetting, null)
                 },
                 guild.GetGuildId(),
+                ctx.GetModeratorId(),
                 option is ChannelOption.Off ? null : channel?.GetChannelId());
 
 
-            await ctx.EditReplyAsync(message: option is ChannelOption.Off
+            await ctx.ReplyAsync(message: option is ChannelOption.Off
                 ? $"Disabled {logSetting}"
                 : $"Updated {logSetting} to {channel?.Mention}");
             await this._guildLog.SendLogMessageAsync(new GuildLogMessage

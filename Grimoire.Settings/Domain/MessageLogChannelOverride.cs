@@ -6,9 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using Grimoire.Domain;
-using Grimoire.Settings.Domain.Shared;
-
 namespace Grimoire.Settings.Domain;
 
 public enum MessageLogOverrideOption
@@ -17,7 +14,7 @@ public enum MessageLogOverrideOption
     NeverLog
 }
 
-public sealed class MessageLogChannelOverride
+public sealed record MessageLogChannelOverride
 {
     public MessageLogOverrideOption ChannelOption { get; set; }
     public required ChannelId ChannelId { get; init; }

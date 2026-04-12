@@ -48,13 +48,13 @@ public sealed partial class PublishCommands
 
         if (result is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Could not find a ban with Sin Id: {sinId}");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, $"Could not find a ban with Sin Id: {sinId}");
             return;
         }
 
         if (result.Pardon is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The ban must be pardoned first before the unban can be published.");
             return;
         }
@@ -64,7 +64,7 @@ public sealed partial class PublishCommands
 
         if (banLogMessage is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Red,
+            await ctx.ReplyAsync(GrimoireColor.Red,
                 $"Failed to publish unban reason. Verify {ctx.Guild?.CurrentMember.Mention} has access to send messages in the public ban log channel.");
             return;
         }
@@ -80,7 +80,7 @@ public sealed partial class PublishCommands
         }
 
 
-        await ctx.EditReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
+        await ctx.ReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),

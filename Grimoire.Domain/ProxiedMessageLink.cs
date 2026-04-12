@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed class ProxiedMessageLink
+public sealed record ProxiedMessageLink
 {
     public required MessageId ProxyMessageId { get; init; }
     public Message? ProxyMessage { get; init; }

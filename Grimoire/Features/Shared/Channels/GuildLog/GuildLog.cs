@@ -21,26 +21,27 @@ public sealed partial class GuildLog(
     IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : BackgroundService
 {
+    private const int QueueCapacity = 1024;
+
     private readonly Channel<GuildLogMessageBase> _channel =
-        Channel.CreateUnbounded<GuildLogMessageBase>(new UnboundedChannelOptions
+        Channel.CreateBounded<GuildLogMessageBase>(new BoundedChannelOptions(QueueCapacity)
         {
-            SingleReader = true, SingleWriter = false
+            SingleReader = true,
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.Wait // backpressure instead of unbounded memory growth
         });
 
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
     private readonly DiscordClient _discordClient = discordClient;
     private readonly ILogger<GuildLog> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        while (await this._channel.Reader.WaitToReadAsync(cancellationToken))
+        await foreach (var result in this._channel.Reader.ReadAllAsync(cancellationToken))
             try
             {
-                var result = await this._channel.Reader.ReadAsync(cancellationToken);
-
-                var logChannelId = await this._settingsModule.GetLogChannelSetting(
+                var logChannelId = await this._settingsModule.GetEffectiveLogChannelSetting(
                     result.GuildLogType,
                     result.GuildId,
                     cancellationToken);
@@ -52,21 +53,53 @@ public sealed partial class GuildLog(
 
                 if (channel is null)
                     continue;
-                var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-                    await channel.SendMessageAsync(result.GetMessageBuilder()), cancellationToken);
+
+                var message = await DiscordRetryPolicy.RetryDiscordCall(
+                    async _ => await channel.SendMessageAsync(result.GetMessageBuilder()), cancellationToken);
+
                 if (ShouldPurgeMessageAfterInterval(result.GuildLogType))
-                    await ScheduleMessagePurge(message.GetMessageId(), channel.GetChannelId(), result.GuildId,
+                    await ScheduleMessagePurge(
+                        message.GetMessageId(),
+                        channel.GetChannelId(),
+                        result.GuildId,
                         cancellationToken);
             }
-            catch (Exception e)
+            catch (OperationCanceledException)
             {
-                LogError(this._logger, e, e.Message);
+                break;
+            }
+            catch (Exception ex)
+            {
+                LogProcessError(this._logger, ex, result.GuildId, result.GuildLogType);
             }
     }
 
-    [LoggerMessage(Level = LogLevel.Error,
-        Message = "An error occurred while processing the log message. Message: ({message})")]
-    static partial void LogError(ILogger logger, Exception e, string message);
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        this._channel.Writer.TryComplete(); // reject future writes and let reader drain/exit
+        await base.StopAsync(cancellationToken);
+    }
+
+    public ValueTask SendLogMessageAsync(
+        GuildLogMessageBase logMessageMessage,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(logMessageMessage);
+
+        return this._channel.Writer.TryWrite(logMessageMessage)
+            ? ValueTask.CompletedTask
+            : this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken);
+    }
+
+    [LoggerMessage(
+        EventId = 1001,
+        Level = LogLevel.Error,
+        Message = "Failed to process guild log. GuildId={GuildId}, GuildLogType={GuildLogType}")]
+    private static partial void LogProcessError(
+        ILogger logger,
+        Exception exception,
+        GuildId guildId,
+        GuildLogType guildLogType);
 
     private static bool ShouldPurgeMessageAfterInterval(GuildLogType guildLogType)
     {
@@ -82,15 +115,10 @@ public sealed partial class GuildLog(
             GuildLogType.AvatarUpdated => false,
             GuildLogType.NicknameUpdated => false,
             GuildLogType.UsernameUpdated => false,
-            GuildLogType.BanLog => false,
-            _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, "Unknown log type")
+            GuildLogType.PublicModeration => false,
+            _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
         };
     }
-
-
-    public Task SendLogMessageAsync(GuildLogMessageBase logMessageMessage,
-        CancellationToken cancellationToken = default)
-        => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken).AsTask();
 
     private async Task ScheduleMessagePurge(MessageId messageId, ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)

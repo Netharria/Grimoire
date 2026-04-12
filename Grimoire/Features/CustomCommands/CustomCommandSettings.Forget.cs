@@ -46,7 +46,7 @@ public sealed partial class CustomCommandSettings
 
             var alreadyForgotten = deletedCount == 0;
 
-            await ctx.EditReplyAsync(GrimoireColor.Green,
+            await ctx.ReplyAsync(GrimoireColor.Green,
                 alreadyForgotten
                     ? $"Command `{name}` was already forgotten."
                     : $"Removed command {name}");

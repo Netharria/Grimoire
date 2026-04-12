@@ -51,11 +51,11 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
             await ChannelLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount);
         else
         {
-            await ctx.EditReplyAsync(message: "Channel not of valid type.");
+            await ctx.ReplyAsync(message: "Channel not of valid type.");
             return;
         }
 
-        await ctx.EditReplyAsync(
+        await ctx.ReplyAsync(
             message: $"{channel.Mention} has been locked for {durationAmount} {durationType}");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

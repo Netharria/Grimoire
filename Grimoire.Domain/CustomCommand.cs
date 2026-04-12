@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed class CustomCommand
+public sealed record CustomCommand
 {
     public required CustomCommandName Name { get; set; }
     public required GuildId GuildId { get; set; }
@@ -28,7 +28,6 @@ public readonly record struct CustomCommandName(string Value)
 {
     public override string ToString() => Value;
 }
-
 
 public readonly record struct CustomCommandEmbedColor(string Value)
 {

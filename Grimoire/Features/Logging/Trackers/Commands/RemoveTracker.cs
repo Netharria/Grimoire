@@ -35,7 +35,7 @@ public sealed class RemoveTracker(SettingsModule settingsModule, GuildLog guildL
         var tracker = await this._settingsModule.RemoveTracker(member.GetUserId(), guild.GetGuildId());
 
 
-        await ctx.EditReplyAsync(message: $"Tracker removed from {member.Mention}");
+        await ctx.ReplyAsync(message: $"Tracker removed from {member.Mention}");
 
         if (tracker is not null)
             await this._trackerLog.SendTrackerMessageAsync(new TrackerMessage

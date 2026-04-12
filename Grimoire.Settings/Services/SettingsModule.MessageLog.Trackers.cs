@@ -8,7 +8,6 @@
 using System.Collections.Frozen;
 using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Settings.Services;
 
@@ -20,18 +19,21 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
     {
         var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
-        var trackers = await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var results = await dbContext.Trackers
-                .AsNoTracking()
-                .Where(x => x.GuildId == guildId)
-                .ToDictionaryAsync(
-                    tracker => tracker.UserId,
-                    tracker => tracker.LogChannelId,
-                    cancellationToken);
-            return results.ToFrozenDictionary();
-        }, this._cacheEntryOptions);
+        var trackers = await this._cache.GetOrCreateAsync(cacheKey,
+            guildId,
+            async (state, ct) =>
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                var results = await dbContext.Trackers
+                    .AsNoTracking()
+                    .Where(x => x.GuildId == state)
+                    .ToDictionaryAsync(
+                        tracker => tracker.UserId,
+                        tracker => tracker.LogChannelId,
+                        ct);
+                return results.ToFrozenDictionary();
+            }, this._cacheEntryOptions,
+            cancellationToken: cancellationToken);
 
         return trackers?.GetValueOrDefault(memberId);
     }
@@ -69,7 +71,7 @@ public sealed partial class SettingsModule
 
         await dbContext.SaveChangesAsync(cancellationToken);
         var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
-        this._memoryCache.Remove(cacheKey);
+        await this._cache.RemoveAsync(cacheKey, cancellationToken);
     }
 
     public async Task<Tracker?> RemoveTracker(UserId memberId, GuildId guildId,
@@ -84,7 +86,7 @@ public sealed partial class SettingsModule
         dbContext.Trackers.Remove(existingTracker);
         await dbContext.SaveChangesAsync(cancellationToken);
         var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
-        this._memoryCache.Remove(cacheKey);
+        await this._cache.RemoveAsync(cacheKey, cancellationToken);
         return existingTracker;
     }
 
@@ -100,7 +102,7 @@ public sealed partial class SettingsModule
         foreach (var guildId in affectedGuilds)
         {
             var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
-            this._memoryCache.Remove(cacheKey);
+            await this._cache.RemoveAsync(cacheKey, cancellationToken);
         }
 
         return expiredTrackers;

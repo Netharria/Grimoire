@@ -6,6 +6,8 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 
+using Grimoire.Settings.Domain;
+
 namespace Grimoire.Settings.Enums;
 
 public enum GuildLogType
@@ -20,44 +22,45 @@ public enum GuildLogType
     AvatarUpdated,
     NicknameUpdated,
     UsernameUpdated,
-    BanLog
+    PublicModeration
 }
 
 public static class GuildLogTypeExtensions
 {
-    public static Module GetLogTypeModule(this GuildLogType guildLogType)
-        => guildLogType switch
-        {
-            GuildLogType.Moderation => Module.General,
-            GuildLogType.Leveling => Module.Leveling,
-            GuildLogType.BulkMessageDeleted => Module.MessageLog,
-            GuildLogType.MessageEdited => Module.MessageLog,
-            GuildLogType.MessageDeleted => Module.MessageLog,
-            GuildLogType.UserJoined => Module.UserLog,
-            GuildLogType.UserLeft => Module.UserLog,
-            GuildLogType.AvatarUpdated => Module.UserLog,
-            GuildLogType.NicknameUpdated => Module.UserLog,
-            GuildLogType.UsernameUpdated => Module.UserLog,
-            GuildLogType.BanLog => Module.Moderation,
-            _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
-        };
-
-    public static string GetCacheKey(this GuildLogType guildLogType, GuildId guildId)
+    extension(GuildLogType guildLogType)
     {
-        return guildLogType switch
-        {
-            GuildLogType.Moderation => $"ModerationLog-{guildId}",
-            GuildLogType.Leveling => $"LevelingLog-{guildId}",
-            GuildLogType.BulkMessageDeleted => $"BulkMessageDeletedLog-{guildId}",
-            GuildLogType.MessageEdited => $"MessageEditedLog-{guildId}",
-            GuildLogType.MessageDeleted => $"MessageDeletedLog-{guildId}",
-            GuildLogType.UserJoined => $"UserJoinedLog-{guildId}",
-            GuildLogType.UserLeft => $"UserLeftLog-{guildId}",
-            GuildLogType.AvatarUpdated => $"AvatarUpdatedLog-{guildId}",
-            GuildLogType.NicknameUpdated => $"NicknameUpdatedLog-{guildId}",
-            GuildLogType.UsernameUpdated => $"UsernameUpdatedLog-{guildId}",
-            GuildLogType.BanLog => $"BanLog-{guildId}",
-            _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
-        };
+        public Module GetLogTypeModule()
+            => guildLogType switch
+            {
+                GuildLogType.Moderation => Module.General,
+                GuildLogType.Leveling => Module.Leveling,
+                GuildLogType.BulkMessageDeleted => Module.MessageLog,
+                GuildLogType.MessageEdited => Module.MessageLog,
+                GuildLogType.MessageDeleted => Module.MessageLog,
+                GuildLogType.UserJoined => Module.UserLog,
+                GuildLogType.UserLeft => Module.UserLog,
+                GuildLogType.AvatarUpdated => Module.UserLog,
+                GuildLogType.NicknameUpdated => Module.UserLog,
+                GuildLogType.UsernameUpdated => Module.UserLog,
+                GuildLogType.PublicModeration => Module.Moderation,
+                _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
+            };
+
+        public GuildSettingType ToGuildSettingType()
+            => guildLogType switch
+            {
+                GuildLogType.Moderation => GuildSettingType.ModerationLogChannel,
+                GuildLogType.Leveling => GuildSettingType.LevelingLogChannel,
+                GuildLogType.BulkMessageDeleted => GuildSettingType.BulkDeleteLogChannel,
+                GuildLogType.MessageEdited => GuildSettingType.EditLogChannel,
+                GuildLogType.MessageDeleted => GuildSettingType.DeleteLogChannel,
+                GuildLogType.UserJoined => GuildSettingType.JoinLogChannel,
+                GuildLogType.UserLeft => GuildSettingType.LeaveLogChannel,
+                GuildLogType.AvatarUpdated => GuildSettingType.AvatarLogChannel,
+                GuildLogType.NicknameUpdated => GuildSettingType.NicknameLogChannel,
+                GuildLogType.UsernameUpdated => GuildSettingType.UsernameLogChannel,
+                GuildLogType.PublicModeration => GuildSettingType.PublicModerationLogChannel,
+                _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
+            };
     }
 }

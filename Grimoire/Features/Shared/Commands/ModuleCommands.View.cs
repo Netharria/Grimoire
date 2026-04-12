@@ -22,7 +22,7 @@ internal sealed partial class ModuleCommands
 
         var guildSettings = await this._settingsModule.GetAllModuleState(guild.GetGuildId());
 
-        await ctx.EditReplyAsync(
+        await ctx.ReplyAsync(
             title: "Current states of modules.",
             message: $"**Leveling Enabled:** {guildSettings.LevelingEnabled}\n" +
                      $"**User Log Enabled:** {guildSettings.UserLogEnabled}\n" +

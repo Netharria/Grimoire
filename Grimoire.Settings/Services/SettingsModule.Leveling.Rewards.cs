@@ -9,7 +9,6 @@ using System.Collections.Frozen;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Grimoire.Settings.Services;
 
@@ -24,19 +23,24 @@ public sealed partial class SettingsModule
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
             return FrozenSet<RewardEntry>.Empty;
         var cacheKey = string.Format(RewardsCacheKeyPrefix, guildId);
-        return await this._memoryCache.GetOrCreateAsync(cacheKey, async _ =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var results = await dbContext.Rewards
-                .AsNoTracking()
-                .Where(reward => reward.GuildId == guildId)
-                .Select(reward => new RewardEntry
-                {
-                    RoleId = reward.RoleId, RewardLevel = reward.RewardLevel, RewardMessage = reward.RewardMessage
-                })
-                .ToHashSetAsync(cancellationToken);
-            return results.ToFrozenSet();
-        }, this._cacheEntryOptions) ?? [];
+        return await this._cache.GetOrCreateAsync(cacheKey,
+            guildId,
+            async (guildIdState, ct) =>
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                var results = await dbContext.Rewards
+                    .AsNoTracking()
+                    .Where(reward => reward.GuildId == guildIdState)
+                    .Select(reward => new RewardEntry
+                    {
+                        RoleId = reward.RoleId,
+                        RewardLevel = reward.RewardLevel,
+                        RewardMessage = reward.RewardMessage
+                    })
+                    .ToHashSetAsync(ct);
+                return results.ToFrozenSet();
+            }, this._cacheEntryOptions,
+            cancellationToken: cancellationToken);
     }
 
     public async Task AddOrUpdateRewardAsync(
@@ -58,7 +62,7 @@ public sealed partial class SettingsModule
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var cacheKey = string.Format(RewardsCacheKeyPrefix, reward.GuildId);
-        this._memoryCache.Remove(cacheKey);
+        await this._cache.RemoveAsync(cacheKey, cancellationToken);
     }
 
     public async Task RemoveRewardAsync(
@@ -76,7 +80,7 @@ public sealed partial class SettingsModule
         dbContext.Rewards.Remove(reward);
         await dbContext.SaveChangesAsync(cancellationToken);
         var cacheKey = string.Format(RewardsCacheKeyPrefix, guildId);
-        this._memoryCache.Remove(cacheKey);
+        await this._cache.RemoveAsync(cacheKey, cancellationToken);
     }
 
 

@@ -35,16 +35,16 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         if (guild.GetGuildId() != member.Guild.GetGuildId())
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
             return;
         }
 
         await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId());
 
-        var muteRoleId = await this._settingsModule.GetMuteRole(guild.GetGuildId());
+        var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
         if (muteRoleId is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The mute role is not configured. Please configure it before using this command.");
             return;
         }
@@ -52,7 +52,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
         if (muteRole is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow,
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The configured mute role does not exist. Please configure it again before using this command.");
             return;
         }
@@ -67,7 +67,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
             .WithTimestamp(DateTimeOffset.UtcNow);
 
 
-        await ctx.EditReplyAsync(embed: embed);
+        await ctx.ReplyAsync(embed: embed);
 
         try
         {

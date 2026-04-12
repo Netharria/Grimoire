@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed class Message
+public sealed record Message
 {
     public required ChannelId ChannelId { get; init; }
     public DateTimeOffset CreatedTimestamp { get; } = DateTimeOffset.UtcNow;

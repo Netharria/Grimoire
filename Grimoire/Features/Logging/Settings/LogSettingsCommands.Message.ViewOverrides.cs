@@ -40,7 +40,7 @@ public partial class LogSettingsCommands
                     }).AppendLine();
             }
 
-            await ctx.EditReplyAsync(GrimoireColor.Purple, title: "Channel Override Settings",
+            await ctx.ReplyAsync(GrimoireColor.Purple, title: "Channel Override Settings",
                 message: channelOverrideString.ToString());
         }
     }

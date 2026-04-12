@@ -22,22 +22,22 @@ public partial class MuteAdminCommands
 
         var role = await guild.CreateRoleAsync("Muted");
 
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
+        await ctx.ReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration.");
 
-        await this._settingsModule.SetMuteRole(role.GetRoleId(), guild.GetGuildId());
+        await this._settingsModule.SetMuteRole(guild.GetGuildId(), ctx.GetModeratorId(), role.GetRoleId());
 
-        await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
+        await ctx.ReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions");
         var result = await SetMuteRolePermissionsAsync(guild, role)
             .Where(x => !x.WasSuccessful)
             .ToArrayAsync();
 
         if (result.Length == 0)
-            await ctx.EditReplyAsync(GrimoireColor.DarkPurple,
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple,
                 $"Successfully created role {role.Mention} and set permissions for channels");
         else
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, $"Successfully created role {role.Mention} but, " +
+            await ctx.ReplyAsync(GrimoireColor.Yellow, $"Successfully created role {role.Mention} but, " +
                                                            $"was not able to set permissions for the following channels. {string.Join(' ', result.Select(x => x.Channel.Mention))}");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

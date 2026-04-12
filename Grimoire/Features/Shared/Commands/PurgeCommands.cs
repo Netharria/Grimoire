@@ -29,7 +29,7 @@ internal sealed class PurgeCommands
             await ctx.DeferResponseAsync();
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync(count, $"{ctx.User.Username} purged these messages.");
-        await ctx.EditReplyAsync(GrimoireColor.Green,
+        await ctx.ReplyAsync(GrimoireColor.Green,
             PurgeMessageBuilder(messagesDeleted));
     }
 
@@ -49,7 +49,7 @@ internal sealed class PurgeCommands
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync(count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
                 messages => messages.Author is not null && messages.Author == user);
-        await ctx.EditReplyAsync(GrimoireColor.Green,
+        await ctx.ReplyAsync(GrimoireColor.Green,
             PurgeMessageBuilder(messagesDeleted));
     }
 

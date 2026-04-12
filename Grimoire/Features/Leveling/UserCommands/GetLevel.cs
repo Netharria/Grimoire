@@ -27,13 +27,13 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
     {
         if (ctx.Guild is null || ctx.Member is null)
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
             return;
         }
 
         if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.GetGuildId()))
         {
-            await ctx.EditReplyAsync(GrimoireColor.Yellow, "The leveling module is not enabled on this server.");
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "The leveling module is not enabled on this server.");
             return;
         }
 
@@ -104,6 +104,6 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .WithThumbnail(avatarUrl)
             .WithFooter($"{ctx.Guild.Name}", ctx.Guild.IconUrl)
             .Build();
-        await ctx.EditReplyAsync(embed: embed);
+        await ctx.ReplyAsync(embed: embed);
     }
 }

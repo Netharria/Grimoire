@@ -62,7 +62,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
 
         var message = $"**ID:** {sinId} **User:** {result.UserName}";
 
-        await ctx.EditReplyAsync(embed: new DiscordEmbedBuilder()
+        await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
             .WithAuthor("Reason Updated")
             .AddField("Id", sinId.ToString(), true)
             .AddField("User", result.UserName?.Value ?? "Unknown", true)
