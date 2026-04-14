@@ -7,19 +7,18 @@
 
 using System.Collections.Frozen;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    private const string TrackersCacheKeyPrefix = "Trackers_{0}";
-
     public async Task<ChannelId?> GetTrackerChannelAsync(UserId memberId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
-        var trackers = await this._cache.GetOrCreateAsync(cacheKey,
+        var trackers = await this._cache.GetOrCreateAsync(
+            CacheKey.Trackers(guildId),
             guildId,
             async (state, ct) =>
             {
@@ -35,10 +34,10 @@ public sealed partial class SettingsModule
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
 
-        return trackers?.GetValueOrDefault(memberId);
+        return trackers.GetValueOrDefault(memberId);
     }
 
-    public async Task AddTracker(
+    public async Task<SettingsResult> AddTracker(
         UserId memberId,
         ModeratorId moderatorId,
         GuildId guildId,
@@ -53,7 +52,7 @@ public sealed partial class SettingsModule
         if (existingTracker is not null)
         {
             existingTracker.LogChannelId = channelId;
-            existingTracker.EndTime = DateTime.UtcNow.Add(duration);
+            existingTracker.EndTime = DateTimeOffset.UtcNow.Add(duration);
             existingTracker.ModeratorId = moderatorId;
         }
         else
@@ -64,17 +63,18 @@ public sealed partial class SettingsModule
                 ModeratorId = moderatorId,
                 GuildId = guildId,
                 LogChannelId = channelId,
-                EndTime = DateTime.UtcNow.Add(duration)
+                EndTime = DateTimeOffset.UtcNow.Add(duration)
             };
             dbContext.Trackers.Add(newTracker);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
+        var cacheKey = CacheKey.Trackers(guildId);
         await this._cache.RemoveAsync(cacheKey, cancellationToken);
+        return SettingsResult.Written();
     }
 
-    public async Task<Tracker?> RemoveTracker(UserId memberId, GuildId guildId,
+    public async Task<SettingsResult<Tracker?>> RemoveTracker(UserId memberId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -82,26 +82,26 @@ public sealed partial class SettingsModule
             .Where(x => x.UserId == memberId && x.GuildId == guildId)
             .FirstOrDefaultAsync(cancellationToken);
         if (existingTracker is null)
-            return null;
+            return SettingsResult.Unchanged<Tracker?>(null);
         dbContext.Trackers.Remove(existingTracker);
         await dbContext.SaveChangesAsync(cancellationToken);
-        var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
+        var cacheKey = CacheKey.Trackers(guildId);
         await this._cache.RemoveAsync(cacheKey, cancellationToken);
-        return existingTracker;
+        return SettingsResult.Written<Tracker?>(existingTracker);
     }
 
     public async Task<IReadOnlyList<Tracker>> RemoveAllExpiredTrackers(CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var expiredTrackers = await dbContext.Trackers
-            .Where(x => x.EndTime <= DateTime.UtcNow)
+            .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
             .ToListAsync(cancellationToken);
         dbContext.Trackers.RemoveRange(expiredTrackers);
         await dbContext.SaveChangesAsync(cancellationToken);
         var affectedGuilds = expiredTrackers.Select(x => x.GuildId).Distinct();
         foreach (var guildId in affectedGuilds)
         {
-            var cacheKey = string.Format(TrackersCacheKeyPrefix, guildId);
+            var cacheKey = CacheKey.Trackers(guildId);
             await this._cache.RemoveAsync(cacheKey, cancellationToken);
         }
 

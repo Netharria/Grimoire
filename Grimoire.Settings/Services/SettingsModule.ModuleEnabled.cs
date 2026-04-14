@@ -7,21 +7,14 @@
 
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Helpers;
 
 namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    private static readonly List<GuildSettingType> _moduleSettingKeys =
-    [
-        GuildSettingType.CustomCommandsModuleEnabled,
-        GuildSettingType.LevelingModuleEnabled,
-        GuildSettingType.MessageLogModuleEnabled,
-        GuildSettingType.ModerationModuleEnabled,
-        GuildSettingType.UserLogModuleEnabled
-    ];
 
-    public async Task SetModuleState(
+    public async Task<SettingsResult> SetModuleState(
         Module moduleType,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -29,90 +22,76 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
     {
         if (moduleType == Module.General)
-            return;
-        var guildSettingType = moduleType.ToGuildSettingType();
-        if (guildSettingType is not { } settingType)
-            return;
+            return SettingsResult.Invalid("Cannot disable the general module.");
+        if (moduleType.ToGuildSettingType() is not { } settingType)
+            return SettingsResult.Invalid("Was not able to parse the module type.");
         if (enableModule)
-        {
-            await SetGuildSetting(
+            return await SetGuildSetting(
                 new GuildSettingCustomValue
                 {
-                    Type = settingType, GuildId = guildId, SetBy = moderatorId, Value = bool.TrueString
+                    Type = settingType,
+                    GuildId = guildId,
+                    SetBy = moderatorId,
+                    SetAt =  DateTimeOffset.UtcNow,
+                    Value = bool.TrueString
                 }, cancellationToken);
-            return;
-        }
-
-        await SetGuildSetting(
-            new GuildSettingDisabled { Type = settingType, GuildId = guildId, SetBy = moderatorId },
+        return await SetGuildSetting(
+            new GuildSettingDisabled
+            {
+                Type = settingType,
+                GuildId = guildId,
+                SetBy = moderatorId,
+                SetAt =  DateTimeOffset.UtcNow,
+            },
             cancellationToken);
     }
+
+    private static bool ParseEnabled(CachedSetting? setting) =>
+        setting is CachedCustomSetting { Value: var v }
+        && bool.TryParse(v, out var enabled)
+        && enabled;
 
     public async Task<bool> IsModuleEnabled(Module moduleType, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         if (moduleType == Module.General)
             return true;
-        var guildSettingType = moduleType.ToGuildSettingType();
-        if (guildSettingType is not { } settingType)
+        if (moduleType.ToGuildSettingType() is not { } settingType)
             return false;
         var result = await GetGuildSetting(settingType, guildId, cancellationToken);
 
-        if (result is not CachedCustomSetting customValue)
-            return false;
-        return bool.TryParse(customValue.Value, out var isEnabled) && isEnabled;
+        return ParseEnabled(result);
     }
 
     public async Task<GuildModuleState> GetAllModuleState(GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var latestByKey =
-            await GetGuildSettings(guildId, _moduleSettingKeys, cancellationToken)
-                .ToDictionaryAsync(x => x.Type, x => x, cancellationToken: cancellationToken);
 
-        var levelingSettingType = latestByKey.GetValueOrDefault(GuildSettingType.LevelingModuleEnabled);
-        var userLogSetting = latestByKey.GetValueOrDefault(GuildSettingType.UserLogModuleEnabled);
-        var moderationSetting = latestByKey.GetValueOrDefault(GuildSettingType.ModerationModuleEnabled);
-        var messageLogSetting = latestByKey.GetValueOrDefault(GuildSettingType.MessageLogModuleEnabled);
-        var commandsSetting = latestByKey.GetValueOrDefault(GuildSettingType.CustomCommandsModuleEnabled);
+        var levelingSettingType = await GetGuildSetting(GuildSettingType.LevelingModuleEnabled,  guildId, cancellationToken);
+        var userLogSetting = await GetGuildSetting(GuildSettingType.UserLogModuleEnabled,  guildId, cancellationToken);
+        var moderationSetting = await GetGuildSetting(GuildSettingType.ModerationModuleEnabled,  guildId, cancellationToken);
+        var messageLogSetting = await GetGuildSetting(GuildSettingType.MessageLogModuleEnabled,  guildId, cancellationToken);
+        var commandsSetting = await GetGuildSetting(GuildSettingType.CustomCommandsModuleEnabled,  guildId, cancellationToken);
+        var antiSpamSetting = await GetGuildSetting(GuildSettingType.AntiSpamModuleEnabled,  guildId, cancellationToken);
 
         return new GuildModuleState
         {
-            LevelingEnabled = levelingSettingType is GuildSettingCustomValue levelingCustomValue
-                              && bool.TryParse(levelingCustomValue.Value, out var levelingEnabled)
-                              && levelingEnabled,
-            LevelingModuleSetBy = levelingSettingType?.SetBy,
-            UserLogEnabled = userLogSetting is GuildSettingCustomValue userLogCustomValue
-                             && bool.TryParse(userLogCustomValue.Value, out var userLogEnabled)
-                             && userLogEnabled,
-            UserLogModuleSetBy = userLogSetting?.SetBy,
-            ModerationEnabled = moderationSetting is GuildSettingCustomValue moderationCustomValue
-                                && bool.TryParse(moderationCustomValue.Value, out var moderationEnabled)
-                                && moderationEnabled,
-            ModerationModuleSetBy = moderationSetting?.SetBy,
-            MessageLogEnabled = messageLogSetting is GuildSettingCustomValue messageLogCustomValue
-                                && bool.TryParse(messageLogCustomValue.Value, out var messageLogEnabled)
-                                && messageLogEnabled,
-            MessageLogModuleSetBy = messageLogSetting?.SetBy,
-            CommandsEnabled = commandsSetting is GuildSettingCustomValue commandsCustomValue
-                              && bool.TryParse(commandsCustomValue.Value, out var commandsEnabled)
-                              && commandsEnabled,
-            CommandsModuleSetBy = commandsSetting?.SetBy
+            LevelingEnabled = ParseEnabled(levelingSettingType),
+            UserLogEnabled = ParseEnabled(userLogSetting),
+            ModerationEnabled = ParseEnabled(moderationSetting),
+            MessageLogEnabled = ParseEnabled(messageLogSetting),
+            CommandsEnabled = ParseEnabled(commandsSetting),
+            AntiSpamEnabled = ParseEnabled(antiSpamSetting)
         };
     }
 
     public record GuildModuleState
     {
         public required bool LevelingEnabled { get; init; }
-        public ModeratorId? LevelingModuleSetBy { get; init; }
         public required bool UserLogEnabled { get; init; }
-        public ModeratorId? UserLogModuleSetBy { get; init; }
         public required bool ModerationEnabled { get; init; }
-        public ModeratorId? ModerationModuleSetBy { get; init; }
         public required bool MessageLogEnabled { get; init; }
-        public ModeratorId? MessageLogModuleSetBy { get; init; }
         public required bool CommandsEnabled { get; init; }
-        public ModeratorId? CommandsModuleSetBy { get; init; }
+        public required bool AntiSpamEnabled { get; init; }
     }
 }

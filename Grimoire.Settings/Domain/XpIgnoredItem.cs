@@ -20,7 +20,7 @@ public sealed record IgnoredChannel : XpIgnoredItem
 {
     public ChannelId ChannelId
     {
-        get => new (Id);
+        get => new(Id);
         init => Id = value.Value;
     }
 }
@@ -29,7 +29,7 @@ public sealed record IgnoredMember : XpIgnoredItem
 {
     public UserId UserId
     {
-        get => new (Id);
+        get => new(Id);
         init => Id = value.Value;
     }
 }
@@ -38,7 +38,7 @@ public sealed record IgnoredRole : XpIgnoredItem
 {
     public RoleId RoleId
     {
-        get => new (Id);
+        get => new(Id);
         init => Id = value.Value;
     }
 }

@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Leveling.Settings;
@@ -18,15 +19,15 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
     private readonly SettingsModule _settingsModule = settingsModule;
 
     private static string BuildIgnoreListAsync(
-        IEnumerable<ChannelId> ignoredChannelIds,
-        IEnumerable<RoleId> ignoredRoleIds,
-        IEnumerable<UserId> ignoredMemberIds)
+        IEnumerable<XpIgnoredItem> ignoredItems)
     {
-        return string.Join(' ',
-                   ignoredMemberIds.Select(x => $"<@{x}>")) +
-               string.Join(' ',
-                   ignoredChannelIds.Select(x => $"<#{x}>")) +
-               string.Join(' ',
-                   ignoredRoleIds.Select(x => $"<@&{x}>"));
+        return string.Join(' ', ignoredItems
+            .Select(item => item switch
+            {
+                IgnoredChannel => $"<#{item.Id}>",
+                IgnoredMember => $"<@{item.Id}>",
+                IgnoredRole => $"<@&{item.Id}>",
+                _ => ""
+            }));
     }
 }

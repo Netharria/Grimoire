@@ -17,7 +17,7 @@ public enum MessageLogOverrideOption
 
 public sealed record MessageLogChannelOverride
 {
-    public required MessageLogOverrideOption ChannelOption { get; set; }
+    public required MessageLogOverrideOption ChannelOption { get; init; }
     public required ChannelId ChannelId { get; init; }
     public required GuildId GuildId { get; init; }
     public required ModeratorId SetBy { get; init; }

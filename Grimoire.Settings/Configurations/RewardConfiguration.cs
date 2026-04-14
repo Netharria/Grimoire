@@ -17,15 +17,15 @@ internal sealed class RewardConfiguration : IEntityTypeConfiguration<Reward>
 {
     public void Configure(EntityTypeBuilder<Reward> builder)
     {
-        builder.HasKey(e => e.RoleId);
+        builder.HasKey(e => new { e.GuildId, e.RoleId, e.SetAt });
         builder.Property(e => e.RewardMessage)
             .HasMaxLength(4096)
             .IsRequired(false);
         builder.Property(e => e.RewardLevel).IsRequired();
-        builder.HasIndex(e => new { e.GuildId, e.RewardLevel });
         builder.Property(e => e.SetBy)
             .HasConversion(e => e.Value, value => new ModeratorId(value));
-
+        builder.HasIndex(x => new { x.GuildId, x.RoleId, x.SetAt })
+            .IsDescending(false, false, true);
 
         builder.Property(e => e.GuildId)
             .HasConversion(e => e.Value, value => new GuildId(value));

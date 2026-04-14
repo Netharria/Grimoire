@@ -19,56 +19,17 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    Type = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    State = table.Column<int>(type: "integer", nullable: false),
+                    State = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false),
                     Value = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GuildSettings", x => new { x.Type, x.GuildId, x.SetAt });
-                    table.CheckConstraint("CK_GuildSettings_State_Value", "\"State\" = 2 AND \"Value\" IS NOT NULL\r\n                OR \"State\" IN (0, 1) AND \"Value\" IS NULL");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "IgnoredChannels",
-                schema: "Settings",
-                columns: table => new
-                {
-                    ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_IgnoredChannels", x => x.ChannelId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "IgnoredMembers",
-                schema: "Settings",
-                columns: table => new
-                {
-                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_IgnoredMembers", x => new { x.UserId, x.GuildId });
-                });
-
-            migrationBuilder.CreateTable(
-                name: "IgnoredRoles",
-                schema: "Settings",
-                columns: table => new
-                {
-                    RoleId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_IgnoredRoles", x => x.RoleId);
+                    table.CheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\r\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
                 });
 
             migrationBuilder.CreateTable(
@@ -95,12 +56,14 @@ namespace Grimoire.Settings.Migrations
                 columns: table => new
                 {
                     ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    ChannelOption = table.Column<int>(type: "integer", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ChannelOption = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MessagesLogChannelOverrides", x => x.ChannelId);
+                    table.PrimaryKey("PK_MessagesLogChannelOverrides", x => new { x.ChannelId, x.GuildId, x.SetAt });
                 });
 
             migrationBuilder.CreateTable(
@@ -125,12 +88,15 @@ namespace Grimoire.Settings.Migrations
                 {
                     RoleId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     RewardLevel = table.Column<int>(type: "integer", nullable: false),
-                    RewardMessage = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: true)
+                    RewardMessage = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: true),
+                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    Enabled = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Rewards", x => x.RoleId);
+                    table.PrimaryKey("PK_Rewards", x => new { x.GuildId, x.RoleId, x.SetAt });
                 });
 
             migrationBuilder.CreateTable(
@@ -139,12 +105,14 @@ namespace Grimoire.Settings.Migrations
                 columns: table => new
                 {
                     ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    ChannelOption = table.Column<int>(type: "integer", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ChannelOption = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SpamFilterOverrides", x => x.ChannelId);
+                    table.PrimaryKey("PK_SpamFilterOverrides", x => new { x.ChannelId, x.GuildId, x.SetAt });
                 });
 
             migrationBuilder.CreateTable(
@@ -163,6 +131,23 @@ namespace Grimoire.Settings.Migrations
                     table.PrimaryKey("PK_Trackers", x => new { x.UserId, x.GuildId });
                 });
 
+            migrationBuilder.CreateTable(
+                name: "XpIgnoredItems",
+                schema: "Settings",
+                columns: table => new
+                {
+                    Id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    Enabled = table.Column<bool>(type: "boolean", nullable: false),
+                    Type = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_XpIgnoredItems", x => new { x.GuildId, x.Id, x.SetAt });
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_GuildSettings_GuildId_Type_SetAt",
                 schema: "Settings",
@@ -177,6 +162,19 @@ namespace Grimoire.Settings.Migrations
                 column: "EndTime");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MessagesLogChannelOverrides_ChannelId_GuildId_SetAt",
+                schema: "Settings",
+                table: "MessagesLogChannelOverrides",
+                columns: new[] { "ChannelId", "GuildId", "SetAt" },
+                descending: new[] { false, false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MessagesLogChannelOverrides_GuildId",
+                schema: "Settings",
+                table: "MessagesLogChannelOverrides",
+                column: "GuildId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Mutes_UserId_GuildId",
                 schema: "Settings",
                 table: "Mutes",
@@ -184,16 +182,37 @@ namespace Grimoire.Settings.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Rewards_GuildId_RewardLevel",
+                name: "IX_Rewards_GuildId_RoleId_SetAt",
                 schema: "Settings",
                 table: "Rewards",
-                columns: new[] { "GuildId", "RewardLevel" });
+                columns: new[] { "GuildId", "RoleId", "SetAt" },
+                descending: new[] { false, false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpamFilterOverrides_ChannelId_GuildId_SetAt",
+                schema: "Settings",
+                table: "SpamFilterOverrides",
+                columns: new[] { "ChannelId", "GuildId", "SetAt" },
+                descending: new[] { false, false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpamFilterOverrides_GuildId",
+                schema: "Settings",
+                table: "SpamFilterOverrides",
+                column: "GuildId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trackers_EndTime",
                 schema: "Settings",
                 table: "Trackers",
                 column: "EndTime");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_XpIgnoredItems_GuildId_Id_SetAt",
+                schema: "Settings",
+                table: "XpIgnoredItems",
+                columns: new[] { "GuildId", "Id", "SetAt" },
+                descending: new[] { false, false, true });
         }
 
         /// <inheritdoc />
@@ -201,18 +220,6 @@ namespace Grimoire.Settings.Migrations
         {
             migrationBuilder.DropTable(
                 name: "GuildSettings",
-                schema: "Settings");
-
-            migrationBuilder.DropTable(
-                name: "IgnoredChannels",
-                schema: "Settings");
-
-            migrationBuilder.DropTable(
-                name: "IgnoredMembers",
-                schema: "Settings");
-
-            migrationBuilder.DropTable(
-                name: "IgnoredRoles",
                 schema: "Settings");
 
             migrationBuilder.DropTable(
@@ -237,6 +244,10 @@ namespace Grimoire.Settings.Migrations
 
             migrationBuilder.DropTable(
                 name: "Trackers",
+                schema: "Settings");
+
+            migrationBuilder.DropTable(
+                name: "XpIgnoredItems",
                 schema: "Settings");
         }
     }

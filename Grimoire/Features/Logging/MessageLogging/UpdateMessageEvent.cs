@@ -58,19 +58,21 @@ public sealed class UpdateMessageEvent(
                 StringComparison.CurrentCultureIgnoreCase))
             return;
 
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomEmbed
+        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser
         {
-            TrackerId = args.Author.Id,
+            UserId = message.UserId,
             GuildId = args.Guild.GetGuildId(),
-            TrackerIdType = TrackerIdType.UserId,
-            Embed = new DiscordEmbedBuilder()
-                .AddField("User", args.Author.Mention, true)
-                .AddField("Channel", args.Channel.Mention, true)
-                .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
-                .WithFooter("Message Sent", args.Author.GetAvatarUrl(MediaFormat.Auto))
-                .WithTimestamp(DateTime.UtcNow)
-                .AddMessageTextToFields("Before", message.MessageContent.ToString() ?? string.Empty)
-                .AddMessageTextToFields("After", args.Message.Content)
+            Message = new TrackerMessageCustomEmbed
+            {
+                Embed = new DiscordEmbedBuilder()
+                    .AddField("User", args.Author.Mention, true)
+                    .AddField("Channel", args.Channel.Mention, true)
+                    .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
+                    .WithFooter("Message Sent", args.Author.GetAvatarUrl(MediaFormat.Auto))
+                    .WithTimestamp(DateTime.UtcNow)
+                    .AddMessageTextToFields("Before", message.MessageContent.ToString() ?? string.Empty)
+                    .AddMessageTextToFields("After", args.Message.Content)
+            }
         });
 
         await dbContext.MessageHistory.AddAsync(

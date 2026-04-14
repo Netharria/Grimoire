@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Helpers;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.Lock.Commands;
@@ -34,7 +35,12 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         channel ??= ctx.Channel;
         var response = await this._settingsModule.RemoveLock(channel.GetChannelId(), guild.GetGuildId());
 
-        if (response is null)
+        if (response is SettingsInvalid<Settings.Domain.Lock?> invalid)
+        {
+            await ctx.RespondAsync(invalid.Reason);
+        }
+
+        if (response is not SettingsWritten<Settings.Domain.Lock?> { InputValue: { } lockedChannel })
         {
             await ctx.ReplyAsync(message: $"{channel.Mention} is not locked.");
             return;
@@ -45,8 +51,8 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
             var permissions = guild.Channels[channel.Id].PermissionOverwrites
                 .First(x => x.Id == guild.EveryoneRole.Id);
             await channel.AddOverwriteAsync(guild.EveryoneRole,
-                permissions.Allowed.RevertLockPermissions(response.PreviouslyAllowed.Permissions)
-                , permissions.Denied.RevertLockPermissions(response.PreviouslyDenied.Permissions));
+                permissions.Allowed.RevertLockPermissions(lockedChannel.PreviouslyAllowed.Permissions)
+                , permissions.Denied.RevertLockPermissions(lockedChannel.PreviouslyDenied.Permissions));
         }
 
         await ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked");

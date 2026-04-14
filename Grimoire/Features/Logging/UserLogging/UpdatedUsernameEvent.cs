@@ -64,22 +64,24 @@ public sealed class UpdatedUsernameEvent(
                 .WithColor(GrimoireColor.Mint)
         });
 
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomEmbed
+        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser()
         {
             GuildId = args.Guild.GetGuildId(),
-            TrackerId = args.Member.Id,
-            TrackerIdType = TrackerIdType.UserId,
-            Embed = new DiscordEmbedBuilder()
-                .WithAuthor("Username Updated")
-                .AddField("User", UserExtensions.Mention(args.Member.GetUserId()))
-                .AddField("Before",
-                    Username.IsNullOrWhiteSpace(currentUsername) ? "`Unknown`" : currentUsername.Value,
-                    true)
-                .AddField("After",
-                    string.IsNullOrWhiteSpace(args.UsernameAfter) ? "`Unknown`" : args.UsernameAfter,
-                    true)
-                .WithTimestamp(DateTimeOffset.UtcNow)
-                .WithColor(GrimoireColor.Mint)
+            UserId = args.Member.GetUserId(),
+            Message = new TrackerMessageCustomEmbed
+            {
+                Embed = new DiscordEmbedBuilder()
+                    .WithAuthor("Username Updated")
+                    .AddField("User", UserExtensions.Mention(args.Member.GetUserId()))
+                    .AddField("Before",
+                        Username.IsNullOrWhiteSpace(currentUsername) ? "`Unknown`" : currentUsername.Value,
+                        true)
+                    .AddField("After",
+                        string.IsNullOrWhiteSpace(args.UsernameAfter) ? "`Unknown`" : args.UsernameAfter,
+                        true)
+                    .WithTimestamp(DateTimeOffset.UtcNow)
+                    .WithColor(GrimoireColor.Mint)
+            }
         });
     }
 }

@@ -70,21 +70,23 @@ public sealed class UpdatedAvatarEvent(
                     false)
         });
 
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomMessage
+        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser()
         {
             GuildId = args.Guild.GetGuildId(),
-            TrackerId = args.Member.Id,
-            TrackerIdType = TrackerIdType.UserId,
-            Message = await this._imageEmbedService.BuildImageEmbedAsync(
-                [args.MemberAfter.AvatarUrl],
-                args.Member.GetUserId(),
-                new DiscordEmbedBuilder()
-                    .WithAuthor("Avatar Updated")
-                    .AddField("User", UserExtensions.Mention(args.Member.GetUserId()))
-                    .WithThumbnail(args.MemberAfter.AvatarUrl)
-                    .WithTimestamp(DateTimeOffset.UtcNow)
-                    .WithColor(GrimoireColor.Purple),
-                false)
+            UserId = args.Member.GetUserId(),
+            Message = new TrackerMessageCustomMessage
+            {
+                Message = await this._imageEmbedService.BuildImageEmbedAsync(
+                    [args.MemberAfter.AvatarUrl],
+                    args.Member.GetUserId(),
+                    new DiscordEmbedBuilder()
+                        .WithAuthor("Avatar Updated")
+                        .AddField("User", UserExtensions.Mention(args.Member.GetUserId()))
+                        .WithThumbnail(args.MemberAfter.AvatarUrl)
+                        .WithTimestamp(DateTimeOffset.UtcNow)
+                        .WithColor(GrimoireColor.Purple),
+                    false)
+            }
         });
     }
 }

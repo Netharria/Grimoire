@@ -5,8 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Collections.Frozen;
 using System.Globalization;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Helpers;
 
 namespace Grimoire.Settings.Services;
 
@@ -20,9 +22,7 @@ public sealed partial class SettingsModule
         Amount
     }
 
-    private const string LevelingCacheKeyPrefix = "LevelingSettings_";
-
-    private static readonly List<GuildSettingType> _levelingSettingKeys =
+    private static readonly FrozenSet<GuildSettingType> _levelingSettingKeys =
     [
         GuildSettingType.TextTime,
         GuildSettingType.LevelScalingBase,
@@ -34,23 +34,21 @@ public sealed partial class SettingsModule
     {
         Amount = new XpGainAmount(5),
         Base = new LevelScalingBase(15),
-        Modifier = new LevelScalingModifier(15),
+        Modifier = new LevelScalingModifier(50),
         TextTime = TimeSpan.FromMinutes(3)
     };
-
-    private static string GetLevelingCacheKey(GuildId guildId) => $"{LevelingCacheKeyPrefix}{guildId}";
 
     public async Task<LevelingSettingEntry> GetLevelingSettings(
         GuildId guildId,
         CancellationToken cancellationToken = default) =>
         await this._cache.GetOrCreateAsync(
-            GetLevelingCacheKey(guildId),
+            CacheKey.LevelingSettings(guildId),
             guildId,
-            async (guildIdState, ct) => await GetLevelingSettingsCacheEntry(guildIdState, ct),
+            GetLevelingSettingsCacheEntry,
             this._cacheEntryOptions,
             cancellationToken: cancellationToken);
 
-    private async Task<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
+    private async ValueTask<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
@@ -109,7 +107,7 @@ public sealed partial class SettingsModule
         }
     }
 
-    public async Task SetLevelingSettings(
+    public async Task<SettingsResult> SetLevelingSettings(
         GuildId guildId,
         ModeratorId setBy,
         LevelSettings settingToChange,
@@ -117,9 +115,9 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
     {
         if (!LevelingConfigValid(settingToChange, newValue))
-            return;
+            return SettingsResult.Invalid($"{settingToChange} value {newValue} is out of range.");
 
-        await SetGuildSetting(
+        var result = await SetGuildSetting(
             new GuildSettingCustomValue
             {
                 GuildId = guildId,
@@ -132,16 +130,19 @@ public sealed partial class SettingsModule
                     _ => throw new ArgumentOutOfRangeException(nameof(settingToChange), settingToChange, null)
                 },
                 SetBy = setBy,
+                SetAt = DateTimeOffset.UtcNow,
                 Value = settingToChange switch
                 {
-                    LevelSettings.TextTime => TimeSpan.FromSeconds(newValue)
+                    LevelSettings.TextTime => TimeSpan.FromMinutes(newValue)
                         .ToString("c", CultureInfo.InvariantCulture),
                     _ => newValue.ToString(CultureInfo.InvariantCulture)
                 }
             }, cancellationToken);
 
+        if (result is SettingsWritten)
+            await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken);
 
-        await this._cache.RemoveAsync(GetLevelingCacheKey(guildId), cancellationToken);
+        return result;
     }
 
     private static bool LevelingConfigValid(LevelSettings settingToValidate, int setting)

@@ -15,14 +15,20 @@ internal sealed class MessageLogChannelOverrideConfiguration : IEntityTypeConfig
 {
     public void Configure(EntityTypeBuilder<MessageLogChannelOverride> builder)
     {
-        builder.HasKey(x => x.ChannelId);
+        builder.HasKey(x => new { x.ChannelId, x.GuildId, x.SetAt });
         builder.Property(x => x.ChannelId)
             .ValueGeneratedNever();
         builder.Property(x => x.ChannelOption)
+            .HasConversion<string>()
+            .HasMaxLength(16)
             .IsRequired();
         builder.Property(e => e.SetBy)
             .HasConversion(e => e.Value, value => new ModeratorId(value));
 
+        builder.HasIndex(x => new { x.ChannelId, x.GuildId, x.SetAt })
+            .IsDescending(false, false, true);
+
+        builder.HasIndex(x => x.GuildId);
         builder.Property(e => e.GuildId)
             .HasConversion(e => e.Value, value => new GuildId(value));
         builder.Property(e => e.ChannelId)

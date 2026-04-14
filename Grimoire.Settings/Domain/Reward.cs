@@ -12,9 +12,9 @@ public sealed record Reward
     public required RoleId RoleId { get; init; }
 
     public required GuildId GuildId { get; init; }
-    public required int RewardLevel { get; set; }
-    public string? RewardMessage { get; set; }
+    public required int RewardLevel { get; init; }
+    public string? RewardMessage { get; init; }
     public required ModeratorId SetBy { get; init; }
     public required DateTimeOffset SetAt { get; init; }
-    public required bool Disabled { get; init; }
+    public required bool Enabled { get; init; }
 }

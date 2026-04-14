@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.Diagnostics;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
@@ -38,22 +37,20 @@ public partial class LogSettingsCommands
             channel ??= ctx.Channel;
             var guild = ctx.Guild!;
 
-            if (overrideSetting is MessageLogOverrideSetting.Inherit)
-                await this._settingsModule.RemoveChannelLogOverride(channel.GetChannelId(), guild.GetGuildId());
-            else
-                await this._settingsModule.SetChannelLogOverride(channel.GetChannelId(),
-                    guild.GetGuildId(),
-                    ctx.GetModeratorId(),
-                    overrideSetting switch
-                    {
-                        MessageLogOverrideSetting.Always =>
-                            MessageLogOverrideOption.AlwaysLog,
-                        MessageLogOverrideSetting.Never =>
-                            MessageLogOverrideOption.NeverLog,
-                        MessageLogOverrideSetting.Inherit => throw new UnreachableException(),
-                        _ => throw new NotImplementedException(
-                            "A Message log Override option was selected that has not been implemented.")
-                    });
+            await this._settingsModule.SetChannelLogOverride(channel.GetChannelId(),
+                guild.GetGuildId(),
+                ctx.GetModeratorId(),
+                overrideSetting switch
+                {
+                    MessageLogOverrideSetting.Always =>
+                        MessageLogOverrideOption.AlwaysLog,
+                    MessageLogOverrideSetting.Never =>
+                        MessageLogOverrideOption.NeverLog,
+                    MessageLogOverrideSetting.Inherit =>
+                        MessageLogOverrideOption.Inherit,
+                    _ => throw new NotImplementedException(
+                        "A Message log Override option was selected that has not been implemented.")
+                });
 
 
             var message = overrideSetting switch

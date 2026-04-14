@@ -27,14 +27,16 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
         if (args.Before.ChannelId is null)
         {
             await this._trackerLog.SendTrackerMessageAsync(
-                new TrackerMessageCustomEmbed
+                new TrackerEventUser
                 {
                     GuildId = new GuildId(args.GuildId.Value),
-                    TrackerId = args.UserId,
-                    TrackerIdType = TrackerIdType.UserId,
-                    Embed = embed
-                        .WithAuthor()
-                        .AddField("Channel", ChannelExtensions.Mention(args.After.ChannelId), true)
+                    UserId = new  UserId(args.UserId),
+                    Message = new TrackerMessageCustomEmbed
+                    {
+                        Embed = embed
+                            .WithAuthor()
+                            .AddField("Channel", ChannelExtensions.Mention(args.After.ChannelId), true)
+                    }
                 });
             return;
         }
@@ -42,29 +44,33 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
         if (args.After.ChannelId is null)
         {
             await this._trackerLog.SendTrackerMessageAsync(
-                new TrackerMessageCustomEmbed
+                new TrackerEventUser()
                 {
                     GuildId = new GuildId(args.GuildId.Value),
-                    TrackerId = args.UserId,
-                    TrackerIdType = TrackerIdType.UserId,
-                    Embed = embed
-                        .WithAuthor("Left Voice Channel")
-                        .AddField("Channel", ChannelExtensions.Mention(args.Before.ChannelId), true)
+                    UserId = new  UserId(args.UserId),
+                    Message = new TrackerMessageCustomEmbed
+                    {
+                        Embed = embed
+                            .WithAuthor("Left Voice Channel")
+                            .AddField("Channel", ChannelExtensions.Mention(args.Before.ChannelId), true)
+                    }
                 });
             return;
         }
 
         if (args.Before.ChannelId != args.After.ChannelId)
             await this._trackerLog.SendTrackerMessageAsync(
-                new TrackerMessageCustomEmbed
+                new TrackerEventUser()
                 {
                     GuildId = new GuildId(args.GuildId.Value),
-                    TrackerId = args.UserId,
-                    TrackerIdType = TrackerIdType.UserId,
-                    Embed = embed
-                        .WithAuthor("Moved Voice Channels")
-                        .AddField("From", ChannelExtensions.Mention(args.Before.ChannelId), true)
-                        .AddField("To", ChannelExtensions.Mention(args.After.ChannelId), true)
+                    UserId = new  UserId(args.UserId),
+                    Message = new TrackerMessageCustomEmbed
+                    {
+                        Embed = embed
+                            .WithAuthor("Moved Voice Channels")
+                            .AddField("From", ChannelExtensions.Mention(args.Before.ChannelId), true)
+                            .AddField("To", ChannelExtensions.Mention(args.After.ChannelId), true)
+                    }
                 });
     }
 }

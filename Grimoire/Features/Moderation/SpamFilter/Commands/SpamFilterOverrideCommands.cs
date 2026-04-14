@@ -40,15 +40,7 @@ internal class SpamFilterOverrideCommands(
             return;
         }
 
-
-        if (overrideSetting is SpamFilterOverrideSetting.Inherit)
-        {
-            await this._spamTrackerModule.RemoveOverride(channel.GetChannelId(), guild.GetGuildId());
-            await ctx.ReplyAsync(GrimoireColor.Purple, $"Set {channel.Mention} to inherit spam filter settings.");
-            return;
-        }
-
-        await this._spamTrackerModule.AddOrUpdateOverride(
+        await this._settingsModule.SetSpamFilterOverrideAsync(
             channel.GetChannelId(),
             guild.GetGuildId(),
             ctx.GetModeratorId(),
@@ -56,8 +48,7 @@ internal class SpamFilterOverrideCommands(
             {
                 SpamFilterOverrideSetting.Always => SpamFilterOverrideOption.AlwaysFilter,
                 SpamFilterOverrideSetting.Never => SpamFilterOverrideOption.NeverFilter,
-                SpamFilterOverrideSetting.Inherit => throw new ArgumentOutOfRangeException(nameof(overrideSetting),
-                    overrideSetting, null),
+                SpamFilterOverrideSetting.Inherit => SpamFilterOverrideOption.Inherit,
                 _ => throw new NotImplementedException(
                     "A spam filter override option was selected that has not been implemented.")
             });

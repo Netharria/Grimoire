@@ -8,6 +8,7 @@
 using System.Globalization;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Helpers;
 
 namespace Grimoire.Settings.Services;
 
@@ -26,19 +27,9 @@ public sealed partial class SettingsModule
 
     public async Task<ChannelId?> GetConfiguredLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
         CancellationToken cancellationToken = default)
-    {
-        var result = await GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken);
+        => ParseChannelId(await GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken));
 
-        if (result is not CachedCustomSetting setting)
-            return null;
-        if (ulong.TryParse(setting.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var channelId)
-            && channelId != 0)
-            return new ChannelId(channelId);
-
-        return null;
-    }
-
-    public Task SetLogChannelSetting(
+    public Task<SettingsResult> SetLogChannelSetting(
         GuildLogType guildLogType,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -49,7 +40,10 @@ public sealed partial class SettingsModule
             return SetGuildSetting(
                 new GuildSettingDisabled
                 {
-                    GuildId = guildId, Type = guildLogType.ToGuildSettingType(), SetBy = moderatorId
+                    GuildId = guildId,
+                    Type = guildLogType.ToGuildSettingType(),
+                    SetBy = moderatorId,
+                    SetAt = DateTimeOffset.UtcNow,
                 }, cancellationToken);
         return SetGuildSetting(
             new GuildSettingCustomValue
@@ -57,6 +51,7 @@ public sealed partial class SettingsModule
                 GuildId = guildId,
                 Type = guildLogType.ToGuildSettingType(),
                 SetBy = moderatorId,
+                SetAt = DateTimeOffset.UtcNow,
                 Value = channelId.Value.Value.ToString(CultureInfo.InvariantCulture)
             }, cancellationToken);
     }

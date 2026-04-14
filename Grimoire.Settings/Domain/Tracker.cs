@@ -12,6 +12,6 @@ public sealed record Tracker
     public required ChannelId LogChannelId { get; set; }
     public required DateTimeOffset EndTime { get; set; }
     public required ModeratorId ModeratorId { get; set; }
-    public required UserId UserId { get; set; }
-    public required GuildId GuildId { get; set; }
+    public required UserId UserId { get; init; }
+    public required GuildId GuildId { get; init; }
 }

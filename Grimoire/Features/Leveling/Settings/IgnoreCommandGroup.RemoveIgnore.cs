@@ -5,8 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Collections.Frozen;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Settings;
@@ -32,21 +34,42 @@ public partial class IgnoreCommandGroup
             return;
         }
 
-        var ignoredMemberIds = value.OfType<DiscordUser>().Select(x => x.GetUserId()).ToHashSet();
-        var ignoredChannelIds = value.OfType<DiscordChannel>().Select(x => x.GetChannelId()).ToHashSet();
-        var ignoredRoleIds = value.OfType<DiscordRole>().Select(x => x.GetRoleId()).ToHashSet();
+        var ignoredItems = value.Select(item => (XpIgnoredItem?)(item switch
+            {
+                DiscordUser => new IgnoredMember
+                {
+                    Id = item.Id,
+                    GuildId = guild.GetGuildId(),
+                    SetAt = DateTimeOffset.Now,
+                    SetBy = ctx.GetModeratorId(),
+                    Enabled = false
+                },
+                DiscordRole => new IgnoredRole
+                {
+                    Id = item.Id,
+                    GuildId = guild.GetGuildId(),
+                    SetAt = DateTimeOffset.Now,
+                    SetBy = ctx.GetModeratorId(),
+                    Enabled = false
+                },
+                DiscordChannel => new IgnoredChannel
+                {
+                    Id = item.Id,
+                    GuildId = guild.GetGuildId(),
+                    SetAt = DateTimeOffset.Now,
+                    SetBy = ctx.GetModeratorId(),
+                    Enabled = false
+                },
+                _ => null
+            })).OfType<XpIgnoredItem>()
+            .ToFrozenSet();
 
-
-        await this._settingsModule.RemoveIgnoredItems(
+        await this._settingsModule.AppendIgnoredItemsEvent(
             guild.GetGuildId(),
-            ignoredMemberIds,
-            ignoredChannelIds,
-            ignoredRoleIds);
+            ignoredItems
+        );
 
-        var message = BuildIgnoreListAsync(
-                          ignoredChannelIds,
-                          ignoredRoleIds,
-                          ignoredMemberIds)
+        var message = BuildIgnoreListAsync(ignoredItems)
                       + " are no longer ignored for xp gain.";
 
         await ctx.ReplyAsync(GrimoireColor.Green,

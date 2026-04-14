@@ -20,8 +20,8 @@ public sealed partial class TrackerLog(
     SettingsModule settingsModule)
     : BackgroundService
 {
-    private readonly Channel<TrackerMessageBase> _channel =
-        Channel.CreateUnbounded<TrackerMessageBase>(new UnboundedChannelOptions
+    private readonly Channel<TrackerEventBase> _channel =
+        Channel.CreateUnbounded<TrackerEventBase>(new UnboundedChannelOptions
         {
             SingleReader = true, SingleWriter = false
         });
@@ -59,29 +59,29 @@ public sealed partial class TrackerLog(
         Message = "An error occurred while processing the log message. Message: ({message})")]
     static partial void LogError(ILogger logger, Exception e, string message);
 
-    private async Task<ChannelId?> GetLogChannelId(TrackerMessageBase trackerMessageBase,
+    private async Task<ChannelId?> GetLogChannelId(TrackerEventBase trackerEventBase,
         CancellationToken cancellationToken)
     {
         if (!await this._settingsModule.IsModuleEnabled(
                 Module.MessageLog,
-                trackerMessageBase.GuildId,
+                trackerEventBase.GuildId,
                 cancellationToken))
             return null;
 
-        return trackerMessageBase.TrackerIdType switch
+        return trackerEventBase switch
         {
-            TrackerIdType.UserId => await this._settingsModule.GetTrackerChannelAsync(
-                new UserId(trackerMessageBase.TrackerId),
-                trackerMessageBase.GuildId,
+            TrackerEventUser user => await this._settingsModule.GetTrackerChannelAsync(
+                user.UserId,
+                user.GuildId,
                 cancellationToken),
-            TrackerIdType.ChannelId => new ChannelId(trackerMessageBase.TrackerId),
-            _ => throw new ArgumentOutOfRangeException(nameof(trackerMessageBase),
-                trackerMessageBase, "Unknown log type")
+            TrackerEventChannel channel => channel.ChannelId,
+            _ => throw new ArgumentOutOfRangeException(nameof(trackerEventBase),
+                trackerEventBase, "Unknown log type")
         };
     }
 
 
-    public ValueTask SendTrackerMessageAsync(TrackerMessageBase logMessageMessage,
+    public ValueTask SendTrackerMessageAsync(TrackerEventBase trackerEvent,
         CancellationToken cancellationToken = default)
-        => this._channel.Writer.WriteAsync(logMessageMessage, cancellationToken);
+        => this._channel.Writer.WriteAsync(trackerEvent, cancellationToken);
 }

@@ -25,8 +25,9 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Settings.Domain.GuildSetting", b =>
                 {
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
+                    b.Property<string>("Type")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
@@ -37,8 +38,10 @@ namespace Grimoire.Settings.Migrations
                     b.Property<decimal>("SetBy")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)");
 
                     b.HasKey("Type", "GuildId", "SetAt");
 
@@ -47,51 +50,12 @@ namespace Grimoire.Settings.Migrations
 
                     b.ToTable("GuildSettings", "Settings", t =>
                         {
-                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "\"State\" = 2 AND \"Value\" IS NOT NULL\r\n                OR \"State\" IN (0, 1) AND \"Value\" IS NULL");
+                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\r\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
                         });
 
-                    b.HasDiscriminator<int>("State");
+                    b.HasDiscriminator<string>("State").HasValue("GuildSetting");
 
                     b.UseTphMappingStrategy();
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredChannel", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("ChannelId");
-
-                    b.ToTable("IgnoredChannels", "Settings");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredMember", b =>
-                {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("UserId", "GuildId");
-
-                    b.ToTable("IgnoredMembers", "Settings");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredRole", b =>
-                {
-                    b.Property<decimal>("RoleId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("RoleId");
-
-                    b.ToTable("IgnoredRoles", "Settings");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.Lock", b =>
@@ -131,13 +95,26 @@ namespace Grimoire.Settings.Migrations
                     b.Property<decimal>("ChannelId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<int>("ChannelOption")
-                        .HasColumnType("integer");
-
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.HasKey("ChannelId");
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ChannelOption")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<decimal>("SetBy")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("ChannelId", "GuildId", "SetAt");
+
+                    b.HasIndex("GuildId");
+
+                    b.HasIndex("ChannelId", "GuildId", "SetAt")
+                        .IsDescending(false, false, true);
 
                     b.ToTable("MessagesLogChannelOverrides", "Settings");
                 });
@@ -166,11 +143,17 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Settings.Domain.Reward", b =>
                 {
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
                     b.Property<decimal>("RoleId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("RewardLevel")
                         .HasColumnType("integer");
@@ -179,9 +162,13 @@ namespace Grimoire.Settings.Migrations
                         .HasMaxLength(4096)
                         .HasColumnType("character varying(4096)");
 
-                    b.HasKey("RoleId");
+                    b.Property<decimal>("SetBy")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.HasIndex("GuildId", "RewardLevel");
+                    b.HasKey("GuildId", "RoleId", "SetAt");
+
+                    b.HasIndex("GuildId", "RoleId", "SetAt")
+                        .IsDescending(false, false, true);
 
                     b.ToTable("Rewards", "Settings");
                 });
@@ -191,13 +178,26 @@ namespace Grimoire.Settings.Migrations
                     b.Property<decimal>("ChannelId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<int>("ChannelOption")
-                        .HasColumnType("integer");
-
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.HasKey("ChannelId");
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ChannelOption")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<decimal>("SetBy")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.HasKey("ChannelId", "GuildId", "SetAt");
+
+                    b.HasIndex("GuildId");
+
+                    b.HasIndex("ChannelId", "GuildId", "SetAt")
+                        .IsDescending(false, false, true);
 
                     b.ToTable("SpamFilterOverrides", "Settings");
                 });
@@ -226,6 +226,40 @@ namespace Grimoire.Settings.Migrations
                     b.ToTable("Trackers", "Settings");
                 });
 
+            modelBuilder.Entity("Grimoire.Settings.Domain.XpIgnoredItem", b =>
+                {
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("SetBy")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)");
+
+                    b.HasKey("GuildId", "Id", "SetAt");
+
+                    b.HasIndex("GuildId", "Id", "SetAt")
+                        .IsDescending(false, false, true);
+
+                    b.ToTable("XpIgnoredItems", "Settings");
+
+                    b.HasDiscriminator<string>("Type").HasValue("XpIgnoredItem");
+
+                    b.UseTphMappingStrategy();
+                });
+
             modelBuilder.Entity("Grimoire.Settings.Domain.GuildSettingCustomValue", b =>
                 {
                     b.HasBaseType("Grimoire.Settings.Domain.GuildSetting");
@@ -237,10 +271,10 @@ namespace Grimoire.Settings.Migrations
 
                     b.ToTable(t =>
                         {
-                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "\"State\" = 2 AND \"Value\" IS NOT NULL\r\n                OR \"State\" IN (0, 1) AND \"Value\" IS NULL");
+                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\r\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
                         });
 
-                    b.HasDiscriminator().HasValue(2);
+                    b.HasDiscriminator().HasValue("CustomValue");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.GuildSettingDefault", b =>
@@ -249,10 +283,10 @@ namespace Grimoire.Settings.Migrations
 
                     b.ToTable(t =>
                         {
-                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "\"State\" = 2 AND \"Value\" IS NOT NULL\r\n                OR \"State\" IN (0, 1) AND \"Value\" IS NULL");
+                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\r\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
                         });
 
-                    b.HasDiscriminator().HasValue(0);
+                    b.HasDiscriminator().HasValue("Default");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.GuildSettingDisabled", b =>
@@ -261,10 +295,31 @@ namespace Grimoire.Settings.Migrations
 
                     b.ToTable(t =>
                         {
-                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "\"State\" = 2 AND \"Value\" IS NOT NULL\r\n                OR \"State\" IN (0, 1) AND \"Value\" IS NULL");
+                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\r\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
                         });
 
-                    b.HasDiscriminator().HasValue(1);
+                    b.HasDiscriminator().HasValue("Disabled");
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredChannel", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+
+                    b.HasDiscriminator().HasValue("Channel");
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredMember", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+
+                    b.HasDiscriminator().HasValue("Member");
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredRole", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+
+                    b.HasDiscriminator().HasValue("Role");
                 });
 #pragma warning restore 612, 618
         }

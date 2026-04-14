@@ -16,7 +16,8 @@ public enum Module
     Moderation,
     MessageLog,
     Commands,
-    General
+    General,
+    AntiSpam
 }
 
 internal static class ModuleExtensions
@@ -29,6 +30,7 @@ internal static class ModuleExtensions
             Module.MessageLog => GuildSettingType.MessageLogModuleEnabled,
             Module.Moderation => GuildSettingType.ModerationModuleEnabled,
             Module.UserLog => GuildSettingType.UserLogModuleEnabled,
+            Module.AntiSpam => GuildSettingType.AntiSpamModuleEnabled,
             Module.General => null,
             _ => throw new ArgumentOutOfRangeException(nameof(module), module, null)
         };

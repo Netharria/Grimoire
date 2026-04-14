@@ -5,33 +5,30 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Collections.Frozen;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
-using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule(
     IDbContextFactory<SettingsDbContext> dbContextFactory,
-    HybridCache cache,
-    ILogger<SettingsModule> logger)
+    HybridCache cache)
 {
     private readonly HybridCache _cache = cache;
 
     private readonly HybridCacheEntryOptions _cacheEntryOptions = new() { Expiration = TimeSpan.FromDays(1) };
 
     private readonly IDbContextFactory<SettingsDbContext> _dbContextFactory = dbContextFactory;
-    private readonly ILogger<SettingsModule> _logger = logger;
-
-    private static string GetGuildSettingsCacheKey(GuildSettingType key, GuildId guildId) => $"{key}_{guildId}";
 
     private ValueTask<CachedSetting> GetGuildSetting(GuildSettingType key, GuildId guildId,
         CancellationToken cancellationToken = default)
         => this._cache.GetOrCreateAsync(
-            GetGuildSettingsCacheKey(key, guildId),
+            CacheKey.GuildSetting(key, guildId),
             new { key, guildId },
             async (state, ct) =>
             {
@@ -47,7 +44,7 @@ public sealed partial class SettingsModule(
 
     private async IAsyncEnumerable<GuildSetting> GetGuildSettings(
         GuildId guildId,
-        IReadOnlyList<GuildSettingType> settingTypes,
+        FrozenSet<GuildSettingType> settingTypes,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -72,7 +69,7 @@ public sealed partial class SettingsModule(
             _ => new CachedDefaultSetting()
         };
 
-    private async Task SetGuildSetting(GuildSetting newSetting,
+    private async Task<SettingsResult> SetGuildSetting(GuildSetting newSetting,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -83,12 +80,13 @@ public sealed partial class SettingsModule(
             .FirstOrDefaultAsync(cancellationToken);
 
         if (IsRedundantWrite(current, newSetting))
-            return;
+            return SettingsResult.Unchanged();
         dbContext.GuildSettings.Add(newSetting);
         await dbContext.SaveChangesAsync(cancellationToken);
         await this._cache.RemoveAsync(
-            GetGuildSettingsCacheKey(newSetting.Type, newSetting.GuildId),
+            CacheKey.GuildSetting(newSetting.Type, newSetting.GuildId),
             cancellationToken);
+        return SettingsResult.Written();
     }
 
     private static bool IsRedundantWrite(GuildSetting? current, GuildSetting incoming) =>
@@ -102,19 +100,9 @@ public sealed partial class SettingsModule(
         };
 
     public async Task<ChannelId?> GetUserCommandChannel(GuildId guildId, CancellationToken cancellationToken = default)
-    {
-        var result = await GetGuildSetting(GuildSettingType.UserCommandChannel, guildId, cancellationToken);
+        => ParseChannelId(await GetGuildSetting(GuildSettingType.UserCommandChannel, guildId, cancellationToken));
 
-        if (result is not CachedCustomSetting setting)
-            return null;
-        if (ulong.TryParse(setting.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var channelId)
-            && channelId != 0)
-            return new ChannelId(channelId);
-
-        return null;
-    }
-
-    public Task SetUserCommandChannelSetting(
+    public Task<SettingsResult> SetUserCommandChannelSetting(
         GuildId guildId,
         ModeratorId moderatorId,
         ChannelId? channelId,
@@ -124,7 +112,10 @@ public sealed partial class SettingsModule(
             return SetGuildSetting(
                 new GuildSettingDisabled
                 {
-                    GuildId = guildId, Type = GuildSettingType.UserCommandChannel, SetBy = moderatorId
+                    GuildId = guildId,
+                    Type = GuildSettingType.UserCommandChannel,
+                    SetBy = moderatorId,
+                    SetAt = DateTimeOffset.UtcNow,
                 }, cancellationToken);
         return SetGuildSetting(
             new GuildSettingCustomValue
@@ -132,9 +123,24 @@ public sealed partial class SettingsModule(
                 GuildId = guildId,
                 Type = GuildSettingType.UserCommandChannel,
                 SetBy = moderatorId,
+                SetAt = DateTimeOffset.UtcNow,
                 Value = channelId.Value.Value.ToString(CultureInfo.InvariantCulture)
             }, cancellationToken);
     }
+
+    private static ChannelId? ParseChannelId(CachedSetting setting) =>
+        setting is CachedCustomSetting { Value: var v }
+        && ulong.TryParse(v, NumberStyles.None, CultureInfo.InvariantCulture, out var id)
+        && id != 0
+            ? new ChannelId(id)
+            : null;
+
+    private static RoleId? ParseRoleId(CachedSetting setting) =>
+        setting is CachedCustomSetting { Value: var v }
+        && ulong.TryParse(v, NumberStyles.None, CultureInfo.InvariantCulture, out var id)
+        && id != 0
+            ? new RoleId(id)
+            : null;
 
     private abstract record CachedSetting;
 

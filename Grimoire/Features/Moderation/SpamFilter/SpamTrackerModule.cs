@@ -26,60 +26,13 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
 
     private readonly SettingsModule _settingsModule = settingsModule;
 
-    private readonly HybridCacheEntryOptions
-        _spamFilterCacheEntryOptions = new() { Expiration = TimeSpan.FromHours(2) };
 
     private readonly HybridCacheEntryOptions _spamTrackerCacheEntryOptions =
-        new() { Expiration = TimeSpan.FromHours(30) };
-
-    private static string GetSpamFilterCacheKey(ChannelId channelId)
-        => $"SpamFilterOverrideChannel_{channelId}";
+        new() { Expiration = TimeSpan.FromMinutes(30) };
 
     private static string GetSpamUserCacheKey(GuildId guildId, ulong memberId)
         => $"SpamUser_{guildId}_{memberId}";
 
-    private async Task<SpamFilterOverrideCacheOption> GetSpamFilterOverrideChannelAsync(ChannelId channelId,
-        CancellationToken cancellationToken = default)
-    {
-        return await this._memoryCache.GetOrCreateAsync(
-            GetSpamFilterCacheKey(channelId),
-            channelId,
-            async (channelIdState, ct) =>
-            {
-                var spamFilterOverrideOption =
-                    await this._settingsModule.GetSpamFilterOverrideAsync(channelIdState, ct);
-                return spamFilterOverrideOption switch
-                {
-                    SpamFilterOverrideOption.AlwaysFilter => SpamFilterOverrideCacheOption.AlwaysFilter,
-                    SpamFilterOverrideOption.NeverFilter => SpamFilterOverrideCacheOption.NeverFilter,
-                    _ => SpamFilterOverrideCacheOption.Default
-                };
-            }, this._spamFilterCacheEntryOptions,
-            cancellationToken: cancellationToken);
-    }
-
-    private ValueTask SetSpamFilterCache(ChannelId channelId, SpamFilterOverrideOption? overrideOption)
-        => this._memoryCache.SetAsync(GetSpamFilterCacheKey(channelId),
-            overrideOption switch
-            {
-                SpamFilterOverrideOption.AlwaysFilter => SpamFilterOverrideCacheOption.AlwaysFilter,
-                SpamFilterOverrideOption.NeverFilter => SpamFilterOverrideCacheOption.NeverFilter,
-                _ => SpamFilterOverrideCacheOption.Default
-            }, this._spamTrackerCacheEntryOptions);
-
-    public async Task AddOrUpdateOverride(ChannelId channelId, GuildId guildId, ModeratorId steBy, SpamFilterOverrideOption option,
-        CancellationToken cancellationToken = default)
-    {
-        await this._settingsModule.SetSpamFilterOverrideAsync(channelId, guildId, steBy, option, cancellationToken);
-        await SetSpamFilterCache(channelId, option);
-    }
-
-    public async Task RemoveOverride(ChannelId channelId, GuildId guildId,
-        CancellationToken cancellationToken = default)
-    {
-        await this._settingsModule.RemoveSpamFilterOverrideAsync(channelId, guildId, cancellationToken);
-        await SetSpamFilterCache(channelId, null);
-    }
 
     public async Task<CheckSpamResult> CheckSpam(DiscordMessage message, CancellationToken cancellationToken = default)
     {
@@ -93,11 +46,14 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
         while (currentChannel is not null)
         {
             var spamFilterOverrideOption =
-                await GetSpamFilterOverrideChannelAsync(currentChannel.GetChannelId(), cancellationToken);
+                await this._settingsModule.GetSpamFilterOverrideAsync(
+                    currentChannel.Guild.GetGuildId(),
+                    currentChannel.GetChannelId(),
+                    cancellationToken);
 
-            if (spamFilterOverrideOption == SpamFilterOverrideCacheOption.AlwaysFilter)
+            if (spamFilterOverrideOption == SpamFilterOverrideOption.AlwaysFilter)
                 break;
-            if (spamFilterOverrideOption == SpamFilterOverrideCacheOption.NeverFilter)
+            if (spamFilterOverrideOption == SpamFilterOverrideOption.NeverFilter)
                 return new CheckSpamResult { IsSpam = false };
 
             currentChannel = currentChannel.Parent;
@@ -151,12 +107,5 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
     {
         public required bool IsSpam { get; init; }
         public string Reason { get; init; } = string.Empty;
-    }
-
-    private enum SpamFilterOverrideCacheOption
-    {
-        AlwaysFilter,
-        NeverFilter,
-        Default
     }
 }

@@ -12,8 +12,8 @@ public sealed record Lock
     public required PreviouslyAllowedPermissions PreviouslyAllowed { get; init; }
     public required PreviouslyDeniedPermissions PreviouslyDenied { get; init; }
     public required ModeratorId ModeratorId { get; set; }
-    public required string Reason { get; init; }
-    public DateTimeOffset EndTime { get; set; }
+    public required string Reason { get; set; }
+    public required DateTimeOffset EndTime { get; set; }
     public required ChannelId ChannelId { get; init; }
     public required GuildId GuildId { get; init; }
 }

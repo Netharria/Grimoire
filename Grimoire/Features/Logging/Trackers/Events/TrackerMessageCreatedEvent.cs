@@ -22,21 +22,23 @@ internal sealed class TrackerMessageCreatedEvent(
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null) return;
 
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerMessageCustomMessage
+        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser
         {
             GuildId = args.Guild.GetGuildId(),
-            TrackerId = args.Author.Id,
-            TrackerIdType = TrackerIdType.UserId,
-            Message = await this._imageEmbedService.BuildImageEmbedAsync(
-                args.Message.Attachments.Select(x => x.Url).OfType<string>().ToArray(),
-                args.GetAuthorUserId(),
-                new DiscordEmbedBuilder()
-                    .AddField("User", args.Author.Mention, true)
-                    .AddField("Channel", args.Channel.Mention, true)
-                    .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
-                    .WithFooter("Message Sent", args.Author.GetAvatarUrl(MediaFormat.Auto))
-                    .WithTimestamp(DateTime.UtcNow)
-                    .AddMessageTextToFields("**Content**", args.Message.Content, false))
+            UserId = new UserId(args.Author.Id),
+            Message = new TrackerMessageCustomMessage
+            {
+                Message = await this._imageEmbedService.BuildImageEmbedAsync(
+                    args.Message.Attachments.Select(x => x.Url).OfType<string>().ToArray(),
+                    args.GetAuthorUserId(),
+                    new DiscordEmbedBuilder()
+                        .AddField("User", args.Author.Mention, true)
+                        .AddField("Channel", args.Channel.Mention, true)
+                        .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
+                        .WithFooter("Message Sent", args.Author.GetAvatarUrl(MediaFormat.Auto))
+                        .WithTimestamp(DateTime.UtcNow)
+                        .AddMessageTextToFields("**Content**", args.Message.Content, false))
+            }
         });
     }
 }

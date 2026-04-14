@@ -31,6 +31,6 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>
             .HasConversion(e => e.Value, value => new UserId(value));
 
         builder.Property(e => e.SinId)
-            .HasConversion(e => e.GetValueOrDefault().Value, value => new SinId(value));
+            .HasConversion(e => e.Value, value => new SinId(value));
     }
 }

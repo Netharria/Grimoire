@@ -9,8 +9,8 @@ namespace Grimoire.Settings.Domain;
 
 public sealed record Mute
 {
-    public SinId? SinId { get; init; }
-    public DateTimeOffset EndTime { get; init; }
+    public SinId SinId { get; init; }
+    public required DateTimeOffset EndTime { get; init; }
     public required UserId UserId { get; init; }
     public required GuildId GuildId { get; init; }
 }

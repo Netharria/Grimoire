@@ -7,11 +7,25 @@
 
 namespace Grimoire.Features.Shared.Channels.TrackerLog;
 
-public abstract record TrackerMessageBase
+public abstract record TrackerEventBase
 {
-    public required ulong TrackerId { get; init; }
-    public required TrackerIdType TrackerIdType { get; init; }
     public required GuildId GuildId { get; init; }
+    public required TrackerMessageBase Message { get; init; }
+    public DiscordMessageBuilder GetMessageBuilder() => Message.GetMessageBuilder();
+}
+
+public sealed record TrackerEventChannel : TrackerEventBase
+{
+    public required ChannelId ChannelId { get; init; }
+};
+
+public sealed record TrackerEventUser : TrackerEventBase
+{
+    public required UserId UserId { get; init; }
+}
+
+public abstract record TrackerMessageBase()
+{
     public abstract DiscordMessageBuilder GetMessageBuilder();
 }
 

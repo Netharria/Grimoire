@@ -16,7 +16,7 @@ public enum SpamFilterOverrideOption
 
 public sealed record SpamFilterOverride
 {
-    public required SpamFilterOverrideOption ChannelOption { get; set; }
+    public required SpamFilterOverrideOption ChannelOption { get; init; }
     public required ChannelId ChannelId { get; init; }
     public required GuildId GuildId { get; init; }
     public required ModeratorId SetBy { get; init; }

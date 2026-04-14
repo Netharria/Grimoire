@@ -31,9 +31,13 @@ internal sealed class XpIgnoredItemsConfiguration : IEntityTypeConfiguration<XpI
         builder.Property(e => e.SetBy)
             .HasConversion(e => e.Value, value => new ModeratorId(value));
 
-        builder.HasDiscriminator<IgnoredType>("Type")
-            .HasValue<IgnoredChannel>(IgnoredType.Channel)
-            .HasValue<IgnoredRole>(IgnoredType.Role)
-            .HasValue<IgnoredMember>(IgnoredType.Member);
+        builder.Ignore("ChannelId");
+        builder.Ignore("RoleId");
+        builder.Ignore("UserId");
+
+        builder.HasDiscriminator<string>("Type")
+            .HasValue<IgnoredChannel>(nameof(IgnoredType.Channel))
+            .HasValue<IgnoredRole>(nameof(IgnoredType.Role))
+            .HasValue<IgnoredMember>(nameof(IgnoredType.Member));
     }
 }

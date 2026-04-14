@@ -8,7 +8,9 @@
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Channels.TrackerLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Helpers;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Logging.Trackers.Commands;
@@ -37,14 +39,16 @@ public sealed class RemoveTracker(SettingsModule settingsModule, GuildLog guildL
 
         await ctx.ReplyAsync(message: $"Tracker removed from {member.Mention}");
 
-        if (tracker is not null)
-            await this._trackerLog.SendTrackerMessageAsync(new TrackerMessage
+        if (tracker is SettingsWritten<Tracker?> { InputValue: { } written })
+            await this._trackerLog.SendTrackerMessageAsync(new TrackerEventChannel
             {
                 GuildId = guild.GetGuildId(),
-                TrackerId = tracker.LogChannelId.Value,
-                TrackerIdType = TrackerIdType.ChannelId,
-                Color = GrimoireColor.Purple,
-                Description = $"{ctx.User.Username} removed a tracker on {member.Mention}"
+                ChannelId = written.LogChannelId,
+                Message = new TrackerMessage
+                {
+                    Color = GrimoireColor.Purple,
+                    Description = $"{ctx.User.Username} removed a tracker on {member.Mention}"
+                }
             });
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

@@ -35,12 +35,14 @@ public sealed class RemoveExpiredTrackers
                 var user = await discord.GetUserOrDefaultAsync(expiredTracker.UserId);
 
                 await trackerLog.SendTrackerMessageAsync(
-                    new TrackerMessage
+                    new TrackerEventChannel
                     {
                         GuildId = expiredTracker.GuildId,
-                        TrackerId = expiredTracker.LogChannelId.Value,
-                        TrackerIdType = TrackerIdType.ChannelId,
-                        Description = $"Tracker on {user?.Mention} has expired."
+                        ChannelId = expiredTracker.LogChannelId,
+                        Message = new TrackerMessage
+                        {
+                            Description = $"Tracker on {user?.Mention} has expired."
+                        }
                     }, cancellationToken);
 
                 await guildLog.SendLogMessageAsync(

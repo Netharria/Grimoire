@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Settings.Configurations;
 
-internal class GuildSettingConfiguration : IEntityTypeConfiguration<GuildSetting>
+internal sealed class GuildSettingConfiguration : IEntityTypeConfiguration<GuildSetting>
 {
     public void Configure(EntityTypeBuilder<GuildSetting> builder)
     {
@@ -20,10 +20,10 @@ internal class GuildSettingConfiguration : IEntityTypeConfiguration<GuildSetting
             Key = guildSetting.Type, guildSetting.GuildId, UpdatedAt = guildSetting.SetAt
         });
 
-        builder.HasDiscriminator<GuildSettingState>("State")
-            .HasValue<GuildSettingDefault>(GuildSettingState.Default)
-            .HasValue<GuildSettingDisabled>(GuildSettingState.Disabled)
-            .HasValue<GuildSettingCustomValue>(GuildSettingState.CustomValue);
+        builder.HasDiscriminator<string>("State")
+            .HasValue<GuildSettingDefault>("Default")
+            .HasValue<GuildSettingDisabled>("Disabled")
+            .HasValue<GuildSettingCustomValue>("CustomValue");
 
         builder.HasIndex(x => new { x.GuildId, Key = x.Type, x.SetAt })
             .IsDescending(false, false, true);
@@ -35,9 +35,13 @@ internal class GuildSettingConfiguration : IEntityTypeConfiguration<GuildSetting
         builder.Property(e => e.SetBy)
             .HasConversion(e => e.Value, value => new ModeratorId(value));
 
+        builder.Property(e => e.Type)
+            .HasConversion<string>()
+            .HasMaxLength(64);
+
         builder.ToTable(table => table.HasCheckConstraint(
             "CK_GuildSettings_State_Value",
-            @"""State"" = 2 AND ""Value"" IS NOT NULL
-                OR ""State"" IN (0, 1) AND ""Value"" IS NULL"));
+            @"(""State"" = 'CustomValue' AND ""Value"" IS NOT NULL)
+                OR (""State"" IN ('Default', 'Disabled') AND ""Value"" IS NULL)"));
     }
 }

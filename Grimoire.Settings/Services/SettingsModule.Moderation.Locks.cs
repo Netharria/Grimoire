@@ -8,19 +8,18 @@
 using System.Collections.Frozen;
 using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Lock = Grimoire.Settings.Domain.Lock;
 
 namespace Grimoire.Settings.Services;
 
-public partial class SettingsModule
+public sealed partial class SettingsModule
 {
-    private const string LocksCacheKeyPrefix = "Locks_{0}";
-
     public async Task<bool> IsChannelLocked(ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
+        var cacheKey = CacheKey.Locks(guildId);
         var locks = await this._cache.GetOrCreateAsync(cacheKey,
             guildId,
             async (guildIdState, ct) =>
@@ -35,10 +34,10 @@ public partial class SettingsModule
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
 
-        return locks?.Contains(channelId) ?? false;
+        return locks.Contains(channelId);
     }
 
-    public async Task AddLock(
+    public async Task<SettingsResult> AddLock(
         ModeratorId moderatorId,
         GuildId guildId,
         ChannelId channelId,
@@ -56,6 +55,7 @@ public partial class SettingsModule
         {
             existingLock.EndTime = lockEndTime;
             existingLock.ModeratorId = moderatorId;
+            existingLock.Reason = reason;
         }
         else
         {
@@ -73,11 +73,12 @@ public partial class SettingsModule
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
+        var cacheKey = CacheKey.Locks(guildId);
         await this._cache.RemoveAsync(cacheKey, cancellationToken);
+        return SettingsResult.Written();
     }
 
-    public async Task<Lock?> RemoveLock(ChannelId channelId, GuildId guildId,
+    public async Task<SettingsResult<Lock?>> RemoveLock(ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -85,12 +86,12 @@ public partial class SettingsModule
             .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
             .FirstOrDefaultAsync(cancellationToken);
         if (existingLocks is null)
-            return null;
+            return SettingsResult.Unchanged<Lock?>(null);
         dbContext.Locks.Remove(existingLocks);
         await dbContext.SaveChangesAsync(cancellationToken);
-        var cacheKey = string.Format(LocksCacheKeyPrefix, guildId);
+        var cacheKey = CacheKey.Locks(guildId);
         await this._cache.RemoveAsync(cacheKey, cancellationToken);
-        return existingLocks;
+        return SettingsResult.Written<Lock?>(existingLocks);
     }
 
     public async IAsyncEnumerable<Lock> GetAllExpiredLocks(
@@ -99,7 +100,7 @@ public partial class SettingsModule
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         await foreach (var expiredLocks in dbContext.Locks
                            .AsNoTracking()
-                           .Where(x => x.EndTime <= DateTime.UtcNow)
+                           .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
                            .AsAsyncEnumerable()
                            .WithCancellation(cancellationToken))
             yield return expiredLocks;

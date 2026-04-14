@@ -9,37 +9,17 @@ namespace Grimoire.Settings.Domain;
 
 internal abstract record GuildSetting
 {
-    protected GuildSetting(GuildSetting original)
-    {
-        Type = original.Type;
-        GuildId = original.GuildId;
-        SetBy = original.SetBy;
-        SetAt = DateTimeOffset.UtcNow;
-    }
-
     internal required GuildSettingType Type { get; init; }
     internal required GuildId GuildId { get; init; }
     internal required ModeratorId SetBy { get; init; }
-    internal DateTimeOffset SetAt { get; } = DateTimeOffset.UtcNow;
+    internal required DateTimeOffset SetAt { get; init; }
 }
 
-internal record GuildSettingDefault : GuildSetting;
+internal sealed record GuildSettingDefault : GuildSetting;
 
-internal record GuildSettingDisabled : GuildSetting;
+internal sealed record GuildSettingDisabled : GuildSetting;
 
-internal record GuildSettingCustomValue : GuildSetting
+internal sealed record GuildSettingCustomValue : GuildSetting
 {
-    public GuildSettingCustomValue(GuildSettingCustomValue original) : base(original)
-    {
-        Value = original.Value;
-    }
-
     internal required string Value { get; init; }
-}
-
-internal enum GuildSettingState
-{
-    Default,
-    Disabled,
-    CustomValue
 }

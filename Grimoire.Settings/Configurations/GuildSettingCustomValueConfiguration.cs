@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Settings.Configurations;
 
-internal class GuildSettingCustomValueConfiguration : IEntityTypeConfiguration<GuildSettingCustomValue>
+internal sealed class GuildSettingCustomValueConfiguration : IEntityTypeConfiguration<GuildSettingCustomValue>
 {
     public void Configure(EntityTypeBuilder<GuildSettingCustomValue> builder)
     {

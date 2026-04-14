@@ -10,11 +10,12 @@ using System.Runtime.CompilerServices;
 using EntityFramework.Exceptions.Common;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.Settings.Services;
 
-public partial class SettingsModule
+public sealed partial class SettingsModule
 {
     public async Task<RoleId?> GetEffectiveMuteRole(
         GuildId guildId,
@@ -28,27 +29,23 @@ public partial class SettingsModule
     public async Task<RoleId?> GetConfiguredMuteRole(
         GuildId guildId,
         CancellationToken cancellationToken = default)
-    {
-        var result = await GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken);
+        => ParseRoleId(await GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken));
 
-        if (result is not CachedCustomSetting setting)
-            return null;
-        if (ulong.TryParse(setting.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var roleId)
-            && roleId != 0)
-            return new RoleId(roleId);
-
-        return null;
-    }
-
-    public Task DisableMuteRole(
+    public Task<SettingsResult> DisableMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
         => SetGuildSetting(
-            new GuildSettingDisabled { GuildId = guildId, Type = GuildSettingType.MuteRole, SetBy = moderatorId },
+            new GuildSettingDisabled
+            {
+                GuildId = guildId,
+                Type = GuildSettingType.MuteRole,
+                SetBy = moderatorId,
+                SetAt = DateTimeOffset.UtcNow,
+            },
             cancellationToken);
 
-    public Task SetMuteRole(
+    public Task<SettingsResult> SetMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         RoleId muteRoleId,
@@ -59,6 +56,7 @@ public partial class SettingsModule
                 GuildId = guildId,
                 Type = GuildSettingType.MuteRole,
                 SetBy = moderatorId,
+                SetAt = DateTimeOffset.UtcNow,
                 Value = muteRoleId.Value.ToString(CultureInfo.InvariantCulture)
             }, cancellationToken);
 
@@ -73,11 +71,11 @@ public partial class SettingsModule
             .AnyAsync(x =>
                     x.UserId == userId
                     && x.GuildId == guildId
-                    && x.EndTime > DateTime.UtcNow,
+                    && x.EndTime > DateTimeOffset.UtcNow,
                 cancellationToken);
     }
 
-    public async Task AddMute(
+    public async Task<SettingsResult> AddMute(
         UserId userId,
         GuildId guildId,
         SinId sinId,
@@ -94,13 +92,14 @@ public partial class SettingsModule
                 cancellationToken);
 
         if (updated > 0)
-            return;
+            return SettingsResult.Written();
 
         dbContext.Mutes.Add(new Mute { UserId = userId, GuildId = guildId, EndTime = muteEndTime, SinId = sinId });
 
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+            return SettingsResult.Written();
         }
         catch (UniqueConstraintException)
         {
@@ -110,23 +109,24 @@ public partial class SettingsModule
                         .SetProperty(x => x.EndTime, muteEndTime)
                         .SetProperty(x => x.SinId, sinId),
                     cancellationToken);
+            return SettingsResult.Written();
         }
     }
 
-    public async Task<Mute?> RemoveMute(UserId userId, GuildId guildId, CancellationToken cancellationToken = default)
+    public async Task<SettingsResult<Mute?>> RemoveMute(UserId userId, GuildId guildId,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingMute = await dbContext.Mutes
             .AsNoTracking()
             .Where(x => x.UserId == userId && x.GuildId == guildId)
-            .OrderByDescending(x => x.EndTime)
             .FirstOrDefaultAsync(cancellationToken);
         if (existingMute is null)
-            return null;
+            return SettingsResult.Unchanged<Mute?>(null);
         await dbContext.Mutes
             .Where(x => x.UserId == userId && x.GuildId == guildId)
             .ExecuteDeleteAsync(cancellationToken);
-        return existingMute;
+        return SettingsResult.Written<Mute?>(existingMute);
     }
 
     public async IAsyncEnumerable<Mute> GetAllExpiredMutes(
