@@ -17,6 +17,7 @@ public abstract record SettingsResult
     public static SettingsResult<T> Invalid<T>(string reason) => new SettingsInvalid<T>(reason);
 }
 
+// ReSharper disable once UnusedTypeParameter
 public abstract record SettingsResult<T> : SettingsResult;
 
 public sealed record SettingsWritten : SettingsResult;

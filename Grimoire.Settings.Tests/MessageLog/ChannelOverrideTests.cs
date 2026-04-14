@@ -1,0 +1,149 @@
+// This file is part of the Grimoire Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+
+namespace Grimoire.Settings.Tests.MessageLog;
+
+[Collection("Settings collection")]
+public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncLifetime
+{
+    private static readonly GuildId _guildId = new(1UL);
+    private static readonly ModeratorId _modId = new(999UL);
+    private static readonly ChannelId _channelId = new(200UL);
+    private readonly SettingsModule _sut = SettingsModuleFactory.Create(factory.ConnectionString);
+
+    public async Task InitializeAsync()
+        => await this._sut.SetModuleState(Module.MessageLog, _guildId, _modId, true);
+
+    public Task DisposeAsync() => factory.ResetDatabase();
+
+    [Fact]
+    public async Task ModuleDisabled_ShouldLogMessage_ReturnsFalse()
+    {
+        await this._sut.SetModuleState(Module.MessageLog, _guildId, _modId, false);
+
+        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
+        var result = await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task AlwaysLog_Override_ReturnsTrue()
+    {
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task NeverLog_Override_ReturnsFalse()
+    {
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
+
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Inherit_ParentAlwaysLog_ReturnsTrue()
+    {
+        var parentChannelId = new ChannelId(201UL);
+        await this._sut.SetChannelLogOverride(parentChannelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+
+        var channelNodes = new Dictionary<ChannelId, ChannelId?> { [_channelId] = parentChannelId };
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes);
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Inherit_ParentNeverLog_ReturnsFalse()
+    {
+        var parentChannelId = new ChannelId(201UL);
+        await this._sut.SetChannelLogOverride(parentChannelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
+
+        var channelNodes = new Dictionary<ChannelId, ChannelId?> { [_channelId] = parentChannelId };
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Inherit_NoParent_ReturnsTrue()
+    {
+        // No override for _channelId and no entry in channelNodes → defaults to true.
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task DeepHierarchy_Inherit_Inherit_AlwaysLog()
+    {
+        var mid = new ChannelId(201UL);
+        var root = new ChannelId(202UL);
+        await this._sut.SetChannelLogOverride(root, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+
+        var channelNodes = new Dictionary<ChannelId, ChannelId?> { [_channelId] = mid, [mid] = root };
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes);
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task RedundantWrite_ReturnsUnchanged_NoNewRow()
+    {
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+
+        var result =
+            await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+
+        result.ShouldBeOfType<SettingsUnchanged>();
+
+        await using var db = factory.CreateDbContext();
+        var count = await db.MessagesLogChannelOverrides
+            .Where(x => x.ChannelId == _channelId && x.GuildId == _guildId)
+            .CountAsync();
+        count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task NewValue_InsertsRow_CacheUpdated()
+    {
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+
+        var result =
+            await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
+
+        result.ShouldBeOfType<SettingsWritten>();
+
+        // Cache was updated in-place via SetAsync — same SUT should return NeverLog.
+        var shouldLog = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+        shouldLog.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task GetAllOverriddenChannels_ExcludesInherit()
+    {
+        var neverChannel = new ChannelId(201UL);
+        var inheritChannel = new ChannelId(202UL);
+
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+        await this._sut.SetChannelLogOverride(neverChannel, _guildId, _modId, MessageLogOverrideOption.NeverLog);
+        await this._sut.SetChannelLogOverride(inheritChannel, _guildId, _modId, MessageLogOverrideOption.Inherit);
+
+        var overrides = await this._sut.GetAllOverriddenChannels(_guildId).ToListAsync();
+
+        overrides.Count.ShouldBe(2);
+        overrides.ShouldContain(x => x.ChannelId == _channelId);
+        overrides.ShouldContain(x => x.ChannelId == neverChannel);
+        overrides.ShouldNotContain(x => x.ChannelId == inheritChannel);
+    }
+}

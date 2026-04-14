@@ -34,7 +34,7 @@ public sealed partial class SettingsModule
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
 
-        return trackers.GetValueOrDefault(memberId);
+        return trackers.TryGetValue(memberId, out var channelId) ? channelId : null;
     }
 
     public async Task<SettingsResult> AddTracker(

@@ -9,6 +9,7 @@ using System.Collections.Frozen;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;

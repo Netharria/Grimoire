@@ -17,6 +17,8 @@ public sealed class LockedTreadEvents(SettingsModule settingsModule)
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
+        // DSharpPlus hasn't finished implementing nullable notations
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null)
             return;
         if (!args.Channel.IsThread)

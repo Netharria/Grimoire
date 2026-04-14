@@ -27,20 +27,27 @@ public sealed partial class SettingsModule
             async (guildIdState, ct) =>
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                var results = await dbContext.Rewards
-                    .AsNoTracking()
-                    .Where(reward => reward.GuildId == guildIdState)
-                    .GroupBy(reward => reward.RoleId)
-                    .Select(group => group.OrderByDescending(reward => reward.SetAt).First())
-                    .Where(reward => reward.Enabled)
-                    .Select(reward => new RewardEntry
-                    {
-                        RoleId = reward.RoleId,
-                        RewardLevel = reward.RewardLevel,
-                        RewardMessage = reward.RewardMessage
-                    })
-                    .ToHashSetAsync(ct);
-                return results.ToFrozenSet();
+                // Materialize the latest-per-role rows first; EF Core cannot translate
+                // a .Where() or .Select(projection) after GroupBy().Select(g => g.First()).
+                // EF Core cannot translate a .Where() or .Select(projection) after
+                // GroupBy().Select(g => g.First()). Stream rows as they arrive and
+                // filter/project in memory.
+                var entries = new HashSet<RewardEntry>();
+                await foreach (var reward in dbContext.Rewards
+                                   .AsNoTracking()
+                                   .Where(reward => reward.GuildId == guildIdState)
+                                   .GroupBy(reward => reward.RoleId)
+                                   .Select(group => group.OrderByDescending(reward => reward.SetAt).First())
+                                   .AsAsyncEnumerable()
+                                   .WithCancellation(ct))
+                    if (reward.Enabled)
+                        entries.Add(new RewardEntry
+                        {
+                            RoleId = reward.RoleId,
+                            RewardLevel = reward.RewardLevel,
+                            RewardMessage = reward.RewardMessage
+                        });
+                return entries.ToFrozenSet();
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
     }

@@ -7,6 +7,7 @@
 
 using System.Globalization;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 using Grimoire.Settings.Helpers;
 
 namespace Grimoire.Settings.Services;

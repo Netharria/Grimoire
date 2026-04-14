@@ -43,15 +43,17 @@ public sealed partial class SettingsModule
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()).
+        // Stream rows as they arrive and filter in memory.
         await foreach (var spamFilterOverride in dbContext.SpamFilterOverrides
                            .AsNoTracking()
                            .Where(x => x.GuildId == guildId)
                            .GroupBy(x => x.ChannelId)
                            .Select(g => g.OrderByDescending(x => x.SetAt).First())
-                           .Where(x => x.ChannelOption != SpamFilterOverrideOption.Inherit)
                            .AsAsyncEnumerable()
                            .WithCancellation(cancellationToken))
-            yield return spamFilterOverride;
+            if (spamFilterOverride.ChannelOption != SpamFilterOverrideOption.Inherit)
+                yield return spamFilterOverride;
     }
 
     public async Task<SettingsResult> SetSpamFilterOverrideAsync(ChannelId channelId, GuildId guildId,

@@ -11,65 +11,67 @@ namespace Grimoire.Extensions;
 
 public static class DiscordGuildExtensions
 {
-    public static ValueTask<T?> GetRecentAuditLogAsync<T>(this DiscordGuild guild,
-        DiscordAuditLogActionType? actionType = null, int allowedTimeSpan = 500)
-        where T : DiscordAuditLogEntry
-        => guild.GetAuditLogsAsync(1, actionType: actionType)
-            .OfType<T>()
-            .FirstOrDefaultAsync(x =>
-                x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
-
-    public static Task<DiscordRole?> GetRoleOrDefaultAsync(this DiscordGuild guild, RoleId? roleId)
-        => roleId is { } id
-            ? guild.GetRoleOrDefaultAsync(id)
-            : Task.FromResult<DiscordRole?>(null);
-
-    public static async Task<DiscordRole?> GetRoleOrDefaultAsync(this DiscordGuild guild, RoleId roleId)
+    extension(DiscordGuild guild)
     {
-        try
+        public ValueTask<T?> GetRecentAuditLogAsync<T>(DiscordAuditLogActionType? actionType = null, int allowedTimeSpan = 500)
+            where T : DiscordAuditLogEntry
+            => guild.GetAuditLogsAsync(1, actionType: actionType)
+                .OfType<T>()
+                .FirstOrDefaultAsync(x =>
+                    x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
+
+        public Task<DiscordRole?> GetRoleOrDefaultAsync(RoleId? roleId, CancellationToken token = default)
+            => roleId is { } id
+                ? guild.GetRoleOrDefaultAsync(id, token)
+                : Task.FromResult<DiscordRole?>(null);
+
+        public async Task<DiscordRole?> GetRoleOrDefaultAsync(RoleId roleId, CancellationToken token = default)
         {
-            return await guild.GetRoleAsync(roleId.Value);
+            try
+            {
+                return await guild.GetRoleAsync(roleId.Value);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
-        catch (Exception)
+
+        public Task<DiscordChannel?> GetChannelOrDefaultAsync(ChannelId? channelId)
+            => channelId is { } id
+                ? guild.GetChannelOrDefaultAsync(id)
+                : Task.FromResult<DiscordChannel?>(null);
+
+        public async Task<DiscordChannel?> GetChannelOrDefaultAsync(ChannelId channelId)
         {
-            return null;
+            try
+            {
+                return await guild.GetChannelAsync(channelId.Value);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
+
+        public Task<DiscordMember?> GetMemberOrDefaultAsync(UserId? userId)
+            => userId is { } id
+                ? guild.GetMemberOrDefaultAsync(id)
+                : Task.FromResult<DiscordMember?>(null);
+
+        public async Task<DiscordMember?> GetMemberOrDefaultAsync(UserId userId)
+        {
+            try
+            {
+                return await guild.GetMemberAsync(userId.Value);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        [Pure]
+        public GuildId GetGuildId() => new(guild.Id);
     }
-
-    public static Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordGuild guild, ChannelId? channelId)
-        => channelId is { } id
-            ? guild.GetChannelOrDefaultAsync(id)
-            : Task.FromResult<DiscordChannel?>(null);
-
-    public static async Task<DiscordChannel?> GetChannelOrDefaultAsync(this DiscordGuild guild, ChannelId channelId)
-    {
-        try
-        {
-            return await guild.GetChannelAsync(channelId.Value);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
-
-    public static Task<DiscordMember?> GetMemberOrDefaultAsync(this DiscordGuild guild, UserId? userId)
-        => userId is { } id
-            ? guild.GetMemberOrDefaultAsync(id)
-            : Task.FromResult<DiscordMember?>(null);
-
-    public static async Task<DiscordMember?> GetMemberOrDefaultAsync(this DiscordGuild guild, UserId userId)
-    {
-        try
-        {
-            return await guild.GetMemberAsync(userId.Value);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
-
-    [Pure]
-    public static GuildId GetGuildId(this DiscordGuild guild) => new(guild.Id);
 }

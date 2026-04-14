@@ -8,15 +8,13 @@
 using System.Globalization;
 using DSharpPlus.Commands.Converters;
 using DSharpPlus.Commands.Processors.TextCommands;
-using Microsoft.Extensions.Logging;
 using static DSharpPlus.Entities.Optional;
 
 namespace Grimoire.Features.Moderation;
 
-public class SinIdArgumentConverter(ILogger<SinIdArgumentConverter> logger)
+public class SinIdArgumentConverter
     : ITextArgumentConverter<SinId>, ISlashArgumentConverter<SinId>
 {
-    private readonly ILogger<SinIdArgumentConverter> _logger = logger;
     public DiscordApplicationCommandOptionType ParameterType => DiscordApplicationCommandOptionType.String;
     public string ReadableName => "Command Name";
     public ConverterInputType RequiresText => ConverterInputType.Always;

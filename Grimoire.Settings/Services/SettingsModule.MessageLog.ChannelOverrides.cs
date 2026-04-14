@@ -97,17 +97,16 @@ public sealed partial class SettingsModule
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var overrides = dbContext.MessagesLogChannelOverrides
-            .AsNoTracking()
-            .Where(ovr => ovr.GuildId == guildId)
-            .GroupBy(ovr => ovr.ChannelId)
-            .Select(ovr =>
-                ovr
-                    .OrderByDescending(x => x.SetAt)
-                    .First())
-            .Where(x => x.ChannelOption != MessageLogOverrideOption.Inherit)
-            .AsAsyncEnumerable();
-
-        await foreach (var channelId in overrides.WithCancellation(cancellationToken)) yield return channelId;
+        // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()).
+        // Stream rows as they arrive and filter in memory.
+        await foreach (var channelOverride in dbContext.MessagesLogChannelOverrides
+                           .AsNoTracking()
+                           .Where(ovr => ovr.GuildId == guildId)
+                           .GroupBy(ovr => ovr.ChannelId)
+                           .Select(ovr => ovr.OrderByDescending(x => x.SetAt).First())
+                           .AsAsyncEnumerable()
+                           .WithCancellation(cancellationToken))
+            if (channelOverride.ChannelOption != MessageLogOverrideOption.Inherit)
+                yield return channelOverride;
     }
 }

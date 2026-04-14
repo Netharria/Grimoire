@@ -51,6 +51,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Serilog;
+using ZiggyCreatures.Caching.Fusion;
 using AddMessageEvent = Grimoire.Features.Logging.MessageLogging.AddMessageEvent;
 using DeleteMessageEvent = Grimoire.Features.Logging.MessageLogging.DeleteMessageEvent;
 
@@ -227,7 +228,8 @@ await Host.CreateDefaultBuilder(args)
             .AddStandardResilienceHandler();
         services.AddHttpClient();
 
-        services.AddHybridCache();
+        services.AddFusionCache()
+            .AsHybridCache();
 
         services.AddHttpClient("Pluralkit", x =>
         {

@@ -30,9 +30,9 @@ public sealed partial class RewardCommandGroup
             title: "Rewards",
             message: string.Join('\n', rewards
                 .ToAsyncEnumerable()
-                .Select(async (SettingsModule.RewardEntry x, CancellationToken token) =>
+                .Select(async (x, token) =>
                 {
-                    var role = await guild.GetRoleOrDefaultAsync(x.RoleId);
+                    var role = await guild.GetRoleOrDefaultAsync(x.RoleId, token);
                     return
                         $"Level:{x.RewardLevel} Role:{role?.Mention} {(x.RewardMessage == null ? "" : $"Reward Message: {x.RewardMessage}")}";
                 })));

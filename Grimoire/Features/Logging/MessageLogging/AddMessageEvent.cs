@@ -28,14 +28,12 @@ public sealed partial class AddMessageEvent(
             || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
             return;
 
-        var guild = args.Guild!;
-
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()))
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()))
             return;
 
         if (!await this._settingsModule.ShouldLogMessage(
                 args.GetChannelId(),
-                guild.GetGuildId(),
+                args.Guild.GetGuildId(),
                 args.Channel.BuildChannelTree().ToDictionary()))
             return;
 
@@ -58,14 +56,14 @@ public sealed partial class AddMessageEvent(
                 .ToArray(),
             ChannelId = args.GetChannelId(),
             ReferencedMessageId = args.Message.ReferencedMessage?.GetMessageId(),
-            GuildId = guild.GetGuildId(),
+            GuildId = args.Guild.GetGuildId(),
             MessageHistory =
             [
                 new MessageHistory
                 {
                     MessageId = args.GetMessageId(),
                     MessageContent = args.Message.GetMessageContent(),
-                    GuildId = guild.GetGuildId(),
+                    GuildId = args.Guild.GetGuildId(),
                     Action = MessageAction.Created
                 }
             ]

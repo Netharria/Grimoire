@@ -13,11 +13,9 @@ namespace Grimoire.Features.Moderation.SpamFilter.Commands;
 
 [Command("SpamFilter")]
 internal class SpamFilterOverrideCommands(
-    SpamTrackerModule spamTrackerModule,
     SettingsModule settingsModule)
 {
     private readonly SettingsModule _settingsModule = settingsModule;
-    private readonly SpamTrackerModule _spamTrackerModule = spamTrackerModule;
 
     [Command("Override")]
     [Description("Overrides the default spam filter settings. Use this to control which channels are filtered.")]

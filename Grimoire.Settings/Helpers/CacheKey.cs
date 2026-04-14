@@ -1,4 +1,4 @@
-﻿using Grimoire.Settings.Domain;
+﻿using Grimoire.Settings.Enums;
 
 namespace Grimoire.Settings.Helpers;
 

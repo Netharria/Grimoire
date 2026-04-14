@@ -56,17 +56,23 @@ public sealed partial class SettingsModule
             async (guildIdState, ct) =>
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                var results = await dbContext
-                    .XpIgnoredItems
-                    .AsNoTracking()
-                    .Where(ignoredItem => ignoredItem.GuildId == guildIdState)
-                    .GroupBy(ignoredItem => ignoredItem.Id)
-                    .Select(ignoredGroup
-                        => ignoredGroup.OrderByDescending(item => item.SetAt)
-                            .First())
-                    .Where(ignoredItem => ignoredItem.Enabled)
-                    .ToListAsync(ct);
-                return results.ToFrozenSet();
+                // XpIgnoredItem uses TPH (discriminator column), which prevents EF Core from
+                // translating a .Where() applied after GroupBy().Select(g => g.First()).
+                // Stream rows as they arrive and filter by Enabled in memory.
+                var enabledItems = new List<XpIgnoredItem>();
+                await foreach (var item in dbContext
+                                   .XpIgnoredItems
+                                   .AsNoTracking()
+                                   .Where(ignoredItem => ignoredItem.GuildId == guildIdState)
+                                   .GroupBy(ignoredItem => ignoredItem.Id)
+                                   .Select(ignoredGroup
+                                       => ignoredGroup.OrderByDescending(item => item.SetAt)
+                                           .First())
+                                   .AsAsyncEnumerable()
+                                   .WithCancellation(ct))
+                    if (item.Enabled)
+                        enabledItems.Add(item);
+                return enabledItems.ToFrozenSet();
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
 

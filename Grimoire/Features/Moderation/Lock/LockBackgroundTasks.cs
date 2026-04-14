@@ -31,6 +31,8 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
 
             if (!channel.IsThread)
             {
+                // DSharpPlus hasn't finished implementing nullable notations
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                 var everyoneRole = channel.Guild?.EveryoneRole;
                 if (everyoneRole is null)
                     continue;

@@ -24,17 +24,17 @@ public sealed class BulkMessageDeletedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, MessagesBulkDeletedEventArgs args)
     {
+        // DSharpPlus hasn't finished implementing nullable notations
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null) return;
 
-        var guild = args.Guild!;
-
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()))
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()))
             return;
         var messageIds = args.Messages.Select(x => x.GetMessageId()).ToHashSet();
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var messages = await dbContext.MessageHistory
             .AsNoTracking()
-            .Where(history => history.GuildId == guild.GetGuildId())
+            .Where(history => history.GuildId == args.Guild.GetGuildId())
             .Where(history => messageIds.Contains(history.MessageId))
             .GroupBy(history => new { history.MessageId, history.GuildId })
             .Select(historyGroup => new MessageDto
@@ -61,7 +61,7 @@ public sealed class BulkMessageDeletedEvent(
             {
                 MessageId = x.MessageId,
                 Action = MessageAction.Deleted,
-                GuildId = guild.GetGuildId(),
+                GuildId = args.Guild.GetGuildId(),
                 MessageContent = x.MessageContent
             });
 
@@ -78,7 +78,7 @@ public sealed class BulkMessageDeletedEvent(
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
             {
-                GuildId = guild.GetGuildId(),
+                GuildId = args.Guild.GetGuildId(),
                 GuildLogType = GuildLogType.BulkMessageDeleted,
                 Message = new DiscordMessageBuilder()
                     .AddEmbed(embed)
