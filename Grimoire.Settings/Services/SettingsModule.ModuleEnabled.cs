@@ -13,7 +13,6 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-
     public async Task<SettingsResult> SetModuleState(
         Module moduleType,
         GuildId guildId,
@@ -32,16 +31,13 @@ public sealed partial class SettingsModule
                     Type = settingType,
                     GuildId = guildId,
                     SetBy = moderatorId,
-                    SetAt =  DateTimeOffset.UtcNow,
+                    SetAt = DateTimeOffset.UtcNow,
                     Value = bool.TrueString
                 }, cancellationToken);
         return await SetGuildSetting(
             new GuildSettingDisabled
             {
-                Type = settingType,
-                GuildId = guildId,
-                SetBy = moderatorId,
-                SetAt =  DateTimeOffset.UtcNow,
+                Type = settingType, GuildId = guildId, SetBy = moderatorId, SetAt = DateTimeOffset.UtcNow
             },
             cancellationToken);
     }
@@ -66,13 +62,16 @@ public sealed partial class SettingsModule
     public async Task<GuildModuleState> GetAllModuleState(GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-
-        var levelingSettingType = await GetGuildSetting(GuildSettingType.LevelingModuleEnabled,  guildId, cancellationToken);
-        var userLogSetting = await GetGuildSetting(GuildSettingType.UserLogModuleEnabled,  guildId, cancellationToken);
-        var moderationSetting = await GetGuildSetting(GuildSettingType.ModerationModuleEnabled,  guildId, cancellationToken);
-        var messageLogSetting = await GetGuildSetting(GuildSettingType.MessageLogModuleEnabled,  guildId, cancellationToken);
-        var commandsSetting = await GetGuildSetting(GuildSettingType.CustomCommandsModuleEnabled,  guildId, cancellationToken);
-        var antiSpamSetting = await GetGuildSetting(GuildSettingType.AntiSpamModuleEnabled,  guildId, cancellationToken);
+        var levelingSettingType =
+            await GetGuildSetting(GuildSettingType.LevelingModuleEnabled, guildId, cancellationToken);
+        var userLogSetting = await GetGuildSetting(GuildSettingType.UserLogModuleEnabled, guildId, cancellationToken);
+        var moderationSetting =
+            await GetGuildSetting(GuildSettingType.ModerationModuleEnabled, guildId, cancellationToken);
+        var messageLogSetting =
+            await GetGuildSetting(GuildSettingType.MessageLogModuleEnabled, guildId, cancellationToken);
+        var commandsSetting =
+            await GetGuildSetting(GuildSettingType.CustomCommandsModuleEnabled, guildId, cancellationToken);
+        var antiSpamSetting = await GetGuildSetting(GuildSettingType.AntiSpamModuleEnabled, guildId, cancellationToken);
 
         return new GuildModuleState
         {

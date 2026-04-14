@@ -42,7 +42,7 @@ public sealed partial class SettingsModule
                 GuildId = guildId,
                 Type = GuildSettingType.SinAutoPardonDuration,
                 SetBy = moderatorId,
-                SetAt =  DateTimeOffset.UtcNow,
+                SetAt = DateTimeOffset.UtcNow,
                 Value = autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)
             }, cancellationToken);
 

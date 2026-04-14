@@ -41,7 +41,7 @@ public sealed partial class SettingsModule
                 GuildId = guildId,
                 Type = GuildSettingType.MuteRole,
                 SetBy = moderatorId,
-                SetAt = DateTimeOffset.UtcNow,
+                SetAt = DateTimeOffset.UtcNow
             },
             cancellationToken);
 

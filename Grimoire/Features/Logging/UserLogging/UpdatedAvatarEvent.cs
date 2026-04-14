@@ -70,7 +70,7 @@ public sealed class UpdatedAvatarEvent(
                     false)
         });
 
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser()
+        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser
         {
             GuildId = args.Guild.GetGuildId(),
             UserId = args.Member.GetUserId(),

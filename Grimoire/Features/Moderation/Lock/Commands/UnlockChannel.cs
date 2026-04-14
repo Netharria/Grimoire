@@ -35,10 +35,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         channel ??= ctx.Channel;
         var response = await this._settingsModule.RemoveLock(channel.GetChannelId(), guild.GetGuildId());
 
-        if (response is SettingsInvalid<Settings.Domain.Lock?> invalid)
-        {
-            await ctx.RespondAsync(invalid.Reason);
-        }
+        if (response is SettingsInvalid<Settings.Domain.Lock?> invalid) await ctx.RespondAsync(invalid.Reason);
 
         if (response is not SettingsWritten<Settings.Domain.Lock?> { InputValue: { } lockedChannel })
         {

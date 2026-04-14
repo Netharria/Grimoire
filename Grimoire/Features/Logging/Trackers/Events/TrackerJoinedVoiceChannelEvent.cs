@@ -30,7 +30,7 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
                 new TrackerEventUser
                 {
                     GuildId = new GuildId(args.GuildId.Value),
-                    UserId = new  UserId(args.UserId),
+                    UserId = new UserId(args.UserId),
                     Message = new TrackerMessageCustomEmbed
                     {
                         Embed = embed
@@ -44,10 +44,10 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
         if (args.After.ChannelId is null)
         {
             await this._trackerLog.SendTrackerMessageAsync(
-                new TrackerEventUser()
+                new TrackerEventUser
                 {
                     GuildId = new GuildId(args.GuildId.Value),
-                    UserId = new  UserId(args.UserId),
+                    UserId = new UserId(args.UserId),
                     Message = new TrackerMessageCustomEmbed
                     {
                         Embed = embed
@@ -60,10 +60,10 @@ internal sealed class TrackerJoinedVoiceChannelEvent(TrackerLog trackerLog) : IE
 
         if (args.Before.ChannelId != args.After.ChannelId)
             await this._trackerLog.SendTrackerMessageAsync(
-                new TrackerEventUser()
+                new TrackerEventUser
                 {
                     GuildId = new GuildId(args.GuildId.Value),
-                    UserId = new  UserId(args.UserId),
+                    UserId = new UserId(args.UserId),
                     Message = new TrackerMessageCustomEmbed
                     {
                         Embed = embed

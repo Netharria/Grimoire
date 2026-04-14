@@ -23,7 +23,8 @@ public sealed partial class RewardCommandGroup
 
         await ctx.DeferResponseAsync();
 
-        await this._settingsModule.SetRewardAsync(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), 0, null, false);
+        await this._settingsModule.SetRewardAsync(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), 0, null,
+            false);
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, $"Removed {role.Mention} reward");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

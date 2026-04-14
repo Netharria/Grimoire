@@ -67,7 +67,7 @@ public partial class IgnoreCommandGroup
         await this._settingsModule.AppendIgnoredItemsEvent(
             guild.GetGuildId(),
             ignoredItems
-            );
+        );
         var message = BuildIgnoreListAsync(ignoredItems) +
                       " are now ignored for xp gain.";
 

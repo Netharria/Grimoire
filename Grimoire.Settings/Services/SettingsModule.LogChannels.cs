@@ -43,7 +43,7 @@ public sealed partial class SettingsModule
                     GuildId = guildId,
                     Type = guildLogType.ToGuildSettingType(),
                     SetBy = moderatorId,
-                    SetAt = DateTimeOffset.UtcNow,
+                    SetAt = DateTimeOffset.UtcNow
                 }, cancellationToken);
         return SetGuildSetting(
             new GuildSettingCustomValue

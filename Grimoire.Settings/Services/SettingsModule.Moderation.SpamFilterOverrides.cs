@@ -61,7 +61,7 @@ public sealed partial class SettingsModule
     {
         var currentSetting = await GetSpamFilterOverrideAsync(guildId, channelId, cancellationToken);
 
-        if  (currentSetting == option)
+        if (currentSetting == option)
             return SettingsResult.Unchanged();
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);

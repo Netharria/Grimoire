@@ -64,7 +64,7 @@ public sealed class UpdatedUsernameEvent(
                 .WithColor(GrimoireColor.Mint)
         });
 
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser()
+        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser
         {
             GuildId = args.Guild.GetGuildId(),
             UserId = args.Member.GetUserId(),

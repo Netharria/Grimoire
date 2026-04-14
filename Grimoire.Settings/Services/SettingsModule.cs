@@ -115,7 +115,7 @@ public sealed partial class SettingsModule(
                     GuildId = guildId,
                     Type = GuildSettingType.UserCommandChannel,
                     SetBy = moderatorId,
-                    SetAt = DateTimeOffset.UtcNow,
+                    SetAt = DateTimeOffset.UtcNow
                 }, cancellationToken);
         return SetGuildSetting(
             new GuildSettingCustomValue

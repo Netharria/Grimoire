@@ -17,16 +17,16 @@ public abstract record SettingsResult
     public static SettingsResult<T> Invalid<T>(string reason) => new SettingsInvalid<T>(reason);
 }
 
-public abstract record SettingsResult<T>() : SettingsResult;
+public abstract record SettingsResult<T> : SettingsResult;
 
 public sealed record SettingsWritten : SettingsResult;
 
-public sealed record SettingsWritten<T>(T InputValue) : SettingsResult<T>();
+public sealed record SettingsWritten<T>(T InputValue) : SettingsResult<T>;
 
 public sealed record SettingsUnchanged : SettingsResult;
 
-public sealed record SettingsUnchanged<T>(T InputValue) : SettingsResult<T>();
+public sealed record SettingsUnchanged<T>(T InputValue) : SettingsResult<T>;
 
 public sealed record SettingsInvalid(string Reason) : SettingsResult;
 
-public sealed record SettingsInvalid<T>(string Reason) : SettingsResult<T>();
+public sealed record SettingsInvalid<T>(string Reason) : SettingsResult<T>;
