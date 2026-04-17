@@ -87,4 +87,7 @@ public static class DiscordClientExtensions
 
     public static Task<DiscordUser> GetUserAsync(this DiscordClient client, UserId userId, bool updateCache = false)
         => client.GetUserAsync(userId.Value, updateCache);
+
+    public static ModeratorId GetGrimoireModeratorId(this DiscordClient client) =>
+        new ModeratorId(client.CurrentUser.Id);
 }

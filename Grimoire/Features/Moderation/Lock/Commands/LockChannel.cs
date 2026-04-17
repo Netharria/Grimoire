@@ -75,15 +75,14 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
     {
         var previousSetting = guild.Channels[channel.Id].PermissionOverwrites
             .First(x => x.Id == guild.EveryoneRole.Id);
-        var lockEndTime = durationType.GetDateTimeOffset(durationAmount);
-        await this._settingsModule.AddLock(
+        await this._settingsModule.AddChannelLock(
             moderatorId,
             guild.GetGuildId(),
             channel.GetChannelId(),
             previousSetting.GetPreviouslyAllowedPermissions(),
             previousSetting.GetPreviouslyDeniedPermissions(),
             reason ?? string.Empty,
-            lockEndTime
+            durationType.GetDateTimeOffset(durationAmount)
         );
         await channel.AddOverwriteAsync(guild.EveryoneRole,
             previousSetting.Allowed.RevokeLockPermissions(),
@@ -93,12 +92,10 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
     private async Task ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount) =>
-        await this._settingsModule.AddLock(
+        await this._settingsModule.AddThreadLock(
             moderatorId,
             guild.GetGuildId(),
             channel.GetChannelId(),
-            new PreviouslyAllowedPermissions(),
-            new PreviouslyDeniedPermissions(),
             reason ?? string.Empty,
             durationType.GetDateTimeOffset(durationAmount)
         );

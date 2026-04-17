@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Settings.Configurations;
 
-internal sealed class GuildSettingConfiguration : IEntityTypeConfiguration<GuildSetting>
+internal sealed class GuildSettingConfiguration : IEntityTypeConfiguration<GuildSetting>, IEntityTypeConfiguration<GuildSettingCustomValue>
 {
     public void Configure(EntityTypeBuilder<GuildSetting> builder)
     {
@@ -23,7 +23,8 @@ internal sealed class GuildSettingConfiguration : IEntityTypeConfiguration<Guild
         builder.HasDiscriminator<string>("State")
             .HasValue<GuildSettingDefault>("Default")
             .HasValue<GuildSettingDisabled>("Disabled")
-            .HasValue<GuildSettingCustomValue>("CustomValue");
+            .HasValue<GuildSettingCustomValue>("CustomValue")
+            .IsComplete();
 
         builder.HasIndex(x => new { x.GuildId, Key = x.Type, x.SetAt })
             .IsDescending(false, false, true);
@@ -43,5 +44,12 @@ internal sealed class GuildSettingConfiguration : IEntityTypeConfiguration<Guild
             "CK_GuildSettings_State_Value",
             @"(""State"" = 'CustomValue' AND ""Value"" IS NOT NULL)
                 OR (""State"" IN ('Default', 'Disabled') AND ""Value"" IS NULL)"));
+    }
+
+    public void Configure(EntityTypeBuilder<GuildSettingCustomValue> builder)
+    {
+        builder.Property(guildSetting => guildSetting.Value)
+            .HasMaxLength(200)
+            .IsRequired();
     }
 }

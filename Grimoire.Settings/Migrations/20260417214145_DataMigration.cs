@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -420,15 +420,34 @@ namespace Grimoire.Settings.Migrations
                 $$;
                 """);
 
-            // ==================== Locks ====================
+            // ==================== ChannelLocks ====================
             // Old ModeratorId was nullable; new schema requires it — fall back to 0.
+            // Rows with PreviouslyAllowed = 0 AND PreviouslyDenied = 0 are treated as
+            // thread locks (ThreadLockAsync always stored zeros there); all others are
+            // channel locks. This heuristic is imperfect for channels that genuinely had
+            // zero permission overrides, but is the best available without an IsThread flag.
 
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    INSERT INTO "Settings"."Locks" ("ChannelId", "PreviouslyAllowed", "PreviouslyDenied", "ModeratorId", "Reason", "EndTime", "GuildId")
-                    SELECT "ChannelId", "PreviouslyAllowed", "PreviouslyDenied", COALESCE("ModeratorId", 0), "Reason", "EndTime", "GuildId"
-                    FROM public."Locks";
+                    INSERT INTO "Settings"."ChannelLocks" ("ChannelId", "GuildId", "SetAt", "ModeratorId", "Reason", "EventType", "PreviouslyAllowed", "PreviouslyDenied", "EndTime")
+                    SELECT "ChannelId", "GuildId", NOW(), COALESCE("ModeratorId", 0), "Reason", 'LockEvent', "PreviouslyAllowed", "PreviouslyDenied", "EndTime"
+                    FROM public."Locks"
+                    WHERE NOT ("PreviouslyAllowed" = 0 AND "PreviouslyDenied" = 0);
+                EXCEPTION WHEN undefined_table THEN NULL;
+                END;
+                $$;
+                """);
+
+            // ==================== ThreadLocks ====================
+
+            migrationBuilder.Sql("""
+                DO $$
+                BEGIN
+                    INSERT INTO "Settings"."ThreadLocks" ("ChannelId", "GuildId", "SetAt", "ModeratorId", "Reason", "EventType", "EndTime")
+                    SELECT "ChannelId", "GuildId", NOW(), COALESCE("ModeratorId", 0), "Reason", 'LockEvent', "EndTime"
+                    FROM public."Locks"
+                    WHERE "PreviouslyAllowed" = 0 AND "PreviouslyDenied" = 0;
                 EXCEPTION WHEN undefined_table THEN NULL;
                 END;
                 $$;
@@ -458,7 +477,8 @@ namespace Grimoire.Settings.Migrations
             migrationBuilder.Sql("""DELETE FROM "Settings"."SpamFilterOverrides";""");
             migrationBuilder.Sql("""DELETE FROM "Settings"."Rewards";""");
             migrationBuilder.Sql("""DELETE FROM "Settings"."Mutes";""");
-            migrationBuilder.Sql("""DELETE FROM "Settings"."Locks";""");
+            migrationBuilder.Sql("""DELETE FROM "Settings"."ChannelLocks";""");
+            migrationBuilder.Sql("""DELETE FROM "Settings"."ThreadLocks";""");
             migrationBuilder.Sql("""DELETE FROM "Settings"."Trackers";""");
         }
     }

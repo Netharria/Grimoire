@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -10,7 +10,6 @@ using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Lock = Grimoire.Settings.Domain.Lock;
 
 namespace Grimoire.Settings.Services;
 
@@ -19,16 +18,20 @@ public sealed partial class SettingsModule
     public async Task<bool> IsChannelLocked(ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        var cacheKey = CacheKey.Locks(guildId);
-        var locks = await this._cache.GetOrCreateAsync(cacheKey,
+        var locks = await this._cache.GetOrCreateAsync(CacheKey.ChannelLocks(guildId),
             guildId,
-            async (guildIdState, ct) =>
+            async (state, ct) =>
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                var results = await dbContext.Locks
+                var results = await dbContext.ChannelLocks
                     .AsNoTracking()
-                    .Where(x => x.GuildId == guildIdState)
-                    .Select(@lock => @lock.ChannelId)
+                    .OfType<ChannelLockEvent>()
+                    .Where(x => x.GuildId == state)
+                    .Where(x => !dbContext.ChannelLocks
+                        .Any(y => y.ChannelId == x.ChannelId &&
+                                  y.GuildId == x.GuildId &&
+                                  y.SetAt > x.SetAt))
+                    .Select(x => x.ChannelId)
                     .ToHashSetAsync(ct);
                 return results.ToFrozenSet();
             }, this._cacheEntryOptions,
@@ -37,7 +40,7 @@ public sealed partial class SettingsModule
         return locks.Contains(channelId);
     }
 
-    public async Task<SettingsResult> AddLock(
+    public async Task<SettingsResult> AddChannelLock(
         ModeratorId moderatorId,
         GuildId guildId,
         ChannelId channelId,
@@ -48,61 +51,175 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var existingLock = await dbContext.Locks
+        var existingPermissions = await dbContext.ChannelLocks
+            .AsNoTracking()
+            .OfType<ChannelLockEvent>()
             .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
+            .Where(x => !dbContext.ChannelLocks
+                .Any(y => y.ChannelId == x.ChannelId &&
+                          y.GuildId == x.GuildId &&
+                          y.SetAt > x.SetAt))
+            .Select(x => new { x.PreviouslyAllowed, x.PreviouslyDenied })
             .FirstOrDefaultAsync(cancellationToken);
-        if (existingLock is not null)
+
+        dbContext.ChannelLocks.Add(new ChannelLockEvent
         {
-            existingLock.EndTime = lockEndTime;
-            existingLock.ModeratorId = moderatorId;
-            existingLock.Reason = reason;
-        }
-        else
-        {
-            var newLock = new Lock
-            {
-                ModeratorId = moderatorId,
-                GuildId = guildId,
-                ChannelId = channelId,
-                EndTime = lockEndTime,
-                PreviouslyAllowed = previouslyAllowed,
-                PreviouslyDenied = previouslyDenied,
-                Reason = reason
-            };
-            dbContext.Locks.Add(newLock);
-        }
+            ChannelId = channelId,
+            GuildId = guildId,
+            ModeratorId = moderatorId,
+            Reason = reason,
+            EndTime = lockEndTime,
+            SetAt = DateTimeOffset.UtcNow,
+            PreviouslyAllowed = existingPermissions?.PreviouslyAllowed ?? previouslyAllowed,
+            PreviouslyDenied = existingPermissions?.PreviouslyDenied ?? previouslyDenied,
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        var cacheKey = CacheKey.Locks(guildId);
-        await this._cache.RemoveAsync(cacheKey, cancellationToken);
+        await this._cache.RemoveAsync(CacheKey.ChannelLocks(guildId), cancellationToken);
         return SettingsResult.Written();
     }
 
-    public async Task<SettingsResult<Lock?>> RemoveLock(ChannelId channelId, GuildId guildId,
+    public async Task<SettingsResult<ChannelLockEvent?>> RemoveChannelLock(
+        ChannelId channelId,
+        GuildId guildId,
+        ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var existingLocks = await dbContext.Locks
+        var existingLock = await dbContext.ChannelLocks
+            .OfType<ChannelLockEvent>()
             .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
+            .Where(x => !dbContext.ChannelLocks
+                .Any(y => y.ChannelId == x.ChannelId &&
+                          y.GuildId == x.GuildId &&
+                          y.SetAt > x.SetAt))
             .FirstOrDefaultAsync(cancellationToken);
-        if (existingLocks is null)
-            return SettingsResult.Unchanged<Lock?>(null);
-        dbContext.Locks.Remove(existingLocks);
+        if (existingLock is null)
+            return SettingsResult.Unchanged<ChannelLockEvent?>(null);
+
+        dbContext.ChannelLocks.Add(new ChannelUnlockEvent
+        {
+            ChannelId = channelId,
+            GuildId = guildId,
+            ModeratorId = moderatorId,
+            Reason = string.Empty,
+            SetAt = DateTimeOffset.UtcNow,
+        });
         await dbContext.SaveChangesAsync(cancellationToken);
-        var cacheKey = CacheKey.Locks(guildId);
-        await this._cache.RemoveAsync(cacheKey, cancellationToken);
-        return SettingsResult.Written<Lock?>(existingLocks);
+        await this._cache.RemoveAsync(CacheKey.ChannelLocks(guildId), cancellationToken);
+        return SettingsResult.Written<ChannelLockEvent?>(existingLock);
     }
 
-    public async IAsyncEnumerable<Lock> GetAllExpiredLocks(
+    public async IAsyncEnumerable<ChannelLockEvent> GetAllExpiredChannelLocks(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await foreach (var expiredLocks in dbContext.Locks
+        await foreach (var expired in dbContext.ChannelLocks
                            .AsNoTracking()
+                           .OfType<ChannelLockEvent>()
                            .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
+                           .Where(x => !dbContext.ChannelLocks
+                               .Any(y => y.ChannelId == x.ChannelId &&
+                                         y.GuildId == x.GuildId &&
+                                         y.SetAt > x.SetAt))
                            .AsAsyncEnumerable()
                            .WithCancellation(cancellationToken))
-            yield return expiredLocks;
+            yield return expired;
+    }
+
+    public async Task<bool> IsThreadLocked(ChannelId channelId, GuildId guildId,
+        CancellationToken cancellationToken = default)
+    {
+        var locks = await this._cache.GetOrCreateAsync(CacheKey.ThreadLocks(guildId),
+            guildId,
+            async (state, ct) =>
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                var results = await dbContext.ThreadLocks
+                    .AsNoTracking()
+                    .OfType<ThreadLockEvent>()
+                    .Where(x => x.GuildId == state)
+                    .Where(x => !dbContext.ThreadLocks
+                        .Any(y => y.ChannelId == x.ChannelId &&
+                                  y.GuildId == x.GuildId &&
+                                  y.SetAt > x.SetAt))
+                    .Select(x => x.ChannelId)
+                    .ToHashSetAsync(ct);
+                return results.ToFrozenSet();
+            }, this._cacheEntryOptions,
+            cancellationToken: cancellationToken);
+
+        return locks.Contains(channelId);
+    }
+
+    public async Task<SettingsResult> AddThreadLock(
+        ModeratorId moderatorId,
+        GuildId guildId,
+        ChannelId channelId,
+        string reason,
+        DateTimeOffset lockEndTime,
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        dbContext.ThreadLocks.Add(new ThreadLockEvent
+        {
+            ChannelId = channelId,
+            GuildId = guildId,
+            ModeratorId = moderatorId,
+            Reason = reason,
+            EndTime = lockEndTime,
+            SetAt = DateTimeOffset.UtcNow,
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await this._cache.RemoveAsync(CacheKey.ThreadLocks(guildId), cancellationToken);
+        return SettingsResult.Written();
+    }
+
+    public async Task<SettingsResult<ThreadLockEvent?>> RemoveThreadLock(
+        ChannelId channelId,
+        GuildId guildId,
+        ModeratorId moderatorId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var existingLock = await dbContext.ThreadLocks
+            .OfType<ThreadLockEvent>()
+            .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
+            .Where(x => !dbContext.ThreadLocks
+                .Any(y => y.ChannelId == x.ChannelId &&
+                          y.GuildId == x.GuildId &&
+                          y.SetAt > x.SetAt))
+            .FirstOrDefaultAsync(cancellationToken);
+        if (existingLock is null)
+            return SettingsResult.Unchanged<ThreadLockEvent?>(null);
+
+        dbContext.ThreadLocks.Add(new ThreadUnlockEvent
+        {
+            ChannelId = channelId,
+            GuildId = guildId,
+            ModeratorId = moderatorId,
+            Reason = string.Empty,
+            SetAt = DateTimeOffset.UtcNow,
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await this._cache.RemoveAsync(CacheKey.ThreadLocks(guildId), cancellationToken);
+        return SettingsResult.Written<ThreadLockEvent?>(existingLock);
+    }
+
+    public async IAsyncEnumerable<ThreadLockEvent> GetAllExpiredThreadLocks(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await foreach (var expired in dbContext.ThreadLocks
+                           .AsNoTracking()
+                           .OfType<ThreadLockEvent>()
+                           .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
+                           .Where(x => !dbContext.ThreadLocks
+                               .Any(y => y.ChannelId == x.ChannelId &&
+                                         y.GuildId == x.GuildId &&
+                                         y.SetAt > x.SetAt))
+                           .AsAsyncEnumerable()
+                           .WithCancellation(cancellationToken))
+            yield return expired;
     }
 }

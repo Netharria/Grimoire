@@ -9,17 +9,24 @@ using System.Diagnostics.CodeAnalysis;
 using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Lock = Grimoire.Settings.Domain.Lock;
 
 namespace Grimoire.Settings.Configurations;
 
 [ExcludeFromCodeCoverage]
-internal sealed class LockConfigurations : IEntityTypeConfiguration<Lock>
+internal sealed class ThreadLockConfigurations : IEntityTypeConfiguration<ThreadLock>, IEntityTypeConfiguration<ThreadLockEvent>
 {
-    public void Configure(EntityTypeBuilder<Lock> builder)
+    public void Configure(EntityTypeBuilder<ThreadLock> builder)
     {
-        builder.HasKey(e => e.ChannelId);
-        builder.HasIndex(x => x.EndTime);
+        builder.HasKey(e => new { e.ChannelId, e.GuildId, e.SetAt });
+
+        builder.HasDiscriminator<string>("EventType")
+            .HasValue<ThreadLockEvent>("LockEvent")
+            .HasValue<ThreadUnlockEvent>("UnlockEvent")
+            .IsComplete();
+
+        builder.HasIndex(e => new { e.ChannelId, e.GuildId, e.SetAt })
+            .IsDescending(false, false, true);
+
         builder.Property(e => e.Reason)
             .HasMaxLength(4096);
 
@@ -29,10 +36,10 @@ internal sealed class LockConfigurations : IEntityTypeConfiguration<Lock>
             .HasConversion(e => e.Value, value => new ChannelId(value));
         builder.Property(e => e.ModeratorId)
             .HasConversion(e => e.Value, value => new ModeratorId(value));
+    }
 
-        builder.Property(e => e.PreviouslyAllowed)
-            .HasConversion(e => e.Permissions, value => new PreviouslyAllowedPermissions(value));
-        builder.Property(e => e.PreviouslyDenied)
-            .HasConversion(e => e.Permissions, value => new PreviouslyDeniedPermissions(value));
+    public void Configure(EntityTypeBuilder<ThreadLockEvent> builder)
+    {
+        builder.HasIndex(x => x.EndTime);
     }
 }

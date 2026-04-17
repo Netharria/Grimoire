@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Helpers;
 using Grimoire.Settings.Services;
@@ -31,25 +32,17 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         await ctx.DeferResponseAsync();
 
         var guild = ctx.Guild!;
-
         channel ??= ctx.Channel;
-        var response = await this._settingsModule.RemoveLock(channel.GetChannelId(), guild.GetGuildId());
+        var moderatorId = ctx.GetModeratorId();
 
-        if (response is SettingsInvalid<Settings.Domain.Lock?> invalid) await ctx.RespondAsync(invalid.Reason);
+        var wasLocked = channel.IsThread
+            ? await this.TryUnlockThreadAsync(guild, channel, moderatorId)
+            : await this.TryUnlockChannelAsync(guild, channel, moderatorId);
 
-        if (response is not SettingsWritten<Settings.Domain.Lock?> { InputValue: { } lockedChannel })
+        if (!wasLocked)
         {
             await ctx.ReplyAsync(message: $"{channel.Mention} is not locked.");
             return;
-        }
-
-        if (!channel.IsThread)
-        {
-            var permissions = guild.Channels[channel.Id].PermissionOverwrites
-                .First(x => x.Id == guild.EveryoneRole.Id);
-            await channel.AddOverwriteAsync(guild.EveryoneRole,
-                permissions.Allowed.RevertLockPermissions(lockedChannel.PreviouslyAllowed.Permissions)
-                , permissions.Denied.RevertLockPermissions(lockedChannel.PreviouslyDenied.Permissions));
         }
 
         await ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked");
@@ -61,5 +54,27 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} unlocked {channel.Mention}"
         });
+    }
+
+    private async Task<bool> TryUnlockThreadAsync(DiscordGuild guild, DiscordChannel channel, ModeratorId moderatorId)
+    {
+        var response = await this._settingsModule.RemoveThreadLock(
+            channel.GetChannelId(), guild.GetGuildId(), moderatorId);
+        return response is SettingsWritten<ThreadLockEvent?>;
+    }
+
+    private async Task<bool> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel, ModeratorId moderatorId)
+    {
+        var response = await this._settingsModule.RemoveChannelLock(
+            channel.GetChannelId(), guild.GetGuildId(), moderatorId);
+        if (response is not SettingsWritten<ChannelLockEvent?> { InputValue: { } lockedChannel })
+            return false;
+
+        var permissions = guild.Channels[channel.Id].PermissionOverwrites
+            .First(x => x.Id == guild.EveryoneRole.Id);
+        await channel.AddOverwriteAsync(guild.EveryoneRole,
+            permissions.Allowed.RevertLockPermissions(lockedChannel.PreviouslyAllowed.Permissions),
+            permissions.Denied.RevertLockPermissions(lockedChannel.PreviouslyDenied.Permissions));
+        return true;
     }
 }

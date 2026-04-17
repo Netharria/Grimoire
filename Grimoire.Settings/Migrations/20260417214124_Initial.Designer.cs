@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Settings.Migrations
 {
     [DbContext(typeof(SettingsDbContext))]
-    [Migration("20260414010718_Initial")]
+    [Migration("20260417214124_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -25,6 +25,42 @@ namespace Grimoire.Settings.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.ChannelLock", b =>
+                {
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)");
+
+                    b.Property<decimal>("ModeratorId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.HasKey("ChannelId", "GuildId", "SetAt");
+
+                    b.HasIndex("ChannelId", "GuildId", "SetAt")
+                        .IsDescending(false, false, true);
+
+                    b.ToTable("ChannelLocks", "Settings");
+
+                    b.HasDiscriminator<string>("EventType").IsComplete(true).HasValue("ChannelLock");
+
+                    b.UseTphMappingStrategy();
+                });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.GuildSetting", b =>
                 {
@@ -59,38 +95,6 @@ namespace Grimoire.Settings.Migrations
                     b.HasDiscriminator<string>("State").HasValue("GuildSetting");
 
                     b.UseTphMappingStrategy();
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.Lock", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<DateTimeOffset>("EndTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<long>("PreviouslyAllowed")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PreviouslyDenied")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(4096)
-                        .HasColumnType("character varying(4096)");
-
-                    b.HasKey("ChannelId");
-
-                    b.HasIndex("EndTime");
-
-                    b.ToTable("Locks", "Settings");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.MessageLogChannelOverride", b =>
@@ -205,6 +209,42 @@ namespace Grimoire.Settings.Migrations
                     b.ToTable("SpamFilterOverrides", "Settings");
                 });
 
+            modelBuilder.Entity("Grimoire.Settings.Domain.ThreadLock", b =>
+                {
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)");
+
+                    b.Property<decimal>("ModeratorId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.HasKey("ChannelId", "GuildId", "SetAt");
+
+                    b.HasIndex("ChannelId", "GuildId", "SetAt")
+                        .IsDescending(false, false, true);
+
+                    b.ToTable("ThreadLocks", "Settings");
+
+                    b.HasDiscriminator<string>("EventType").IsComplete(true).HasValue("ThreadLock");
+
+                    b.UseTphMappingStrategy();
+                });
+
             modelBuilder.Entity("Grimoire.Settings.Domain.Tracker", b =>
                 {
                     b.Property<decimal>("UserId")
@@ -263,6 +303,31 @@ namespace Grimoire.Settings.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("Grimoire.Settings.Domain.ChannelLockEvent", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.ChannelLock");
+
+                    b.Property<DateTimeOffset>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("PreviouslyAllowed")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PreviouslyDenied")
+                        .HasColumnType("bigint");
+
+                    b.HasIndex("EndTime");
+
+                    b.HasDiscriminator().HasValue("LockEvent");
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.ChannelUnlockEvent", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.ChannelLock");
+
+                    b.HasDiscriminator().HasValue("UnlockEvent");
+                });
+
             modelBuilder.Entity("Grimoire.Settings.Domain.GuildSettingCustomValue", b =>
                 {
                     b.HasBaseType("Grimoire.Settings.Domain.GuildSetting");
@@ -302,6 +367,25 @@ namespace Grimoire.Settings.Migrations
                         });
 
                     b.HasDiscriminator().HasValue("Disabled");
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.ThreadLockEvent", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.ThreadLock");
+
+                    b.Property<DateTimeOffset>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasIndex("EndTime");
+
+                    b.HasDiscriminator().HasValue("LockEvent");
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.ThreadUnlockEvent", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.ThreadLock");
+
+                    b.HasDiscriminator().HasValue("UnlockEvent");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredChannel", b =>

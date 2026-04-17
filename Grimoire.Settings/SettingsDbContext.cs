@@ -7,7 +7,6 @@
 
 using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
-using Lock = Grimoire.Settings.Domain.Lock;
 
 namespace Grimoire.Settings;
 
@@ -15,7 +14,8 @@ public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> option
 {
     internal DbSet<GuildSetting> GuildSettings { get; init; }
     internal DbSet<XpIgnoredItem> XpIgnoredItems { get; init; }
-    internal DbSet<Lock> Locks { get; init; }
+    internal DbSet<ChannelLock> ChannelLocks { get; init; }
+    internal DbSet<ThreadLock> ThreadLocks { get; init; }
     internal DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; init; }
     internal DbSet<Mute> Mutes { get; init; }
     internal DbSet<Reward> Rewards { get; init; }

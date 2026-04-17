@@ -15,6 +15,26 @@ namespace Grimoire.Settings.Migrations
                 name: "Settings");
 
             migrationBuilder.CreateTable(
+                name: "ChannelLocks",
+                schema: "Settings",
+                columns: table => new
+                {
+                    ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    Reason = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: false),
+                    EventType = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false),
+                    PreviouslyAllowed = table.Column<long>(type: "bigint", nullable: true),
+                    PreviouslyDenied = table.Column<long>(type: "bigint", nullable: true),
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChannelLocks", x => new { x.ChannelId, x.GuildId, x.SetAt });
+                });
+
+            migrationBuilder.CreateTable(
                 name: "GuildSettings",
                 schema: "Settings",
                 columns: table => new
@@ -30,24 +50,6 @@ namespace Grimoire.Settings.Migrations
                 {
                     table.PrimaryKey("PK_GuildSettings", x => new { x.Type, x.GuildId, x.SetAt });
                     table.CheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\r\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Locks",
-                schema: "Settings",
-                columns: table => new
-                {
-                    ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    PreviouslyAllowed = table.Column<long>(type: "bigint", nullable: false),
-                    PreviouslyDenied = table.Column<long>(type: "bigint", nullable: false),
-                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    Reason = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: false),
-                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Locks", x => x.ChannelId);
                 });
 
             migrationBuilder.CreateTable(
@@ -116,6 +118,24 @@ namespace Grimoire.Settings.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ThreadLocks",
+                schema: "Settings",
+                columns: table => new
+                {
+                    ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    Reason = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: false),
+                    EventType = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false),
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ThreadLocks", x => new { x.ChannelId, x.GuildId, x.SetAt });
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Trackers",
                 schema: "Settings",
                 columns: table => new
@@ -149,17 +169,24 @@ namespace Grimoire.Settings.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChannelLocks_ChannelId_GuildId_SetAt",
+                schema: "Settings",
+                table: "ChannelLocks",
+                columns: new[] { "ChannelId", "GuildId", "SetAt" },
+                descending: new[] { false, false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChannelLocks_EndTime",
+                schema: "Settings",
+                table: "ChannelLocks",
+                column: "EndTime");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_GuildSettings_GuildId_Type_SetAt",
                 schema: "Settings",
                 table: "GuildSettings",
                 columns: new[] { "GuildId", "Type", "SetAt" },
                 descending: new[] { false, false, true });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Locks_EndTime",
-                schema: "Settings",
-                table: "Locks",
-                column: "EndTime");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MessagesLogChannelOverrides_ChannelId_GuildId_SetAt",
@@ -202,6 +229,19 @@ namespace Grimoire.Settings.Migrations
                 column: "GuildId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ThreadLocks_ChannelId_GuildId_SetAt",
+                schema: "Settings",
+                table: "ThreadLocks",
+                columns: new[] { "ChannelId", "GuildId", "SetAt" },
+                descending: new[] { false, false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ThreadLocks_EndTime",
+                schema: "Settings",
+                table: "ThreadLocks",
+                column: "EndTime");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Trackers_EndTime",
                 schema: "Settings",
                 table: "Trackers",
@@ -219,11 +259,11 @@ namespace Grimoire.Settings.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "GuildSettings",
+                name: "ChannelLocks",
                 schema: "Settings");
 
             migrationBuilder.DropTable(
-                name: "Locks",
+                name: "GuildSettings",
                 schema: "Settings");
 
             migrationBuilder.DropTable(
@@ -240,6 +280,10 @@ namespace Grimoire.Settings.Migrations
 
             migrationBuilder.DropTable(
                 name: "SpamFilterOverrides",
+                schema: "Settings");
+
+            migrationBuilder.DropTable(
+                name: "ThreadLocks",
                 schema: "Settings");
 
             migrationBuilder.DropTable(

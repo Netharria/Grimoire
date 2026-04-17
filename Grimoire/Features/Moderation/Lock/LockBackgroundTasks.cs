@@ -22,38 +22,59 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
         var guildLog = serviceProvider.GetRequiredService<GuildLog>();
 
-        await foreach (var expiredLock in settingsModule.GetAllExpiredLocks(cancellationToken))
+        await foreach (var expiredLock in settingsModule.GetAllExpiredChannelLocks(cancellationToken))
         {
-            var channel = await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId);
-
+            var channel = await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId, cancellationToken);
             if (channel is null)
                 continue;
 
-            if (!channel.IsThread)
-            {
-                // DSharpPlus hasn't finished implementing nullable notations
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-                var everyoneRole = channel.Guild?.EveryoneRole;
-                if (everyoneRole is null)
-                    continue;
-                var permissions = channel.PermissionOverwrites
-                    .First(x => x.Id == expiredLock.GuildId.Value);
-                await channel.AddOverwriteAsync(everyoneRole,
-                    permissions.Allowed.RevertLockPermissions(expiredLock.PreviouslyAllowed.Permissions)
-                    , permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied.Permissions));
-            }
+            // DSharpPlus hasn't finished implementing nullable notations
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+            var everyoneRole = channel.Guild?.EveryoneRole;
+            if (everyoneRole is null)
+                continue;
 
-            await settingsModule.RemoveLock(expiredLock.ChannelId, expiredLock.GuildId, cancellationToken);
+            var permissions = channel.PermissionOverwrites
+                .First(x => x.Id == expiredLock.GuildId.Value);
+            await channel.AddOverwriteAsync(everyoneRole,
+                permissions.Allowed.RevertLockPermissions(expiredLock.PreviouslyAllowed.Permissions),
+                permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied.Permissions));
 
-            var embed = new DiscordEmbedBuilder()
-                .WithDescription($"Lock on {channel.Mention} has expired.");
-            await guildLog.SendLogMessageAsync(
-                new GuildLogMessageCustomEmbed
-                {
-                    GuildId = expiredLock.GuildId, GuildLogType = GuildLogType.Moderation, Embed = embed
-                }, cancellationToken);
+            await settingsModule.RemoveChannelLock(
+                expiredLock.ChannelId,
+                expiredLock.GuildId,
+                discordClient.GetGrimoireModeratorId(),
+                cancellationToken);
 
-            await channel.SendMessageAsync(embed);
+            await SendLockExpiredLogAsync(guildLog, channel, expiredLock.GuildId, cancellationToken);
         }
+
+        await foreach (var expiredLock in settingsModule.GetAllExpiredThreadLocks(cancellationToken))
+        {
+            var channel = await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId, cancellationToken);
+            if (channel is null)
+                continue;
+
+            await settingsModule.RemoveThreadLock(
+                expiredLock.ChannelId,
+                expiredLock.GuildId,
+                discordClient.GetGrimoireModeratorId(),
+                cancellationToken);
+
+            await SendLockExpiredLogAsync(guildLog, channel, expiredLock.GuildId, cancellationToken);
+        }
+    }
+
+    private static async Task SendLockExpiredLogAsync(GuildLog guildLog, DiscordChannel channel, GuildId guildId,
+        CancellationToken cancellationToken)
+    {
+        var embed = new DiscordEmbedBuilder()
+            .WithDescription($"Lock on {channel.Mention} has expired.");
+        await guildLog.SendLogMessageAsync(
+            new GuildLogMessageCustomEmbed
+            {
+                GuildId = guildId, GuildLogType = GuildLogType.Moderation, Embed = embed
+            }, cancellationToken);
+        await channel.SendMessageAsync(embed);
     }
 }
