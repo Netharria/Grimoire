@@ -10,9 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02580"/>
-    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02580"/>
-    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02580"/>
+    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02582" />
+    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02582" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02582" />
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="10.0.0"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.6" />
@@ -36,7 +36,6 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0"/>
     <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0"/>
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1"/>
-    <PackageReference Include="System.Composition.AttributedModel" Version="10.0.4" />
     <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.6.0"/>
   </ItemGroup>
 
