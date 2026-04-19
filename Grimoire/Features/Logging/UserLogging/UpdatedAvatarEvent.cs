@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Features.Shared.Channels.TrackerLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -16,15 +15,13 @@ public sealed class UpdatedAvatarEvent(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     IDiscordImageEmbedService imageEmbedService,
     SettingsModule settingsModule,
-    GuildLog guildLog,
-    TrackerLog trackerLog)
+    GuildLog guildLog)
     : IEventHandler<GuildMemberUpdatedEventArgs>
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
     private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
     private readonly SettingsModule _settingsModule = settingsModule;
-    private readonly TrackerLog _trackerLog = trackerLog;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
@@ -68,25 +65,6 @@ public sealed class UpdatedAvatarEvent(
                     args.Member.GetUserId(),
                     embed,
                     false)
-        });
-
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser
-        {
-            GuildId = args.Guild.GetGuildId(),
-            UserId = args.Member.GetUserId(),
-            Message = new TrackerMessageCustomMessage
-            {
-                Message = await this._imageEmbedService.BuildImageEmbedAsync(
-                    [args.MemberAfter.AvatarUrl],
-                    args.Member.GetUserId(),
-                    new DiscordEmbedBuilder()
-                        .WithAuthor("Avatar Updated")
-                        .AddField("User", UserExtensions.Mention(args.Member.GetUserId()))
-                        .WithThumbnail(args.MemberAfter.AvatarUrl)
-                        .WithTimestamp(DateTimeOffset.UtcNow)
-                        .WithColor(GrimoireColor.Purple),
-                    false)
-            }
         });
     }
 }

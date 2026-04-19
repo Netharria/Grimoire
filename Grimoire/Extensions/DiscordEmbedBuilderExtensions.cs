@@ -15,48 +15,50 @@ public static partial class DiscordEmbedBuilderExtensions
     [GeneratedRegex(@"([\s\S]{1,1024})(?:\s|$)", RegexOptions.None, 1000)]
     private static partial Regex SplitText();
 
-    public static DiscordEmbedBuilder AddMessageTextToFields(this DiscordEmbedBuilder embedBuilder, string contentType,
-        string? content, bool addBlankField = true)
+    extension(DiscordEmbedBuilder embedBuilder)
     {
-        if (string.IsNullOrWhiteSpace(content) && addBlankField)
-            return embedBuilder.AddField(contentType, "`blank`");
-        if (string.IsNullOrWhiteSpace(content)) return embedBuilder;
-        var splitContent = SplitText().Matches(content).Select(x => x.Value).ToList();
-
-        if (splitContent.Sum(x => x.Length) != content.Length)
+        public DiscordEmbedBuilder AddMessageTextToFields(string contentType,
+            string? content, bool addBlankField = true)
         {
-            Log.Logger.Warning(
-                "Defaulting to crude embed field splitter because the regex return left off some characters. Original Length: ({contentLength}), Regex Length: ({regexLength})",
-                content.Length, splitContent.Sum(x => x.Length));
-            splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
-        }
+            if (string.IsNullOrWhiteSpace(content) && addBlankField)
+                return embedBuilder.AddField(contentType, "`blank`");
+            if (string.IsNullOrWhiteSpace(content)) return embedBuilder;
+            var splitContent = SplitText().Matches(content).Select(x => x.Value).ToList();
 
-        if (splitContent.Any(x => x.Length > 1024))
-        {
-            Log.Logger.Warning("Size of element is too large. Trying trim.");
-            splitContent = splitContent.Select(x => x.Trim()).ToList();
+            if (splitContent.Sum(x => x.Length) != content.Length)
+            {
+                Log.Logger.Warning(
+                    "Defaulting to crude embed field splitter because the regex return left off some characters. Original Length: ({contentLength}), Regex Length: ({regexLength})",
+                    content.Length, splitContent.Sum(x => x.Length));
+                splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
+            }
 
             if (splitContent.Any(x => x.Length > 1024))
             {
-                Log.Logger.Warning(
-                    "Defaulting to crude embed field splitter because the regex returned a string that was longer than 1024. String lengths {lengths}",
-                    string.Join(' ', splitContent.Select(x => x.Length)));
-                splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
+                Log.Logger.Warning("Size of element is too large. Trying trim.");
+                splitContent = splitContent.Select(x => x.Trim()).ToList();
+
+                if (splitContent.Any(x => x.Length > 1024))
+                {
+                    Log.Logger.Warning(
+                        "Defaulting to crude embed field splitter because the regex returned a string that was longer than 1024. String lengths {lengths}",
+                        string.Join(' ', splitContent.Select(x => x.Length)));
+                    splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
+                }
             }
+
+            if (splitContent.Count > 0)
+                embedBuilder.AddField(contentType, splitContent[0]);
+            if (splitContent.Count <= 1)
+                return embedBuilder;
+
+            foreach (var x in splitContent.Skip(1))
+                embedBuilder.AddField("**Continued**", x);
+
+            return embedBuilder;
         }
 
-        if (splitContent.Count > 0)
-            embedBuilder.AddField(contentType, splitContent[0]);
-        if (splitContent.Count <= 1)
-            return embedBuilder;
-
-        foreach (var x in splitContent.Skip(1))
-            embedBuilder.AddField("**Continued**", x);
-
-        return embedBuilder;
+        public DiscordEmbedBuilder WithThumbnail(AvatarFileName avatarFileName)
+            => embedBuilder.WithThumbnail(avatarFileName.Value);
     }
-
-    public static DiscordEmbedBuilder WithThumbnail(this DiscordEmbedBuilder embedBuilder,
-        AvatarFileName avatarFileName)
-        => embedBuilder.WithThumbnail(avatarFileName.Value);
 }

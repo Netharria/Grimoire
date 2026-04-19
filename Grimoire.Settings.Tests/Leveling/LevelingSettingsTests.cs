@@ -22,20 +22,20 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         var settings = await this._sut.GetLevelingSettings(_guildId);
 
-        settings.TextTime.ShouldBe(TimeSpan.FromMinutes(3));
-        ((int)settings.Base).ShouldBe(15);
-        ((int)settings.Modifier).ShouldBe(50);
-        ((int)settings.Amount).ShouldBe(5);
+        settings.XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(3));
+        settings.Base.Value.ShouldBe(15);
+        settings.Modifier.Value.ShouldBe(50);
+        settings.Amount.Value.ShouldBe(5);
     }
 
     [Fact]
     public async Task SetTextTime_RoundTrips()
     {
-        await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.TextTime, 10);
+        await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.XpTimeoutPeriod, 10);
 
         var settings = await this._sut.GetLevelingSettings(_guildId);
 
-        settings.TextTime.ShouldBe(TimeSpan.FromMinutes(10));
+        settings.XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(10));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
         var settings = await this._sut.GetLevelingSettings(_guildId);
 
-        ((int)settings.Base).ShouldBe(20);
+        settings.Base.Value.ShouldBe(20);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
         var settings = await this._sut.GetLevelingSettings(_guildId);
 
-        ((int)settings.Modifier).ShouldBe(100);
+        settings.Modifier.Value.ShouldBe(100);
     }
 
     [Fact]
@@ -65,23 +65,23 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
         var settings = await this._sut.GetLevelingSettings(_guildId);
 
-        ((int)settings.Amount).ShouldBe(10);
+        settings.Amount.Value.ShouldBe(10);
     }
 
     [Fact]
     public async Task TextTime_BelowRange_ReturnsInvalid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.TextTime, 0);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.XpTimeoutPeriod, 0);
 
-        result.ShouldBeOfType<SettingsInvalid>();
+        result.ShouldBeOfType<Result<int>.Invalid>();
     }
 
     [Fact]
     public async Task TextTime_AboveRange_ReturnsInvalid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.TextTime, 61);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.XpTimeoutPeriod, 61);
 
-        result.ShouldBeOfType<SettingsInvalid>();
+        result.ShouldBeOfType<Result<int>.Invalid>();
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.Amount, 0);
 
-        result.ShouldBeOfType<SettingsInvalid>();
+        result.ShouldBeOfType<Result<int>.Invalid>();
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.Amount, 101);
 
-        result.ShouldBeOfType<SettingsInvalid>();
+        result.ShouldBeOfType<Result<int>.Invalid>();
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.Base, 501);
 
-        result.ShouldBeOfType<SettingsInvalid>();
+        result.ShouldBeOfType<Result<int>.Invalid>();
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.Modifier, 201);
 
-        result.ShouldBeOfType<SettingsInvalid>();
+        result.ShouldBeOfType<Result<int>.Invalid>();
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var settings = await freshSut.GetLevelingSettings(_guildId);
 
-        ((int)settings.Base).ShouldBe(30);
+        settings.Base.Value.ShouldBe(30);
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.Base, 20);
 
-        result.ShouldBeOfType<SettingsUnchanged>();
+        result.ShouldBeOfType<Result<int>.NotModified>();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
@@ -152,9 +152,9 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, SettingsModule.LevelSettings.Base, 30);
 
-        result.ShouldBeOfType<SettingsWritten>();
+        result.ShouldBeOfType<Result<int>.Success>();
 
         var settings = await this._sut.GetLevelingSettings(_guildId);
-        ((int)settings.Base).ShouldBe(30);
+        settings.Base.Value.ShouldBe(30);
     }
 }

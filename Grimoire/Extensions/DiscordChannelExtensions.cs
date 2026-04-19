@@ -47,31 +47,34 @@ public static class DiscordChannelExtensions
         }
     }
 
-    public static Task<DiscordMessage?> GetMessageOrDefaultAsync(this DiscordChannel channel, MessageId? messageId)
-        => messageId is { } id
-            ? channel.GetMessageOrDefaultAsync(id)
-            : Task.FromResult<DiscordMessage?>(null);
-
-    public static async Task<DiscordMessage?> GetMessageOrDefaultAsync(this DiscordChannel channel, MessageId messageId)
+    extension(DiscordChannel channel)
     {
-        try
+        public Task<DiscordMessage?> GetMessageOrDefaultAsync(MessageId? messageId)
+            => messageId is { } id
+                ? channel.GetMessageOrDefaultAsync(id)
+                : Task.FromResult<DiscordMessage?>(null);
+
+        public async Task<DiscordMessage?> GetMessageOrDefaultAsync(MessageId messageId)
         {
-            return await channel.GetMessageAsync(messageId.Value);
+            try
+            {
+                return await channel.GetMessageAsync(messageId.Value);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
-        catch (Exception)
-        {
-            return null;
-        }
+
+        [Pure]
+        public ChannelId GetChannelId() => new(channel.Id);
+
+        [Pure]
+        public ChannelId? GetParentChannelId() =>
+            channel.ParentId is not null ? new ChannelId(channel.ParentId.Value) : null;
+
+        public Task<DiscordMessage> GetMessageAsync(MessageId id,
+            bool skipCache = false)
+            => channel.GetMessageAsync(id.Value, skipCache);
     }
-
-    [Pure]
-    public static ChannelId GetChannelId(this DiscordChannel channel) => new(channel.Id);
-
-    [Pure]
-    public static ChannelId? GetParentChannelId(this DiscordChannel channel) =>
-        channel.ParentId is not null ? new ChannelId(channel.ParentId.Value) : null;
-
-    public static Task<DiscordMessage> GetMessageAsync(this DiscordChannel discordChannel, MessageId id,
-        bool skipCache = false)
-        => discordChannel.GetMessageAsync(id.Value, skipCache);
 }

@@ -40,6 +40,10 @@ public sealed partial class CustomCommandSettings
         var guildId = guild.GetGuildId();
         try
         {
+            await dbContext.CustomCommandUsages
+                .Where(x => x.Name == name && x.GuildId == guildId)
+                .ExecuteDeleteAsync();
+
             var deletedCount = await dbContext.CustomCommands
                 .Where(x => x.Name == name && x.GuildId == guildId)
                 .ExecuteDeleteAsync();

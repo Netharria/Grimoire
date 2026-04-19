@@ -59,22 +59,31 @@ public sealed partial class AddBanCommand(
         }
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var sin = await dbContext.Sins.AddAsync(
-            new Sin
-            {
-                GuildId = guild.GetGuildId(),
-                UserId = user.GetUserId(),
-                Reason = reason,
-                SinType = SinType.Ban,
-                ModeratorId = ctx.GetModeratorId()
-            });
+        var sin = new Sin
+        {
+            GuildId = guild.GetGuildId(),
+            UserId = user.GetUserId(),
+            SinType = SinType.Ban,
+            ModeratorId = ctx.GetModeratorId(),
+            ReasonHistory = string.IsNullOrWhiteSpace(reason) ? [] :
+            [
+                new SinReasonHistory
+                {
+                    SinId = default,
+                    Reason = reason,
+                    ModeratorId = ctx.GetModeratorId(),
+                    SetAt = DateTimeOffset.UtcNow
+                }
+            ]
+        };
+        dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 
         try
         {
             if (user is DiscordMember member)
                 await member.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithAuthor($"Ban ID {sin.Entity.Id}")
+                    .WithAuthor($"Ban ID {sin.Id}")
                     .WithDescription($"You have been banned from {guild.Name} "
                                      + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
                     .WithColor(GrimoireColor.Red));
@@ -93,7 +102,7 @@ public sealed partial class AddBanCommand(
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Banned")
             .AddField("User", user.Mention, true)
-            .AddField("Sin Id", $"**{sin.Entity.Id}**", true)
+            .AddField("Sin Id", $"**{sin.Id}**", true)
             .AddField("Moderator", ctx.User.Mention, true)
             .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason)
             .WithColor(GrimoireColor.Red)

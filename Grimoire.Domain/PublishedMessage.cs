@@ -12,7 +12,8 @@ namespace Grimoire.Domain;
 public enum PublishType
 {
     Ban,
-    Unban
+    Unban,
+    Kick
 }
 
 [UsedImplicitly]

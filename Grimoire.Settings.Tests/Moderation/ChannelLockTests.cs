@@ -54,11 +54,11 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         count.ShouldBe(2);
 
         var latest = await db.ChannelLocks
-            .OfType<ChannelLockEvent>()
+            .OfType<ChannelLocked>()
             .Where(x => x.ChannelId == _channelId)
             .OrderByDescending(x => x.SetAt)
             .FirstAsync();
-        latest.Reason.ShouldBe(newReason);
+        latest.Reason?.Value.ShouldBe(newReason);
         latest.EndTime.ShouldBe(newEndTime, TimeSpan.FromSeconds(1));
     }
 
@@ -70,14 +70,13 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
 
         await this._sut.AddChannelLock(_modId, _guildId, _channelId, originalAllowed, originalDenied, "first",
             DateTimeOffset.UtcNow.AddHours(1));
-        // Second lock passes different permissions — should be ignored in favour of the originals
         await this._sut.AddChannelLock(_modId, _guildId, _channelId,
             new PreviouslyAllowedPermissions(99999L), new PreviouslyDeniedPermissions(88888L),
             "second", DateTimeOffset.UtcNow.AddHours(2));
 
         await using var db = factory.CreateDbContext();
         var latest = await db.ChannelLocks
-            .OfType<ChannelLockEvent>()
+            .OfType<ChannelLocked>()
             .Where(x => x.ChannelId == _channelId)
             .OrderByDescending(x => x.SetAt)
             .FirstAsync();
@@ -86,29 +85,28 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     }
 
     [Fact]
-    public async Task RemoveChannelLock_NotLocked_ReturnsUnchanged()
+    public async Task RemoveChannelLock_NotLocked_ReturnsNotFound()
     {
         var result = await this._sut.RemoveChannelLock(_channelId, _guildId, _modId);
 
-        result.ShouldBeOfType<SettingsUnchanged<ChannelLockEvent?>>();
-        ((SettingsUnchanged<ChannelLockEvent?>)result).InputValue.ShouldBeNull();
+        result.ShouldBeOfType<Result<ChannelLocked>.NotFound>();
     }
 
     [Fact]
-    public async Task RemoveChannelLock_Locked_ReturnsWrittenAndInsertsUnlockEntry()
+    public async Task RemoveChannelLock_Locked_ReturnsSuccessAndInsertsUnlockEntry()
     {
         await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied, "test",
             DateTimeOffset.UtcNow.AddHours(1));
 
         var result = await this._sut.RemoveChannelLock(_channelId, _guildId, _modId);
 
-        result.ShouldBeOfType<SettingsWritten<ChannelLockEvent?>>();
-        ((SettingsWritten<ChannelLockEvent?>)result).InputValue.ShouldNotBeNull();
+        result.ShouldBeOfType<Result<ChannelLocked>.Success>();
+        ((Result<ChannelLocked>.Success)result).Value.ShouldNotBeNull();
 
         await using var db = factory.CreateDbContext();
         var count = await db.ChannelLocks.CountAsync(x => x.ChannelId == _channelId);
         count.ShouldBe(2);
-        (await db.ChannelLocks.OfType<ChannelUnlockEvent>().AnyAsync(x => x.ChannelId == _channelId)).ShouldBeTrue();
+        (await db.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(x => x.ChannelId == _channelId)).ShouldBeTrue();
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         (await freshSut.IsChannelLocked(_channelId, _guildId)).ShouldBeFalse();
@@ -118,10 +116,16 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     public async Task GetAllExpiredChannelLocks_OnlyReturnsPastEndTime()
     {
         var futureChannel = new ChannelId(201UL);
-        await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied, "past",
-            DateTimeOffset.UtcNow.AddHours(-1));
-        await this._sut.AddChannelLock(_modId, _guildId, futureChannel, _prevAllowed, _prevDenied, "future",
-            DateTimeOffset.UtcNow.AddHours(1));
+        var setAt = DateTimeOffset.UtcNow.AddHours(-2);
+
+        await using var db = factory.CreateDbContext();
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("past"), _channelId, _guildId, setAt,
+            _prevAllowed, _prevDenied, setAt.AddHours(1)).OrElse(null!));
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("future"), futureChannel, _guildId, DateTimeOffset.UtcNow,
+            _prevAllowed, _prevDenied, DateTimeOffset.UtcNow.AddHours(1)).OrElse(null!));
+        await db.SaveChangesAsync();
 
         var expired = await this._sut.GetAllExpiredChannelLocks().ToListAsync();
 
@@ -135,12 +139,10 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied, "test",
             DateTimeOffset.UtcNow.AddHours(1));
 
-        // Warm the cache.
         (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldBeTrue();
 
         await this._sut.RemoveChannelLock(_channelId, _guildId, _modId);
 
-        // Cache was invalidated by RemoveChannelLock; fresh read reflects removal.
         (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldBeFalse();
     }
 }

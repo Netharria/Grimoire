@@ -13,7 +13,8 @@ namespace Grimoire.Domain;
 public sealed record CustomCommandRole
 {
     public required RoleId RoleId { get; init; }
-    public required CustomCommandName CustomCommandName { get; init; }
-    public CustomCommand? CustomCommand { get; init; }
+    public required CustomCommandName Name { get; init; }
     public required GuildId GuildId { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
+    public CustomCommand? CustomCommand { get; init; }
 }

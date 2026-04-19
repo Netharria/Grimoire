@@ -7,6 +7,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Values;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,6 +20,9 @@ internal sealed class RewardConfiguration : IEntityTypeConfiguration<Reward>
     {
         builder.HasKey(e => new { e.GuildId, e.RoleId, e.SetAt });
         builder.Property(e => e.RewardMessage)
+            .HasConversion(
+                r => r == null ? null : r.Value.Value,
+                v => v == null ? null : RewardMessage.FromDatabase(v))
             .HasMaxLength(4096)
             .IsRequired(false);
         builder.Property(e => e.RewardLevel).IsRequired();

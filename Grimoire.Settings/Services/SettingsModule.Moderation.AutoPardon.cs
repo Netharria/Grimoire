@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -8,7 +8,6 @@
 using System.Globalization;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
-using Grimoire.Settings.Helpers;
 
 namespace Grimoire.Settings.Services;
 
@@ -32,32 +31,24 @@ public sealed partial class SettingsModule
         return GetDefaultAutoPardonDuration();
     }
 
-    public Task<SettingsResult> SetAutoPardonDuration(
+    public async Task<Result<TimeSpan>> SetAutoPardonDuration(
         GuildId guildId,
         ModeratorId moderatorId,
         TimeSpan autoPardonAfter,
         CancellationToken cancellationToken = default)
-        => SetGuildSetting(
-            new GuildSettingCustomValue
-            {
-                GuildId = guildId,
-                Type = GuildSettingType.SinAutoPardonDuration,
-                SetBy = moderatorId,
-                SetAt = DateTimeOffset.UtcNow,
-                Value = autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)
-            }, cancellationToken);
+        => (await SetGuildSetting(
+                new GuildSettingCustomValue(GuildSettingType.SinAutoPardonDuration, guildId, moderatorId,
+                    DateTimeOffset.UtcNow, autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)),
+                cancellationToken))
+            .Map(_ => autoPardonAfter);
 
-    public Task<SettingsResult> ResetAutoPardonDuration(
+    public async Task<Result<TimeSpan>> ResetAutoPardonDuration(
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
-        => SetGuildSetting(
-            new GuildSettingCustomValue
-            {
-                GuildId = guildId,
-                Type = GuildSettingType.SinAutoPardonDuration,
-                SetBy = moderatorId,
-                SetAt = DateTimeOffset.UtcNow,
-                Value = GetDefaultAutoPardonDuration().ToString("c", CultureInfo.InvariantCulture)
-            }, cancellationToken);
+        => (await SetGuildSetting(
+                new GuildSettingCustomValue(GuildSettingType.SinAutoPardonDuration, guildId, moderatorId,
+                    DateTimeOffset.UtcNow, GetDefaultAutoPardonDuration().ToString("c", CultureInfo.InvariantCulture)),
+                cancellationToken)
+            ).Map(_ => GetDefaultAutoPardonDuration());
 }

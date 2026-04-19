@@ -24,9 +24,9 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
         return string.Join(' ', ignoredItems
             .Select(item => item switch
             {
-                IgnoredChannel => $"<#{item.Id}>",
-                IgnoredMember => $"<@{item.Id}>",
-                IgnoredRole => $"<@&{item.Id}>",
+                IgnoredChannel c => $"<#{c.ChannelId.Value}>",
+                IgnoredMember m => $"<@{m.UserId.Value}>",
+                IgnoredRole r => $"<@&{r.RoleId.Value}>",
                 _ => ""
             }));
     }

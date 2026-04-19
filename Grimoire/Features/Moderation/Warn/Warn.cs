@@ -45,11 +45,19 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
             UserId = user.GetUserId(),
             GuildId = guild.GetGuildId(),
             ModeratorId = ctx.GetModeratorId(),
-            Reason = reason,
-            SinType = SinType.Warn
+            SinType = SinType.Warn,
+            ReasonHistory = string.IsNullOrWhiteSpace(reason) ? [] :
+            [
+                new SinReasonHistory
+                {
+                    SinId = default,
+                    Reason = reason,
+                    ModeratorId = ctx.GetModeratorId(),
+                    SetAt = DateTimeOffset.UtcNow
+                }
+            ]
         };
-        await dbcontext.Sins
-            .AddAsync(sin);
+        dbcontext.Sins.Add(sin);
         await dbcontext.SaveChangesAsync();
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Warn")

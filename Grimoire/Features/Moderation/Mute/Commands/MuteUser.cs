@@ -67,14 +67,23 @@ public sealed class MuteUser(
             UserId = member.GetUserId(),
             GuildId = guild.GetGuildId(),
             ModeratorId = ctx.GetModeratorId(),
-            Reason = reason ?? string.Empty,
-            SinType = SinType.Mute
+            SinType = SinType.Mute,
+            ReasonHistory = string.IsNullOrWhiteSpace(reason) ? [] :
+            [
+                new SinReasonHistory
+                {
+                    SinId = default,
+                    Reason = reason,
+                    ModeratorId = ctx.GetModeratorId(),
+                    SetAt = DateTimeOffset.UtcNow
+                }
+            ]
         };
 
-        await dbContext.Sins.AddAsync(sin);
+        dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 
-        await this._settingsModule.AddMute(member.GetUserId(), guild.GetGuildId(), sin.Id, muteEndTime);
+        await this._settingsModule.AddMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId(), sin.Id, muteEndTime);
 
         var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
         if (muteRole is null)

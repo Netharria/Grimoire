@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -33,6 +33,7 @@ public sealed partial class SettingsModule
                     return true;
                 case MessageLogOverrideOption.NeverLog:
                     return false;
+                case MessageLogOverrideOption.Inherit:
                 default:
                     currentChannelId = channelNodes.GetValueOrDefault(currentChannelId.Value);
                     break;
@@ -61,7 +62,8 @@ public sealed partial class SettingsModule
                 }, this._cacheEntryOptions,
                 cancellationToken: cancellationToken);
 
-    public async Task<SettingsResult> SetChannelLogOverride(ChannelId channelId,
+    public async Task<Result<MessageLogChannelOverride>> SetChannelLogOverride(
+        ChannelId channelId,
         GuildId guildId,
         ModeratorId setBy,
         MessageLogOverrideOption option,
@@ -70,19 +72,12 @@ public sealed partial class SettingsModule
         var existingOverride = await GetChannelLogOverride(channelId, guildId, cancellationToken);
 
         if (existingOverride == option)
-            return SettingsResult.Unchanged();
+            return new Result<MessageLogChannelOverride>.NotModified(
+                new Error("channel-log-override.not-changed", "The channel is already set to this log option."));
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        var newOverride = new MessageLogChannelOverride
-        {
-            ChannelId = channelId,
-            GuildId = guildId,
-            SetBy = setBy,
-            ChannelOption = option,
-            SetAt = DateTimeOffset.UtcNow
-        };
-
+        var newOverride = new MessageLogChannelOverride(option, channelId, guildId, setBy, DateTimeOffset.UtcNow);
 
         dbContext.MessagesLogChannelOverrides.Add(newOverride);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -90,7 +85,7 @@ public sealed partial class SettingsModule
         await this._cache.SetAsync(CacheKey.LogOverride(channelId),
             option, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
-        return SettingsResult.Written();
+        return Result<MessageLogChannelOverride>.Ok(newOverride);
     }
 
     public async IAsyncEnumerable<MessageLogChannelOverride> GetAllOverriddenChannels(GuildId guildId,

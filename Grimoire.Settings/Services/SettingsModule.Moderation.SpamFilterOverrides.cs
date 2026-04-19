@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -56,7 +56,9 @@ public sealed partial class SettingsModule
                 yield return spamFilterOverride;
     }
 
-    public async Task<SettingsResult> SetSpamFilterOverrideAsync(ChannelId channelId, GuildId guildId,
+    public async Task<Result<SpamFilterOverride>> SetSpamFilterOverrideAsync(
+        ChannelId channelId,
+        GuildId guildId,
         ModeratorId setBy,
         SpamFilterOverrideOption option,
         CancellationToken cancellationToken = default)
@@ -64,24 +66,19 @@ public sealed partial class SettingsModule
         var currentSetting = await GetSpamFilterOverrideAsync(guildId, channelId, cancellationToken);
 
         if (currentSetting == option)
-            return SettingsResult.Unchanged();
+            return new Result<SpamFilterOverride>.NotModified(
+                new Error("spam-filter-override.not-changed",
+                    "The channel is already set to this spam filter option."));
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        var spamFilterOverride = new SpamFilterOverride
-        {
-            ChannelId = channelId,
-            GuildId = guildId,
-            SetBy = setBy,
-            SetAt = DateTimeOffset.UtcNow,
-            ChannelOption = option
-        };
+        var spamFilterOverride = new SpamFilterOverride(option, channelId, guildId, setBy, DateTimeOffset.UtcNow);
 
         dbContext.SpamFilterOverrides.Add(spamFilterOverride);
         await dbContext.SaveChangesAsync(cancellationToken);
         await this._cache.SetAsync(CacheKey.SpamFilterOverride(channelId),
             option, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
-        return SettingsResult.Written();
+        return Result<SpamFilterOverride>.Ok(spamFilterOverride);
     }
 }

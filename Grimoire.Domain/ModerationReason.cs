@@ -1,0 +1,28 @@
+// This file is part of the Grimoire Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+
+namespace Grimoire.Domain;
+
+public readonly record struct ModerationReason
+{
+    public string Value { get; }
+
+    private ModerationReason(string value) => this.Value = value;
+
+    public static ModerationReason FromDatabase(string value) => new(value);
+
+    public static Validation<ModerationReason> Create(string? input)
+    {
+        var trimmed = input?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 4096)
+            return Validation<ModerationReason>.Fail(
+                new Error("moderation-reason.invalid", "Reason must be 1\u20134096 non-whitespace characters."));
+        return Validation<ModerationReason>.Succeed(new(trimmed));
+    }
+
+    public override string ToString() => this.Value;
+}

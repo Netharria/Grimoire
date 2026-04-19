@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -7,13 +7,12 @@
 
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
-using Grimoire.Settings.Helpers;
 
 namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<SettingsResult> SetModuleState(
+    public async Task<Result<bool>> SetModuleState(
         Module moduleType,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -21,25 +20,19 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
     {
         if (moduleType == Module.General)
-            return SettingsResult.Invalid("Cannot disable the general module.");
+            return Result<bool>.Fail(new Error("module.general.immutable", "Cannot disable the general module."));
         if (moduleType.ToGuildSettingType() is not { } settingType)
-            return SettingsResult.Invalid("Was not able to parse the module type.");
+            return Result<bool>.Fail(new Error("module.type.unrecognized", "Was not able to parse the module type."));
         if (enableModule)
-            return await SetGuildSetting(
-                new GuildSettingCustomValue
-                {
-                    Type = settingType,
-                    GuildId = guildId,
-                    SetBy = moderatorId,
-                    SetAt = DateTimeOffset.UtcNow,
-                    Value = bool.TrueString
-                }, cancellationToken);
-        return await SetGuildSetting(
-            new GuildSettingDisabled
-            {
-                Type = settingType, GuildId = guildId, SetBy = moderatorId, SetAt = DateTimeOffset.UtcNow
-            },
-            cancellationToken);
+            return (await SetGuildSetting(
+                    new GuildSettingCustomValue(settingType, guildId, moderatorId, DateTimeOffset.UtcNow,
+                        bool.TrueString),
+                    cancellationToken)
+                ).Map(_ => enableModule);
+        return (await SetGuildSetting(
+                new GuildSettingDisabled(settingType, guildId, moderatorId, DateTimeOffset.UtcNow),
+                cancellationToken)
+            ).Map(_ => enableModule);
     }
 
     private static bool ParseEnabled(CachedSetting? setting) =>

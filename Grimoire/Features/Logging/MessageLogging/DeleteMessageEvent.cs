@@ -32,7 +32,6 @@ public sealed partial class DeleteMessageEvent(
     private readonly IPluralkitService _pluralKitService = pluralKitService;
     private readonly SettingsModule _settingsModule = settingsModule;
 
-
     public async Task HandleEventAsync(DiscordClient sender, MessageDeletedEventArgs args)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
@@ -50,16 +49,17 @@ public sealed partial class DeleteMessageEvent(
         if (pluralkitMessage is not null
             && ulong.TryParse(pluralkitMessage.Id, out var proxyMessageId)
             && ulong.TryParse(pluralkitMessage.OriginalId, out var originalMessageId)
-            && proxyMessageId != args.Message.Id)
+            && proxyMessageId != args.Message.Id
+            && pluralkitMessage.PluralKitSystem?.Id is { } systemId
+            && pluralkitMessage.Member?.Id is { } memberId)
         {
-            await dbContext.AddAsync(
-                new ProxiedMessageLink
-                {
-                    ProxyMessageId = new MessageId(proxyMessageId),
-                    OriginalMessageId = new MessageId(originalMessageId),
-                    SystemId = pluralkitMessage.PluralKitSystem?.Id,
-                    MemberId = pluralkitMessage.Member?.Id
-                });
+            await dbContext.AddAsync(new ProxiedMessageLink
+            {
+                ProxyMessageId = new MessageId(proxyMessageId),
+                OriginalMessageId = new MessageId(originalMessageId),
+                SystemId = systemId,
+                MemberId = memberId
+            });
             try
             {
                 await dbContext.SaveChangesAsync();
@@ -85,39 +85,46 @@ public sealed partial class DeleteMessageEvent(
             await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.GetGuildId(),
                 args.Channel.GetChannelId(),
                 args.Message.GetMessageId());
+
         var message = await dbContext.Messages
             .AsNoTracking()
-            .Where(message => message.Id == args.Message.GetMessageId())
-            .Select(message => new Response
+            .Where(m => m.Id == args.Message.GetMessageId())
+            .Select(m => new Response
             {
-                UserId = message.UserId,
-                MessageContent = message.MessageHistory
-                    .OrderByDescending(messageHistory => messageHistory.TimeStamp)
-                    .First(messageHistory => messageHistory.Action != MessageAction.Deleted)
-                    .MessageContent,
-                ReferencedMessage = message.ReferencedMessageId,
-                Attachments = message.Attachments
-                    .Select(attachment => new AttachmentDto { Id = attachment.Id, FileName = attachment.FileName })
+                UserId = m.UserId,
+                Content = dbContext.MessageHistory
+                    .OfType<MessageHistoryContentEntry>()
+                    .Where(h => h.MessageId == m.Id)
+                    .OrderByDescending(h => h.TimeStamp)
+                    .Select(h => (MessageContent?)h.Content)
+                    .FirstOrDefault(),
+                ReferencedMessage = m.ReferencedMessageId,
+                Attachments = m.Attachments
+                    .Select(a => new AttachmentDto { Id = a.Id, FileName = a.FileName })
                     .ToArray(),
-                OriginalUserId = message.ProxiedMessageLink!.OriginalMessage!.UserId,
-                SystemId = message.ProxiedMessageLink.SystemId,
-                MemberId = message.ProxiedMessageLink.MemberId
-            }).FirstOrDefaultAsync();
+                OriginalUserId = m.ProxiedMessageLink!.OriginalMessage!.UserId,
+                SystemId = m.ProxiedMessageLink.SystemId,
+                MemberId = m.ProxiedMessageLink.MemberId
+            })
+            .FirstOrDefaultAsync();
+
         if (message is null)
             return;
-        await dbContext.MessageHistory.AddAsync(
-            new MessageHistory
-            {
-                MessageId = args.Message.GetMessageId(),
-                Action = MessageAction.Deleted,
-                MessageContent = message.MessageContent,
-                GuildId = args.Guild.GetGuildId(),
-                DeletedByModeratorId = auditLogEntry?.UserResponsible?.Id is not null
-                    ? new ModeratorId(auditLogEntry.UserResponsible.Id)
-                    : null
-            });
-        await dbContext.SaveChangesAsync();
 
+        await dbContext.MessageHistory.AddAsync(
+            auditLogEntry?.UserResponsible?.Id is { } modId
+                ? new MessageDeletedByModeratorEntry
+                {
+                    MessageId = args.Message.GetMessageId(),
+                    GuildId = args.Guild.GetGuildId(),
+                    ModeratorId = new ModeratorId(modId)
+                }
+                : new MessageDeletedEntry
+                {
+                    MessageId = args.Message.GetMessageId(),
+                    GuildId = args.Guild.GetGuildId()
+                });
+        await dbContext.SaveChangesAsync();
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
         {
@@ -139,6 +146,7 @@ public sealed partial class DeleteMessageEvent(
             .AddField("Message Id", args.Message.Id.ToString(), true)
             .WithTimestamp(DateTime.UtcNow)
             .WithColor(GrimoireColor.Red);
+
         var avatarUrl = await sender.GetUserAvatar(
             response.OriginalUserId ?? response.UserId,
             args.Guild);
@@ -153,11 +161,9 @@ public sealed partial class DeleteMessageEvent(
             if (user is not null)
                 embed.AddField("Original Author", user.Mention, true);
             embed.AddField("System Id",
-                    string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId,
-                    true)
+                    string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId, true)
                 .AddField("Member Id",
-                    string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId,
-                    true);
+                    string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId, true);
         }
 
         if (auditLogEntry?.UserResponsible is not null)
@@ -167,7 +173,7 @@ public sealed partial class DeleteMessageEvent(
             embed.WithDescription(
                 $"**[Reply To](https://discordapp.com/channels/{args.Guild.Id}/{args.Channel.Id}/{response.ReferencedMessage})**");
 
-        embed.AddMessageTextToFields("**Content**", response.MessageContent.ToString() ?? string.Empty, false);
+        embed.AddMessageTextToFields("**Content**", response.Content?.ToString() ?? string.Empty, false);
 
         return await this._attachmentUploadService.BuildImageEmbedAsync(
             response.Attachments.Select(x => x.FileName).ToArray(),
@@ -184,7 +190,7 @@ public sealed partial class DeleteMessageEvent(
     public sealed record Response
     {
         public UserId UserId { get; init; }
-        public MessageContent? MessageContent { get; init; }
+        public MessageContent? Content { get; init; }
         public MessageId? ReferencedMessage { get; init; }
         public AttachmentDto[] Attachments { get; init; } = [];
         public UserId? OriginalUserId { get; init; }

@@ -30,6 +30,8 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<CustomCommandRole> CustomCommandsRole { get; init; }
 
+    public DbSet<CustomCommandUsage> CustomCommandUsages { get; init; }
+
     [Obsolete("Table To be Dropped Soon.")]
     public DbSet<Guild> Guilds { get; init; }
 
@@ -80,7 +82,7 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     [Obsolete("Use Settings Module Instead.")]
     public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; init; }
 
-    public DbSet<MessageHistory> MessageHistory { get; init; }
+    public DbSet<MessageHistoryEntry> MessageHistory { get; init; }
 
 
     [Obsolete("Use Settings Module Instead.")]
@@ -105,13 +107,11 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<Sin> Sins { get; init; }
 
+    public DbSet<SinReasonHistory> SinReasonHistory { get; init; }
+
 
     [Obsolete("Use Settings Module Instead.")]
     public DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<Tracker> Trackers { get; init; }
 
     [Obsolete("Table to be deleted soon.")]
     public DbSet<User> Users { get; init; }

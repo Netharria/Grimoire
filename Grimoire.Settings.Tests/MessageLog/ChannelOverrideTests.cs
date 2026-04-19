@@ -78,7 +78,6 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     [Fact]
     public async Task Inherit_NoParent_ReturnsTrue()
     {
-        // No override for _channelId and no entry in channelNodes → defaults to true.
         var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
 
         result.ShouldBeTrue();
@@ -98,14 +97,14 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     }
 
     [Fact]
-    public async Task RedundantWrite_ReturnsUnchanged_NoNewRow()
+    public async Task RedundantWrite_ReturnsNotModified_NoNewRow()
     {
         await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
 
         var result =
             await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
 
-        result.ShouldBeOfType<SettingsUnchanged>();
+        result.ShouldBeOfType<Result<MessageLogChannelOverride>.NotModified>();
 
         await using var db = factory.CreateDbContext();
         var count = await db.MessagesLogChannelOverrides
@@ -122,9 +121,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         var result =
             await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
 
-        result.ShouldBeOfType<SettingsWritten>();
+        result.ShouldBeOfType<Result<MessageLogChannelOverride>.Success>();
 
-        // Cache was updated in-place via SetAsync — same SUT should return NeverLog.
         var shouldLog = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
         shouldLog.ShouldBeFalse();
     }

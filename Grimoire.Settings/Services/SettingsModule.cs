@@ -30,10 +30,10 @@ public sealed partial class SettingsModule(
         CancellationToken cancellationToken = default)
         => this._cache.GetOrCreateAsync(
             CacheKey.GuildSetting(key, guildId),
-            new { key, guildId },
+            new { key, guildId, this._dbContextFactory },
             async (state, ct) =>
             {
-                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                await using var dbContext = await state._dbContextFactory.CreateDbContextAsync(ct);
                 var result = await dbContext.GuildSettings
                     .AsNoTracking()
                     .Where(setting => setting.Type == state.key && setting.GuildId == state.guildId)
@@ -70,7 +70,7 @@ public sealed partial class SettingsModule(
             _ => new CachedDefaultSetting()
         };
 
-    private async Task<SettingsResult> SetGuildSetting(GuildSetting newSetting,
+    private async Task<Result<GuildSetting>> SetGuildSetting(GuildSetting newSetting,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -81,13 +81,14 @@ public sealed partial class SettingsModule(
             .FirstOrDefaultAsync(cancellationToken);
 
         if (IsRedundantWrite(current, newSetting))
-            return SettingsResult.Unchanged();
+            return new Result<GuildSetting>.NotModified(new Error($"guild-setting.{newSetting.Type}.not-changed",
+                "The setting was already set to that value."));
         dbContext.GuildSettings.Add(newSetting);
         await dbContext.SaveChangesAsync(cancellationToken);
         await this._cache.RemoveAsync(
             CacheKey.GuildSetting(newSetting.Type, newSetting.GuildId),
             cancellationToken);
-        return SettingsResult.Written();
+        return Result<GuildSetting>.Ok(newSetting);
     }
 
     private static bool IsRedundantWrite(GuildSetting? current, GuildSetting incoming) =>
@@ -103,31 +104,23 @@ public sealed partial class SettingsModule(
     public async Task<ChannelId?> GetUserCommandChannel(GuildId guildId, CancellationToken cancellationToken = default)
         => ParseChannelId(await GetGuildSetting(GuildSettingType.UserCommandChannel, guildId, cancellationToken));
 
-    public Task<SettingsResult> SetUserCommandChannelSetting(
+    public async Task<Result<ChannelId?>> SetUserCommandChannelSetting(
         GuildId guildId,
         ModeratorId moderatorId,
         ChannelId? channelId,
         CancellationToken cancellationToken = default)
-    {
-        if (channelId is null)
-            return SetGuildSetting(
-                new GuildSettingDisabled
-                {
-                    GuildId = guildId,
-                    Type = GuildSettingType.UserCommandChannel,
-                    SetBy = moderatorId,
-                    SetAt = DateTimeOffset.UtcNow
-                }, cancellationToken);
-        return SetGuildSetting(
-            new GuildSettingCustomValue
-            {
-                GuildId = guildId,
-                Type = GuildSettingType.UserCommandChannel,
-                SetBy = moderatorId,
-                SetAt = DateTimeOffset.UtcNow,
-                Value = channelId.Value.Value.ToString(CultureInfo.InvariantCulture)
-            }, cancellationToken);
-    }
+        => (channelId switch
+        {
+            not null => await SetGuildSetting(
+                new GuildSettingCustomValue(GuildSettingType.UserCommandChannel, guildId, moderatorId,
+                    DateTimeOffset.UtcNow,
+                    channelId.Value.Value.ToString(CultureInfo.InvariantCulture)),
+                cancellationToken),
+            _ => await SetGuildSetting(
+                new GuildSettingDisabled(GuildSettingType.UserCommandChannel, guildId, moderatorId,
+                    DateTimeOffset.UtcNow),
+                cancellationToken)
+        }).Map(_ => channelId);
 
     private static ChannelId? ParseChannelId(CachedSetting setting) =>
         setting is CachedCustomSetting { Value: var v }

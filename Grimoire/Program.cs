@@ -24,9 +24,6 @@ using Grimoire.Features.Leveling.UserCommands;
 using Grimoire.Features.LogCleanup;
 using Grimoire.Features.Logging.MessageLogging;
 using Grimoire.Features.Logging.Settings;
-using Grimoire.Features.Logging.Trackers;
-using Grimoire.Features.Logging.Trackers.Commands;
-using Grimoire.Features.Logging.Trackers.Events;
 using Grimoire.Features.Logging.UserLogging;
 using Grimoire.Features.Moderation.Ban.Commands;
 using Grimoire.Features.Moderation.Ban.Events;
@@ -41,7 +38,6 @@ using Grimoire.Features.Moderation.SpamFilter.Commands;
 using Grimoire.Features.Moderation.Warn;
 using Grimoire.Features.Shared;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Features.Shared.Channels.TrackerLog;
 using Grimoire.Features.Shared.Commands;
 using Grimoire.Features.Shared.Events;
 using Grimoire.Features.Shared.PluralKit;
@@ -119,9 +115,6 @@ await Host.CreateDefaultBuilder(args)
                     .AddEventHandlers<DeleteMessageEvent>()
                     .AddEventHandlers<BulkMessageDeletedEvent>()
                     .AddEventHandlers<UpdateMessageEvent>()
-                    //Trackers
-                    .AddEventHandlers<TrackerMessageCreatedEvent>()
-                    .AddEventHandlers<TrackerJoinedVoiceChannelEvent>()
                     //User Log
                     .AddEventHandlers<GuildMemberAddedEvent>()
                     .AddEventHandlers<GuildMemberRemovedEvent>()
@@ -169,10 +162,6 @@ await Host.CreateDefaultBuilder(args)
                 // Logging
                 extension.AddCommands<LogSettingsCommands>();
 
-                //Trackers
-                extension.AddCommands<AddTracker>();
-                extension.AddCommands<RemoveTracker>();
-
                 // Moderation
                 extension.AddCommands<AddBanCommand>();
                 extension.AddCommands<RemoveBanCommand>();
@@ -216,10 +205,7 @@ await Host.CreateDefaultBuilder(args)
             }, new CommandsConfiguration { UseDefaultCommandErrorHandler = false })
             .AddSingleton<GuildLog>()
             .AddHostedService<GuildLog>()
-            .AddSingleton<TrackerLog>()
-            .AddHostedService<TrackerLog>()
             .AddHostedService<CleanupLogsBackgroundTask>()
-            .AddHostedService<RemoveExpiredTrackers.BackgroundTask>()
             .AddHostedService<LockBackgroundTasks>()
             .AddHostedService<MuteBackgroundTasks>()
             .AddHostedService<DiscordStartService>()

@@ -47,8 +47,7 @@ public sealed partial class PluralkitService : IPluralkitService
         {
             return await httpClient.GetFromJsonAsync<PluralKitMessage>(MessageEndpoint + messageId);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound ||
-                                              ex.StatusCode == HttpStatusCode.BadGateway)
+        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadGateway)
         {
             return null;
         }

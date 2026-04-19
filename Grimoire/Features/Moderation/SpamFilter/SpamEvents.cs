@@ -52,13 +52,22 @@ internal sealed class SpamEvents(
             UserId = member.GetUserId(),
             GuildId = args.Guild.GetGuildId(),
             ModeratorId = new ModeratorId(args.Guild.CurrentMember.Id),
-            Reason = checkSpamResult.Reason,
-            SinType = SinType.Mute
+            SinType = SinType.Mute,
+            ReasonHistory =
+            [
+                new SinReasonHistory
+                {
+                    SinId = default,
+                    Reason = checkSpamResult.Reason,
+                    ModeratorId = new ModeratorId(args.Guild.CurrentMember.Id),
+                    SetAt = DateTimeOffset.UtcNow
+                }
+            ]
         };
-        await dbContext.Sins.AddAsync(sin);
+        dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 
-        await this._settingsModule.AddMute(member.GetUserId(), args.Guild.GetGuildId(), sin.Id, muteEndTime);
+        await this._settingsModule.AddMute(member.GetUserId(), args.Guild.GetGuildId(), new ModeratorId(args.Guild.CurrentMember.Id), sin.Id, muteEndTime);
 
         var muteRole = await args.Guild.GetRoleOrDefaultAsync(muteRoleId.Value);
 

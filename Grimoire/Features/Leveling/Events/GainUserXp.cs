@@ -69,16 +69,16 @@ public sealed partial class GainUserXp(
         await dbContext.XpHistory.AddAsync(
             new XpHistory
             {
-                Xp = levelingSettingEntry.Amount,
+                Xp = levelingSettingEntry.Amount.Value,
                 UserId = args.GetAuthorUserId(),
                 GuildId = member.GetGuildId(),
-                TimeOut = DateTimeOffset.UtcNow + levelingSettingEntry.TextTime,
+                TimeOut = DateTimeOffset.UtcNow + levelingSettingEntry.XpTimeoutPeriod.Value,
                 Type = XpHistoryType.Earned
             });
         await dbContext.SaveChangesAsync();
 
         var previousLevel = levelingSettingEntry.GetLevelFromXp(xp);
-        var currentLevel = levelingSettingEntry.GetLevelFromXp(xp + levelingSettingEntry.Amount);
+        var currentLevel = levelingSettingEntry.GetLevelFromXp(xp + levelingSettingEntry.Amount.Value);
 
         if (previousLevel < currentLevel)
             await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed

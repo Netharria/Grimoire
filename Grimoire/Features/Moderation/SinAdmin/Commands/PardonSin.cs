@@ -33,39 +33,34 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
         var guild = ctx.Guild!;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var result = await dbContext.Sins
-            .Where(sin => sin.Id == sinId)
-            .Where(sin => sin.GuildId == guild.GetGuildId())
-            .Include(sin => sin.Pardon)
-            .Select(sin => new
-            {
+        var userName = await dbContext.Sins
+            .Where(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId())
+            .Select(sin => (Username?)dbContext.UsernameHistory
                 // ReSharper disable AccessToDisposedClosure
-                // ReSharper enable AccessToDisposedClosure
-                Sin = sin,
-                UserName = (Username?)dbContext.UsernameHistory
-                    .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
-                    .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
-                    .Select(usernameHistory => usernameHistory.Username)
-                    .FirstOrDefault()
-            })
+                .Where(h => h.UserId == sin.UserId)
+                .OrderByDescending(h => h.Timestamp)
+                .Select(h => h.Username)
+                // ReSharper restore AccessToDisposedClosure
+                .FirstOrDefault())
             .FirstOrDefaultAsync();
 
-        if (result is null)
+        if (userName is null)
         {
             await ctx.ReplyAsync(GrimoireColor.Red, "Could not find a sin with that ID.");
             return;
         }
 
-        if (result.Sin.Pardon is not null)
-            result.Sin.Pardon.Reason = reason;
-        else
-            result.Sin.Pardon = new Pardon
-            {
-                SinId = sinId, GuildId = guild.GetGuildId(), ModeratorId = ctx.GetModeratorId(), Reason = reason
-            };
+        dbContext.Pardons.Add(new Pardon
+        {
+            SinId = sinId,
+            GuildId = guild.GetGuildId(),
+            ModeratorId = ctx.GetModeratorId(),
+            Reason = reason,
+            SetAt = DateTimeOffset.UtcNow
+        });
         await dbContext.SaveChangesAsync();
 
-        var message = $"**ID:** {sinId} **User:** {result.UserName}";
+        var message = $"**ID:** {sinId} **User:** {userName}";
 
         await ctx.ReplyAsync(GrimoireColor.Green, message, "Pardoned");
 
@@ -75,7 +70,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
             GuildLogType = GuildLogType.Moderation,
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor("Pardon")
-                .AddField("User", result.UserName?.Value ?? "Unknown", true)
+                .AddField("User", userName?.Value ?? "Unknown", true)
                 .AddField("Sin Id", sinId.ToString(), true)
                 .AddField("Moderator", ctx.User.Mention, true)
                 .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason, true)

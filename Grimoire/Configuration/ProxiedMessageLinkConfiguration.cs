@@ -5,10 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
 
+[ExcludeFromCodeCoverage]
 internal sealed class ProxiedMessageLinkConfiguration : IEntityTypeConfiguration<ProxiedMessageLink>
 {
     public void Configure(EntityTypeBuilder<ProxiedMessageLink> builder)
@@ -27,10 +29,10 @@ internal sealed class ProxiedMessageLinkConfiguration : IEntityTypeConfiguration
             .HasConversion(e => e.Value, value => new MessageId(value))
             .IsRequired();
         builder.Property(x => x.SystemId)
-            .IsRequired(false)
-            .HasMaxLength(256);
+            .HasMaxLength(256)
+            .IsRequired();
         builder.Property(x => x.MemberId)
-            .IsRequired(false)
-            .HasMaxLength(256);
+            .HasMaxLength(256)
+            .IsRequired();
     }
 }

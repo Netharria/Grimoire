@@ -30,42 +30,39 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
     {
         await ctx.DeferResponseAsync();
 
-
         var guild = ctx.Guild!;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var result = await dbContext.Sins
-            .Where(sin => sin.Id == sinId)
-            .Where(sin => sin.GuildId == guild.GetGuildId())
-            .Select(sin => new
-            {
+        var userName = await dbContext.Sins
+            .Where(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId())
+            .Select(sin => (Username?)dbContext.UsernameHistory
                 // ReSharper disable AccessToDisposedClosure
-                Sin = sin,
-                UserName = (Username?)dbContext.UsernameHistory
-                    .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
-                    .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
-                    .Select(usernameHistory => usernameHistory.Username)
-                    .FirstOrDefault()
+                .Where(h => h.UserId == sin.UserId)
+                .OrderByDescending(h => h.Timestamp)
+                .Select(h => h.Username)
                 // ReSharper restore AccessToDisposedClosure
-            })
+                .FirstOrDefault())
             .FirstOrDefaultAsync();
 
-        if (result is null)
+        if (userName is null)
         {
             await ctx.SendErrorResponseAsync("Could not find a sin with that ID.");
             return;
         }
 
-        result.Sin.Reason = reason;
-
+        dbContext.SinReasonHistory.Add(new SinReasonHistory
+        {
+            SinId = sinId,
+            Reason = reason,
+            ModeratorId = ctx.GetModeratorId(),
+            SetAt = DateTimeOffset.UtcNow
+        });
         await dbContext.SaveChangesAsync();
-
-        var message = $"**ID:** {sinId} **User:** {result.UserName}";
 
         await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
             .WithAuthor("Reason Updated")
             .AddField("Id", sinId.ToString(), true)
-            .AddField("User", result.UserName?.Value ?? "Unknown", true)
+            .AddField("User", userName?.Value ?? "Unknown", true)
             .AddField("Reason", reason)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green));
@@ -75,7 +72,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Green,
-            Description = $"{ctx.User.Mention} updated reason to {reason} for {message}"
+            Description = $"{ctx.User.Mention} updated reason to {reason} for **ID:** {sinId} **User:** {userName}"
         });
     }
 }

@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -8,7 +8,6 @@
 using System.Globalization;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
-using Grimoire.Settings.Helpers;
 
 namespace Grimoire.Settings.Services;
 
@@ -29,30 +28,22 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
         => ParseChannelId(await GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken));
 
-    public Task<SettingsResult> SetLogChannelSetting(
+    public async Task<Result<ChannelId?>> SetLogChannelSetting(
         GuildLogType guildLogType,
         GuildId guildId,
         ModeratorId moderatorId,
         ChannelId? channelId,
         CancellationToken cancellationToken = default)
-    {
-        if (channelId is null)
-            return SetGuildSetting(
-                new GuildSettingDisabled
-                {
-                    GuildId = guildId,
-                    Type = guildLogType.ToGuildSettingType(),
-                    SetBy = moderatorId,
-                    SetAt = DateTimeOffset.UtcNow
-                }, cancellationToken);
-        return SetGuildSetting(
-            new GuildSettingCustomValue
-            {
-                GuildId = guildId,
-                Type = guildLogType.ToGuildSettingType(),
-                SetBy = moderatorId,
-                SetAt = DateTimeOffset.UtcNow,
-                Value = channelId.Value.Value.ToString(CultureInfo.InvariantCulture)
-            }, cancellationToken);
-    }
+        => (channelId switch
+        {
+            not null => await SetGuildSetting(
+                new GuildSettingCustomValue(guildLogType.ToGuildSettingType(), guildId, moderatorId,
+                    DateTimeOffset.UtcNow,
+                    channelId.Value.Value.ToString(CultureInfo.InvariantCulture)),
+                cancellationToken),
+            _ => await SetGuildSetting(
+                new GuildSettingDisabled(guildLogType.ToGuildSettingType(), guildId, moderatorId,
+                    DateTimeOffset.UtcNow),
+                cancellationToken)
+        }).Map(_ => channelId);
 }

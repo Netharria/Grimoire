@@ -39,8 +39,15 @@ public sealed partial class PublishCommands
                     .OrderByDescending(x => x.Timestamp)
                     .First().Username,
                 sin.SinOn,
-                sin.Reason,
-                PublishedBanId = (MessageId?)sin.PublishMessages.First(x => x.PublishType == PublishType.Ban).MessageId
+                Reason = dbContext.SinReasonHistory
+                    .Where(r => r.SinId == sin.Id)
+                    .OrderByDescending(r => r.SetAt)
+                    .Select(r => r.Reason)
+                    .FirstOrDefault() ?? string.Empty,
+                PublishedBanId = sin.PublishMessages
+                    .Where(x => x.PublishType == PublishType.Ban)
+                    .Select(x => (MessageId?)x.MessageId)
+                    .FirstOrDefault()
                 // ReSharper restore AccessToDisposedClosure
             })
             .FirstOrDefaultAsync();

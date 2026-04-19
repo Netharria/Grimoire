@@ -39,7 +39,7 @@ public sealed partial class LevelSettingsCommandGroup
             LevelSettingsOptions.Amount => SettingsModule.LevelSettings.Amount,
             LevelSettingsOptions.Base => SettingsModule.LevelSettings.Base,
             LevelSettingsOptions.Modifier => SettingsModule.LevelSettings.Modifier,
-            LevelSettingsOptions.TextTime => SettingsModule.LevelSettings.TextTime,
+            LevelSettingsOptions.TextTime => SettingsModule.LevelSettings.XpTimeoutPeriod,
             _ => throw new UnreachableException("Invalid setting.")
         };
 

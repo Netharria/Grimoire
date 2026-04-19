@@ -9,9 +9,12 @@ namespace Grimoire.Extensions;
 
 public static class DiscordMessageExtensions
 {
-    [Pure]
-    public static MessageId GetMessageId(this DiscordMessage message) => new(message.Id);
+    extension(DiscordMessage message)
+    {
+        [Pure]
+        public MessageId GetMessageId() => new(message.Id);
 
-    [Pure]
-    public static MessageContent GetMessageContent(this DiscordMessage message) => new(message.Content);
+        [Pure]
+        public MessageContent GetMessageContent() => new(message.Content);
+    }
 }

@@ -30,42 +30,37 @@ public sealed class BulkMessageDeletedEvent(
 
         if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()))
             return;
+
         var messageIds = args.Messages.Select(x => x.GetMessageId()).ToHashSet();
+        var guildId = args.Guild.GetGuildId();
+
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var messages = await dbContext.MessageHistory
+
+        var messages = await dbContext.Messages
             .AsNoTracking()
-            .Where(history => history.GuildId == args.Guild.GetGuildId())
-            .Where(history => messageIds.Contains(history.MessageId))
-            .GroupBy(history => new { history.MessageId, history.GuildId })
-            .Select(historyGroup => new MessageDto
-                {
-                    MessageId = historyGroup.Key.MessageId,
-                    // ReSharper disable AccessToDisposedClosure
-                    UserId = dbContext.Messages
-                        .Where(attachment => attachment.Id == historyGroup.Key.MessageId)
-                        .Select(attachment => attachment.UserId)
-                        .FirstOrDefault(),
-                    MessageContent = historyGroup.MaxBy(history => history.TimeStamp)!.MessageContent,
-                    Attachments = dbContext.Attachments
-                        .Where(attachment => attachment.MessageId == historyGroup.Key.MessageId)
-                        .Select(x =>
-                            new AttachmentDto { Id = x.Id, FileName = x.FileName })
-                    // ReSharper restore AccessToDisposedClosure
-                }
-            ).ToArrayAsync();
+            .Where(m => m.GuildId == guildId && messageIds.Contains(m.Id))
+            .Select(m => new MessageDto
+            {
+                MessageId = m.Id,
+                UserId = m.UserId,
+                // ReSharper disable AccessToDisposedClosure
+                Content = dbContext.MessageHistory
+                    .OfType<MessageHistoryContentEntry>()
+                    .Where(h => h.MessageId == m.Id)
+                    .OrderByDescending(h => h.TimeStamp)
+                    .Select(h => (MessageContent?)h.Content)
+                    .FirstOrDefault(),
+                Attachments = m.Attachments
+                    .Select(a => new AttachmentDto { Id = a.Id, FileName = a.FileName })
+                // ReSharper restore AccessToDisposedClosure
+            })
+            .ToArrayAsync();
+
         if (messages.Length == 0)
             return;
 
-        var messageHistory = messages.Select(x =>
-            new MessageHistory
-            {
-                MessageId = x.MessageId,
-                Action = MessageAction.Deleted,
-                GuildId = args.Guild.GetGuildId(),
-                MessageContent = x.MessageContent
-            });
-
-        await dbContext.MessageHistory.AddRangeAsync(messageHistory);
+        await dbContext.MessageHistory.AddRangeAsync(
+            messages.Select(x => new MessageDeletedEntry { MessageId = x.MessageId, GuildId = guildId }));
         await dbContext.SaveChangesAsync();
 
         var embed = new DiscordEmbedBuilder()
@@ -75,36 +70,32 @@ public sealed class BulkMessageDeletedEvent(
                              "Full message dump attached.")
             .WithColor(GrimoireColor.Red);
 
-
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
-            {
-                GuildId = args.Guild.GetGuildId(),
-                GuildLogType = GuildLogType.BulkMessageDeleted,
-                Message = new DiscordMessageBuilder()
-                    .AddEmbed(embed)
-                    .AddFile($"{DateTime.UtcNow:r}.txt",
-                        await BuildBulkMessageLogFile(messages, args.Guild))
-            }
-        );
+        {
+            GuildId = guildId,
+            GuildLogType = GuildLogType.BulkMessageDeleted,
+            Message = new DiscordMessageBuilder()
+                .AddEmbed(embed)
+                .AddFile($"{DateTime.UtcNow:r}.txt",
+                    await BuildBulkMessageLogFile(messages, args.Guild))
+        });
     }
 
-    private static async Task<MemoryStream> BuildBulkMessageLogFile(IEnumerable<MessageDto> messages,
-        DiscordGuild guild)
+    private static async Task<MemoryStream> BuildBulkMessageLogFile(
+        IEnumerable<MessageDto> messages, DiscordGuild guild)
     {
         var stringBuilder = new StringBuilder();
-        foreach (var messageDto in messages)
+        foreach (var msg in messages)
         {
-            var author = await guild.GetMemberOrDefaultAsync(messageDto.UserId);
+            var author = await guild.GetMemberOrDefaultAsync(msg.UserId);
             stringBuilder.AppendFormat(
-                    "Author: {0} ({1})\n" +
-                    "Id: {2}\n" +
-                    "Content: {3}\n" +
-                    (messageDto.Attachments.Any() ? "Attachments: {4}\n" : string.Empty),
+                    "Author: {0} ({1})\nId: {2}\nContent: {3}\n"
+                    + (msg.Attachments.Any() ? "Attachments: {4}\n" : string.Empty),
                     author?.Mention ?? "Unknown User",
-                    messageDto.UserId,
-                    messageDto.MessageId,
-                    messageDto.MessageContent,
-                    string.Join("\n", messageDto.Attachments.Select(x => x.FileName)))
+                    msg.UserId,
+                    msg.MessageId,
+                    msg.Content,
+                    string.Join("\n", msg.Attachments.Select(x => x.FileName)))
                 .AppendLine();
         }
 
@@ -120,7 +111,7 @@ public sealed class BulkMessageDeletedEvent(
     {
         public required UserId UserId { get; init; }
         public required MessageId MessageId { get; init; }
-        public required MessageContent? MessageContent { get; init; }
+        public required MessageContent? Content { get; init; }
         public required IEnumerable<AttachmentDto> Attachments { get; init; }
     }
 }

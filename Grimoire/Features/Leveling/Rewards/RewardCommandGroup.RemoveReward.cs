@@ -7,6 +7,7 @@
 
 
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Rewards;
@@ -23,16 +24,34 @@ public sealed partial class RewardCommandGroup
 
         await ctx.DeferResponseAsync();
 
-        await this._settingsModule.SetRewardAsync(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), 0, null,
-            false);
+        await
+                Reward.Create(
+                    role.GetRoleId(),
+                    guild.GetGuildId(),
+                    1,
+                    null,
+                    ctx.GetModeratorId(),
+                    DateTimeOffset.UtcNow,
+                    true)
+            .BindAsync(async reward => (await this._settingsModule.SetRewardAsync(reward)).ToValidation())
+            .Match(
+                reward => OnAddSuccess(ctx, reward, role, guild),
+                errors => OnFail(ctx, errors)
+            );
+    }
 
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple, $"Removed {role.Mention} reward");
+    private async Task OnRemoveSuccess(CommandContext ctx, Reward reward, DiscordRole role, DiscordGuild guild)
+    {
+        var responseMessage =
+            $"{ctx.User.Mention} removed {role.Mention} reward";
+
+        await ctx.ReplyAsync(GrimoireColor.DarkPurple, responseMessage);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
+            GuildLogType = GuildLogType.Leveling,
             Color = GrimoireColor.DarkPurple,
-            Description = $"{ctx.User.Mention} removed {role.Mention} reward"
+            Description = responseMessage
         });
     }
 }

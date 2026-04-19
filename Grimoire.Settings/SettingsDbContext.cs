@@ -20,7 +20,6 @@ public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> option
     internal DbSet<Mute> Mutes { get; init; }
     internal DbSet<Reward> Rewards { get; init; }
     internal DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; }
-    internal DbSet<Tracker> Trackers { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

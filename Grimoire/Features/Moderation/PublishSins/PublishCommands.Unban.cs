@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -38,10 +38,23 @@ public sealed partial class PublishCommands
                     .Where(history => history.UserId == x.UserId)
                     .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
                     .First().Username,
-                x.Pardon,
-                UnbanMessageId = (MessageId?)x.PublishMessages
-                    .First(publishedMessage => publishedMessage.PublishType == PublishType.Unban)
-                    .MessageId
+                LatestPardon = dbContext.Pardons
+                    .Where(p => p.SinId == x.Id)
+                    .OrderByDescending(p => p.SetAt)
+                    .Select(p => new
+                    {
+                        p.Reason,
+                        PardonDate = dbContext.Pardons
+                            .Where(p2 => p2.SinId == x.Id)
+                            .OrderBy(p2 => p2.SetAt)
+                            .Select(p2 => p2.SetAt)
+                            .First()
+                    })
+                    .FirstOrDefault(),
+                UnbanMessageId = x.PublishMessages
+                    .Where(m => m.PublishType == PublishType.Unban)
+                    .Select(m => (MessageId?)m.MessageId)
+                    .FirstOrDefault()
                 // ReSharper restore AccessToDisposedClosure
             })
             .FirstOrDefaultAsync();
@@ -52,15 +65,15 @@ public sealed partial class PublishCommands
             return;
         }
 
-        if (result.Pardon is null)
+        if (result.LatestPardon is null)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The ban must be pardoned first before the unban can be published.");
             return;
         }
 
-        var banLogMessage = await SendPublicLogMessage(ctx, result.UserId, result.Username, result.Pardon.Reason,
-            result.UnbanMessageId, result.Pardon.PardonDate, PublishType.Unban);
+        var banLogMessage = await SendPublicLogMessage(ctx, result.UserId, result.Username,
+            result.LatestPardon.Reason, result.UnbanMessageId, result.LatestPardon.PardonDate, PublishType.Unban);
 
         if (banLogMessage is null)
         {
@@ -78,7 +91,6 @@ public sealed partial class PublishCommands
                 });
             await dbContext.SaveChangesAsync();
         }
-
 
         await ctx.ReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

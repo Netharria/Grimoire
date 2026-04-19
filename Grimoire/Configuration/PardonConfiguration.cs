@@ -15,14 +15,17 @@ internal sealed class PardonConfiguration : IEntityTypeConfiguration<Pardon>
 {
     public void Configure(EntityTypeBuilder<Pardon> builder)
     {
-        builder.HasKey(e => e.SinId);
+        builder.HasKey(e => new { e.SinId, e.SetAt });
+
+        builder.HasIndex(e => new { e.SinId, e.SetAt })
+            .IsDescending(false, true);
+
         builder.HasOne(e => e.Sin)
-            .WithOne(e => e.Pardon)
-            .HasForeignKey<Pardon>(e => e.SinId)
+            .WithMany(e => e.Pardons)
+            .HasForeignKey(e => e.SinId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
-        builder.Property(e => e.PardonDate)
-            .HasDefaultValueSql("now()");
+
         builder.Property(e => e.Reason)
             .HasMaxLength(1000)
             .IsRequired();

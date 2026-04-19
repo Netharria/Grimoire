@@ -39,7 +39,14 @@ public partial class BanAddedEvent(
             .OrderByDescending(x => x.SinOn)
             .Select(sin => new LastSin
             {
-                SinId = sin.Id, ModeratorId = sin.ModeratorId, Reason = sin.Reason, SinOn = sin.SinOn
+                SinId = sin.Id,
+                ModeratorId = sin.ModeratorId,
+                Reason = dbContext.SinReasonHistory
+                    .Where(r => r.SinId == sin.Id)
+                    .OrderByDescending(r => r.SetAt)
+                    .Select(r => r.Reason)
+                    .FirstOrDefault() ?? string.Empty,
+                SinOn = sin.SinOn
             })
             .FirstOrDefaultAsync();
         if (lastBan is null || lastBan.SinOn < DateTimeOffset.UtcNow.AddSeconds(-30))
@@ -49,29 +56,41 @@ public partial class BanAddedEvent(
                     await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(DiscordAuditLogActionType.Ban,
                         1500);
 
-                var sin = await dbContext.Sins.AddAsync(
-                    new Sin
-                    {
-                        GuildId = args.Guild.GetGuildId(),
-                        UserId = args.Member.GetUserId(),
-                        Reason = banAuditLog?.Target.Id != args.Member.Id
-                            ? string.Empty
-                            : banAuditLog.Reason ?? string.Empty,
-                        SinType = SinType.Ban,
-                        ModeratorId = banAuditLog?.Target.Id != args.Member.Id
-                            ? null
-                            : banAuditLog.UserResponsible?.Id is not null
-                                ? new ModeratorId(banAuditLog.UserResponsible.Id)
-                                : null
-                    });
+                var auditReason = banAuditLog?.Target.Id != args.Member.Id
+                    ? string.Empty
+                    : banAuditLog.Reason ?? string.Empty;
+                ModeratorId? auditModeratorId = banAuditLog?.Target.Id != args.Member.Id
+                    ? null
+                    : banAuditLog.UserResponsible?.Id is not null
+                        ? new ModeratorId(banAuditLog.UserResponsible.Id)
+                        : null;
+
+                var sin = new Sin
+                {
+                    GuildId = args.Guild.GetGuildId(),
+                    UserId = args.Member.GetUserId(),
+                    SinType = SinType.Ban,
+                    ModeratorId = auditModeratorId,
+                    ReasonHistory = string.IsNullOrWhiteSpace(auditReason) ? [] :
+                    [
+                        new SinReasonHistory
+                        {
+                            SinId = default,
+                            Reason = auditReason,
+                            ModeratorId = auditModeratorId,
+                            SetAt = DateTimeOffset.UtcNow
+                        }
+                    ]
+                };
+                dbContext.Sins.Add(sin);
                 await dbContext.SaveChangesAsync();
 
                 lastBan = new LastSin
                 {
-                    SinId = sin.Entity.Id,
-                    ModeratorId = sin.Entity.ModeratorId,
-                    Reason = sin.Entity.Reason,
-                    SinOn = sin.Entity.SinOn
+                    SinId = sin.Id,
+                    ModeratorId = sin.ModeratorId,
+                    Reason = auditReason,
+                    SinOn = sin.SinOn
                 };
             }
             catch (Exception ex) when (ex is UnauthorizedException or ServerErrorException)

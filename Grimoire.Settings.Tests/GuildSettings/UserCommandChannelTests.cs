@@ -40,13 +40,13 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
     }
 
     [Fact]
-    public async Task RedundantWrite_ReturnsUnchanged()
+    public async Task RedundantWrite_ReturnsNotModified()
     {
         await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId);
 
         var result = await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId);
 
-        result.ShouldBeOfType<SettingsUnchanged>();
+        result.ShouldBeOfType<Result<ChannelId?>.NotModified>();
     }
 
     [Fact]

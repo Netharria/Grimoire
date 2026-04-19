@@ -16,6 +16,6 @@ public sealed record ProxiedMessageLink
     public Message? ProxyMessage { get; init; }
     public required MessageId OriginalMessageId { get; init; }
     public Message? OriginalMessage { get; init; }
-    public string? SystemId { get; init; }
-    public string? MemberId { get; init; }
+    public required string SystemId { get; init; }
+    public required string MemberId { get; init; }
 }

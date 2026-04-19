@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Collections.Frozen;
+using System.Diagnostics;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Helpers;
@@ -25,11 +26,15 @@ public sealed partial class SettingsModule
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
             return true;
         var allIgnoredItems = await GetAllIgnoredItems(guildId, cancellationToken);
-        var rawRoleIds = userRoleIds.Select(roleId => roleId.Value).ToHashSet();
         return allIgnoredItems
-            .Any(ignoredItem => ignoredItem.Id == userId.Value
-                                || ignoredItem.Id == channelId.Value
-                                || rawRoleIds.Contains(ignoredItem.Id));
+            .Any(ignoredItem =>
+                ignoredItem switch
+                {
+                    IgnoredChannel channel => channel.ChannelId == channelId,
+                    IgnoredMember member => member.UserId == userId && member.GuildId == guildId,
+                    IgnoredRole role => userRoleIds.Contains(role.RoleId),
+                    _ => throw new UnreachableException()
+                });
     }
 
     public async Task<bool> IsMemberIgnored(
@@ -41,10 +46,15 @@ public sealed partial class SettingsModule
         if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
             return true;
         var allIgnoredItems = await GetAllIgnoredItems(guildId, cancellationToken);
-        var rawRoleIds = userRoleIds.Select(roleId => roleId.Value).ToHashSet();
         return allIgnoredItems
-            .Any(ignoredItem => ignoredItem.Id == userId.Value
-                                || rawRoleIds.Contains(ignoredItem.Id));
+            .Any(ignoredItem =>
+                ignoredItem switch
+                {
+                    IgnoredChannel => false,
+                    IgnoredMember member => member.UserId == userId && member.GuildId == guildId,
+                    IgnoredRole role => userRoleIds.Contains(role.RoleId),
+                    _ => throw new UnreachableException()
+                });
     }
 
     public async Task<IReadOnlySet<XpIgnoredItem>> GetAllIgnoredItems(
@@ -64,7 +74,7 @@ public sealed partial class SettingsModule
                                    .XpIgnoredItems
                                    .AsNoTracking()
                                    .Where(ignoredItem => ignoredItem.GuildId == guildIdState)
-                                   .GroupBy(ignoredItem => ignoredItem.Id)
+                                   .GroupBy(ignoredItem => EF.Property<ulong>(ignoredItem, "Id"))
                                    .Select(ignoredGroup
                                        => ignoredGroup.OrderByDescending(item => item.SetAt)
                                            .First())
@@ -77,16 +87,18 @@ public sealed partial class SettingsModule
             cancellationToken: cancellationToken);
 
 
-    public async Task<SettingsResult> AppendIgnoredItemsEvent(
+    public async Task<Result<IReadOnlySet<XpIgnoredItem>>> AppendIgnoredItemsEvent(
         GuildId guildId,
         IReadOnlySet<XpIgnoredItem> itemsToIgnore,
         CancellationToken cancellationToken = default)
     {
         if (itemsToIgnore.Count == 0)
-            return SettingsResult.Unchanged();
+            return new Result<IReadOnlySet<XpIgnoredItem>>.NotModified(
+                new Error("xp-ignored-items.empty", "No items were provided to ignore."));
         if (itemsToIgnore.Any(ignoredItem => ignoredItem.GuildId != guildId))
-            return SettingsResult.Invalid(
-                "The guild id provided in the ignored items does not match the expected guild id.");
+            return Result<IReadOnlySet<XpIgnoredItem>>.Fail(
+                new Error("xp-ignored-items.guild-id.mismatch",
+                    "The guild id provided in the ignored items does not match the expected guild id."));
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         dbContext.XpIgnoredItems.AddRange(itemsToIgnore);
@@ -94,6 +106,6 @@ public sealed partial class SettingsModule
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await this._cache.RemoveAsync(CacheKey.XpIgnoredItems(guildId), cancellationToken);
-        return SettingsResult.Written();
+        return Result<IReadOnlySet<XpIgnoredItem>>.Ok(itemsToIgnore);
     }
 }

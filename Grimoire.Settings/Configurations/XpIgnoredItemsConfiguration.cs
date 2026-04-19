@@ -15,12 +15,12 @@ internal sealed class XpIgnoredItemsConfiguration : IEntityTypeConfiguration<XpI
 {
     public void Configure(EntityTypeBuilder<XpIgnoredItem> builder)
     {
-        builder.HasKey(e => new { e.GuildId, e.Id, e.SetAt });
-        builder.Property(e => e.Id)
+        builder.HasKey(nameof(XpIgnoredItem.GuildId), "Id", nameof(XpIgnoredItem.SetAt));
+        builder.Property<ulong>("Id")
             .ValueGeneratedNever()
             .IsRequired();
 
-        builder.HasIndex(e => new { e.GuildId, e.Id, e.SetAt })
+        builder.HasIndex(nameof(XpIgnoredItem.GuildId), "Id", nameof(XpIgnoredItem.SetAt))
             .IsDescending(false, false, true);
 
         builder.Property(e => e.GuildId)

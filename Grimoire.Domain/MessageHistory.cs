@@ -10,22 +10,26 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed record MessageHistory
+public abstract record MessageHistoryEntry
 {
     public required MessageId MessageId { get; init; }
-    public Message? Message { get; init; }
     public required GuildId GuildId { get; init; }
-    public required MessageAction Action { get; init; }
-    public required MessageContent? MessageContent { get; init; }
-    public ModeratorId? DeletedByModeratorId { get; init; }
     public DateTimeOffset TimeStamp { get; } = DateTimeOffset.UtcNow;
+    public Message? Message { get; init; }
 }
 
-public enum MessageAction
+public abstract record MessageHistoryContentEntry : MessageHistoryEntry
 {
-    Created,
-    Updated,
-    Deleted
+    public required MessageContent Content { get; init; }
+}
+
+public sealed record MessageCreatedEntry : MessageHistoryContentEntry;
+public sealed record MessageEditedEntry : MessageHistoryContentEntry;
+public sealed record MessageDeletedEntry : MessageHistoryEntry;
+
+public sealed record MessageDeletedByModeratorEntry : MessageHistoryEntry
+{
+    public required ModeratorId ModeratorId { get; init; }
 }
 
 public readonly record struct MessageContent(string Content)

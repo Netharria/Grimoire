@@ -20,6 +20,8 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
                 context.CustomCommands
                     .AsNoTracking()
                     .Where(x => x.GuildId == guildId)
+                    .Where(x => !context.CustomCommands.Any(y =>
+                        y.GuildId == x.GuildId && y.Name == x.Name && y.CreatedAt > x.CreatedAt))
                     .OrderBy(x =>
                         EF.Functions.FuzzyStringMatchLevenshtein(x.Name.Value.ToLower(), cleanedText.ToLower()))
                     .Take(5)

@@ -17,7 +17,7 @@ public enum GuildSettingType
     UserCommandChannel,
 
     //Leveling Settings
-    TextTime,
+    XpTimeoutPeriod,
     LevelScalingBase,
     LevelScalingModifier,
     XpGainAmount,

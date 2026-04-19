@@ -38,7 +38,7 @@ public partial class IgnoreCommandGroup
             {
                 DiscordUser => new IgnoredMember
                 {
-                    Id = item.Id,
+                    UserId = new UserId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
                     SetBy = ctx.GetModeratorId(),
@@ -46,7 +46,7 @@ public partial class IgnoreCommandGroup
                 },
                 DiscordRole => new IgnoredRole
                 {
-                    Id = item.Id,
+                    RoleId = new RoleId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
                     SetBy = ctx.GetModeratorId(),
@@ -54,7 +54,7 @@ public partial class IgnoreCommandGroup
                 },
                 DiscordChannel => new IgnoredChannel
                 {
-                    Id = item.Id,
+                    ChannelId = new ChannelId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
                     SetBy = ctx.GetModeratorId(),

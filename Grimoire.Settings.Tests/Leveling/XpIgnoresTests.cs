@@ -41,7 +41,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredMember
                 {
-                    Id = _userId.Value,
+                    UserId = _userId,
                     GuildId = _guildId,
                     SetBy = _modId,
                     SetAt = DateTimeOffset.UtcNow,
@@ -62,7 +62,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredChannel
                 {
-                    Id = _channelId.Value,
+                    ChannelId = _channelId,
                     GuildId = _guildId,
                     SetBy = _modId,
                     SetAt = DateTimeOffset.UtcNow,
@@ -83,7 +83,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredRole
                 {
-                    Id = _roleId.Value,
+                    RoleId = _roleId,
                     GuildId = _guildId,
                     SetBy = _modId,
                     SetAt = DateTimeOffset.UtcNow,
@@ -112,7 +112,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredChannel
                 {
-                    Id = _channelId.Value,
+                    ChannelId = _channelId,
                     GuildId = _guildId,
                     SetBy = _modId,
                     SetAt = DateTimeOffset.UtcNow,
@@ -120,27 +120,26 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
                 }
             });
 
-        // Channel ignores should not affect IsMemberIgnored.
         var result = await this._sut.IsMemberIgnored(_guildId, _userId, new HashSet<RoleId>());
 
         result.ShouldBeFalse();
     }
 
     [Fact]
-    public async Task AppendEmpty_ReturnsUnchanged()
+    public async Task AppendEmpty_ReturnsNotModified()
     {
         var result = await this._sut.AppendIgnoredItemsEvent(_guildId, new HashSet<XpIgnoredItem>());
 
-        result.ShouldBeOfType<SettingsUnchanged>();
+        result.ShouldBeOfType<Result<IReadOnlySet<XpIgnoredItem>>.NotModified>();
     }
 
     [Fact]
-    public async Task AppendMismatchedGuild_ReturnsInvalid()
+    public async Task AppendMismatchedGuild_ReturnsFail()
     {
         var wrongGuild = new GuildId(2UL);
         var item = new IgnoredChannel
         {
-            Id = _channelId.Value,
+            ChannelId = _channelId,
             GuildId = wrongGuild,
             SetBy = _modId,
             SetAt = DateTimeOffset.UtcNow,
@@ -149,7 +148,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
 
         var result = await this._sut.AppendIgnoredItemsEvent(_guildId, new HashSet<XpIgnoredItem> { item });
 
-        result.ShouldBeOfType<SettingsInvalid>();
+        result.ShouldBeOfType<Result<IReadOnlySet<XpIgnoredItem>>.Invalid>();
     }
 
     [Fact]
@@ -163,7 +162,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredChannel
                 {
-                    Id = _channelId.Value,
+                    ChannelId = _channelId,
                     GuildId = _guildId,
                     SetBy = _modId,
                     SetAt = past,
@@ -175,7 +174,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredChannel
                 {
-                    Id = _channelId.Value,
+                    ChannelId = _channelId,
                     GuildId = _guildId,
                     SetBy = _modId,
                     SetAt = now,
@@ -186,7 +185,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var items = await freshSut.GetAllIgnoredItems(_guildId);
 
-        items.ShouldNotContain(x => x.Id == _channelId.Value);
+        items.OfType<IgnoredChannel>().ShouldNotContain(c => c.ChannelId == _channelId);
     }
 
     [Fact]
@@ -199,43 +198,22 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
         await this._sut.AppendIgnoredItemsEvent(_guildId,
             new HashSet<XpIgnoredItem>
             {
-                new IgnoredChannel
-                {
-                    Id = _channelId.Value,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = t1,
-                    Enabled = true
-                }
+                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t1, Enabled = true }
             });
         await this._sut.AppendIgnoredItemsEvent(_guildId,
             new HashSet<XpIgnoredItem>
             {
-                new IgnoredChannel
-                {
-                    Id = _channelId.Value,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = t2,
-                    Enabled = false
-                }
+                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t2, Enabled = false }
             });
         await this._sut.AppendIgnoredItemsEvent(_guildId,
             new HashSet<XpIgnoredItem>
             {
-                new IgnoredChannel
-                {
-                    Id = _channelId.Value,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = t3,
-                    Enabled = true
-                }
+                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t3, Enabled = true }
             });
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var items = await freshSut.GetAllIgnoredItems(_guildId);
 
-        items.ShouldContain(x => x.Id == _channelId.Value);
+        items.OfType<IgnoredChannel>().ShouldContain(c => c.ChannelId == _channelId);
     }
 }

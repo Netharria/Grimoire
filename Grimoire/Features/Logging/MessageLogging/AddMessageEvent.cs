@@ -39,32 +39,28 @@ public sealed partial class AddMessageEvent(
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
-
         var message = new Message
         {
             Id = args.GetMessageId(),
             UserId = args.GetAuthorUserId(),
-            Attachments = args.Message.Attachments
+            Attachments = [.. args.Message.Attachments
                 .Where(x => !string.IsNullOrWhiteSpace(x.FileName))
-                .Select(x =>
-                    new Attachment
-                    {
-                        Id = new AttachmentId(x.Id),
-                        MessageId = new MessageId(args.Message.Id),
-                        FileName = x.FileName ?? string.Empty
-                    })
-                .ToArray(),
+                .Select(x => new Attachment
+                {
+                    Id = new AttachmentId(x.Id),
+                    MessageId = new MessageId(args.Message.Id),
+                    FileName = x.FileName ?? string.Empty
+                })],
             ChannelId = args.GetChannelId(),
             ReferencedMessageId = args.Message.ReferencedMessage?.GetMessageId(),
             GuildId = args.Guild.GetGuildId(),
             MessageHistory =
             [
-                new MessageHistory
+                new MessageCreatedEntry
                 {
                     MessageId = args.GetMessageId(),
-                    MessageContent = args.Message.GetMessageContent(),
                     GuildId = args.Guild.GetGuildId(),
-                    Action = MessageAction.Created
+                    Content = args.Message.GetMessageContent()
                 }
             ]
         };

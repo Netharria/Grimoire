@@ -11,34 +11,39 @@ namespace Grimoire.Extensions;
 
 public static class PermissionsExtensions
 {
-    public static DiscordPermissions GetLockPermissions(this DiscordPermissions permissions)
-        => permissions & PermissionValues.LockPermissions;
+    extension(DiscordPermissions permissions)
+    {
+        public DiscordPermissions GetLockPermissions()
+            => permissions & PermissionValues.LockPermissions;
 
-    public static DiscordPermissions SetLockPermissions(this DiscordPermissions permissions)
-        => permissions | PermissionValues.LockPermissions;
+        public DiscordPermissions SetLockPermissions()
+            => permissions + PermissionValues.LockPermissions;
 
-    public static DiscordPermissions RevokeLockPermissions(this DiscordPermissions permissions)
-        => permissions & ~PermissionValues.LockPermissions;
+        public DiscordPermissions RevokeLockPermissions()
+            => permissions - PermissionValues.LockPermissions;
+
+        public DiscordPermissions RevertLockPermissions(DiscordPermissions previousPermissions)
+            => permissions & (previousPermissions ^ ~PermissionValues.LockPermissions);
+
+        public DiscordPermissions RevertLockPermissions(long previousPermissions)
+            => permissions.RevertLockPermissions(new DiscordPermissions(previousPermissions));
+
+        public DiscordPermissions SetVoiceLockPermissions()
+            => permissions + PermissionValues.VoiceLockPermissions;
+
+        public DiscordPermissions RevokeVoiceLockPermissions()
+            => permissions - PermissionValues.VoiceLockPermissions;
+    }
 
     // ReSharper disable once MemberCanBePrivate.Global
-    public static DiscordPermissions RevertLockPermissions(this DiscordPermissions permissions,
-        DiscordPermissions previousPermissions)
-        => permissions & (previousPermissions ^ ~PermissionValues.LockPermissions);
-
-    public static DiscordPermissions RevertLockPermissions(this DiscordPermissions permissions,
-        long previousPermissions)
-        => permissions.RevertLockPermissions(new DiscordPermissions(previousPermissions));
 
 
-    public static DiscordPermissions SetVoiceLockPermissions(this DiscordPermissions permissions)
-        => permissions | PermissionValues.VoiceLockPermissions;
+    extension(DiscordOverwrite permissions)
+    {
+        public PreviouslyAllowedPermissions GetPreviouslyAllowedPermissions()
+            => new(long.Parse(permissions.Allowed.ToString()));
 
-    public static DiscordPermissions RevokeVoiceLockPermissions(this DiscordPermissions permissions)
-        => permissions & ~PermissionValues.VoiceLockPermissions;
-
-    public static PreviouslyAllowedPermissions GetPreviouslyAllowedPermissions(this DiscordOverwrite permissions)
-        => new(long.Parse(permissions.Allowed.ToString()));
-
-    public static PreviouslyDeniedPermissions GetPreviouslyDeniedPermissions(this DiscordOverwrite permissions)
-        => new(long.Parse(permissions.Denied.ToString()));
+        public PreviouslyDeniedPermissions GetPreviouslyDeniedPermissions()
+            => new(long.Parse(permissions.Denied.ToString()));
+    }
 }

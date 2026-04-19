@@ -33,7 +33,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             var muteRole = await settingsModule.GetConfiguredMuteRole(guild.GetGuildId(), cancellationToken);
 
             if (user is null) continue;
-            var role = await guild.GetRoleOrDefaultAsync(muteRole);
+            var role = await guild.GetRoleOrDefaultAsync(muteRole, cancellationToken);
             if (role is null) continue;
             try
             {
@@ -51,7 +51,8 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                     }, cancellationToken);
             }
 
-            await settingsModule.RemoveMute(expiredMute.UserId, expiredMute.GuildId, cancellationToken);
+            await settingsModule.RemoveMute(expiredMute.UserId, expiredMute.GuildId,
+                new ModeratorId(discordClient.CurrentUser.Id), cancellationToken);
 
             var embed = new DiscordEmbedBuilder()
                 .WithDescription($"Mute on {user.Mention} has expired.");

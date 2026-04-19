@@ -6,8 +6,9 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Collections.Frozen;
-using System.Globalization;
+using System.Diagnostics;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Values;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Helpers;
 
@@ -17,7 +18,7 @@ public sealed partial class SettingsModule
 {
     public enum LevelSettings
     {
-        TextTime,
+        XpTimeoutPeriod,
         Base,
         Modifier,
         Amount
@@ -25,19 +26,11 @@ public sealed partial class SettingsModule
 
     private static readonly FrozenSet<GuildSettingType> _levelingSettingKeys =
     [
-        GuildSettingType.TextTime,
+        GuildSettingType.XpTimeoutPeriod,
         GuildSettingType.LevelScalingBase,
         GuildSettingType.LevelScalingModifier,
         GuildSettingType.XpGainAmount
     ];
-
-    private readonly LevelingSettingEntry _defaultLevelingSettings = new()
-    {
-        Amount = new XpGainAmount(5),
-        Base = new LevelScalingBase(15),
-        Modifier = new LevelScalingModifier(50),
-        TextTime = TimeSpan.FromMinutes(3)
-    };
 
     public async Task<LevelingSettingEntry> GetLevelingSettings(
         GuildId guildId,
@@ -63,102 +56,58 @@ public sealed partial class SettingsModule
 
         return new LevelingSettingEntry
         {
-            Amount = TryReadPositiveInt(latestByKey, GuildSettingType.XpGainAmount, out var amount)
-                ? new XpGainAmount(amount)
-                : this._defaultLevelingSettings.Amount,
-            Base = TryReadPositiveInt(latestByKey, GuildSettingType.LevelScalingBase, out var @base)
-                ? new LevelScalingBase(@base)
-                : this._defaultLevelingSettings.Base,
-            Modifier = TryReadPositiveInt(latestByKey, GuildSettingType.LevelScalingModifier, out var modifier)
-                ? new LevelScalingModifier(modifier)
-                : this._defaultLevelingSettings.Modifier,
-            TextTime = TryReadValidTextTime(latestByKey, CultureInfo.InvariantCulture, out var timeSpan)
-                ? timeSpan
-                : this._defaultLevelingSettings.TextTime
+            Amount = XpGainAmount.Create(
+                    latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount))
+                .OrElse(XpGainAmount.Default),
+            Base = LevelScalingBase.Create(
+                    latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase))
+                .OrElse(LevelScalingBase.Default),
+            Modifier = LevelScalingModifier.Create(
+                    latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier))
+                .OrElse(LevelScalingModifier.Default),
+            XpTimeoutPeriod = XpTimeoutPeriod.Create(
+                    latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod))
+                .OrElse(XpTimeoutPeriod.Default)
         };
-
-        static bool TryReadValidTextTime(
-            IReadOnlyDictionary<GuildSettingType, string?> map,
-            CultureInfo cultureInfo,
-            out TimeSpan value)
-        {
-            if (!map.TryGetValue(GuildSettingType.TextTime, out var timeSpanStr)
-                || !TimeSpan.TryParse(timeSpanStr, cultureInfo, out var timeSpan)
-                || timeSpan <= TimeSpan.Zero
-                || timeSpan.TotalMinutes > 60)
-            {
-                value = TimeSpan.Zero;
-                return false;
-            }
-
-            value = timeSpan;
-            return true;
-        }
-
-        static bool TryReadPositiveInt(
-            IReadOnlyDictionary<GuildSettingType, string?> map,
-            GuildSettingType key,
-            out int value)
-        {
-            value = 0;
-            return map.TryGetValue(key, out var str)
-                   && str is not null
-                   && int.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out value)
-                   && value >= 1;
-        }
     }
 
-    public async Task<SettingsResult> SetLevelingSettings(
+    public Task<Result<int>> SetLevelingSettings(
         GuildId guildId,
         ModeratorId setBy,
         LevelSettings settingToChange,
         int newValue,
         CancellationToken cancellationToken = default)
-    {
-        if (!LevelingConfigValid(settingToChange, newValue))
-            return SettingsResult.Invalid($"{settingToChange} value {newValue} is out of range.");
-
-        var result = await SetGuildSetting(
-            new GuildSettingCustomValue
-            {
-                GuildId = guildId,
-                Type = settingToChange switch
+        => CreateLevelingSetting(settingToChange, newValue)
+            .MatchAsync(
+                async x =>
                 {
-                    LevelSettings.TextTime => GuildSettingType.TextTime,
-                    LevelSettings.Base => GuildSettingType.LevelScalingBase,
-                    LevelSettings.Modifier => GuildSettingType.LevelScalingModifier,
-                    LevelSettings.Amount => GuildSettingType.XpGainAmount,
-                    _ => throw new ArgumentOutOfRangeException(nameof(settingToChange), settingToChange, null)
+                    var (settingType, setting) = x;
+                    var result = await SetGuildSetting(
+                        new GuildSettingCustomValue(settingType, guildId, setBy, DateTimeOffset.UtcNow, setting),
+                        cancellationToken);
+                    if (result is Result<GuildSetting>.Success)
+                        await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken);
+                    return result.Map(_ => newValue);
                 },
-                SetBy = setBy,
-                SetAt = DateTimeOffset.UtcNow,
-                Value = settingToChange switch
-                {
-                    LevelSettings.TextTime => TimeSpan.FromMinutes(newValue)
-                        .ToString("c", CultureInfo.InvariantCulture),
-                    _ => newValue.ToString(CultureInfo.InvariantCulture)
-                }
-            }, cancellationToken);
+                errors => Result<int>.Fail(errors));
 
-        if (result is SettingsWritten)
-            await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken);
-
-        return result;
-    }
-
-    private static bool LevelingConfigValid(LevelSettings settingToValidate, int setting)
-        => settingToValidate switch
+    private static Validation<(GuildSettingType, string)> CreateLevelingSetting(LevelSettings setting, int value)
+        => setting switch
         {
-            LevelSettings.Amount => setting is >= 1 and <= 100,
-            LevelSettings.Base => setting is >= 1 and <= 500,
-            LevelSettings.Modifier => setting is >= 1 and <= 200,
-            LevelSettings.TextTime => setting is >= 1 and <= 60,
-            _ => false
+            LevelSettings.Amount => XpGainAmount.Create(value).ToDatabaseString()
+                .Map(x => (GuildSettingType.XpGainAmount, x)),
+            LevelSettings.Base => LevelScalingBase.Create(value).ToDatabaseString()
+                .Map(x => (GuildSettingType.LevelScalingBase, x)),
+            LevelSettings.Modifier => LevelScalingModifier.Create(value).ToDatabaseString()
+                .Map(x => (GuildSettingType.LevelScalingModifier, x)),
+            LevelSettings.XpTimeoutPeriod => XpTimeoutPeriod.Create(value).ToDatabaseString()
+                .Map(x => (GuildSettingType.XpTimeoutPeriod, x)),
+            _ => throw new UnreachableException()
         };
 
     public sealed record LevelingSettingEntry
     {
-        public TimeSpan TextTime { get; init; }
+        public XpTimeoutPeriod XpTimeoutPeriod { get; init; }
         public LevelScalingBase Base { get; init; }
         public LevelScalingModifier Modifier { get; init; }
         public XpGainAmount Amount { get; init; }
@@ -169,13 +118,13 @@ public sealed partial class SettingsModule
             if (xp > 1000)
                 // This is to reduce the number of iterations. Minor inaccuracy is acceptable.
                 // ReSharper disable once PossibleLossOfFraction
-                i = (int)Math.Floor(Math.Sqrt((xp - Base) * 100 /
-                                              (Base * Modifier)));
+                i = (int)Math.Floor(Math.Sqrt((xp - Base.Value) * 100 /
+                                              (Base.Value * Modifier.Value)));
             while (true)
             {
-                var xpNeeded = Base + (
-                    (long)Math.Round(Base *
-                                     (Modifier / 100.0) * i) * i);
+                var xpNeeded = Base.Value + (
+                    (long)Math.Round(Base.Value *
+                                     (Modifier.Value / 100.0) * i) * i);
                 if (xp < xpNeeded)
                     return i + 1;
 
@@ -189,8 +138,8 @@ public sealed partial class SettingsModule
             return level switch
             {
                 < 0 => 0,
-                0 => Base,
-                _ => Base + ((long)Math.Round(Base * (Modifier / 100.0) * level) * level)
+                0 => Base.Value,
+                _ => Base.Value + ((long)Math.Round(Base.Value * (Modifier.Value / 100.0) * level) * level)
             };
         }
     }

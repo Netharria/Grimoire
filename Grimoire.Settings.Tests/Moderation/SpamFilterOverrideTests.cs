@@ -59,7 +59,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
     }
 
     [Fact]
-    public async Task RedundantWrite_ReturnsUnchanged_NoNewRow()
+    public async Task RedundantWrite_ReturnsNotModified_NoNewRow()
     {
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.AlwaysFilter);
 
@@ -67,7 +67,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
             await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId,
                 SpamFilterOverrideOption.AlwaysFilter);
 
-        result.ShouldBeOfType<SettingsUnchanged>();
+        result.ShouldBeOfType<Result<SpamFilterOverride>.NotModified>();
 
         await using var db = factory.CreateDbContext();
         var count = await db.SpamFilterOverrides
@@ -85,9 +85,8 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
             await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId,
                 SpamFilterOverrideOption.NeverFilter);
 
-        result.ShouldBeOfType<SettingsWritten>();
+        result.ShouldBeOfType<Result<SpamFilterOverride>.Success>();
 
-        // Cache updated via SetAsync — same SUT returns the new value.
         (await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId)).ShouldBe(
             SpamFilterOverrideOption.NeverFilter);
     }

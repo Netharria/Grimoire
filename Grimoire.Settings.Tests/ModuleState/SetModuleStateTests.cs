@@ -22,7 +22,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     {
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-        result.ShouldBeOfType<SettingsWritten>();
+        result.ShouldBeOfType<Result<GuildSetting>.Success>();
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeTrue();
     }
 
@@ -31,7 +31,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     {
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
 
-        result.ShouldBeOfType<SettingsWritten>();
+        result.ShouldBeOfType<Result<GuildSetting>.Success>();
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeFalse();
     }
 
@@ -53,7 +53,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         var result = await this._sut.SetModuleState(Module.General, _guildId, _modId, true);
 
-        result.ShouldBeOfType<SettingsInvalid>();
+        result.ShouldBeOfType<Result<GuildSetting>.Invalid>();
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-        result.ShouldBeOfType<SettingsUnchanged>();
+        result.ShouldBeOfType<Result<GuildSetting>.NotModified>();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
@@ -79,7 +79,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
 
-        result.ShouldBeOfType<SettingsUnchanged>();
+        result.ShouldBeOfType<Result<GuildSetting>.NotModified>();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
@@ -110,44 +110,27 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     [Fact]
     public async Task CacheInvalidatedAfterStateChange()
     {
-        // Seed an enabled row 2 hours in the past (bypasses the module/cache).
         await using (var db = factory.CreateDbContext())
         {
-            db.GuildSettings.Add(new GuildSettingCustomValue
-            {
-                Type = GuildSettingType.LevelingModuleEnabled,
-                GuildId = _guildId,
-                SetBy = _modId,
-                SetAt = DateTimeOffset.UtcNow.AddHours(-2),
-                Value = bool.TrueString
-            });
+            db.GuildSettings.Add(new GuildSettingCustomValue(
+                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
+                bool.TrueString));
             await db.SaveChangesAsync();
         }
 
-        // Warm the cache: module queries DB and caches true.
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeTrue();
 
-        // Directly insert a Disabled row 1 hour in the past — now the latest DB row, still bypassing the cache.
         await using (var db = factory.CreateDbContext())
         {
-            db.GuildSettings.Add(new GuildSettingDisabled
-            {
-                Type = GuildSettingType.LevelingModuleEnabled,
-                GuildId = _guildId,
-                SetBy = _modId,
-                SetAt = DateTimeOffset.UtcNow.AddHours(-1)
-            });
+            db.GuildSettings.Add(new GuildSettingDisabled(
+                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)));
             await db.SaveChangesAsync();
         }
 
-        // Cache is still warm — still reports true even though the latest DB row is now Disabled.
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeTrue();
 
-        // SetModuleState detects the DB change (Disabled → CustomValue) and invalidates the cache.
-        // The new row is written at UtcNow, which is after both past rows, so it becomes the latest.
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-        // Cache was invalidated; fresh DB read now sees the newly written CustomValue(true) row.
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeTrue();
     }
 }

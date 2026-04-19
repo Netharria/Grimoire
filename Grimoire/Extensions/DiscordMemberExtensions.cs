@@ -9,21 +9,23 @@ namespace Grimoire.Extensions;
 
 public static class DiscordMemberExtensions
 {
-    [Pure]
-    public static UserId GetUserId(this DiscordMember member) => new(member.Id);
+    extension(DiscordMember member)
+    {
+        [Pure]
+        public UserId GetUserId() => new(member.Id);
 
-    [Pure]
-    public static GuildId GetGuildId(this DiscordMember member) => new(member.Guild.Id);
+        [Pure]
+        public GuildId GetGuildId() => new(member.Guild.Id);
 
-    [Pure]
-    public static Nickname GetNickname(this DiscordMember member) => new(member.Nickname);
+        [Pure]
+        public Nickname GetNickname() => new(member.Nickname);
 
-    [Pure]
-    public static AvatarFileName GetAvatarFileName(this DiscordMember member) => new(member.AvatarUrl);
+        [Pure]
+        public AvatarFileName GetAvatarFileName() => new(member.AvatarUrl);
 
-
-    [Pure]
-    public static AvatarFileName GetAvatarFileName(this DiscordMember member, MediaFormat mediaFormat,
-        ushort imageSize = 1024)
-        => new(member.GetGuildAvatarUrl(mediaFormat, imageSize));
+        [Pure]
+        public AvatarFileName GetAvatarFileName(MediaFormat mediaFormat,
+            ushort imageSize = 1024)
+            => new(member.GetGuildAvatarUrl(mediaFormat, imageSize));
+    }
 }

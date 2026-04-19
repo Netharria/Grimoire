@@ -12,5 +12,4 @@ internal static class CacheKey
     internal static string SpamFilterOverride(ChannelId channelId) => $"SpamFilterOverrides_{channelId}";
     internal static string ChannelLocks(GuildId guildId) => $"ChannelLocks_{guildId}";
     internal static string ThreadLocks(GuildId guildId) => $"ThreadLocks_{guildId}";
-    internal static string Trackers(GuildId guildId) => $"Trackers_{guildId}";
 }

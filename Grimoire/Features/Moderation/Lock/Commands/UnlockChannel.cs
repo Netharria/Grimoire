@@ -9,7 +9,6 @@ using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
-using Grimoire.Settings.Helpers;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.Lock.Commands;
@@ -60,14 +59,14 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
     {
         var response = await this._settingsModule.RemoveThreadLock(
             channel.GetChannelId(), guild.GetGuildId(), moderatorId);
-        return response is SettingsWritten<ThreadLockEvent?>;
+        return response is Result<ThreadLocked>.Success;
     }
 
     private async Task<bool> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel, ModeratorId moderatorId)
     {
         var response = await this._settingsModule.RemoveChannelLock(
             channel.GetChannelId(), guild.GetGuildId(), moderatorId);
-        if (response is not SettingsWritten<ChannelLockEvent?> { InputValue: { } lockedChannel })
+        if (response is not Result<ChannelLocked>.Success { Value: { } lockedChannel })
             return false;
 
         var permissions = guild.Channels[channel.Id].PermissionOverwrites

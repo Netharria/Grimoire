@@ -18,7 +18,7 @@ public sealed record Message
     public ProxiedMessageLink? ProxiedMessageLink { get; init; }
     public ProxiedMessageLink? OriginalMessageLink { get; init; }
     public ICollection<Attachment> Attachments { get; init; } = [];
-    public ICollection<MessageHistory> MessageHistory { get; init; } = [];
+    public ICollection<MessageHistoryEntry> MessageHistory { get; init; } = [];
     public required MessageId Id { get; init; }
     public required UserId UserId { get; init; }
     public required GuildId GuildId { get; init; }

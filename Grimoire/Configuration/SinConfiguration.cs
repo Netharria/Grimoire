@@ -18,12 +18,6 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
         builder.HasKey(sin => sin.Id);
         builder.Property(sin => sin.Id)
             .UseIdentityAlwaysColumn();
-        builder.Property(sin => sin.Reason)
-            .HasMaxLength(1000);
-        builder.HasOne(sin => sin.Pardon)
-            .WithOne(sin => sin.Sin)
-            .HasForeignKey<Pardon>(sin => sin.SinId)
-            .IsRequired(false);
         builder.Property(sin => sin.SinOn)
             .HasDefaultValueSql("now()");
         // Primary query pattern: Filter by UserId + GuildId, order by SinOn

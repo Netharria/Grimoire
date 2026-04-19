@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Features.Shared.Channels.TrackerLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -15,13 +14,11 @@ namespace Grimoire.Features.Logging.UserLogging;
 public sealed class UpdatedUsernameEvent(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule,
-    GuildLog guildLog,
-    TrackerLog trackerLog) : IEventHandler<GuildMemberUpdatedEventArgs>
+    GuildLog guildLog) : IEventHandler<GuildMemberUpdatedEventArgs>
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
     private readonly SettingsModule _settingsModule = settingsModule;
-    private readonly TrackerLog _trackerLog = trackerLog;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
@@ -62,26 +59,6 @@ public sealed class UpdatedUsernameEvent(
                 .WithThumbnail(args.MemberAfter.GetAvatarUrl(MediaFormat.Auto))
                 .WithTimestamp(DateTimeOffset.UtcNow)
                 .WithColor(GrimoireColor.Mint)
-        });
-
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser
-        {
-            GuildId = args.Guild.GetGuildId(),
-            UserId = args.Member.GetUserId(),
-            Message = new TrackerMessageCustomEmbed
-            {
-                Embed = new DiscordEmbedBuilder()
-                    .WithAuthor("Username Updated")
-                    .AddField("User", UserExtensions.Mention(args.Member.GetUserId()))
-                    .AddField("Before",
-                        Username.IsNullOrWhiteSpace(currentUsername) ? "`Unknown`" : currentUsername.Value,
-                        true)
-                    .AddField("After",
-                        string.IsNullOrWhiteSpace(args.UsernameAfter) ? "`Unknown`" : args.UsernameAfter,
-                        true)
-                    .WithTimestamp(DateTimeOffset.UtcNow)
-                    .WithColor(GrimoireColor.Mint)
-            }
         });
     }
 }

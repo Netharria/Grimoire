@@ -8,7 +8,6 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using EntityFramework.Exceptions.Common;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
@@ -79,57 +78,29 @@ public sealed partial class CustomCommandSettings
             return;
         }
 
-        var commandRoles = roleIds.Select(roleId =>
-            new CustomCommandRole { CustomCommandName = name, GuildId = guildId, RoleId = roleId }).ToList();
-
+        var now = DateTimeOffset.UtcNow;
+        var command = new CustomCommand
+        {
+            Name = name,
+            GuildId = guildId,
+            CreatedAt = now,
+            Content = content,
+            HasMention = hasMention,
+            HasMessage = hasMessage,
+            IsEmbedded = embed,
+            EmbedColor = embedColor,
+            RestrictedUse = restrictedUse,
+            ModeratorId = ctx.GetModeratorId(),
+            Roles = [.. roleIds.Select(roleId =>
+                new CustomCommandRole { Name = name, GuildId = guildId, CreatedAt = now, RoleId = roleId })]
+        };
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-
-        var result = await dbContext.CustomCommands
-            .Include(x => x.CustomCommandRoles)
-            .FirstOrDefaultAsync(x => x.Name == name && x.GuildId == guildId);
-
-        if (result is null)
-        {
-            result = new CustomCommand
-            {
-                Name = name,
-                GuildId = guildId,
-                Content = content,
-                HasMention = hasMention,
-                HasMessage = hasMessage,
-                IsEmbedded = embed,
-                EmbedColor = embedColor,
-                RestrictedUse = restrictedUse,
-                CustomCommandRoles = commandRoles
-            };
-            await dbContext.AddAsync(result);
-        }
-        else
-        {
-            result.Name = name;
-            result.GuildId = guildId;
-            result.Content = content;
-            result.HasMention = hasMention;
-            result.HasMessage = hasMessage;
-            result.IsEmbedded = embed;
-            result.EmbedColor = embedColor;
-            result.RestrictedUse = restrictedUse;
-            result.CustomCommandRoles.Clear();
-            foreach (var role in commandRoles)
-                result.CustomCommandRoles.Add(role);
-        }
+        await dbContext.AddAsync(command);
 
         try
         {
             await dbContext.SaveChangesAsync();
-        }
-        catch (UniqueConstraintException)
-        {
-            // Rare race: another request created this command in parallel.
-            await ctx.SendErrorResponseAsync(
-                $"Command `{name}` was modified at the same time. Please run this command again.");
-            return;
         }
         catch (DbUpdateException)
         {

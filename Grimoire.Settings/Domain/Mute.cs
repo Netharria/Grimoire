@@ -7,10 +7,61 @@
 
 namespace Grimoire.Settings.Domain;
 
-public sealed record Mute
+public abstract record Mute(
+    UserId UserId,
+    GuildId GuildId,
+    ModeratorId ModeratorId,
+    DateTimeOffset SetAt);
+
+public sealed record MuteAdded : Mute
 {
+    private MuteAdded(
+        UserId userId,
+        GuildId guildId,
+        ModeratorId moderatorId,
+        SinId sinId,
+        DateTimeOffset setAt,
+        DateTimeOffset endTime)
+        : base(userId, guildId, moderatorId, setAt)
+    {
+        SinId = sinId;
+        EndTime = endTime;
+    }
+
     public SinId SinId { get; init; }
-    public required DateTimeOffset EndTime { get; init; }
-    public required UserId UserId { get; init; }
-    public required GuildId GuildId { get; init; }
+    public DateTimeOffset EndTime { get; init; }
+
+    public static Validation<MuteAdded> Create(
+        UserId userId,
+        GuildId guildId,
+        ModeratorId moderatorId,
+        SinId sinId,
+        DateTimeOffset setAt,
+        DateTimeOffset endTime)
+    {
+        if (endTime <= setAt)
+            return Validation<MuteAdded>.Fail(
+                new Error("mute.end-time.invalid", "End time must be after the mute's set time."));
+        if (userId.Value == 0)
+            return Validation<MuteAdded>.Fail(
+                new Error("mute.user-id.invalid", "UserId must be specified."));
+        if (moderatorId.Value == 0)
+            return Validation<MuteAdded>.Fail(
+                new Error("mute.moderator-id.invalid", "ModeratorId must be specified."));
+        if (moderatorId.Value == userId.Value)
+            return Validation<MuteAdded>.Fail(
+                new Error("mute.self-mute.invalid", "A moderator cannot mute themselves."));
+        if (sinId.Value <= 0)
+            return Validation<MuteAdded>.Fail(
+                new Error("mute.sin-id.invalid", "Negative Sin Ids are not allowed."));
+        return Validation<MuteAdded>.Succeed(
+            new MuteAdded(userId, guildId, moderatorId, sinId, setAt, endTime));
+    }
 }
+
+public sealed record MuteRemoved(
+    UserId UserId,
+    GuildId GuildId,
+    ModeratorId ModeratorId,
+    DateTimeOffset SetAt)
+    : Mute(UserId, GuildId, ModeratorId, SetAt);

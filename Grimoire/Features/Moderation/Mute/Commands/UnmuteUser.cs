@@ -39,7 +39,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
             return;
         }
 
-        await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId());
+        await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId());
 
         var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
         if (muteRoleId is null)

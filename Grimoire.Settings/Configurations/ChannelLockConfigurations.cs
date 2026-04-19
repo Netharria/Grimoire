@@ -13,21 +13,25 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Settings.Configurations;
 
 [ExcludeFromCodeCoverage]
-internal sealed class ChannelLockConfigurations : IEntityTypeConfiguration<ChannelLock>, IEntityTypeConfiguration<ChannelLockEvent>
+internal sealed class ChannelLockConfigurations : IEntityTypeConfiguration<ChannelLock>,
+    IEntityTypeConfiguration<ChannelLocked>
 {
     public void Configure(EntityTypeBuilder<ChannelLock> builder)
     {
         builder.HasKey(e => new { e.ChannelId, e.GuildId, e.SetAt });
 
         builder.HasDiscriminator<string>("EventType")
-            .HasValue<ChannelLockEvent>("LockEvent")
-            .HasValue<ChannelUnlockEvent>("UnlockEvent")
-            .IsComplete(true);
+            .HasValue<ChannelLocked>("Locked")
+            .HasValue<ChannelUnlocked>("Unlocked")
+            .IsComplete();
 
         builder.HasIndex(e => new { e.ChannelId, e.GuildId, e.SetAt })
             .IsDescending(false, false, true);
 
         builder.Property(e => e.Reason)
+            .HasConversion(
+                r => r == null ? null : r.Value.Value,
+                v => v == null ? null : ModerationReason.FromDatabase(v))
             .HasMaxLength(4096);
 
         builder.Property(e => e.GuildId)
@@ -38,7 +42,7 @@ internal sealed class ChannelLockConfigurations : IEntityTypeConfiguration<Chann
             .HasConversion(e => e.Value, value => new ModeratorId(value));
     }
 
-    public void Configure(EntityTypeBuilder<ChannelLockEvent> builder)
+    public void Configure(EntityTypeBuilder<ChannelLocked> builder)
     {
         builder.HasIndex(x => x.EndTime);
 

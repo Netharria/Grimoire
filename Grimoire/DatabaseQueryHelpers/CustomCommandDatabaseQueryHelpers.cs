@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -11,19 +11,19 @@ public static class CustomCommandDatabaseQueryHelpers
 {
     public static IQueryable<GetCustomCommandQueryResult> GetCustomCommandQuery(
         this IQueryable<CustomCommand> customCommands, GuildId guildId, CustomCommandName commandName)
-        =>
-            customCommands
-                .Where(command => command.GuildId == guildId && command.Name == commandName)
-                .Select(command => new GetCustomCommandQueryResult
-                {
-                    Content = command.Content,
-                    HasMention = command.HasMention,
-                    HasMessage = command.HasMessage,
-                    IsEmbedded = command.IsEmbedded,
-                    EmbedColor = command.EmbedColor,
-                    RestrictedUse = command.RestrictedUse,
-                    PermissionRoles = command.CustomCommandRoles.Select(commandRole => commandRole.RoleId).ToArray()
-                });
+        => customCommands
+            .Where(command => command.GuildId == guildId && command.Name == commandName)
+            .OrderByDescending(command => command.CreatedAt)
+            .Select(command => new GetCustomCommandQueryResult
+            {
+                Content = command.Content,
+                HasMention = command.HasMention,
+                HasMessage = command.HasMessage,
+                IsEmbedded = command.IsEmbedded,
+                EmbedColor = command.EmbedColor,
+                RestrictedUse = command.RestrictedUse,
+                PermissionRoles = command.Roles.Select(role => role.RoleId).ToArray()
+            });
 
     public record GetCustomCommandQueryResult
     {

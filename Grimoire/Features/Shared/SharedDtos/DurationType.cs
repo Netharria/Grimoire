@@ -16,21 +16,24 @@ public enum DurationType
 
 public static class DurationTypeExtensions
 {
-    public static DateTimeOffset GetDateTimeOffset(this DurationType durationType, long durationAmount)
-        => durationType switch
-        {
-            DurationType.Minutes => DateTime.UtcNow.AddMinutes(durationAmount),
-            DurationType.Hours => DateTime.UtcNow.AddHours(durationAmount),
-            DurationType.Days => DateTime.UtcNow.AddDays(durationAmount),
-            _ => throw new NotImplementedException()
-        };
+    extension(DurationType durationType)
+    {
+        public DateTimeOffset GetDateTimeOffset(long durationAmount)
+            => durationType switch
+            {
+                DurationType.Minutes => DateTime.UtcNow.AddMinutes(durationAmount),
+                DurationType.Hours => DateTime.UtcNow.AddHours(durationAmount),
+                DurationType.Days => DateTime.UtcNow.AddDays(durationAmount),
+                _ => throw new NotImplementedException()
+            };
 
-    public static TimeSpan GetTimeSpan(this DurationType durationType, long durationAmount)
-        => durationType switch
-        {
-            DurationType.Minutes => TimeSpan.FromMinutes(durationAmount),
-            DurationType.Hours => TimeSpan.FromHours(durationAmount),
-            DurationType.Days => TimeSpan.FromDays(durationAmount),
-            _ => throw new NotImplementedException()
-        };
+        public TimeSpan GetTimeSpan(long durationAmount)
+            => durationType switch
+            {
+                DurationType.Minutes => TimeSpan.FromMinutes(durationAmount),
+                DurationType.Hours => TimeSpan.FromHours(durationAmount),
+                DurationType.Days => TimeSpan.FromDays(durationAmount),
+                _ => throw new NotImplementedException()
+            };
+    }
 }

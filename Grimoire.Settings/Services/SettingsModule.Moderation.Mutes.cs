@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -7,10 +7,8 @@
 
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using EntityFramework.Exceptions.Common;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
-using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Grimoire.Settings.Services;
@@ -31,34 +29,25 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
         => ParseRoleId(await GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken));
 
-    public Task<SettingsResult> DisableMuteRole(
+    public async Task<Result<GuildId>> DisableMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
-        => SetGuildSetting(
-            new GuildSettingDisabled
-            {
-                GuildId = guildId,
-                Type = GuildSettingType.MuteRole,
-                SetBy = moderatorId,
-                SetAt = DateTimeOffset.UtcNow
-            },
-            cancellationToken);
+        => (await SetGuildSetting(
+                new GuildSettingDisabled(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow),
+                cancellationToken))
+            .Map(_ => guildId);
 
-    public Task<SettingsResult> SetMuteRole(
+    public async Task<Result<RoleId>> SetMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         RoleId muteRoleId,
         CancellationToken cancellationToken = default)
-        => SetGuildSetting(
-            new GuildSettingCustomValue
-            {
-                GuildId = guildId,
-                Type = GuildSettingType.MuteRole,
-                SetBy = moderatorId,
-                SetAt = DateTimeOffset.UtcNow,
-                Value = muteRoleId.Value.ToString(CultureInfo.InvariantCulture)
-            }, cancellationToken);
+        => (await SetGuildSetting(
+                new GuildSettingCustomValue(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow,
+                    muteRoleId.Value.ToString(CultureInfo.InvariantCulture)),
+                cancellationToken))
+            .Map(_ => muteRoleId);
 
     public async Task<bool> IsMemberMuted(
         UserId userId,
@@ -68,86 +57,85 @@ public sealed partial class SettingsModule
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.Mutes
             .AsNoTracking()
-            .AnyAsync(x =>
-                    x.UserId == userId
-                    && x.GuildId == guildId
-                    && x.EndTime > DateTimeOffset.UtcNow,
-                cancellationToken);
+            .OfType<MuteAdded>()
+            .Where(x => x.UserId == userId && x.GuildId == guildId)
+            // ReSharper disable once AccessToDisposedClosure
+            .Where(x => !dbContext.Mutes.Any(y =>
+                y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
+            .AnyAsync(x => x.EndTime > DateTimeOffset.UtcNow, cancellationToken);
     }
 
-    public async Task<SettingsResult> AddMute(
+    public async Task<Result<MuteAdded>> AddMute(
         UserId userId,
         GuildId guildId,
+        ModeratorId moderatorId,
         SinId sinId,
-        DateTimeOffset muteEndTime,
+        DateTimeOffset endTime,
         CancellationToken cancellationToken = default)
     {
+        var setAt = DateTimeOffset.UtcNow;
+        if (MuteAdded.Create(userId, guildId, moderatorId, sinId, setAt, endTime)
+            is not Validation<MuteAdded>.Valid(var mute))
+            return Result<MuteAdded>.Fail(new Error("mute.invalid", "Mute parameters are invalid."));
+
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-
-        var updated = await dbContext.Mutes
-            .Where(x => x.UserId == userId && x.GuildId == guildId)
-            .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(x => x.EndTime, muteEndTime)
-                    .SetProperty(x => x.SinId, sinId),
-                cancellationToken);
-
-        if (updated > 0)
-            return SettingsResult.Written();
-
-        dbContext.Mutes.Add(new Mute { UserId = userId, GuildId = guildId, EndTime = muteEndTime, SinId = sinId });
-
-        try
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return SettingsResult.Written();
-        }
-        catch (UniqueConstraintException)
-        {
-            await dbContext.Mutes
-                .Where(x => x.UserId == userId && x.GuildId == guildId)
-                .ExecuteUpdateAsync(setters => setters
-                        .SetProperty(x => x.EndTime, muteEndTime)
-                        .SetProperty(x => x.SinId, sinId),
-                    cancellationToken);
-            return SettingsResult.Written();
-        }
+        dbContext.Mutes.Add(mute);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result<MuteAdded>.Ok(mute);
     }
 
-    public async Task<SettingsResult<Mute?>> RemoveMute(UserId userId, GuildId guildId,
+    public async Task<Result<MuteAdded>> RemoveMute(
+        UserId userId,
+        GuildId guildId,
+        ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingMute = await dbContext.Mutes
             .AsNoTracking()
+            .OfType<MuteAdded>()
             .Where(x => x.UserId == userId && x.GuildId == guildId)
+            // ReSharper disable once AccessToDisposedClosure
+            .Where(x => !dbContext.Mutes.Any(y =>
+                y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
             .FirstOrDefaultAsync(cancellationToken);
         if (existingMute is null)
-            return SettingsResult.Unchanged<Mute?>(null);
-        await dbContext.Mutes
-            .Where(x => x.UserId == userId && x.GuildId == guildId)
-            .ExecuteDeleteAsync(cancellationToken);
-        return SettingsResult.Written<Mute?>(existingMute);
+            return new Result<MuteAdded>.NotFound(
+                new Error("mute.not-found", "No active mute found for this user."));
+
+        dbContext.Mutes.Add(new MuteRemoved(userId, guildId, moderatorId, DateTimeOffset.UtcNow));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result<MuteAdded>.Ok(existingMute);
     }
 
-    public async IAsyncEnumerable<Mute> GetAllExpiredMutes(
+    public async IAsyncEnumerable<MuteAdded> GetAllExpiredMutes(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         await foreach (var expiredMute in dbContext.Mutes
                            .AsNoTracking()
+                           .OfType<MuteAdded>()
                            .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
+                           // ReSharper disable once AccessToDisposedClosure
+                           .Where(x => !dbContext.Mutes.Any(y =>
+                               y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
                            .AsAsyncEnumerable()
                            .WithCancellation(cancellationToken))
             yield return expiredMute;
     }
 
-    public async IAsyncEnumerable<Mute> GetAllMutes(GuildId guildId,
+    public async IAsyncEnumerable<MuteAdded> GetAllMutes(
+        GuildId guildId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         await foreach (var mute in dbContext.Mutes
                            .AsNoTracking()
-                           .Where(mute => mute.GuildId == guildId)
+                           .OfType<MuteAdded>()
+                           .Where(x => x.GuildId == guildId)
+                           // ReSharper disable once AccessToDisposedClosure
+                           .Where(x => !dbContext.Mutes.Any(y =>
+                               y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
                            .AsAsyncEnumerable()
                            .WithCancellation(cancellationToken))
             yield return mute;

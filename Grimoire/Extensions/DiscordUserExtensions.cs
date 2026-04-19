@@ -9,9 +9,12 @@ namespace Grimoire.Extensions;
 
 public static class DiscordUserExtensions
 {
-    [Pure]
-    public static UserId GetUserId(this DiscordUser user) => new(user.Id);
+    extension(DiscordUser user)
+    {
+        [Pure]
+        public UserId GetUserId() => new(user.Id);
 
-    [Pure]
-    public static Username GetUsername(this DiscordUser user) => new(user.Username);
+        [Pure]
+        public Username GetUsername() => new(user.Username);
+    }
 }

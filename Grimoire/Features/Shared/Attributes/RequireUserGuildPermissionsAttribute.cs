@@ -30,19 +30,19 @@ internal sealed class RequireUserGuildPermissionsCheck : IContextCheck<RequireUs
         if (context.Guild is null)
             return ValueTask.FromResult<string?>("This command can only be used in a server.");
 
-        var usr = context.Member;
-        if (usr is null)
+        var member = context.Member;
+        if (member is null)
             return ValueTask.FromResult<string?>("This command can only be used in a server.");
 
-        if (usr.Id == context.Guild.OwnerId)
+        if (member.Id == context.Guild.OwnerId)
             return ValueTask.FromResult<string?>(null);
 
-        var pusr = usr.Permissions;
+        var memberPermissions = member.Permissions;
 
-        if (pusr.HasPermission(DiscordPermission.Administrator))
+        if (memberPermissions.HasPermission(DiscordPermission.Administrator))
             return ValueTask.FromResult<string?>(null);
 
-        return (pusr & attribute.Permissions) == attribute.Permissions
+        return memberPermissions.HasPermission(attribute.Permissions)
             ? ValueTask.FromResult<string?>(null)
             : ValueTask.FromResult<string?>("You do not have the required permissions to use this command.");
     }

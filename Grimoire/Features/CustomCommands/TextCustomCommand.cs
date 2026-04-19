@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -22,80 +22,61 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
             || eventArgs.Author is not DiscordMember member
             || eventArgs.Author.IsBot)
             return;
+
         var contentRaw = eventArgs.Message.Content;
         if (string.IsNullOrWhiteSpace(contentRaw) || !contentRaw.StartsWith('!'))
             return;
 
-        var messageArgs = eventArgs.Message.Content[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
+        var messageArgs = contentRaw[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (messageArgs.Length == 0)
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
+        var commandName = new CustomCommandName(messageArgs[0]);
         var response = await dbContext.CustomCommands
             .AsNoTracking()
-            .GetCustomCommandQuery(member.GetGuildId(), new CustomCommandName(messageArgs[0]))
+            .GetCustomCommandQuery(member.GetGuildId(), commandName)
             .FirstOrDefaultAsync();
 
         if (response is null ||
             !GetCustomCommand.IsUserAuthorized(member, response.RestrictedUse, response.PermissionRoles))
             return;
-        var content = response.Content;
-        if (response.HasMention && messageArgs.Length > 1)
+
+        await dbContext.CustomCommandUsages.AddAsync(new CustomCommandUsage
         {
-            SnowflakeObject? snowflakeObject = null;
-            if (DiscordRegex.ContainsUserMentions(messageArgs[1]))
-            {
-                var userIdMatches = DiscordRegex.GetUserMentions(messageArgs[1])
-                    .ToArray();
-                if (userIdMatches.Length > 0)
-                    snowflakeObject = await sender.GetUserOrDefaultAsync(new UserId(userIdMatches[0]));
-            }
-            else if (DiscordRegex.ContainsRoleMentions(messageArgs[1]))
-            {
-                var roleIdMatches = DiscordRegex.GetRoleMentions(messageArgs[1])
-                    .ToArray();
-                if (roleIdMatches.Length > 0)
-                    snowflakeObject = await eventArgs.Guild.GetRoleOrDefaultAsync(new RoleId(roleIdMatches[0]));
-            }
+            Name = commandName,
+            GuildId = member.GetGuildId(),
+            UserId = member.GetUserId(),
+            UsedAt = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
 
+        var snowflakeObject = response.HasMention && messageArgs.Length > 1
+            ? await ResolveSnowflake(messageArgs[1])
+            : null;
 
-            content = content.Replace(
-                "%Mention",
-                snowflakeObject switch
-                {
-                    DiscordUser user => user.Mention,
-                    DiscordRole { Id: var roleId } when roleId == member.Guild.Id => "@ everyone",
-                    DiscordRole role => role.Mention,
-                    _ => string.Empty
-                }, StringComparison.OrdinalIgnoreCase);
-        }
+        var rawMessage = response.HasMessage
+            ? string.Join(' ', messageArgs.Skip(response.HasMention ? 2 : 1))
+            : string.Empty;
 
-        if (response.HasMessage)
-        {
-            var rawMessage = string.Join(' ', messageArgs.Skip(response.HasMention ? 2 : 1));
-            var sanitizedMessage = GetCustomCommand.SanitizeUserMessageMentions(rawMessage, eventArgs.Guild.Id);
-            content = content.Replace("%Message", sanitizedMessage, StringComparison.OrdinalIgnoreCase);
-        }
-
-        content = GetCustomCommand.TruncateForDiscord(
-            content,
+        var content = GetCustomCommand.TruncateForDiscord(
+            GetCustomCommand.ApplyMessage(
+                GetCustomCommand.ApplyMention(response.Content, response.HasMention, snowflakeObject, member.Guild.Id),
+                response.HasMessage, rawMessage, member.Guild.Id),
             response.IsEmbedded ? MaxEmbedDescriptionLength : MaxMessageLength);
 
-        var discordResponse = new DiscordMessageBuilder();
+        await eventArgs.Channel.SendMessageAsync(
+            GetCustomCommand.BuildMessageResponse(content, response.IsEmbedded, response.EmbedColor));
+        return;
 
-        if (response.IsEmbedded)
+        async Task<SnowflakeObject?> ResolveSnowflake(string arg)
         {
-            var discordEmbed = new DiscordEmbedBuilder()
-                .WithDescription(content);
-            if (response.EmbedColor is not null)
-                discordEmbed.WithColor(GrimoireColor.FromCustomCommandEmbedColor(response.EmbedColor.Value));
-            discordResponse.AddEmbed(discordEmbed);
+            var userIds = DiscordRegex.GetUserMentions(arg).ToArray();
+            if (userIds.Length > 0) return await sender.GetUserOrDefaultAsync(new UserId(userIds[0]));
+            var roleIds = DiscordRegex.GetRoleMentions(arg).ToArray();
+            if (roleIds.Length > 0) return await eventArgs.Guild.GetRoleOrDefaultAsync(new RoleId(roleIds[0]));
+            return null;
         }
-        else
-            discordResponse.WithContent(content);
-
-        await eventArgs.Channel.SendMessageAsync(discordResponse);
     }
 }

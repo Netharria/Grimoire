@@ -7,7 +7,6 @@
 
 using EntityFramework.Exceptions.Common;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Features.Shared.Channels.TrackerLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -16,13 +15,11 @@ namespace Grimoire.Features.Logging.MessageLogging;
 public sealed class UpdateMessageEvent(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule,
-    GuildLog guildLog,
-    TrackerLog trackerLog) : IEventHandler<MessageUpdatedEventArgs>
+    GuildLog guildLog) : IEventHandler<MessageUpdatedEventArgs>
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
     private readonly SettingsModule _settingsModule = settingsModule;
-    private readonly TrackerLog _trackerLog = trackerLog;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageUpdatedEventArgs args)
     {
@@ -35,54 +32,39 @@ public sealed class UpdateMessageEvent(
 
         if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()))
             return;
+
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+
         var message = await dbContext.Messages
             .AsNoTracking()
-            .Where(message => message.GuildId == args.Guild.GetGuildId() && message.Id == args.Message.GetMessageId())
-            .Select(message => new
-                {
-                    MessageId = message.Id,
-                    message.UserId,
-                    message.MessageHistory
-                        .OrderByDescending(messageHistory => messageHistory.TimeStamp)
-                        .First(messageHistory => messageHistory.Action != MessageAction.Deleted)
-                        .MessageContent,
-                    Success = true,
-                    OriginalUserId = (UserId?)message.ProxiedMessageLink!.OriginalMessage!.UserId,
-                    message.ProxiedMessageLink.SystemId,
-                    message.ProxiedMessageLink.MemberId
-                }
-            ).FirstOrDefaultAsync();
+            .Where(m => m.GuildId == args.Guild.GetGuildId() && m.Id == args.Message.GetMessageId())
+            .Select(m => new
+            {
+                MessageId = m.Id,
+                m.UserId,
+                Content = (MessageContent?)dbContext.MessageHistory
+                    .OfType<MessageHistoryContentEntry>()
+                    .Where(h => h.MessageId == m.Id)
+                    .OrderByDescending(h => h.TimeStamp)
+                    .Select(h => (MessageContent?)h.Content)
+                    .FirstOrDefault(),
+                OriginalUserId = (UserId?)m.ProxiedMessageLink!.OriginalMessage!.UserId,
+                m.ProxiedMessageLink.SystemId,
+                m.ProxiedMessageLink.MemberId
+            })
+            .FirstOrDefaultAsync();
+
         if (message is null
-            || MessageContent.Equals(message.MessageContent, args.Message.GetMessageContent(),
+            || MessageContent.Equals(message.Content, args.Message.GetMessageContent(),
                 StringComparison.CurrentCultureIgnoreCase))
             return;
 
-        await this._trackerLog.SendTrackerMessageAsync(new TrackerEventUser
+        await dbContext.MessageHistory.AddAsync(new MessageEditedEntry
         {
-            UserId = message.UserId,
+            MessageId = message.MessageId,
             GuildId = args.Guild.GetGuildId(),
-            Message = new TrackerMessageCustomEmbed
-            {
-                Embed = new DiscordEmbedBuilder()
-                    .AddField("User", args.Author.Mention, true)
-                    .AddField("Channel", args.Channel.Mention, true)
-                    .AddField("Link", $"**[Jump URL]({args.Message.JumpLink})**", true)
-                    .WithFooter("Message Sent", args.Author.GetAvatarUrl(MediaFormat.Auto))
-                    .WithTimestamp(DateTime.UtcNow)
-                    .AddMessageTextToFields("Before", message.MessageContent.ToString() ?? string.Empty)
-                    .AddMessageTextToFields("After", args.Message.Content)
-            }
+            Content = args.Message.GetMessageContent()
         });
-
-        await dbContext.MessageHistory.AddAsync(
-            new MessageHistory
-            {
-                MessageId = message.MessageId,
-                Action = MessageAction.Updated,
-                GuildId = args.Guild.GetGuildId(),
-                MessageContent = args.Message.GetMessageContent()
-            });
         try
         {
             await dbContext.SaveChangesAsync();
@@ -96,8 +78,6 @@ public sealed class UpdateMessageEvent(
         if (avatarUrl is null)
             return;
 
-
-        var embeds = new List<DiscordEmbedBuilder>();
         var embed = new DiscordEmbedBuilder()
             .WithDescription($"**[Jump Url]({args.Message.JumpLink})**")
             .AddField("Channel", args.Channel.Mention, true)
@@ -113,33 +93,25 @@ public sealed class UpdateMessageEvent(
             if (user is not null)
                 embed.AddField("Original Author", user.Mention, true);
             embed.AddField("System Id",
-                    string.IsNullOrWhiteSpace(message.SystemId) ? "Private" : message.SystemId,
-                    true)
+                    string.IsNullOrWhiteSpace(message.SystemId) ? "Private" : message.SystemId, true)
                 .AddField("Member Id",
-                    string.IsNullOrWhiteSpace(message.MemberId) ? "Private" : message.MemberId,
-                    true);
+                    string.IsNullOrWhiteSpace(message.MemberId) ? "Private" : message.MemberId, true);
         }
         else
             embed.AddField("Author", args.Author.Mention, true);
 
-        if (message.MessageContent.ToString()?.Length + args.Message.Content.Length >= 5000)
-        {
-            var afterEmbed = new DiscordEmbedBuilder(embed);
-            embed.AddMessageTextToFields("Before", message.MessageContent.ToString());
-            embeds.Add(embed);
-            embeds.Add(afterEmbed.AddMessageTextToFields("After", args.Message.Content));
-        }
-        else
-        {
-            embed.AddMessageTextToFields("Before", message.MessageContent.ToString())
-                .AddMessageTextToFields("After", args.Message.Content);
-            embeds.Add(embed);
-        }
+        List<DiscordEmbedBuilder> embeds = message.Content.ToString()?.Length + args.Message.Content.Length >= 5000
+            ? [embed.AddMessageTextToFields("Before", message.Content.ToString()),
+               new DiscordEmbedBuilder(embed).AddMessageTextToFields("After", args.Message.Content)]
+            : [embed.AddMessageTextToFields("Before", message.Content.ToString())
+                    .AddMessageTextToFields("After", args.Message.Content)];
 
         foreach (var embedToSend in embeds)
             await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
             {
-                GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.MessageEdited, Embed = embedToSend
+                GuildId = args.Guild.GetGuildId(),
+                GuildLogType = GuildLogType.MessageEdited,
+                Embed = embedToSend
             });
     }
 }

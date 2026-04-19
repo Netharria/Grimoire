@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -7,6 +7,7 @@
 
 using System.Collections.Frozen;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Values;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -27,11 +28,6 @@ public sealed partial class SettingsModule
             async (guildIdState, ct) =>
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                // Materialize the latest-per-role rows first; EF Core cannot translate
-                // a .Where() or .Select(projection) after GroupBy().Select(g => g.First()).
-                // EF Core cannot translate a .Where() or .Select(projection) after
-                // GroupBy().Select(g => g.First()). Stream rows as they arrive and
-                // filter/project in memory.
                 var entries = new HashSet<RewardEntry>();
                 await foreach (var reward in dbContext.Rewards
                                    .AsNoTracking()
@@ -41,50 +37,47 @@ public sealed partial class SettingsModule
                                    .AsAsyncEnumerable()
                                    .WithCancellation(ct))
                     if (reward.Enabled)
-                        entries.Add(new RewardEntry
-                        {
-                            RoleId = reward.RoleId,
-                            RewardLevel = reward.RewardLevel,
-                            RewardMessage = reward.RewardMessage
-                        });
+                        entries.Add(new RewardEntry(
+                            reward.RoleId,
+                            reward.RewardLevel,
+                            reward.RewardMessage?.Value));
                 return entries.ToFrozenSet();
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
     }
 
-    public async Task<SettingsResult> SetRewardAsync(
+    public Task<Result<Reward>> SetRewardAsync(
         RoleId roleId,
         GuildId guildId,
         ModeratorId moderatorId,
-        int level,
+        int rewardLevel,
         string? rewardMessage,
         bool enabled,
         CancellationToken cancellationToken = default)
     {
+        var msgValidation = rewardMessage is null
+            ? Validation<RewardMessage?>.Succeed(null)
+            : RewardMessage.Create(rewardMessage).Map(m => (RewardMessage?)m);
+        return msgValidation
+            .Bind(msg => Reward.Create(roleId, guildId, rewardLevel, msg, moderatorId, DateTimeOffset.UtcNow, enabled))
+            .MatchAsync(
+                reward => SetRewardAsync(reward, cancellationToken),
+                errors => Result<Reward>.Fail(errors));
+    }
+
+    public async Task<Result<Reward>> SetRewardAsync(
+        Reward reward,
+        CancellationToken cancellationToken = default)
+    {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var reward = new Reward
-        {
-            RoleId = roleId,
-            GuildId = guildId,
-            SetBy = moderatorId,
-            SetAt = DateTimeOffset.UtcNow,
-            RewardLevel = level,
-            RewardMessage = rewardMessage,
-            Enabled = enabled
-        };
 
         dbContext.Rewards.Add(reward);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var cacheKey = CacheKey.LevelingRewards(reward.GuildId);
         await this._cache.RemoveAsync(cacheKey, cancellationToken);
-        return SettingsResult.Written();
+        return Result<Reward>.Ok(reward);
     }
 
-    public sealed record RewardEntry
-    {
-        public RoleId RoleId { get; init; }
-        public int RewardLevel { get; init; }
-        public string? RewardMessage { get; init; }
-    }
+    public sealed record RewardEntry(RoleId RoleId, int RewardLevel, string? RewardMessage);
 }

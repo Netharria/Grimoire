@@ -5,15 +5,22 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Values;
 using Grimoire.Settings.Enums;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
+[UsedImplicitly]
 public sealed partial class RewardCommandGroup
 {
+
+    [UsedImplicitly]
     [RequireGuild]
     [RequireModuleEnabled(Module.Leveling)]
     [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
@@ -22,29 +29,55 @@ public sealed partial class RewardCommandGroup
     public async Task AddAsync(CommandContext ctx,
         [Parameter("Role")] [Description("The role to be added as a reward.")]
         DiscordRole role,
+        [MinMaxValue(0, int.MaxValue)]
         [Parameter("Level")] [Description("The level the reward is awarded at.")]
         int level,
         [MinMaxLength(maxLength: 4096)]
         [Parameter("Message")]
         [Description("The message to send to users when they earn a reward. Discord Markdown applies.")]
-        string message = "")
+        string? message = null)
     {
         await ctx.DeferResponseAsync();
 
         var guild = ctx.Guild!;
 
-        if (guild.CurrentMember.Hierarchy < role.Position)
-        {
-            await ctx.SendErrorResponseAsync(
+        await ValidateBotHasPermission(guild, role)
+            .Bind(_ => CreateRewardMessage(message))
+            .Bind(validatedMessage =>
+                Reward.Create(
+                    role.GetRoleId(),
+                    guild.GetGuildId(),
+                    level,
+                    validatedMessage,
+                    ctx.GetModeratorId(),
+                    DateTimeOffset.UtcNow,
+                    true)
+            )
+            .BindAsync(async reward => (await this._settingsModule.SetRewardAsync(reward)).ToValidation())
+            .Match(
+                reward => OnAddSuccess(ctx, reward, role, guild),
+                errors => OnFail(ctx, errors)
+            );
+    }
+
+    private static Validation<DiscordRole> ValidateBotHasPermission(DiscordGuild guild, DiscordRole role)
+        => guild.CurrentMember.Hierarchy < role.Position
+            ? Validation<DiscordRole>.Fail(new Error("reward.role-id.bot-permissions",
                 $"{guild.CurrentMember.DisplayName} will not be able to apply this " +
-                $"reward role because the role has a higher rank than it does.");
-            return;
-        }
+                $"reward role because the role has a higher rank than it does."))
+            : Validation<DiscordRole>.Succeed(role);
 
-        await this._settingsModule.SetRewardAsync(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), level,
-            message, true);
+    private static Task OnFail(CommandContext ctx, ImmutableArray<Error> errors) =>
+        ctx.ReplyAsync(GrimoireColor.Red,
+                $"Was not able to update the rewards for the server for the following errors: \n" +
+                $"{string.Join('\n', errors.Distinct().Select(error => error.Message))}")
+            .AsTask();
 
-        var responseMessage = $"Successfully updated the rewards to include {role.Mention} at level {level}.";
+
+    private async Task OnAddSuccess(CommandContext ctx, Reward reward, DiscordRole role, DiscordGuild guild)
+    {
+        var responseMessage =
+            $"Successfully updated the rewards to include {role.Mention} at level {reward.RewardLevel}.";
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, responseMessage);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
@@ -55,4 +88,12 @@ public sealed partial class RewardCommandGroup
             Description = responseMessage
         });
     }
+
+    private static Validation<RewardMessage?> CreateRewardMessage(string? message)
+        => message switch
+        {
+            not null => RewardMessage.Create(message)
+                .Map(x => (RewardMessage?)x),
+            _ => Validation<RewardMessage?>.Succeed(null)
+        };
 }

@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-
 namespace Grimoire.Settings.Domain;
 
 public enum MessageLogOverrideOption
@@ -15,11 +14,9 @@ public enum MessageLogOverrideOption
     Inherit
 }
 
-public sealed record MessageLogChannelOverride
-{
-    public required MessageLogOverrideOption ChannelOption { get; init; }
-    public required ChannelId ChannelId { get; init; }
-    public required GuildId GuildId { get; init; }
-    public required ModeratorId SetBy { get; init; }
-    public required DateTimeOffset SetAt { get; init; }
-}
+public sealed record MessageLogChannelOverride(
+    MessageLogOverrideOption ChannelOption,
+    ChannelId ChannelId,
+    GuildId GuildId,
+    ModeratorId SetBy,
+    DateTimeOffset SetAt);

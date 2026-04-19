@@ -12,16 +12,18 @@ namespace Grimoire.Domain;
 [UsedImplicitly]
 public sealed record CustomCommand
 {
-    public required CustomCommandName Name { get; set; }
-    public required GuildId GuildId { get; set; }
-    public required string Content { get; set; }
-    public required bool HasMention { get; set; }
-    public required bool HasMessage { get; set; }
-    public required bool IsEmbedded { get; set; }
-    public CustomCommandEmbedColor? EmbedColor { get; set; }
-    public required bool RestrictedUse { get; set; }
+    public required CustomCommandName Name { get; init; }
+    public required GuildId GuildId { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
+    public required string Content { get; init; }
+    public required bool HasMention { get; init; }
+    public required bool HasMessage { get; init; }
+    public required bool IsEmbedded { get; init; }
+    public CustomCommandEmbedColor? EmbedColor { get; init; }
+    public required bool RestrictedUse { get; init; }
+    public ModeratorId? ModeratorId { get; init; }
 
-    public ICollection<CustomCommandRole> CustomCommandRoles { get; init; } = [];
+    public ICollection<CustomCommandRole> Roles { get; init; } = [];
 }
 
 public readonly record struct CustomCommandName(string Value)

@@ -39,7 +39,7 @@ public sealed partial class LevelSettingsCommandGroup
         await ctx.ReplyAsync(
             title: "Current Level System Settings",
             message: $"**Module Enabled:** {moduleEnabled}\n" +
-                     $"**Text Time:** {response.TextTime.TotalMinutes} minutes.\n" +
+                     $"**Text Time:** {response.XpTimeoutPeriod.Value.TotalMinutes} minutes.\n" +
                      $"**Base:** {response.Base}\n" +
                      $"**Modifier:** {response.Modifier}\n" +
                      $"**Reward Amount:** {response.Amount}\n" +

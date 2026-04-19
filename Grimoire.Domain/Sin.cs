@@ -13,7 +13,8 @@ public enum SinType
 {
     Warn,
     Mute,
-    Ban
+    Ban,
+    Kick
 }
 
 [UsedImplicitly]
@@ -21,16 +22,15 @@ public sealed record Sin
 {
     public ModeratorId? ModeratorId { get; init; }
 
-    public required string Reason { get; set; }
-
     public DateTimeOffset SinOn { get; } = DateTimeOffset.UtcNow;
 
     public required SinType SinType { get; init; }
 
-    public Pardon? Pardon { get; set; }
+    public ICollection<Pardon> Pardons { get; init; } = [];
 
     public ICollection<PublishedMessage> PublishMessages { get; init; } = [];
 
+    public ICollection<SinReasonHistory> ReasonHistory { get; init; } = [];
 
     // ReSharper disable once UnusedAutoPropertyAccessor.Local
     public SinId Id { get; private set; }

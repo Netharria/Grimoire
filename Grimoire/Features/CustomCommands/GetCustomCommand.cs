@@ -52,50 +52,28 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             .GetCustomCommandQuery(guild.GetGuildId(), name)
             .FirstOrDefaultAsync();
 
-        if (response is null
-            || !IsUserAuthorized(ctx.Member, response.RestrictedUse, response.PermissionRoles))
+        if (response is null || !IsUserAuthorized(ctx.Member, response.RestrictedUse, response.PermissionRoles))
         {
             await ctx.DeleteResponseAsync();
             return;
         }
 
-        var content = response.Content;
-
-        if (response.HasMention)
-            content = content.Replace(
-                "%Mention",
-                snowflakeObject switch
-                {
-                    DiscordUser user => user.Mention,
-                    DiscordRole { Id: var roleId } when roleId == guild.Id => "@ everyone",
-                    DiscordRole role => role.Mention,
-                    _ => string.Empty
-                }, StringComparison.OrdinalIgnoreCase);
-        if (response.HasMessage)
+        await dbContext.CustomCommandUsages.AddAsync(new CustomCommandUsage
         {
-            var sanitizedMessage = SanitizeUserMessageMentions(message, guild.Id);
-            content = content.Replace("%Message", sanitizedMessage, StringComparison.OrdinalIgnoreCase);
-        }
+            Name = name,
+            GuildId = guild.GetGuildId(),
+            UserId = ctx.User.GetUserId(),
+            UsedAt = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
 
-        content = TruncateForDiscord(
-            content,
+        var content = TruncateForDiscord(
+            ApplyMessage(
+                ApplyMention(response.Content, response.HasMention, snowflakeObject, guild.Id),
+                response.HasMessage, message, guild.Id),
             response.IsEmbedded ? MaxEmbedDescriptionLength : MaxMessageLength);
 
-        var discordResponse = new DiscordWebhookBuilder();
-
-        if (response.IsEmbedded)
-        {
-            var discordEmbed = new DiscordEmbedBuilder()
-                .WithDescription(content);
-            if (response.EmbedColor is not null)
-                discordEmbed.WithColor(GrimoireColor.FromCustomCommandEmbedColor(response.EmbedColor.Value));
-            discordResponse.AddEmbed(discordEmbed);
-        }
-        else
-            discordResponse.WithContent(content);
-
-
-        await ctx.EditResponseAsync(discordResponse);
+        await ctx.EditResponseAsync(BuildWebhookResponse(content, response.IsEmbedded, response.EmbedColor));
     }
 
     internal static string SanitizeUserMessageMentions(string input, ulong guildId)
@@ -109,18 +87,13 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
 
         // Neutralize only the @everyone role mention form: <@&guildId>.
         // Keep all other role mentions intact.
-        sanitized = RoleMentionRegex().Replace(sanitized, match =>
+        return RoleMentionRegex().Replace(sanitized, match =>
         {
             var roleIdText = match.Groups[1].Value;
-
-            if (!ulong.TryParse(roleIdText, out var roleId) || roleId != guildId)
-                return match.Value;
-
-            // Break mention syntax but keep it readable.
-            return "@ everyone";
+            return ulong.TryParse(roleIdText, out var roleId) && roleId == guildId
+                ? "@ everyone"
+                : match.Value;
         });
-
-        return sanitized;
     }
 
     public static bool IsUserAuthorized(
@@ -128,14 +101,10 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         bool restrictedUse,
         IReadOnlyCollection<RoleId> permissionRoles)
     {
-        if (member is null)
-            return false;
-
-        if (permissionRoles.Count == 0)
-            return !restrictedUse;
+        if (member is null) return false;
+        if (permissionRoles.Count == 0) return !restrictedUse;
 
         var memberRoleIds = member.Roles.Select(static role => role.GetRoleId());
-
         var permissionsRolesSet = permissionRoles.ToFrozenSet();
 
         return restrictedUse
@@ -149,13 +118,47 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             return input;
 
         const string ellipsis = "…";
-
         var truncated = input[..(maxLength - ellipsis.Length)];
         // Roll back if we split a surrogate pair
         if (truncated.Length > 0 && char.IsHighSurrogate(truncated[^1]))
             truncated = truncated[..^1];
         return string.Concat(truncated, ellipsis);
     }
+
+    internal static DiscordWebhookBuilder BuildWebhookResponse(
+        string content, bool isEmbedded, CustomCommandEmbedColor? embedColor)
+        => isEmbedded
+            ? new DiscordWebhookBuilder().AddEmbed(BuildEmbed(content, embedColor))
+            : new DiscordWebhookBuilder().WithContent(content);
+
+    internal static DiscordMessageBuilder BuildMessageResponse(
+        string content, bool isEmbedded, CustomCommandEmbedColor? embedColor)
+        => isEmbedded
+            ? new DiscordMessageBuilder().AddEmbed(BuildEmbed(content, embedColor))
+            : new DiscordMessageBuilder().WithContent(content);
+
+    private static DiscordEmbedBuilder BuildEmbed(string content, CustomCommandEmbedColor? embedColor)
+        => (embedColor is { } color
+                ? new DiscordEmbedBuilder().WithColor(GrimoireColor.FromCustomCommandEmbedColor(color))
+                : new DiscordEmbedBuilder())
+            .WithDescription(content);
+
+    internal static string ApplyMention(string text, bool hasMention, SnowflakeObject? snowflake, ulong guildId)
+        => hasMention
+            ? text.Replace("%Mention", snowflake switch
+            {
+                DiscordUser user => user.Mention,
+                DiscordRole { Id: var roleId } when roleId == guildId => "@ everyone",
+                DiscordRole role => role.Mention,
+                _ => string.Empty
+            }, StringComparison.OrdinalIgnoreCase)
+            : text;
+
+    internal static string ApplyMessage(string text, bool hasMessage, string message, ulong guildId)
+        => hasMessage
+            ? text.Replace("%Message", SanitizeUserMessageMentions(message, guildId),
+                StringComparison.OrdinalIgnoreCase)
+            : text;
 
     [GeneratedRegex(@"@(everyone|here)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex EveryoneHereRegex();
