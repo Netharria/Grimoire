@@ -15,19 +15,20 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<RoleId?> GetEffectiveMuteRole(
+    public async Task<Result<RoleId?>> GetEffectiveMuteRole(
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!await IsModuleEnabled(Module.Moderation, guildId, cancellationToken))
-            return null;
+        if (!(await IsModuleEnabled(Module.Moderation, guildId, cancellationToken)).OrElse(false))
+            return Result<RoleId?>.Ok(null);
         return await GetConfiguredMuteRole(guildId, cancellationToken);
     }
 
-    public async Task<RoleId?> GetConfiguredMuteRole(
+    public async Task<Result<RoleId?>> GetConfiguredMuteRole(
         GuildId guildId,
         CancellationToken cancellationToken = default)
-        => ParseRoleId(await GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken));
+        => (await GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken))
+            .Map(ParseRoleId);
 
     public async Task<Result<GuildId>> DisableMuteRole(
         GuildId guildId,
@@ -49,20 +50,20 @@ public sealed partial class SettingsModule
                 cancellationToken))
             .Map(_ => muteRoleId);
 
-    public async Task<bool> IsMemberMuted(
+    public async Task<Result<bool>> IsMemberMuted(
         UserId userId,
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        return await dbContext.Mutes
+        return Result<bool>.Ok(await dbContext.Mutes
             .AsNoTracking()
             .OfType<MuteAdded>()
             .Where(x => x.UserId == userId && x.GuildId == guildId)
             // ReSharper disable once AccessToDisposedClosure
             .Where(x => !dbContext.Mutes.Any(y =>
                 y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
-            .AnyAsync(x => x.EndTime > DateTimeOffset.UtcNow, cancellationToken);
+            .AnyAsync(x => x.EndTime > DateTimeOffset.UtcNow, cancellationToken));
     }
 
     public async Task<Result<MuteAdded>> AddMute(

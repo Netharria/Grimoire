@@ -9,9 +9,12 @@ namespace Grimoire.Domain;
 
 public readonly record struct ModerationReason
 {
-    public string Value { get; }
+    private ModerationReason(string value)
+    {
+        Value = value;
+    }
 
-    private ModerationReason(string value) => this.Value = value;
+    public string Value { get; }
 
     public static ModerationReason FromDatabase(string value) => new(value);
 
@@ -21,8 +24,8 @@ public readonly record struct ModerationReason
         if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 4096)
             return Validation<ModerationReason>.Fail(
                 new Error("moderation-reason.invalid", "Reason must be 1\u20134096 non-whitespace characters."));
-        return Validation<ModerationReason>.Succeed(new(trimmed));
+        return Validation<ModerationReason>.Succeed(new ModerationReason(trimmed));
     }
 
-    public override string ToString() => this.Value;
+    public override string ToString() => Value;
 }

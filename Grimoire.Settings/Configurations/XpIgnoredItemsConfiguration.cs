@@ -36,9 +36,12 @@ internal sealed class XpIgnoredItemsConfiguration : IEntityTypeConfiguration<XpI
         builder.Ignore("UserId");
 
         builder.HasDiscriminator<string>("Type")
-            .HasValue<IgnoredChannel>(nameof(IgnoredType.Channel))
-            .HasValue<IgnoredRole>(nameof(IgnoredType.Role))
-            .HasValue<IgnoredMember>(nameof(IgnoredType.Member))
+            .HasValue<IgnoredChannel>("IgnoredChannel")
+            .HasValue<WatchedChannel>("WatchedChannel")
+            .HasValue<IgnoredRole>("IgnoredRole")
+            .HasValue<WatchedRole>("WatchedRole")
+            .HasValue<IgnoredMember>("IgnoredMember")
+            .HasValue<WatchedMember>("WatchedMember")
             .IsComplete();
     }
 }

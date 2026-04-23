@@ -37,7 +37,7 @@ public sealed partial class DeleteMessageEvent(
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null
             || args.Message.Author?.Id == args.Guild.CurrentMember.Id
-            || await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()))
+            || (await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())).OrElse(false))
             return;
 
         var pluralkitMessage =
@@ -92,6 +92,7 @@ public sealed partial class DeleteMessageEvent(
             .Select(m => new Response
             {
                 UserId = m.UserId,
+                // ReSharper disable once AccessToDisposedClosure
                 Content = dbContext.MessageHistory
                     .OfType<MessageHistoryContentEntry>()
                     .Where(h => h.MessageId == m.Id)
@@ -121,8 +122,7 @@ public sealed partial class DeleteMessageEvent(
                 }
                 : new MessageDeletedEntry
                 {
-                    MessageId = args.Message.GetMessageId(),
-                    GuildId = args.Guild.GetGuildId()
+                    MessageId = args.Message.GetMessageId(), GuildId = args.Guild.GetGuildId()
                 });
         await dbContext.SaveChangesAsync();
 

@@ -57,9 +57,9 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
         if (ctx is SlashCommandContext slashContext)
             await slashContext.DeferResponseAsync(
                 !member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                && userCommandChannel != ctx.GetChannelId());
+                && userCommandChannel.OrElse(null) != ctx.GetChannelId());
         else if (!member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                 && userCommandChannel != ctx.GetChannelId())
+                 && userCommandChannel.OrElse(null) != ctx.GetChannelId())
             return;
 
         var getUserCenteredLeaderboardQuery =

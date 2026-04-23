@@ -22,7 +22,7 @@ public class BanRemovedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanRemovedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId()))
+        if (!(await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())).OrElse(false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();

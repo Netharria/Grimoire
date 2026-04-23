@@ -46,10 +46,10 @@ public sealed partial class GuildLog(
                     result.GuildId,
                     cancellationToken);
 
-                if (logChannelId is null)
+                if (logChannelId.OrElse(null) is not { } logChannel)
                     continue;
 
-                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannelId.Value, cancellationToken);
+                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannel, cancellationToken);
 
                 if (channel is null)
                     continue;

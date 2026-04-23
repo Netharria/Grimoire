@@ -28,13 +28,13 @@ public sealed partial class AddMessageEvent(
             || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()))
+        if (!(await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())).OrElse(false))
             return;
 
-        if (!await this._settingsModule.ShouldLogMessage(
+        if (!(await this._settingsModule.ShouldLogMessage(
                 args.GetChannelId(),
                 args.Guild.GetGuildId(),
-                args.Channel.BuildChannelTree().ToDictionary()))
+                args.Channel.BuildChannelTree().ToDictionary())).OrElse(false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -43,14 +43,17 @@ public sealed partial class AddMessageEvent(
         {
             Id = args.GetMessageId(),
             UserId = args.GetAuthorUserId(),
-            Attachments = [.. args.Message.Attachments
-                .Where(x => !string.IsNullOrWhiteSpace(x.FileName))
-                .Select(x => new Attachment
-                {
-                    Id = new AttachmentId(x.Id),
-                    MessageId = new MessageId(args.Message.Id),
-                    FileName = x.FileName ?? string.Empty
-                })],
+            Attachments =
+            [
+                .. args.Message.Attachments
+                    .Where(x => !string.IsNullOrWhiteSpace(x.FileName))
+                    .Select(x => new Attachment
+                    {
+                        Id = new AttachmentId(x.Id),
+                        MessageId = new MessageId(args.Message.Id),
+                        FileName = x.FileName ?? string.Empty
+                    })
+            ],
             ChannelId = args.GetChannelId(),
             ReferencedMessageId = args.Message.ReferencedMessage?.GetMessageId(),
             GuildId = args.Guild.GetGuildId(),

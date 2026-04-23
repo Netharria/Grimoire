@@ -75,13 +75,11 @@ public sealed partial class CustomCommandSettings
             EmbedColor = target.EmbedColor,
             RestrictedUse = target.RestrictedUse,
             ModeratorId = ctx.GetModeratorId(),
-            Roles = [.. target.Roles.Select(r => new CustomCommandRole
-            {
-                Name = r.Name,
-                GuildId = r.GuildId,
-                CreatedAt = now,
-                RoleId = r.RoleId
-            })]
+            Roles =
+            [
+                .. target.Roles.Select(r =>
+                    new CustomCommandRole { Name = r.Name, GuildId = r.GuildId, CreatedAt = now, RoleId = r.RoleId })
+            ]
         };
 
         await dbContext.AddAsync(reverted);

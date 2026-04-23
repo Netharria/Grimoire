@@ -91,8 +91,11 @@ public sealed partial class CustomCommandSettings
             EmbedColor = embedColor,
             RestrictedUse = restrictedUse,
             ModeratorId = ctx.GetModeratorId(),
-            Roles = [.. roleIds.Select(roleId =>
-                new CustomCommandRole { Name = name, GuildId = guildId, CreatedAt = now, RoleId = roleId })]
+            Roles =
+            [
+                .. roleIds.Select(roleId =>
+                    new CustomCommandRole { Name = name, GuildId = guildId, CreatedAt = now, RoleId = roleId })
+            ]
         };
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();

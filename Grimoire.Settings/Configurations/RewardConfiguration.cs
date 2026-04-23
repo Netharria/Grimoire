@@ -19,21 +19,32 @@ internal sealed class RewardConfiguration : IEntityTypeConfiguration<Reward>
     public void Configure(EntityTypeBuilder<Reward> builder)
     {
         builder.HasKey(e => new { e.GuildId, e.RoleId, e.SetAt });
+        builder.HasDiscriminator<string>("RewardType")
+            .HasValue<RewardAdded>("Added")
+            .HasValue<RewardRemoved>("Removed");
+
+        builder.Property(e => e.SetBy)
+            .HasConversion(e => e.Value, value => new ModeratorId(value));
+        builder.Property(e => e.GuildId)
+            .HasConversion(e => e.Value, value => new GuildId(value));
+        builder.Property(e => e.RoleId)
+            .HasConversion(e => e.Value, value => new RoleId(value));
+        builder.HasIndex(x => new { x.GuildId, x.RoleId, x.SetAt })
+            .IsDescending(false, false, true);
+    }
+}
+
+[ExcludeFromCodeCoverage]
+internal sealed class RewardAddedConfiguration : IEntityTypeConfiguration<RewardAdded>
+{
+    public void Configure(EntityTypeBuilder<RewardAdded> builder)
+    {
+        builder.Property(e => e.RewardLevel).IsRequired();
         builder.Property(e => e.RewardMessage)
             .HasConversion(
                 r => r == null ? null : r.Value.Value,
                 v => v == null ? null : RewardMessage.FromDatabase(v))
             .HasMaxLength(4096)
             .IsRequired(false);
-        builder.Property(e => e.RewardLevel).IsRequired();
-        builder.Property(e => e.SetBy)
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
-        builder.HasIndex(x => new { x.GuildId, x.RoleId, x.SetAt })
-            .IsDescending(false, false, true);
-
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-        builder.Property(e => e.RoleId)
-            .HasConversion(e => e.Value, value => new RoleId(value));
     }
 }

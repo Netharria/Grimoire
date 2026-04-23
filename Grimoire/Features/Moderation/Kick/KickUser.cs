@@ -47,16 +47,18 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
             GuildId = guild.GetGuildId(),
             ModeratorId = ctx.GetModeratorId(),
             SinType = SinType.Kick,
-            ReasonHistory = string.IsNullOrWhiteSpace(reason) ? [] :
-            [
-                new SinReasonHistory
-                {
-                    SinId = default,
-                    Reason = reason,
-                    ModeratorId = ctx.GetModeratorId(),
-                    SetAt = DateTimeOffset.UtcNow
-                }
-            ]
+            ReasonHistory = string.IsNullOrWhiteSpace(reason)
+                ? []
+                :
+                [
+                    new SinReasonHistory
+                    {
+                        SinId = default,
+                        Reason = reason,
+                        ModeratorId = ctx.GetModeratorId(),
+                        SetAt = DateTimeOffset.UtcNow
+                    }
+                ]
         };
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();

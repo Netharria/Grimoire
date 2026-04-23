@@ -23,7 +23,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     [Fact]
     public async Task NoLock_IsChannelLocked_ReturnsFalse()
     {
-        var result = await this._sut.IsChannelLocked(_channelId, _guildId);
+        var result = (await this._sut.IsChannelLocked(_channelId, _guildId)).OrElse(false);
 
         result.ShouldBeFalse();
     }
@@ -34,7 +34,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied, "test",
             DateTimeOffset.UtcNow.AddHours(1));
 
-        var result = await this._sut.IsChannelLocked(_channelId, _guildId);
+        var result = (await this._sut.IsChannelLocked(_channelId, _guildId)).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -109,7 +109,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         (await db.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(x => x.ChannelId == _channelId)).ShouldBeTrue();
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        (await freshSut.IsChannelLocked(_channelId, _guildId)).ShouldBeFalse();
+        (await freshSut.IsChannelLocked(_channelId, _guildId)).OrElse(false).ShouldBeFalse();
     }
 
     [Fact]
@@ -139,10 +139,225 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied, "test",
             DateTimeOffset.UtcNow.AddHours(1));
 
-        (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldBeTrue();
+        (await this._sut.IsChannelLocked(_channelId, _guildId)).OrElse(false).ShouldBeTrue();
 
         await this._sut.RemoveChannelLock(_channelId, _guildId, _modId);
 
-        (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldBeFalse();
+        (await this._sut.IsChannelLocked(_channelId, _guildId)).OrElse(false).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task AddChannelLock_InvalidReason_ReturnsInvalidWithErrorCode()
+    {
+        var result = await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied,
+            "   ", DateTimeOffset.UtcNow.AddHours(1));
+
+        var invalid = result.ShouldBeOfType<Result<ChannelLocked>.Invalid>();
+        invalid.Errors.ShouldContain(e => e.Code == "moderation-reason.invalid");
+    }
+
+    [Fact]
+    public async Task AddChannelLock_PastEndTime_ReturnsInvalidWithErrorCode()
+    {
+        var result = await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied,
+            "reason", DateTimeOffset.UtcNow.AddHours(-1));
+
+        var invalid = result.ShouldBeOfType<Result<ChannelLocked>.Invalid>();
+        invalid.Errors.ShouldContain(e => e.Code == "channel-lock.end-time.invalid");
+    }
+
+    [Fact]
+    public async Task RemoveChannelLock_NotFound_HasCorrectErrorCode()
+    {
+        var result = await this._sut.RemoveChannelLock(_channelId, _guildId, _modId);
+
+        var notFound = result.ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+        notFound.Error.Code.ShouldBe("channel-lock.not-found");
+    }
+
+    [Fact]
+    public async Task CacheInvalidated_AfterAddChannelLock()
+    {
+        (await this._sut.IsChannelLocked(_channelId, _guildId)).OrElse(false).ShouldBeFalse();
+
+        await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied, "test",
+            DateTimeOffset.UtcNow.AddHours(1));
+
+        (await this._sut.IsChannelLocked(_channelId, _guildId)).OrElse(false).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task CacheKey_TwoGuilds_NoCacheInterference()
+    {
+        var guildB = new GuildId(2UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-2);
+
+        await using var db = factory.CreateDbContext();
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("locked"), _channelId, _guildId, t1,
+            _prevAllowed, _prevDenied, t1.AddHours(4)).OrElse(null!));
+        await db.SaveChangesAsync();
+
+        (await this._sut.IsChannelLocked(_channelId, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsChannelLocked(_channelId, guildB)).OrElse(false).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task IsChannelLocked_SameChannelDifferentGuild_ReturnsFalse()
+    {
+        var guildB = new GuildId(2UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-2);
+
+        await using var db = factory.CreateDbContext();
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("locked"), _channelId, guildB, t1,
+            _prevAllowed, _prevDenied, t1.AddHours(4)).OrElse(null!));
+        await db.SaveChangesAsync();
+
+        var result = (await this._sut.IsChannelLocked(_channelId, _guildId)).OrElse(false);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task IsChannelLocked_NewerEventForOtherChannelInSameGuild_OriginalChannelStillLocked()
+    {
+        var otherChannel = new ChannelId(201UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-2);
+        var t2 = DateTimeOffset.UtcNow.AddHours(-1);
+
+        await using var db = factory.CreateDbContext();
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("first"), _channelId, _guildId, t1,
+            _prevAllowed, _prevDenied, t1.AddHours(4)).OrElse(null!));
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
+            _prevAllowed, _prevDenied, t2.AddHours(4)).OrElse(null!));
+        await db.SaveChangesAsync();
+
+        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
+        (await freshSut.IsChannelLocked(_channelId, _guildId)).OrElse(false).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task RemoveChannelLock_DifferentGuild_ReturnsNotFound()
+    {
+        var guildB = new GuildId(2UL);
+
+        await this._sut.AddChannelLock(_modId, _guildId, _channelId, _prevAllowed, _prevDenied, "locked",
+            DateTimeOffset.UtcNow.AddHours(1));
+
+        var result = await this._sut.RemoveChannelLock(_channelId, guildB, _modId);
+
+        result.ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+    }
+
+    [Fact]
+    public async Task RemoveChannelLock_NewerEventForOtherChannelInSameGuild_OriginalChannelUnlocks()
+    {
+        var otherChannel = new ChannelId(201UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-2);
+        var t2 = DateTimeOffset.UtcNow.AddHours(-1);
+
+        await using var db = factory.CreateDbContext();
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("first"), _channelId, _guildId, t1,
+            _prevAllowed, _prevDenied, t1.AddHours(4)).OrElse(null!));
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
+            _prevAllowed, _prevDenied, t2.AddHours(4)).OrElse(null!));
+        await db.SaveChangesAsync();
+
+        var result = await this._sut.RemoveChannelLock(_channelId, _guildId, _modId);
+
+        result.ShouldBeOfType<Result<ChannelLocked>.Success>();
+    }
+
+    [Fact]
+    public async Task GetAllExpiredChannelLocks_NewerEventForOtherChannelInSameGuild_ExpiredChannelStillReturned()
+    {
+        var otherChannel = new ChannelId(201UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-3);
+        var t2 = DateTimeOffset.UtcNow.AddHours(-1);
+
+        await using var db = factory.CreateDbContext();
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("expired"), _channelId, _guildId, t1,
+            _prevAllowed, _prevDenied, t1.AddHours(1)).OrElse(null!));
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
+            _prevAllowed, _prevDenied, t2.AddHours(4)).OrElse(null!));
+        await db.SaveChangesAsync();
+
+        var expired = await this._sut.GetAllExpiredChannelLocks().ToListAsync();
+
+        expired.ShouldContain(x => x.ChannelId == _channelId);
+    }
+
+    [Fact]
+    public async Task GetAllExpiredChannelLocks_SameChannelDifferentGuild_EachGuildTrackedSeparately()
+    {
+        var guildB = new GuildId(2UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-3);
+
+        await using var db = factory.CreateDbContext();
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("guild-a"), _channelId, _guildId, t1,
+            _prevAllowed, _prevDenied, t1.AddHours(1)).OrElse(null!));
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("guild-b"), _channelId, guildB, t1.AddMinutes(10),
+            _prevAllowed, _prevDenied, t1.AddHours(2)).OrElse(null!));
+        await db.SaveChangesAsync();
+
+        var expired = await this._sut.GetAllExpiredChannelLocks().ToListAsync();
+
+        expired.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task AddChannelLock_TwoChannelsSameGuild_CarriesForwardCorrectPermissions()
+    {
+        var otherChannel = new ChannelId(201UL);
+        var p1Allowed = new PreviouslyAllowedPermissions(11111L);
+        var p1Denied = new PreviouslyDeniedPermissions(22222L);
+        var p2Allowed = new PreviouslyAllowedPermissions(33333L);
+        var p2Denied = new PreviouslyDeniedPermissions(44444L);
+
+        await this._sut.AddChannelLock(_modId, _guildId, _channelId, p1Allowed, p1Denied, "first",
+            DateTimeOffset.UtcNow.AddHours(1));
+        await this._sut.AddChannelLock(_modId, _guildId, otherChannel, p2Allowed, p2Denied, "second",
+            DateTimeOffset.UtcNow.AddHours(1));
+
+        await this._sut.AddChannelLock(_modId, _guildId, _channelId, new PreviouslyAllowedPermissions(99999L),
+            new PreviouslyDeniedPermissions(88888L), "re-lock", DateTimeOffset.UtcNow.AddHours(2));
+
+        await using var db = factory.CreateDbContext();
+        var latest = await db.ChannelLocks
+            .OfType<ChannelLocked>()
+            .Where(x => x.ChannelId == _channelId)
+            .OrderByDescending(x => x.SetAt)
+            .FirstAsync();
+        latest.PreviouslyAllowed.ShouldBe(p1Allowed);
+        latest.PreviouslyDenied.ShouldBe(p1Denied);
+    }
+
+    [Fact]
+    public async Task GetAllExpiredChannelLocks_NewerLockedRowForSameChannel_ExcludedFromExpired()
+    {
+        var t1 = DateTimeOffset.UtcNow.AddHours(-3);
+        var t2 = DateTimeOffset.UtcNow.AddHours(-1);
+
+        await using var db = factory.CreateDbContext();
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("old-expired"), _channelId, _guildId, t1,
+            _prevAllowed, _prevDenied, t1.AddHours(1)).OrElse(null!));
+        db.ChannelLocks.Add(ChannelLocked.Create(
+            _modId, ModerationReason.FromDatabase("newer-active"), _channelId, _guildId, t2,
+            _prevAllowed, _prevDenied, t2.AddHours(4)).OrElse(null!));
+        await db.SaveChangesAsync();
+
+        var expired = await this._sut.GetAllExpiredChannelLocks().ToListAsync();
+
+        expired.ShouldBeEmpty();
     }
 }

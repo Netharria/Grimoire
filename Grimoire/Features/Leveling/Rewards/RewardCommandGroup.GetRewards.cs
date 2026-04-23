@@ -8,7 +8,6 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Enums;
-using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -24,7 +23,7 @@ public sealed partial class RewardCommandGroup
         await ctx.DeferResponseAsync();
         var guild = ctx.Guild!;
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId());
+        var rewards = (await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())).OrElse(default!);
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple,
             title: "Rewards",

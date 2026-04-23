@@ -16,17 +16,17 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<bool> IsMessageIgnored(
+    public async Task<Result<bool>> IsMessageIgnored(
         GuildId guildId,
         UserId userId,
         IReadOnlySet<RoleId> userRoleIds,
         ChannelId channelId,
         CancellationToken cancellationToken = default)
     {
-        if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
-            return true;
-        var allIgnoredItems = await GetAllIgnoredItems(guildId, cancellationToken);
-        return allIgnoredItems
+        if (!(await IsModuleEnabled(Module.Leveling, guildId, cancellationToken)).OrElse(false))
+            return Result<bool>.Ok(true);
+        var allIgnoredItems = (await GetAllIgnoredItems(guildId, cancellationToken)).OrElse(FrozenSet<XpIgnoredItem>.Empty);
+        return Result<bool>.Ok(allIgnoredItems
             .Any(ignoredItem =>
                 ignoredItem switch
                 {
@@ -34,19 +34,19 @@ public sealed partial class SettingsModule
                     IgnoredMember member => member.UserId == userId && member.GuildId == guildId,
                     IgnoredRole role => userRoleIds.Contains(role.RoleId),
                     _ => throw new UnreachableException()
-                });
+                }));
     }
 
-    public async Task<bool> IsMemberIgnored(
+    public async Task<Result<bool>> IsMemberIgnored(
         GuildId guildId,
         UserId userId,
         IReadOnlySet<RoleId> userRoleIds,
         CancellationToken cancellationToken = default)
     {
-        if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken))
-            return true;
-        var allIgnoredItems = await GetAllIgnoredItems(guildId, cancellationToken);
-        return allIgnoredItems
+        if (!(await IsModuleEnabled(Module.Leveling, guildId, cancellationToken)).OrElse(false))
+            return Result<bool>.Ok(true);
+        var allIgnoredItems = (await GetAllIgnoredItems(guildId, cancellationToken)).OrElse(FrozenSet<XpIgnoredItem>.Empty);
+        return Result<bool>.Ok(allIgnoredItems
             .Any(ignoredItem =>
                 ignoredItem switch
                 {
@@ -54,21 +54,19 @@ public sealed partial class SettingsModule
                     IgnoredMember member => member.UserId == userId && member.GuildId == guildId,
                     IgnoredRole role => userRoleIds.Contains(role.RoleId),
                     _ => throw new UnreachableException()
-                });
+                }));
     }
 
-    public async Task<IReadOnlySet<XpIgnoredItem>> GetAllIgnoredItems(
+    public async Task<Result<IReadOnlySet<XpIgnoredItem>>> GetAllIgnoredItems(
         GuildId guildId,
         CancellationToken cancellationToken = default)
-        => await this._cache.GetOrCreateAsync(
+    {
+        var items = await this._cache.GetOrCreateAsync(
             CacheKey.XpIgnoredItems(guildId),
             guildId,
             async (guildIdState, ct) =>
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                // XpIgnoredItem uses TPH (discriminator column), which prevents EF Core from
-                // translating a .Where() applied after GroupBy().Select(g => g.First()).
-                // Stream rows as they arrive and filter by Enabled in memory.
                 var enabledItems = new List<XpIgnoredItem>();
                 await foreach (var item in dbContext
                                    .XpIgnoredItems
@@ -80,11 +78,13 @@ public sealed partial class SettingsModule
                                            .First())
                                    .AsAsyncEnumerable()
                                    .WithCancellation(ct))
-                    if (item.Enabled)
+                    if (item is IgnoredChannel or IgnoredMember or IgnoredRole)
                         enabledItems.Add(item);
                 return enabledItems.ToFrozenSet();
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
+        return Result<IReadOnlySet<XpIgnoredItem>>.Ok(items);
+    }
 
 
     public async Task<Result<IReadOnlySet<XpIgnoredItem>>> AppendIgnoredItemsEvent(

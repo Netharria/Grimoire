@@ -22,6 +22,12 @@ public readonly record struct XpGainAmount
 
     public int Value { get; }
 
+
+    internal static XpGainAmount FromDatabaseOrDefault(string? input)
+        => input is not null
+            ? new XpGainAmount(int.Parse(input, NumberStyles.Integer, CultureInfo.InvariantCulture))
+            : Default;
+
     public static Validation<XpGainAmount> Create(string? inputStr)
     {
         if (!int.TryParse(inputStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var input)

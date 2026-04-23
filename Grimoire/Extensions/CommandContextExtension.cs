@@ -46,8 +46,11 @@ public static class CommandContextExtension
             };
         }
 
-        public ValueTask SendErrorResponseAsync(string message) => ctx.ReplyAsync(GrimoireColor.Red, message, ephemeral: true);
-        public ValueTask SendWarningResponseAsync(string message) => ctx.ReplyAsync(GrimoireColor.Yellow, message, ephemeral: true);
+        public ValueTask SendErrorResponseAsync(string message) =>
+            ctx.ReplyAsync(GrimoireColor.Red, message, ephemeral: true);
+
+        public ValueTask SendWarningResponseAsync(string message) =>
+            ctx.ReplyAsync(GrimoireColor.Yellow, message, ephemeral: true);
 
         [Pure]
         public DiscordChannel? GetChannelOption(ChannelOption channelOption,
@@ -57,7 +60,8 @@ public static class CommandContextExtension
             {
                 ChannelOption.Off => null,
                 ChannelOption.CurrentChannel => ctx.Channel,
-                ChannelOption.SelectChannel => selectedChannel ?? throw new ArgumentNullException(nameof(selectedChannel),
+                ChannelOption.SelectChannel => selectedChannel ?? throw new ArgumentNullException(
+                    nameof(selectedChannel),
                     "Selected channel cannot be empty when ChannelOption is SelectChannel."),
                 _ => throw new UnreachableException("Invalid ChannelOption value.")
             };

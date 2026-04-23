@@ -19,7 +19,6 @@ namespace Grimoire.Features.Leveling.Rewards;
 [UsedImplicitly]
 public sealed partial class RewardCommandGroup
 {
-
     [UsedImplicitly]
     [RequireGuild]
     [RequireModuleEnabled(Module.Leveling)]
@@ -29,8 +28,7 @@ public sealed partial class RewardCommandGroup
     public async Task AddAsync(CommandContext ctx,
         [Parameter("Role")] [Description("The role to be added as a reward.")]
         DiscordRole role,
-        [MinMaxValue(0, int.MaxValue)]
-        [Parameter("Level")] [Description("The level the reward is awarded at.")]
+        [MinMaxValue(0, int.MaxValue)] [Parameter("Level")] [Description("The level the reward is awarded at.")]
         int level,
         [MinMaxLength(maxLength: 4096)]
         [Parameter("Message")]
@@ -44,16 +42,16 @@ public sealed partial class RewardCommandGroup
         await ValidateBotHasPermission(guild, role)
             .Bind(_ => CreateRewardMessage(message))
             .Bind(validatedMessage =>
-                Reward.Create(
+                RewardAdded.Create(
                     role.GetRoleId(),
                     guild.GetGuildId(),
                     level,
                     validatedMessage,
                     ctx.GetModeratorId(),
-                    DateTimeOffset.UtcNow,
-                    true)
+                    DateTimeOffset.UtcNow)
             )
-            .BindAsync(async reward => (await this._settingsModule.SetRewardAsync(reward)).ToValidation())
+            .ToResult()
+            .BindAsync(async reward => await this._settingsModule.SetRewardAsync(reward))
             .Match(
                 reward => OnAddSuccess(ctx, reward, role, guild),
                 errors => OnFail(ctx, errors)
@@ -67,14 +65,16 @@ public sealed partial class RewardCommandGroup
                 $"reward role because the role has a higher rank than it does."))
             : Validation<DiscordRole>.Succeed(role);
 
-    private static Task OnFail(CommandContext ctx, ImmutableArray<Error> errors) =>
-        ctx.ReplyAsync(GrimoireColor.Red,
+    private static Task OnFail(CommandContext ctx, ImmutableArray<Error> errors)
+    {
+        return ctx.ReplyAsync(GrimoireColor.Red,
                 $"Was not able to update the rewards for the server for the following errors: \n" +
                 $"{string.Join('\n', errors.Distinct().Select(error => error.Message))}")
             .AsTask();
+    }
 
 
-    private async Task OnAddSuccess(CommandContext ctx, Reward reward, DiscordRole role, DiscordGuild guild)
+    private async Task OnAddSuccess(CommandContext ctx, RewardAdded reward, DiscordRole role, DiscordGuild guild)
     {
         var responseMessage =
             $"Successfully updated the rewards to include {role.Mention} at level {reward.RewardLevel}.";

@@ -22,8 +22,8 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     {
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-        result.ShouldBeOfType<Result<GuildSetting>.Success>();
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeTrue();
+        result.ShouldBeOfType<Result<bool>.Success>();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
     }
 
     [Fact]
@@ -31,8 +31,8 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     {
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
 
-        result.ShouldBeOfType<Result<GuildSetting>.Success>();
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeFalse();
+        result.ShouldBeOfType<Result<bool>.Success>();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeFalse();
     }
 
     [Fact]
@@ -43,17 +43,17 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
                      Module.Leveling, Module.UserLog, Module.Moderation, Module.MessageLog, Module.Commands,
                      Module.AntiSpam
                  })
-            (await this._sut.IsModuleEnabled(module, _guildId)).ShouldBeFalse();
+            (await this._sut.IsModuleEnabled(module, _guildId)).OrElse(false).ShouldBeFalse();
     }
 
     [Fact]
     public async Task GeneralModule_AlwaysEnabled()
     {
-        (await this._sut.IsModuleEnabled(Module.General, _guildId)).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.General, _guildId)).OrElse(false).ShouldBeTrue();
 
         var result = await this._sut.SetModuleState(Module.General, _guildId, _modId, true);
 
-        result.ShouldBeOfType<Result<GuildSetting>.Invalid>();
+        result.ShouldBeOfType<Result<bool>.Invalid>();
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-        result.ShouldBeOfType<Result<GuildSetting>.NotModified>();
+        result.ShouldBeOfType<Result<bool>.NotModified>();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
@@ -79,7 +79,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
 
-        result.ShouldBeOfType<Result<GuildSetting>.NotModified>();
+        result.ShouldBeOfType<Result<bool>.NotModified>();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
@@ -97,7 +97,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         await this._sut.SetModuleState(Module.Moderation, _guildId, _modId, false);
         await this._sut.SetModuleState(Module.Commands, _guildId, _modId, false);
 
-        var state = await this._sut.GetAllModuleState(_guildId);
+        var state = (await this._sut.GetAllModuleState(_guildId)).OrElse(default!);
 
         state.LevelingEnabled.ShouldBeTrue();
         state.UserLogEnabled.ShouldBeTrue();
@@ -105,6 +105,79 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         state.ModerationEnabled.ShouldBeFalse();
         state.CommandsEnabled.ShouldBeFalse();
         state.AntiSpamEnabled.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task GeneralModule_SetState_HasCorrectErrorCode()
+    {
+        var result = await this._sut.SetModuleState(Module.General, _guildId, _modId, true);
+
+        var invalid = result.ShouldBeOfType<Result<bool>.Invalid>();
+        invalid.Errors.ShouldContain(e => e.Code == "module.general.immutable");
+    }
+
+    [Fact]
+    public async Task TwoGuilds_ModuleState_Independent()
+    {
+        var guildB = new GuildId(2UL);
+
+        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
+        await this._sut.SetModuleState(Module.Leveling, guildB, _modId, false);
+
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, guildB)).OrElse(false).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task GetGuildSetting_MultipleRows_LatestWins()
+    {
+        await using var db = factory.CreateDbContext();
+        db.GuildSettings.Add(new GuildSettingCustomValue(
+            GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
+            bool.TrueString));
+        db.GuildSettings.Add(new GuildSettingDisabled(
+            GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)));
+        await db.SaveChangesAsync();
+
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task SetGuildSetting_MultipleRows_LatestDeterminesRedundancy()
+    {
+        await using var db = factory.CreateDbContext();
+        db.GuildSettings.Add(new GuildSettingCustomValue(
+            GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
+            bool.TrueString));
+        db.GuildSettings.Add(new GuildSettingDisabled(
+            GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)));
+        await db.SaveChangesAsync();
+
+        var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
+
+        result.ShouldBeOfType<Result<bool>.NotModified>();
+    }
+
+    [Fact]
+    public async Task RedundantEnable_NotModified_HasCorrectErrorCode()
+    {
+        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
+
+        var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
+
+        var notModified = result.ShouldBeOfType<Result<bool>.NotModified>();
+        notModified.Error.Code.ShouldBe($"guild-setting.{GuildSettingType.LevelingModuleEnabled}.not-changed");
+    }
+
+    [Fact]
+    public async Task CacheCleared_AfterModuleStateChange()
+    {
+        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
+
+        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
+
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeFalse();
     }
 
     [Fact]
@@ -118,7 +191,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
             await db.SaveChangesAsync();
         }
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
 
         await using (var db = factory.CreateDbContext())
         {
@@ -127,10 +200,10 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
             await db.SaveChangesAsync();
         }
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
 
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
     }
 }

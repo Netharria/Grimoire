@@ -12,10 +12,11 @@ using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
-using Grimoire.Settings.Services;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Leveling.Settings;
 
+[UsedImplicitly]
 public sealed partial class LevelSettingsCommandGroup
 {
     public enum LevelSettingsOptions
@@ -33,13 +34,13 @@ public sealed partial class LevelSettingsCommandGroup
         Amount
     }
 
-    public static SettingsModule.LevelSettings ToLevelSettings(LevelSettingsOptions levelSettingsOptions)
+    public static LevelSettings ToLevelSettings(LevelSettingsOptions levelSettingsOptions)
         => levelSettingsOptions switch
         {
-            LevelSettingsOptions.Amount => SettingsModule.LevelSettings.Amount,
-            LevelSettingsOptions.Base => SettingsModule.LevelSettings.Base,
-            LevelSettingsOptions.Modifier => SettingsModule.LevelSettings.Modifier,
-            LevelSettingsOptions.TextTime => SettingsModule.LevelSettings.XpTimeoutPeriod,
+            LevelSettingsOptions.Amount => LevelSettings.Amount,
+            LevelSettingsOptions.Base => LevelSettings.Base,
+            LevelSettingsOptions.Modifier => LevelSettings.Modifier,
+            LevelSettingsOptions.TextTime => LevelSettings.XpTimeoutPeriod,
             _ => throw new UnreachableException("Invalid setting.")
         };
 

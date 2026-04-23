@@ -28,7 +28,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId);
+        var result = (await freshSut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId)).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -41,15 +41,11 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredMember
                 {
-                    UserId = _userId,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = DateTimeOffset.UtcNow,
-                    Enabled = true
+                    UserId = _userId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow
                 }
             });
 
-        var result = await this._sut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId);
+        var result = (await this._sut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId)).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -62,15 +58,11 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredChannel
                 {
-                    ChannelId = _channelId,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = DateTimeOffset.UtcNow,
-                    Enabled = true
+                    ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow
                 }
             });
 
-        var result = await this._sut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId);
+        var result = (await this._sut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId)).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -83,15 +75,11 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredRole
                 {
-                    RoleId = _roleId,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = DateTimeOffset.UtcNow,
-                    Enabled = true
+                    RoleId = _roleId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow
                 }
             });
 
-        var result = await this._sut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId> { _roleId }, _channelId);
+        var result = (await this._sut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId> { _roleId }, _channelId)).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -99,7 +87,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
     [Fact]
     public async Task NoneIgnored_IsMessageIgnored_ReturnsFalse()
     {
-        var result = await this._sut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId);
+        var result = (await this._sut.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId)).OrElse(false);
 
         result.ShouldBeFalse();
     }
@@ -112,15 +100,11 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
             {
                 new IgnoredChannel
                 {
-                    ChannelId = _channelId,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = DateTimeOffset.UtcNow,
-                    Enabled = true
+                    ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow
                 }
             });
 
-        var result = await this._sut.IsMemberIgnored(_guildId, _userId, new HashSet<RoleId>());
+        var result = (await this._sut.IsMemberIgnored(_guildId, _userId, new HashSet<RoleId>())).OrElse(false);
 
         result.ShouldBeFalse();
     }
@@ -139,11 +123,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
         var wrongGuild = new GuildId(2UL);
         var item = new IgnoredChannel
         {
-            ChannelId = _channelId,
-            GuildId = wrongGuild,
-            SetBy = _modId,
-            SetAt = DateTimeOffset.UtcNow,
-            Enabled = true
+            ChannelId = _channelId, GuildId = wrongGuild, SetBy = _modId, SetAt = DateTimeOffset.UtcNow
         };
 
         var result = await this._sut.AppendIgnoredItemsEvent(_guildId, new HashSet<XpIgnoredItem> { item });
@@ -160,30 +140,16 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
         await this._sut.AppendIgnoredItemsEvent(_guildId,
             new HashSet<XpIgnoredItem>
             {
-                new IgnoredChannel
-                {
-                    ChannelId = _channelId,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = past,
-                    Enabled = true
-                }
+                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = past }
             });
         await this._sut.AppendIgnoredItemsEvent(_guildId,
             new HashSet<XpIgnoredItem>
             {
-                new IgnoredChannel
-                {
-                    ChannelId = _channelId,
-                    GuildId = _guildId,
-                    SetBy = _modId,
-                    SetAt = now,
-                    Enabled = false
-                }
+                new WatchedChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = now }
             });
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var items = await freshSut.GetAllIgnoredItems(_guildId);
+        var items = (await freshSut.GetAllIgnoredItems(_guildId)).OrElse(default!);
 
         items.OfType<IgnoredChannel>().ShouldNotContain(c => c.ChannelId == _channelId);
     }
@@ -198,22 +164,172 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
         await this._sut.AppendIgnoredItemsEvent(_guildId,
             new HashSet<XpIgnoredItem>
             {
-                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t1, Enabled = true }
+                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t1 }
             });
         await this._sut.AppendIgnoredItemsEvent(_guildId,
             new HashSet<XpIgnoredItem>
             {
-                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t2, Enabled = false }
+                new WatchedChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t2 }
             });
         await this._sut.AppendIgnoredItemsEvent(_guildId,
             new HashSet<XpIgnoredItem>
             {
-                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t3, Enabled = true }
+                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = t3 }
             });
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var items = await freshSut.GetAllIgnoredItems(_guildId);
+        var items = (await freshSut.GetAllIgnoredItems(_guildId)).OrElse(default!);
 
         items.OfType<IgnoredChannel>().ShouldContain(c => c.ChannelId == _channelId);
+    }
+
+    [Fact]
+    public async Task AppendEmpty_ErrorCode_IsCorrect()
+    {
+        var result = await this._sut.AppendIgnoredItemsEvent(_guildId, new HashSet<XpIgnoredItem>());
+
+        var notModified = result.ShouldBeOfType<Result<IReadOnlySet<XpIgnoredItem>>.NotModified>();
+        notModified.Error.Code.ShouldBe("xp-ignored-items.empty");
+        notModified.Error.Message.ShouldNotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task AppendMismatchedGuild_ErrorCode_IsCorrect()
+    {
+        var wrongGuild = new GuildId(2UL);
+        var item = new IgnoredChannel
+        {
+            ChannelId = _channelId, GuildId = wrongGuild, SetBy = _modId, SetAt = DateTimeOffset.UtcNow
+        };
+
+        var result = await this._sut.AppendIgnoredItemsEvent(_guildId, new HashSet<XpIgnoredItem> { item });
+
+        var invalid = result.ShouldBeOfType<Result<IReadOnlySet<XpIgnoredItem>>.Invalid>();
+        var error = invalid.Errors.ShouldHaveSingleItem();
+        error.Code.ShouldBe("xp-ignored-items.guild-id.mismatch");
+        error.Message.ShouldNotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task IsMemberIgnored_SameUserDifferentGuild_ReturnsFalse()
+    {
+        var guildB = new GuildId(2UL);
+        await this._sut.SetModuleState(Module.Leveling, guildB, _modId, true);
+
+        await this._sut.AppendIgnoredItemsEvent(_guildId,
+            new HashSet<XpIgnoredItem>
+            {
+                new IgnoredMember { UserId = _userId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
+            });
+
+        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
+        var result = (await freshSut.IsMemberIgnored(guildB, _userId, new HashSet<RoleId>())).OrElse(false);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task IsMessageIgnored_SameUserDifferentGuild_ReturnsFalse()
+    {
+        var guildB = new GuildId(2UL);
+        await this._sut.SetModuleState(Module.Leveling, guildB, _modId, true);
+
+        await this._sut.AppendIgnoredItemsEvent(_guildId,
+            new HashSet<XpIgnoredItem>
+            {
+                new IgnoredMember { UserId = _userId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
+            });
+
+        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
+        var result = (await freshSut.IsMessageIgnored(guildB, _userId, new HashSet<RoleId>(), _channelId)).OrElse(false);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task IsMessageIgnored_SameChannelDifferentGuild_ReturnsFalse()
+    {
+        var guildB = new GuildId(2UL);
+        await this._sut.SetModuleState(Module.Leveling, guildB, _modId, true);
+
+        await this._sut.AppendIgnoredItemsEvent(_guildId,
+            new HashSet<XpIgnoredItem>
+            {
+                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
+            });
+
+        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
+        var result = (await freshSut.IsMessageIgnored(guildB, _userId, new HashSet<RoleId>(), _channelId)).OrElse(false);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task ModuleDisabled_IsMemberIgnored_ReturnsTrue()
+    {
+        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
+
+        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
+        var result = (await freshSut.IsMemberIgnored(_guildId, _userId, new HashSet<RoleId>())).OrElse(false);
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task UserIgnored_IsMemberIgnored_ReturnsTrue()
+    {
+        await this._sut.AppendIgnoredItemsEvent(_guildId,
+            new HashSet<XpIgnoredItem>
+            {
+                new IgnoredMember { UserId = _userId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
+            });
+
+        var result = (await this._sut.IsMemberIgnored(_guildId, _userId, new HashSet<RoleId>())).OrElse(false);
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task DifferentUserInSameGuild_IsMemberIgnored_ReturnsFalse()
+    {
+        var otherUser = new UserId(101UL);
+        await this._sut.AppendIgnoredItemsEvent(_guildId,
+            new HashSet<XpIgnoredItem>
+            {
+                new IgnoredMember { UserId = _userId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
+            });
+
+        var result = (await this._sut.IsMemberIgnored(_guildId, otherUser, new HashSet<RoleId>())).OrElse(false);
+
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task AppendIgnoredItems_MixedGuildItems_ReturnsInvalid()
+    {
+        var wrongGuild = new GuildId(2UL);
+        var items = new HashSet<XpIgnoredItem>
+        {
+            new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow },
+            new IgnoredMember { UserId = _userId, GuildId = wrongGuild, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
+        };
+
+        var result = await this._sut.AppendIgnoredItemsEvent(_guildId, items);
+
+        result.ShouldBeOfType<Result<IReadOnlySet<XpIgnoredItem>>.Invalid>();
+    }
+
+    [Fact]
+    public async Task CacheInvalidated_AfterAppendIgnoredItems()
+    {
+        (await this._sut.GetAllIgnoredItems(_guildId)).OrElse(default!).ShouldBeEmpty();
+
+        await this._sut.AppendIgnoredItemsEvent(_guildId,
+            new HashSet<XpIgnoredItem>
+            {
+                new IgnoredChannel { ChannelId = _channelId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
+            });
+
+        (await this._sut.GetAllIgnoredItems(_guildId)).OrElse(default!).ShouldHaveSingleItem();
     }
 }

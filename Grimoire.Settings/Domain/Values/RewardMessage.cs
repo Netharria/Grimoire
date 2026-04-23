@@ -16,7 +16,10 @@ public readonly record struct RewardMessage
 
     public string Value { get; }
 
-    internal static RewardMessage FromDatabase(string value) => new(value);
+    internal static RewardMessage? FromDatabase(string? value) =>
+        value is not null
+            ? new RewardMessage(value)
+            : null;
 
     public static Validation<RewardMessage> Create(string? input)
     {

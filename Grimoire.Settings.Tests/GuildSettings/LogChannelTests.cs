@@ -26,7 +26,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
 
         var result = await this._sut.GetEffectiveLogChannelSetting(GuildLogType.Leveling, _guildId);
 
-        result.ShouldBeNull();
+        result.OrElse(_channelId).ShouldBeNull();
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
 
         var result = await this._sut.GetEffectiveLogChannelSetting(GuildLogType.Leveling, _guildId);
 
-        result.ShouldBe(_channelId);
+        result.OrElse(null).ShouldBe(_channelId);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
 
         var result = await this._sut.GetEffectiveLogChannelSetting(GuildLogType.Leveling, _guildId);
 
-        result.ShouldBeNull();
+        result.OrElse(_channelId).ShouldBeNull();
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
 
         var result = await this._sut.GetConfiguredLogChannelSetting(GuildLogType.Leveling, _guildId);
 
-        result.ShouldBeNull();
+        result.OrElse(_channelId).ShouldBeNull();
     }
 
     [Fact]

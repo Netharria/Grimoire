@@ -32,13 +32,13 @@ public sealed record ChannelLocked : ChannelLock
         EndTime = endTime;
     }
 
-    public PreviouslyAllowedPermissions PreviouslyAllowed { get; init; }
-    public PreviouslyDeniedPermissions PreviouslyDenied { get; init; }
-    public DateTimeOffset EndTime { get; init; }
+    public PreviouslyAllowedPermissions PreviouslyAllowed { get; }
+    public PreviouslyDeniedPermissions PreviouslyDenied { get; }
+    public DateTimeOffset EndTime { get; }
 
     public static Validation<ChannelLocked> Create(
         ModeratorId moderatorId,
-        ModerationReason reason,
+        ModerationReason? reason,
         ChannelId channelId,
         GuildId guildId,
         DateTimeOffset setAt,

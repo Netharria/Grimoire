@@ -13,7 +13,8 @@ public static class DiscordGuildExtensions
 {
     extension(DiscordGuild guild)
     {
-        public ValueTask<T?> GetRecentAuditLogAsync<T>(DiscordAuditLogActionType? actionType = null, int allowedTimeSpan = 500)
+        public ValueTask<T?> GetRecentAuditLogAsync<T>(DiscordAuditLogActionType? actionType = null,
+            int allowedTimeSpan = 500)
             where T : DiscordAuditLogEntry
             => guild.GetAuditLogsAsync(1, actionType: actionType)
                 .OfType<T>()

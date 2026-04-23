@@ -90,7 +90,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
             _ => throw new ArgumentOutOfRangeException(nameof(sinQueryType), sinQueryType, null)
         };
 
-        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId());
+        var autoPardonAfter = (await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId())).OrElse(TimeSpan.FromDays(10950));
 
         var result = await queryable
             .Where(x => x.SinOn > DateTimeOffset.UtcNow - autoPardonAfter)
@@ -109,7 +109,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
                 x.ModeratorId,
                 // ReSharper disable AccessToDisposedClosure
                 Pardon = dbContext.Pardons.Any(p => p.SinId == x.Id),
-                PardonModeratorId = (ModeratorId?)dbContext.Pardons
+                PardonModeratorId = dbContext.Pardons
                     .Where(p => p.SinId == x.Id)
                     .OrderByDescending(p => p.SetAt)
                     .Select(p => (ModeratorId?)p.ModeratorId)

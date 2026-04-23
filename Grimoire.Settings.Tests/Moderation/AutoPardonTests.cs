@@ -22,7 +22,7 @@ public sealed class AutoPardonTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         var result = await this._sut.GetAutoPardonDuration(_guildId);
 
-        result.ShouldBe(TimeSpan.FromDays(10950));
+        result.OrElse(default).ShouldBe(TimeSpan.FromDays(10950));
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class AutoPardonTests(SettingsTestsFactory factory) : IAsyncLifeti
 
         var result = await this._sut.GetAutoPardonDuration(_guildId);
 
-        result.ShouldBe(TimeSpan.FromDays(30));
+        result.OrElse(default).ShouldBe(TimeSpan.FromDays(30));
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public sealed class AutoPardonTests(SettingsTestsFactory factory) : IAsyncLifeti
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var result = await freshSut.GetAutoPardonDuration(_guildId);
 
-        result.ShouldBe(TimeSpan.FromDays(10950));
+        result.OrElse(default).ShouldBe(TimeSpan.FromDays(10950));
     }
 
     [Fact]
@@ -56,10 +56,22 @@ public sealed class AutoPardonTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         var result = await this._sut.ResetAutoPardonDuration(_guildId, _modId);
 
-        result.ShouldBeOfType<Result<GuildSetting>.Success>();
+        result.ShouldBeOfType<Result<TimeSpan>.Success>();
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var duration = await freshSut.GetAutoPardonDuration(_guildId);
-        duration.ShouldBe(TimeSpan.FromDays(10950));
+        duration.OrElse(default).ShouldBe(TimeSpan.FromDays(10950));
+    }
+
+    [Fact]
+    public async Task TwoGuilds_AutoPardon_Independent()
+    {
+        var guildB = new GuildId(2UL);
+
+        await this._sut.SetAutoPardonDuration(_guildId, _modId, TimeSpan.FromDays(30));
+        await this._sut.SetAutoPardonDuration(guildB, _modId, TimeSpan.FromDays(60));
+
+        (await this._sut.GetAutoPardonDuration(_guildId)).OrElse(default).ShouldBe(TimeSpan.FromDays(30));
+        (await this._sut.GetAutoPardonDuration(guildB)).OrElse(default).ShouldBe(TimeSpan.FromDays(60));
     }
 }

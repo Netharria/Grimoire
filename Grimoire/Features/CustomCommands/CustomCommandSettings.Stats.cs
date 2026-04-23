@@ -67,14 +67,14 @@ public sealed partial class CustomCommandSettings
         await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
             .WithAuthor($"Stats for !{name}")
             .WithColor(GrimoireColor.Purple)
-            .AddField("Total Uses", (stats?.Total ?? 0).ToString(), inline: true)
-            .AddField("Last 30 Days", (stats?.LastMonth ?? 0).ToString(), inline: true)
-            .AddField("Last Year", (stats?.LastYear ?? 0).ToString(), inline: true)
+            .AddField("Total Uses", (stats?.Total ?? 0).ToString(), true)
+            .AddField("Last 30 Days", (stats?.LastMonth ?? 0).ToString(), true)
+            .AddField("Last Year", (stats?.LastYear ?? 0).ToString(), true)
             .AddField("Last Used",
                 stats?.LastUsed is { } lastUsed
                     ? $"<t:{lastUsed.ToUnixTimeSeconds()}:R>"
                     : "Never",
-                inline: true)
+                true)
             .AddField("Top Users", topUsersText));
     }
 }

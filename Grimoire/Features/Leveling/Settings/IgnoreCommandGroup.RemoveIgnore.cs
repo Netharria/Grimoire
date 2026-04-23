@@ -36,29 +36,26 @@ public partial class IgnoreCommandGroup
 
         var ignoredItems = value.Select(item => (XpIgnoredItem?)(item switch
             {
-                DiscordUser => new IgnoredMember
+                DiscordUser => new WatchedMember
                 {
                     UserId = new UserId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
-                    SetBy = ctx.GetModeratorId(),
-                    Enabled = false
+                    SetBy = ctx.GetModeratorId()
                 },
-                DiscordRole => new IgnoredRole
+                DiscordRole => new WatchedRole
                 {
                     RoleId = new RoleId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
-                    SetBy = ctx.GetModeratorId(),
-                    Enabled = false
+                    SetBy = ctx.GetModeratorId()
                 },
-                DiscordChannel => new IgnoredChannel
+                DiscordChannel => new WatchedChannel
                 {
                     ChannelId = new ChannelId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
-                    SetBy = ctx.GetModeratorId(),
-                    Enabled = false
+                    SetBy = ctx.GetModeratorId()
                 },
                 _ => null
             })).OfType<XpIgnoredItem>()

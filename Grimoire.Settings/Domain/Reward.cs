@@ -9,54 +9,38 @@ using Grimoire.Settings.Domain.Values;
 
 namespace Grimoire.Settings.Domain;
 
-public sealed record Reward
+public abstract record Reward(RoleId RoleId, GuildId GuildId, ModeratorId SetBy, DateTimeOffset SetAt);
+
+public sealed record RewardAdded(
+    RoleId RoleId,
+    GuildId GuildId,
+    ModeratorId SetBy,
+    DateTimeOffset SetAt,
+    int RewardLevel,
+    RewardMessage? RewardMessage)
+    : Reward(RoleId, GuildId, SetBy, SetAt)
 {
-    private Reward(
+    public static Validation<RewardAdded> Create(
         RoleId roleId,
         GuildId guildId,
         int rewardLevel,
         RewardMessage? rewardMessage,
         ModeratorId setBy,
-        DateTimeOffset setAt,
-        bool enabled)
-    {
-        RoleId = roleId;
-        GuildId = guildId;
-        RewardLevel = rewardLevel;
-        RewardMessage = rewardMessage;
-        SetBy = setBy;
-        SetAt = setAt;
-        Enabled = enabled;
-    }
-
-    public RoleId RoleId { get; }
-    public GuildId GuildId { get; }
-    public int RewardLevel { get; }
-    public RewardMessage? RewardMessage { get; }
-    public ModeratorId SetBy { get; }
-    public DateTimeOffset SetAt { get; }
-    public bool Enabled { get; }
-
-    public static Validation<Reward> Create(
-        RoleId roleId,
-        GuildId guildId,
-        int rewardLevel,
-        RewardMessage? rewardMessage,
-        ModeratorId setBy,
-        DateTimeOffset setAt,
-        bool enabled
-    )
+        DateTimeOffset setAt)
     {
         if (rewardLevel < 0)
-            return Validation<Reward>.Fail(
+            return Validation<RewardAdded>.Fail(
                 new Error("reward.reward-level.invalid", "Reward Level must be greater than or equal to zero."));
         if (roleId.Value == 0)
-            return Validation<Reward>.Fail(
+            return Validation<RewardAdded>.Fail(
                 new Error("reward.role-id.invalid", "RoleId must be specified."));
         if (setBy.Value == 0)
-            return Validation<Reward>.Fail(
-                new Error("mute.moderator-id.invalid", "ModeratorId must be specified."));
-        return Validation<Reward>.Succeed(
-            new Reward(roleId, guildId, rewardLevel, rewardMessage, setBy, setAt, enabled));
+            return Validation<RewardAdded>.Fail(
+                new Error("reward.moderator-id.invalid", "ModeratorId must be specified."));
+        return Validation<RewardAdded>.Succeed(
+            new RewardAdded(roleId, guildId, setBy, setAt, rewardLevel, rewardMessage));
     }
 }
+
+public sealed record RewardRemoved(RoleId RoleId, GuildId GuildId, ModeratorId SetBy, DateTimeOffset SetAt)
+    : Reward(RoleId, GuildId, SetBy, SetAt);

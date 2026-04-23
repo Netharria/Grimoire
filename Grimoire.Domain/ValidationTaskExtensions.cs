@@ -6,49 +6,41 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Grimoire.Domain;
 
 public static class ValidationTaskExtensions
 {
-    public static async Task<Validation<TOut>> Map<T, TOut>(
-        this Task<Validation<T>> task,
-        Func<T, TOut> mapper)
-        => (await task).Map(mapper);
-
-    public static async Task<Validation<TOut>> Bind<T, TOut>(
-        this Task<Validation<T>> task,
-        Func<T, Validation<TOut>> binder)
-        => (await task).Bind(binder);
-
-    public static async Task<Validation<TOut>> BindAsync<T, TOut>(
-        this Task<Validation<T>> task,
-        Func<T, Task<Validation<TOut>>> binder)
-        => await (await task).BindAsync(binder);
-
-    public static async Task<TOut> Match<T, TOut>(
-        this Task<Validation<T>> task,
-        Func<T, TOut> onValid,
-        Func<ImmutableArray<Error>, TOut> onInvalid)
-        => (await task).Match(onValid, onInvalid);
-
-    public static async Task<TOut> MatchAsync<T, TOut>(
-        this Task<Validation<T>> task,
-        Func<T, Task<TOut>> onValid,
-        Func<ImmutableArray<Error>, TOut> onInvalid)
-        => await (await task).MatchAsync(onValid, onInvalid);
-
-    public static async Task<TOut> MatchAsync<T, TOut>(
-        this Task<Validation<T>> task,
-        Func<T, Task<TOut>> onValid,
-        Func<ImmutableArray<Error>, Task<TOut>> onInvalid)
+    extension<T>(Task<Validation<T>> task)
     {
-        var validation = await task;
-        return validation switch
+        public async Task<Validation<TOut>> Map<TOut>(Func<T, TOut> mapper)
+            => (await task).Map(mapper);
+
+        public async Task<Validation<TOut>> Bind<TOut>(Func<T, Validation<TOut>> binder)
+            => (await task).Bind(binder);
+
+        public async Task<Validation<TOut>> BindAsync<TOut>(Func<T, Task<Validation<TOut>>> binder)
+            => await (await task).BindAsync(binder);
+
+        public async Task<TOut> Match<TOut>(Func<T, TOut> onValid,
+            Func<ImmutableArray<Error>, TOut> onInvalid)
+            => (await task).Match(onValid, onInvalid);
+
+        public async Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> onValid,
+            Func<ImmutableArray<Error>, TOut> onInvalid)
+            => await (await task).MatchAsync(onValid, onInvalid);
+
+        public async Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> onValid,
+            Func<ImmutableArray<Error>, Task<TOut>> onInvalid)
         {
-            Validation<T>.Valid(var v) => await onValid(v),
-            Validation<T>.Invalid(var e) => await onInvalid(e),
-            _ => throw new System.Diagnostics.UnreachableException()
-        };
+            var validation = await task;
+            return validation switch
+            {
+                Validation<T>.Valid(var v) => await onValid(v),
+                Validation<T>.Invalid(var e) => await onInvalid(e),
+                _ => throw new UnreachableException()
+            };
+        }
     }
 }

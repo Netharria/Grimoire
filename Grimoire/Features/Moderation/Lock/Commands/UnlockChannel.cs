@@ -35,8 +35,8 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         var moderatorId = ctx.GetModeratorId();
 
         var wasLocked = channel.IsThread
-            ? await this.TryUnlockThreadAsync(guild, channel, moderatorId)
-            : await this.TryUnlockChannelAsync(guild, channel, moderatorId);
+            ? await TryUnlockThreadAsync(guild, channel, moderatorId)
+            : await TryUnlockChannelAsync(guild, channel, moderatorId);
 
         if (!wasLocked)
         {

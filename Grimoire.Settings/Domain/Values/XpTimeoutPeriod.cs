@@ -24,6 +24,11 @@ public readonly record struct XpTimeoutPeriod
 
     public TimeSpan Value { get; }
 
+    internal static XpTimeoutPeriod FromDatabaseOrDefault(string? input)
+        => input is not null
+            ? new XpTimeoutPeriod(TimeSpan.Parse(input, CultureInfo.InvariantCulture))
+            : Default;
+
     public static Validation<XpTimeoutPeriod> Create(int? input)
     {
         if (input is not (>= MinValueInt and <= MaxValueInt))

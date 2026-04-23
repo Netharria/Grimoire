@@ -35,12 +35,11 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var userName = await dbContext.Sins
             .Where(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId())
+            // ReSharper disable once AccessToDisposedClosure
             .Select(sin => (Username?)dbContext.UsernameHistory
-                // ReSharper disable AccessToDisposedClosure
                 .Where(h => h.UserId == sin.UserId)
                 .OrderByDescending(h => h.Timestamp)
                 .Select(h => h.Username)
-                // ReSharper restore AccessToDisposedClosure
                 .FirstOrDefault())
             .FirstOrDefaultAsync();
 
@@ -52,17 +51,14 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
 
         dbContext.SinReasonHistory.Add(new SinReasonHistory
         {
-            SinId = sinId,
-            Reason = reason,
-            ModeratorId = ctx.GetModeratorId(),
-            SetAt = DateTimeOffset.UtcNow
+            SinId = sinId, Reason = reason, ModeratorId = ctx.GetModeratorId(), SetAt = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();
 
         await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
             .WithAuthor("Reason Updated")
             .AddField("Id", sinId.ToString(), true)
-            .AddField("User", userName?.Value ?? "Unknown", true)
+            .AddField("User", userName.Value.Value, true)
             .AddField("Reason", reason)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green));

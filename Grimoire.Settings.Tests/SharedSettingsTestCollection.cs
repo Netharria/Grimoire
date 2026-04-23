@@ -8,6 +8,4 @@
 namespace Grimoire.Settings.Tests;
 
 [CollectionDefinition("Settings collection")]
-public sealed class SharedSettingsTestCollection : ICollectionFixture<SettingsTestsFactory>
-{
-}
+public sealed class SharedSettingsTestCollection : ICollectionFixture<SettingsTestsFactory>;

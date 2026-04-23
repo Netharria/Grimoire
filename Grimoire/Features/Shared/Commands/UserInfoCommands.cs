@@ -88,7 +88,7 @@ internal sealed class UserInfoCommands(
         GuildId guildId,
         DiscordEmbedBuilder embed)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, guildId))
+        if (!(await this._settingsModule.IsModuleEnabled(Module.UserLog, guildId)).OrElse(false))
             return;
         var usernames = await dbContext.UsernameHistory
             .AsNoTracking()
@@ -127,7 +127,7 @@ internal sealed class UserInfoCommands(
         GuildId guildId,
         IReadOnlySet<RoleId> roleIds)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, guildId))
+        if (!(await this._settingsModule.IsModuleEnabled(Module.Leveling, guildId)).OrElse(false))
             return;
 
         var membersXp = await dbContext.XpHistory
@@ -137,9 +137,9 @@ internal sealed class UserInfoCommands(
             .Select(member => member.Sum(xpHistory => xpHistory.Xp))
             .FirstOrDefaultAsync();
 
-        var levelSettings = await this._settingsModule.GetLevelingSettings(guildId);
+        var levelSettings = (await this._settingsModule.GetLevelingSettings(guildId)).OrElse(default!);
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId);
+        var rewards = (await this._settingsModule.GetLevelingRewardsAsync(guildId)).OrElse(default!);
 
 
         var membersLevel = levelSettings.GetLevelFromXp(membersXp);
@@ -148,7 +148,7 @@ internal sealed class UserInfoCommands(
             .Select(x => x.RoleId)
             .ToArray();
 
-        var isXpIgnored = await this._settingsModule.IsMemberIgnored(guildId, userId, roleIds);
+        var isXpIgnored = (await this._settingsModule.IsMemberIgnored(guildId, userId, roleIds)).OrElse(false);
 
         embed.AddField("Level", membersLevel.ToString(), true)
             .AddField("Can Gain Xp", isXpIgnored ? "No" : "Yes", true)
@@ -165,9 +165,9 @@ internal sealed class UserInfoCommands(
         UserId userId,
         DiscordEmbedBuilder embed)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId))
+        if (!(await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId)).OrElse(false))
             return;
-        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guildId);
+        var autoPardonAfter = (await this._settingsModule.GetAutoPardonDuration(guildId)).OrElse(TimeSpan.FromDays(10950));
         var response = await dbContext.Sins
             .AsNoTracking()
             .Where(sin => sin.UserId == userId

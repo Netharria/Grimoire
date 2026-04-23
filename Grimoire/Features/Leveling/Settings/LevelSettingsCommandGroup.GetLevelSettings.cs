@@ -27,15 +27,15 @@ public sealed partial class LevelSettingsCommandGroup
             return;
         }
 
-        var response = await this._settingsModule.GetLevelingSettings(guild.GetGuildId());
-        var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId());
+        var response = (await this._settingsModule.GetLevelingSettings(guild.GetGuildId())).OrElse(default!);
+        var moduleEnabled = (await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId())).OrElse(false);
         var levelChannelLog =
             await this._settingsModule.GetEffectiveLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
 
         var levelLogMention =
-            levelChannelLog is null
+            levelChannelLog.OrElse(null) is not { } channel
                 ? "None"
-                : ctx.Guild.Channels.GetValueOrDefault(levelChannelLog.Value.Value)?.Mention;
+                : ctx.Guild.Channels.GetValueOrDefault(channel.Value)?.Mention;
         await ctx.ReplyAsync(
             title: "Current Level System Settings",
             message: $"**Module Enabled:** {moduleEnabled}\n" +

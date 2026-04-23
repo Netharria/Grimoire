@@ -42,14 +42,14 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId());
 
         var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
-        if (muteRoleId is null)
+        if (muteRoleId.OrElse(null) is not { } muteId)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The mute role is not configured. Please configure it before using this command.");
             return;
         }
 
-        var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
+        var muteRole = await guild.GetRoleOrDefaultAsync(muteId);
         if (muteRole is null)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow,

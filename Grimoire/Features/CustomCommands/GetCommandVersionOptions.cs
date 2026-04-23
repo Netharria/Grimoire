@@ -43,7 +43,7 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
 
         return versions.Select((v, i) => new DiscordAutoCompleteChoice(
             $"v{i + 1} — <t:{v.CreatedAt.ToUnixTimeSeconds()}:f>"
-                + (v.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty),
+            + (v.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty),
             v.CreatedAt.ToUnixTimeSeconds().ToString()));
     }
 }

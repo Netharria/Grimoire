@@ -41,24 +41,21 @@ public partial class IgnoreCommandGroup
                     UserId = new UserId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
-                    SetBy = ctx.GetModeratorId(),
-                    Enabled = true
+                    SetBy = ctx.GetModeratorId()
                 },
                 DiscordRole => new IgnoredRole
                 {
                     RoleId = new RoleId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
-                    SetBy = ctx.GetModeratorId(),
-                    Enabled = true
+                    SetBy = ctx.GetModeratorId()
                 },
                 DiscordChannel => new IgnoredChannel
                 {
                     ChannelId = new ChannelId(item.Id),
                     GuildId = guild.GetGuildId(),
                     SetAt = DateTimeOffset.Now,
-                    SetBy = ctx.GetModeratorId(),
-                    Enabled = true
+                    SetBy = ctx.GetModeratorId()
                 },
                 _ => null
             })).OfType<XpIgnoredItem>()

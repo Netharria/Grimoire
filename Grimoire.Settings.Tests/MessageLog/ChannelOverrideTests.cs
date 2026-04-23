@@ -26,7 +26,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         await this._sut.SetModuleState(Module.MessageLog, _guildId, _modId, false);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+        var result = (await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())).OrElse(false);
 
         result.ShouldBeFalse();
     }
@@ -36,7 +36,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     {
         await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
 
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+        var result = (await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -46,7 +46,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     {
         await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
 
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+        var result = (await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())).OrElse(false);
 
         result.ShouldBeFalse();
     }
@@ -58,7 +58,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         await this._sut.SetChannelLogOverride(parentChannelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
 
         var channelNodes = new Dictionary<ChannelId, ChannelId?> { [_channelId] = parentChannelId };
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes);
+        var result = (await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes)).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -70,7 +70,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         await this._sut.SetChannelLogOverride(parentChannelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
 
         var channelNodes = new Dictionary<ChannelId, ChannelId?> { [_channelId] = parentChannelId };
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes);
+        var result = (await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes)).OrElse(false);
 
         result.ShouldBeFalse();
     }
@@ -78,7 +78,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     [Fact]
     public async Task Inherit_NoParent_ReturnsTrue()
     {
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+        var result = (await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -91,7 +91,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         await this._sut.SetChannelLogOverride(root, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
 
         var channelNodes = new Dictionary<ChannelId, ChannelId?> { [_channelId] = mid, [mid] = root };
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes);
+        var result = (await this._sut.ShouldLogMessage(_channelId, _guildId, channelNodes)).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -123,7 +123,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
 
         result.ShouldBeOfType<Result<MessageLogChannelOverride>.Success>();
 
-        var shouldLog = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>());
+        var shouldLog = (await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())).OrElse(false);
         shouldLog.ShouldBeFalse();
     }
 
@@ -143,5 +143,76 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         overrides.ShouldContain(x => x.ChannelId == _channelId);
         overrides.ShouldContain(x => x.ChannelId == neverChannel);
         overrides.ShouldNotContain(x => x.ChannelId == inheritChannel);
+    }
+
+    [Fact]
+    public async Task SetChannelLogOverride_NotModified_HasCorrectErrorCode()
+    {
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+
+        var result =
+            await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+
+        var notModified = result.ShouldBeOfType<Result<MessageLogChannelOverride>.NotModified>();
+        notModified.Error.Code.ShouldBe("channel-log-override.not-changed");
+    }
+
+    [Fact]
+    public async Task CacheKey_TwoDifferentChannels_NoCacheInterference()
+    {
+        var channelB = new ChannelId(201UL);
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
+
+        var resultB = (await this._sut.ShouldLogMessage(channelB, _guildId, new Dictionary<ChannelId, ChannelId?>())).OrElse(false);
+
+        resultB.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ShouldLogMessage_SameChannelDifferentGuild_DoesNotAffectResult()
+    {
+        var guildB = new GuildId(2UL);
+        await this._sut.SetModuleState(Module.MessageLog, guildB, _modId, true);
+        await this._sut.SetChannelLogOverride(_channelId, guildB, _modId, MessageLogOverrideOption.NeverLog);
+
+        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
+        var result = (await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())).OrElse(false);
+
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetAllOverriddenChannels_ExcludesOtherGuild()
+    {
+        var guildB = new GuildId(2UL);
+        var channelB = new ChannelId(201UL);
+
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
+        await this._sut.SetChannelLogOverride(channelB, guildB, _modId, MessageLogOverrideOption.NeverLog);
+
+        var overrides = await this._sut.GetAllOverriddenChannels(_guildId).ToListAsync();
+
+        overrides.Count.ShouldBe(1);
+        overrides.Single().ChannelId.ShouldBe(_channelId);
+    }
+
+    [Fact]
+    public async Task SetChannelLogOverride_MultipleHistoricalRows_LatestWins()
+    {
+        await using (var db = factory.CreateDbContext())
+        {
+            var t1 = DateTimeOffset.UtcNow.AddHours(-2);
+            var t2 = DateTimeOffset.UtcNow.AddHours(-1);
+            db.MessagesLogChannelOverrides.Add(new MessageLogChannelOverride(
+                MessageLogOverrideOption.AlwaysLog, _channelId, _guildId, _modId, t1));
+            db.MessagesLogChannelOverrides.Add(new MessageLogChannelOverride(
+                MessageLogOverrideOption.NeverLog, _channelId, _guildId, _modId, t2));
+            await db.SaveChangesAsync();
+        }
+
+        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
+        var result = (await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())).OrElse(false);
+
+        result.ShouldBeFalse();
     }
 }

@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
 using System.Globalization;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
@@ -15,21 +16,21 @@ public sealed partial class SettingsModule
 {
     private static TimeSpan GetDefaultAutoPardonDuration() => TimeSpan.FromDays(10950);
 
-    public async Task<TimeSpan> GetAutoPardonDuration(GuildId guildId, CancellationToken cancellationToken = default)
-    {
-        var result = await GetGuildSetting(
+    public async Task<Result<TimeSpan>> GetAutoPardonDuration(GuildId guildId, CancellationToken cancellationToken = default) =>
+        (await GetGuildSetting(
             GuildSettingType.SinAutoPardonDuration,
             guildId,
-            cancellationToken);
-
-        if (result is not CachedCustomSetting setting)
-            return GetDefaultAutoPardonDuration();
-        if (TimeSpan.TryParse(setting.Value, CultureInfo.InvariantCulture, out var autoPardon)
-            && autoPardon != TimeSpan.Zero)
-            return autoPardon;
-
-        return GetDefaultAutoPardonDuration();
-    }
+            cancellationToken))
+        .Map(cachedSetting => cachedSetting switch
+        {
+            CachedDefaultSetting => GetDefaultAutoPardonDuration(),
+            CachedCustomSetting customSetting => TimeSpan.Parse(customSetting.Value, CultureInfo.InvariantCulture),
+            CachedDisabledSetting => GetDefaultAutoPardonDuration(),
+            _ => throw new UnreachableException()
+        }).Map(cachedSetting =>
+            cachedSetting != TimeSpan.Zero
+                ? cachedSetting
+                : TimeSpan.Zero);
 
     public async Task<Result<TimeSpan>> SetAutoPardonDuration(
         GuildId guildId,

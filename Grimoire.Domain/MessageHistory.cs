@@ -24,7 +24,9 @@ public abstract record MessageHistoryContentEntry : MessageHistoryEntry
 }
 
 public sealed record MessageCreatedEntry : MessageHistoryContentEntry;
+
 public sealed record MessageEditedEntry : MessageHistoryContentEntry;
+
 public sealed record MessageDeletedEntry : MessageHistoryEntry;
 
 public sealed record MessageDeletedByModeratorEntry : MessageHistoryEntry

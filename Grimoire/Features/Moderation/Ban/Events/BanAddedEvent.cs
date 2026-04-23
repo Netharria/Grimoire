@@ -28,7 +28,7 @@ public partial class BanAddedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanAddedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId()))
+        if (!(await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())).OrElse(false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -41,6 +41,7 @@ public partial class BanAddedEvent(
             {
                 SinId = sin.Id,
                 ModeratorId = sin.ModeratorId,
+                // ReSharper disable once AccessToDisposedClosure
                 Reason = dbContext.SinReasonHistory
                     .Where(r => r.SinId == sin.Id)
                     .OrderByDescending(r => r.SetAt)
@@ -71,26 +72,25 @@ public partial class BanAddedEvent(
                     UserId = args.Member.GetUserId(),
                     SinType = SinType.Ban,
                     ModeratorId = auditModeratorId,
-                    ReasonHistory = string.IsNullOrWhiteSpace(auditReason) ? [] :
-                    [
-                        new SinReasonHistory
-                        {
-                            SinId = default,
-                            Reason = auditReason,
-                            ModeratorId = auditModeratorId,
-                            SetAt = DateTimeOffset.UtcNow
-                        }
-                    ]
+                    ReasonHistory = string.IsNullOrWhiteSpace(auditReason)
+                        ? []
+                        :
+                        [
+                            new SinReasonHistory
+                            {
+                                SinId = default,
+                                Reason = auditReason,
+                                ModeratorId = auditModeratorId,
+                                SetAt = DateTimeOffset.UtcNow
+                            }
+                        ]
                 };
                 dbContext.Sins.Add(sin);
                 await dbContext.SaveChangesAsync();
 
                 lastBan = new LastSin
                 {
-                    SinId = sin.Id,
-                    ModeratorId = sin.ModeratorId,
-                    Reason = auditReason,
-                    SinOn = sin.SinOn
+                    SinId = sin.Id, ModeratorId = sin.ModeratorId, Reason = auditReason, SinOn = sin.SinOn
                 };
             }
             catch (Exception ex) when (ex is UnauthorizedException or ServerErrorException)

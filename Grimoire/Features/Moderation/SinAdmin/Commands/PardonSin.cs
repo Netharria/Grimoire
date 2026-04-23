@@ -33,18 +33,17 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
         var guild = ctx.Guild!;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var userName = await dbContext.Sins
+        var result = await dbContext.Sins
             .Where(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId())
+            // ReSharper disable once AccessToDisposedClosure
             .Select(sin => (Username?)dbContext.UsernameHistory
-                // ReSharper disable AccessToDisposedClosure
                 .Where(h => h.UserId == sin.UserId)
                 .OrderByDescending(h => h.Timestamp)
                 .Select(h => h.Username)
-                // ReSharper restore AccessToDisposedClosure
                 .FirstOrDefault())
             .FirstOrDefaultAsync();
 
-        if (userName is null)
+        if (result is not { Value: var userName })
         {
             await ctx.ReplyAsync(GrimoireColor.Red, "Could not find a sin with that ID.");
             return;
@@ -70,7 +69,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
             GuildLogType = GuildLogType.Moderation,
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor("Pardon")
-                .AddField("User", userName?.Value ?? "Unknown", true)
+                .AddField("User", userName, true)
                 .AddField("Sin Id", sinId.ToString(), true)
                 .AddField("Moderator", ctx.User.Mention, true)
                 .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason, true)

@@ -9,11 +9,13 @@
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using JetBrains.Annotations;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
 public sealed partial class RewardCommandGroup
 {
+    [UsedImplicitly]
     [Command("Remove")]
     [Description("Removes a reward from the server.")]
     public async Task RemoveAsync(CommandContext ctx,
@@ -24,23 +26,20 @@ public sealed partial class RewardCommandGroup
 
         await ctx.DeferResponseAsync();
 
-        await
-                Reward.Create(
-                    role.GetRoleId(),
-                    guild.GetGuildId(),
-                    1,
-                    null,
-                    ctx.GetModeratorId(),
-                    DateTimeOffset.UtcNow,
-                    true)
-            .BindAsync(async reward => (await this._settingsModule.SetRewardAsync(reward)).ToValidation())
-            .Match(
-                reward => OnAddSuccess(ctx, reward, role, guild),
-                errors => OnFail(ctx, errors)
-            );
+        var removeReward = new RewardRemoved(
+            role.GetRoleId(),
+            guild.GetGuildId(),
+            ctx.GetModeratorId(),
+            DateTimeOffset.UtcNow);
+
+        var result = await this._settingsModule.SetRewardAsync(removeReward);
+
+        await result.Match(
+            _ => OnRemoveSuccess(ctx, role, guild),
+            errors => OnFail(ctx, errors));
     }
 
-    private async Task OnRemoveSuccess(CommandContext ctx, Reward reward, DiscordRole role, DiscordGuild guild)
+    private async Task OnRemoveSuccess(CommandContext ctx, DiscordRole role, DiscordGuild guild)
     {
         var responseMessage =
             $"{ctx.User.Mention} removed {role.Mention} reward";

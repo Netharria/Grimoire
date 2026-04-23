@@ -15,13 +15,13 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<bool> ShouldLogMessage(ChannelId channelId,
+    public async Task<Result<bool>> ShouldLogMessage(ChannelId channelId,
         GuildId guildId,
         IReadOnlyDictionary<ChannelId, ChannelId?> channelNodes,
         CancellationToken cancellationToken = default)
     {
-        if (!await IsModuleEnabled(Module.MessageLog, guildId, cancellationToken))
-            return false;
+        if (!(await IsModuleEnabled(Module.MessageLog, guildId, cancellationToken)).OrElse(false))
+            return Result<bool>.Ok(false);
 
         ChannelId? currentChannelId = channelId;
         while (currentChannelId is not null)
@@ -30,9 +30,9 @@ public sealed partial class SettingsModule
             switch (overrideOption)
             {
                 case MessageLogOverrideOption.AlwaysLog:
-                    return true;
+                    return Result<bool>.Ok(true);
                 case MessageLogOverrideOption.NeverLog:
-                    return false;
+                    return Result<bool>.Ok(false);
                 case MessageLogOverrideOption.Inherit:
                 default:
                     currentChannelId = channelNodes.GetValueOrDefault(currentChannelId.Value);
@@ -40,7 +40,7 @@ public sealed partial class SettingsModule
             }
         }
 
-        return true;
+        return Result<bool>.Ok(true);
     }
 
     private async Task<MessageLogOverrideOption> GetChannelLogOverride(ChannelId channelId,

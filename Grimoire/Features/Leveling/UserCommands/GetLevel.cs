@@ -31,7 +31,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             return;
         }
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.GetGuildId()))
+        if (!(await this._settingsModule.IsModuleEnabled(Module.Leveling, ctx.Guild.GetGuildId())).OrElse(false))
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "The leveling module is not enabled on this server.");
             return;
@@ -42,9 +42,9 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         if (ctx is SlashCommandContext slashContext)
             await slashContext.DeferResponseAsync(
                 !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                && userCommandChannelId != ctx.GetChannelId());
+                && userCommandChannelId.OrElse(null) != ctx.GetChannelId());
         else if (!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                 && userCommandChannelId != ctx.GetChannelId())
+                 && userCommandChannelId.OrElse(null) != ctx.GetChannelId())
             return;
 
 
@@ -58,13 +58,13 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .Select(xpHistories => xpHistories.Sum(x => x.Xp))
             .FirstOrDefaultAsync();
 
-        var levelingSettings = await this._settingsModule.GetLevelingSettings(ctx.Guild.GetGuildId());
+        var levelingSettings = (await this._settingsModule.GetLevelingSettings(ctx.Guild.GetGuildId())).OrElse(default!);
 
         var currentLevel = levelingSettings.GetLevelFromXp(membersXp);
         var currentLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel);
         var nextLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel, 1);
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.GetGuildId());
+        var rewards = (await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.GetGuildId())).OrElse(default!);
 
         var nextReward = rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 

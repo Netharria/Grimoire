@@ -8,7 +8,6 @@
 global using Grimoire.Domain;
 global using Grimoire.Settings.Domain;
 global using Grimoire.Settings.Enums;
-global using Grimoire.Settings.Helpers;
 global using Grimoire.Settings.Services;
 global using Microsoft.EntityFrameworkCore;
 global using Shouldly;

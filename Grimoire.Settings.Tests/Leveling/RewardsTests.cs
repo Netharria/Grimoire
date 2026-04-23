@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain.Values;
+
 namespace Grimoire.Settings.Tests.Leveling;
 
 [Collection("Settings collection")]
@@ -20,10 +22,17 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
 
     public Task DisposeAsync() => factory.ResetDatabase();
 
+    private Task AddReward(RoleId roleId, int level, string? message = null)
+        => this._sut.SetRewardAsync(
+            new RewardAdded(roleId, _guildId, _modId, DateTimeOffset.UtcNow, level, null));
+
+    private Task RemoveReward(RoleId roleId)
+        => this._sut.SetRewardAsync(new RewardRemoved(roleId, _guildId, _modId, DateTimeOffset.UtcNow));
+
     [Fact]
     public async Task NoRewards_ReturnsEmptySet()
     {
-        var result = await this._sut.GetLevelingRewardsAsync(_guildId);
+        var result = (await this._sut.GetLevelingRewardsAsync(_guildId)).OrElse(default!);
 
         result.ShouldBeEmpty();
     }
@@ -31,11 +40,11 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task ModuleDisabled_ReturnsEmptySet()
     {
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, null, true);
+        await AddReward(_roleId, 5);
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId);
+        var result = (await freshSut.GetLevelingRewardsAsync(_guildId)).OrElse(default!);
 
         result.ShouldBeEmpty();
     }
@@ -43,9 +52,10 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task SingleReward_ReturnedCorrectly()
     {
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, "GG", true);
+        await this._sut.SetRewardAsync(
+            new RewardAdded(_roleId, _guildId, _modId, DateTimeOffset.UtcNow, 5, RewardMessage.FromDatabase("GG")));
 
-        var result = await this._sut.GetLevelingRewardsAsync(_guildId);
+        var result = (await this._sut.GetLevelingRewardsAsync(_guildId)).OrElse(default!);
 
         result.ShouldHaveSingleItem();
         var entry = result.Single();
@@ -59,12 +69,12 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     {
         var roleId2 = new RoleId(301UL);
         var roleId3 = new RoleId(302UL);
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, null, true);
-        await this._sut.SetRewardAsync(roleId2, _guildId, _modId, 10, null, true);
-        await this._sut.SetRewardAsync(roleId3, _guildId, _modId, 15, null, true);
+        await AddReward(_roleId, 5);
+        await AddReward(roleId2, 10);
+        await AddReward(roleId3, 15);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId);
+        var result = (await freshSut.GetLevelingRewardsAsync(_guildId)).OrElse(default!);
 
         result.Count.ShouldBe(3);
         result.Select(x => x.RoleId).ShouldContain(_roleId);
@@ -75,40 +85,68 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task MultipleHistoricalRows_LatestWins()
     {
-        // Two rows for the same role; the second (level=10) is latest.
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, null, true);
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 10, null, true);
+        await AddReward(_roleId, 5);
+        await AddReward(_roleId, 10);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId);
+        var result = (await freshSut.GetLevelingRewardsAsync(_guildId)).OrElse(default!);
 
         result.ShouldHaveSingleItem();
         result.Single().RewardLevel.ShouldBe(10);
     }
 
     [Fact]
-    public async Task LatestRowDisabled_NotReturned()
+    public async Task LatestRowRemoved_NotReturned()
     {
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, null, true);
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, null, false);
+        await AddReward(_roleId, 5);
+        await RemoveReward(_roleId);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId);
+        var result = (await freshSut.GetLevelingRewardsAsync(_guildId)).OrElse(default!);
 
         result.ShouldBeEmpty();
     }
 
     [Fact]
-    public async Task ReEnable_AppearsAgain()
+    public async Task ReAdded_AppearsAgain()
     {
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, null, true);
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, null, false);
-        await this._sut.SetRewardAsync(_roleId, _guildId, _modId, 5, null, true);
+        await AddReward(_roleId, 5);
+        await RemoveReward(_roleId);
+        await AddReward(_roleId, 5);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId);
+        var result = (await freshSut.GetLevelingRewardsAsync(_guildId)).OrElse(default!);
 
         result.ShouldHaveSingleItem();
         result.Single().RoleId.ShouldBe(_roleId);
+    }
+
+    [Fact]
+    public async Task CacheInvalidated_AfterSetReward()
+    {
+        (await this._sut.GetLevelingRewardsAsync(_guildId)).OrElse(default!).ShouldBeEmpty();
+
+        await AddReward(_roleId, 5);
+
+        (await this._sut.GetLevelingRewardsAsync(_guildId)).OrElse(default!).ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public async Task TwoGuilds_Rewards_Independent()
+    {
+        var guildB = new GuildId(2UL);
+        var roleB = new RoleId(301UL);
+        await this._sut.SetModuleState(Module.Leveling, guildB, _modId, true);
+
+        await AddReward(_roleId, 5);
+        await this._sut.SetRewardAsync(new RewardAdded(roleB, guildB, _modId, DateTimeOffset.UtcNow, 10, null));
+
+        var resultA = (await this._sut.GetLevelingRewardsAsync(_guildId)).OrElse(default!);
+        var resultB = (await this._sut.GetLevelingRewardsAsync(guildB)).OrElse(default!);
+
+        resultA.ShouldHaveSingleItem();
+        resultA.Single().RoleId.ShouldBe(_roleId);
+        resultB.ShouldHaveSingleItem();
+        resultB.Single().RoleId.ShouldBe(roleB);
     }
 }

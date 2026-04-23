@@ -22,6 +22,11 @@ public readonly record struct LevelScalingBase
 
     public int Value { get; }
 
+    internal static LevelScalingBase FromDatabaseOrDefault(string? input)
+        => input is not null
+            ? new LevelScalingBase(int.Parse(input, NumberStyles.Integer, CultureInfo.InvariantCulture))
+            : Default;
+
     public static Validation<LevelScalingBase> Create(string? inputStr)
     {
         if (!int.TryParse(inputStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var input)

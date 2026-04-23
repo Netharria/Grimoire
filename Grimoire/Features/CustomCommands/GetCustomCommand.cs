@@ -60,10 +60,7 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
 
         await dbContext.CustomCommandUsages.AddAsync(new CustomCommandUsage
         {
-            Name = name,
-            GuildId = guild.GetGuildId(),
-            UserId = ctx.User.GetUserId(),
-            UsedAt = DateTimeOffset.UtcNow
+            Name = name, GuildId = guild.GetGuildId(), UserId = ctx.User.GetUserId(), UsedAt = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();
 

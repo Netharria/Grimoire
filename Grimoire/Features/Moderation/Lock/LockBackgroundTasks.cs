@@ -25,13 +25,11 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
         await foreach (var expiredLock in settingsModule.GetAllExpiredChannelLocks(cancellationToken))
         {
             var channel = await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId, cancellationToken);
-            if (channel is null)
-                continue;
 
             // DSharpPlus hasn't finished implementing nullable notations
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            var everyoneRole = channel.Guild?.EveryoneRole;
-            if (everyoneRole is null)
+            // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+            var everyoneRole = channel?.Guild?.EveryoneRole;
+            if (channel is null || everyoneRole is null)
                 continue;
 
             var permissions = channel.PermissionOverwrites
@@ -71,10 +69,8 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
         var embed = new DiscordEmbedBuilder()
             .WithDescription($"Lock on {channel.Mention} has expired.");
         await guildLog.SendLogMessageAsync(
-            new GuildLogMessageCustomEmbed
-            {
-                GuildId = guildId, GuildLogType = GuildLogType.Moderation, Embed = embed
-            }, cancellationToken);
+            new GuildLogMessageCustomEmbed { GuildId = guildId, GuildLogType = GuildLogType.Moderation, Embed = embed },
+            cancellationToken);
         await channel.SendMessageAsync(embed);
     }
 }

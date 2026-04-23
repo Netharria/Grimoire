@@ -30,7 +30,7 @@ public sealed class UpdateMessageEvent(
         if (args.Message.Author?.Id == args.Guild.CurrentMember.Id)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()))
+        if (!(await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())).OrElse(false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -42,7 +42,8 @@ public sealed class UpdateMessageEvent(
             {
                 MessageId = m.Id,
                 m.UserId,
-                Content = (MessageContent?)dbContext.MessageHistory
+                // ReSharper disable once AccessToDisposedClosure
+                Content = dbContext.MessageHistory
                     .OfType<MessageHistoryContentEntry>()
                     .Where(h => h.MessageId == m.Id)
                     .OrderByDescending(h => h.TimeStamp)
@@ -101,17 +102,21 @@ public sealed class UpdateMessageEvent(
             embed.AddField("Author", args.Author.Mention, true);
 
         List<DiscordEmbedBuilder> embeds = message.Content.ToString()?.Length + args.Message.Content.Length >= 5000
-            ? [embed.AddMessageTextToFields("Before", message.Content.ToString()),
-               new DiscordEmbedBuilder(embed).AddMessageTextToFields("After", args.Message.Content)]
-            : [embed.AddMessageTextToFields("Before", message.Content.ToString())
-                    .AddMessageTextToFields("After", args.Message.Content)];
+            ?
+            [
+                embed.AddMessageTextToFields("Before", message.Content.ToString()),
+                new DiscordEmbedBuilder(embed).AddMessageTextToFields("After", args.Message.Content)
+            ]
+            :
+            [
+                embed.AddMessageTextToFields("Before", message.Content.ToString())
+                    .AddMessageTextToFields("After", args.Message.Content)
+            ];
 
         foreach (var embedToSend in embeds)
             await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
             {
-                GuildId = args.Guild.GetGuildId(),
-                GuildLogType = GuildLogType.MessageEdited,
-                Embed = embedToSend
+                GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.MessageEdited, Embed = embedToSend
             });
     }
 }

@@ -13,20 +13,21 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<ChannelId?> GetEffectiveLogChannelSetting(
+    public async Task<Result<ChannelId?>> GetEffectiveLogChannelSetting(
         GuildLogType guildLogType,
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!await IsModuleEnabled(guildLogType.GetLogTypeModule(), guildId, cancellationToken))
-            return null;
+        if (!(await IsModuleEnabled(guildLogType.GetLogTypeModule(), guildId, cancellationToken)).OrElse(false))
+            return Result<ChannelId?>.Ok(null);
 
         return await GetConfiguredLogChannelSetting(guildLogType, guildId, cancellationToken);
     }
 
-    public async Task<ChannelId?> GetConfiguredLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
+    public async Task<Result<ChannelId?>> GetConfiguredLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
         CancellationToken cancellationToken = default)
-        => ParseChannelId(await GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken));
+        => (await GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken))
+            .Map(ParseChannelId);
 
     public async Task<Result<ChannelId?>> SetLogChannelSetting(
         GuildLogType guildLogType,

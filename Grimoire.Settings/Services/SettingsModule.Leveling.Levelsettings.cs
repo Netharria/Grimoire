@@ -16,14 +16,6 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public enum LevelSettings
-    {
-        XpTimeoutPeriod,
-        Base,
-        Modifier,
-        Amount
-    }
-
     private static readonly FrozenSet<GuildSettingType> _levelingSettingKeys =
     [
         GuildSettingType.XpTimeoutPeriod,
@@ -32,15 +24,16 @@ public sealed partial class SettingsModule
         GuildSettingType.XpGainAmount
     ];
 
-    public async Task<LevelingSettingEntry> GetLevelingSettings(
+    public async Task<Result<LevelingSettingEntry>> GetLevelingSettings(
         GuildId guildId,
         CancellationToken cancellationToken = default) =>
-        await this._cache.GetOrCreateAsync(
-            CacheKey.LevelingSettings(guildId),
-            guildId,
-            GetLevelingSettingsCacheEntry,
-            this._cacheEntryOptions,
-            cancellationToken: cancellationToken);
+        Result<LevelingSettingEntry>.Ok(
+            await this._cache.GetOrCreateAsync(
+                CacheKey.LevelingSettings(guildId),
+                guildId,
+                GetLevelingSettingsCacheEntry,
+                this._cacheEntryOptions,
+                cancellationToken: cancellationToken));
 
     private async ValueTask<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
         GuildId guildId,
@@ -55,20 +48,16 @@ public sealed partial class SettingsModule
                 }, cancellationToken: cancellationToken);
 
         return new LevelingSettingEntry
-        {
-            Amount = XpGainAmount.Create(
-                    latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount))
-                .OrElse(XpGainAmount.Default),
-            Base = LevelScalingBase.Create(
-                    latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase))
-                .OrElse(LevelScalingBase.Default),
-            Modifier = LevelScalingModifier.Create(
-                    latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier))
-                .OrElse(LevelScalingModifier.Default),
-            XpTimeoutPeriod = XpTimeoutPeriod.Create(
-                    latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod))
-                .OrElse(XpTimeoutPeriod.Default)
-        };
+        (
+            XpTimeoutPeriod.FromDatabaseOrDefault(
+                latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),
+            LevelScalingModifier.FromDatabaseOrDefault(
+                latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier)),
+            LevelScalingBase.FromDatabaseOrDefault(
+                latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase)),
+            XpGainAmount.FromDatabaseOrDefault(
+                latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount))
+        );
     }
 
     public Task<Result<int>> SetLevelingSettings(
@@ -105,13 +94,12 @@ public sealed partial class SettingsModule
             _ => throw new UnreachableException()
         };
 
-    public sealed record LevelingSettingEntry
+    public sealed record LevelingSettingEntry(
+        XpTimeoutPeriod XpTimeoutPeriod,
+        LevelScalingModifier Modifier,
+        LevelScalingBase Base,
+        XpGainAmount Amount)
     {
-        public XpTimeoutPeriod XpTimeoutPeriod { get; init; }
-        public LevelScalingBase Base { get; init; }
-        public LevelScalingModifier Modifier { get; init; }
-        public XpGainAmount Amount { get; init; }
-
         public int GetLevelFromXp(long xp)
         {
             var i = 0;

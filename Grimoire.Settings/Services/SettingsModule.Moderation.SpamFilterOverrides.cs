@@ -14,29 +14,30 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<SpamFilterOverrideOption> GetSpamFilterOverrideAsync(
+    public async Task<Result<SpamFilterOverrideOption>> GetSpamFilterOverrideAsync(
         GuildId guildId,
         ChannelId channelId,
         CancellationToken cancellationToken = default)
     {
-        return await this._cache.GetOrCreateAsync(
-            CacheKey.SpamFilterOverride(channelId),
-            new { GuildId = guildId, ChannelId = channelId },
-            async (state, ct) =>
-            {
-                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                var result = await dbContext.SpamFilterOverrides
-                    .AsNoTracking()
-                    .Where(x => x.GuildId == state.GuildId)
-                    .Where(x => x.ChannelId == state.ChannelId)
-                    .OrderByDescending(x => x.SetAt)
-                    .Select(x => (SpamFilterOverrideOption?)x.ChannelOption)
-                    .FirstOrDefaultAsync(ct);
-                return result
-                       ?? SpamFilterOverrideOption.Inherit;
-            },
-            this._cacheEntryOptions,
-            cancellationToken: cancellationToken);
+        return Result<SpamFilterOverrideOption>.Ok(
+            await this._cache.GetOrCreateAsync(
+                CacheKey.SpamFilterOverride(channelId),
+                new { GuildId = guildId, ChannelId = channelId },
+                async (state, ct) =>
+                {
+                    await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                    var result = await dbContext.SpamFilterOverrides
+                        .AsNoTracking()
+                        .Where(x => x.GuildId == state.GuildId)
+                        .Where(x => x.ChannelId == state.ChannelId)
+                        .OrderByDescending(x => x.SetAt)
+                        .Select(x => (SpamFilterOverrideOption?)x.ChannelOption)
+                        .FirstOrDefaultAsync(ct);
+                    return result
+                           ?? SpamFilterOverrideOption.Inherit;
+                },
+                this._cacheEntryOptions,
+                cancellationToken: cancellationToken));
     }
 
     public async IAsyncEnumerable<SpamFilterOverride> GetAllSpamFilterOverrideAsync(GuildId guildId,
@@ -63,7 +64,7 @@ public sealed partial class SettingsModule
         SpamFilterOverrideOption option,
         CancellationToken cancellationToken = default)
     {
-        var currentSetting = await GetSpamFilterOverrideAsync(guildId, channelId, cancellationToken);
+        var currentSetting = (await GetSpamFilterOverrideAsync(guildId, channelId, cancellationToken)).OrElse(SpamFilterOverrideOption.Inherit);
 
         if (currentSetting == option)
             return new Result<SpamFilterOverride>.NotModified(

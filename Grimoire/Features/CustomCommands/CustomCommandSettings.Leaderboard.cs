@@ -56,8 +56,8 @@ public sealed partial class CustomCommandSettings
             var text = string.Join("\n", rankings.Select((r, i) =>
                 $"**{i + 1}.** `!{r.Name}` — {r.Count} uses"));
 
-            await ctx.ReplyAsync(GrimoireColor.Purple, text, title: "Command Leaderboard",
-                footer: $"{rankings.Count} commands");
+            await ctx.ReplyAsync(GrimoireColor.Purple, text, "Command Leaderboard",
+                $"{rankings.Count} commands");
         }
         else
         {
@@ -78,8 +78,8 @@ public sealed partial class CustomCommandSettings
             var text = string.Join("\n", rankings.Select((r, i) =>
                 $"**{i + 1}.** {UserExtensions.Mention(r.UserId)} — {r.Count} uses"));
 
-            await ctx.ReplyAsync(GrimoireColor.Purple, text, title: $"Leaderboard for !{name}",
-                footer: $"{rankings.Sum(r => r.Count)} total uses");
+            await ctx.ReplyAsync(GrimoireColor.Purple, text, $"Leaderboard for !{name}",
+                $"{rankings.Sum(r => r.Count)} total uses");
         }
     }
 }

@@ -53,7 +53,7 @@ public sealed class MuteUser(
 
         var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
 
-        if (muteRoleId is null)
+        if (muteRoleId.OrElse(null) is not { } muteId)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The mute role is not configured. Please configure it before using this command.");
@@ -68,24 +68,27 @@ public sealed class MuteUser(
             GuildId = guild.GetGuildId(),
             ModeratorId = ctx.GetModeratorId(),
             SinType = SinType.Mute,
-            ReasonHistory = string.IsNullOrWhiteSpace(reason) ? [] :
-            [
-                new SinReasonHistory
-                {
-                    SinId = default,
-                    Reason = reason,
-                    ModeratorId = ctx.GetModeratorId(),
-                    SetAt = DateTimeOffset.UtcNow
-                }
-            ]
+            ReasonHistory = string.IsNullOrWhiteSpace(reason)
+                ? []
+                :
+                [
+                    new SinReasonHistory
+                    {
+                        SinId = default,
+                        Reason = reason,
+                        ModeratorId = ctx.GetModeratorId(),
+                        SetAt = DateTimeOffset.UtcNow
+                    }
+                ]
         };
 
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 
-        await this._settingsModule.AddMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId(), sin.Id, muteEndTime);
+        await this._settingsModule.AddMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId(), sin.Id,
+            muteEndTime);
 
-        var muteRole = await guild.GetRoleOrDefaultAsync(muteRoleId.Value);
+        var muteRole = await guild.GetRoleOrDefaultAsync(muteId);
         if (muteRole is null)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow,

@@ -23,7 +23,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task NoMute_IsMemberMuted_ReturnsFalse()
     {
-        var result = await this._sut.IsMemberMuted(_userId, _guildId);
+        var result = (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false);
 
         result.ShouldBeFalse();
     }
@@ -33,7 +33,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
     {
         await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(1));
 
-        var result = await this._sut.IsMemberMuted(_userId, _guildId);
+        var result = (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false);
 
         result.ShouldBeTrue();
     }
@@ -43,7 +43,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
     {
         await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(-1));
 
-        var result = await this._sut.IsMemberMuted(_userId, _guildId);
+        var result = (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false);
 
         result.ShouldBeFalse();
     }
@@ -104,7 +104,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         await using var db = factory.CreateDbContext();
         (await db.Mutes.OfType<MuteRemoved>().AnyAsync(x => x.UserId == _userId && x.GuildId == _guildId))
             .ShouldBeTrue();
-        (await this._sut.IsMemberMuted(_userId, _guildId)).ShouldBeFalse();
+        (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false).ShouldBeFalse();
     }
 
     [Fact]
@@ -114,9 +114,17 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         var futureUser = new UserId(102UL);
         var recentUser = new UserId(103UL);
 
-        await this._sut.AddMute(pastUser, _guildId, _modId, new SinId(10L), DateTimeOffset.UtcNow.AddHours(-1));
+        await using (var db = factory.CreateDbContext())
+        {
+            var pastMute = MuteAdded.Create(pastUser, _guildId, _modId, new SinId(10L),
+                DateTimeOffset.UtcNow.AddHours(-2), DateTimeOffset.UtcNow.AddHours(-1));
+            var recentMute = MuteAdded.Create(recentUser, _guildId, _modId, new SinId(12L),
+                DateTimeOffset.UtcNow.AddSeconds(-10), DateTimeOffset.UtcNow.AddSeconds(-5));
+            db.Mutes.Add(((Validation<MuteAdded>.Valid)pastMute).Value);
+            db.Mutes.Add(((Validation<MuteAdded>.Valid)recentMute).Value);
+            await db.SaveChangesAsync();
+        }
         await this._sut.AddMute(futureUser, _guildId, _modId, new SinId(11L), DateTimeOffset.UtcNow.AddHours(1));
-        await this._sut.AddMute(recentUser, _guildId, _modId, new SinId(12L), DateTimeOffset.UtcNow.AddSeconds(-5));
 
         var expired = await this._sut.GetAllExpiredMutes().ToListAsync();
 
@@ -167,13 +175,126 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AddMute_InvalidEndTime_ReturnsInvalidWithErrorCode()
+    {
+        var result = await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(-1));
+
+        var invalid = result.ShouldBeOfType<Result<MuteAdded>.Invalid>();
+        invalid.Errors.ShouldContain(e => e.Code == "mute.invalid");
+    }
+
+    [Fact]
+    public async Task RemoveMute_NotFound_HasCorrectErrorCode()
+    {
+        var result = await this._sut.RemoveMute(_userId, _guildId, _modId);
+
+        var notFound = result.ShouldBeOfType<Result<MuteAdded>.NotFound>();
+        notFound.Error.Code.ShouldBe("mute.not-found");
+    }
+
+    [Fact]
+    public async Task IsMemberMuted_SameUserDifferentGuild_ReturnsFalse()
+    {
+        var guildB = new GuildId(2UL);
+
+        await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(1));
+
+        (await this._sut.IsMemberMuted(_userId, guildB)).OrElse(false).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task RemoveMute_SameUserDifferentGuild_ReturnsNotFound()
+    {
+        var guildB = new GuildId(2UL);
+
+        await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(1));
+
+        var result = await this._sut.RemoveMute(_userId, guildB, _modId);
+
+        result.ShouldBeOfType<Result<MuteAdded>.NotFound>();
+    }
+
+    [Fact]
+    public async Task IsMemberMuted_NewerMuteRemovedInDifferentGuild_OriginalGuildStillMuted()
+    {
+        var guildB = new GuildId(2UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-2);
+        var t2 = DateTimeOffset.UtcNow.AddHours(-1);
+
+        await using var db = factory.CreateDbContext();
+        db.Mutes.Add(((Validation<MuteAdded>.Valid)MuteAdded.Create(
+            _userId, _guildId, _modId, _sinId,
+            t1, t1.AddHours(4))).Value);
+        db.Mutes.Add(new MuteRemoved(_userId, guildB, _modId, t2));
+        await db.SaveChangesAsync();
+
+        (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetAllExpiredMutes_SameUserDifferentGuild_EachGuildTrackedSeparately()
+    {
+        var guildB = new GuildId(2UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-3);
+
+        await using var db = factory.CreateDbContext();
+        db.Mutes.Add(((Validation<MuteAdded>.Valid)MuteAdded.Create(
+            _userId, _guildId, _modId, _sinId,
+            t1, t1.AddHours(1))).Value);
+        db.Mutes.Add(((Validation<MuteAdded>.Valid)MuteAdded.Create(
+            _userId, guildB, _modId, new SinId(2L),
+            t1.AddMinutes(10), t1.AddHours(2))).Value);
+        await db.SaveChangesAsync();
+
+        var expired = await this._sut.GetAllExpiredMutes().ToListAsync();
+
+        expired.Count.ShouldBe(2);
+        expired.ShouldContain(x => x.GuildId == _guildId);
+        expired.ShouldContain(x => x.GuildId == guildB);
+    }
+
+    [Fact]
+    public async Task GetAllExpiredMutes_NewerMuteRemovedInDifferentGuild_OriginalExpiredMuteStillReturned()
+    {
+        var guildB = new GuildId(2UL);
+        var t1 = DateTimeOffset.UtcNow.AddHours(-3);
+        var t2 = DateTimeOffset.UtcNow.AddHours(-1);
+
+        await using var db = factory.CreateDbContext();
+        db.Mutes.Add(((Validation<MuteAdded>.Valid)MuteAdded.Create(
+            _userId, _guildId, _modId, _sinId,
+            t1, t1.AddHours(1))).Value);
+        db.Mutes.Add(new MuteRemoved(_userId, guildB, _modId, t2));
+        await db.SaveChangesAsync();
+
+        var expired = await this._sut.GetAllExpiredMutes().ToListAsync();
+
+        expired.ShouldContain(x => x.UserId == _userId && x.GuildId == _guildId);
+    }
+
+    [Fact]
+    public async Task GetAllMutes_SameUserDifferentGuild_ExcludesOtherGuild()
+    {
+        var guildB = new GuildId(2UL);
+
+        await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(1));
+        await this._sut.AddMute(_userId, guildB, _modId, new SinId(2L), DateTimeOffset.UtcNow.AddHours(1));
+
+        var mutes = await this._sut.GetAllMutes(_guildId).ToListAsync();
+
+        mutes.Count.ShouldBe(1);
+        mutes.Single().UserId.ShouldBe(_userId);
+        mutes.Single().GuildId.ShouldBe(_guildId);
+    }
+
+    [Fact]
     public async Task ModuleDisabled_GetEffectiveMuteRole_ReturnsNull()
     {
         await this._sut.SetMuteRole(_guildId, _modId, _roleId);
 
         var result = await this._sut.GetEffectiveMuteRole(_guildId);
 
-        result.ShouldBeNull();
+        result.OrElse(_roleId).ShouldBeNull();
     }
 
     [Fact]
@@ -184,7 +305,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
 
         var result = await this._sut.GetEffectiveMuteRole(_guildId);
 
-        result.ShouldBe(_roleId);
+        result.OrElse(null).ShouldBe(_roleId);
     }
 
     [Fact]
@@ -197,6 +318,6 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var result = await freshSut.GetEffectiveMuteRole(_guildId);
 
-        result.ShouldBeNull();
+        result.OrElse(_roleId).ShouldBeNull();
     }
 }

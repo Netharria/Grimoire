@@ -7,6 +7,7 @@
 
 using System.Data.Common;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Respawn;
@@ -15,6 +16,7 @@ using Xunit;
 
 namespace Grimoire.Test.Unit;
 
+[UsedImplicitly]
 public sealed class GrimoireCoreFactory : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgreSqlContainer =

@@ -13,39 +13,34 @@ public abstract record XpIgnoredItem
     public required GuildId GuildId { get; init; }
     public required ModeratorId SetBy { get; init; }
     public required DateTimeOffset SetAt { get; init; }
-    public required bool Enabled { get; init; }
 }
 
 public sealed record IgnoredChannel : XpIgnoredItem
 {
-    public ChannelId ChannelId
-    {
-        get => new(Id);
-        init => Id = value.Value;
-    }
+    public ChannelId ChannelId { get => new(Id); init => Id = value.Value; }
+}
+
+public sealed record WatchedChannel : XpIgnoredItem
+{
+    public ChannelId ChannelId { get => new(Id); init => Id = value.Value; }
 }
 
 public sealed record IgnoredMember : XpIgnoredItem
 {
-    public UserId UserId
-    {
-        get => new(Id);
-        init => Id = value.Value;
-    }
+    public UserId UserId { get => new(Id); init => Id = value.Value; }
+}
+
+public sealed record WatchedMember : XpIgnoredItem
+{
+    public UserId UserId { get => new(Id); init => Id = value.Value; }
 }
 
 public sealed record IgnoredRole : XpIgnoredItem
 {
-    public RoleId RoleId
-    {
-        get => new(Id);
-        init => Id = value.Value;
-    }
+    public RoleId RoleId { get => new(Id); init => Id = value.Value; }
 }
 
-public enum IgnoredType
+public sealed record WatchedRole : XpIgnoredItem
 {
-    Channel,
-    Member,
-    Role
+    public RoleId RoleId { get => new(Id); init => Id = value.Value; }
 }

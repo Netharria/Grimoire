@@ -12,10 +12,6 @@ namespace Grimoire.Domain;
 
 public abstract record Validation<T>
 {
-    public sealed record Valid(T Value) : Validation<T>;
-
-    public sealed record Invalid(ImmutableArray<Error> Errors) : Validation<T>;
-
     public static Validation<T> Succeed(T value) => new Valid(value);
 
     public static Validation<T> Fail(Error error) => new Invalid([error]);
@@ -70,8 +66,18 @@ public abstract record Validation<T>
             _ => throw new UnreachableException()
         };
 
+    public Validation<T> IfFailed(Func<Validation<T>> fallback)
+        => this is Valid ? this : fallback();
+
     public T OrElse(T fallback)
         => this is Valid v ? v.Value : fallback;
+
+    public static Validation<bool> Pure(Func<bool> predicate, Func<Error> error)
+        => predicate() switch
+        {
+            true => Validation<bool>.Succeed(true),
+            false => Validation<bool>.Fail(error())
+        };
 
     public Result<T> ToResult()
         => this switch
@@ -80,4 +86,8 @@ public abstract record Validation<T>
             Invalid(var errors) => Result<T>.Fail(errors),
             _ => throw new UnreachableException()
         };
+
+    public sealed record Valid(T Value) : Validation<T>;
+
+    public sealed record Invalid(ImmutableArray<Error> Errors) : Validation<T>;
 }

@@ -46,16 +46,18 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
             GuildId = guild.GetGuildId(),
             ModeratorId = ctx.GetModeratorId(),
             SinType = SinType.Warn,
-            ReasonHistory = string.IsNullOrWhiteSpace(reason) ? [] :
-            [
-                new SinReasonHistory
-                {
-                    SinId = default,
-                    Reason = reason,
-                    ModeratorId = ctx.GetModeratorId(),
-                    SetAt = DateTimeOffset.UtcNow
-                }
-            ]
+            ReasonHistory = string.IsNullOrWhiteSpace(reason)
+                ? []
+                :
+                [
+                    new SinReasonHistory
+                    {
+                        SinId = default,
+                        Reason = reason,
+                        ModeratorId = ctx.GetModeratorId(),
+                        SetAt = DateTimeOffset.UtcNow
+                    }
+                ]
         };
         dbcontext.Sins.Add(sin);
         await dbcontext.SaveChangesAsync();

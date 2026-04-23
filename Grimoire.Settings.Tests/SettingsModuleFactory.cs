@@ -8,6 +8,7 @@
 using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -26,7 +27,7 @@ internal static class SettingsModuleFactory
         mockFactory.CreateDbContextAsync(Arg.Any<CancellationToken>())
             .Returns(_ => Task.FromResult(CreateDbContext(connectionString)));
 
-        return new SettingsModule(mockFactory, hybridCache);
+        return new SettingsModule(mockFactory, hybridCache, NullLogger<SettingsModule>.Instance);
     }
 
     private static SettingsDbContext CreateDbContext(string connectionString)

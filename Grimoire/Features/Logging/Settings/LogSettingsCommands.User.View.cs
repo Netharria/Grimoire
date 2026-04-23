@@ -42,29 +42,29 @@ public partial class LogSettingsCommands
                     guild.GetGuildId());
 
             var joinChannelLog =
-                joinLog is null
+                joinLog.OrElse(null) is not { } join
                     ? "None"
-                    : (await guild.GetChannelOrDefaultAsync(joinLog))?.Mention ?? "Deleted Channel";
+                    : (await guild.GetChannelOrDefaultAsync(join))?.Mention ?? "Deleted Channel";
             var leaveChannelLog =
-                leaveLog is null
+                leaveLog.OrElse(null) is not { } leave
                     ? "None"
-                    : (await guild.GetChannelOrDefaultAsync(leaveLog))?.Mention ?? "Deleted Channel";
+                    : (await guild.GetChannelOrDefaultAsync(leave))?.Mention ?? "Deleted Channel";
             var usernameChannelLog =
-                usernameUpdated is null
+                usernameUpdated.OrElse(null) is not { } username
                     ? "None"
-                    : (await guild.GetChannelOrDefaultAsync(usernameUpdated))?.Mention ?? "Deleted Channel";
+                    : (await guild.GetChannelOrDefaultAsync(username))?.Mention ?? "Deleted Channel";
             var nicknameChannelLog =
-                nicknameUpdated is null
+                nicknameUpdated.OrElse(null) is not { } nickname
                     ? "None"
-                    : (await guild.GetChannelOrDefaultAsync(nicknameUpdated))?.Mention ?? "Deleted Channel";
+                    : (await guild.GetChannelOrDefaultAsync(nickname))?.Mention ?? "Deleted Channel";
             var avatarChannelLog =
-                avatarUpdated is null
+                avatarUpdated.OrElse(null) is not { } avatar
                     ? "None"
-                    : (await guild.GetChannelOrDefaultAsync(avatarUpdated))?.Mention ?? "Deleted Channel";
+                    : (await guild.GetChannelOrDefaultAsync(avatar))?.Mention ?? "Deleted Channel";
             await ctx.ReplyAsync(
                 title: "Current Logging System Settings",
                 message:
-                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, guild.GetGuildId())}\n" +
+                $"**Module Enabled:** {(await this._settingsModule.IsModuleEnabled(Module.UserLog, guild.GetGuildId())).OrElse(false)}\n" +
                 $"**Join Log:** {joinChannelLog}\n" +
                 $"**Leave Log:** {leaveChannelLog}\n" +
                 $"**Username Log:** {usernameChannelLog}\n" +

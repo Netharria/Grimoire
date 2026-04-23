@@ -30,7 +30,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
 
             var user = await guild.GetMemberOrDefaultAsync(expiredMute.UserId);
 
-            var muteRole = await settingsModule.GetConfiguredMuteRole(guild.GetGuildId(), cancellationToken);
+            var muteRole = (await settingsModule.GetConfiguredMuteRole(guild.GetGuildId(), cancellationToken)).OrElse(null);
 
             if (user is null) continue;
             var role = await guild.GetRoleOrDefaultAsync(muteRole, cancellationToken);

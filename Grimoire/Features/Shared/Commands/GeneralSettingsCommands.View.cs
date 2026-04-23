@@ -18,8 +18,8 @@ internal sealed partial class GeneralSettingsCommands
         var guild = ctx.Guild!;
 
         var modLogChannelId =
-            await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId());
-        var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId());
+            (await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId())).OrElse(null);
+        var userCommandChannelId = (await this._settingsModule.GetUserCommandChannel(guild.GetGuildId())).OrElse(null);
 
         var moderationLogText = modLogChannelId is null
             ? "None"

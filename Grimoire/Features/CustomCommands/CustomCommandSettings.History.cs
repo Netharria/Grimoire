@@ -58,7 +58,8 @@ public sealed partial class CustomCommandSettings
         {
             var v = versions[i];
             var preview = v.Content.Length > 100 ? string.Concat(v.Content.AsSpan(0, 100), "…") : v.Content;
-            var entry = $"**v{i + 1}{(i == 0 ? " (current)" : string.Empty)}** — <t:{v.CreatedAt.ToUnixTimeSeconds()}:f>"
+            var entry =
+                $"**v{i + 1}{(i == 0 ? " (current)" : string.Empty)}** — <t:{v.CreatedAt.ToUnixTimeSeconds()}:f>"
                 + (v.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty)
                 + $"\n> {preview}\n";
 
@@ -67,6 +68,7 @@ public sealed partial class CustomCommandSettings
                 pages.Add(stringBuilder.ToString());
                 stringBuilder.Clear();
             }
+
             stringBuilder.Append(entry);
         }
 
@@ -74,6 +76,6 @@ public sealed partial class CustomCommandSettings
             pages.Add(stringBuilder.ToString());
 
         foreach (var page in pages)
-            await ctx.ReplyAsync(GrimoireColor.Purple, page, title: $"Version history for {name}");
+            await ctx.ReplyAsync(GrimoireColor.Purple, page, $"Version history for {name}");
     }
 }

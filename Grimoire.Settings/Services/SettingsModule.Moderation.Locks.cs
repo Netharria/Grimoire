@@ -15,7 +15,7 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<bool> IsChannelLocked(ChannelId channelId, GuildId guildId,
+    public async Task<Result<bool>> IsChannelLocked(ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         var locks = await this._cache.GetOrCreateAsync(CacheKey.ChannelLocks(guildId),
@@ -38,7 +38,7 @@ public sealed partial class SettingsModule
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
 
-        return locks.Contains(channelId);
+        return Result<bool>.Ok(locks.Contains(channelId));
     }
 
     public async Task<Result<ChannelLocked>> AddChannelLock(
@@ -128,7 +128,7 @@ public sealed partial class SettingsModule
             yield return expired;
     }
 
-    public async Task<bool> IsThreadLocked(ChannelId channelId, GuildId guildId,
+    public async Task<Result<bool>> IsThreadLocked(ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         var locks = await this._cache.GetOrCreateAsync(CacheKey.ThreadLocks(guildId),
@@ -151,7 +151,7 @@ public sealed partial class SettingsModule
             }, this._cacheEntryOptions,
             cancellationToken: cancellationToken);
 
-        return locks.Contains(channelId);
+        return Result<bool>.Ok(locks.Contains(channelId));
     }
 
     public async Task<Result<ThreadLocked>> AddThreadLock(

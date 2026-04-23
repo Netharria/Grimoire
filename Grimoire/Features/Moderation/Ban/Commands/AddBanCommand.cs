@@ -65,16 +65,18 @@ public sealed partial class AddBanCommand(
             UserId = user.GetUserId(),
             SinType = SinType.Ban,
             ModeratorId = ctx.GetModeratorId(),
-            ReasonHistory = string.IsNullOrWhiteSpace(reason) ? [] :
-            [
-                new SinReasonHistory
-                {
-                    SinId = default,
-                    Reason = reason,
-                    ModeratorId = ctx.GetModeratorId(),
-                    SetAt = DateTimeOffset.UtcNow
-                }
-            ]
+            ReasonHistory = string.IsNullOrWhiteSpace(reason)
+                ? []
+                :
+                [
+                    new SinReasonHistory
+                    {
+                        SinId = default,
+                        Reason = reason,
+                        ModeratorId = ctx.GetModeratorId(),
+                        SetAt = DateTimeOffset.UtcNow
+                    }
+                ]
         };
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();

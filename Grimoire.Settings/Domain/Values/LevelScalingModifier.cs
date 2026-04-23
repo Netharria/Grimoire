@@ -22,6 +22,12 @@ public readonly record struct LevelScalingModifier
 
     public int Value { get; }
 
+
+    internal static LevelScalingModifier FromDatabaseOrDefault(string? input)
+        => input is not null
+            ? new LevelScalingModifier(int.Parse(input, NumberStyles.Integer, CultureInfo.InvariantCulture))
+            : Default;
+
     public static Validation<LevelScalingModifier> Create(string? inputStr)
     {
         if (!int.TryParse(inputStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var input)
@@ -44,6 +50,9 @@ public readonly record struct LevelScalingModifier
 
 public static class LevelScalingModifierExtensions
 {
-    internal static Validation<string> ToDatabaseString(this Validation<LevelScalingModifier> v)
-        => v.Map(x => x.Value.ToString(CultureInfo.InvariantCulture));
+    extension(Validation<LevelScalingModifier> v)
+    {
+        internal Validation<string> ToDatabaseString()
+            => v.Map(x => x.Value.ToString(CultureInfo.InvariantCulture));
+    }
 }
