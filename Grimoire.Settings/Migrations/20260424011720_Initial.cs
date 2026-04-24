@@ -139,7 +139,7 @@ namespace Grimoire.Settings.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "XpIgnoredItems",
+                name: "XpTrackedItems",
                 schema: "Settings",
                 columns: table => new
                 {
@@ -151,7 +151,7 @@ namespace Grimoire.Settings.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_XpIgnoredItems", x => new { x.GuildId, x.Id, x.SetAt });
+                    table.PrimaryKey("PK_XpTrackedItems", x => new { x.GuildId, x.Id, x.SetAt });
                 });
 
             migrationBuilder.CreateIndex(
@@ -234,9 +234,9 @@ namespace Grimoire.Settings.Migrations
                 column: "EndTime");
 
             migrationBuilder.CreateIndex(
-                name: "IX_XpIgnoredItems_GuildId_Id_SetAt",
+                name: "IX_XpTrackedItems_GuildId_Id_SetAt",
                 schema: "Settings",
-                table: "XpIgnoredItems",
+                table: "XpTrackedItems",
                 columns: new[] { "GuildId", "Id", "SetAt" },
                 descending: new[] { false, false, true });
         }
@@ -273,7 +273,7 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings");
 
             migrationBuilder.DropTable(
-                name: "XpIgnoredItems",
+                name: "XpTrackedItems",
                 schema: "Settings");
         }
     }

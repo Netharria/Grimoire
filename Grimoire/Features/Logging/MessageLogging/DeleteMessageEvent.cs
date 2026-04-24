@@ -37,7 +37,7 @@ public sealed partial class DeleteMessageEvent(
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null
             || args.Message.Author?.Id == args.Guild.CurrentMember.Id
-            || (await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())).OrElse(false))
+            || await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
         var pluralkitMessage =

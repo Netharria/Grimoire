@@ -19,7 +19,7 @@ public sealed partial class SettingsModule
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!(await IsModuleEnabled(Module.Leveling, guildId, cancellationToken)).OrElse(false))
+        if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken).GetOrElse(() => false))
             return Result<IReadOnlySet<RewardEntry>>.Ok(FrozenSet<RewardEntry>.Empty);
         var cacheKey = CacheKey.LevelingRewards(guildId);
         return Result<IReadOnlySet<RewardEntry>>.Ok(

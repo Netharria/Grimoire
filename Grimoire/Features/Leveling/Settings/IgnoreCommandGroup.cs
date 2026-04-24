@@ -19,7 +19,7 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
     private readonly SettingsModule _settingsModule = settingsModule;
 
     private static string BuildIgnoreListAsync(
-        IEnumerable<XpIgnoredItem> ignoredItems)
+        IEnumerable<XpTrackedItem> ignoredItems)
     {
         return string.Join(' ', ignoredItems
             .Select(item => item switch

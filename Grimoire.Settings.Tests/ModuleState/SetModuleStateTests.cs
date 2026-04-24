@@ -23,7 +23,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
         result.ShouldBeOfType<Result<bool>.Success>();
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeTrue();
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
 
         result.ShouldBeOfType<Result<bool>.Success>();
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -43,13 +43,13 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
                      Module.Leveling, Module.UserLog, Module.Moderation, Module.MessageLog, Module.Commands,
                      Module.AntiSpam
                  })
-            (await this._sut.IsModuleEnabled(module, _guildId)).OrElse(false).ShouldBeFalse();
+            (await this._sut.IsModuleEnabled(module, _guildId)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
     public async Task GeneralModule_AlwaysEnabled()
     {
-        (await this._sut.IsModuleEnabled(Module.General, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.General, _guildId)).ShouldSucceed().ShouldBeTrue();
 
         var result = await this._sut.SetModuleState(Module.General, _guildId, _modId, true);
 
@@ -97,7 +97,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         await this._sut.SetModuleState(Module.Moderation, _guildId, _modId, false);
         await this._sut.SetModuleState(Module.Commands, _guildId, _modId, false);
 
-        var state = (await this._sut.GetAllModuleState(_guildId)).OrElse(default!);
+        var state = await this._sut.GetAllModuleState(_guildId).ShouldSucceed();
 
         state.LevelingEnabled.ShouldBeTrue();
         state.UserLogEnabled.ShouldBeTrue();
@@ -124,8 +124,8 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
         await this._sut.SetModuleState(Module.Leveling, guildB, _modId, false);
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
-        (await this._sut.IsModuleEnabled(Module.Leveling, guildB)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, guildB)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
             GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)));
         await db.SaveChangesAsync();
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -173,11 +173,11 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     public async Task CacheCleared_AfterModuleStateChange()
     {
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeTrue();
 
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
             await db.SaveChangesAsync();
         }
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeTrue();
 
         await using (var db = factory.CreateDbContext())
         {
@@ -200,10 +200,10 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
             await db.SaveChangesAsync();
         }
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeTrue();
 
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeTrue();
     }
 }

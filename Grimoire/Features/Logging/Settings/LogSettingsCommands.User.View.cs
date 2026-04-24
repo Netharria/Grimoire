@@ -42,29 +42,29 @@ public partial class LogSettingsCommands
                     guild.GetGuildId());
 
             var joinChannelLog =
-                joinLog.OrElse(null) is not { } join
+                joinLog.GetOrElse(() => null) is not { } join
                     ? "None"
                     : (await guild.GetChannelOrDefaultAsync(join))?.Mention ?? "Deleted Channel";
             var leaveChannelLog =
-                leaveLog.OrElse(null) is not { } leave
+                leaveLog.GetOrElse(() => null) is not { } leave
                     ? "None"
                     : (await guild.GetChannelOrDefaultAsync(leave))?.Mention ?? "Deleted Channel";
             var usernameChannelLog =
-                usernameUpdated.OrElse(null) is not { } username
+                usernameUpdated.GetOrElse(() => null) is not { } username
                     ? "None"
                     : (await guild.GetChannelOrDefaultAsync(username))?.Mention ?? "Deleted Channel";
             var nicknameChannelLog =
-                nicknameUpdated.OrElse(null) is not { } nickname
+                nicknameUpdated.GetOrElse(() => null) is not { } nickname
                     ? "None"
                     : (await guild.GetChannelOrDefaultAsync(nickname))?.Mention ?? "Deleted Channel";
             var avatarChannelLog =
-                avatarUpdated.OrElse(null) is not { } avatar
+                avatarUpdated.GetOrElse(() => null) is not { } avatar
                     ? "None"
                     : (await guild.GetChannelOrDefaultAsync(avatar))?.Mention ?? "Deleted Channel";
             await ctx.ReplyAsync(
                 title: "Current Logging System Settings",
                 message:
-                $"**Module Enabled:** {(await this._settingsModule.IsModuleEnabled(Module.UserLog, guild.GetGuildId())).OrElse(false)}\n" +
+                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, guild.GetGuildId()).GetOrElse(() => false)}\n" +
                 $"**Join Log:** {joinChannelLog}\n" +
                 $"**Leave Log:** {leaveChannelLog}\n" +
                 $"**Username Log:** {usernameChannelLog}\n" +

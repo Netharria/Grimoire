@@ -20,7 +20,8 @@ internal sealed partial class ModuleCommands
 
         var guild = ctx.Guild!;
 
-        var guildSettings = (await this._settingsModule.GetAllModuleState(guild.GetGuildId())).OrElse(default!);
+        var guildSettings = await this._settingsModule.GetAllModuleState(guild.GetGuildId())
+            .GetOrElse(() => default!);
 
         await ctx.ReplyAsync(
             title: "Current states of modules.",

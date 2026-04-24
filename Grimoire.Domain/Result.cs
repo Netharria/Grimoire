@@ -42,6 +42,9 @@ public abstract record Result<T>
             _ => throw new UnreachableException()
         };
 
+    public Task<Result<TOut>> MapAsync<TOut>(Func<T, Task<TOut>> mapper)
+        => BindAsync(async v => Result<TOut>.Ok(await mapper(v)));
+
     public Task<Result<TOut>> BindAsync<TOut>(Func<T, Task<Result<TOut>>> binder)
         => this switch
         {
@@ -78,11 +81,11 @@ public abstract record Result<T>
             _ => throw new UnreachableException()
         };
 
-    public Result<T> IfFailed(Func<Result<T>> fallback)
+    public Result<T> OrElse(Func<Result<T>> fallback)
         => this is Success ? this : fallback();
 
-    public T OrElse(T fallback)
-        => this is Success v ? v.Value : fallback;
+    public T GetOrElse(Func<T> fallback)
+        => this is Success v ? v.Value : fallback();
 
     public Validation<T> ToValidation()
         => this switch

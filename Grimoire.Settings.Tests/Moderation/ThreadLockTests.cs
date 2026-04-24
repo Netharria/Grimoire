@@ -21,7 +21,7 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     [Fact]
     public async Task NoLock_IsThreadLocked_ReturnsFalse()
     {
-        var result = (await this._sut.IsThreadLocked(_channelId, _guildId)).OrElse(false);
+        var result = await this._sut.IsThreadLocked(_channelId, _guildId).ShouldSucceed();
 
         result.ShouldBeFalse();
     }
@@ -31,7 +31,7 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         await this._sut.AddThreadLock(_modId, _guildId, _channelId, "test", DateTimeOffset.UtcNow.AddHours(1));
 
-        var result = (await this._sut.IsThreadLocked(_channelId, _guildId)).OrElse(false);
+        var result = await this._sut.IsThreadLocked(_channelId, _guildId).ShouldSucceed();
 
         result.ShouldBeTrue();
     }
@@ -82,7 +82,7 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         (await db.ThreadLocks.OfType<ThreadUnlocked>().AnyAsync(x => x.ChannelId == _channelId)).ShouldBeTrue();
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        (await freshSut.IsThreadLocked(_channelId, _guildId)).OrElse(false).ShouldBeFalse();
+        (await freshSut.IsThreadLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -94,10 +94,10 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         await using var db = factory.CreateDbContext();
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("past"), _channelId, _guildId, setAt,
-            setAt.AddHours(1)).OrElse(null!));
+            setAt.AddHours(1)).ShouldSucceed());
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("future"), futureChannel, _guildId, DateTimeOffset.UtcNow,
-            DateTimeOffset.UtcNow.AddHours(1)).OrElse(null!));
+            DateTimeOffset.UtcNow.AddHours(1)).ShouldSucceed());
         await db.SaveChangesAsync();
 
         var expired = await this._sut.GetAllExpiredThreadLocks().ToListAsync();
@@ -111,11 +111,11 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         await this._sut.AddThreadLock(_modId, _guildId, _channelId, "test", DateTimeOffset.UtcNow.AddHours(1));
 
-        (await this._sut.IsThreadLocked(_channelId, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsThreadLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeTrue();
 
         await this._sut.RemoveThreadLock(_channelId, _guildId, _modId);
 
-        (await this._sut.IsThreadLocked(_channelId, _guildId)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsThreadLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -150,11 +150,11 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     [Fact]
     public async Task CacheInvalidated_AfterAddThreadLock()
     {
-        (await this._sut.IsThreadLocked(_channelId, _guildId)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsThreadLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeFalse();
 
         await this._sut.AddThreadLock(_modId, _guildId, _channelId, "test", DateTimeOffset.UtcNow.AddHours(1));
 
-        (await this._sut.IsThreadLocked(_channelId, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsThreadLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeTrue();
     }
 
     [Fact]
@@ -166,11 +166,11 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         await using var db = factory.CreateDbContext();
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("locked"), _channelId, _guildId, t1,
-            t1.AddHours(4)).OrElse(null!));
+            t1.AddHours(4)).ShouldSucceed());
         await db.SaveChangesAsync();
 
-        (await this._sut.IsThreadLocked(_channelId, _guildId)).OrElse(false).ShouldBeTrue();
-        (await this._sut.IsThreadLocked(_channelId, guildB)).OrElse(true).ShouldBeFalse();
+        (await this._sut.IsThreadLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeTrue();
+        (await this._sut.IsThreadLocked(_channelId, guildB)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -182,10 +182,10 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         await using var db = factory.CreateDbContext();
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("locked"), _channelId, guildB, t1,
-            t1.AddHours(4)).OrElse(null!));
+            t1.AddHours(4)).ShouldSucceed());
         await db.SaveChangesAsync();
 
-        (await this._sut.IsThreadLocked(_channelId, _guildId)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsThreadLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -198,14 +198,14 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         await using var db = factory.CreateDbContext();
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("first"), _channelId, _guildId, t1,
-            t1.AddHours(4)).OrElse(null!));
+            t1.AddHours(4)).ShouldSucceed());
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
-            t2.AddHours(4)).OrElse(null!));
+            t2.AddHours(4)).ShouldSucceed());
         await db.SaveChangesAsync();
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        (await freshSut.IsThreadLocked(_channelId, _guildId)).OrElse(false).ShouldBeTrue();
+        (await freshSut.IsThreadLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeTrue();
     }
 
     [Fact]
@@ -230,10 +230,10 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         await using var db = factory.CreateDbContext();
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("first"), _channelId, _guildId, t1,
-            t1.AddHours(4)).OrElse(null!));
+            t1.AddHours(4)).ShouldSucceed());
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
-            t2.AddHours(4)).OrElse(null!));
+            t2.AddHours(4)).ShouldSucceed());
         await db.SaveChangesAsync();
 
         var result = await this._sut.RemoveThreadLock(_channelId, _guildId, _modId);
@@ -251,10 +251,10 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         await using var db = factory.CreateDbContext();
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("expired"), _channelId, _guildId, t1,
-            t1.AddHours(1)).OrElse(null!));
+            t1.AddHours(1)).ShouldSucceed());
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
-            t2.AddHours(4)).OrElse(null!));
+            t2.AddHours(4)).ShouldSucceed());
         await db.SaveChangesAsync();
 
         var expired = await this._sut.GetAllExpiredThreadLocks().ToListAsync();
@@ -271,10 +271,10 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         await using var db = factory.CreateDbContext();
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("old-expired"), _channelId, _guildId, t1,
-            t1.AddHours(1)).OrElse(null!));
+            t1.AddHours(1)).ShouldSucceed());
         db.ThreadLocks.Add(ThreadLocked.Create(
             _modId, ModerationReason.FromDatabase("newer-active"), _channelId, _guildId, t2,
-            t2.AddHours(4)).OrElse(null!));
+            t2.AddHours(4)).ShouldSucceed());
         await db.SaveChangesAsync();
 
         var expired = await this._sut.GetAllExpiredThreadLocks().ToListAsync();

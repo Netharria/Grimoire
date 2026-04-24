@@ -27,13 +27,14 @@ public sealed partial class LevelSettingsCommandGroup
             return;
         }
 
-        var response = (await this._settingsModule.GetLevelingSettings(guild.GetGuildId())).OrElse(default!);
-        var moduleEnabled = (await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId())).OrElse(false);
+        var response = await this._settingsModule.GetLevelingSettings(guild.GetGuildId())
+            .GetOrElse(() => default!);
+        var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId()).GetOrElse(() => false);
         var levelChannelLog =
             await this._settingsModule.GetEffectiveLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
 
         var levelLogMention =
-            levelChannelLog.OrElse(null) is not { } channel
+            levelChannelLog.GetOrElse(() => null) is not { } channel
                 ? "None"
                 : ctx.Guild.Channels.GetValueOrDefault(channel.Value)?.Mention;
         await ctx.ReplyAsync(

@@ -22,10 +22,10 @@ internal sealed partial class ModSettings
 
         var guild = ctx.Guild!;
 
-        var autoPardonAfter = (await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId())).OrElse(TimeSpan.FromDays(10950));
-        var banLogChannel = (await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.PublicModeration,
-            guild.GetGuildId())).OrElse(null);
-        var moduleEnabled = (await this._settingsModule.IsModuleEnabled(Module.Moderation, guild.GetGuildId())).OrElse(false);
+        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId()).GetOrElse(() => TimeSpan.FromDays(10950));
+        var banLogChannel = await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.PublicModeration,
+            guild.GetGuildId()).GetOrElse(() => null);
+        var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Moderation, guild.GetGuildId()).GetOrElse(() => false);
 
         var banLog = banLogChannel is null
             ? "None"

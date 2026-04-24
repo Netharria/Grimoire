@@ -25,7 +25,7 @@ public sealed class UpdatedAvatarEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
-        if (!(await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId())).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();

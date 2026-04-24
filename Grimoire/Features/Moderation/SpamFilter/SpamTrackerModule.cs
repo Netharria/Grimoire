@@ -46,10 +46,10 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
         while (currentChannel is not null)
         {
             var spamFilterOverrideOption =
-                (await this._settingsModule.GetSpamFilterOverrideAsync(
+                await this._settingsModule.GetSpamFilterOverrideAsync(
                     currentChannel.Guild.GetGuildId(),
                     currentChannel.GetChannelId(),
-                    cancellationToken)).OrElse(SpamFilterOverrideOption.Inherit);
+                    cancellationToken).GetOrElse(() => SpamFilterOverrideOption.Inherit);
 
             if (spamFilterOverrideOption == SpamFilterOverrideOption.AlwaysFilter)
                 break;

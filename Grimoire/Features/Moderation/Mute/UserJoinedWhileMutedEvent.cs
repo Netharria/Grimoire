@@ -15,9 +15,11 @@ public sealed class UserJoinedWhileMuted(SettingsModule settingsModule) : IEvent
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
-        if (!(await this._settingsModule.IsMemberMuted(args.Member.GetUserId(), args.Guild.GetGuildId())).OrElse(false))
+        if (!await this._settingsModule.IsMemberMuted(args.Member.GetUserId(), args.Guild.GetGuildId())
+                .GetOrElse(() => false))
             return;
-        var muteRole = (await this._settingsModule.GetEffectiveMuteRole(args.Member.GetGuildId())).OrElse(null);
+        var muteRole = await this._settingsModule.GetEffectiveMuteRole(args.Member.GetGuildId())
+            .GetOrElse(() => null);
         var role = await args.Guild.GetRoleOrDefaultAsync(muteRole);
         if (role is null) return;
         await args.Member.GrantRoleAsync(role, "Rejoined while muted");

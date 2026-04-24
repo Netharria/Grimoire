@@ -11,16 +11,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Settings.Configurations;
 
-internal sealed class XpIgnoredItemsConfiguration : IEntityTypeConfiguration<XpIgnoredItem>
+internal sealed class XpTrackedItemsConfiguration : IEntityTypeConfiguration<XpTrackedItem>
 {
-    public void Configure(EntityTypeBuilder<XpIgnoredItem> builder)
+    public void Configure(EntityTypeBuilder<XpTrackedItem> builder)
     {
-        builder.HasKey(nameof(XpIgnoredItem.GuildId), "Id", nameof(XpIgnoredItem.SetAt));
+        builder.HasKey(nameof(XpTrackedItem.GuildId), "Id", nameof(XpTrackedItem.SetAt));
         builder.Property<ulong>("Id")
             .ValueGeneratedNever()
             .IsRequired();
 
-        builder.HasIndex(nameof(XpIgnoredItem.GuildId), "Id", nameof(XpIgnoredItem.SetAt))
+        builder.HasIndex(nameof(XpTrackedItem.GuildId), "Id", nameof(XpTrackedItem.SetAt))
             .IsDescending(false, false, true);
 
         builder.Property(e => e.GuildId)

@@ -88,7 +88,8 @@ internal sealed class UserInfoCommands(
         GuildId guildId,
         DiscordEmbedBuilder embed)
     {
-        if (!(await this._settingsModule.IsModuleEnabled(Module.UserLog, guildId)).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, guildId)
+                .GetOrElse(() => false))
             return;
         var usernames = await dbContext.UsernameHistory
             .AsNoTracking()
@@ -127,7 +128,8 @@ internal sealed class UserInfoCommands(
         GuildId guildId,
         IReadOnlySet<RoleId> roleIds)
     {
-        if (!(await this._settingsModule.IsModuleEnabled(Module.Leveling, guildId)).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, guildId)
+                .GetOrElse(() => false))
             return;
 
         var membersXp = await dbContext.XpHistory
@@ -137,9 +139,11 @@ internal sealed class UserInfoCommands(
             .Select(member => member.Sum(xpHistory => xpHistory.Xp))
             .FirstOrDefaultAsync();
 
-        var levelSettings = (await this._settingsModule.GetLevelingSettings(guildId)).OrElse(default!);
+        var levelSettings = await this._settingsModule.GetLevelingSettings(guildId)
+            .GetOrElse(() => default!);
 
-        var rewards = (await this._settingsModule.GetLevelingRewardsAsync(guildId)).OrElse(default!);
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId)
+            .GetOrElse(() => default!);
 
 
         var membersLevel = levelSettings.GetLevelFromXp(membersXp);
@@ -148,7 +152,8 @@ internal sealed class UserInfoCommands(
             .Select(x => x.RoleId)
             .ToArray();
 
-        var isXpIgnored = (await this._settingsModule.IsMemberIgnored(guildId, userId, roleIds)).OrElse(false);
+        var isXpIgnored = await this._settingsModule.IsMemberIgnored(guildId, userId, roleIds)
+            .GetOrElse(() => false);
 
         embed.AddField("Level", membersLevel.ToString(), true)
             .AddField("Can Gain Xp", isXpIgnored ? "No" : "Yes", true)
@@ -165,9 +170,11 @@ internal sealed class UserInfoCommands(
         UserId userId,
         DiscordEmbedBuilder embed)
     {
-        if (!(await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId)).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId)
+                .GetOrElse(() => false))
             return;
-        var autoPardonAfter = (await this._settingsModule.GetAutoPardonDuration(guildId)).OrElse(TimeSpan.FromDays(10950));
+        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guildId)
+            .GetOrElse(() => TimeSpan.FromDays(10950));
         var response = await dbContext.Sins
             .AsNoTracking()
             .Where(sin => sin.UserId == userId

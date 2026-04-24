@@ -41,14 +41,16 @@ public sealed partial class GainUserXp(
             || member.IsBot)
             return;
 
-        if (!(await this._settingsModule.IsModuleEnabled(Module.Leveling, member.GetGuildId())).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, member.GetGuildId())
+                .GetOrElse(() => false))
             return;
 
-        if (!(await this._settingsModule.IsMessageIgnored(
+        if (!await this._settingsModule.IsMessageIgnored(
                 member.GetGuildId(),
                 args.GetAuthorUserId(),
                 member.Roles.Select(x => x.GetRoleId()).ToHashSet(),
-                args.GetChannelId())).OrElse(false))
+                args.GetChannelId())
+                .GetOrElse(() => false))
             return;
 
 
@@ -64,7 +66,8 @@ public sealed partial class GainUserXp(
             .Select(xp => xp.Xp)
             .LongCountAsync();
 
-        var levelingSettingEntry = (await this._settingsModule.GetLevelingSettings(member.GetGuildId())).OrElse(default!);
+        var levelingSettingEntry = await this._settingsModule.GetLevelingSettings(member.GetGuildId())
+            .GetOrElse(() => default!);
 
         await dbContext.XpHistory.AddAsync(
             new XpHistory
@@ -109,7 +112,8 @@ public sealed partial class GainUserXp(
         if (member is null)
             return;
 
-        var rewards = (await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)).OrElse(default!);
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)
+            .GetOrElse(() => default!);
 
 
         var newRewards = rewards

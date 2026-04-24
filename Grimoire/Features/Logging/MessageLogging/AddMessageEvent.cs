@@ -28,13 +28,13 @@ public sealed partial class AddMessageEvent(
             || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
             return;
 
-        if (!(await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
-        if (!(await this._settingsModule.ShouldLogMessage(
+        if (!await this._settingsModule.ShouldLogMessage(
                 args.GetChannelId(),
                 args.Guild.GetGuildId(),
-                args.Channel.BuildChannelTree().ToDictionary())).OrElse(false))
+                args.Channel.BuildChannelTree().ToDictionary()).GetOrElse(() => false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();

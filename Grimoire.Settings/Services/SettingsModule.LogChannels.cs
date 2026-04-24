@@ -18,15 +18,16 @@ public sealed partial class SettingsModule
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!(await IsModuleEnabled(guildLogType.GetLogTypeModule(), guildId, cancellationToken)).OrElse(false))
+        if (!await IsModuleEnabled(guildLogType.GetLogTypeModule(), guildId, cancellationToken).GetOrElse(() => false))
             return Result<ChannelId?>.Ok(null);
 
         return await GetConfiguredLogChannelSetting(guildLogType, guildId, cancellationToken);
     }
 
-    public async Task<Result<ChannelId?>> GetConfiguredLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
+    public Task<Result<ChannelId?>> GetConfiguredLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
         CancellationToken cancellationToken = default)
-        => (await GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken))
+        => GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken)
+            .AsTask()
             .Map(ParseChannelId);
 
     public async Task<Result<ChannelId?>> SetLogChannelSetting(

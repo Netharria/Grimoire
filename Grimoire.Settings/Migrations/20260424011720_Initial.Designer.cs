@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Settings.Migrations
 {
     [DbContext(typeof(SettingsDbContext))]
-    [Migration("20260420031616_Initial")]
+    [Migration("20260424011720_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -251,7 +251,7 @@ namespace Grimoire.Settings.Migrations
                     b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("Grimoire.Settings.Domain.XpIgnoredItem", b =>
+            modelBuilder.Entity("Grimoire.Settings.Domain.XpTrackedItem", b =>
                 {
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
@@ -275,9 +275,9 @@ namespace Grimoire.Settings.Migrations
                     b.HasIndex("GuildId", "Id", "SetAt")
                         .IsDescending(false, false, true);
 
-                    b.ToTable("XpIgnoredItems", "Settings");
+                    b.ToTable("XpTrackedItems", "Settings");
 
-                    b.HasDiscriminator<string>("Type").IsComplete(true).HasValue("XpIgnoredItem");
+                    b.HasDiscriminator<string>("Type").IsComplete(true).HasValue("XpTrackedItem");
 
                     b.UseTphMappingStrategy();
                 });
@@ -412,42 +412,42 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredChannel", b =>
                 {
-                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+                    b.HasBaseType("Grimoire.Settings.Domain.XpTrackedItem");
 
                     b.HasDiscriminator().HasValue("IgnoredChannel");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredMember", b =>
                 {
-                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+                    b.HasBaseType("Grimoire.Settings.Domain.XpTrackedItem");
 
                     b.HasDiscriminator().HasValue("IgnoredMember");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredRole", b =>
                 {
-                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+                    b.HasBaseType("Grimoire.Settings.Domain.XpTrackedItem");
 
                     b.HasDiscriminator().HasValue("IgnoredRole");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.WatchedChannel", b =>
                 {
-                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+                    b.HasBaseType("Grimoire.Settings.Domain.XpTrackedItem");
 
                     b.HasDiscriminator().HasValue("WatchedChannel");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.WatchedMember", b =>
                 {
-                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+                    b.HasBaseType("Grimoire.Settings.Domain.XpTrackedItem");
 
                     b.HasDiscriminator().HasValue("WatchedMember");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.WatchedRole", b =>
                 {
-                    b.HasBaseType("Grimoire.Settings.Domain.XpIgnoredItem");
+                    b.HasBaseType("Grimoire.Settings.Domain.XpTrackedItem");
 
                     b.HasDiscriminator().HasValue("WatchedRole");
                 });

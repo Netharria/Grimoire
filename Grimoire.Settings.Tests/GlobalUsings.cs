@@ -7,6 +7,7 @@
 
 global using Grimoire.Domain;
 global using Grimoire.Settings.Domain;
+global using Grimoire.Settings.Tests;
 global using Grimoire.Settings.Enums;
 global using Grimoire.Settings.Services;
 global using Microsoft.EntityFrameworkCore;

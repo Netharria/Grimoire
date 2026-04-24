@@ -30,7 +30,7 @@ public sealed class UpdateMessageEvent(
         if (args.Message.Author?.Id == args.Guild.CurrentMember.Id)
             return;
 
-        if (!(await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();

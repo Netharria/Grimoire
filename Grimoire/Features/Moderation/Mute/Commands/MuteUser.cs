@@ -53,7 +53,7 @@ public sealed class MuteUser(
 
         var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
 
-        if (muteRoleId.OrElse(null) is not { } muteId)
+        if (muteRoleId.GetOrElse(() => null) is not { } muteId)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The mute role is not configured. Please configure it before using this command.");

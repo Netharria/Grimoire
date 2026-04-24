@@ -20,7 +20,8 @@ public sealed partial class SettingsModule
         IReadOnlyDictionary<ChannelId, ChannelId?> channelNodes,
         CancellationToken cancellationToken = default)
     {
-        if (!(await IsModuleEnabled(Module.MessageLog, guildId, cancellationToken)).OrElse(false))
+        if (!await IsModuleEnabled(Module.MessageLog, guildId, cancellationToken)
+                .GetOrElse(() => false))
             return Result<bool>.Ok(false);
 
         ChannelId? currentChannelId = channelId;

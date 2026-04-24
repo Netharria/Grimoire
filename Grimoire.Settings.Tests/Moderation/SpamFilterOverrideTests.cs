@@ -21,7 +21,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
     [Fact]
     public async Task NoRow_ReturnsInherit()
     {
-        var result = (await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId)).OrElse(SpamFilterOverrideOption.Inherit);
+        var result = await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId).ShouldSucceed();
 
         result.ShouldBe(SpamFilterOverrideOption.Inherit);
     }
@@ -31,7 +31,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
     {
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.AlwaysFilter);
 
-        var result = (await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId)).OrElse(SpamFilterOverrideOption.Inherit);
+        var result = await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId).ShouldSucceed();
 
         result.ShouldBe(SpamFilterOverrideOption.AlwaysFilter);
     }
@@ -41,7 +41,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
     {
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.NeverFilter);
 
-        var result = (await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId)).OrElse(SpamFilterOverrideOption.Inherit);
+        var result = await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId).ShouldSucceed();
 
         result.ShouldBe(SpamFilterOverrideOption.NeverFilter);
     }
@@ -53,7 +53,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.NeverFilter);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = (await freshSut.GetSpamFilterOverrideAsync(_guildId, _channelId)).OrElse(SpamFilterOverrideOption.Inherit);
+        var result = await freshSut.GetSpamFilterOverrideAsync(_guildId, _channelId).ShouldSucceed();
 
         result.ShouldBe(SpamFilterOverrideOption.NeverFilter);
     }
@@ -87,7 +87,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
 
         result.ShouldBeOfType<Result<SpamFilterOverride>.Success>();
 
-        (await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId)).OrElse(SpamFilterOverrideOption.Inherit).ShouldBe(
+        (await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId)).ShouldSucceed().ShouldBe(
             SpamFilterOverrideOption.NeverFilter);
     }
 
@@ -130,7 +130,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         var channelB = new ChannelId(201UL);
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.AlwaysFilter);
 
-        var resultB = (await this._sut.GetSpamFilterOverrideAsync(_guildId, channelB)).OrElse(SpamFilterOverrideOption.Inherit);
+        var resultB = await this._sut.GetSpamFilterOverrideAsync(_guildId, channelB).ShouldSucceed();
 
         resultB.ShouldBe(SpamFilterOverrideOption.Inherit);
     }
@@ -143,7 +143,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.AlwaysFilter);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = (await freshSut.GetSpamFilterOverrideAsync(guildB, _channelId)).OrElse(SpamFilterOverrideOption.Inherit);
+        var result = await freshSut.GetSpamFilterOverrideAsync(guildB, _channelId).ShouldSucceed();
 
         result.ShouldBe(SpamFilterOverrideOption.Inherit);
     }

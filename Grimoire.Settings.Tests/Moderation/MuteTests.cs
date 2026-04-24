@@ -23,7 +23,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task NoMute_IsMemberMuted_ReturnsFalse()
     {
-        var result = (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false);
+        var result = await this._sut.IsMemberMuted(_userId, _guildId).ShouldSucceed();
 
         result.ShouldBeFalse();
     }
@@ -33,7 +33,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
     {
         await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(1));
 
-        var result = (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false);
+        var result = await this._sut.IsMemberMuted(_userId, _guildId).ShouldSucceed();
 
         result.ShouldBeTrue();
     }
@@ -43,7 +43,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
     {
         await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(-1));
 
-        var result = (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false);
+        var result = await this._sut.IsMemberMuted(_userId, _guildId).ShouldSucceed();
 
         result.ShouldBeFalse();
     }
@@ -104,7 +104,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         await using var db = factory.CreateDbContext();
         (await db.Mutes.OfType<MuteRemoved>().AnyAsync(x => x.UserId == _userId && x.GuildId == _guildId))
             .ShouldBeTrue();
-        (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsMemberMuted(_userId, _guildId)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -199,7 +199,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
 
         await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(1));
 
-        (await this._sut.IsMemberMuted(_userId, guildB)).OrElse(false).ShouldBeFalse();
+        (await this._sut.IsMemberMuted(_userId, guildB)).ShouldSucceed().ShouldBeFalse();
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         db.Mutes.Add(new MuteRemoved(_userId, guildB, _modId, t2));
         await db.SaveChangesAsync();
 
-        (await this._sut.IsMemberMuted(_userId, _guildId)).OrElse(false).ShouldBeTrue();
+        (await this._sut.IsMemberMuted(_userId, _guildId)).ShouldSucceed().ShouldBeTrue();
     }
 
     [Fact]
@@ -294,7 +294,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
 
         var result = await this._sut.GetEffectiveMuteRole(_guildId);
 
-        result.OrElse(_roleId).ShouldBeNull();
+        result.ShouldSucceed().ShouldBeNull();
     }
 
     [Fact]
@@ -305,7 +305,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
 
         var result = await this._sut.GetEffectiveMuteRole(_guildId);
 
-        result.OrElse(null).ShouldBe(_roleId);
+        result.ShouldSucceed().ShouldBe(_roleId);
     }
 
     [Fact]
@@ -318,6 +318,6 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var result = await freshSut.GetEffectiveMuteRole(_guildId);
 
-        result.OrElse(_roleId).ShouldBeNull();
+        result.ShouldSucceed().ShouldBeNull();
     }
 }

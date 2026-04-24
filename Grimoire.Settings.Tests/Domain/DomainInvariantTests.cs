@@ -207,7 +207,7 @@ public sealed class DomainInvariantTests
     [Fact]
     public void RewardAdded_WithMessage_IsValid()
     {
-        var msg = RewardMessage.Create("Congratulations!").OrElse(default);
+        var msg = RewardMessage.Create("Congratulations!").ShouldSucceed();
         RewardAdded.Create(_roleId, _guildId, 10, msg, _modId, _now)
             .ShouldBeOfType<Validation<RewardAdded>.Valid>();
     }

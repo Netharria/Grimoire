@@ -25,7 +25,7 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
 
         var result = await this._sut.GetUserCommandChannel(_guildId);
 
-        result.OrElse(null).ShouldBe(_channelId);
+        result.ShouldSucceed().ShouldBe(_channelId);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
 
         var result = await this._sut.GetUserCommandChannel(_guildId);
 
-        result.OrElse(_channelId).ShouldBeNull();
+        result.ShouldSucceed().ShouldBeNull();
     }
 
     [Fact]
@@ -54,6 +54,6 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
     {
         var result = await this._sut.GetUserCommandChannel(_guildId);
 
-        result.OrElse(_channelId).ShouldBeNull();
+        result.ShouldSucceed().ShouldBeNull();
     }
 }

@@ -12,10 +12,19 @@ namespace Grimoire.Domain;
 
 public static class ResultTaskExtensions
 {
+    extension<T>(Task<T> task)
+    {
+        public async Task<Result<T>> ToResult()
+            => Result<T>.Ok(await task);
+    }
+
     extension<T>(Task<Result<T>> task)
     {
         public async Task<Result<TOut>> Map<TOut>(Func<T, TOut> mapper)
             => (await task).Map(mapper);
+
+        public async Task<Result<TOut>> MapAsync<TOut>(Func<T, Task<TOut>> mapper)
+            => await (await task).MapAsync(mapper);
 
         public async Task<Result<TOut>> Bind<TOut>(Func<T, Result<TOut>> binder)
             => (await task).Bind(binder);
@@ -46,5 +55,9 @@ public static class ResultTaskExtensions
                 _ => throw new UnreachableException()
             };
         }
+        public async Task<Result<T>> OrElse(Func<Result<T>> fallback)
+            => (await task).OrElse(fallback);
+        public async Task<T> GetOrElse(Func<T> fallback)
+            => (await task).GetOrElse(fallback);
     }
 }

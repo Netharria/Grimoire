@@ -18,14 +18,6 @@ public abstract record Validation<T>
 
     public static Validation<T> Fail(IEnumerable<Error> errors) => new Invalid([..errors]);
 
-    public static Validation<TOut> IsNotNull<TOut>(TOut? value, string errorCode, string errorMessage, string? target)
-        where TOut : class
-        => value switch
-        {
-            not null => Validation<TOut>.Succeed(value),
-            _ => Validation<TOut>.Fail(new Error(errorCode, errorMessage, target))
-        };
-
     public Validation<TOut> Map<TOut>(Func<T, TOut> mapper)
         => this switch
         {
@@ -58,6 +50,9 @@ public abstract record Validation<T>
             _ => throw new UnreachableException()
         };
 
+    public Task<Validation<TOut>> MapAsync<TOut>(Func<T, Task<TOut>> mapper)
+        => BindAsync(async v => Validation<TOut>.Succeed(await mapper(v)));
+
     public Task<Validation<TOut>> BindAsync<TOut>(Func<T, Task<Validation<TOut>>> binder)
         => this switch
         {
@@ -66,18 +61,11 @@ public abstract record Validation<T>
             _ => throw new UnreachableException()
         };
 
-    public Validation<T> IfFailed(Func<Validation<T>> fallback)
+    public Validation<T> OrElse(Func<Validation<T>> fallback)
         => this is Valid ? this : fallback();
 
-    public T OrElse(T fallback)
-        => this is Valid v ? v.Value : fallback;
-
-    public static Validation<bool> Pure(Func<bool> predicate, Func<Error> error)
-        => predicate() switch
-        {
-            true => Validation<bool>.Succeed(true),
-            false => Validation<bool>.Fail(error())
-        };
+    public T GetOrElse(Func<T> fallback)
+        => this is Valid v ? v.Value : fallback();
 
     public Result<T> ToResult()
         => this switch

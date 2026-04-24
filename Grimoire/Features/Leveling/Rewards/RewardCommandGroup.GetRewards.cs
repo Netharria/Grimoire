@@ -23,7 +23,8 @@ public sealed partial class RewardCommandGroup
         await ctx.DeferResponseAsync();
         var guild = ctx.Guild!;
 
-        var rewards = (await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())).OrElse(default!);
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
+            .GetOrElse(() => default!);
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple,
             title: "Rewards",

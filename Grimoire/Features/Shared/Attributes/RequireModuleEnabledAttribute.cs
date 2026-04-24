@@ -24,7 +24,8 @@ internal sealed class RequireModuleEnabledCheck : IContextCheck<RequireModuleEna
         if (context.Guild is null)
             return "This command can only be used in a server.";
         var settingsModule = context.ServiceProvider.GetRequiredService<SettingsModule>();
-        var result = (await settingsModule.IsModuleEnabled(attribute.Module, context.Guild.GetGuildId())).OrElse(false);
+        var result = await settingsModule.IsModuleEnabled(attribute.Module, context.Guild.GetGuildId())
+            .GetOrElse(() => false);
         return !result ? "This module is disabled in this server." : null;
     }
 }

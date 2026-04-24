@@ -12,10 +12,19 @@ namespace Grimoire.Domain;
 
 public static class ValidationTaskExtensions
 {
+    extension<T>(Task<T> task)
+    {
+        public async Task<Validation<T>> ToValidation()
+            => Validation<T>.Succeed(await task);
+    }
+
     extension<T>(Task<Validation<T>> task)
     {
         public async Task<Validation<TOut>> Map<TOut>(Func<T, TOut> mapper)
             => (await task).Map(mapper);
+
+        public async Task<Validation<TOut>> MapAsync<TOut>(Func<T, Task<TOut>> mapper)
+            => await (await task).MapAsync(mapper);
 
         public async Task<Validation<TOut>> Bind<TOut>(Func<T, Validation<TOut>> binder)
             => (await task).Bind(binder);
@@ -42,5 +51,10 @@ public static class ValidationTaskExtensions
                 _ => throw new UnreachableException()
             };
         }
+
+        public async Task<Validation<T>> OrElse(Func<Validation<T>> fallback)
+            => (await task).OrElse(fallback);
+        public async Task<T> GetOrElse(Func<T> fallback)
+            => (await task).GetOrElse(fallback);
     }
 }

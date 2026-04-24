@@ -22,7 +22,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task NoRows_ReturnsAllDefaults()
     {
-        var settings = (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!);
+        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
 
         settings.XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(3));
         settings.Base.Value.ShouldBe(15);
@@ -35,7 +35,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 10);
 
-        var settings = (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!);
+        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
 
         settings.XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(10));
     }
@@ -45,7 +45,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20);
 
-        var settings = (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!);
+        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
 
         settings.Base.Value.ShouldBe(20);
     }
@@ -55,7 +55,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 100);
 
-        var settings = (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!);
+        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
 
         settings.Modifier.Value.ShouldBe(100);
     }
@@ -65,7 +65,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 10);
 
-        var settings = (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!);
+        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
 
         settings.Amount.Value.ShouldBe(10);
     }
@@ -128,7 +128,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
         // Fresh SUT to bypass the cache populated by the second write.
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var settings = (await freshSut.GetLevelingSettings(_guildId)).OrElse(default!);
+        var settings = await freshSut.GetLevelingSettings(_guildId).ShouldSucceed();
 
         settings.Base.Value.ShouldBe(30);
     }
@@ -158,7 +158,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
         result.ShouldBeOfType<Result<int>.Success>();
 
-        var settings = (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!);
+        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
         settings.Base.Value.ShouldBe(30);
     }
 
@@ -168,7 +168,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 1);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Base.Value.ShouldBe(1);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(1);
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 500);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Base.Value.ShouldBe(500);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(500);
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 1);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Modifier.Value.ShouldBe(1);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Modifier.Value.ShouldBe(1);
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 200);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Modifier.Value.ShouldBe(200);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Modifier.Value.ShouldBe(200);
     }
 
     [Fact]
@@ -214,7 +214,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 1);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Amount.Value.ShouldBe(1);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Amount.Value.ShouldBe(1);
     }
 
     [Fact]
@@ -223,7 +223,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 100);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Amount.Value.ShouldBe(100);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Amount.Value.ShouldBe(100);
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 1);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(1));
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(1));
     }
 
     [Fact]
@@ -241,17 +241,17 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 60);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(60));
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(60));
     }
 
     [Fact]
     public async Task CacheInvalidated_AfterSuccessfulWrite()
     {
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Base.Value.ShouldBe(15);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(15);
 
         await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 99);
 
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Base.Value.ShouldBe(99);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(99);
     }
 
     [Fact]
@@ -262,8 +262,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 100);
         await this._sut.SetLevelingSettings(guildB, _modId, LevelSettings.Base, 200);
 
-        (await this._sut.GetLevelingSettings(_guildId)).OrElse(default!).Base.Value.ShouldBe(100);
-        (await this._sut.GetLevelingSettings(guildB)).OrElse(default!).Base.Value.ShouldBe(200);
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(100);
+        (await this._sut.GetLevelingSettings(guildB)).ShouldSucceed().Base.Value.ShouldBe(200);
     }
 
     // ── LevelingSettingEntry math ─────────────────────────────────────────────

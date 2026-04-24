@@ -7,7 +7,7 @@
 
 namespace Grimoire.Settings.Domain;
 
-public abstract record XpIgnoredItem
+public abstract record XpTrackedItem
 {
     protected ulong Id { get; init; }
     public required GuildId GuildId { get; init; }
@@ -15,12 +15,16 @@ public abstract record XpIgnoredItem
     public required DateTimeOffset SetAt { get; init; }
 }
 
+public abstract record XpIgnoredItem : XpTrackedItem;
+public abstract record XpWatchedItem : XpTrackedItem;
+
+
 public sealed record IgnoredChannel : XpIgnoredItem
 {
     public ChannelId ChannelId { get => new(Id); init => Id = value.Value; }
 }
 
-public sealed record WatchedChannel : XpIgnoredItem
+public sealed record WatchedChannel : XpWatchedItem
 {
     public ChannelId ChannelId { get => new(Id); init => Id = value.Value; }
 }
@@ -30,7 +34,7 @@ public sealed record IgnoredMember : XpIgnoredItem
     public UserId UserId { get => new(Id); init => Id = value.Value; }
 }
 
-public sealed record WatchedMember : XpIgnoredItem
+public sealed record WatchedMember : XpWatchedItem
 {
     public UserId UserId { get => new(Id); init => Id = value.Value; }
 }
@@ -40,7 +44,7 @@ public sealed record IgnoredRole : XpIgnoredItem
     public RoleId RoleId { get => new(Id); init => Id = value.Value; }
 }
 
-public sealed record WatchedRole : XpIgnoredItem
+public sealed record WatchedRole : XpWatchedItem
 {
     public RoleId RoleId { get => new(Id); init => Id = value.Value; }
 }

@@ -19,35 +19,37 @@ public sealed partial class SettingsModule
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!(await IsModuleEnabled(Module.Moderation, guildId, cancellationToken)).OrElse(false))
+        if (!await IsModuleEnabled(Module.Moderation, guildId, cancellationToken)
+                .GetOrElse(() => false))
             return Result<RoleId?>.Ok(null);
         return await GetConfiguredMuteRole(guildId, cancellationToken);
     }
 
-    public async Task<Result<RoleId?>> GetConfiguredMuteRole(
+    public Task<Result<RoleId?>> GetConfiguredMuteRole(
         GuildId guildId,
         CancellationToken cancellationToken = default)
-        => (await GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken))
+        => GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken)
+            .AsTask()
             .Map(ParseRoleId);
 
-    public async Task<Result<GuildId>> DisableMuteRole(
+    public Task<Result<GuildId>> DisableMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
-        => (await SetGuildSetting(
+        => SetGuildSetting(
                 new GuildSettingDisabled(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow),
-                cancellationToken))
+                cancellationToken)
             .Map(_ => guildId);
 
-    public async Task<Result<RoleId>> SetMuteRole(
+    public Task<Result<RoleId>> SetMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         RoleId muteRoleId,
         CancellationToken cancellationToken = default)
-        => (await SetGuildSetting(
+        => SetGuildSetting(
                 new GuildSettingCustomValue(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow,
                     muteRoleId.Value.ToString(CultureInfo.InvariantCulture)),
-                cancellationToken))
+                cancellationToken)
             .Map(_ => muteRoleId);
 
     public async Task<Result<bool>> IsMemberMuted(

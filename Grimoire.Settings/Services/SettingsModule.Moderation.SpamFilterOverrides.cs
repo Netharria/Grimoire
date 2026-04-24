@@ -64,7 +64,10 @@ public sealed partial class SettingsModule
         SpamFilterOverrideOption option,
         CancellationToken cancellationToken = default)
     {
-        var currentSetting = (await GetSpamFilterOverrideAsync(guildId, channelId, cancellationToken)).OrElse(SpamFilterOverrideOption.Inherit);
+        var currentSetting =
+            await GetSpamFilterOverrideAsync(guildId, channelId, cancellationToken)
+                .GetOrElse(() => SpamFilterOverrideOption
+                .Inherit);
 
         if (currentSetting == option)
             return new Result<SpamFilterOverride>.NotModified(

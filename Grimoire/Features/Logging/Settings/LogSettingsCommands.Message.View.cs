@@ -39,24 +39,24 @@ public partial class LogSettingsCommands
                     guild.GetGuildId());
 
             var deleteChannelLog =
-                deleteChannelLogId.OrElse(null) is not { } deleteChannel
+                deleteChannelLogId.GetOrElse(() => null) is not { } deleteChannel
                     ? "None"
                     : (await guild.GetChannelOrDefaultAsync(deleteChannel))?
                     .Mention ?? "Deleted Channel";
             var bulkDeleteChannelLog =
-                bulkDeleteChannelLogId.OrElse(null) is not { } bulkChannel
+                bulkDeleteChannelLogId.GetOrElse(() => null) is not { } bulkChannel
                     ? "None"
                     : (await guild.GetChannelOrDefaultAsync(bulkChannel))?
                     .Mention ?? "Deleted Channel";
             var editChannelLog =
-                editChannelLogId.OrElse(null) is not { } editChannel
+                editChannelLogId.GetOrElse(() => null) is not { } editChannel
                     ? "None"
                     : (await guild.GetChannelOrDefaultAsync(editChannel))?
                     .Mention ?? "Deleted Channel";
             await ctx.ReplyAsync(
                 title: "Current Logging System Settings",
                 message:
-                $"**Module Enabled:** {(await this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId())).OrElse(false)}\n" +
+                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()).GetOrElse(() => false)}\n" +
                 $"**Delete Log:** {deleteChannelLog}\n" +
                 $"**Bulk Delete Log:** {bulkDeleteChannelLog}\n" +
                 $"**Edit Log:** {editChannelLog}\n");

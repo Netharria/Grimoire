@@ -34,7 +34,7 @@ public partial class IgnoreCommandGroup
             return;
         }
 
-        var ignoredItems = value.Select(item => (XpIgnoredItem?)(item switch
+        var ignoredItems = value.Select(item => (XpTrackedItem?)(item switch
             {
                 DiscordUser => new WatchedMember
                 {
@@ -58,7 +58,7 @@ public partial class IgnoreCommandGroup
                     SetBy = ctx.GetModeratorId()
                 },
                 _ => null
-            })).OfType<XpIgnoredItem>()
+            })).OfType<XpTrackedItem>()
             .ToFrozenSet();
 
         await this._settingsModule.AppendIgnoredItemsEvent(

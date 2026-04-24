@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.Collections.Frozen;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
@@ -34,7 +33,7 @@ public partial class IgnoreCommandGroup
             return;
         }
 
-        var ignoredItems = value.Select(item => (XpIgnoredItem?)(item switch
+        var ignoredItems = value.Select(item => (XpTrackedItem?)(item switch
             {
                 DiscordUser => new IgnoredMember
                 {
@@ -58,8 +57,8 @@ public partial class IgnoreCommandGroup
                     SetBy = ctx.GetModeratorId()
                 },
                 _ => null
-            })).OfType<XpIgnoredItem>()
-            .ToFrozenSet();
+            })).OfType<XpTrackedItem>()
+            .ToHashSet();
 
         await this._settingsModule.AppendIgnoredItemsEvent(
             guild.GetGuildId(),

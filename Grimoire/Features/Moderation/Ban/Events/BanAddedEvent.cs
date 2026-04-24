@@ -28,7 +28,7 @@ public partial class BanAddedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanAddedEventArgs args)
     {
-        if (!(await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();

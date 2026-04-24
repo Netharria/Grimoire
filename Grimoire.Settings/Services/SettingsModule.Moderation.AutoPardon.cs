@@ -16,11 +16,13 @@ public sealed partial class SettingsModule
 {
     private static TimeSpan GetDefaultAutoPardonDuration() => TimeSpan.FromDays(10950);
 
-    public async Task<Result<TimeSpan>> GetAutoPardonDuration(GuildId guildId, CancellationToken cancellationToken = default) =>
-        (await GetGuildSetting(
+    public Task<Result<TimeSpan>> GetAutoPardonDuration(GuildId guildId,
+        CancellationToken cancellationToken = default) =>
+        GetGuildSetting(
             GuildSettingType.SinAutoPardonDuration,
             guildId,
-            cancellationToken))
+            cancellationToken)
+            .AsTask()
         .Map(cachedSetting => cachedSetting switch
         {
             CachedDefaultSetting => GetDefaultAutoPardonDuration(),
@@ -30,26 +32,26 @@ public sealed partial class SettingsModule
         }).Map(cachedSetting =>
             cachedSetting != TimeSpan.Zero
                 ? cachedSetting
-                : TimeSpan.Zero);
+                : GetDefaultAutoPardonDuration());
 
-    public async Task<Result<TimeSpan>> SetAutoPardonDuration(
+    public Task<Result<TimeSpan>> SetAutoPardonDuration(
         GuildId guildId,
         ModeratorId moderatorId,
         TimeSpan autoPardonAfter,
         CancellationToken cancellationToken = default)
-        => (await SetGuildSetting(
+        => SetGuildSetting(
                 new GuildSettingCustomValue(GuildSettingType.SinAutoPardonDuration, guildId, moderatorId,
                     DateTimeOffset.UtcNow, autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)),
-                cancellationToken))
+                cancellationToken)
             .Map(_ => autoPardonAfter);
 
-    public async Task<Result<TimeSpan>> ResetAutoPardonDuration(
+    public Task<Result<TimeSpan>> ResetAutoPardonDuration(
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
-        => (await SetGuildSetting(
+        => SetGuildSetting(
                 new GuildSettingCustomValue(GuildSettingType.SinAutoPardonDuration, guildId, moderatorId,
                     DateTimeOffset.UtcNow, GetDefaultAutoPardonDuration().ToString("c", CultureInfo.InvariantCulture)),
                 cancellationToken)
-            ).Map(_ => GetDefaultAutoPardonDuration());
+            .Map(_ => GetDefaultAutoPardonDuration());
 }

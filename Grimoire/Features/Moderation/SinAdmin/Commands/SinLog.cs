@@ -90,7 +90,8 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
             _ => throw new ArgumentOutOfRangeException(nameof(sinQueryType), sinQueryType, null)
         };
 
-        var autoPardonAfter = (await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId())).OrElse(TimeSpan.FromDays(10950));
+        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId())
+            .GetOrElse(() => TimeSpan.FromDays(10950));
 
         var result = await queryable
             .Where(x => x.SinOn > DateTimeOffset.UtcNow - autoPardonAfter)

@@ -24,7 +24,7 @@ internal sealed class GuildMemberAddedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
-        if (!(await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId())).OrElse(false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
         var invites = await args.Guild.GetInvitesAsync();
         var inviteUsed = this._inviteService.CalculateInviteUsed(new GuildInviteDto
