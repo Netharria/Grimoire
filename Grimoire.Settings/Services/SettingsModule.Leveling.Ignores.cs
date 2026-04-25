@@ -15,13 +15,13 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<Result<bool>> IsMessageIgnored(
+    public Task<Result<bool>> IsMessageIgnored(
         GuildId guildId,
         UserId userId,
         IReadOnlySet<RoleId> userRoleIds,
         ChannelId channelId,
         CancellationToken cancellationToken = default)
-        => await GetAllIgnoredItems(guildId, cancellationToken)
+        => GetAllIgnoredItems(guildId, cancellationToken)
             .OrElse(() => Result<FrozenSet<XpIgnoredItem>>.Ok(FrozenSet<XpIgnoredItem>.Empty))
             .Map(ignoredItems =>
                 ignoredItems.Any(ignoredItem =>
@@ -33,12 +33,12 @@ public sealed partial class SettingsModule
                         _ => throw new UnreachableException()
                     }));
 
-    public async Task<Result<bool>> IsMemberIgnored(
+    public Task<Result<bool>> IsMemberIgnored(
         GuildId guildId,
         UserId userId,
         IReadOnlySet<RoleId> userRoleIds,
         CancellationToken cancellationToken = default)
-        => await GetAllIgnoredItems(guildId, cancellationToken)
+        => GetAllIgnoredItems(guildId, cancellationToken)
             .OrElse(() => Result<FrozenSet<XpIgnoredItem>>.Ok(FrozenSet<XpIgnoredItem>.Empty))
             .Map(ignoredItems =>
                 ignoredItems.Any(ignoredItem =>
