@@ -104,7 +104,11 @@ public sealed partial class SettingsModule
             return new Result<ChannelLocked>.NotFound(
                 new Error("channel-lock.not-found", "The channel is not currently locked."));
 
-        dbContext.ChannelLocks.Add(new ChannelUnlocked(moderatorId, channelId, guildId, DateTimeOffset.UtcNow));
+        if (ChannelUnlocked.Create(moderatorId, channelId, guildId, DateTimeOffset.UtcNow)
+            is not Validation<ChannelUnlocked>.Valid(var unlock))
+            return Result<ChannelLocked>.Fail(
+                new Error("channel-unlock.invalid", "Unable to create channel unlock event."));
+        dbContext.ChannelLocks.Add(unlock);
         await dbContext.SaveChangesAsync(cancellationToken);
         await this._cache.RemoveAsync(CacheKey.ChannelLocks(guildId), cancellationToken);
         return Result<ChannelLocked>.Ok(existingLock);
@@ -200,7 +204,11 @@ public sealed partial class SettingsModule
             return new Result<ThreadLocked>.NotFound(
                 new Error("thread-lock.not-found", "The thread is not currently locked."));
 
-        dbContext.ThreadLocks.Add(new ThreadUnlocked(moderatorId, channelId, guildId, DateTimeOffset.UtcNow));
+        if (ThreadUnlocked.Create(moderatorId, channelId, guildId, DateTimeOffset.UtcNow)
+            is not Validation<ThreadUnlocked>.Valid(var unlock))
+            return Result<ThreadLocked>.Fail(
+                new Error("thread-unlock.invalid", "Unable to create thread unlock event."));
+        dbContext.ThreadLocks.Add(unlock);
         await dbContext.SaveChangesAsync(cancellationToken);
         await this._cache.RemoveAsync(CacheKey.ThreadLocks(guildId), cancellationToken);
         return Result<ThreadLocked>.Ok(existingLock);

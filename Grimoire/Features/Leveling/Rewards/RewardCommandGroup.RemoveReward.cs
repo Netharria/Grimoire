@@ -26,11 +26,12 @@ public sealed partial class RewardCommandGroup
 
         await ctx.DeferResponseAsync();
 
-        var removeReward = new RewardRemoved(
-            role.GetRoleId(),
-            guild.GetGuildId(),
-            ctx.GetModeratorId(),
-            DateTimeOffset.UtcNow);
+        if (RewardRemoved.Create(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow)
+            is not Validation<RewardRemoved>.Valid(var removeReward))
+        {
+            await ctx.EditResponseAsync("Failed to create reward removal event.");
+            return;
+        }
 
         var result = await this._settingsModule.SetRewardAsync(removeReward);
 

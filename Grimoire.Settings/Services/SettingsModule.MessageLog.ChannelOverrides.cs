@@ -53,7 +53,7 @@ public sealed partial class SettingsModule
                 async (state, ct) =>
                 {
                     await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                    var channelOverride = await dbContext.MessagesLogChannelOverrides
+                    var channelOverride = await dbContext.MessageLogChannelOverrides
                         .AsNoTracking()
                         .Where(ovr => ovr.GuildId == state.guildId && ovr.ChannelId == state.channelId)
                         .OrderByDescending(x => x.SetAt)
@@ -78,9 +78,12 @@ public sealed partial class SettingsModule
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        var newOverride = new MessageLogChannelOverride(option, channelId, guildId, setBy, DateTimeOffset.UtcNow);
+        if (MessageLogChannelOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
+            is not Validation<MessageLogChannelOverride>.Valid(var newOverride))
+            return Result<MessageLogChannelOverride>.Fail(
+                new Error("message-log-override.invalid", "Unable to create message log channel override."));
 
-        dbContext.MessagesLogChannelOverrides.Add(newOverride);
+        dbContext.MessageLogChannelOverrides.Add(newOverride);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await this._cache.SetAsync(CacheKey.LogOverride(channelId),
@@ -95,7 +98,7 @@ public sealed partial class SettingsModule
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()).
         // Stream rows as they arrive and filter in memory.
-        await foreach (var channelOverride in dbContext.MessagesLogChannelOverrides
+        await foreach (var channelOverride in dbContext.MessageLogChannelOverrides
                            .AsNoTracking()
                            .Where(ovr => ovr.GuildId == guildId)
                            .GroupBy(ovr => ovr.ChannelId)

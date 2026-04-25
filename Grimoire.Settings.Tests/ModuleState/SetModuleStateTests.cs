@@ -132,11 +132,13 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     public async Task GetGuildSetting_MultipleRows_LatestWins()
     {
         await using var db = factory.CreateDbContext();
-        db.GuildSettings.Add(new GuildSettingCustomValue(
-            GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
-            bool.TrueString));
-        db.GuildSettings.Add(new GuildSettingDisabled(
-            GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)));
+        db.GuildSettings.Add(
+            ((Validation<GuildSettingCustomValue>.Valid)GuildSettingCustomValue.Create(
+                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
+                bool.TrueString)).Value);
+        db.GuildSettings.Add(
+            ((Validation<GuildSettingDisabled>.Valid)GuildSettingDisabled.Create(
+                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))).Value);
         await db.SaveChangesAsync();
 
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeFalse();
@@ -146,11 +148,13 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     public async Task SetGuildSetting_MultipleRows_LatestDeterminesRedundancy()
     {
         await using var db = factory.CreateDbContext();
-        db.GuildSettings.Add(new GuildSettingCustomValue(
-            GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
-            bool.TrueString));
-        db.GuildSettings.Add(new GuildSettingDisabled(
-            GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)));
+        db.GuildSettings.Add(
+            ((Validation<GuildSettingCustomValue>.Valid)GuildSettingCustomValue.Create(
+                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
+                bool.TrueString)).Value);
+        db.GuildSettings.Add(
+            ((Validation<GuildSettingDisabled>.Valid)GuildSettingDisabled.Create(
+                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))).Value);
         await db.SaveChangesAsync();
 
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
@@ -185,9 +189,10 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     {
         await using (var db = factory.CreateDbContext())
         {
-            db.GuildSettings.Add(new GuildSettingCustomValue(
-                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
-                bool.TrueString));
+            db.GuildSettings.Add(
+                ((Validation<GuildSettingCustomValue>.Valid)GuildSettingCustomValue.Create(
+                    GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
+                    bool.TrueString)).Value);
             await db.SaveChangesAsync();
         }
 
@@ -195,8 +200,9 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         await using (var db = factory.CreateDbContext())
         {
-            db.GuildSettings.Add(new GuildSettingDisabled(
-                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)));
+            db.GuildSettings.Add(
+                ((Validation<GuildSettingDisabled>.Valid)GuildSettingDisabled.Create(
+                    GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))).Value);
             await db.SaveChangesAsync();
         }
 

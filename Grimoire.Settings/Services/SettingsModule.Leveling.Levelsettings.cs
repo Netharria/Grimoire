@@ -71,9 +71,10 @@ public sealed partial class SettingsModule
                 async x =>
                 {
                     var (settingType, setting) = x;
-                    var result = await SetGuildSetting(
-                        new GuildSettingCustomValue(settingType, guildId, setBy, DateTimeOffset.UtcNow, setting),
-                        cancellationToken);
+                    if (GuildSettingCustomValue.Create(settingType, guildId, setBy, DateTimeOffset.UtcNow, setting)
+                        is not Validation<GuildSettingCustomValue>.Valid(var customValue))
+                        return Result<int>.Fail(new Error("guild-setting.invalid", "Invalid guild setting value."));
+                    var result = await SetGuildSetting(customValue, cancellationToken);
                     if (result is Result<GuildSetting>.Success)
                         await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken);
                     return result.Map(_ => newValue);

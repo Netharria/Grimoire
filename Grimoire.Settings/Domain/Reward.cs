@@ -42,5 +42,28 @@ public sealed record RewardAdded(
     }
 }
 
-public sealed record RewardRemoved(RoleId RoleId, GuildId GuildId, ModeratorId SetBy, DateTimeOffset SetAt)
-    : Reward(RoleId, GuildId, SetBy, SetAt);
+public sealed record RewardRemoved : Reward
+{
+    private RewardRemoved(
+        RoleId roleId,
+        GuildId guildId,
+        ModeratorId setBy,
+        DateTimeOffset setAt)
+        : base(roleId, guildId, setBy, setAt) { }
+
+    public static Validation<RewardRemoved> Create(
+        RoleId roleId,
+        GuildId guildId,
+        ModeratorId setBy,
+        DateTimeOffset setAt)
+    {
+        if (roleId.Value == 0)
+            return Validation<RewardRemoved>.Fail(
+                new Error("reward-removed.role-id.invalid", "RoleId must be specified."));
+        if (setBy.Value == 0)
+            return Validation<RewardRemoved>.Fail(
+                new Error("reward-removed.set-by.invalid", "ModeratorId must be specified."));
+        return Validation<RewardRemoved>.Succeed(
+            new RewardRemoved(roleId, guildId, setBy, setAt));
+    }
+}

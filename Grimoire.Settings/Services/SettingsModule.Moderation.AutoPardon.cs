@@ -39,19 +39,19 @@ public sealed partial class SettingsModule
         ModeratorId moderatorId,
         TimeSpan autoPardonAfter,
         CancellationToken cancellationToken = default)
-        => SetGuildSetting(
-                new GuildSettingCustomValue(GuildSettingType.SinAutoPardonDuration, guildId, moderatorId,
-                    DateTimeOffset.UtcNow, autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)),
-                cancellationToken)
-            .Map(_ => autoPardonAfter);
+        => GuildSettingCustomValue.Create(GuildSettingType.SinAutoPardonDuration, guildId, moderatorId,
+                DateTimeOffset.UtcNow, autoPardonAfter.ToString("c", CultureInfo.InvariantCulture))
+            .MatchAsync(
+                setting => SetGuildSetting(setting, cancellationToken).Map(_ => autoPardonAfter),
+                errors => Result<TimeSpan>.Fail(errors));
 
     public Task<Result<TimeSpan>> ResetAutoPardonDuration(
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
-        => SetGuildSetting(
-                new GuildSettingCustomValue(GuildSettingType.SinAutoPardonDuration, guildId, moderatorId,
-                    DateTimeOffset.UtcNow, GetDefaultAutoPardonDuration().ToString("c", CultureInfo.InvariantCulture)),
-                cancellationToken)
-            .Map(_ => GetDefaultAutoPardonDuration());
+        => GuildSettingCustomValue.Create(GuildSettingType.SinAutoPardonDuration, guildId, moderatorId,
+                DateTimeOffset.UtcNow, GetDefaultAutoPardonDuration().ToString("c", CultureInfo.InvariantCulture))
+            .MatchAsync(
+                setting => SetGuildSetting(setting, cancellationToken).Map(_ => GetDefaultAutoPardonDuration()),
+                errors => Result<TimeSpan>.Fail(errors));
 }

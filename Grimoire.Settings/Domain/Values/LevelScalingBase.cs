@@ -47,6 +47,9 @@ public readonly record struct LevelScalingBase
 
 internal static class LevelingSettingsExtensions
 {
-    internal static Validation<string> ToDatabaseString(this Validation<LevelScalingBase> v)
-        => v.Map(x => x.Value.ToString(CultureInfo.InvariantCulture));
+    extension(Validation<LevelScalingBase> v)
+    {
+        internal Validation<string> ToDatabaseString()
+            => v.Map(x => x.Value.ToString(CultureInfo.InvariantCulture));
+    }
 }

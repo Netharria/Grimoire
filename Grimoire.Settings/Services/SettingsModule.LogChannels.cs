@@ -38,14 +38,15 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
         => (channelId switch
         {
-            not null => await SetGuildSetting(
-                new GuildSettingCustomValue(guildLogType.ToGuildSettingType(), guildId, moderatorId,
-                    DateTimeOffset.UtcNow,
-                    channelId.Value.Value.ToString(CultureInfo.InvariantCulture)),
-                cancellationToken),
-            _ => await SetGuildSetting(
-                new GuildSettingDisabled(guildLogType.ToGuildSettingType(), guildId, moderatorId,
-                    DateTimeOffset.UtcNow),
-                cancellationToken)
+            not null => await GuildSettingCustomValue.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
+                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture))
+                .MatchAsync(
+                    setting => SetGuildSetting(setting, cancellationToken),
+                    errors => Result<GuildSetting>.Fail(errors)),
+            _ => await GuildSettingDisabled.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
+                    DateTimeOffset.UtcNow)
+                .MatchAsync(
+                    setting => SetGuildSetting(setting, cancellationToken),
+                    errors => Result<GuildSetting>.Fail(errors))
         }).Map(_ => channelId);
 }

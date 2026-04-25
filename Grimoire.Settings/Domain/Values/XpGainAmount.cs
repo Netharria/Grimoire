@@ -48,6 +48,9 @@ public readonly record struct XpGainAmount
 
 public static class XpGainAmountExtensions
 {
-    internal static Validation<string> ToDatabaseString(this Validation<XpGainAmount> v)
-        => v.Map(x => x.Value.ToString(CultureInfo.InvariantCulture));
+    extension(Validation<XpGainAmount> v)
+    {
+        internal Validation<string> ToDatabaseString()
+            => v.Map(x => x.Value.ToString(CultureInfo.InvariantCulture));
+    }
 }

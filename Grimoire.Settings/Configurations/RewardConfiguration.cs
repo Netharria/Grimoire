@@ -21,7 +21,8 @@ internal sealed class RewardConfiguration : IEntityTypeConfiguration<Reward>
         builder.HasKey(e => new { e.GuildId, e.RoleId, e.SetAt });
         builder.HasDiscriminator<string>("RewardType")
             .HasValue<RewardAdded>("Added")
-            .HasValue<RewardRemoved>("Removed");
+            .HasValue<RewardRemoved>("Removed")
+            .IsComplete();
 
         builder.Property(e => e.SetBy)
             .HasConversion(e => e.Value, value => new ModeratorId(value));

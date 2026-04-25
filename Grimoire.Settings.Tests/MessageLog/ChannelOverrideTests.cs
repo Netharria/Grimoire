@@ -107,7 +107,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         result.ShouldBeOfType<Result<MessageLogChannelOverride>.NotModified>();
 
         await using var db = factory.CreateDbContext();
-        var count = await db.MessagesLogChannelOverrides
+        var count = await db.MessageLogChannelOverrides
             .Where(x => x.ChannelId == _channelId && x.GuildId == _guildId)
             .CountAsync();
         count.ShouldBe(1);
@@ -203,10 +203,12 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         {
             var t1 = DateTimeOffset.UtcNow.AddHours(-2);
             var t2 = DateTimeOffset.UtcNow.AddHours(-1);
-            db.MessagesLogChannelOverrides.Add(new MessageLogChannelOverride(
-                MessageLogOverrideOption.AlwaysLog, _channelId, _guildId, _modId, t1));
-            db.MessagesLogChannelOverrides.Add(new MessageLogChannelOverride(
-                MessageLogOverrideOption.NeverLog, _channelId, _guildId, _modId, t2));
+            db.MessageLogChannelOverrides.Add(
+                ((Validation<MessageLogChannelOverride>.Valid)MessageLogChannelOverride.Create(
+                    MessageLogOverrideOption.AlwaysLog, _channelId, _guildId, _modId, t1)).Value);
+            db.MessageLogChannelOverrides.Add(
+                ((Validation<MessageLogChannelOverride>.Valid)MessageLogChannelOverride.Create(
+                    MessageLogOverrideOption.NeverLog, _channelId, _guildId, _modId, t2)).Value);
             await db.SaveChangesAsync();
         }
 

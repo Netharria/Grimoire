@@ -36,21 +36,21 @@ public sealed partial class SettingsModule
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
-        => SetGuildSetting(
-                new GuildSettingDisabled(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow),
-                cancellationToken)
-            .Map(_ => guildId);
+        => GuildSettingDisabled.Create(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow)
+            .MatchAsync(
+                setting => SetGuildSetting(setting, cancellationToken).Map(_ => guildId),
+                errors => Result<GuildId>.Fail(errors));
 
     public Task<Result<RoleId>> SetMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         RoleId muteRoleId,
         CancellationToken cancellationToken = default)
-        => SetGuildSetting(
-                new GuildSettingCustomValue(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow,
-                    muteRoleId.Value.ToString(CultureInfo.InvariantCulture)),
-                cancellationToken)
-            .Map(_ => muteRoleId);
+        => GuildSettingCustomValue.Create(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow,
+                muteRoleId.Value.ToString(CultureInfo.InvariantCulture))
+            .MatchAsync(
+                setting => SetGuildSetting(setting, cancellationToken).Map(_ => muteRoleId),
+                errors => Result<RoleId>.Fail(errors));
 
     public async Task<Result<bool>> IsMemberMuted(
         UserId userId,
@@ -106,7 +106,11 @@ public sealed partial class SettingsModule
             return new Result<MuteAdded>.NotFound(
                 new Error("mute.not-found", "No active mute found for this user."));
 
-        dbContext.Mutes.Add(new MuteRemoved(userId, guildId, moderatorId, DateTimeOffset.UtcNow));
+        if (MuteRemoved.Create(userId, guildId, moderatorId, DateTimeOffset.UtcNow)
+            is not Validation<MuteRemoved>.Valid(var muteRemoved))
+            return Result<MuteAdded>.Fail(
+                new Error("mute-removed.invalid", "Unable to create mute removal event."));
+        dbContext.Mutes.Add(muteRemoved);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result<MuteAdded>.Ok(existingMute);
     }

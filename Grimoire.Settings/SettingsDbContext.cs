@@ -16,7 +16,7 @@ public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> option
     internal DbSet<XpTrackedItem> XpTrackedItems { get; init; }
     internal DbSet<ChannelLock> ChannelLocks { get; init; }
     internal DbSet<ThreadLock> ThreadLocks { get; init; }
-    internal DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; init; }
+    internal DbSet<MessageLogChannelOverride> MessageLogChannelOverrides { get; init; }
     internal DbSet<Mute> Mutes { get; init; }
     internal DbSet<Reward> Rewards { get; init; }
     internal DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; }

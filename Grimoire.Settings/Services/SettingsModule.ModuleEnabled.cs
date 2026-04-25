@@ -31,13 +31,15 @@ public sealed partial class SettingsModule
         => ToSettingType(moduleType)
             .BindAsync(async settingType => enableModule switch
             {
-                true => await SetGuildSetting(
-                    new GuildSettingCustomValue(settingType, guildId, moderatorId, DateTimeOffset.UtcNow,
-                        bool.TrueString),
-                    cancellationToken),
-                false => await SetGuildSetting(
-                    new GuildSettingDisabled(settingType, guildId, moderatorId, DateTimeOffset.UtcNow),
-                    cancellationToken)
+                true => await GuildSettingCustomValue.Create(settingType, guildId, moderatorId,
+                        DateTimeOffset.UtcNow, bool.TrueString)
+                    .MatchAsync(
+                        setting => SetGuildSetting(setting, cancellationToken),
+                        errors => Result<GuildSetting>.Fail(errors)),
+                false => await GuildSettingDisabled.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow)
+                    .MatchAsync(
+                        setting => SetGuildSetting(setting, cancellationToken),
+                        errors => Result<GuildSetting>.Fail(errors))
             }).Map(_ => enableModule);
 
     private static bool ParseEnabled(CachedSetting? setting) =>

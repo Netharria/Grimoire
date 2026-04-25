@@ -55,13 +55,36 @@ public sealed record ChannelLocked : ChannelLock
     }
 }
 
-public sealed record ChannelUnlocked(
-    ModeratorId ModeratorId,
-    ChannelId ChannelId,
-    GuildId GuildId,
-    DateTimeOffset SetAt,
-    ModerationReason? Reason = null)
-    : ChannelLock(ModeratorId, ChannelId, GuildId, SetAt, Reason);
+public sealed record ChannelUnlocked : ChannelLock
+{
+    private ChannelUnlocked(
+        ModeratorId moderatorId,
+        ChannelId channelId,
+        GuildId guildId,
+        DateTimeOffset setAt,
+        ModerationReason? reason)
+        : base(moderatorId, channelId, guildId, setAt, reason) { }
+
+    public static Validation<ChannelUnlocked> Create(
+        ModeratorId moderatorId,
+        ChannelId channelId,
+        GuildId guildId,
+        DateTimeOffset setAt,
+        ModerationReason? reason = null)
+    {
+        if (moderatorId.Value == 0)
+            return Validation<ChannelUnlocked>.Fail(
+                new Error("channel-unlock.moderator-id.invalid", "ModeratorId must be specified."));
+        if (channelId.Value == 0)
+            return Validation<ChannelUnlocked>.Fail(
+                new Error("channel-unlock.channel-id.invalid", "ChannelId must be specified."));
+        if (guildId.Value == 0)
+            return Validation<ChannelUnlocked>.Fail(
+                new Error("channel-unlock.guild-id.invalid", "GuildId must be specified."));
+        return Validation<ChannelUnlocked>.Succeed(
+            new ChannelUnlocked(moderatorId, channelId, guildId, setAt, reason));
+    }
+}
 
 public readonly record struct PreviouslyAllowedPermissions(long Permissions);
 

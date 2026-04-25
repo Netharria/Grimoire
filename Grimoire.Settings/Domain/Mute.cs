@@ -28,8 +28,8 @@ public sealed record MuteAdded : Mute
         EndTime = endTime;
     }
 
-    public SinId SinId { get; init; }
-    public DateTimeOffset EndTime { get; init; }
+    public SinId SinId { get; }
+    public DateTimeOffset EndTime { get; }
 
     public static Validation<MuteAdded> Create(
         UserId userId,
@@ -53,15 +53,34 @@ public sealed record MuteAdded : Mute
                 new Error("mute.self-mute.invalid", "A moderator cannot mute themselves."));
         if (sinId.Value <= 0)
             return Validation<MuteAdded>.Fail(
-                new Error("mute.sin-id.invalid", "Negative Sin Ids are not allowed."));
+                new Error("mute.sin-id.invalid", "Sin Id must be a positive number."));
         return Validation<MuteAdded>.Succeed(
             new MuteAdded(userId, guildId, moderatorId, sinId, setAt, endTime));
     }
 }
 
-public sealed record MuteRemoved(
-    UserId UserId,
-    GuildId GuildId,
-    ModeratorId ModeratorId,
-    DateTimeOffset SetAt)
-    : Mute(UserId, GuildId, ModeratorId, SetAt);
+public sealed record MuteRemoved : Mute
+{
+    private MuteRemoved(
+        UserId userId,
+        GuildId guildId,
+        ModeratorId moderatorId,
+        DateTimeOffset setAt)
+        : base(userId, guildId, moderatorId, setAt) { }
+
+    public static Validation<MuteRemoved> Create(
+        UserId userId,
+        GuildId guildId,
+        ModeratorId moderatorId,
+        DateTimeOffset setAt)
+    {
+        if (userId.Value == 0)
+            return Validation<MuteRemoved>.Fail(
+                new Error("mute-removed.user-id.invalid", "UserId must be specified."));
+        if (moderatorId.Value == 0)
+            return Validation<MuteRemoved>.Fail(
+                new Error("mute-removed.moderator-id.invalid", "ModeratorId must be specified."));
+        return Validation<MuteRemoved>.Succeed(
+            new MuteRemoved(userId, guildId, moderatorId, setAt));
+    }
+}
