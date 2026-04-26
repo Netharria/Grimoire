@@ -29,45 +29,47 @@ public sealed partial class CustomCommandSettings
         CustomCommandName name)
     {
         await ctx.DeferResponseAsync();
+        var guild = ctx.Guild!;
+        await DeleteCommandAsync(guild.GetGuildId(), name)
+            .Match(
+            alreadyForgotten => OnForgetSuccess(ctx, guild, name, alreadyForgotten),
+            errors => ctx.SendErrorResponseAsync(errors[0].Message).AsTask());
+    }
 
-        if (ctx.Guild is not { } guild)
-        {
-            await ctx.SendWarningResponseAsync("You need to be in a guild to use this command.");
-            return;
-        }
-
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var guildId = guild.GetGuildId();
+    private async Task<Result<bool>> DeleteCommandAsync(GuildId guildId, CustomCommandName name)
+    {
         try
         {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             await dbContext.CustomCommandUsages
                 .Where(x => x.Name == name && x.GuildId == guildId)
                 .ExecuteDeleteAsync();
-
             var deletedCount = await dbContext.CustomCommands
                 .Where(x => x.Name == name && x.GuildId == guildId)
                 .ExecuteDeleteAsync();
-
-            var alreadyForgotten = deletedCount == 0;
-
-            await ctx.ReplyAsync(GrimoireColor.Green,
-                alreadyForgotten
-                    ? $"Command `{name}` was already forgotten."
-                    : $"Removed command {name}");
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = guildId,
-                GuildLogType = GuildLogType.Moderation,
-                Description = alreadyForgotten
-                    ? $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command `{name}` (already absent)."
-                    : $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command `{name}`.",
-                Color = GrimoireColor.Purple
-            });
+            return Result<bool>.Ok(deletedCount == 0);
         }
         catch (DbUpdateException)
         {
-            await ctx.SendErrorResponseAsync(
-                "Could not forget that command right now due to a database error. Please try again.");
+            return Result<bool>.Fail(new Error("command.forget.db_error",
+                "Could not forget that command right now due to a database error. Please try again."));
         }
+    }
+
+    private async Task OnForgetSuccess(CommandContext ctx, DiscordGuild guild, CustomCommandName name, bool alreadyForgotten)
+    {
+        await ctx.ReplyAsync(GrimoireColor.Green,
+            alreadyForgotten
+                ? $"Command `{name}` was already forgotten."
+                : $"Removed command {name}");
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        {
+            GuildId = guild.GetGuildId(),
+            GuildLogType = GuildLogType.Moderation,
+            Description = alreadyForgotten
+                ? $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command `{name}` (already absent)."
+                : $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command `{name}`.",
+            Color = GrimoireColor.Purple
+        });
     }
 }

@@ -53,7 +53,7 @@ namespace Grimoire.Settings.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MessagesLogChannelOverrides",
+                name: "MessageLogChannelOverrides",
                 schema: "Settings",
                 columns: table => new
                 {
@@ -65,7 +65,7 @@ namespace Grimoire.Settings.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MessagesLogChannelOverrides", x => new { x.ChannelId, x.GuildId, x.SetAt });
+                    table.PrimaryKey("PK_MessageLogChannelOverrides", x => new { x.ChannelId, x.GuildId, x.SetAt });
                 });
 
             migrationBuilder.CreateTable(
@@ -175,16 +175,16 @@ namespace Grimoire.Settings.Migrations
                 descending: new[] { false, false, true });
 
             migrationBuilder.CreateIndex(
-                name: "IX_MessagesLogChannelOverrides_ChannelId_GuildId_SetAt",
+                name: "IX_MessageLogChannelOverrides_ChannelId_GuildId_SetAt",
                 schema: "Settings",
-                table: "MessagesLogChannelOverrides",
+                table: "MessageLogChannelOverrides",
                 columns: new[] { "ChannelId", "GuildId", "SetAt" },
                 descending: new[] { false, false, true });
 
             migrationBuilder.CreateIndex(
-                name: "IX_MessagesLogChannelOverrides_GuildId",
+                name: "IX_MessageLogChannelOverrides_GuildId",
                 schema: "Settings",
-                table: "MessagesLogChannelOverrides",
+                table: "MessageLogChannelOverrides",
                 column: "GuildId");
 
             migrationBuilder.CreateIndex(
@@ -253,7 +253,7 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings");
 
             migrationBuilder.DropTable(
-                name: "MessagesLogChannelOverrides",
+                name: "MessageLogChannelOverrides",
                 schema: "Settings");
 
             migrationBuilder.DropTable(

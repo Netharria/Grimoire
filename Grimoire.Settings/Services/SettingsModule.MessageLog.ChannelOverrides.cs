@@ -27,7 +27,8 @@ public sealed partial class SettingsModule
         ChannelId? currentChannelId = channelId;
         while (currentChannelId is not null)
         {
-            var overrideOption = await GetChannelLogOverride(currentChannelId.Value, guildId, cancellationToken);
+            var overrideOption = await GetChannelLogOverride(currentChannelId.Value, guildId, cancellationToken)
+                .GetOrElse(() => MessageLogOverrideOption.Inherit);
             switch (overrideOption)
             {
                 case MessageLogOverrideOption.AlwaysLog:
@@ -44,67 +45,81 @@ public sealed partial class SettingsModule
         return Result<bool>.Ok(true);
     }
 
-    private Task<MessageLogOverrideOption> GetChannelLogOverride(ChannelId channelId,
+    private Task<Result<MessageLogOverrideOption>> GetChannelLogOverride(ChannelId channelId,
         GuildId guildId,
         CancellationToken cancellationToken)
-        =>
-            this._cache.GetOrCreateAsync(CacheKey.LogOverride(channelId),
+        => ExecuteSafelyAsync(async ct =>
+        {
+            var result = await this._cache.GetOrCreateAsync(CacheKey.LogOverride(channelId),
                 new { channelId, guildId },
-                async (state, ct) =>
+                async (state, innerCt) =>
                 {
-                    await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                    await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(innerCt);
                     var channelOverride = await dbContext.MessageLogChannelOverrides
                         .AsNoTracking()
                         .Where(ovr => ovr.GuildId == state.guildId && ovr.ChannelId == state.channelId)
                         .OrderByDescending(x => x.SetAt)
                         .Select(ovr => (MessageLogOverrideOption?)ovr.ChannelOption)
-                        .FirstOrDefaultAsync(ct);
+                        .FirstOrDefaultAsync(innerCt);
                     return channelOverride ?? MessageLogOverrideOption.Inherit;
                 }, this._cacheEntryOptions,
-                cancellationToken: cancellationToken)
-                .AsTask();
+                cancellationToken: ct);
+            return Result<MessageLogOverrideOption>.Ok(result);
+        }, new Error("channel-log-override.lookup-failed", "Could not retrieve channel log override."), cancellationToken);
 
-    public async Task<Result<MessageLogChannelOverride>> SetChannelLogOverride(
+    public Task<Result<MessageLogChannelOverride>> SetChannelLogOverride(
         ChannelId channelId,
         GuildId guildId,
         ModeratorId setBy,
         MessageLogOverrideOption option,
         CancellationToken cancellationToken = default)
-    {
-        var existingOverride = await GetChannelLogOverride(channelId, guildId, cancellationToken);
+        => ExecuteSafelyAsync(async ct =>
+        {
+            var existingOverride = await GetChannelLogOverride(channelId, guildId, ct)
+                .GetOrElse(() => MessageLogOverrideOption.Inherit);
 
-        if (existingOverride == option)
-            return new Result<MessageLogChannelOverride>.NotModified(
-                new Error("channel-log-override.not-changed", "The channel is already set to this log option."));
+            if (existingOverride == option)
+                return new Result<MessageLogChannelOverride>.NotModified(
+                    new Error("channel-log-override.not-changed", "The channel is already set to this log option."));
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
 
-        return await MessageLogChannelOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
-            .ToResult()
-            .TapAsync(async newOverride =>
-            {
-                dbContext.MessageLogChannelOverrides.Add(newOverride);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                await this._cache.SetAsync(CacheKey.LogOverride(channelId),
-                    option, this._cacheEntryOptions,
-                    cancellationToken: cancellationToken);
-            });
-    }
+            return await MessageLogChannelOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
+                .ToResult()
+                .BindAsync(async newOverride =>
+                {
+                    dbContext.MessageLogChannelOverrides.Add(newOverride);
+                    await dbContext.SaveChangesAsync(ct);
+                    await this._cache.SetAsync(CacheKey.LogOverride(channelId), option, this._cacheEntryOptions,
+                        cancellationToken: ct);
+                    return Result<MessageLogChannelOverride>.Ok(newOverride);
+                });
+        }, new Error("channel-log-override.save-failed", "Could not set channel log override."), cancellationToken);
 
     public async IAsyncEnumerable<MessageLogChannelOverride> GetAllOverriddenChannels(GuildId guildId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()).
-        // Stream rows as they arrive and filter in memory.
-        await foreach (var channelOverride in dbContext.MessageLogChannelOverrides
-                           .AsNoTracking()
-                           .Where(ovr => ovr.GuildId == guildId)
-                           .GroupBy(ovr => ovr.ChannelId)
-                           .Select(ovr => ovr.OrderByDescending(x => x.SetAt).First())
-                           .AsAsyncEnumerable()
-                           .WithCancellation(cancellationToken))
-            if (channelOverride.ChannelOption != MessageLogOverrideOption.Inherit)
-                yield return channelOverride;
+        List<MessageLogChannelOverride> overrides;
+        try
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()).
+            // Stream rows as they arrive and filter in memory.
+            overrides = await dbContext.MessageLogChannelOverrides
+                .AsNoTracking()
+                .Where(ovr => ovr.GuildId == guildId)
+                .GroupBy(ovr => ovr.ChannelId)
+                .Select(ovr => ovr.OrderByDescending(x => x.SetAt).First())
+                .ToListAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogOperationFailure(this._logger, ex.Message, ex);
+            yield break;
+        }
+
+        foreach (var channelOverride in overrides
+                     .Where(channelOverride => channelOverride.ChannelOption != MessageLogOverrideOption.Inherit))
+            yield return channelOverride;
     }
 }

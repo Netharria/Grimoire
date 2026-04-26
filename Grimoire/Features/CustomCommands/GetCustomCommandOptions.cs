@@ -27,12 +27,10 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
                     .Take(5)
                     .Select(x => new DiscordAutoCompleteChoice(
                         x.Name
-                        + (x.HasMention ? " <Mention>" : string.Empty)
-                        + (x.HasMessage ? " <Message>" : string.Empty),
+                        + (x.Content.Contains("%mention") ? " <Mention>" : string.Empty)
+                        + (x.Content.Contains("%message") ? " <Message>" : string.Empty),
                         x.Name.Value))
             );
-
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
 
     public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
     {
@@ -42,7 +40,7 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
 
         if (string.IsNullOrEmpty(cleanedText))
             return [];
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         return await _getCommandsAsync(dbContext, new GuildId(context.Guild.Id), cleanedText)
             .ToListAsync();

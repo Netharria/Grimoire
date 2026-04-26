@@ -14,77 +14,86 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<Result<SpamFilterOverrideOption>> GetSpamFilterOverrideAsync(
+    public Task<Result<SpamFilterOverrideOption>> GetSpamFilterOverrideAsync(
         GuildId guildId,
         ChannelId channelId,
         CancellationToken cancellationToken = default)
-    {
-        return Result<SpamFilterOverrideOption>.Ok(
-            await this._cache.GetOrCreateAsync(
+        => ExecuteSafelyAsync(async ct =>
+        {
+            var result = await this._cache.GetOrCreateAsync(
                 CacheKey.SpamFilterOverride(channelId),
                 new { GuildId = guildId, ChannelId = channelId },
-                async (state, ct) =>
+                async (state, innerCt) =>
                 {
-                    await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                    var result = await dbContext.SpamFilterOverrides
+                    await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(innerCt);
+                    var spamOverride = await dbContext.SpamFilterOverrides
                         .AsNoTracking()
                         .Where(x => x.GuildId == state.GuildId)
                         .Where(x => x.ChannelId == state.ChannelId)
                         .OrderByDescending(x => x.SetAt)
                         .Select(x => (SpamFilterOverrideOption?)x.ChannelOption)
-                        .FirstOrDefaultAsync(ct);
-                    return result
-                           ?? SpamFilterOverrideOption.Inherit;
+                        .FirstOrDefaultAsync(innerCt);
+                    return spamOverride ?? SpamFilterOverrideOption.Inherit;
                 },
                 this._cacheEntryOptions,
-                cancellationToken: cancellationToken));
-    }
+                cancellationToken: ct);
+            return Result<SpamFilterOverrideOption>.Ok(result);
+        }, new Error("spam-filter-override.lookup-failed", "Could not retrieve spam filter override."), cancellationToken);
 
     public async IAsyncEnumerable<SpamFilterOverride> GetAllSpamFilterOverrideAsync(GuildId guildId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()).
-        // Stream rows as they arrive and filter in memory.
-        await foreach (var spamFilterOverride in dbContext.SpamFilterOverrides
-                           .AsNoTracking()
-                           .Where(x => x.GuildId == guildId)
-                           .GroupBy(x => x.ChannelId)
-                           .Select(g => g.OrderByDescending(x => x.SetAt).First())
-                           .AsAsyncEnumerable()
-                           .WithCancellation(cancellationToken))
+        List<SpamFilterOverride> overrides;
+        try
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()).
+            // Stream rows as they arrive and filter in memory.
+            overrides = await dbContext.SpamFilterOverrides
+                .AsNoTracking()
+                .Where(x => x.GuildId == guildId)
+                .GroupBy(x => x.ChannelId)
+                .Select(g => g.OrderByDescending(x => x.SetAt).First())
+                .ToListAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogOperationFailure(this._logger, ex.Message, ex);
+            yield break;
+        }
+
+        foreach (var spamFilterOverride in overrides)
             if (spamFilterOverride.ChannelOption != SpamFilterOverrideOption.Inherit)
                 yield return spamFilterOverride;
     }
 
-    public async Task<Result<SpamFilterOverride>> SetSpamFilterOverrideAsync(
+    public Task<Result<SpamFilterOverride>> SetSpamFilterOverrideAsync(
         ChannelId channelId,
         GuildId guildId,
         ModeratorId setBy,
         SpamFilterOverrideOption option,
         CancellationToken cancellationToken = default)
-    {
-        var currentSetting =
-            await GetSpamFilterOverrideAsync(guildId, channelId, cancellationToken)
-                .GetOrElse(() => SpamFilterOverrideOption
-                .Inherit);
+        => ExecuteSafelyAsync(async ct =>
+        {
+            var currentSetting = await GetSpamFilterOverrideAsync(guildId, channelId, ct)
+                .GetOrElse(() => SpamFilterOverrideOption.Inherit);
 
-        if (currentSetting == option)
-            return new Result<SpamFilterOverride>.NotModified(
-                new Error("spam-filter-override.not-changed",
-                    "The channel is already set to this spam filter option."));
+            if (currentSetting == option)
+                return new Result<SpamFilterOverride>.NotModified(
+                    new Error("spam-filter-override.not-changed",
+                        "The channel is already set to this spam filter option."));
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
 
-        return await SpamFilterOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
-            .ToResult()
-            .TapAsync(async spamFilterOverride =>
-            {
-                dbContext.SpamFilterOverrides.Add(spamFilterOverride);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                await this._cache.SetAsync(CacheKey.SpamFilterOverride(channelId),
-                    option, this._cacheEntryOptions,
-                    cancellationToken: cancellationToken);
-            });
-    }
+            return await SpamFilterOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
+                .ToResult()
+                .BindAsync(async spamFilterOverride =>
+                {
+                    dbContext.SpamFilterOverrides.Add(spamFilterOverride);
+                    await dbContext.SaveChangesAsync(ct);
+                    await this._cache.SetAsync(CacheKey.SpamFilterOverride(channelId), option,
+                        this._cacheEntryOptions, cancellationToken: ct);
+                    return Result<SpamFilterOverride>.Ok(spamFilterOverride);
+                });
+        }, new Error("spam-filter-override.save-failed", "Could not save the spam filter override."), cancellationToken);
 }

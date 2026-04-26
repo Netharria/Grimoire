@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
@@ -47,77 +46,79 @@ public sealed partial class CustomCommandSettings
         [Parameter("PermissionRole_7")] DiscordRole? permissionRole7 = null,
         [Parameter("PermissionRole_8")] DiscordRole? permissionRole8 = null,
         [Parameter("PermissionRole_9")] DiscordRole? permissionRole9 = null,
-        [Parameter("PermissionRole_10")] DiscordRole? permissionRole10 = null
-    )
+        [Parameter("PermissionRole_10")] DiscordRole? permissionRole10 = null)
     {
         await ctx.DeferResponseAsync();
-
-        if (ctx.Guild is not { } guild)
-        {
-            await ctx.SendWarningResponseAsync("This command can only be used in a server.");
-            return;
-        }
-
+        var guild = ctx.Guild!;
         var guildId = guild.GetGuildId();
-        var hasMention = content.Contains("%mention", StringComparison.OrdinalIgnoreCase);
-        var hasMessage = content.Contains("%message", StringComparison.OrdinalIgnoreCase);
+        var roleIds = CollectRoleIds(permissionRole1, permissionRole2, permissionRole3, permissionRole4, permissionRole5,
+            permissionRole6, permissionRole7, permissionRole8, permissionRole9, permissionRole10);
 
-        var roleIds = new[]
-            {
-                permissionRole1, permissionRole2, permissionRole3, permissionRole4, permissionRole5,
-                permissionRole6, permissionRole7, permissionRole8, permissionRole9, permissionRole10
-            }
-            .OfType<DiscordRole>()
-            .Select(r => r.GetRoleId())
-            .Distinct()
-            .ToList();
-
-        if (restrictedUse && roleIds.Count == 0)
+        if (ValidateRoles(restrictedUse, roleIds) is not Validation<IReadOnlyList<RoleId>>.Valid { Value: var roles })
         {
             await ctx.SendWarningResponseAsync("Command set as restricted but no roles allowed to use it.");
             return;
         }
 
+        await SaveCommandAsync(BuildCommand(name, guildId, content, embed, embedColor, restrictedUse, roles, ctx.GetModeratorId()))
+            .Match(
+                _ => OnLearnSuccessAsync(ctx, guild, name),
+                errors => ctx.SendErrorResponseAsync(errors[0].Message).AsTask());
+    }
+
+    private static IReadOnlyList<RoleId> CollectRoleIds(params DiscordRole?[] roles)
+        => roles.OfType<DiscordRole>().Select(r => r.GetRoleId()).Distinct().ToList();
+
+    private static Validation<IReadOnlyList<RoleId>> ValidateRoles(bool restrictedUse, IReadOnlyList<RoleId> roleIds)
+        => restrictedUse && roleIds.Count == 0
+            ? Validation<IReadOnlyList<RoleId>>.Fail(new Error("command.learn.no_roles",
+                "Command set as restricted but no roles allowed to use it."))
+            : Validation<IReadOnlyList<RoleId>>.Succeed(roleIds);
+
+    private static CustomCommand BuildCommand(CustomCommandName name, GuildId guildId, string content, bool embed,
+        CustomCommandEmbedColor? embedColor, bool restrictedUse, IReadOnlyList<RoleId> roleIds, ModeratorId? moderatorId)
+    {
         var now = DateTimeOffset.UtcNow;
-        var command = new CustomCommand
+        return new CustomCommand
         {
             Name = name,
             GuildId = guildId,
             CreatedAt = now,
             Content = content,
-            HasMention = hasMention,
-            HasMessage = hasMessage,
             IsEmbedded = embed,
             EmbedColor = embedColor,
             RestrictedUse = restrictedUse,
-            ModeratorId = ctx.GetModeratorId(),
-            Roles =
-            [
-                .. roleIds.Select(roleId =>
-                    new CustomCommandRole { Name = name, GuildId = guildId, CreatedAt = now, RoleId = roleId })
-            ]
+            ModeratorId = moderatorId,
+            Roles = [.. roleIds.Select(roleId => new CustomCommandRole
+            {
+                Name = name, GuildId = guildId, CreatedAt = now, RoleId = roleId
+            })]
         };
+    }
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        await dbContext.AddAsync(command);
-
+    private async Task<Result<CustomCommand>> SaveCommandAsync(CustomCommand command)
+    {
         try
         {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await dbContext.AddAsync(command);
             await dbContext.SaveChangesAsync();
+            return Result<CustomCommand>.Ok(command);
         }
         catch (DbUpdateException)
         {
-            await ctx.SendErrorResponseAsync(
-                "Could not save that command right now due to a database error. Please try again.");
-            return;
+            return Result<CustomCommand>.Fail(new Error("command.learn.db_error",
+                "Could not save that command right now due to a database error. Please try again."));
         }
+    }
 
+    private async Task OnLearnSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name)
+    {
         await ctx.ReplyAsync(GrimoireColor.Green, $"Added {name} custom command.");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             Color = GrimoireColor.Purple,
-            Description =
-                $"{ctx.User.Mention} asked {ctx.Guild.CurrentMember.Mention} to learn a new command: {name}",
+            Description = $"{ctx.User.Mention} asked {guild.CurrentMember!.Mention} to learn a new command: {name}",
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation
         });

@@ -21,14 +21,7 @@ public class CommandNameArgumentConverter
     public ConverterInputType RequiresText => ConverterInputType.Always;
 
     public Task<Optional<CustomCommandName>> ConvertAsync(ConverterContext context)
-    {
-        if (context.Argument is not string str || string.IsNullOrWhiteSpace(str))
-            return Task.FromResult(FromNoValue<CustomCommandName>());
-        str = str.Trim();
-
-        if (str.Any(char.IsWhiteSpace) || str.Length > 24)
-            return Task.FromResult(FromNoValue<CustomCommandName>());
-
-        return Task.FromResult(FromValue(new CustomCommandName(str)));
-    }
+        => Task.FromResult(context.Argument is string str && CustomCommandName.TryParse(str) is { } name
+            ? FromValue(name)
+            : FromNoValue<CustomCommandName>());
 }

@@ -14,8 +14,6 @@ namespace Grimoire.Features.CustomCommands;
 internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IAutoCompleteProvider
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
     public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
     {
         if (context.Guild is null)
@@ -28,10 +26,10 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
         if (string.IsNullOrEmpty(nameValue))
             return [];
 
-        var name = new CustomCommandName(nameValue);
+        var name = CustomCommandName.Parse(nameValue);
         var guildId = new GuildId(context.Guild.Id);
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var versions = await dbContext.CustomCommands
             .AsNoTracking()
@@ -42,7 +40,7 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
             .ToListAsync();
 
         return versions.Select((v, i) => new DiscordAutoCompleteChoice(
-            $"v{i + 1} — <t:{v.CreatedAt.ToUnixTimeSeconds()}:f>"
+            $"v{i + 1} — {v.CreatedAt:yyyy-MM-dd HH:mm} UTC"
             + (v.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty),
             v.CreatedAt.ToUnixTimeSeconds().ToString()));
     }

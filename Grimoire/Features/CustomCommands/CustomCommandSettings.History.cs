@@ -29,53 +29,58 @@ public sealed partial class CustomCommandSettings
         CustomCommandName name)
     {
         await ctx.DeferResponseAsync();
+        await GetVersionsAsync(ctx.Guild!.GetGuildId(), name)
+            .Match(
+                versions => SendHistoryPagesAsync(ctx, name, versions),
+                errors => ctx.SendWarningResponseAsync(errors[0].Message).AsTask());
+    }
 
-        if (ctx.Guild is not { } guild)
-        {
-            await ctx.SendWarningResponseAsync("This command can only be used in a server.");
-            return;
-        }
-
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-
+    private async Task<Result<IReadOnlyList<CommandVersion>>> GetVersionsAsync(GuildId guildId, CustomCommandName name)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var versions = await dbContext.CustomCommands
             .AsNoTracking()
-            .Where(x => x.GuildId == guild.GetGuildId() && x.Name == name)
+            .Where(x => x.GuildId == guildId && x.Name == name)
             .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new { x.CreatedAt, x.ModeratorId, x.Content })
+            .Select(x => new CommandVersion(x.CreatedAt, x.ModeratorId, x.Content))
             .ToListAsync();
+        return versions.Count == 0
+            ? Result<IReadOnlyList<CommandVersion>>.Fail(new Error("command.history.not_found", $"No command named `{name}` exists."))
+            : Result<IReadOnlyList<CommandVersion>>.Ok(versions);
+    }
 
-        if (versions.Count == 0)
-        {
-            await ctx.SendWarningResponseAsync($"No command named `{name}` exists.");
-            return;
-        }
-
-        var stringBuilder = new StringBuilder();
-        var pages = new List<string>();
-
-        for (var i = 0; i < versions.Count; i++)
-        {
-            var v = versions[i];
-            var preview = v.Content.Length > 100 ? string.Concat(v.Content.AsSpan(0, 100), "…") : v.Content;
-            var entry =
-                $"**v{i + 1}{(i == 0 ? " (current)" : string.Empty)}** — <t:{v.CreatedAt.ToUnixTimeSeconds()}:f>"
-                + (v.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty)
-                + $"\n> {preview}\n";
-
-            if (stringBuilder.Length + entry.Length > 2048)
-            {
-                pages.Add(stringBuilder.ToString());
-                stringBuilder.Clear();
-            }
-
-            stringBuilder.Append(entry);
-        }
-
-        if (stringBuilder.Length > 0)
-            pages.Add(stringBuilder.ToString());
-
-        foreach (var page in pages)
+    private static async Task SendHistoryPagesAsync(CommandContext ctx, CustomCommandName name, IReadOnlyList<CommandVersion> versions)
+    {
+        foreach (var page in BuildPages(versions))
             await ctx.ReplyAsync(GrimoireColor.Purple, page, $"Version history for {name}");
     }
+
+    private static IEnumerable<string> BuildPages(IReadOnlyList<CommandVersion> versions)
+    {
+        var builder = new StringBuilder();
+        for (var i = 0; i < versions.Count; i++)
+        {
+            var entry = FormatEntry(versions[i], i);
+            if (builder.Length + entry.Length > 2048)
+            {
+                yield return builder.ToString();
+                builder.Clear();
+            }
+            builder.Append(entry);
+        }
+        if (builder.Length > 0)
+            yield return builder.ToString();
+    }
+
+    private static string FormatEntry(CommandVersion version, int index)
+    {
+        var preview = version.Content.Length > 100
+            ? string.Concat(version.Content.AsSpan(0, 100), "…")
+            : version.Content;
+        return $"**v{index + 1}{(index == 0 ? " (current)" : string.Empty)}** — <t:{version.CreatedAt.ToUnixTimeSeconds()}:f>"
+            + (version.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty)
+            + $"\n> {preview}\n";
+    }
+
+    private sealed record CommandVersion(DateTimeOffset CreatedAt, ModeratorId? ModeratorId, string Content);
 }

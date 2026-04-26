@@ -12,10 +12,6 @@ namespace Grimoire.Features.CustomCommands;
 public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IEventHandler<MessageCreatedEventArgs>
 {
-    private const int MaxMessageLength = 2000;
-    private const int MaxEmbedDescriptionLength = 4096;
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs eventArgs)
     {
         if (eventArgs.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply
@@ -31,16 +27,16 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
         if (messageArgs.Length == 0)
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
-        var commandName = new CustomCommandName(messageArgs[0]);
+        var commandName = CustomCommandName.Parse(messageArgs[0]);
         var response = await dbContext.CustomCommands
             .AsNoTracking()
             .GetCustomCommandQuery(member.GetGuildId(), commandName)
             .FirstOrDefaultAsync();
 
         if (response is null ||
-            !GetCustomCommand.IsUserAuthorized(member, response.RestrictedUse, response.PermissionRoles))
+            !GetCustomCommand.IsUserAuthorized(member, response.Access))
             return;
 
         await dbContext.CustomCommandUsages.AddAsync(new CustomCommandUsage
@@ -64,10 +60,12 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
             GetCustomCommand.ApplyMessage(
                 GetCustomCommand.ApplyMention(response.Content, response.HasMention, snowflakeObject, member.Guild.Id),
                 response.HasMessage, rawMessage, member.Guild.Id),
-            response.IsEmbedded ? MaxEmbedDescriptionLength : MaxMessageLength);
+            response.OutputFormat is CommandOutputFormat.Embedded
+                ? GetCustomCommand.MaxEmbedDescriptionLength
+                : GetCustomCommand.MaxMessageLength);
 
         await eventArgs.Channel.SendMessageAsync(
-            GetCustomCommand.BuildMessageResponse(content, response.IsEmbedded, response.EmbedColor));
+            GetCustomCommand.BuildMessageResponse(content, response.OutputFormat));
         return;
 
         async Task<SnowflakeObject?> ResolveSnowflake(string arg)

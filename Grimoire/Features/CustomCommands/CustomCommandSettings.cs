@@ -13,7 +13,4 @@ namespace Grimoire.Features.CustomCommands;
 public sealed partial class CustomCommandSettings(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     GuildLog guildLog)
-{
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-}
+{ }

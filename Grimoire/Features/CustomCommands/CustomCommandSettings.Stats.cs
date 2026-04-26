@@ -27,19 +27,16 @@ public sealed partial class CustomCommandSettings
         CustomCommandName name)
     {
         await ctx.DeferResponseAsync();
+        var (usage, topUsers) = await QueryStatsAsync(ctx.Guild!.GetGuildId(), name);
+        await ctx.ReplyAsync(embed: BuildStatsEmbed(name, usage, topUsers));
+    }
 
-        if (ctx.Guild is not { } guild)
-        {
-            await ctx.SendWarningResponseAsync("This command can only be used in a server.");
-            return;
-        }
-
-        var guildId = guild.GetGuildId();
+    private async Task<(UsageStats? Usage, IReadOnlyList<TopUser> TopUsers)> QueryStatsAsync(GuildId guildId, CustomCommandName name)
+    {
         var now = DateTimeOffset.UtcNow;
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-
-        var stats = await dbContext.CustomCommandUsages
+        var raw = await dbContext.CustomCommandUsages
             .Where(x => x.GuildId == guildId && x.Name == name)
             .GroupBy(_ => true)
             .Select(g => new
@@ -51,7 +48,9 @@ public sealed partial class CustomCommandSettings
             })
             .FirstOrDefaultAsync();
 
-        var topUsers = await dbContext.CustomCommandUsages
+        var usage = raw is null ? null : new UsageStats(raw.Total, raw.LastMonth, raw.LastYear, raw.LastUsed);
+
+        var topUsersRaw = await dbContext.CustomCommandUsages
             .Where(x => x.GuildId == guildId && x.Name == name)
             .GroupBy(x => x.UserId)
             .Select(g => new { UserId = g.Key, Count = g.Count() })
@@ -59,22 +58,29 @@ public sealed partial class CustomCommandSettings
             .Take(3)
             .ToListAsync();
 
+        var topUsers = topUsersRaw.Select(u => new TopUser(u.UserId, u.Count)).ToList();
+        return (usage, topUsers);
+    }
+
+    private static DiscordEmbed BuildStatsEmbed(CustomCommandName name, UsageStats? usage, IReadOnlyList<TopUser> topUsers)
+    {
         var topUsersText = topUsers.Count > 0
-            ? string.Join("\n", topUsers.Select((u, i) =>
-                $"**{i + 1}.** {UserExtensions.Mention(u.UserId)} — {u.Count} uses"))
+            ? string.Join("\n", topUsers.Select((u, i) => $"**{i + 1}.** {UserExtensions.Mention(u.UserId)} — {u.Count} uses"))
             : "No usage data yet.";
 
-        await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
+        return new DiscordEmbedBuilder()
             .WithAuthor($"Stats for !{name}")
             .WithColor(GrimoireColor.Purple)
-            .AddField("Total Uses", (stats?.Total ?? 0).ToString(), true)
-            .AddField("Last 30 Days", (stats?.LastMonth ?? 0).ToString(), true)
-            .AddField("Last Year", (stats?.LastYear ?? 0).ToString(), true)
+            .AddField("Total Uses", (usage?.Total ?? 0).ToString(), true)
+            .AddField("Last 30 Days", (usage?.LastMonth ?? 0).ToString(), true)
+            .AddField("Last Year", (usage?.LastYear ?? 0).ToString(), true)
             .AddField("Last Used",
-                stats?.LastUsed is { } lastUsed
-                    ? $"<t:{lastUsed.ToUnixTimeSeconds()}:R>"
-                    : "Never",
+                usage?.LastUsed is { } lastUsed ? $"<t:{lastUsed.ToUnixTimeSeconds()}:R>" : "Never",
                 true)
-            .AddField("Top Users", topUsersText));
+            .AddField("Top Users", topUsersText)
+            .Build();
     }
+
+    private sealed record UsageStats(int Total, int LastMonth, int LastYear, DateTimeOffset? LastUsed);
+    private sealed record TopUser(UserId UserId, int Count);
 }

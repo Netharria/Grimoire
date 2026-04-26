@@ -34,34 +34,34 @@ public sealed partial class CustomCommandSettings
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is not { } guild)
-        {
-            await ctx.SendWarningResponseAsync("This command can only be used in a server.");
-            return;
-        }
-
         if (!long.TryParse(version, out var unixSeconds))
         {
             await ctx.SendWarningResponseAsync("Invalid version selected. Use the autocomplete to pick a version.");
             return;
         }
 
-        var targetCreatedAt = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
-        var guildId = guild.GetGuildId();
+        var guild = ctx.Guild!;
+        await FetchVersionAsync(guild.GetGuildId(), name, DateTimeOffset.FromUnixTimeSeconds(unixSeconds))
+            .BindAsync(target => SaveRevertedCommandAsync(target, ctx.GetModeratorId()))
+            .Match(
+                _ => OnRevertSuccessAsync(ctx, guild, name, unixSeconds),
+                errors => ctx.SendWarningResponseAsync(errors[0].Message).AsTask());
+    }
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-
+    private async Task<Result<CustomCommand>> FetchVersionAsync(GuildId guildId, CustomCommandName name, DateTimeOffset targetCreatedAt)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var target = await dbContext.CustomCommands
             .AsNoTracking()
             .Include(x => x.Roles)
             .FirstOrDefaultAsync(x => x.GuildId == guildId && x.Name == name && x.CreatedAt == targetCreatedAt);
+        return target is null
+            ? Result<CustomCommand>.Fail(new Error("command.revert.not_found", $"Version not found for command `{name}`."))
+            : Result<CustomCommand>.Ok(target);
+    }
 
-        if (target is null)
-        {
-            await ctx.SendWarningResponseAsync($"Version not found for command `{name}`.");
-            return;
-        }
-
+    private async Task<Result<CustomCommand>> SaveRevertedCommandAsync(CustomCommand target, ModeratorId? moderatorId)
+    {
         var now = DateTimeOffset.UtcNow;
         var reverted = new CustomCommand
         {
@@ -69,38 +69,37 @@ public sealed partial class CustomCommandSettings
             GuildId = target.GuildId,
             CreatedAt = now,
             Content = target.Content,
-            HasMention = target.HasMention,
-            HasMessage = target.HasMessage,
             IsEmbedded = target.IsEmbedded,
             EmbedColor = target.EmbedColor,
             RestrictedUse = target.RestrictedUse,
-            ModeratorId = ctx.GetModeratorId(),
-            Roles =
-            [
-                .. target.Roles.Select(r =>
-                    new CustomCommandRole { Name = r.Name, GuildId = r.GuildId, CreatedAt = now, RoleId = r.RoleId })
-            ]
+            ModeratorId = moderatorId,
+            Roles = [.. target.Roles.Select(r => new CustomCommandRole
+            {
+                Name = r.Name, GuildId = r.GuildId, CreatedAt = now, RoleId = r.RoleId
+            })]
         };
-
-        await dbContext.AddAsync(reverted);
-
         try
         {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await dbContext.AddAsync(reverted);
             await dbContext.SaveChangesAsync();
+            return Result<CustomCommand>.Ok(reverted);
         }
         catch (DbUpdateException)
         {
-            await ctx.SendErrorResponseAsync("Could not revert the command due to a database error. Please try again.");
-            return;
+            return Result<CustomCommand>.Fail(new Error("command.revert.db_error",
+                "Could not revert the command due to a database error. Please try again."));
         }
+    }
 
-        await ctx.ReplyAsync(GrimoireColor.Green,
-            $"Reverted `{name}` to version from <t:{unixSeconds}:f>.");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+    private async Task OnRevertSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name, long unixSeconds)
+    {
+        await ctx.ReplyAsync(GrimoireColor.Green, $"Reverted `{name}` to version from <t:{unixSeconds}:f>.");
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} reverted command `{name}` to version from <t:{unixSeconds}:f>.",
-            GuildId = guildId,
+            GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation
         });
     }

@@ -38,8 +38,9 @@ public sealed partial class SettingsModule
                     this._cacheEntryOptions,
                     cancellationToken: cancellationToken));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            LogOperationFailure(this._logger, ex.Message, ex);
             return Result<LevelingSettingEntry>.Fail(new Error(
                 "levelsettings.fetch.failed",
                 "Could not fetch level settings from cache"));

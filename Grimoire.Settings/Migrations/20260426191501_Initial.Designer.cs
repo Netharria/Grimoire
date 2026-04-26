@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Settings.Migrations
 {
     [DbContext(typeof(SettingsDbContext))]
-    [Migration("20260424011720_Initial")]
+    [Migration("20260426191501_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -122,7 +122,7 @@ namespace Grimoire.Settings.Migrations
                     b.HasIndex("ChannelId", "GuildId", "SetAt")
                         .IsDescending(false, false, true);
 
-                    b.ToTable("MessagesLogChannelOverrides", "Settings");
+                    b.ToTable("MessageLogChannelOverrides", "Settings");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.Mute", b =>
@@ -182,7 +182,7 @@ namespace Grimoire.Settings.Migrations
 
                     b.ToTable("Rewards", "Settings");
 
-                    b.HasDiscriminator<string>("RewardType").HasValue("Reward");
+                    b.HasDiscriminator<string>("RewardType").IsComplete(true).HasValue("Reward");
 
                     b.UseTphMappingStrategy();
                 });

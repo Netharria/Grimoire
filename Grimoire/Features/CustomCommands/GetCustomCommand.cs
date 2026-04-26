@@ -17,9 +17,8 @@ namespace Grimoire.Features.CustomCommands;
 
 public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
 {
-    private const int MaxMessageLength = 2000;
-    private const int MaxEmbedDescriptionLength = 4096;
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    internal const int MaxMessageLength = 2000;
+    internal const int MaxEmbedDescriptionLength = 4096;
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Commands)]
@@ -38,39 +37,46 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         string message = "")
     {
         await ctx.DeferResponseAsync();
+        var guild = ctx.Guild!;
 
-        if (ctx.Guild is not { } guild)
-        {
-            await ctx.SendWarningResponseAsync("This command can only be used in a server.");
-            return;
-        }
-
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-
-        var response = await dbContext.CustomCommands
-            .AsNoTracking()
-            .GetCustomCommandQuery(guild.GetGuildId(), name)
-            .FirstOrDefaultAsync();
-
-        if (response is null || !IsUserAuthorized(ctx.Member, response.RestrictedUse, response.PermissionRoles))
+        var result = await FetchAuthorizedCommandAsync(guild.GetGuildId(), name, ctx.Member);
+        if (result is not Result<CustomCommandDatabaseQueryHelpers.GetCustomCommandQueryResult>.Success { Value: var response })
         {
             await ctx.DeleteResponseAsync();
             return;
         }
 
+        await RecordUsageAsync(name, guild.GetGuildId(), ctx.User.GetUserId());
+        await ctx.EditResponseAsync(BuildWebhookResponse(
+            TruncateForDiscord(
+                ApplyMessage(
+                    ApplyMention(response.Content, response.HasMention, snowflakeObject, guild.Id),
+                    response.HasMessage, message, guild.Id),
+                response.OutputFormat is CommandOutputFormat.Embedded ? MaxEmbedDescriptionLength : MaxMessageLength),
+            response.OutputFormat));
+    }
+
+    private async Task<Result<CustomCommandDatabaseQueryHelpers.GetCustomCommandQueryResult>> FetchAuthorizedCommandAsync(
+        GuildId guildId, CustomCommandName name, DiscordMember? member)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var response = await dbContext.CustomCommands
+            .AsNoTracking()
+            .GetCustomCommandQuery(guildId, name)
+            .FirstOrDefaultAsync();
+        return response is null || !IsUserAuthorized(member, response.Access)
+            ? Result<CustomCommandDatabaseQueryHelpers.GetCustomCommandQueryResult>.Fail(new Error("command.not_found", "Command not found or not authorized."))
+            : Result<CustomCommandDatabaseQueryHelpers.GetCustomCommandQueryResult>.Ok(response);
+    }
+
+    private async Task RecordUsageAsync(CustomCommandName name, GuildId guildId, UserId userId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         await dbContext.CustomCommandUsages.AddAsync(new CustomCommandUsage
         {
-            Name = name, GuildId = guild.GetGuildId(), UserId = ctx.User.GetUserId(), UsedAt = DateTimeOffset.UtcNow
+            Name = name, GuildId = guildId, UserId = userId, UsedAt = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();
-
-        var content = TruncateForDiscord(
-            ApplyMessage(
-                ApplyMention(response.Content, response.HasMention, snowflakeObject, guild.Id),
-                response.HasMessage, message, guild.Id),
-            response.IsEmbedded ? MaxEmbedDescriptionLength : MaxMessageLength);
-
-        await ctx.EditResponseAsync(BuildWebhookResponse(content, response.IsEmbedded, response.EmbedColor));
     }
 
     internal static string SanitizeUserMessageMentions(string input, ulong guildId)
@@ -93,20 +99,18 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         });
     }
 
-    public static bool IsUserAuthorized(
-        DiscordMember? member,
-        bool restrictedUse,
-        IReadOnlyCollection<RoleId> permissionRoles)
+    public static bool IsUserAuthorized(DiscordMember? member, CommandAccess access)
     {
         if (member is null) return false;
-        if (permissionRoles.Count == 0) return !restrictedUse;
-
-        var memberRoleIds = member.Roles.Select(static role => role.GetRoleId());
-        var permissionsRolesSet = permissionRoles.ToFrozenSet();
-
-        return restrictedUse
-            ? memberRoleIds.Any(permissionsRolesSet.Contains)
-            : memberRoleIds.All(roleId => !permissionsRolesSet.Contains(roleId));
+        var memberRoles = member.Roles.Select(static r => r.GetRoleId());
+        return access switch
+        {
+            CommandAccess.Open => true,
+            CommandAccess.Allowlist { Roles: { Count: 0 } } => false,
+            CommandAccess.Allowlist { Roles: var roles } => memberRoles.Any(roles.ToFrozenSet().Contains),
+            CommandAccess.Blocklist { Roles: var roles } => memberRoles.All(r => !roles.ToFrozenSet().Contains(r)),
+            _ => false,
+        };
     }
 
     internal static string TruncateForDiscord(string input, int maxLength)
@@ -122,21 +126,19 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         return string.Concat(truncated, ellipsis);
     }
 
-    internal static DiscordWebhookBuilder BuildWebhookResponse(
-        string content, bool isEmbedded, CustomCommandEmbedColor? embedColor)
-        => isEmbedded
-            ? new DiscordWebhookBuilder().AddEmbed(BuildEmbed(content, embedColor))
+    internal static DiscordWebhookBuilder BuildWebhookResponse(string content, CommandOutputFormat format)
+        => format is CommandOutputFormat.Embedded { Color: var color }
+            ? new DiscordWebhookBuilder().AddEmbed(BuildEmbed(content, color))
             : new DiscordWebhookBuilder().WithContent(content);
 
-    internal static DiscordMessageBuilder BuildMessageResponse(
-        string content, bool isEmbedded, CustomCommandEmbedColor? embedColor)
-        => isEmbedded
-            ? new DiscordMessageBuilder().AddEmbed(BuildEmbed(content, embedColor))
+    internal static DiscordMessageBuilder BuildMessageResponse(string content, CommandOutputFormat format)
+        => format is CommandOutputFormat.Embedded { Color: var color }
+            ? new DiscordMessageBuilder().AddEmbed(BuildEmbed(content, color))
             : new DiscordMessageBuilder().WithContent(content);
 
-    private static DiscordEmbedBuilder BuildEmbed(string content, CustomCommandEmbedColor? embedColor)
-        => (embedColor is { } color
-                ? new DiscordEmbedBuilder().WithColor(GrimoireColor.FromCustomCommandEmbedColor(color))
+    private static DiscordEmbedBuilder BuildEmbed(string content, CustomCommandEmbedColor? color)
+        => (color is { } c
+                ? new DiscordEmbedBuilder().WithColor(GrimoireColor.FromCustomCommandEmbedColor(c))
                 : new DiscordEmbedBuilder())
             .WithDescription(content);
 

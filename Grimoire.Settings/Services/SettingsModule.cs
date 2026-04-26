@@ -73,14 +73,24 @@ public sealed partial class SettingsModule(
         FrozenSet<GuildSettingType> settingTypes,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await foreach (var setting in dbContext.GuildSettings
-                           .AsNoTracking()
-                           .Where(s => s.GuildId == guildId && settingTypes.Contains(s.Type))
-                           .GroupBy(s => s.Type)
-                           .Select(g => g.OrderByDescending(s => s.SetAt).First())
-                           .AsAsyncEnumerable()
-                           .WithCancellation(cancellationToken))
+        List<GuildSetting> settings;
+        try
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            settings = await dbContext.GuildSettings
+                .AsNoTracking()
+                .Where(s => s.GuildId == guildId && settingTypes.Contains(s.Type))
+                .GroupBy(s => s.Type)
+                .Select(g => g.OrderByDescending(s => s.SetAt).First())
+                .ToListAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogSettingLookupFailure(this._logger, ex.Message, ex);
+            yield break;
+        }
+
+        foreach (var setting in settings)
             yield return setting;
     }
 
@@ -126,6 +136,25 @@ public sealed partial class SettingsModule(
     [LoggerMessage(LogLevel.Error,
         "Was not able to save a setting to the database or cache for the following reason : {message}")]
     private static partial void LogSettingSaveFailure(ILogger logger, string message, Exception? ex);
+
+    [LoggerMessage(LogLevel.Error, "Settings module operation failed: {message}")]
+    private static partial void LogOperationFailure(ILogger logger, string message, Exception? ex);
+
+    private async Task<Result<T>> ExecuteSafelyAsync<T>(
+        Func<CancellationToken, Task<Result<T>>> operation,
+        Error failureError,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await operation(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogOperationFailure(this._logger, ex.Message, ex);
+            return Result<T>.Fail(failureError);
+        }
+    }
 
     private static bool IsRedundantWrite(GuildSetting? current, GuildSetting incoming) =>
         (current, incoming) switch
