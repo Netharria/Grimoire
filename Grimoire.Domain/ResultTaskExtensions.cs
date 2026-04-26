@@ -32,29 +32,24 @@ public static class ResultTaskExtensions
         public async Task<Result<TOut>> BindAsync<TOut>(Func<T, Task<Result<TOut>>> binder)
             => await (await task).BindAsync(binder);
 
+        public async Task<Result<T>> Tap(Action<T> action)
+            => (await task).Tap(action);
+
+        public async Task<Result<T>> TapAsync(Func<T, Task> action)
+            => await (await task).TapAsync(action);
+
         public async Task<TOut> Match<TOut>(Func<T, TOut> onSuccess,
-            Func<ImmutableArray<Error>, TOut> onFail)
-            => (await task).Match(onSuccess, onFail);
+            Func<ImmutableArray<Error>, TOut> onFail,
+            Func<ImmutableArray<Error>, TOut>? onNotFound = null,
+            Func<ImmutableArray<Error>, TOut>? onNotChanged = null)
+            => (await task).Match(onSuccess, onFail,  onNotFound, onNotChanged);
 
         public async Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> onSuccess,
-            Func<ImmutableArray<Error>, TOut> onFail)
-            => await (await task).MatchAsync(onSuccess, onFail);
+            Func<ImmutableArray<Error>, TOut> onFail,
+            Func<ImmutableArray<Error>, TOut>? onNotFound = null,
+            Func<ImmutableArray<Error>, TOut>? onNotChanged = null)
+            => await (await task).MatchAsync(onSuccess, onFail,  onNotFound, onNotChanged);
 
-        public async Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> onSuccess,
-            Func<ImmutableArray<Error>, Task<TOut>> onFail)
-        {
-            var result = await task;
-            return result switch
-            {
-                Result<T>.Success(var v) => await onSuccess(v),
-                Result<T>.Invalid(var e) => await onFail(e),
-                Result<T>.NotFound(var e) => await onFail([e]),
-                Result<T>.NotModified(var e) => await onFail([e]),
-                Result<T>.Conflict(var e) => await onFail([e]),
-                Result<T>.Forbidden(var e) => await onFail([e]),
-                _ => throw new UnreachableException()
-            };
-        }
         public async Task<Result<T>> OrElse(Func<Result<T>> fallback)
             => (await task).OrElse(fallback);
         public async Task<T> GetOrElse(Func<T> fallback)

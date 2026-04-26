@@ -41,9 +41,9 @@ public sealed class AutoPardonTests(SettingsTestsFactory factory) : IAsyncLifeti
         // Store a zero duration directly to simulate a corrupt/zero stored value.
         await using var db = factory.CreateDbContext();
         db.GuildSettings.Add(
-            ((Validation<GuildSettingCustomValue>.Valid)GuildSettingCustomValue.Create(
+            GuildSettingCustomValue.Create(
                 GuildSettingType.SinAutoPardonDuration, _guildId, _modId, DateTimeOffset.UtcNow,
-                TimeSpan.Zero.ToString("c"))).Value);
+                TimeSpan.Zero.ToString("c")).ShouldSucceed());
         await db.SaveChangesAsync();
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);

@@ -20,16 +20,16 @@ internal sealed record GuildSettingDefault : GuildSetting
     private GuildSettingDefault(GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
         : base(type, guildId, setBy, setAt) { }
 
-    internal static Validation<GuildSettingDefault> Create(
+    internal static Validation<GuildSetting> Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
     {
         if (guildId.Value == 0)
-            return Validation<GuildSettingDefault>.Fail(
+            return Validation<GuildSetting>.Fail(
                 new Error("guild-setting.guild-id.invalid", "GuildId must be specified."));
         if (setBy.Value == 0)
-            return Validation<GuildSettingDefault>.Fail(
+            return Validation<GuildSetting>.Fail(
                 new Error("guild-setting.set-by.invalid", "ModeratorId must be specified."));
-        return Validation<GuildSettingDefault>.Succeed(new GuildSettingDefault(type, guildId, setBy, setAt));
+        return Validation<GuildSetting>.Succeed(new GuildSettingDefault(type, guildId, setBy, setAt));
     }
 }
 
@@ -38,16 +38,16 @@ internal sealed record GuildSettingDisabled : GuildSetting
     private GuildSettingDisabled(GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
         : base(type, guildId, setBy, setAt) { }
 
-    internal static Validation<GuildSettingDisabled> Create(
+    internal static Validation<GuildSetting> Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
     {
         if (guildId.Value == 0)
-            return Validation<GuildSettingDisabled>.Fail(
+            return Validation<GuildSetting>.Fail(
                 new Error("guild-setting.guild-id.invalid", "GuildId must be specified."));
         if (setBy.Value == 0)
-            return Validation<GuildSettingDisabled>.Fail(
+            return Validation<GuildSetting>.Fail(
                 new Error("guild-setting.set-by.invalid", "ModeratorId must be specified."));
-        return Validation<GuildSettingDisabled>.Succeed(new GuildSettingDisabled(type, guildId, setBy, setAt));
+        return Validation<GuildSetting>.Succeed(new GuildSettingDisabled(type, guildId, setBy, setAt));
     }
 }
 
@@ -62,20 +62,20 @@ internal sealed record GuildSettingCustomValue : GuildSetting
 
     public string Value { get; }
 
-    internal static Validation<GuildSettingCustomValue> Create(
+    internal static Validation<GuildSetting> Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt, string? value)
     {
         if (guildId.Value == 0)
-            return Validation<GuildSettingCustomValue>.Fail(
+            return Validation<GuildSetting>.Fail(
                 new Error("guild-setting.guild-id.invalid", "GuildId must be specified."));
         if (setBy.Value == 0)
-            return Validation<GuildSettingCustomValue>.Fail(
+            return Validation<GuildSetting>.Fail(
                 new Error("guild-setting.set-by.invalid", "ModeratorId must be specified."));
         var trimmed = value?.Trim();
         if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 200)
-            return Validation<GuildSettingCustomValue>.Fail(
+            return Validation<GuildSetting>.Fail(
                 new Error("guild-setting.value.invalid", "Value must be between 1 and 200 non-whitespace characters."));
-        return Validation<GuildSettingCustomValue>.Succeed(
+        return Validation<GuildSetting>.Succeed(
             new GuildSettingCustomValue(type, guildId, setBy, setAt, trimmed));
     }
 }

@@ -83,11 +83,4 @@ public sealed partial class SettingsModule
                 .AsTask();
     }
 
-    public record GuildModuleState(
-        bool LevelingEnabled,
-        bool UserLogEnabled,
-        bool ModerationEnabled,
-        bool MessageLogEnabled,
-        bool CommandsEnabled,
-        bool AntiSpamEnabled);
 }

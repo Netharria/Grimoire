@@ -41,7 +41,12 @@ public sealed partial class GuildLog(
         await foreach (var result in this._channel.Reader.ReadAllAsync(cancellationToken))
             try
             {
-                var logChannelId = await this._settingsModule.GetEffectiveLogChannelSetting(
+                if (await this._settingsModule.IsModuleEnabled(result.GuildLogType.GetLogTypeModule(), result.GuildId,
+                            cancellationToken)
+                        .GetOrElse(() => false))
+                    continue;
+
+                var logChannelId = await this._settingsModule.GetLogChannelSetting(
                     result.GuildLogType,
                     result.GuildId,
                     cancellationToken);

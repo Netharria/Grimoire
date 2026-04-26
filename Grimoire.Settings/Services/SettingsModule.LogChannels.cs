@@ -13,24 +13,13 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<Result<ChannelId?>> GetEffectiveLogChannelSetting(
-        GuildLogType guildLogType,
-        GuildId guildId,
-        CancellationToken cancellationToken = default)
-    {
-        if (!await IsModuleEnabled(guildLogType.GetLogTypeModule(), guildId, cancellationToken).GetOrElse(() => false))
-            return Result<ChannelId?>.Ok(null);
-
-        return await GetConfiguredLogChannelSetting(guildLogType, guildId, cancellationToken);
-    }
-
-    public Task<Result<ChannelId?>> GetConfiguredLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
+    public Task<Result<ChannelId?>> GetLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
         CancellationToken cancellationToken = default)
         => GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken)
             .AsTask()
             .Map(ParseChannelId);
 
-    public async Task<Result<ChannelId?>> SetLogChannelSetting(
+    public Task<Result<ChannelId?>> SetLogChannelSetting(
         GuildLogType guildLogType,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -38,15 +27,9 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
         => (channelId switch
         {
-            not null => await GuildSettingCustomValue.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
-                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture))
-                .MatchAsync(
-                    setting => SetGuildSetting(setting, cancellationToken),
-                    errors => Result<GuildSetting>.Fail(errors)),
-            _ => await GuildSettingDisabled.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
-                    DateTimeOffset.UtcNow)
-                .MatchAsync(
-                    setting => SetGuildSetting(setting, cancellationToken),
-                    errors => Result<GuildSetting>.Fail(errors))
+            not null => ApplyGuildSetting( GuildSettingCustomValue.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
+                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture)), cancellationToken),
+            _ => ApplyGuildSetting(GuildSettingDisabled.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
+                    DateTimeOffset.UtcNow),  cancellationToken)
         }).Map(_ => channelId);
 }

@@ -40,7 +40,7 @@ public sealed partial class RewardCommandGroup
         var guild = ctx.Guild!;
 
         await ValidateBotHasPermission(guild, role)
-            .Bind(_ => CreateRewardMessage(message))
+            .Bind(_ => RewardMessage.CreateIfNotNull(message))
             .Bind(validatedMessage =>
                 RewardAdded.Create(
                     role.GetRoleId(),
@@ -88,12 +88,4 @@ public sealed partial class RewardCommandGroup
             Description = responseMessage
         });
     }
-
-    private static Validation<RewardMessage?> CreateRewardMessage(string? message)
-        => message switch
-        {
-            not null => RewardMessage.Create(message)
-                .Map(x => (RewardMessage?)x),
-            _ => Validation<RewardMessage?>.Succeed(null)
-        };
 }

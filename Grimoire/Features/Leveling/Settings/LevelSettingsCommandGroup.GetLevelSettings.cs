@@ -31,7 +31,7 @@ public sealed partial class LevelSettingsCommandGroup
             .GetOrElse(() => default!);
         var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId()).GetOrElse(() => false);
         var levelChannelLog =
-            await this._settingsModule.GetEffectiveLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
+            await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
 
         var levelLogMention =
             levelChannelLog.GetOrElse(() => null) is not { } channel

@@ -165,6 +165,16 @@ public sealed class DomainInvariantTests
         invalid.Errors.ShouldHaveSingleItem().Message.ShouldNotBeNullOrWhiteSpace();
     }
 
+    // ── ModerationReason ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void ModerationReason_WhitespaceInput_IsInvalidWithErrorCode()
+    {
+        var result = ModerationReason.Create("   ");
+        var invalid = result.ShouldBeOfType<Validation<ModerationReason>.Invalid>();
+        invalid.Errors.ShouldContain(e => e.Code == "moderation-reason.invalid");
+    }
+
     // ── RewardAdded ───────────────────────────────────────────────────────────
 
     private static readonly RoleId _roleId = new(300UL);

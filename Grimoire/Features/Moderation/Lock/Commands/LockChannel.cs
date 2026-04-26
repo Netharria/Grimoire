@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -68,34 +69,45 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         });
     }
 
-    private async Task ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
+    private Task<Result<ChannelLocked>> ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount)
     {
         var previousSetting = guild.Channels[channel.Id].PermissionOverwrites
             .First(x => x.Id == guild.EveryoneRole.Id);
-        await this._settingsModule.AddChannelLock(
-            moderatorId,
-            guild.GetGuildId(),
-            channel.GetChannelId(),
-            previousSetting.GetPreviouslyAllowedPermissions(),
-            previousSetting.GetPreviouslyDeniedPermissions(),
-            reason ?? string.Empty,
-            durationType.GetDateTimeOffset(durationAmount)
-        );
-        await channel.AddOverwriteAsync(guild.EveryoneRole,
-            previousSetting.Allowed.RevokeLockPermissions(),
-            previousSetting.Denied.SetLockPermissions());
+        return ModerationReason.CreateIfNotNull(reason)
+            .Bind(validatedReason =>
+                ChannelLocked.Create(
+                    moderatorId,
+                    validatedReason,
+                    channel.GetChannelId(),
+                    guild.GetGuildId(),
+                    DateTimeOffset.UtcNow,
+                    previousSetting.GetPreviouslyAllowedPermissions(),
+                    previousSetting.GetPreviouslyDeniedPermissions(),
+                    durationType.GetDateTimeOffset(durationAmount)))
+            .ToResult()
+            .BindAsync(channelLock =>
+                this._settingsModule.ApplyChannelLockAction(channelLock))
+            .TapAsync(_ =>
+                channel.AddOverwriteAsync(guild.EveryoneRole,
+                    previousSetting.Allowed.RevokeLockPermissions(),
+                    previousSetting.Denied.SetLockPermissions()));
     }
 
-    private async Task ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
+    private Task<Result<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount) =>
-        await this._settingsModule.AddThreadLock(
-            moderatorId,
-            guild.GetGuildId(),
-            channel.GetChannelId(),
-            reason ?? string.Empty,
-            durationType.GetDateTimeOffset(durationAmount)
-        );
+        ModerationReason.CreateIfNotNull(reason)
+            .Bind(validatedReason =>
+                ThreadLocked.Create(
+                    moderatorId,
+                    validatedReason,
+                    channel.GetChannelId(),
+                    guild.GetGuildId(),
+                    DateTimeOffset.UtcNow,
+                    durationType.GetDateTimeOffset(durationAmount)))
+            .ToResult()
+            .BindAsync(channelLock =>
+                this._settingsModule.ApplyThreadLockAction(channelLock));
 }

@@ -28,17 +28,17 @@ public partial class LogSettingsCommands
             var guild = ctx.Guild!;
 
             var joinLog =
-                await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.UserJoined, guild.GetGuildId());
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.UserJoined, guild.GetGuildId());
             var leaveLog =
-                await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.UserLeft, guild.GetGuildId());
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.UserLeft, guild.GetGuildId());
             var usernameUpdated =
-                await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.UsernameUpdated,
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.UsernameUpdated,
                     guild.GetGuildId());
             var nicknameUpdated =
-                await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.NicknameUpdated,
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.NicknameUpdated,
                     guild.GetGuildId());
             var avatarUpdated =
-                await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.AvatarUpdated,
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.AvatarUpdated,
                     guild.GetGuildId());
 
             var joinChannelLog =

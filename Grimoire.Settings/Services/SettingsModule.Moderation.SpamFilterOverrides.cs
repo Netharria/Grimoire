@@ -76,16 +76,15 @@ public sealed partial class SettingsModule
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        if (SpamFilterOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
-            is not Validation<SpamFilterOverride>.Valid(var spamFilterOverride))
-            return Result<SpamFilterOverride>.Fail(
-                new Error("spam-filter-override.invalid", "Unable to create spam filter override."));
-
-        dbContext.SpamFilterOverrides.Add(spamFilterOverride);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await this._cache.SetAsync(CacheKey.SpamFilterOverride(channelId),
-            option, this._cacheEntryOptions,
-            cancellationToken: cancellationToken);
-        return Result<SpamFilterOverride>.Ok(spamFilterOverride);
+        return await SpamFilterOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
+            .ToResult()
+            .TapAsync(async spamFilterOverride =>
+            {
+                dbContext.SpamFilterOverrides.Add(spamFilterOverride);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await this._cache.SetAsync(CacheKey.SpamFilterOverride(channelId),
+                    option, this._cacheEntryOptions,
+                    cancellationToken: cancellationToken);
+            });
     }
 }

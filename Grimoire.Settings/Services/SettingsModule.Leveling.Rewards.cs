@@ -7,7 +7,6 @@
 
 using System.Collections.Frozen;
 using Grimoire.Settings.Domain;
-using Grimoire.Settings.Enums;
 using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,26 +18,21 @@ public sealed partial class SettingsModule
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        if (!await IsModuleEnabled(Module.Leveling, guildId, cancellationToken).GetOrElse(() => false))
-            return Result<IReadOnlySet<RewardEntry>>.Ok(FrozenSet<RewardEntry>.Empty);
-        var cacheKey = CacheKey.LevelingRewards(guildId);
         return Result<IReadOnlySet<RewardEntry>>.Ok(
-            await this._cache.GetOrCreateAsync(cacheKey,
+            await this._cache.GetOrCreateAsync(CacheKey.LevelingRewards(guildId),
                 guildId,
                 async (guildIdState, ct) =>
                 {
                     await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-                    var entries = new HashSet<RewardEntry>();
-                    await foreach (var reward in dbContext.Rewards
-                                       .AsNoTracking()
-                                       .Where(reward => reward.GuildId == guildIdState)
-                                       .GroupBy(reward => reward.RoleId)
-                                       .Select(group => group.OrderByDescending(reward => reward.SetAt).First())
-                                       .AsAsyncEnumerable()
-                                       .WithCancellation(ct))
-                        if (reward is RewardAdded added)
-                            entries.Add(new RewardEntry(added.RoleId, added.RewardLevel, added.RewardMessage?.Value));
-                    return entries.ToFrozenSet();
+                    return (await dbContext.Rewards
+                            .AsNoTracking()
+                            .Where(reward => reward.GuildId == guildIdState)
+                            .GroupBy(reward => reward.RoleId)
+                            .Select(group => group.OrderByDescending(reward => reward.SetAt).First())
+                            .ToListAsync(ct))
+                        .OfType<RewardAdded>()
+                        .Select(added => new RewardEntry(added.RoleId, added.RewardLevel, added.RewardMessage?.Value))
+                        .ToFrozenSet();
                 }, this._cacheEntryOptions,
                 cancellationToken: cancellationToken));
     }
@@ -47,15 +41,22 @@ public sealed partial class SettingsModule
         T reward,
         CancellationToken cancellationToken = default) where T : Reward
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        try
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        dbContext.Rewards.Add(reward);
-        await dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.Rewards.Add(reward);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-        var cacheKey = CacheKey.LevelingRewards(reward.GuildId);
-        await this._cache.RemoveAsync(cacheKey, cancellationToken);
-        return Result<T>.Ok(reward);
+            var cacheKey = CacheKey.LevelingRewards(reward.GuildId);
+            await this._cache.RemoveAsync(cacheKey, cancellationToken);
+            return Result<T>.Ok(reward);
+        }
+        catch (Exception)
+        {
+            return Result<T>.Fail(new Error("set-reward.failed", "Could not set reward"));
+        }
+
     }
 
-    public sealed record RewardEntry(RoleId RoleId, int RewardLevel, string? RewardMessage);
 }

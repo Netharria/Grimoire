@@ -44,11 +44,11 @@ public sealed partial class SettingsModule
         return Result<bool>.Ok(true);
     }
 
-    private async Task<MessageLogOverrideOption> GetChannelLogOverride(ChannelId channelId,
+    private Task<MessageLogOverrideOption> GetChannelLogOverride(ChannelId channelId,
         GuildId guildId,
         CancellationToken cancellationToken)
         =>
-            await this._cache.GetOrCreateAsync(CacheKey.LogOverride(channelId),
+            this._cache.GetOrCreateAsync(CacheKey.LogOverride(channelId),
                 new { channelId, guildId },
                 async (state, ct) =>
                 {
@@ -61,7 +61,8 @@ public sealed partial class SettingsModule
                         .FirstOrDefaultAsync(ct);
                     return channelOverride ?? MessageLogOverrideOption.Inherit;
                 }, this._cacheEntryOptions,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken)
+                .AsTask();
 
     public async Task<Result<MessageLogChannelOverride>> SetChannelLogOverride(
         ChannelId channelId,
@@ -78,18 +79,16 @@ public sealed partial class SettingsModule
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        if (MessageLogChannelOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
-            is not Validation<MessageLogChannelOverride>.Valid(var newOverride))
-            return Result<MessageLogChannelOverride>.Fail(
-                new Error("message-log-override.invalid", "Unable to create message log channel override."));
-
-        dbContext.MessageLogChannelOverrides.Add(newOverride);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        await this._cache.SetAsync(CacheKey.LogOverride(channelId),
-            option, this._cacheEntryOptions,
-            cancellationToken: cancellationToken);
-        return Result<MessageLogChannelOverride>.Ok(newOverride);
+        return await MessageLogChannelOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
+            .ToResult()
+            .TapAsync(async newOverride =>
+            {
+                dbContext.MessageLogChannelOverrides.Add(newOverride);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await this._cache.SetAsync(CacheKey.LogOverride(channelId),
+                    option, this._cacheEntryOptions,
+                    cancellationToken: cancellationToken);
+            });
     }
 
     public async IAsyncEnumerable<MessageLogChannelOverride> GetAllOverriddenChannels(GuildId guildId,

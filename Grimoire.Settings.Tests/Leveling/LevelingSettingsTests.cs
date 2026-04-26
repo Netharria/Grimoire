@@ -351,7 +351,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         entry.GetXpNeededForLevel(3, 0).ShouldBe(entry.GetXpNeededForLevel(2, 1));
     }
 
-    private static SettingsModule.LevelingSettingEntry DefaultEntry()
+    private static LevelingSettingEntry DefaultEntry()
         => new(
             XpTimeoutPeriod.FromDatabaseOrDefault(null),
             LevelScalingModifier.FromDatabaseOrDefault(null),

@@ -34,46 +34,46 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         channel ??= ctx.Channel;
         var moderatorId = ctx.GetModeratorId();
 
-        var wasLocked = channel.IsThread
-            ? await TryUnlockThreadAsync(guild, channel, moderatorId)
-            : await TryUnlockChannelAsync(guild, channel, moderatorId);
+        await Validation<DiscordChannel>.Succeed(channel)
+            .ToResult()
+            .BindAsync(discordChannel =>
+                discordChannel switch
+                {
+                    { IsThread:true } => TryUnlockThreadAsync(guild, discordChannel, moderatorId).Map(_ => ctx),
+                    _ => TryUnlockChannelAsync(guild, discordChannel, moderatorId).Map(_ => ctx)
+                })
+            .TapAsync(context => context.ReplyAsync(message: $"{channel.Mention} has been unlocked").AsTask())
+            .Match(
+                onSuccess: _ => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                    {
+                        GuildId = guild.GetGuildId(),
+                        GuildLogType = GuildLogType.Moderation,
+                        Color = GrimoireColor.Purple,
+                        Description = $"{ctx.User.Mention} unlocked {channel.Mention}"
+                    }),
+                onFail: _ => ctx.ReplyAsync(message: $"{channel.Mention} could not be unlocked"),
+                onNotFound: _ => ctx.ReplyAsync(message: $"{channel.Mention} is not locked.")
+                );
 
-        if (!wasLocked)
-        {
-            await ctx.ReplyAsync(message: $"{channel.Mention} is not locked.");
-            return;
-        }
 
-        await ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked");
-
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.Purple,
-            Description = $"{ctx.User.Mention} unlocked {channel.Mention}"
-        });
     }
 
-    private async Task<bool> TryUnlockThreadAsync(DiscordGuild guild, DiscordChannel channel, ModeratorId moderatorId)
-    {
-        var response = await this._settingsModule.RemoveThreadLock(
-            channel.GetChannelId(), guild.GetGuildId(), moderatorId);
-        return response is Result<ThreadLocked>.Success;
-    }
+    private Task<Result<ThreadLocked>> TryUnlockThreadAsync(DiscordGuild guild, DiscordChannel channel, ModeratorId moderatorId)
+    => ThreadUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow)
+            .ToResult()
+            .BindAsync(lockAction => this._settingsModule.ApplyThreadLockAction(lockAction));
 
-    private async Task<bool> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel, ModeratorId moderatorId)
-    {
-        var response = await this._settingsModule.RemoveChannelLock(
-            channel.GetChannelId(), guild.GetGuildId(), moderatorId);
-        if (response is not Result<ChannelLocked>.Success { Value: { } lockedChannel })
-            return false;
-
-        var permissions = guild.Channels[channel.Id].PermissionOverwrites
-            .First(x => x.Id == guild.EveryoneRole.Id);
-        await channel.AddOverwriteAsync(guild.EveryoneRole,
-            permissions.Allowed.RevertLockPermissions(lockedChannel.PreviouslyAllowed.Permissions),
-            permissions.Denied.RevertLockPermissions(lockedChannel.PreviouslyDenied.Permissions));
-        return true;
-    }
+    private Task<Result<ChannelLocked>> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel,
+        ModeratorId moderatorId)
+        => ChannelUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow)
+            .ToResult()
+            .BindAsync(lockAction => this._settingsModule.ApplyChannelLockAction(lockAction))
+            .TapAsync(lockAction =>
+            {
+                var permissions = guild.Channels[channel.Id].PermissionOverwrites
+                    .First(x => x.Id == guild.EveryoneRole.Id);
+                return channel.AddOverwriteAsync(guild.EveryoneRole,
+                    permissions.Allowed.RevertLockPermissions(lockAction.PreviouslyAllowed.Permissions),
+                    permissions.Denied.RevertLockPermissions(lockAction.PreviouslyDenied.Permissions));
+            });
 }

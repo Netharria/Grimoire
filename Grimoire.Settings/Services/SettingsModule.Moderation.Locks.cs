@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Helpers;
@@ -41,25 +42,26 @@ public sealed partial class SettingsModule
         return Result<bool>.Ok(locks.Contains(channelId));
     }
 
-    public async Task<Result<ChannelLocked>> AddChannelLock(
-        ModeratorId moderatorId,
-        GuildId guildId,
-        ChannelId channelId,
-        PreviouslyAllowedPermissions previouslyAllowed,
-        PreviouslyDeniedPermissions previouslyDenied,
-        string reason,
-        DateTimeOffset lockEndTime,
+    public Task<Result<ChannelLocked>> ApplyChannelLockAction(
+        ChannelLock channelLock,
+        CancellationToken cancellationToken = default)
+        => channelLock switch
+        {
+            ChannelLocked v => AddChannelLock(v, cancellationToken),
+            ChannelUnlocked v => RemoveChannelLock(v, cancellationToken),
+            _ => throw new UnreachableException()
+        };
+
+    private async Task<Result<ChannelLocked>> AddChannelLock(
+        ChannelLocked channelLock,
         CancellationToken cancellationToken = default)
     {
-        if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var validReason))
-            return Result<ChannelLocked>.Fail(new Error("moderation-reason.invalid",
-                "Reason must be 1\u20134096 non-whitespace characters."));
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingPermissions = await dbContext.ChannelLocks
             .AsNoTracking()
             .OfType<ChannelLocked>()
-            .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
+            .Where(x => x.ChannelId == channelLock.ChannelId && x.GuildId == channelLock.GuildId)
             // ReSharper disable once AccessToDisposedClosure
             .Where(x => !dbContext.ChannelLocks
                 .Any(y => y.ChannelId == x.ChannelId &&
@@ -68,32 +70,27 @@ public sealed partial class SettingsModule
             .Select(x => new { x.PreviouslyAllowed, x.PreviouslyDenied })
             .FirstOrDefaultAsync(cancellationToken);
 
-        var setAt = DateTimeOffset.UtcNow;
-        var finalAllowed = existingPermissions?.PreviouslyAllowed ?? previouslyAllowed;
-        var finalDenied = existingPermissions?.PreviouslyDenied ?? previouslyDenied;
+        var finalAllowed = existingPermissions?.PreviouslyAllowed ?? channelLock.PreviouslyAllowed;
+        var finalDenied = existingPermissions?.PreviouslyDenied ?? channelLock.PreviouslyDenied;
 
-        if (ChannelLocked.Create(moderatorId, validReason, channelId, guildId, setAt, finalAllowed, finalDenied,
-                lockEndTime)
-            is not Validation<ChannelLocked>.Valid(var lockEvent))
-            return Result<ChannelLocked>.Fail(new Error("channel-lock.end-time.invalid",
-                "Lock end time must be after the current time."));
-
-        dbContext.ChannelLocks.Add(lockEvent);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await this._cache.RemoveAsync(CacheKey.ChannelLocks(guildId), cancellationToken);
-        return Result<ChannelLocked>.Ok(lockEvent);
+      return await ChannelLocked.Create(channelLock, finalAllowed, finalDenied)
+          .ToResult()
+          .TapAsync(async validLock =>
+          {
+              dbContext.ChannelLocks.Add(validLock);
+              await dbContext.SaveChangesAsync(cancellationToken);
+              await this._cache.RemoveAsync(CacheKey.ChannelLocks(validLock.GuildId), cancellationToken);
+          });
     }
 
-    public async Task<Result<ChannelLocked>> RemoveChannelLock(
-        ChannelId channelId,
-        GuildId guildId,
-        ModeratorId moderatorId,
+    private async Task<Result<ChannelLocked>> RemoveChannelLock(
+        ChannelUnlocked lockAction,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingLock = await dbContext.ChannelLocks
             .OfType<ChannelLocked>()
-            .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
+            .Where(x => x.ChannelId == lockAction.ChannelId && x.GuildId == lockAction.GuildId)
             // ReSharper disable once AccessToDisposedClosure
             .Where(x => !dbContext.ChannelLocks
                 .Any(y => y.ChannelId == x.ChannelId &&
@@ -104,13 +101,9 @@ public sealed partial class SettingsModule
             return new Result<ChannelLocked>.NotFound(
                 new Error("channel-lock.not-found", "The channel is not currently locked."));
 
-        if (ChannelUnlocked.Create(moderatorId, channelId, guildId, DateTimeOffset.UtcNow)
-            is not Validation<ChannelUnlocked>.Valid(var unlock))
-            return Result<ChannelLocked>.Fail(
-                new Error("channel-unlock.invalid", "Unable to create channel unlock event."));
-        dbContext.ChannelLocks.Add(unlock);
+        dbContext.ChannelLocks.Add(lockAction);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await this._cache.RemoveAsync(CacheKey.ChannelLocks(guildId), cancellationToken);
+        await this._cache.RemoveAsync(CacheKey.ChannelLocks(lockAction.GuildId), cancellationToken);
         return Result<ChannelLocked>.Ok(existingLock);
     }
 
@@ -158,42 +151,35 @@ public sealed partial class SettingsModule
         return Result<bool>.Ok(locks.Contains(channelId));
     }
 
-    public async Task<Result<ThreadLocked>> AddThreadLock(
-        ModeratorId moderatorId,
-        GuildId guildId,
-        ChannelId channelId,
-        string reason,
-        DateTimeOffset lockEndTime,
+    public Task<Result<ThreadLocked>> ApplyThreadLockAction(
+        ThreadLock lockAction,
+        CancellationToken cancellationToken = default)
+        => lockAction switch
+        {
+            ThreadLocked v => AddThreadLock(v, cancellationToken),
+            ThreadUnlocked v => RemoveThreadLock(v, cancellationToken),
+            _ => throw new UnreachableException()
+        };
+
+    private async Task<Result<ThreadLocked>> AddThreadLock(
+        ThreadLocked threadLock,
         CancellationToken cancellationToken = default)
     {
-        if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var validReason))
-            return Result<ThreadLocked>.Fail(new Error("moderation-reason.invalid",
-                "Reason must be 1\u20134096 non-whitespace characters."));
-
-        var setAt = DateTimeOffset.UtcNow;
-
-        if (ThreadLocked.Create(moderatorId, validReason, channelId, guildId, setAt, lockEndTime)
-            is not Validation<ThreadLocked>.Valid(var lockEvent))
-            return Result<ThreadLocked>.Fail(new Error("thread-lock.end-time.invalid",
-                "Lock end time must be after the current time."));
-
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        dbContext.ThreadLocks.Add(lockEvent);
+        dbContext.ThreadLocks.Add(threadLock);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await this._cache.RemoveAsync(CacheKey.ThreadLocks(guildId), cancellationToken);
-        return Result<ThreadLocked>.Ok(lockEvent);
+        await this._cache.RemoveAsync(CacheKey.ThreadLocks(threadLock.GuildId), cancellationToken);
+        return Result<ThreadLocked>.Ok(threadLock);
     }
 
-    public async Task<Result<ThreadLocked>> RemoveThreadLock(
-        ChannelId channelId,
-        GuildId guildId,
-        ModeratorId moderatorId,
+    private async Task<Result<ThreadLocked>> RemoveThreadLock(
+        ThreadUnlocked lockAction,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         var existingLock = await dbContext.ThreadLocks
             .OfType<ThreadLocked>()
-            .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
+            .Where(x => x.ChannelId == lockAction.ChannelId && x.GuildId == lockAction.GuildId)
             // ReSharper disable once AccessToDisposedClosure
             .Where(x => !dbContext.ThreadLocks
                 .Any(y => y.ChannelId == x.ChannelId &&
@@ -203,14 +189,9 @@ public sealed partial class SettingsModule
         if (existingLock is null)
             return new Result<ThreadLocked>.NotFound(
                 new Error("thread-lock.not-found", "The thread is not currently locked."));
-
-        if (ThreadUnlocked.Create(moderatorId, channelId, guildId, DateTimeOffset.UtcNow)
-            is not Validation<ThreadUnlocked>.Valid(var unlock))
-            return Result<ThreadLocked>.Fail(
-                new Error("thread-unlock.invalid", "Unable to create thread unlock event."));
-        dbContext.ThreadLocks.Add(unlock);
+        dbContext.ThreadLocks.Add(lockAction);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await this._cache.RemoveAsync(CacheKey.ThreadLocks(guildId), cancellationToken);
+        await this._cache.RemoveAsync(CacheKey.ThreadLocks(lockAction.GuildId), cancellationToken);
         return Result<ThreadLocked>.Ok(existingLock);
     }
 

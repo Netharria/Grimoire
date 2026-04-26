@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,13 +39,20 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 permissions.Allowed.RevertLockPermissions(expiredLock.PreviouslyAllowed.Permissions),
                 permissions.Denied.RevertLockPermissions(expiredLock.PreviouslyDenied.Permissions));
 
-            await settingsModule.RemoveChannelLock(
-                expiredLock.ChannelId,
-                expiredLock.GuildId,
-                discordClient.GetGrimoireModeratorId(),
-                cancellationToken);
-
-            await SendLockExpiredLogAsync(guildLog, channel, expiredLock.GuildId, cancellationToken);
+            await ModerationReason.Create("Thread Lock expired.")
+                .Bind(moderationReason =>
+                    ChannelUnlocked.Create(
+                        discordClient.GetGrimoireModeratorId(),
+                        expiredLock.ChannelId,
+                        expiredLock.GuildId,
+                        DateTimeOffset.UtcNow,
+                        moderationReason))
+                .ToResult()
+                .BindAsync(channelUnlock
+                    => settingsModule.ApplyChannelLockAction(
+                        channelUnlock,
+                        cancellationToken))
+                .TapAsync(_ => SendLockExpiredLogAsync(channel, guildLog, cancellationToken));
         }
 
         await foreach (var expiredLock in settingsModule.GetAllExpiredThreadLocks(cancellationToken))
@@ -52,24 +60,32 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
             var channel = await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId, cancellationToken);
             if (channel is null)
                 continue;
-
-            await settingsModule.RemoveThreadLock(
-                expiredLock.ChannelId,
-                expiredLock.GuildId,
-                discordClient.GetGrimoireModeratorId(),
-                cancellationToken);
-
-            await SendLockExpiredLogAsync(guildLog, channel, expiredLock.GuildId, cancellationToken);
+            await ModerationReason.Create("Thread Lock expired.")
+                .Bind(moderationReason =>
+                    ThreadUnlocked.Create(
+                        discordClient.GetGrimoireModeratorId(),
+                        expiredLock.ChannelId,
+                        expiredLock.GuildId,
+                        DateTimeOffset.UtcNow,
+                        moderationReason))
+                .ToResult()
+                .BindAsync(threadUnlock
+                    => settingsModule.ApplyThreadLockAction(
+                        threadUnlock,
+                        cancellationToken))
+                .TapAsync(_ => SendLockExpiredLogAsync(channel, guildLog, cancellationToken));
         }
     }
 
-    private static async Task SendLockExpiredLogAsync(GuildLog guildLog, DiscordChannel channel, GuildId guildId,
+    private static async Task SendLockExpiredLogAsync(
+        DiscordChannel channel,
+        GuildLog guildLog,
         CancellationToken cancellationToken)
     {
         var embed = new DiscordEmbedBuilder()
             .WithDescription($"Lock on {channel.Mention} has expired.");
         await guildLog.SendLogMessageAsync(
-            new GuildLogMessageCustomEmbed { GuildId = guildId, GuildLogType = GuildLogType.Moderation, Embed = embed },
+            new GuildLogMessageCustomEmbed { GuildId = channel.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed },
             cancellationToken);
         await channel.SendMessageAsync(embed);
     }

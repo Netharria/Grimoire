@@ -21,6 +21,13 @@ public readonly record struct RewardMessage
             ? new RewardMessage(value)
             : null;
 
+    public static Validation<RewardMessage?> CreateIfNotNull(string? input)
+        => input switch
+        {
+            not null => Create(input).Map<RewardMessage?>(setting => setting),
+            _ => Validation<RewardMessage?>.Succeed(null)
+        };
+
     public static Validation<RewardMessage> Create(string? input)
     {
         var trimmed = input?.Trim();

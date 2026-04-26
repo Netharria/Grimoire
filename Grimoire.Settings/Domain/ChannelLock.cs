@@ -53,6 +53,22 @@ public sealed record ChannelLocked : ChannelLock
             new ChannelLocked(moderatorId, channelId, guildId, setAt, reason, previouslyAllowed, previouslyDenied,
                 endTime));
     }
+
+    public static Validation<ChannelLocked> Create(
+        ChannelLocked lockAction,
+        PreviouslyAllowedPermissions previouslyAllowed,
+        PreviouslyDeniedPermissions previouslyDenied)
+    {
+        return Validation<ChannelLocked>.Succeed(new ChannelLocked(
+            lockAction.ModeratorId,
+            lockAction.ChannelId,
+            lockAction.GuildId,
+            lockAction.SetAt,
+            lockAction.Reason,
+            previouslyAllowed,
+            previouslyDenied,
+            lockAction.EndTime));
+    }
 }
 
 public sealed record ChannelUnlocked : ChannelLock

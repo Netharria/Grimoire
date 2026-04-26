@@ -24,7 +24,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
         // Set a channel but leave Module.Leveling disabled.
         await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, _channelId);
 
-        var result = await this._sut.GetEffectiveLogChannelSetting(GuildLogType.Leveling, _guildId);
+        var result = await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId);
 
         result.ShouldSucceed().ShouldBeNull();
     }
@@ -35,7 +35,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
         await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, _channelId);
 
-        var result = await this._sut.GetEffectiveLogChannelSetting(GuildLogType.Leveling, _guildId);
+        var result = await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId);
 
         result.ShouldSucceed().ShouldBe(_channelId);
     }
@@ -45,7 +45,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-        var result = await this._sut.GetEffectiveLogChannelSetting(GuildLogType.Leveling, _guildId);
+        var result = await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId);
 
         result.ShouldSucceed().ShouldBeNull();
     }
@@ -56,7 +56,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
         await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, _channelId);
         await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, null);
 
-        var result = await this._sut.GetConfiguredLogChannelSetting(GuildLogType.Leveling, _guildId);
+        var result = await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId);
 
         result.ShouldSucceed().ShouldBeNull();
     }

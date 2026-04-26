@@ -143,24 +143,25 @@ public sealed partial class SettingsModule(
             .AsTask()
             .Map(ParseChannelId);
 
-    public async Task<Result<ChannelId?>> SetUserCommandChannelSetting(
+    public Task<Result<ChannelId?>> SetUserCommandChannelSetting(
         GuildId guildId,
         ModeratorId moderatorId,
         ChannelId? channelId,
         CancellationToken cancellationToken = default)
         => (channelId switch
         {
-            not null => await GuildSettingCustomValue.Create(GuildSettingType.UserCommandChannel, guildId, moderatorId,
-                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture))
-                .MatchAsync(
-                    setting => SetGuildSetting(setting, cancellationToken),
-                    errors => Result<GuildSetting>.Fail(errors)),
-            _ => await GuildSettingDisabled.Create(GuildSettingType.UserCommandChannel, guildId, moderatorId,
-                    DateTimeOffset.UtcNow)
-                .MatchAsync(
-                    setting => SetGuildSetting(setting, cancellationToken),
-                    errors => Result<GuildSetting>.Fail(errors))
+            not null => ApplyGuildSetting(GuildSettingCustomValue.Create(GuildSettingType.UserCommandChannel, guildId, moderatorId,
+                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture)), cancellationToken),
+            _ => ApplyGuildSetting(
+                    GuildSettingDisabled.Create(GuildSettingType.UserCommandChannel, guildId, moderatorId, DateTimeOffset.UtcNow),
+                    cancellationToken)
         }).Map(_ => channelId);
+
+    private Task<Result<GuildSetting>> ApplyGuildSetting(Validation<GuildSetting> validation,
+        CancellationToken cancellationToken = default)
+        => validation.MatchAsync(
+            setting => SetGuildSetting(setting, cancellationToken),
+            errors => Result<GuildSetting>.Fail(errors));
 
     private static T? ParseId<T>(CachedSetting setting, Func<ulong, T> create) where T : struct =>
         setting is CachedCustomSetting { Value: var v }

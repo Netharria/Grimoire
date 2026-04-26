@@ -29,13 +29,13 @@ public partial class LogSettingsCommands
             var guild = ctx.Guild!;
 
             var deleteChannelLogId =
-                await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.MessageDeleted,
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.MessageDeleted,
                     guild.GetGuildId());
             var bulkDeleteChannelLogId =
-                await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.BulkMessageDeleted,
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.BulkMessageDeleted,
                     guild.GetGuildId());
             var editChannelLogId =
-                await this._settingsModule.GetConfiguredLogChannelSetting(GuildLogType.MessageEdited,
+                await this._settingsModule.GetLogChannelSetting(GuildLogType.MessageEdited,
                     guild.GetGuildId());
 
             var deleteChannelLog =

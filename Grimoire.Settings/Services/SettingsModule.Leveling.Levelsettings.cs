@@ -26,19 +26,33 @@ public sealed partial class SettingsModule
 
     public async Task<Result<LevelingSettingEntry>> GetLevelingSettings(
         GuildId guildId,
-        CancellationToken cancellationToken = default) =>
-        Result<LevelingSettingEntry>.Ok(
-            await this._cache.GetOrCreateAsync(
-                CacheKey.LevelingSettings(guildId),
-                guildId,
-                GetLevelingSettingsCacheEntry,
-                this._cacheEntryOptions,
-                cancellationToken: cancellationToken));
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return Result<LevelingSettingEntry>.Ok(
+                await this._cache.GetOrCreateAsync(
+                    CacheKey.LevelingSettings(guildId),
+                    guildId,
+                    GetLevelingSettingsCacheEntry,
+                    this._cacheEntryOptions,
+                    cancellationToken: cancellationToken));
+        }
+        catch (Exception)
+        {
+            return Result<LevelingSettingEntry>.Fail(new Error(
+                "levelsettings.fetch.failed",
+                "Could not fetch level settings from cache"));
+        }
+
+    }
+
 
     private async ValueTask<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
+
         var latestByKey =
             await GetGuildSettings(guildId, _levelingSettingKeys, cancellationToken)
                 .ToDictionaryAsync(x => x.Type, x => x switch
@@ -67,19 +81,11 @@ public sealed partial class SettingsModule
         int newValue,
         CancellationToken cancellationToken = default)
         => CreateLevelingSetting(settingToChange, newValue)
-            .MatchAsync(
-                async x =>
-                {
-                    var (settingType, setting) = x;
-                    if (GuildSettingCustomValue.Create(settingType, guildId, setBy, DateTimeOffset.UtcNow, setting)
-                        is not Validation<GuildSettingCustomValue>.Valid(var customValue))
-                        return Result<int>.Fail(new Error("guild-setting.invalid", "Invalid guild setting value."));
-                    var result = await SetGuildSetting(customValue, cancellationToken);
-                    if (result is Result<GuildSetting>.Success)
-                        await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken);
-                    return result.Map(_ => newValue);
-                },
-                errors => Result<int>.Fail(errors));
+            .Bind(setting => GuildSettingCustomValue.Create(setting.Item1, guildId, setBy, DateTimeOffset.UtcNow, setting.Item2))
+            .ToResult()
+            .BindAsync(setting => SetGuildSetting(setting, cancellationToken))
+            .TapAsync(async _ => await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken))
+            .Map(_ => newValue);
 
     private static Validation<(GuildSettingType, string)> CreateLevelingSetting(LevelSettings setting, int value)
         => setting switch
@@ -95,41 +101,4 @@ public sealed partial class SettingsModule
             _ => throw new UnreachableException()
         };
 
-    public sealed record LevelingSettingEntry(
-        XpTimeoutPeriod XpTimeoutPeriod,
-        LevelScalingModifier Modifier,
-        LevelScalingBase Base,
-        XpGainAmount Amount)
-    {
-        public int GetLevelFromXp(long xp)
-        {
-            var i = 0;
-            if (xp > 1000)
-                // This is to reduce the number of iterations. Minor inaccuracy is acceptable.
-                // ReSharper disable once PossibleLossOfFraction
-                i = (int)Math.Floor(Math.Sqrt((xp - Base.Value) * 100 /
-                                              (Base.Value * Modifier.Value)));
-            while (true)
-            {
-                var xpNeeded = Base.Value + (
-                    (long)Math.Round(Base.Value *
-                                     (Modifier.Value / 100.0) * i) * i);
-                if (xp < xpNeeded)
-                    return i + 1;
-
-                i += 1;
-            }
-        }
-
-        public long GetXpNeededForLevel(int level, int levelModifier = 0)
-        {
-            level = level - 2 + levelModifier;
-            return level switch
-            {
-                < 0 => 0,
-                0 => Base.Value,
-                _ => Base.Value + ((long)Math.Round(Base.Value * (Modifier.Value / 100.0) * level) * level)
-            };
-        }
-    }
 }
