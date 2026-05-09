@@ -28,9 +28,9 @@ public readonly record struct ModerationReason
     public static Validation<ModerationReason> Create(string input)
     {
         var trimmed = input.Trim();
-        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 4096)
+        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 1000)
             return Validation<ModerationReason>.Fail(
-                new Error("moderation-reason.invalid", "Reason must be 1\u20134096 non-whitespace characters."));
+                new Error("moderation-reason.invalid", "Reason must be 1\u20131000 non-whitespace characters."));
         return Validation<ModerationReason>.Succeed(new ModerationReason(trimmed));
     }
 

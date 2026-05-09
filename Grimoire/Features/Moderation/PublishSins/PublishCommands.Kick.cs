@@ -42,7 +42,7 @@ public sealed partial class PublishCommands
                 Reason = dbContext.SinReasonHistory
                     .Where(r => r.SinId == sin.Id)
                     .OrderByDescending(r => r.SetAt)
-                    .Select(r => r.Reason)
+                    .Select(r => r.Reason.Value)
                     .FirstOrDefault() ?? string.Empty,
                 KickMessageId = sin.PublishMessages
                     .Where(x => x.PublishType == PublishType.Kick)

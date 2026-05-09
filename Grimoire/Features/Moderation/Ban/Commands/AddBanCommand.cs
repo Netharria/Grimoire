@@ -72,7 +72,7 @@ public sealed partial class AddBanCommand(
                     new SinReasonHistory
                     {
                         SinId = default,
-                        Reason = reason,
+                        Reason = ModerationReason.FromDatabase(reason),
                         ModeratorId = ctx.GetModeratorId(),
                         SetAt = DateTimeOffset.UtcNow
                     }

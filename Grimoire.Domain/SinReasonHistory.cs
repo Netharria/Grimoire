@@ -13,7 +13,7 @@ namespace Grimoire.Domain;
 public sealed record SinReasonHistory
 {
     public required SinId SinId { get; init; }
-    public required string Reason { get; init; }
+    public required ModerationReason Reason { get; init; }
     public required ModeratorId? ModeratorId { get; init; }
     public required DateTimeOffset SetAt { get; init; }
     public Sin? Sin { get; init; }

@@ -21,7 +21,9 @@ public class CommandNameArgumentConverter
     public ConverterInputType RequiresText => ConverterInputType.Always;
 
     public Task<Optional<CustomCommandName>> ConvertAsync(ConverterContext context)
-        => Task.FromResult(context.Argument is string str && CustomCommandName.TryParse(str) is { } name
-            ? FromValue(name)
+        => Task.FromResult(context.Argument is string str
+            ? CustomCommandName.Create(str).Match(
+                onValid: FromValue,
+                onInvalid: _ => FromNoValue<CustomCommandName>())
             : FromNoValue<CustomCommandName>());
 }

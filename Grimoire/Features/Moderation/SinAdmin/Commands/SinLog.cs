@@ -104,7 +104,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
                 Reason = dbContext.SinReasonHistory
                     .Where(r => r.SinId == x.Id)
                     .OrderByDescending(r => r.SetAt)
-                    .Select(r => r.Reason)
+                    .Select(r => r.Reason.Value)
                     .FirstOrDefault() ?? string.Empty,
                 // ReSharper restore AccessToDisposedClosure
                 x.ModeratorId,

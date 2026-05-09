@@ -18,7 +18,7 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
         builder.HasKey(e => new { e.Name, e.GuildId, e.CreatedAt });
 
         builder.Property(e => e.Name)
-            .HasConversion(name => name.Value, value => CustomCommandName.Parse(value))
+            .HasConversion(name => name.Value, value => CustomCommandName.ParseFromDatabase(value))
             .HasMaxLength(24);
 
         builder.Property(e => e.Content)
@@ -29,7 +29,7 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
             .HasMaxLength(6)
             .HasConversion(
                 color => color.GetValueOrDefault().Value,
-                color => CustomCommandEmbedColor.Parse(color))
+                color => CustomCommandEmbedColor.ParseFromDatabase(color))
             .IsRequired(false);
 
         builder.Property(e => e.GuildId)
@@ -39,5 +39,8 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
             .HasConversion(e => e.GetValueOrDefault().Value, value => new ModeratorId(value));
 
         builder.HasIndex(e => new { e.GuildId, e.Name });
+
+        builder.Ignore(e => e.OutputFormat);
+        builder.Ignore(e => e.Access);
     }
 }

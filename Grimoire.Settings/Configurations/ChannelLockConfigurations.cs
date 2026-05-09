@@ -32,7 +32,7 @@ internal sealed class ChannelLockConfigurations : IEntityTypeConfiguration<Chann
             .HasConversion(
                 r => r == null ? null : r.Value.Value,
                 v => v == null ? null : ModerationReason.FromDatabase(v))
-            .HasMaxLength(4096);
+            .HasMaxLength(1000);
 
         builder.Property(e => e.GuildId)
             .HasConversion(e => e.Value, value => new GuildId(value));

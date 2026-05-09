@@ -42,46 +42,14 @@ public abstract record Result<T>
             _ => throw new UnreachableException()
         };
 
-    public Result<T> Tap(Action<T> action)
-        => this switch
-        {
-            Success(var v) => ExecuteTap(v, action),
-            _ => this
-        };
-
-    private static Result<T> ExecuteTap(T item, Action<T> action)
-    {
-        try
-        {
-            action(item);
-            return Ok(item);
-        }
-        catch (Exception)
-        {
-            return Fail(new Error("result.tap.fail", "Failed to execute action in pipeline."));
-        }
-
+    public Result<T> Tap(Action<T> action){
+        if (this is Success(var v)) action(v);
+        return this;
     }
 
-    public Task<Result<T>> TapAsync(Func<T, Task> action)
-        => this switch
-        {
-            Success(var v) => ExecuteTapAsync(v, action),
-            _ => Task.FromResult(this)
-        };
-
-    private static async Task<Result<T>> ExecuteTapAsync(T item, Func<T,Task> action)
-    {
-        try
-        {
-            await action(item);
-            return Ok(item);
-        }
-        catch (Exception)
-        {
-            return Fail(new Error("result.tap.fail", "Failed to execute action in pipeline."));
-        }
-
+    public async Task<Result<T>> TapAsync(Func<T, Task> action){
+        if (this is Success(var v)) await action(v);
+        return this;
     }
 
     public Task<Result<TOut>> MapAsync<TOut>(Func<T, Task<TOut>> mapper)
@@ -103,15 +71,17 @@ public abstract record Result<T>
         Func<T, TOut> onSuccess,
         Func<ImmutableArray<Error>, TOut> onFailure,
         Func<ImmutableArray<Error>, TOut>? onNotFound = null,
-        Func<ImmutableArray<Error>, TOut>? onNotModified = null)
+        Func<ImmutableArray<Error>, TOut>? onNotModified = null,
+        Func<ImmutableArray<Error>, TOut>? onConflict = null,
+        Func<ImmutableArray<Error>, TOut>? onForbidden = null)
         => this switch
         {
             Success(var v) => onSuccess(v),
             Invalid(var e) => onFailure(e),
             NotFound(var e) => onNotFound is not null ? onNotFound([e]) : onFailure([e]),
-            NotModified(var e) => onNotModified is not null ? onNotModified([e]) :  onFailure([e]),
-            Conflict(var e) => onFailure([e]),
-            Forbidden(var e) => onFailure([e]),
+            NotModified(var e) => onNotModified is not null ? onNotModified([e]) : onFailure([e]),
+            Conflict(var e) => onConflict is not null ? onConflict([e]) : onFailure([e]),
+            Forbidden(var e) => onForbidden is not null ? onForbidden([e]) : onFailure([e]),
             _ => throw new UnreachableException()
         };
 
@@ -119,15 +89,17 @@ public abstract record Result<T>
         Func<T, Task<TOut>> onSuccess,
         Func<ImmutableArray<Error>, TOut> onFailure,
         Func<ImmutableArray<Error>, TOut>? onNotFound = null,
-        Func<ImmutableArray<Error>, TOut>? onNotModified = null)
+        Func<ImmutableArray<Error>, TOut>? onNotModified = null,
+        Func<ImmutableArray<Error>, TOut>? onConflict = null,
+        Func<ImmutableArray<Error>, TOut>? onForbidden = null)
         => this switch
         {
             Success(var v) => onSuccess(v),
             Invalid(var e) => Task.FromResult(onFailure(e)),
-            NotFound(var e) => onNotFound is not null ? Task.FromResult(onNotFound([e]))  :  Task.FromResult(onFailure([e])),
-            NotModified(var e) => onNotModified is not null ? Task.FromResult(onNotModified([e]))  : Task.FromResult(onFailure([e])),
-            Conflict(var e) => Task.FromResult(onFailure([e])),
-            Forbidden(var e) => Task.FromResult(onFailure([e])),
+            NotFound(var e) => onNotFound is not null ? Task.FromResult(onNotFound([e])) : Task.FromResult(onFailure([e])),
+            NotModified(var e) => onNotModified is not null ? Task.FromResult(onNotModified([e])) : Task.FromResult(onFailure([e])),
+            Conflict(var e) => onConflict is not null ? Task.FromResult(onConflict([e])) : Task.FromResult(onFailure([e])),
+            Forbidden(var e) => onForbidden is not null ? Task.FromResult(onForbidden([e])) : Task.FromResult(onFailure([e])),
             _ => throw new UnreachableException()
         };
 

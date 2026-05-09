@@ -34,8 +34,22 @@ public sealed record MessageDeletedByModeratorEntry : MessageHistoryEntry
     public required ModeratorId ModeratorId { get; init; }
 }
 
-public readonly record struct MessageContent(string Content)
+public readonly record struct MessageContent
 {
+    public string Content { get; }
+
+    private MessageContent(string content) => Content = content;
+
+    public static MessageContent FromDatabase(string content) => new(content);
+
+    public static Validation<MessageContent> Create(string? content)
+    {
+        if (string.IsNullOrEmpty(content) || content.Length > 4000)
+            return Validation<MessageContent>.Fail(
+                new Error("message-content.invalid", "Message content must be 1–4000 characters."));
+        return Validation<MessageContent>.Succeed(new MessageContent(content));
+    }
+
     public override string ToString() => Content;
 
     [Pure]

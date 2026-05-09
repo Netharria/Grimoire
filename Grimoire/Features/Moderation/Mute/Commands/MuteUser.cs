@@ -75,7 +75,7 @@ public sealed class MuteUser(
                     new SinReasonHistory
                     {
                         SinId = default,
-                        Reason = reason,
+                        Reason = ModerationReason.FromDatabase(reason!),
                         ModeratorId = ctx.GetModeratorId(),
                         SetAt = DateTimeOffset.UtcNow
                     }

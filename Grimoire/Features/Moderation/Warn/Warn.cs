@@ -53,7 +53,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
                     new SinReasonHistory
                     {
                         SinId = default,
-                        Reason = reason,
+                        Reason = ModerationReason.FromDatabase(reason),
                         ModeratorId = ctx.GetModeratorId(),
                         SetAt = DateTimeOffset.UtcNow
                     }

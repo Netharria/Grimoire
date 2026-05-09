@@ -29,7 +29,7 @@ public sealed class TextCustomCommand(IDbContextFactory<GrimoireDbContext> dbCon
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
-        var commandName = CustomCommandName.Parse(messageArgs[0]);
+        var commandName = CustomCommandName.ParseFromDatabase(messageArgs[0]);
         var response = await dbContext.CustomCommands
             .AsNoTracking()
             .GetCustomCommandQuery(member.GetGuildId(), commandName)

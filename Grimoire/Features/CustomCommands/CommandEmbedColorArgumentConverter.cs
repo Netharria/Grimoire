@@ -21,7 +21,9 @@ public class CommandEmbedColorArgumentConverter
     public ConverterInputType RequiresText => ConverterInputType.Always;
 
     public Task<Optional<CustomCommandEmbedColor>> ConvertAsync(ConverterContext context)
-        => Task.FromResult(context.Argument is string raw && CustomCommandEmbedColor.TryParse(raw) is { } color
-            ? FromValue(color)
+        => Task.FromResult(context.Argument is string raw
+            ? CustomCommandEmbedColor.Create(raw).Match(
+                onValid: FromValue,
+                onInvalid: _ => FromNoValue<CustomCommandEmbedColor>())
             : FromNoValue<CustomCommandEmbedColor>());
 }

@@ -41,14 +41,18 @@ public static class ResultTaskExtensions
         public async Task<TOut> Match<TOut>(Func<T, TOut> onSuccess,
             Func<ImmutableArray<Error>, TOut> onFail,
             Func<ImmutableArray<Error>, TOut>? onNotFound = null,
-            Func<ImmutableArray<Error>, TOut>? onNotChanged = null)
-            => (await task).Match(onSuccess, onFail,  onNotFound, onNotChanged);
+            Func<ImmutableArray<Error>, TOut>? onNotChanged = null,
+            Func<ImmutableArray<Error>, TOut>? onConflict = null,
+            Func<ImmutableArray<Error>, TOut>? onForbidden = null)
+            => (await task).Match(onSuccess, onFail, onNotFound, onNotChanged, onConflict, onForbidden);
 
         public async Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> onSuccess,
             Func<ImmutableArray<Error>, TOut> onFail,
             Func<ImmutableArray<Error>, TOut>? onNotFound = null,
-            Func<ImmutableArray<Error>, TOut>? onNotChanged = null)
-            => await (await task).MatchAsync(onSuccess, onFail,  onNotFound, onNotChanged);
+            Func<ImmutableArray<Error>, TOut>? onNotChanged = null,
+            Func<ImmutableArray<Error>, TOut>? onConflict = null,
+            Func<ImmutableArray<Error>, TOut>? onForbidden = null)
+            => await (await task).MatchAsync(onSuccess, onFail, onNotFound, onNotChanged, onConflict, onForbidden);
 
         public async Task<Result<T>> OrElse(Func<Result<T>> fallback)
             => (await task).OrElse(fallback);

@@ -18,7 +18,7 @@ internal sealed class CustomCommandUsageConfiguration : IEntityTypeConfiguration
         builder.HasKey(e => new { e.Name, e.GuildId, e.UserId, e.UsedAt });
 
         builder.Property(e => e.Name)
-            .HasConversion(name => name.Value, value => CustomCommandName.Parse(value))
+            .HasConversion(name => name.Value, value => CustomCommandName.ParseFromDatabase(value))
             .HasMaxLength(24);
 
         builder.Property(e => e.GuildId)

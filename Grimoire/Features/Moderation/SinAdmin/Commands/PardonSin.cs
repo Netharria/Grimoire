@@ -54,7 +54,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
             SinId = sinId,
             GuildId = guild.GetGuildId(),
             ModeratorId = ctx.GetModeratorId(),
-            Reason = reason,
+            Reason = ModerationReason.FromDatabase(reason),
             SetAt = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();

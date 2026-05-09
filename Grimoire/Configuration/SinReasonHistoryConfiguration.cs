@@ -27,6 +27,7 @@ internal sealed class SinReasonHistoryConfiguration : IEntityTypeConfiguration<S
             .IsRequired();
 
         builder.Property(e => e.Reason)
+            .HasConversion(r => r.Value, v => ModerationReason.FromDatabase(v))
             .HasMaxLength(1000)
             .IsRequired();
 

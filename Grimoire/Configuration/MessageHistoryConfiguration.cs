@@ -41,7 +41,7 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
         builder.Property<MessageContent>("Content")
             .HasColumnName("Content")
             .HasMaxLength(4000)
-            .HasConversion(c => c.Content, v => new MessageContent(v));
+            .HasConversion(c => c.Content, v => MessageContent.FromDatabase(v));
 
         builder.Property<ModeratorId?>("ModeratorId")
             .HasColumnName("ModeratorId")

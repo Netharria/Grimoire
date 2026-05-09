@@ -42,7 +42,7 @@ public sealed partial class PublishCommands
                 Reason = dbContext.SinReasonHistory
                     .Where(r => r.SinId == sin.Id)
                     .OrderByDescending(r => r.SetAt)
-                    .Select(r => r.Reason)
+                    .Select(r => r.Reason.Value)
                     .FirstOrDefault() ?? string.Empty,
                 PublishedBanId = sin.PublishMessages
                     .Where(x => x.PublishType == PublishType.Ban)

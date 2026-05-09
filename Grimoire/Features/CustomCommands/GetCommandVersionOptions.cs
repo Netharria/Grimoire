@@ -26,7 +26,7 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
         if (string.IsNullOrEmpty(nameValue))
             return [];
 
-        var name = CustomCommandName.Parse(nameValue);
+        var name = CustomCommandName.ParseFromDatabase(nameValue);
         var guildId = new GuildId(context.Guild.Id);
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();

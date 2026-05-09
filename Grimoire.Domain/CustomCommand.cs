@@ -23,27 +23,47 @@ public sealed record CustomCommand
     public ModeratorId? ModeratorId { get; init; }
 
     public ICollection<CustomCommandRole> Roles { get; init; } = [];
+
+    public CommandOutputFormat OutputFormat
+        => IsEmbedded ? new CommandOutputFormat.Embedded(EmbedColor) : new CommandOutputFormat.PlainText();
+
+    public CommandAccess Access
+        => RestrictedUse
+            ? new CommandAccess.Allowlist(Roles.Select(r => r.RoleId).ToList())
+            : new CommandAccess.Open();
 }
 
 public readonly record struct CustomCommandName
 {
     public string Value { get; }
 
-    private CustomCommandName(string value) => Value = value;
-
-    public static CustomCommandName? TryParse(string? value)
+    private CustomCommandName(string value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        var trimmed = value.Trim();
-        return trimmed.Any(char.IsWhiteSpace) || trimmed.Length > 24
-            ? null
-            : new CustomCommandName(trimmed);
+        Value = value;
     }
 
-    public static CustomCommandName Parse(string value)
-        => TryParse(value) ?? throw new ArgumentException($"'{value}' is not a valid command name.", nameof(value));
+    public static CustomCommandName ParseFromDatabase(string value)
+        => Create(value)
+            .Match(
+                onValid: result => result,
+                onInvalid: _ => throw new ArgumentException($"'{value}' is not a valid command name.", nameof(value)));
 
     public override string ToString() => Value;
+
+    public static Validation<CustomCommandName> Create(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation<CustomCommandName>.Fail(new Error("custom-command-name.validation.is-null-or-empty",
+                "A value for command name must be provided."));
+        var trimmed = value.Trim();
+        if(trimmed.Any(char.IsWhiteSpace))
+            return Validation<CustomCommandName>.Fail(new Error("custom-command-name.validation.contains-space",
+                "A command name cannot contain spaces."));;
+        return trimmed.Length > 24
+            ? Validation<CustomCommandName>.Fail(new Error("custom-command-name.validation.length",
+                "A command name cannot be more than 24 characters in length."))
+            : Validation<CustomCommandName>.Succeed(new CustomCommandName(trimmed));
+    }
 }
 
 public readonly partial record struct CustomCommandEmbedColor
@@ -52,23 +72,29 @@ public readonly partial record struct CustomCommandEmbedColor
 
     private CustomCommandEmbedColor(string value) => Value = value;
 
-    public static CustomCommandEmbedColor? TryParse(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        var str = value.Trim();
-        if (str.StartsWith('#')) str = str[1..];
-        return ValidHexColor().IsMatch(str)
-            ? new CustomCommandEmbedColor(str.ToUpperInvariant())
-            : null;
-    }
-
-    public static CustomCommandEmbedColor Parse(string value)
-        => TryParse(value) ?? throw new ArgumentException($"'{value}' is not a valid embed color.", nameof(value));
+    public static CustomCommandEmbedColor ParseFromDatabase(string value)
+        => Create(value)
+            .Match(
+                onValid: result => result,
+                onInvalid: _ => throw new ArgumentException($"'{value}' is not a valid embed color.", nameof(value)));
 
     public override string ToString() => Value;
 
     [GeneratedRegex(@"^[0-9A-Fa-f]{6}$", RegexOptions.None, 1000)]
     private static partial Regex ValidHexColor();
+
+    public static Validation<CustomCommandEmbedColor> Create(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation<CustomCommandEmbedColor>.Fail(new Error("custom-command-embed-color.validation.is-null-or-empty",
+                "A value for command embed color must be provided."));
+        var str = value.Trim();
+        if (str.StartsWith('#')) str = str[1..];
+        return ValidHexColor().IsMatch(str)
+            ? Validation<CustomCommandEmbedColor>.Succeed(new CustomCommandEmbedColor(str.ToUpperInvariant()))
+            : Validation<CustomCommandEmbedColor>.Fail(new Error("custom-command-embed-color.validation.does-not-contain-hex",
+            "A command embed color must be a 6 character hex color code."));
+    }
 }
 
 public abstract record CommandOutputFormat

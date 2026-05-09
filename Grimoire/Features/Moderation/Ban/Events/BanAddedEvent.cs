@@ -45,7 +45,7 @@ public partial class BanAddedEvent(
                 Reason = dbContext.SinReasonHistory
                     .Where(r => r.SinId == sin.Id)
                     .OrderByDescending(r => r.SetAt)
-                    .Select(r => r.Reason)
+                    .Select(r => r.Reason.Value)
                     .FirstOrDefault() ?? string.Empty,
                 SinOn = sin.SinOn
             })
@@ -79,7 +79,7 @@ public partial class BanAddedEvent(
                             new SinReasonHistory
                             {
                                 SinId = default,
-                                Reason = auditReason,
+                                Reason = ModerationReason.FromDatabase(auditReason),
                                 ModeratorId = auditModeratorId,
                                 SetAt = DateTimeOffset.UtcNow
                             }

@@ -51,7 +51,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
 
         dbContext.SinReasonHistory.Add(new SinReasonHistory
         {
-            SinId = sinId, Reason = reason, ModeratorId = ctx.GetModeratorId(), SetAt = DateTimeOffset.UtcNow
+            SinId = sinId, Reason = ModerationReason.FromDatabase(reason), ModeratorId = ctx.GetModeratorId(), SetAt = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();
 

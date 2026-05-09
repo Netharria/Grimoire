@@ -73,7 +73,7 @@ public sealed partial class PublishCommands
         }
 
         var banLogMessage = await SendPublicLogMessage(ctx, result.UserId, result.Username,
-            result.LatestPardon.Reason, result.UnbanMessageId, result.LatestPardon.PardonDate, PublishType.Unban);
+            result.LatestPardon.Reason.Value, result.UnbanMessageId, result.LatestPardon.PardonDate, PublishType.Unban);
 
         if (banLogMessage is null)
         {

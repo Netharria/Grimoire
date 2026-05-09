@@ -24,7 +24,7 @@ internal sealed class CustomCommandRoleConfiguration : IEntityTypeConfiguration<
             .IsRequired();
 
         builder.Property(e => e.Name)
-            .HasConversion(name => name.Value, value => CustomCommandName.Parse(value))
+            .HasConversion(name => name.Value, value => CustomCommandName.ParseFromDatabase(value))
             .HasMaxLength(24);
 
         builder.Property(e => e.RoleId)
