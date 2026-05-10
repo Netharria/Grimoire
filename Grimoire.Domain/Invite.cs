@@ -16,12 +16,44 @@ public sealed record Invite
     public required InviteUrl Url { get; init; }
 }
 
-public readonly record struct InviteCode(string Value)
+public readonly record struct InviteCode
 {
+    private InviteCode(string value)
+    {
+        Value = value;
+    }
+
+    public string Value { get; }
+
+    internal static InviteCode FromDatabase(string value) => new(value);
+
+    public static Validation<InviteCode> Create(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation<InviteCode>.Fail(new Error("invite-code.empty", "Invite code cannot be empty."));
+        return Validation<InviteCode>.Succeed(new InviteCode(value.Trim()));
+    }
+
     public override string ToString() => Value;
 }
 
-public readonly record struct InviteUrl(string Value)
+public readonly record struct InviteUrl
 {
+    private InviteUrl(string value)
+    {
+        Value = value;
+    }
+
+    public string Value { get; }
+
+    internal static InviteUrl FromDatabase(string value) => new(value);
+
+    public static Validation<InviteUrl> Create(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation<InviteUrl>.Fail(new Error("invite-url.empty", "Invite URL cannot be empty."));
+        return Validation<InviteUrl>.Succeed(new InviteUrl(value));
+    }
+
     public override string ToString() => Value;
 }

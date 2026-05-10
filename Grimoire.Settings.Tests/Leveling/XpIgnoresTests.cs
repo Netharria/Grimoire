@@ -194,7 +194,7 @@ public sealed class XpIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetim
         var result = await this._sut.AppendIgnoredItemsEvent(_guildId, new HashSet<XpTrackedItem> { item });
 
         var invalid = result.ShouldBeOfType<Result<IReadOnlySet<XpTrackedItem>>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
+        var error = invalid.Error;
         error.Code.ShouldBe("xp-ignored-items.guild-id.mismatch");
         error.Message.ShouldNotBeNullOrWhiteSpace();
     }

@@ -107,7 +107,7 @@ await Host.CreateDefaultBuilder(args)
             .ConfigureEventHandlers(eventHandlerBuilder =>
                 eventHandlerBuilder
                     //Custom Commands
-                    .AddEventHandlers<TextCustomCommand>()
+                    .AddEventHandlers<TextCustomCommandProcessor>()
                     //Leveling
                     .AddEventHandlers<GainUserXp>()
                     //Message Log

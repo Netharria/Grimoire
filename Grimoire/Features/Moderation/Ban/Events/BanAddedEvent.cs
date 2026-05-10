@@ -28,7 +28,8 @@ public partial class BanAddedEvent(
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanAddedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())
+                .GetOrElse(() => false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -79,7 +80,8 @@ public partial class BanAddedEvent(
                             new SinReasonHistory
                             {
                                 SinId = default,
-                                Reason = ModerationReason.FromDatabase(auditReason),
+                                Reason = ModerationReason.Create(auditReason)
+                                    .Match(r => r, _ => throw new UnreachableException()),
                                 ModeratorId = auditModeratorId,
                                 SetAt = DateTimeOffset.UtcNow
                             }

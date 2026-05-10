@@ -5,9 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Immutable;
-using System.Diagnostics;
-
 namespace Grimoire.Domain;
 
 public static class ResultTaskExtensions
@@ -39,20 +36,28 @@ public static class ResultTaskExtensions
             => await (await task).TapAsync(action);
 
         public async Task<TOut> Match<TOut>(Func<T, TOut> onSuccess,
-            Func<ImmutableArray<Error>, TOut> onFail,
-            Func<ImmutableArray<Error>, TOut>? onNotFound = null,
-            Func<ImmutableArray<Error>, TOut>? onNotChanged = null,
-            Func<ImmutableArray<Error>, TOut>? onConflict = null,
-            Func<ImmutableArray<Error>, TOut>? onForbidden = null)
-            => (await task).Match(onSuccess, onFail, onNotFound, onNotChanged, onConflict, onForbidden);
+            Func<Error, TOut> onFail,
+            Func<Error, TOut>? onNotFound = null,
+            Func<Error, TOut>? onNotModified = null,
+            Func<Error, TOut>? onConflict = null,
+            Func<Error, TOut>? onForbidden = null)
+            => (await task).Match(onSuccess, onFail, onNotFound, onNotModified, onConflict, onForbidden);
 
         public async Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> onSuccess,
-            Func<ImmutableArray<Error>, TOut> onFail,
-            Func<ImmutableArray<Error>, TOut>? onNotFound = null,
-            Func<ImmutableArray<Error>, TOut>? onNotChanged = null,
-            Func<ImmutableArray<Error>, TOut>? onConflict = null,
-            Func<ImmutableArray<Error>, TOut>? onForbidden = null)
-            => await (await task).MatchAsync(onSuccess, onFail, onNotFound, onNotChanged, onConflict, onForbidden);
+            Func<Error, TOut> onFail,
+            Func<Error, TOut>? onNotFound = null,
+            Func<Error, TOut>? onNotModified = null,
+            Func<Error, TOut>? onConflict = null,
+            Func<Error, TOut>? onForbidden = null)
+            => await (await task).MatchAsync(onSuccess, onFail, onNotFound, onNotModified, onConflict, onForbidden);
+
+        public async Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> onSuccess,
+            Func<Error, Task<TOut>> onFail,
+            Func<Error, Task<TOut>>? onNotFound = null,
+            Func<Error, Task<TOut>>? onNotModified = null,
+            Func<Error, Task<TOut>>? onConflict = null,
+            Func<Error, Task<TOut>>? onForbidden = null)
+            => await (await task).MatchAsync(onSuccess, onFail, onNotFound, onNotModified, onConflict, onForbidden);
 
         public async Task<Result<T>> OrElse(Func<Result<T>> fallback)
             => (await task).OrElse(fallback);

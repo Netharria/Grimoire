@@ -33,7 +33,7 @@ public sealed partial class CustomCommandSettings
         await DeleteCommandAsync(guild.GetGuildId(), name)
             .Match(
             alreadyForgotten => OnForgetSuccess(ctx, guild, name, alreadyForgotten),
-            errors => ctx.SendErrorResponseAsync(errors[0].Message).AsTask());
+            error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
 
     private async Task<Result<bool>> DeleteCommandAsync(GuildId guildId, CustomCommandName name)
@@ -49,7 +49,7 @@ public sealed partial class CustomCommandSettings
                 .ExecuteDeleteAsync();
             return Result<bool>.Ok(deletedCount == 0);
         }
-        catch (DbUpdateException)
+        catch (Exception)
         {
             return Result<bool>.Fail(new Error("command.forget.db_error",
                 "Could not forget that command right now due to a database error. Please try again."));

@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -15,6 +15,6 @@ public static class DiscordUserExtensions
         public UserId GetUserId() => new(user.Id);
 
         [Pure]
-        public Username GetUsername() => new(user.Username);
+        public Username GetUsername() => Username.FromDatabase(user.Username);
     }
 }

@@ -34,6 +34,18 @@ public abstract record Validation<T>
             _ => throw new UnreachableException()
         };
 
+    public Validation<T> Tap(Action<T> action)
+    {
+        if (this is Valid(var v)) action(v);
+        return this;
+    }
+
+    public async Task<Validation<T>> TapAsync(Func<T, Task> action)
+    {
+        if (this is Valid(var v)) await action(v);
+        return this;
+    }
+
     public TOut Match<TOut>(Func<T, TOut> onValid, Func<ImmutableArray<Error>, TOut> onInvalid)
         => this switch
         {
@@ -71,9 +83,17 @@ public abstract record Validation<T>
         => this switch
         {
             Valid(var v) => Result<T>.Ok(v),
-            Invalid(var errors) => Result<T>.Fail(errors),
+            Invalid(var errors) => Result<T>.Fail(CombineErrors(errors)),
             _ => throw new UnreachableException()
         };
+
+    private static Error CombineErrors(ImmutableArray<Error> errors)
+    {
+        var distinct = errors.Distinct().ToArray();
+        return distinct.Length == 1
+            ? distinct[0]
+            : new Error("validation.failed", string.Join("; ", distinct.Select(e => e.Message)));
+    }
 
     public sealed record Valid(T Value) : Validation<T>;
 

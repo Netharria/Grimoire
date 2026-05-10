@@ -33,12 +33,14 @@ public sealed class UpdatedUsernameEvent(
             .OrderByDescending(x => x.Timestamp)
             .Select(member => member.Username)
             .FirstOrDefaultAsync();
-        if (Username.Equals(currentUsername, new Username(args.UsernameAfter),
-                StringComparison.CurrentCultureIgnoreCase))
+
+        var after = Username.FromDatabase(args.UsernameAfter);
+
+        if (currentUsername.Equals(after, StringComparison.CurrentCultureIgnoreCase))
             return;
 
         await dbContext.UsernameHistory.AddAsync(
-            new UsernameHistory { UserId = args.Member.GetUserId(), Username = new Username(args.UsernameAfter) });
+            new UsernameHistory { UserId = args.Member.GetUserId(), Username = after });
         await dbContext.SaveChangesAsync();
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
@@ -49,7 +51,7 @@ public sealed class UpdatedUsernameEvent(
                 .WithAuthor("Username Updated")
                 .AddField("User", args.MemberAfter.Mention)
                 .AddField("Before",
-                    Username.IsNullOrWhiteSpace(currentUsername)
+                    string.IsNullOrWhiteSpace(currentUsername.Value)
                         ? "`Unknown`"
                         : currentUsername.Value, true)
                 .AddField("After",

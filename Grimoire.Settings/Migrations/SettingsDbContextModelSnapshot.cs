@@ -18,7 +18,7 @@ namespace Grimoire.Settings.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Settings")
-                .HasAnnotation("ProductVersion", "10.0.6")
+                .HasAnnotation("ProductVersion", "10.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -43,8 +43,8 @@ namespace Grimoire.Settings.Migrations
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Reason")
-                        .HasMaxLength(4096)
-                        .HasColumnType("character varying(4096)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.HasKey("ChannelId", "GuildId", "SetAt");
 
@@ -233,8 +233,8 @@ namespace Grimoire.Settings.Migrations
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Reason")
-                        .HasMaxLength(4096)
-                        .HasColumnType("character varying(4096)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.HasKey("ChannelId", "GuildId", "SetAt");
 

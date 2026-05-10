@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -18,14 +18,13 @@ public static class DiscordMemberExtensions
         public GuildId GetGuildId() => new(member.Guild.Id);
 
         [Pure]
-        public Nickname GetNickname() => new(member.Nickname);
+        public Nickname? GetNickname() => Nickname.CreateIfNotEmpty(member.Nickname);
 
         [Pure]
-        public AvatarFileName GetAvatarFileName() => new(member.AvatarUrl);
+        public AvatarFileName GetAvatarFileName() => AvatarFileName.FromDatabase(member.AvatarUrl);
 
         [Pure]
-        public AvatarFileName GetAvatarFileName(MediaFormat mediaFormat,
-            ushort imageSize = 1024)
-            => new(member.GetGuildAvatarUrl(mediaFormat, imageSize));
+        public AvatarFileName? GetAvatarFileName(MediaFormat mediaFormat, ushort imageSize = 1024)
+            => AvatarFileName.CreateIfNotEmpty(member.GetGuildAvatarUrl(mediaFormat, imageSize));
     }
 }

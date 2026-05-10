@@ -23,7 +23,7 @@ public class CommandNameArgumentConverter
     public Task<Optional<CustomCommandName>> ConvertAsync(ConverterContext context)
         => Task.FromResult(context.Argument is string str
             ? CustomCommandName.Create(str).Match(
-                onValid: FromValue,
-                onInvalid: _ => FromNoValue<CustomCommandName>())
+                FromValue,
+                _ => FromNoValue<CustomCommandName>())
             : FromNoValue<CustomCommandName>());
 }

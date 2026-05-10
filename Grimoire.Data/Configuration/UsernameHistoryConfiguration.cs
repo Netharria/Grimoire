@@ -27,6 +27,6 @@ internal sealed class UsernameHistoryConfiguration : IEntityTypeConfiguration<Us
             .HasConversion(e => e.Value, value => new UserId(value));
 
         builder.Property(e => e.Username)
-            .HasConversion(e => e.Value, value => new Username(value));
+            .HasConversion(e => e.Value, value => Username.FromDatabase(value));
     }
 }

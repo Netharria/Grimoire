@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Grimoire.Domain;
 
 [UsedImplicitly]
-public sealed record CustomCommandRole
+public abstract record CustomCommandRole
 {
     public required RoleId RoleId { get; init; }
     public required CustomCommandName Name { get; init; }
@@ -18,3 +18,7 @@ public sealed record CustomCommandRole
     public required DateTimeOffset CreatedAt { get; init; }
     public CustomCommand? CustomCommand { get; init; }
 }
+
+public sealed record CustomCommandDenyRole : CustomCommandRole;
+
+public sealed record CustomCommandAllowRole : CustomCommandRole;

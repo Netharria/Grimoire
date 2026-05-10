@@ -45,7 +45,7 @@ public sealed partial class CustomCommandSettings
             .BindAsync(target => SaveRevertedCommandAsync(target, ctx.GetModeratorId()))
             .Match(
                 _ => OnRevertSuccessAsync(ctx, guild, name, unixSeconds),
-                errors => ctx.SendWarningResponseAsync(errors[0].Message).AsTask());
+                error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
     private async Task<Result<CustomCommand>> FetchVersionAsync(GuildId guildId, CustomCommandName name, DateTimeOffset targetCreatedAt)
@@ -60,36 +60,34 @@ public sealed partial class CustomCommandSettings
             : Result<CustomCommand>.Ok(target);
     }
 
-    private async Task<Result<CustomCommand>> SaveRevertedCommandAsync(CustomCommand target, ModeratorId? moderatorId)
+    private Task<Result<CustomCommand>> SaveRevertedCommandAsync(CustomCommand target, ModeratorId? moderatorId)
     {
-        var now = DateTimeOffset.UtcNow;
-        var reverted = new CustomCommand
-        {
-            Name = target.Name,
-            GuildId = target.GuildId,
-            CreatedAt = now,
-            Content = target.Content,
-            IsEmbedded = target.IsEmbedded,
-            EmbedColor = target.EmbedColor,
-            RestrictedUse = target.RestrictedUse,
-            ModeratorId = moderatorId,
-            Roles = [.. target.Roles.Select(r => new CustomCommandRole
+        ICollection<CustomCommandRole> roles = [
+            .. target.Roles.OfType<CustomCommandAllowRole>()
+                .Select(r => new CustomCommandAllowRole { RoleId = r.RoleId, Name = r.Name, GuildId = r.GuildId, CreatedAt = default }),
+            .. target.Roles.OfType<CustomCommandDenyRole>()
+                .Select(r => new CustomCommandDenyRole { RoleId = r.RoleId, Name = r.Name, GuildId = r.GuildId, CreatedAt = default })
+        ];
+        return Validation<CustomCommand>.Succeed(target)
+            .Bind(oldVersion => oldVersion switch
             {
-                Name = r.Name, GuildId = r.GuildId, CreatedAt = now, RoleId = r.RoleId
-            })]
-        };
-        try
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            await dbContext.AddAsync(reverted);
-            await dbContext.SaveChangesAsync();
-            return Result<CustomCommand>.Ok(reverted);
-        }
-        catch (DbUpdateException)
-        {
-            return Result<CustomCommand>.Fail(new Error("command.revert.db_error",
-                "Could not revert the command due to a database error. Please try again."));
-        }
+                EmbedCustomCommand embedCustomCommand => EmbedCustomCommand.Create(
+                    embedCustomCommand.Name,
+                    embedCustomCommand.GuildId,
+                    embedCustomCommand.Content,
+                    embedCustomCommand.EmbedColor,
+                    roles,
+                    moderatorId),
+                TextCustomCommand textCustomCommand => TextCustomCommand.Create(
+                    textCustomCommand.Name,
+                    textCustomCommand.GuildId,
+                    textCustomCommand.Content,
+                    roles,
+                    moderatorId),
+                _ => Validation<CustomCommand>.Fail(new Error("custom-command-revert.type.unidentifiable", "Failed to match the type of the target custom command."))
+            })
+            .ToResult()
+            .BindAsync(SaveCommandAsync);
     }
 
     private async Task OnRevertSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name, long unixSeconds)

@@ -30,9 +30,15 @@ internal sealed class ProxiedMessageLinkConfiguration : IEntityTypeConfiguration
             .IsRequired();
         builder.Property(x => x.SystemId)
             .HasMaxLength(256)
+            .HasConversion(
+                systemId => systemId.Value,
+                value => PluralKitSystemId.FromDatabase(value))
             .IsRequired();
         builder.Property(x => x.MemberId)
             .HasMaxLength(256)
+            .HasConversion(
+                memberId => memberId.Value,
+                value => PluralKitMemberId.FromDatabase(value))
             .IsRequired();
     }
 }

@@ -23,6 +23,8 @@ public readonly record struct ModeratorId(ulong Value)
 {
     public static ModeratorId? TryParse(string? value)
         => ulong.TryParse(value, out var id) ? new ModeratorId(id) : null;
+    public static explicit operator ModeratorId(UserId id) => new(id.Value);
+    public static explicit operator UserId(ModeratorId id) => new(id.Value);
 }
 
 public readonly record struct GuildId(ulong Value)
@@ -42,3 +44,7 @@ public readonly record struct RoleId(ulong Value)
     public static RoleId? TryParse(string? value)
         => ulong.TryParse(value, out var id) ? new RoleId(id) : null;
 }
+
+public readonly record struct SinId(long Value);
+
+public readonly record struct AttachmentId(ulong Value);

@@ -23,7 +23,7 @@ namespace Grimoire.Settings.Migrations
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    Reason = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: true),
+                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     EventType = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false),
                     PreviouslyAllowed = table.Column<long>(type: "bigint", nullable: true),
                     PreviouslyDenied = table.Column<long>(type: "bigint", nullable: true),
@@ -129,7 +129,7 @@ namespace Grimoire.Settings.Migrations
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    Reason = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: true),
+                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     EventType = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false),
                     EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },

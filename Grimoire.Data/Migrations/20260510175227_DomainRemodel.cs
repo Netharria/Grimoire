@@ -1,22 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Grimoire.Migrations
 {
     /// <inheritdoc />
-    public partial class DatabaseCleanup : Migration
+    public partial class DomainRemodel : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
-        // Create new tables in Settings schema with new structure
-        // (EF will generate these based on your SettingsDbContext models)
-
-        // Then copy data from old tables to new tables
-
-
             migrationBuilder.DropForeignKey(
                 name: "FK_Avatars_Members_UserId_GuildId",
                 table: "Avatars");
@@ -28,6 +22,10 @@ namespace Grimoire.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_CustomCommands_Guilds_GuildId",
                 table: "CustomCommands");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_CustomCommandsRole_CustomCommands_CustomCommandName_GuildId",
+                table: "CustomCommandsRole");
 
             migrationBuilder.DropForeignKey(
                 name: "FK_CustomCommandsRole_Guilds_GuildId",
@@ -182,6 +180,10 @@ namespace Grimoire.Migrations
                 table: "Mutes");
 
             migrationBuilder.DropForeignKey(
+                name: "FK_Mutes_Sins_SinId",
+                table: "Mutes");
+
+            migrationBuilder.DropForeignKey(
                 name: "FK_NicknameHistory_Guilds_GuildId",
                 table: "NicknameHistory");
 
@@ -234,22 +236,6 @@ namespace Grimoire.Migrations
                 table: "SpamFilterOverrides");
 
             migrationBuilder.DropForeignKey(
-                name: "FK_Trackers_Channels_LogChannelId",
-                table: "Trackers");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_Trackers_Guilds_GuildId",
-                table: "Trackers");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_Trackers_Members_ModeratorId_GuildId",
-                table: "Trackers");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_Trackers_Members_UserId_GuildId",
-                table: "Trackers");
-
-            migrationBuilder.DropForeignKey(
                 name: "FK_UsernameHistory_Users_UserId",
                 table: "UsernameHistory");
 
@@ -268,6 +254,9 @@ namespace Grimoire.Migrations
             migrationBuilder.DropTable(
                 name: "Reaction");
 
+            migrationBuilder.DropTable(
+                name: "Trackers");
+
             migrationBuilder.DropIndex(
                 name: "IX_XpHistory_AwarderId_GuildId",
                 table: "XpHistory");
@@ -275,18 +264,6 @@ namespace Grimoire.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_XpHistory_GuildId",
                 table: "XpHistory");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Trackers_GuildId",
-                table: "Trackers");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Trackers_LogChannelId",
-                table: "Trackers");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Trackers_ModeratorId_GuildId",
-                table: "Trackers");
 
             migrationBuilder.DropIndex(
                 name: "IX_SpamFilterOverrides_GuildId",
@@ -303,6 +280,10 @@ namespace Grimoire.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_Sins_UserId_GuildId",
                 table: "Sins");
+
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_Pardons",
+                table: "Pardons");
 
             migrationBuilder.DropIndex(
                 name: "IX_Pardons_GuildId",
@@ -420,6 +401,10 @@ namespace Grimoire.Migrations
                 name: "IX_GuildLevelSettings_LevelChannelLogId",
                 table: "GuildLevelSettings");
 
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_CustomCommandsRole",
+                table: "CustomCommandsRole");
+
             migrationBuilder.DropIndex(
                 name: "IX_CustomCommandsRole_GuildId",
                 table: "CustomCommandsRole");
@@ -428,6 +413,10 @@ namespace Grimoire.Migrations
                 name: "IX_CustomCommandsRole_RoleId",
                 table: "CustomCommandsRole");
 
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_CustomCommands",
+                table: "CustomCommands");
+
             migrationBuilder.DropIndex(
                 name: "IX_CustomCommands_GuildId",
                 table: "CustomCommands");
@@ -435,6 +424,191 @@ namespace Grimoire.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_Channels_GuildId",
                 table: "Channels");
+
+            migrationBuilder.CreateTable(
+                name: "SinReasonHistory",
+                columns: table => new
+                {
+                    SinId = table.Column<long>(type: "bigint", nullable: false),
+                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SinReasonHistory", x => new { x.SinId, x.SetAt });
+                    table.ForeignKey(
+                        name: "FK_SinReasonHistory_Sins_SinId",
+                        column: x => x.SinId,
+                        principalTable: "Sins",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.AddColumn<DateTimeOffset>(
+                name: "SetAt",
+                table: "Pardons",
+                type: "timestamp with time zone",
+                nullable: false,
+                defaultValue: new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)));
+
+            migrationBuilder.AddColumn<string>(
+                name: "Discriminator",
+                table: "MessageHistory",
+                type: "character varying(21)",
+                maxLength: 21,
+                nullable: false,
+                defaultValue: "");
+
+            migrationBuilder.AddColumn<DateTimeOffset>(
+                name: "CreatedAt",
+                table: "CustomCommands",
+                type: "timestamp with time zone",
+                nullable: false,
+                defaultValue: new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)));
+
+            migrationBuilder.AddColumn<string>(
+                name: "CommandType",
+                table: "CustomCommands",
+                type: "character varying(13)",
+                maxLength: 13,
+                nullable: false,
+                defaultValue: "");
+
+            migrationBuilder.AddColumn<string>(
+                name: "Name",
+                table: "CustomCommandsRole",
+                type: "character varying(24)",
+                maxLength: 24,
+                nullable: false,
+                defaultValue: "");
+
+            migrationBuilder.AddColumn<DateTimeOffset>(
+                name: "CreatedAt",
+                table: "CustomCommandsRole",
+                type: "timestamp with time zone",
+                nullable: false,
+                defaultValue: new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)));
+
+            migrationBuilder.AddColumn<string>(
+                name: "RoleType",
+                table: "CustomCommandsRole",
+                type: "character varying(21)",
+                maxLength: 21,
+                nullable: false,
+                defaultValue: "");
+
+            // Populate SinReasonHistory from Sins.Reason before the column is dropped.
+            // Only migrate non-blank reasons; blank reasons are not valid ModerationReason values.
+            migrationBuilder.Sql("""
+                INSERT INTO "SinReasonHistory" ("SinId", "SetAt", "Reason", "ModeratorId")
+                SELECT "Id", "SinOn", "Reason", "ModeratorId"
+                FROM "Sins"
+                WHERE trim("Reason") <> '';
+                """);
+
+            // Copy PardonDate into SetAt before PardonDate is dropped.
+            migrationBuilder.Sql("""
+                UPDATE "Pardons" SET "SetAt" = "PardonDate";
+                """);
+
+            // Map the old integer Action enum to the new TPH discriminator string.
+            // Old enum: 0=Created, 1=Updated, 2=Deleted (with optional DeletedByModeratorId).
+            migrationBuilder.Sql("""
+                UPDATE "MessageHistory"
+                SET "Discriminator" = CASE
+                    WHEN "Action" = 0 THEN 'Created'
+                    WHEN "Action" = 1 THEN 'Edited'
+                    WHEN "Action" = 2 AND "DeletedByModeratorId" IS NOT NULL THEN 'DeletedByModerator'
+                    ELSE 'Deleted'
+                END;
+                """);
+
+            // Set the new CustomCommands columns before the old boolean flags are dropped.
+            // CreatedAt is set to the migration execution time; CommandType is derived from IsEmbedded.
+            migrationBuilder.Sql("""
+                UPDATE "CustomCommands"
+                SET "CreatedAt"   = NOW(),
+                    "CommandType" = CASE WHEN "IsEmbedded" THEN 'Embed' ELSE 'Text' END;
+                """);
+
+            // Populate the new CustomCommandsRole columns.
+            // All legacy roles were allow-type (only AllowRoles existed in the old schema).
+            migrationBuilder.Sql("""
+                UPDATE "CustomCommandsRole" AS ccr
+                SET "Name"      = ccr."CustomCommandName",
+                    "CreatedAt" = cc."CreatedAt",
+                    "RoleType"  = 'Allow'
+                FROM "CustomCommands" AS cc
+                WHERE cc."Name"    = ccr."CustomCommandName"
+                  AND cc."GuildId" = ccr."GuildId";
+                """);
+
+            migrationBuilder.DropColumn(
+                name: "Reason",
+                table: "Sins");
+
+            migrationBuilder.DropColumn(
+                name: "PardonDate",
+                table: "Pardons");
+
+            migrationBuilder.DropColumn(
+                name: "Action",
+                table: "MessageHistory");
+
+            migrationBuilder.DropColumn(
+                name: "CustomCommandName",
+                table: "CustomCommandsRole");
+
+            migrationBuilder.DropColumn(
+                name: "HasMention",
+                table: "CustomCommands");
+
+            migrationBuilder.DropColumn(
+                name: "HasMessage",
+                table: "CustomCommands");
+
+            migrationBuilder.DropColumn(
+                name: "IsEmbedded",
+                table: "CustomCommands");
+
+            migrationBuilder.DropColumn(
+                name: "RestrictedUse",
+                table: "CustomCommands");
+
+            migrationBuilder.RenameColumn(
+                name: "MessageContent",
+                table: "MessageHistory",
+                newName: "Content");
+
+            migrationBuilder.RenameColumn(
+                name: "DeletedByModeratorId",
+                table: "MessageHistory",
+                newName: "ModeratorId");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "SystemId",
+                table: "ProxiedMessages",
+                type: "character varying(256)",
+                maxLength: 256,
+                nullable: false,
+                defaultValue: "",
+                oldClrType: typeof(string),
+                oldType: "character varying(256)",
+                oldMaxLength: 256,
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "MemberId",
+                table: "ProxiedMessages",
+                type: "character varying(256)",
+                maxLength: 256,
+                nullable: false,
+                defaultValue: "",
+                oldClrType: typeof(string),
+                oldType: "character varying(256)",
+                oldMaxLength: 256,
+                oldNullable: true);
 
             migrationBuilder.AlterColumn<decimal>(
                 name: "ModeratorId",
@@ -445,6 +619,41 @@ namespace Grimoire.Migrations
                 oldClrType: typeof(decimal),
                 oldType: "numeric(20,0)",
                 oldNullable: true);
+
+            migrationBuilder.AddColumn<decimal>(
+                name: "ModeratorId",
+                table: "CustomCommands",
+                type: "numeric(20,0)",
+                nullable: true);
+
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_Pardons",
+                table: "Pardons",
+                columns: new[] { "SinId", "SetAt" });
+
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_CustomCommandsRole",
+                table: "CustomCommandsRole",
+                columns: new[] { "Name", "GuildId", "CreatedAt", "RoleId" });
+
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_CustomCommands",
+                table: "CustomCommands",
+                columns: new[] { "Name", "GuildId", "CreatedAt" });
+
+            migrationBuilder.CreateTable(
+                name: "CustomCommandUsages",
+                columns: table => new
+                {
+                    Name = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    UsedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomCommandUsages", x => new { x.Name, x.GuildId, x.UserId, x.UsedAt });
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_XpHistory_GuildId_Xp",
@@ -470,11 +679,56 @@ namespace Grimoire.Migrations
                 name: "IX_Sin_UserId_GuildId_SinOn",
                 table: "Sins",
                 columns: new[] { "UserId", "GuildId", "SinOn" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pardons_SinId_SetAt",
+                table: "Pardons",
+                columns: new[] { "SinId", "SetAt" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomCommands_GuildId_Name",
+                table: "CustomCommands",
+                columns: new[] { "GuildId", "Name" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomCommandUsages_GuildId_Name_UsedAt",
+                table: "CustomCommandUsages",
+                columns: new[] { "GuildId", "Name", "UsedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomCommandUsages_GuildId_Name_UserId",
+                table: "CustomCommandUsages",
+                columns: new[] { "GuildId", "Name", "UserId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SinReasonHistory_SinId_SetAt",
+                table: "SinReasonHistory",
+                columns: new[] { "SinId", "SetAt" },
+                descending: new[] { false, true });
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_CustomCommandsRole_CustomCommands_Name_GuildId_CreatedAt",
+                table: "CustomCommandsRole",
+                columns: new[] { "Name", "GuildId", "CreatedAt" },
+                principalTable: "CustomCommands",
+                principalColumns: new[] { "Name", "GuildId", "CreatedAt" },
+                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_CustomCommandsRole_CustomCommands_Name_GuildId_CreatedAt",
+                table: "CustomCommandsRole");
+
+            migrationBuilder.DropTable(
+                name: "CustomCommandUsages");
+
+            migrationBuilder.DropTable(
+                name: "SinReasonHistory");
+
             migrationBuilder.DropIndex(
                 name: "IX_XpHistory_GuildId_Xp",
                 table: "XpHistory");
@@ -495,6 +749,96 @@ namespace Grimoire.Migrations
                 name: "IX_Sin_UserId_GuildId_SinOn",
                 table: "Sins");
 
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_Pardons",
+                table: "Pardons");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Pardons_SinId_SetAt",
+                table: "Pardons");
+
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_CustomCommandsRole",
+                table: "CustomCommandsRole");
+
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_CustomCommands",
+                table: "CustomCommands");
+
+            migrationBuilder.DropIndex(
+                name: "IX_CustomCommands_GuildId_Name",
+                table: "CustomCommands");
+
+            migrationBuilder.DropColumn(
+                name: "SetAt",
+                table: "Pardons");
+
+            migrationBuilder.DropColumn(
+                name: "Discriminator",
+                table: "MessageHistory");
+
+            migrationBuilder.DropColumn(
+                name: "Name",
+                table: "CustomCommandsRole");
+
+            migrationBuilder.DropColumn(
+                name: "CreatedAt",
+                table: "CustomCommandsRole");
+
+            migrationBuilder.DropColumn(
+                name: "RoleType",
+                table: "CustomCommandsRole");
+
+            migrationBuilder.DropColumn(
+                name: "CreatedAt",
+                table: "CustomCommands");
+
+            migrationBuilder.DropColumn(
+                name: "CommandType",
+                table: "CustomCommands");
+
+            migrationBuilder.DropColumn(
+                name: "ModeratorId",
+                table: "CustomCommands");
+
+            migrationBuilder.RenameColumn(
+                name: "ModeratorId",
+                table: "MessageHistory",
+                newName: "DeletedByModeratorId");
+
+            migrationBuilder.RenameColumn(
+                name: "Content",
+                table: "MessageHistory",
+                newName: "MessageContent");
+
+            migrationBuilder.AddColumn<string>(
+                name: "Reason",
+                table: "Sins",
+                type: "character varying(1000)",
+                maxLength: 1000,
+                nullable: false,
+                defaultValue: "");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "SystemId",
+                table: "ProxiedMessages",
+                type: "character varying(256)",
+                maxLength: 256,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "character varying(256)",
+                oldMaxLength: 256);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "MemberId",
+                table: "ProxiedMessages",
+                type: "character varying(256)",
+                maxLength: 256,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "character varying(256)",
+                oldMaxLength: 256);
+
             migrationBuilder.AlterColumn<decimal>(
                 name: "ModeratorId",
                 table: "Pardons",
@@ -503,10 +847,74 @@ namespace Grimoire.Migrations
                 oldClrType: typeof(decimal),
                 oldType: "numeric(20,0)");
 
+            migrationBuilder.AddColumn<DateTimeOffset>(
+                name: "PardonDate",
+                table: "Pardons",
+                type: "timestamp with time zone",
+                nullable: false,
+                defaultValueSql: "now()");
+
+            migrationBuilder.AddColumn<int>(
+                name: "Action",
+                table: "MessageHistory",
+                type: "integer",
+                nullable: false,
+                defaultValue: 0);
+
+            migrationBuilder.AddColumn<string>(
+                name: "CustomCommandName",
+                table: "CustomCommandsRole",
+                type: "character varying(24)",
+                nullable: false,
+                defaultValue: "");
+
+            migrationBuilder.AddColumn<bool>(
+                name: "HasMention",
+                table: "CustomCommands",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false);
+
+            migrationBuilder.AddColumn<bool>(
+                name: "HasMessage",
+                table: "CustomCommands",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false);
+
+            migrationBuilder.AddColumn<bool>(
+                name: "IsEmbedded",
+                table: "CustomCommands",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false);
+
+            migrationBuilder.AddColumn<bool>(
+                name: "RestrictedUse",
+                table: "CustomCommands",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false);
+
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_Pardons",
+                table: "Pardons",
+                column: "SinId");
+
             migrationBuilder.AddUniqueConstraint(
                 name: "AK_Members_GuildId_UserId",
                 table: "Members",
                 columns: new[] { "GuildId", "UserId" });
+
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_CustomCommandsRole",
+                table: "CustomCommandsRole",
+                columns: new[] { "CustomCommandName", "GuildId", "RoleId" });
+
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_CustomCommands",
+                table: "CustomCommands",
+                columns: new[] { "Name", "GuildId" });
 
             migrationBuilder.CreateTable(
                 name: "Reaction",
@@ -542,6 +950,45 @@ namespace Grimoire.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Trackers",
+                columns: table => new
+                {
+                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    LogChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: true),
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Trackers", x => new { x.UserId, x.GuildId });
+                    table.ForeignKey(
+                        name: "FK_Trackers_Channels_LogChannelId",
+                        column: x => x.LogChannelId,
+                        principalTable: "Channels",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Trackers_Guilds_GuildId",
+                        column: x => x.GuildId,
+                        principalTable: "Guilds",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Trackers_Members_ModeratorId_GuildId",
+                        columns: x => new { x.ModeratorId, x.GuildId },
+                        principalTable: "Members",
+                        principalColumns: new[] { "UserId", "GuildId" },
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Trackers_Members_UserId_GuildId",
+                        columns: x => new { x.UserId, x.GuildId },
+                        principalTable: "Members",
+                        principalColumns: new[] { "UserId", "GuildId" },
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_XpHistory_AwarderId_GuildId",
                 table: "XpHistory",
@@ -551,21 +998,6 @@ namespace Grimoire.Migrations
                 name: "IX_XpHistory_GuildId",
                 table: "XpHistory",
                 column: "GuildId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Trackers_GuildId",
-                table: "Trackers",
-                column: "GuildId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Trackers_LogChannelId",
-                table: "Trackers",
-                column: "LogChannelId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Trackers_ModeratorId_GuildId",
-                table: "Trackers",
-                columns: new[] { "ModeratorId", "GuildId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SpamFilterOverrides_GuildId",
@@ -766,6 +1198,26 @@ namespace Grimoire.Migrations
                 table: "Reaction",
                 columns: new[] { "UserId", "GuildId" });
 
+            migrationBuilder.CreateIndex(
+                name: "IX_Trackers_EndTime",
+                table: "Trackers",
+                column: "EndTime");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trackers_GuildId",
+                table: "Trackers",
+                column: "GuildId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trackers_LogChannelId",
+                table: "Trackers",
+                column: "LogChannelId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trackers_ModeratorId_GuildId",
+                table: "Trackers",
+                columns: new[] { "ModeratorId", "GuildId" });
+
             migrationBuilder.AddForeignKey(
                 name: "FK_Avatars_Members_UserId_GuildId",
                 table: "Avatars",
@@ -788,6 +1240,14 @@ namespace Grimoire.Migrations
                 column: "GuildId",
                 principalTable: "Guilds",
                 principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_CustomCommandsRole_CustomCommands_CustomCommandName_GuildId",
+                table: "CustomCommandsRole",
+                columns: new[] { "CustomCommandName", "GuildId" },
+                principalTable: "CustomCommands",
+                principalColumns: new[] { "Name", "GuildId" },
                 onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddForeignKey(
@@ -1085,6 +1545,14 @@ namespace Grimoire.Migrations
                 onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddForeignKey(
+                name: "FK_Mutes_Sins_SinId",
+                table: "Mutes",
+                column: "SinId",
+                principalTable: "Sins",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
                 name: "FK_NicknameHistory_Guilds_GuildId",
                 table: "NicknameHistory",
                 column: "GuildId",
@@ -1186,38 +1654,6 @@ namespace Grimoire.Migrations
                 column: "GuildId",
                 principalTable: "Guilds",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Trackers_Channels_LogChannelId",
-                table: "Trackers",
-                column: "LogChannelId",
-                principalTable: "Channels",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Trackers_Guilds_GuildId",
-                table: "Trackers",
-                column: "GuildId",
-                principalTable: "Guilds",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Trackers_Members_ModeratorId_GuildId",
-                table: "Trackers",
-                columns: new[] { "ModeratorId", "GuildId" },
-                principalTable: "Members",
-                principalColumns: new[] { "UserId", "GuildId" },
-                onDelete: ReferentialAction.Restrict);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Trackers_Members_UserId_GuildId",
-                table: "Trackers",
-                columns: new[] { "UserId", "GuildId" },
-                principalTable: "Members",
-                principalColumns: new[] { "UserId", "GuildId" },
                 onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddForeignKey(

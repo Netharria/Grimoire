@@ -32,7 +32,7 @@ public sealed partial class CustomCommandSettings
         await GetVersionsAsync(ctx.Guild!.GetGuildId(), name)
             .Match(
                 versions => SendHistoryPagesAsync(ctx, name, versions),
-                errors => ctx.SendWarningResponseAsync(errors[0].Message).AsTask());
+                error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
     private async Task<Result<IReadOnlyList<CommandVersion>>> GetVersionsAsync(GuildId guildId, CustomCommandName name)
@@ -58,9 +58,9 @@ public sealed partial class CustomCommandSettings
     private static IEnumerable<string> BuildPages(IReadOnlyList<CommandVersion> versions)
     {
         var builder = new StringBuilder();
-        for (var i = 0; i < versions.Count; i++)
+        foreach (var (index, version) in versions.Index())
         {
-            var entry = FormatEntry(versions[i], i);
+            var entry = FormatEntry(version, index);
             if (builder.Length + entry.Length > 2048)
             {
                 yield return builder.ToString();
@@ -74,13 +74,14 @@ public sealed partial class CustomCommandSettings
 
     private static string FormatEntry(CommandVersion version, int index)
     {
-        var preview = version.Content.Length > 100
-            ? string.Concat(version.Content.AsSpan(0, 100), "…")
-            : version.Content;
+        var content = version.Content.Value;
+        var preview = content.Length > 100
+            ? string.Concat(content.AsSpan(0, 100), "…")
+            : content;
         return $"**v{index + 1}{(index == 0 ? " (current)" : string.Empty)}** — <t:{version.CreatedAt.ToUnixTimeSeconds()}:f>"
             + (version.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty)
             + $"\n> {preview}\n";
     }
 
-    private sealed record CommandVersion(DateTimeOffset CreatedAt, ModeratorId? ModeratorId, string Content);
+    private sealed record CommandVersion(DateTimeOffset CreatedAt, ModeratorId? ModeratorId, CustomCommandContent Content);
 }

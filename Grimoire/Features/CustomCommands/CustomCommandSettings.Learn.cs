@@ -31,11 +31,12 @@ public sealed partial class CustomCommandSettings
         [Parameter("Content")]
         [Description("The content of the command. Use %mention or %message to add a message arguments")]
         string content,
-        [Parameter("Embed")] [Description("Put the message in an embed")]
+        [Parameter("Embed")]
+        [Description("Put the message in an embed")]
         bool embed = false,
-        [Parameter("EmbedColor")] [Description("Hexadecimal color of the embed")]
+        [Parameter("EmbedColor")] [Description("Hexadecimal color of the embed (only used when OutputType is Embedded)")]
         CustomCommandEmbedColor? embedColor = null,
-        [Parameter("RestrictedUse")] [Description("Only explicitly allowed roles can use this command")]
+        [Parameter("RestrictedUse")] [Description("Restrict this command to specific roles.")]
         bool restrictedUse = false,
         [Parameter("PermissionRole_1")] DiscordRole? permissionRole1 = null,
         [Parameter("PermissionRole_2")] DiscordRole? permissionRole2 = null,
@@ -54,47 +55,30 @@ public sealed partial class CustomCommandSettings
         var roleIds = CollectRoleIds(permissionRole1, permissionRole2, permissionRole3, permissionRole4, permissionRole5,
             permissionRole6, permissionRole7, permissionRole8, permissionRole9, permissionRole10);
 
-        if (ValidateRoles(restrictedUse, roleIds) is not Validation<IReadOnlyList<RoleId>>.Valid { Value: var roles })
+        if (restrictedUse && roleIds.Count == 0)
         {
-            await ctx.SendWarningResponseAsync("Command set as restricted but no roles allowed to use it.");
+            await ctx.SendWarningResponseAsync("A restricted command must have at least one permission role.");
             return;
         }
 
-        await SaveCommandAsync(BuildCommand(name, guildId, content, embed, embedColor, restrictedUse, roles, ctx.GetModeratorId()))
+        ICollection<CustomCommandRole> roles = restrictedUse
+            ? roleIds.Select(id => (CustomCommandRole)new CustomCommandAllowRole
+                { RoleId = id, Name = name, GuildId = guildId, CreatedAt = default }).ToList()
+            : [];
+
+        await CustomCommandContent.Create(content)
+            .Bind(validContent => embed
+                ? EmbedCustomCommand.Create(name, guildId, validContent, embedColor, roles, ctx.GetModeratorId())
+                : TextCustomCommand.Create(name, guildId, validContent, roles, ctx.GetModeratorId()))
+            .ToResult()
+            .BindAsync(SaveCommandAsync)
             .Match(
                 _ => OnLearnSuccessAsync(ctx, guild, name),
-                errors => ctx.SendErrorResponseAsync(errors[0].Message).AsTask());
+                error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
 
     private static IReadOnlyList<RoleId> CollectRoleIds(params DiscordRole?[] roles)
         => roles.OfType<DiscordRole>().Select(r => r.GetRoleId()).Distinct().ToList();
-
-    private static Validation<IReadOnlyList<RoleId>> ValidateRoles(bool restrictedUse, IReadOnlyList<RoleId> roleIds)
-        => restrictedUse && roleIds.Count == 0
-            ? Validation<IReadOnlyList<RoleId>>.Fail(new Error("command.learn.no_roles",
-                "Command set as restricted but no roles allowed to use it."))
-            : Validation<IReadOnlyList<RoleId>>.Succeed(roleIds);
-
-    private static CustomCommand BuildCommand(CustomCommandName name, GuildId guildId, string content, bool embed,
-        CustomCommandEmbedColor? embedColor, bool restrictedUse, IReadOnlyList<RoleId> roleIds, ModeratorId? moderatorId)
-    {
-        var now = DateTimeOffset.UtcNow;
-        return new CustomCommand
-        {
-            Name = name,
-            GuildId = guildId,
-            CreatedAt = now,
-            Content = content,
-            IsEmbedded = embed,
-            EmbedColor = embedColor,
-            RestrictedUse = restrictedUse,
-            ModeratorId = moderatorId,
-            Roles = [.. roleIds.Select(roleId => new CustomCommandRole
-            {
-                Name = name, GuildId = guildId, CreatedAt = now, RoleId = roleId
-            })]
-        };
-    }
 
     private async Task<Result<CustomCommand>> SaveCommandAsync(CustomCommand command)
     {
@@ -118,7 +102,7 @@ public sealed partial class CustomCommandSettings
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             Color = GrimoireColor.Purple,
-            Description = $"{ctx.User.Mention} asked {guild.CurrentMember!.Mention} to learn a new command: {name}",
+            Description = $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to learn a new command: {name}",
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation
         });

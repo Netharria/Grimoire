@@ -18,23 +18,24 @@ public sealed partial class SettingsModule
         GuildId guildId,
         CancellationToken cancellationToken = default)
         => ExecuteSafelyAsync(async ct =>
-            Result<IReadOnlySet<RewardEntry>>.Ok(
-                await this._cache.GetOrCreateAsync(CacheKey.LevelingRewards(guildId),
-                    guildId,
-                    async (guildIdState, innerCt) =>
-                    {
-                        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(innerCt);
-                        return (await dbContext.Rewards
-                                .AsNoTracking()
-                                .Where(reward => reward.GuildId == guildIdState)
-                                .GroupBy(reward => reward.RoleId)
-                                .Select(group => group.OrderByDescending(reward => reward.SetAt).First())
-                                .ToListAsync(innerCt))
-                            .OfType<RewardAdded>()
-                            .Select(added => new RewardEntry(added.RoleId, added.RewardLevel, added.RewardMessage?.Value))
-                            .ToFrozenSet();
-                    }, this._cacheEntryOptions,
-                    cancellationToken: ct)),
+                Result<IReadOnlySet<RewardEntry>>.Ok(
+                    await this._cache.GetOrCreateAsync(CacheKey.LevelingRewards(guildId),
+                        guildId,
+                        async (guildIdState, innerCt) =>
+                        {
+                            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(innerCt);
+                            return (await dbContext.Rewards
+                                    .AsNoTracking()
+                                    .Where(reward => reward.GuildId == guildIdState)
+                                    .GroupBy(reward => reward.RoleId)
+                                    .Select(group => group.OrderByDescending(reward => reward.SetAt).First())
+                                    .ToListAsync(innerCt))
+                                .OfType<RewardAdded>()
+                                .Select(added =>
+                                    new RewardEntry(added.RoleId, added.RewardLevel, added.RewardMessage?.Value))
+                                .ToFrozenSet();
+                        }, this._cacheEntryOptions,
+                        cancellationToken: ct)),
             new Error("reward.lookup-failed", "Could not retrieve rewards."), cancellationToken);
 
     public async Task<Result<T>> SetRewardAsync<T>(
@@ -57,7 +58,5 @@ public sealed partial class SettingsModule
             LogOperationFailure(this._logger, ex.Message, ex);
             return Result<T>.Fail(new Error("set-reward.failed", "Could not set reward"));
         }
-
     }
-
 }

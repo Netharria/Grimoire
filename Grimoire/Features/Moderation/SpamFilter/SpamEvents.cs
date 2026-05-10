@@ -59,7 +59,9 @@ internal sealed class SpamEvents(
                 new SinReasonHistory
                 {
                     SinId = default,
-                    Reason = ModerationReason.FromDatabase(checkSpamResult.Reason),
+                    Reason =
+                        ModerationReason.Create(checkSpamResult.Reason)
+                            .Match(r => r, _ => throw new UnreachableException()),
                     ModeratorId = new ModeratorId(args.Guild.CurrentMember.Id),
                     SetAt = DateTimeOffset.UtcNow
                 }

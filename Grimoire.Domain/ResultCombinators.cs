@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
+
 namespace Grimoire.Domain;
 
 public static class Result
@@ -14,9 +16,7 @@ public static class Result
         Task<Result<T2>> t2)
     {
         await Task.WhenAll(t1, t2);
-        if (t1.Result is not Result<T1>.Success(var v1)) return t1.Result.Map<(T1, T2)>(_ => default!);
-        if (t2.Result is not Result<T2>.Success(var v2)) return t2.Result.Map<(T1, T2)>(_ => default!);
-        return Result<(T1, T2)>.Ok((v1, v2));
+        return Validation.Combine(t1.Result.ToValidation(), t2.Result.ToValidation()).ToResult();
     }
 
     public static async Task<Result<(T1, T2, T3)>> WhenAll<T1, T2, T3>(
@@ -25,10 +25,7 @@ public static class Result
         Task<Result<T3>> t3)
     {
         await Task.WhenAll(t1, t2, t3);
-        if (t1.Result is not Result<T1>.Success(var v1)) return t1.Result.Map<(T1, T2, T3)>(_ => default!);
-        if (t2.Result is not Result<T2>.Success(var v2)) return t2.Result.Map<(T1, T2, T3)>(_ => default!);
-        if (t3.Result is not Result<T3>.Success(var v3)) return t3.Result.Map<(T1, T2, T3)>(_ => default!);
-        return Result<(T1, T2, T3)>.Ok((v1, v2, v3));
+        return Validation.Combine(t1.Result.ToValidation(), t2.Result.ToValidation(), t3.Result.ToValidation()).ToResult();
     }
 
     public static async Task<Result<(T1, T2, T3, T4)>> WhenAll<T1, T2, T3, T4>(
@@ -38,11 +35,9 @@ public static class Result
         Task<Result<T4>> t4)
     {
         await Task.WhenAll(t1, t2, t3, t4);
-        if (t1.Result is not Result<T1>.Success(var v1)) return t1.Result.Map<(T1, T2, T3, T4)>(_ => default!);
-        if (t2.Result is not Result<T2>.Success(var v2)) return t2.Result.Map<(T1, T2, T3, T4)>(_ => default!);
-        if (t3.Result is not Result<T3>.Success(var v3)) return t3.Result.Map<(T1, T2, T3, T4)>(_ => default!);
-        if (t4.Result is not Result<T4>.Success(var v4)) return t4.Result.Map<(T1, T2, T3, T4)>(_ => default!);
-        return Result<(T1, T2, T3, T4)>.Ok((v1, v2, v3, v4));
+        return Validation.Combine(
+            t1.Result.ToValidation(), t2.Result.ToValidation(),
+            t3.Result.ToValidation(), t4.Result.ToValidation()).ToResult();
     }
 
     public static async Task<Result<(T1, T2, T3, T4, T5)>> WhenAll<T1, T2, T3, T4, T5>(
@@ -53,12 +48,9 @@ public static class Result
         Task<Result<T5>> t5)
     {
         await Task.WhenAll(t1, t2, t3, t4, t5);
-        if (t1.Result is not Result<T1>.Success(var v1)) return t1.Result.Map<(T1, T2, T3, T4, T5)>(_ => default!);
-        if (t2.Result is not Result<T2>.Success(var v2)) return t2.Result.Map<(T1, T2, T3, T4, T5)>(_ => default!);
-        if (t3.Result is not Result<T3>.Success(var v3)) return t3.Result.Map<(T1, T2, T3, T4, T5)>(_ => default!);
-        if (t4.Result is not Result<T4>.Success(var v4)) return t4.Result.Map<(T1, T2, T3, T4, T5)>(_ => default!);
-        if (t5.Result is not Result<T5>.Success(var v5)) return t5.Result.Map<(T1, T2, T3, T4, T5)>(_ => default!);
-        return Result<(T1, T2, T3, T4, T5)>.Ok((v1, v2, v3, v4, v5));
+        return Validation.Combine(
+            t1.Result.ToValidation(), t2.Result.ToValidation(), t3.Result.ToValidation(),
+            t4.Result.ToValidation(), t5.Result.ToValidation()).ToResult();
     }
 
     public static async Task<Result<(T1, T2, T3, T4, T5, T6)>> WhenAll<T1, T2, T3, T4, T5, T6>(
@@ -70,12 +62,40 @@ public static class Result
         Task<Result<T6>> t6)
     {
         await Task.WhenAll(t1, t2, t3, t4, t5, t6);
-        if (t1.Result is not Result<T1>.Success(var v1)) return t1.Result.Map<(T1, T2, T3, T4, T5, T6)>(_ => default!);
-        if (t2.Result is not Result<T2>.Success(var v2)) return t2.Result.Map<(T1, T2, T3, T4, T5, T6)>(_ => default!);
-        if (t3.Result is not Result<T3>.Success(var v3)) return t3.Result.Map<(T1, T2, T3, T4, T5, T6)>(_ => default!);
-        if (t4.Result is not Result<T4>.Success(var v4)) return t4.Result.Map<(T1, T2, T3, T4, T5, T6)>(_ => default!);
-        if (t5.Result is not Result<T5>.Success(var v5)) return t5.Result.Map<(T1, T2, T3, T4, T5, T6)>(_ => default!);
-        if (t6.Result is not Result<T6>.Success(var v6)) return t6.Result.Map<(T1, T2, T3, T4, T5, T6)>(_ => default!);
-        return Result<(T1, T2, T3, T4, T5, T6)>.Ok((v1, v2, v3, v4, v5, v6));
+        return Validation.Combine(
+            t1.Result.ToValidation(), t2.Result.ToValidation(), t3.Result.ToValidation(),
+            t4.Result.ToValidation(), t5.Result.ToValidation(), t6.Result.ToValidation()).ToResult();
     }
+
+    public static async Task<Result<IReadOnlyList<T>>> WhenAll<T>(IEnumerable<Task<Result<T>>> tasks)
+    {
+        var results = await Task.WhenAll(tasks);
+        var values = new List<T>(results.Length);
+        var errors = new List<Error>();
+        foreach (var result in results)
+        {
+            if (result is Result<T>.Success(var v))
+                values.Add(v);
+            else
+                errors.Add(ExtractError(result));
+        }
+        return errors.Count == 0
+            ? Result<IReadOnlyList<T>>.Ok(values)
+            : Result<IReadOnlyList<T>>.Fail(CombineErrors([.. errors.Distinct()]));
+    }
+
+    private static Error ExtractError<T>(Result<T> result) => result switch
+    {
+        Result<T>.Invalid(var e) => e,
+        Result<T>.NotFound(var e) => e,
+        Result<T>.NotModified(var e) => e,
+        Result<T>.Conflict(var e) => e,
+        Result<T>.Forbidden(var e) => e,
+        _ => throw new UnreachableException()
+    };
+
+    private static Error CombineErrors(Error[] errors)
+        => errors.Length == 1
+            ? errors[0]
+            : new Error("combined.failure", string.Join("; ", errors.Select(e => e.Message)));
 }

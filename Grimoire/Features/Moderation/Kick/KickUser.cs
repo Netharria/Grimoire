@@ -54,7 +54,8 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
                     new SinReasonHistory
                     {
                         SinId = default,
-                        Reason = ModerationReason.FromDatabase(reason!),
+                        Reason = ModerationReason.Create(reason!)
+                            .Match(r => r, _ => throw new UnreachableException()),
                         ModeratorId = ctx.GetModeratorId(),
                         SetAt = DateTimeOffset.UtcNow
                     }

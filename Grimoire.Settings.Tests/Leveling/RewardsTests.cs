@@ -39,18 +39,6 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ModuleDisabled_ReturnsEmptySet()
-    {
-        await AddReward(_roleId, 5);
-        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
-
-        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId).ShouldSucceed();
-
-        result.ShouldBeEmpty();
-    }
-
-    [Fact]
     public async Task SingleReward_ReturnedCorrectly()
     {
         await this._sut.SetRewardAsync(

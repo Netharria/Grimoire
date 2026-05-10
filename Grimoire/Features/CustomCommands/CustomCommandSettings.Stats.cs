@@ -31,11 +31,19 @@ public sealed partial class CustomCommandSettings
         await ctx.ReplyAsync(embed: BuildStatsEmbed(name, usage, topUsers));
     }
 
-    private async Task<(UsageStats? Usage, IReadOnlyList<TopUser> TopUsers)> QueryStatsAsync(GuildId guildId, CustomCommandName name)
+    private async Task<(UsageStats? Usage, IReadOnlyList<TopUser> TopUsers)> QueryStatsAsync(GuildId guildId,
+        CustomCommandName name)
     {
-        var now = DateTimeOffset.UtcNow;
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var now = DateTimeOffset.UtcNow;
+        var usage = await FetchUsageStatsAsync(dbContext, guildId, name, now);
+        var topUsers = await FetchTopUsersAsync(dbContext, guildId, name);
+        return (usage, topUsers);
+    }
 
+    private static async Task<UsageStats?> FetchUsageStatsAsync(GrimoireDbContext dbContext, GuildId guildId,
+        CustomCommandName name, DateTimeOffset now)
+    {
         var raw = await dbContext.CustomCommandUsages
             .Where(x => x.GuildId == guildId && x.Name == name)
             .GroupBy(_ => true)
@@ -47,25 +55,28 @@ public sealed partial class CustomCommandSettings
                 LastUsed = g.Max(x => (DateTimeOffset?)x.UsedAt)
             })
             .FirstOrDefaultAsync();
+        return raw is null ? null : new UsageStats(raw.Total, raw.LastMonth, raw.LastYear, raw.LastUsed);
+    }
 
-        var usage = raw is null ? null : new UsageStats(raw.Total, raw.LastMonth, raw.LastYear, raw.LastUsed);
-
-        var topUsersRaw = await dbContext.CustomCommandUsages
+    private static async Task<IReadOnlyList<TopUser>> FetchTopUsersAsync(GrimoireDbContext dbContext, GuildId guildId,
+        CustomCommandName name)
+    {
+        var raw = await dbContext.CustomCommandUsages
             .Where(x => x.GuildId == guildId && x.Name == name)
             .GroupBy(x => x.UserId)
             .Select(g => new { UserId = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .Take(3)
             .ToListAsync();
-
-        var topUsers = topUsersRaw.Select(u => new TopUser(u.UserId, u.Count)).ToList();
-        return (usage, topUsers);
+        return raw.Select(u => new TopUser(u.UserId, u.Count)).ToList();
     }
 
-    private static DiscordEmbed BuildStatsEmbed(CustomCommandName name, UsageStats? usage, IReadOnlyList<TopUser> topUsers)
+    private static DiscordEmbed BuildStatsEmbed(CustomCommandName name, UsageStats? usage,
+        IReadOnlyList<TopUser> topUsers)
     {
         var topUsersText = topUsers.Count > 0
-            ? string.Join("\n", topUsers.Select((u, i) => $"**{i + 1}.** {UserExtensions.Mention(u.UserId)} — {u.Count} uses"))
+            ? string.Join("\n",
+                topUsers.Select((u, i) => $"**{i + 1}.** {UserExtensions.Mention(u.UserId)} — {u.Count} uses"))
             : "No usage data yet.";
 
         return new DiscordEmbedBuilder()
@@ -82,5 +93,6 @@ public sealed partial class CustomCommandSettings
     }
 
     private sealed record UsageStats(int Total, int LastMonth, int LastYear, DateTimeOffset? LastUsed);
+
     private sealed record TopUser(UserId UserId, int Count);
 }

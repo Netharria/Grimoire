@@ -61,14 +61,14 @@ public sealed partial class SettingsModule
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
                 return (await dbContext
-                    .XpTrackedItems
-                    .AsNoTracking()
-                    .Where(ignoredItem => ignoredItem.GuildId == guildIdState)
-                    .GroupBy(ignoredItem => EF.Property<ulong>(ignoredItem, "Id"))
-                    .Select(ignoredGroup
-                        => ignoredGroup.OrderByDescending(item => item.SetAt)
-                            .First())
-                    .ToListAsync(cancellationToken: ct))
+                        .XpTrackedItems
+                        .AsNoTracking()
+                        .Where(ignoredItem => ignoredItem.GuildId == guildIdState)
+                        .GroupBy(ignoredItem => EF.Property<ulong>(ignoredItem, "Id"))
+                        .Select(ignoredGroup
+                            => ignoredGroup.OrderByDescending(item => item.SetAt)
+                                .First())
+                        .ToListAsync(ct))
                     .OfType<XpIgnoredItem>()
                     .ToFrozenSet();
             }, this._cacheEntryOptions,

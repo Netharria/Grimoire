@@ -28,6 +28,6 @@ internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<Ni
 
 
         builder.Property(e => e.Nickname)
-            .HasConversion(e => e.GetValueOrDefault().Value, value => new Nickname(value));
+            .HasConversion(e => e.GetValueOrDefault().Value, value => Nickname.FromDatabase(value));
     }
 }

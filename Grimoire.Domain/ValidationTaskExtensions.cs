@@ -20,6 +20,9 @@ public static class ValidationTaskExtensions
 
     extension<T>(Task<Validation<T>> task)
     {
+        public async Task<Result<T>> ToResult()
+            => (await task).ToResult();
+
         public async Task<Validation<TOut>> Map<TOut>(Func<T, TOut> mapper)
             => (await task).Map(mapper);
 

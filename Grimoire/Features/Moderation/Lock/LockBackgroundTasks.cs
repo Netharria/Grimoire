@@ -85,7 +85,10 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
         var embed = new DiscordEmbedBuilder()
             .WithDescription($"Lock on {channel.Mention} has expired.");
         await guildLog.SendLogMessageAsync(
-            new GuildLogMessageCustomEmbed { GuildId = channel.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed },
+            new GuildLogMessageCustomEmbed
+            {
+                GuildId = channel.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
+            },
             cancellationToken);
         await channel.SendMessageAsync(embed);
     }

@@ -27,9 +27,11 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
         => (channelId switch
         {
-            not null => ApplyGuildSetting( GuildSettingCustomValue.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
-                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture)), cancellationToken),
+            not null => ApplyGuildSetting(GuildSettingCustomValue.Create(guildLogType.ToGuildSettingType(), guildId,
+                    moderatorId,
+                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture)),
+                cancellationToken),
             _ => ApplyGuildSetting(GuildSettingDisabled.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
-                    DateTimeOffset.UtcNow),  cancellationToken)
+                DateTimeOffset.UtcNow), cancellationToken)
         }).Map(_ => channelId);
 }

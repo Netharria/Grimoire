@@ -20,6 +20,15 @@ public sealed class DomainInvariantTests
     private static readonly PreviouslyAllowedPermissions _prevAllowed = new(0L);
     private static readonly PreviouslyDeniedPermissions _prevDenied = new(0L);
 
+    // ── MuteAdded ─────────────────────────────────────────────────────────────
+
+    private static readonly UserId _userId = new(100UL);
+    private static readonly SinId _sinId = new(1L);
+
+    // ── RewardAdded ───────────────────────────────────────────────────────────
+
+    private static readonly RoleId _roleId = new(300UL);
+
     // ── ChannelLocked ─────────────────────────────────────────────────────────
 
     [Fact]
@@ -43,7 +52,8 @@ public sealed class DomainInvariantTests
     public void ChannelLocked_EndTimeAfterSetAt_IsValid()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _future);
+        var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied,
+            _future);
         result.ShouldBeOfType<Validation<ChannelLocked>.Valid>();
     }
 
@@ -73,11 +83,6 @@ public sealed class DomainInvariantTests
         ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _future)
             .ShouldBeOfType<Validation<ThreadLocked>.Valid>();
     }
-
-    // ── MuteAdded ─────────────────────────────────────────────────────────────
-
-    private static readonly UserId _userId = new(100UL);
-    private static readonly SinId _sinId = new(1L);
 
     [Fact]
     public void MuteAdded_EndTimeEqualsSetAt_IsInvalidWithCodeAndMessage()
@@ -174,10 +179,6 @@ public sealed class DomainInvariantTests
         var invalid = result.ShouldBeOfType<Validation<ModerationReason>.Invalid>();
         invalid.Errors.ShouldContain(e => e.Code == "moderation-reason.invalid");
     }
-
-    // ── RewardAdded ───────────────────────────────────────────────────────────
-
-    private static readonly RoleId _roleId = new(300UL);
 
     [Fact]
     public void RewardAdded_NegativeLevel_IsInvalidWithCodeAndMessage()

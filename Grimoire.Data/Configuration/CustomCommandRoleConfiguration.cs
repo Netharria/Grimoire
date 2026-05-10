@@ -32,5 +32,10 @@ internal sealed class CustomCommandRoleConfiguration : IEntityTypeConfiguration<
 
         builder.Property(e => e.GuildId)
             .HasConversion(e => e.Value, value => new GuildId(value));
+
+        builder.HasDiscriminator<string>("RoleType")
+            .HasValue<CustomCommandAllowRole>("Allow")
+            .HasValue<CustomCommandDenyRole>("Deny")
+            .IsComplete();
     }
 }

@@ -26,7 +26,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         await this._sut.SetModuleState(Module.MessageLog, _guildId, _modId, false);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>()).ShouldSucceed();
+        var result = await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())
+            .ShouldSucceed();
 
         result.ShouldBeFalse();
     }
@@ -36,7 +37,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     {
         await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog);
 
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>()).ShouldSucceed();
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())
+            .ShouldSucceed();
 
         result.ShouldBeTrue();
     }
@@ -46,7 +48,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     {
         await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
 
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>()).ShouldSucceed();
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())
+            .ShouldSucceed();
 
         result.ShouldBeFalse();
     }
@@ -78,7 +81,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     [Fact]
     public async Task Inherit_NoParent_ReturnsTrue()
     {
-        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>()).ShouldSucceed();
+        var result = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())
+            .ShouldSucceed();
 
         result.ShouldBeTrue();
     }
@@ -123,7 +127,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
 
         result.ShouldBeOfType<Result<MessageLogChannelOverride>.Success>();
 
-        var shouldLog = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>()).ShouldSucceed();
+        var shouldLog = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())
+            .ShouldSucceed();
         shouldLog.ShouldBeFalse();
     }
 
@@ -163,7 +168,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         var channelB = new ChannelId(201UL);
         await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog);
 
-        var resultB = await this._sut.ShouldLogMessage(channelB, _guildId, new Dictionary<ChannelId, ChannelId?>()).ShouldSucceed();
+        var resultB = await this._sut.ShouldLogMessage(channelB, _guildId, new Dictionary<ChannelId, ChannelId?>())
+            .ShouldSucceed();
 
         resultB.ShouldBeTrue();
     }
@@ -176,7 +182,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         await this._sut.SetChannelLogOverride(_channelId, guildB, _modId, MessageLogOverrideOption.NeverLog);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>()).ShouldSucceed();
+        var result = await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())
+            .ShouldSucceed();
 
         result.ShouldBeTrue();
     }
@@ -213,7 +220,8 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         }
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>()).ShouldSucceed();
+        var result = await freshSut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>())
+            .ShouldSucceed();
 
         result.ShouldBeFalse();
     }

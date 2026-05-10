@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
@@ -18,19 +17,30 @@ public sealed record UsernameHistory
     public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
 }
 
-public readonly record struct Username(string Value)
+public readonly record struct Username
 {
+    private Username(string value)
+    {
+        Value = value;
+    }
+
+    public string Value { get; }
+
+    internal static Username FromDatabase(string value) => new(value);
+
+    public static Validation<Username> Create(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation<Username>.Fail(new Error("username.empty", "Username cannot be empty."));
+        var trimmed = value.Trim();
+        return trimmed.Length > 37
+            ? Validation<Username>.Fail(new Error("username.too-long", "Username cannot exceed 37 characters."))
+            : Validation<Username>.Succeed(new Username(trimmed));
+    }
+
+    [Pure]
+    public bool Equals(Username other, StringComparison comparison)
+        => string.Equals(Value, other.Value, comparison);
+
     public override string ToString() => Value;
-
-    [Pure]
-    public static bool Equals(Username? a, Username? b)
-        => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value);
-
-    [Pure]
-    public static bool Equals(Username? a, Username? b, StringComparison stringComparison)
-        => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value, stringComparison);
-
-    [Pure]
-    public static bool IsNullOrWhiteSpace([NotNullWhen(false)] Username? username)
-        => string.IsNullOrWhiteSpace(username?.Value);
 }

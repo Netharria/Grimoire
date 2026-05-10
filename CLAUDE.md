@@ -27,17 +27,18 @@ dotnet test --filter "FullyQualifiedName~TestClassName.TestMethodName"
 # Docker (full stack with PostgreSQL + pgAdmin)
 docker-compose up -d
 
-# EF migrations (run from Grimoire/ directory)
-dotnet ef migrations add <MigrationName> --context GrimoireDbContext
-dotnet ef database update
+# EF migrations (run from repo root)
+dotnet ef migrations add <MigrationName> --context GrimoireDbContext --project Grimoire.Data --startup-project Grimoire
+dotnet ef database update --project Grimoire.Data --startup-project Grimoire
 ```
 
 ## Solution Structure
 
-Four projects in the solution:
+Five projects in the solution:
 
-- **Grimoire** — Main executable. Discord bot entry point, all slash command handlers, event listeners, background services, and the primary `GrimoireDbContext`.
-- **Grimoire.Domain** — Domain models only. EF Core entity definitions, entity configurations, strongly-typed IDs.
+- **Grimoire** — Main executable. Discord bot entry point, all slash command handlers, event listeners, and background services.
+- **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext`, entity configurations, and migrations.
+- **Grimoire.Domain** — Domain models only. Entity definitions and strongly-typed IDs. Has `InternalsVisibleTo("Grimoire.Data")` so EF value converters can use `internal` factory methods (`FromDatabase`, `ParseFromDatabase`).
 - **Grimoire.Settings** — Separate DbContext (`GrimoireSettingsDbContext`) for per-guild settings. Has its own service layer with hybrid caching.
 - **Grimoire.Test.Unit** — xUnit tests using Testcontainers (PostgreSQL), Respawn for DB cleanup, NSubstitute for mocking.
 

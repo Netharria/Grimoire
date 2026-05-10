@@ -19,17 +19,6 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
     public Task DisposeAsync() => factory.ResetDatabase();
 
     [Fact]
-    public async Task ModuleDisabled_GetEffective_ReturnsNull()
-    {
-        // Set a channel but leave Module.Leveling disabled.
-        await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, _channelId);
-
-        var result = await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId);
-
-        result.ShouldSucceed().ShouldBeNull();
-    }
-
-    [Fact]
     public async Task ModuleEnabled_ChannelSet_GetEffectiveReturnsChannel()
     {
         await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);

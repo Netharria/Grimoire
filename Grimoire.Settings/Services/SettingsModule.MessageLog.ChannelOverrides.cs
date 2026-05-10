@@ -49,23 +49,24 @@ public sealed partial class SettingsModule
         GuildId guildId,
         CancellationToken cancellationToken)
         => ExecuteSafelyAsync(async ct =>
-        {
-            var result = await this._cache.GetOrCreateAsync(CacheKey.LogOverride(channelId),
-                new { channelId, guildId },
-                async (state, innerCt) =>
-                {
-                    await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(innerCt);
-                    var channelOverride = await dbContext.MessageLogChannelOverrides
-                        .AsNoTracking()
-                        .Where(ovr => ovr.GuildId == state.guildId && ovr.ChannelId == state.channelId)
-                        .OrderByDescending(x => x.SetAt)
-                        .Select(ovr => (MessageLogOverrideOption?)ovr.ChannelOption)
-                        .FirstOrDefaultAsync(innerCt);
-                    return channelOverride ?? MessageLogOverrideOption.Inherit;
-                }, this._cacheEntryOptions,
-                cancellationToken: ct);
-            return Result<MessageLogOverrideOption>.Ok(result);
-        }, new Error("channel-log-override.lookup-failed", "Could not retrieve channel log override."), cancellationToken);
+            {
+                var result = await this._cache.GetOrCreateAsync(CacheKey.LogOverride(channelId),
+                    new { channelId, guildId },
+                    async (state, innerCt) =>
+                    {
+                        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(innerCt);
+                        var channelOverride = await dbContext.MessageLogChannelOverrides
+                            .AsNoTracking()
+                            .Where(ovr => ovr.GuildId == state.guildId && ovr.ChannelId == state.channelId)
+                            .OrderByDescending(x => x.SetAt)
+                            .Select(ovr => (MessageLogOverrideOption?)ovr.ChannelOption)
+                            .FirstOrDefaultAsync(innerCt);
+                        return channelOverride ?? MessageLogOverrideOption.Inherit;
+                    }, this._cacheEntryOptions,
+                    cancellationToken: ct);
+                return Result<MessageLogOverrideOption>.Ok(result);
+            }, new Error("channel-log-override.lookup-failed", "Could not retrieve channel log override."),
+            cancellationToken);
 
     public Task<Result<MessageLogChannelOverride>> SetChannelLogOverride(
         ChannelId channelId,

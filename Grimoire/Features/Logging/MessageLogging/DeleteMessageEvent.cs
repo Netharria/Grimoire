@@ -37,7 +37,8 @@ public sealed partial class DeleteMessageEvent(
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null
             || args.Message.Author?.Id == args.Guild.CurrentMember.Id
-            || await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+            || await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
+                .GetOrElse(() => false))
             return;
 
         var pluralkitMessage =
@@ -50,8 +51,10 @@ public sealed partial class DeleteMessageEvent(
             && ulong.TryParse(pluralkitMessage.Id, out var proxyMessageId)
             && ulong.TryParse(pluralkitMessage.OriginalId, out var originalMessageId)
             && proxyMessageId != args.Message.Id
-            && pluralkitMessage.PluralKitSystem?.Id is { } systemId
-            && pluralkitMessage.Member?.Id is { } memberId)
+            && pluralkitMessage.PluralKitSystem?.Id is { } rawSystemId
+            && pluralkitMessage.Member?.Id is { } rawMemberId
+            && PluralKitSystemId.Create(rawSystemId) is Validation<PluralKitSystemId>.Valid(var systemId)
+            && PluralKitMemberId.Create(rawMemberId) is Validation<PluralKitMemberId>.Valid(var memberId))
         {
             await dbContext.AddAsync(new ProxiedMessageLink
             {
@@ -161,9 +164,11 @@ public sealed partial class DeleteMessageEvent(
             if (user is not null)
                 embed.AddField("Original Author", user.Mention, true);
             embed.AddField("System Id",
-                    string.IsNullOrWhiteSpace(response.SystemId) ? "Private" : response.SystemId, true)
+                    string.IsNullOrWhiteSpace(response.SystemId?.Value) ? "Private" : response.SystemId.Value.Value,
+                    true)
                 .AddField("Member Id",
-                    string.IsNullOrWhiteSpace(response.MemberId) ? "Private" : response.MemberId, true);
+                    string.IsNullOrWhiteSpace(response.MemberId?.Value) ? "Private" : response.MemberId.Value.Value,
+                    true);
         }
 
         if (auditLogEntry?.UserResponsible is not null)
@@ -176,7 +181,7 @@ public sealed partial class DeleteMessageEvent(
         embed.AddMessageTextToFields("**Content**", response.Content?.ToString() ?? string.Empty, false);
 
         return await this._attachmentUploadService.BuildImageEmbedAsync(
-            response.Attachments.Select(x => x.FileName).ToArray(),
+            response.Attachments.Select(x => x.FileName.Value).ToArray(),
             response.UserId,
             embed);
     }
@@ -194,7 +199,7 @@ public sealed partial class DeleteMessageEvent(
         public MessageId? ReferencedMessage { get; init; }
         public AttachmentDto[] Attachments { get; init; } = [];
         public UserId? OriginalUserId { get; init; }
-        public string? SystemId { get; init; }
-        public string? MemberId { get; init; }
+        public PluralKitSystemId? SystemId { get; init; }
+        public PluralKitMemberId? MemberId { get; init; }
     }
 }

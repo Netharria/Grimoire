@@ -14,8 +14,24 @@ public sealed record Attachment
 {
     public required MessageId MessageId { get; init; }
     public Message? Message { get; init; }
-    public required string FileName { get; init; }
+    public required AttachmentFileName FileName { get; init; }
     public required AttachmentId Id { get; init; }
 }
 
-public readonly record struct AttachmentId(ulong Value);
+public readonly record struct AttachmentFileName
+{
+    public string Value { get; }
+
+    private AttachmentFileName(string value) => Value = value;
+
+    internal static AttachmentFileName FromDatabase(string value) => new(value);
+
+    public static Validation<AttachmentFileName> Create(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation<AttachmentFileName>.Fail(new Error("attachment-file-name.empty", "Attachment file name cannot be empty."));
+        return Validation<AttachmentFileName>.Succeed(new AttachmentFileName(value));
+    }
+
+    public override string ToString() => Value;
+}

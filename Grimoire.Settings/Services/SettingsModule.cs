@@ -188,9 +188,8 @@ public sealed partial class SettingsModule(
 
     private Task<Result<GuildSetting>> ApplyGuildSetting(Validation<GuildSetting> validation,
         CancellationToken cancellationToken = default)
-        => validation.MatchAsync(
-            setting => SetGuildSetting(setting, cancellationToken),
-            errors => Result<GuildSetting>.Fail(errors));
+        => validation.ToResult().BindAsync(
+            setting => SetGuildSetting(setting, cancellationToken));
 
     private static T? ParseId<T>(CachedSetting setting, Func<ulong, T> create) where T : struct =>
         setting is CachedCustomSetting { Value: var v }

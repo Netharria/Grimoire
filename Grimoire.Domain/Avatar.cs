@@ -18,15 +18,30 @@ public sealed record Avatar
     public required GuildId GuildId { get; init; }
 }
 
-public readonly record struct AvatarFileName(string Value)
+public readonly record struct AvatarFileName
 {
+    private AvatarFileName(string value)
+    {
+        Value = value;
+    }
+
+    public string Value { get; }
+
+    internal static AvatarFileName FromDatabase(string value) => new(value);
+
+    public static Validation<AvatarFileName> Create(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation<AvatarFileName>.Fail(new Error("avatar-file-name.empty", "Avatar URL cannot be empty."));
+        return Validation<AvatarFileName>.Succeed(new AvatarFileName(value));
+    }
+
+    public static AvatarFileName? CreateIfNotEmpty(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : new AvatarFileName(value);
+
+    [Pure]
+    public bool Equals(AvatarFileName other, StringComparison comparison)
+        => string.Equals(Value, other.Value, comparison);
+
     public override string ToString() => Value;
-
-    [Pure]
-    public static bool Equals(AvatarFileName? a, AvatarFileName? b)
-        => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value);
-
-    [Pure]
-    public static bool Equals(AvatarFileName? a, AvatarFileName? b, StringComparison stringComparison)
-        => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value, stringComparison);
 }

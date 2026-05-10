@@ -16,8 +16,8 @@ public abstract record XpTrackedItem
 }
 
 public abstract record XpIgnoredItem : XpTrackedItem;
-public abstract record XpWatchedItem : XpTrackedItem;
 
+public abstract record XpWatchedItem : XpTrackedItem;
 
 public sealed record IgnoredChannel : XpIgnoredItem
 {

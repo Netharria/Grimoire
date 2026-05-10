@@ -54,7 +54,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
             SinId = sinId,
             GuildId = guild.GetGuildId(),
             ModeratorId = ctx.GetModeratorId(),
-            Reason = ModerationReason.FromDatabase(reason),
+            Reason = ModerationReason.Create(reason).Match(r => r, _ => throw new UnreachableException()),
             SetAt = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();

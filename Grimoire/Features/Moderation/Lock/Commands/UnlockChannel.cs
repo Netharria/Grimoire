@@ -39,27 +39,26 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
             .BindAsync(discordChannel =>
                 discordChannel switch
                 {
-                    { IsThread:true } => TryUnlockThreadAsync(guild, discordChannel, moderatorId).Map(_ => ctx),
+                    { IsThread: true } => TryUnlockThreadAsync(guild, discordChannel, moderatorId).Map(_ => ctx),
                     _ => TryUnlockChannelAsync(guild, discordChannel, moderatorId).Map(_ => ctx)
                 })
             .TapAsync(context => context.ReplyAsync(message: $"{channel.Mention} has been unlocked").AsTask())
             .Match(
-                onSuccess: _ => this._guildLog.SendLogMessageAsync(new GuildLogMessage
-                    {
-                        GuildId = guild.GetGuildId(),
-                        GuildLogType = GuildLogType.Moderation,
-                        Color = GrimoireColor.Purple,
-                        Description = $"{ctx.User.Mention} unlocked {channel.Mention}"
-                    }),
-                onFail: _ => ctx.ReplyAsync(message: $"{channel.Mention} could not be unlocked"),
-                onNotFound: _ => ctx.ReplyAsync(message: $"{channel.Mention} is not locked.")
-                );
-
-
+                _ => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                {
+                    GuildId = guild.GetGuildId(),
+                    GuildLogType = GuildLogType.Moderation,
+                    Color = GrimoireColor.Purple,
+                    Description = $"{ctx.User.Mention} unlocked {channel.Mention}"
+                }),
+                _ => ctx.ReplyAsync(message: $"{channel.Mention} could not be unlocked"),
+                _ => ctx.ReplyAsync(message: $"{channel.Mention} is not locked.")
+            );
     }
 
-    private Task<Result<ThreadLocked>> TryUnlockThreadAsync(DiscordGuild guild, DiscordChannel channel, ModeratorId moderatorId)
-    => ThreadUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow)
+    private Task<Result<ThreadLocked>> TryUnlockThreadAsync(DiscordGuild guild, DiscordChannel channel,
+        ModeratorId moderatorId)
+        => ThreadUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow)
             .ToResult()
             .BindAsync(lockAction => this._settingsModule.ApplyThreadLockAction(lockAction));
 

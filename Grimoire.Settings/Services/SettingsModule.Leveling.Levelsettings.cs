@@ -45,7 +45,6 @@ public sealed partial class SettingsModule
                 "levelsettings.fetch.failed",
                 "Could not fetch level settings from cache"));
         }
-
     }
 
 
@@ -53,7 +52,6 @@ public sealed partial class SettingsModule
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-
         var latestByKey =
             await GetGuildSettings(guildId, _levelingSettingKeys, cancellationToken)
                 .ToDictionaryAsync(x => x.Type, x => x switch
@@ -82,7 +80,8 @@ public sealed partial class SettingsModule
         int newValue,
         CancellationToken cancellationToken = default)
         => CreateLevelingSetting(settingToChange, newValue)
-            .Bind(setting => GuildSettingCustomValue.Create(setting.Item1, guildId, setBy, DateTimeOffset.UtcNow, setting.Item2))
+            .Bind(setting =>
+                GuildSettingCustomValue.Create(setting.Item1, guildId, setBy, DateTimeOffset.UtcNow, setting.Item2))
             .ToResult()
             .BindAsync(setting => SetGuildSetting(setting, cancellationToken))
             .TapAsync(async _ => await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken))
@@ -101,5 +100,4 @@ public sealed partial class SettingsModule
                 .Map(x => (GuildSettingType.XpTimeoutPeriod, x)),
             _ => throw new UnreachableException()
         };
-
 }

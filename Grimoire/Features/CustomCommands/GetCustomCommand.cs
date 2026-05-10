@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Frozen;
 using System.Text.RegularExpressions;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
@@ -40,7 +39,7 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         var guild = ctx.Guild!;
 
         var result = await FetchAuthorizedCommandAsync(guild.GetGuildId(), name, ctx.Member);
-        if (result is not Result<CustomCommandDatabaseQueryHelpers.GetCustomCommandQueryResult>.Success { Value: var response })
+        if (result is not Result<CustomCommand>.Success { Value: var response })
         {
             await ctx.DeleteResponseAsync();
             return;
@@ -50,13 +49,15 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         await ctx.EditResponseAsync(BuildWebhookResponse(
             TruncateForDiscord(
                 ApplyMessage(
-                    ApplyMention(response.Content, response.HasMention, snowflakeObject, guild.Id),
-                    response.HasMessage, message, guild.Id),
-                response.OutputFormat is CommandOutputFormat.Embedded ? MaxEmbedDescriptionLength : MaxMessageLength),
-            response.OutputFormat));
+                    ApplyMention(response.Content.Value, snowflakeObject, guild.Id),
+                    message, guild.Id),
+                response is EmbedCustomCommand ? MaxEmbedDescriptionLength : MaxMessageLength),
+            response is EmbedCustomCommand embedCmd
+                ? new CommandOutputFormat.Embedded(embedCmd.EmbedColor)
+                : new CommandOutputFormat.Text()));
     }
 
-    private async Task<Result<CustomCommandDatabaseQueryHelpers.GetCustomCommandQueryResult>> FetchAuthorizedCommandAsync(
+    private async Task<Result<CustomCommand>> FetchAuthorizedCommandAsync(
         GuildId guildId, CustomCommandName name, DiscordMember? member)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -64,9 +65,9 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             .AsNoTracking()
             .GetCustomCommandQuery(guildId, name)
             .FirstOrDefaultAsync();
-        return response is null || !IsUserAuthorized(member, response.Access)
-            ? Result<CustomCommandDatabaseQueryHelpers.GetCustomCommandQueryResult>.Fail(new Error("command.not_found", "Command not found or not authorized."))
-            : Result<CustomCommandDatabaseQueryHelpers.GetCustomCommandQueryResult>.Ok(response);
+        return response is null || !IsUserAuthorized(member, response.Roles)
+            ? Result<CustomCommand>.Fail(new Error("command.not_found", "Command not found or not authorized."))
+            : Result<CustomCommand>.Ok(response);
     }
 
     private async Task RecordUsageAsync(CustomCommandName name, GuildId guildId, UserId userId)
@@ -99,18 +100,16 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         });
     }
 
-    public static bool IsUserAuthorized(DiscordMember? member, CommandAccess access)
+    public static bool IsUserAuthorized(DiscordMember? member, ICollection<CustomCommandRole> roles)
     {
         if (member is null) return false;
-        var memberRoles = member.Roles.Select(static r => r.GetRoleId());
-        return access switch
+        var memberRoles = member.Roles.Select(static r => r.GetRoleId()).ToHashSet();
+        return roles.Any(role => role switch
         {
-            CommandAccess.Open => true,
-            CommandAccess.Allowlist { Roles: { Count: 0 } } => false,
-            CommandAccess.Allowlist { Roles: var roles } => memberRoles.Any(roles.ToFrozenSet().Contains),
-            CommandAccess.Blocklist { Roles: var roles } => memberRoles.All(r => !roles.ToFrozenSet().Contains(r)),
-            _ => false,
-        };
+            CustomCommandAllowRole allowRole => !memberRoles.Contains(allowRole.RoleId),
+            CustomCommandDenyRole denyRole => memberRoles.Contains(denyRole.RoleId),
+            _ => false
+        });
     }
 
     internal static string TruncateForDiscord(string input, int maxLength)
@@ -142,22 +141,18 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
                 : new DiscordEmbedBuilder())
             .WithDescription(content);
 
-    internal static string ApplyMention(string text, bool hasMention, SnowflakeObject? snowflake, ulong guildId)
-        => hasMention
-            ? text.Replace("%Mention", snowflake switch
-            {
-                DiscordUser user => user.Mention,
-                DiscordRole { Id: var roleId } when roleId == guildId => "@ everyone",
-                DiscordRole role => role.Mention,
-                _ => string.Empty
-            }, StringComparison.OrdinalIgnoreCase)
-            : text;
+    internal static string ApplyMention(string text, SnowflakeObject? snowflake, ulong guildId)
+        => text.Replace("%Mention", snowflake switch
+        {
+            DiscordUser user => user.Mention,
+            DiscordRole { Id: var roleId } when roleId == guildId => "@ everyone",
+            DiscordRole role => role.Mention,
+            _ => string.Empty
+        }, StringComparison.OrdinalIgnoreCase);
 
-    internal static string ApplyMessage(string text, bool hasMessage, string message, ulong guildId)
-        => hasMessage
-            ? text.Replace("%Message", SanitizeUserMessageMentions(message, guildId),
-                StringComparison.OrdinalIgnoreCase)
-            : text;
+    internal static string ApplyMessage(string text, string message, ulong guildId)
+        => text.Replace("%Message", SanitizeUserMessageMentions(message, guildId),
+            StringComparison.OrdinalIgnoreCase);
 
     [GeneratedRegex(@"@(everyone|here)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex EveryoneHereRegex();

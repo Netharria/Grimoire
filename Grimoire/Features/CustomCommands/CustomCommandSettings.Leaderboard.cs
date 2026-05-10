@@ -33,7 +33,7 @@ public sealed partial class CustomCommandSettings
                 : GetCommandLeaderboardAsync(guildId, name.Value))
             .Match(
                 display => ctx.ReplyAsync(GrimoireColor.Purple, display.Text, display.Title, display.Footer ?? "").AsTask(),
-                errors => ctx.ReplyAsync(GrimoireColor.Purple, errors[0].Message).AsTask());
+                error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
     private async Task<Result<LeaderboardDisplay>> GetOverallLeaderboardAsync(GuildId guildId)

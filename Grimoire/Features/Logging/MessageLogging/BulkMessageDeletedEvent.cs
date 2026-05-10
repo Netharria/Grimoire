@@ -28,7 +28,8 @@ public sealed class BulkMessageDeletedEvent(
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null) return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
+                .GetOrElse(() => false))
             return;
 
         var messageIds = args.Messages.Select(x => x.GetMessageId()).ToHashSet();
@@ -95,7 +96,7 @@ public sealed class BulkMessageDeletedEvent(
                     msg.UserId,
                     msg.MessageId,
                     msg.Content,
-                    string.Join("\n", msg.Attachments.Select(x => x.FileName)))
+                    string.Join("\n", msg.Attachments.Select(x => x.FileName.Value)))
                 .AppendLine();
         }
 

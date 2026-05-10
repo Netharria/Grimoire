@@ -54,7 +54,7 @@ public sealed partial class RewardCommandGroup
             .BindAsync(async reward => await this._settingsModule.SetRewardAsync(reward))
             .Match(
                 reward => OnAddSuccess(ctx, reward, role, guild),
-                errors => OnFail(ctx, errors)
+                error => OnFail(ctx, error)
             );
     }
 
@@ -65,13 +65,10 @@ public sealed partial class RewardCommandGroup
                 $"reward role because the role has a higher rank than it does."))
             : Validation<DiscordRole>.Succeed(role);
 
-    private static Task OnFail(CommandContext ctx, ImmutableArray<Error> errors)
-    {
-        return ctx.ReplyAsync(GrimoireColor.Red,
-                $"Was not able to update the rewards for the server for the following errors: \n" +
-                $"{string.Join('\n', errors.Distinct().Select(error => error.Message))}")
+    private static Task OnFail(CommandContext ctx, Error error)
+        => ctx.ReplyAsync(GrimoireColor.Red,
+                $"Was not able to update the rewards for the server:\n{error.Message}")
             .AsTask();
-    }
 
 
     private async Task OnAddSuccess(CommandContext ctx, RewardAdded reward, DiscordRole role, DiscordGuild guild)

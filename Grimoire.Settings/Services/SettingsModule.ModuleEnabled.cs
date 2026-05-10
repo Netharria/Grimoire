@@ -33,13 +33,13 @@ public sealed partial class SettingsModule
             {
                 true => await GuildSettingCustomValue.Create(settingType, guildId, moderatorId,
                         DateTimeOffset.UtcNow, bool.TrueString)
-                    .MatchAsync(
-                        setting => SetGuildSetting(setting, cancellationToken),
-                        errors => Result<GuildSetting>.Fail(errors)),
+                    .ToResult()
+                    .BindAsync(
+                        setting => SetGuildSetting(setting, cancellationToken)),
                 false => await GuildSettingDisabled.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow)
-                    .MatchAsync(
-                        setting => SetGuildSetting(setting, cancellationToken),
-                        errors => Result<GuildSetting>.Fail(errors))
+                    .ToResult()
+                    .BindAsync(
+                        setting => SetGuildSetting(setting, cancellationToken))
             }).Map(_ => enableModule);
 
     private static bool ParseEnabled(CachedSetting? setting) =>

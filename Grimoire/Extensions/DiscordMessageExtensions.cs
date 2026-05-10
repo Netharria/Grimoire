@@ -15,6 +15,7 @@ public static class DiscordMessageExtensions
         public MessageId GetMessageId() => new(message.Id);
 
         [Pure]
-        public MessageContent GetMessageContent() => MessageContent.FromDatabase(message.Content);
+        public MessageContent GetMessageContent()
+            => MessageContent.Create(message.Content).Match(c => c, _ => throw new UnreachableException());
     }
 }

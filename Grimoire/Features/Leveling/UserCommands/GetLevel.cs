@@ -58,13 +58,15 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .Select(xpHistories => xpHistories.Sum(x => x.Xp))
             .FirstOrDefaultAsync();
 
-        var levelingSettings = await this._settingsModule.GetLevelingSettings(ctx.Guild.GetGuildId()).GetOrElse(() => default!);
+        var levelingSettings =
+            await this._settingsModule.GetLevelingSettings(ctx.Guild.GetGuildId()).GetOrElse(() => default!);
 
         var currentLevel = levelingSettings.GetLevelFromXp(membersXp);
         var currentLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel);
         var nextLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel, 1);
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.GetGuildId()).GetOrElse(() => default!);
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(ctx.Guild.GetGuildId())
+            .GetOrElse(() => default!);
 
         var nextReward = rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 

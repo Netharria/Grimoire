@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
@@ -19,19 +18,33 @@ public sealed record NicknameHistory
     public required GuildId GuildId { get; init; }
 }
 
-public readonly record struct Nickname(string Value)
+public readonly record struct Nickname
 {
+    private Nickname(string value)
+    {
+        Value = value;
+    }
+
+    public string Value { get; }
+
+    internal static Nickname FromDatabase(string value) => new(value);
+
+    public static Validation<Nickname> Create(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation<Nickname>.Fail(new Error("nickname.empty", "Nickname cannot be empty."));
+        var trimmed = value.Trim();
+        return trimmed.Length > 32
+            ? Validation<Nickname>.Fail(new Error("nickname.too-long", "Nickname cannot exceed 32 characters."))
+            : Validation<Nickname>.Succeed(new Nickname(trimmed));
+    }
+
+    public static Nickname? CreateIfNotEmpty(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : new Nickname(value.Trim());
+
+    [Pure]
+    public bool Equals(Nickname other, StringComparison comparison)
+        => string.Equals(Value, other.Value, comparison);
+
     public override string ToString() => Value;
-
-    [Pure]
-    public static bool Equals(Nickname? a, Nickname? b)
-        => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value);
-
-    [Pure]
-    public static bool Equals(Nickname? a, Nickname? b, StringComparison stringComparison)
-        => a is { } aObj && b is { } bObj && string.Equals(aObj.Value, bObj.Value, stringComparison);
-
-    [Pure]
-    public static bool IsNullOrWhiteSpace([NotNullWhen(false)] Nickname? nickname)
-        => string.IsNullOrWhiteSpace(nickname?.Value);
 }

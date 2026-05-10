@@ -14,23 +14,34 @@ namespace Grimoire.Features.CustomCommands;
 internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IAutoCompleteProvider
 {
-    public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
+    public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context) =>
+        await Validation<AutoCompleteContext>.Succeed(context)
+            .Bind(ctx =>
+                ctx switch
+                {
+                    { Guild: not null } => Validation<AutoCompleteContext>.Succeed(ctx),
+                    _ => Validation<AutoCompleteContext>.Fail(new Error(
+                        "command-version-autocomplete.validation.not-in-guild", "This command was not used in a guild"))
+                })
+            .Map(ctx => ctx.Options
+                .FirstOrDefault(o => o.Name.Equals("name", StringComparison.OrdinalIgnoreCase))
+                ?.Value as string)
+            .Bind(CustomCommandName.Create)
+            .ToResult()
+            .BindAsync(async name => await Versions(context.Guild!.GetGuildId(), name))
+            .Match(
+                versions => versions.Select((v, i) =>
+                    new DiscordAutoCompleteChoice($"v{i + 1} — {v.Item1:yyyy-MM-dd HH:mm} UTC"
+                                                  + (v.Item2 is { } mod
+                                                      ? $" by {UserExtensions.Mention(mod)}"
+                                                      : string.Empty),
+                        v.Item1.ToUnixTimeSeconds().ToString())),
+                _ => []);
+
+    private async ValueTask<Result<IEnumerable<(DateTimeOffset, ModeratorId?)>>> Versions(GuildId guildId,
+        CustomCommandName name)
     {
-        if (context.Guild is null)
-            return [];
-
-        var nameValue = context.Options
-            .FirstOrDefault(o => o.Name.Equals("name", StringComparison.OrdinalIgnoreCase))
-            ?.Value as string;
-
-        if (string.IsNullOrEmpty(nameValue))
-            return [];
-
-        var name = CustomCommandName.ParseFromDatabase(nameValue);
-        var guildId = new GuildId(context.Guild.Id);
-
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-
         var versions = await dbContext.CustomCommands
             .AsNoTracking()
             .Where(x => x.GuildId == guildId && x.Name == name)
@@ -38,10 +49,7 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
             .Take(25)
             .Select(x => new { x.CreatedAt, x.ModeratorId })
             .ToListAsync();
-
-        return versions.Select((v, i) => new DiscordAutoCompleteChoice(
-            $"v{i + 1} — {v.CreatedAt:yyyy-MM-dd HH:mm} UTC"
-            + (v.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty),
-            v.CreatedAt.ToUnixTimeSeconds().ToString()));
+        return Result<IEnumerable<(DateTimeOffset, ModeratorId?)>>.Ok(
+            versions.Select(result => (result.CreatedAt, result.ModeratorId)));
     }
 }

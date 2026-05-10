@@ -40,4 +40,4 @@ public sealed record Sin
     public required GuildId GuildId { get; init; }
 }
 
-public readonly record struct SinId(long Value);
+

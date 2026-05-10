@@ -50,7 +50,7 @@ public sealed partial class PublishCommands(
         if (banLogChannel is null)
             return null;
 
-        if (Username.IsNullOrWhiteSpace(username))
+        if (string.IsNullOrWhiteSpace(username.Value))
         {
             var user = await ctx.Client.GetUserAsync(userId);
             username = user.GetUsername();

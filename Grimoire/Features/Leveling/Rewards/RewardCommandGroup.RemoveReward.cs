@@ -37,7 +37,7 @@ public sealed partial class RewardCommandGroup
 
         await result.Match(
             _ => OnRemoveSuccess(ctx, role, guild),
-            errors => OnFail(ctx, errors));
+            error => OnFail(ctx, error));
     }
 
     private async Task OnRemoveSuccess(CommandContext ctx, DiscordRole role, DiscordGuild guild)

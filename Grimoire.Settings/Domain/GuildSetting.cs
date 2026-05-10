@@ -18,7 +18,9 @@ internal abstract record GuildSetting(
 internal sealed record GuildSettingDefault : GuildSetting
 {
     private GuildSettingDefault(GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
-        : base(type, guildId, setBy, setAt) { }
+        : base(type, guildId, setBy, setAt)
+    {
+    }
 
     internal static Validation<GuildSetting> Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
@@ -36,7 +38,9 @@ internal sealed record GuildSettingDefault : GuildSetting
 internal sealed record GuildSettingDisabled : GuildSetting
 {
     private GuildSettingDisabled(GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
-        : base(type, guildId, setBy, setAt) { }
+        : base(type, guildId, setBy, setAt)
+    {
+    }
 
     internal static Validation<GuildSetting> Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)

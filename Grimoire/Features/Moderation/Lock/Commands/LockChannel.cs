@@ -69,7 +69,8 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         });
     }
 
-    private Task<Result<ChannelLocked>> ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
+    private Task<Result<ChannelLocked>> ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId,
+        DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount)
     {
@@ -95,7 +96,8 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     previousSetting.Denied.SetLockPermissions()));
     }
 
-    private Task<Result<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId, DiscordChannel channel,
+    private Task<Result<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,
+        DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount) =>
         ModerationReason.CreateIfNotNull(reason)

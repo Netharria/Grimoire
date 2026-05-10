@@ -11,4 +11,11 @@
     <PackageReference Include="JetBrains.Annotations" Version="2025.2.4"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Grimoire"/>
+    <InternalsVisibleTo Include="Grimoire.Data"/>
+    <InternalsVisibleTo Include="Grimoire.Settings"/>
+    <InternalsVisibleTo Include="Grimoire.Settings.Tests"/>
+  </ItemGroup>
+
 </Project>

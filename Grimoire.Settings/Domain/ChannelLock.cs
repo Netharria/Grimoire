@@ -79,7 +79,9 @@ public sealed record ChannelUnlocked : ChannelLock
         GuildId guildId,
         DateTimeOffset setAt,
         ModerationReason? reason)
-        : base(moderatorId, channelId, guildId, setAt, reason) { }
+        : base(moderatorId, channelId, guildId, setAt, reason)
+    {
+    }
 
     public static Validation<ChannelUnlocked> Create(
         ModeratorId moderatorId,

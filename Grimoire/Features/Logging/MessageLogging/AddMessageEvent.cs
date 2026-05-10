@@ -28,7 +28,8 @@ public sealed partial class AddMessageEvent(
             || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
+                .GetOrElse(() => false))
             return;
 
         if (!await this._settingsModule.ShouldLogMessage(
@@ -51,7 +52,7 @@ public sealed partial class AddMessageEvent(
                     {
                         Id = new AttachmentId(x.Id),
                         MessageId = new MessageId(args.Message.Id),
-                        FileName = x.FileName ?? string.Empty
+                        FileName = AttachmentFileName.FromDatabase(x.FileName!)
                     })
             ],
             ChannelId = args.GetChannelId(),

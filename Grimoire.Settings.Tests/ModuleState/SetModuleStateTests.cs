@@ -113,7 +113,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.General, _guildId, _modId, true);
 
         var invalid = result.ShouldBeOfType<Result<bool>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "module.general.immutable");
+        invalid.Error.Code.ShouldBe("module.general.immutable");
     }
 
     [Fact]
@@ -138,7 +138,8 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
                 bool.TrueString).ShouldSucceed());
         db.GuildSettings.Add(
             GuildSettingDisabled.Create(
-                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)).ShouldSucceed());
+                    GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
+                .ShouldSucceed());
         await db.SaveChangesAsync();
 
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId)).ShouldSucceed().ShouldBeFalse();
@@ -154,7 +155,8 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
                 bool.TrueString).ShouldSucceed());
         db.GuildSettings.Add(
             GuildSettingDisabled.Create(
-                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)).ShouldSucceed());
+                    GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
+                .ShouldSucceed());
         await db.SaveChangesAsync();
 
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false);
@@ -202,7 +204,8 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         {
             db.GuildSettings.Add(
                 GuildSettingDisabled.Create(
-                    GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1)).ShouldSucceed());
+                        GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
+                    .ShouldSucceed());
             await db.SaveChangesAsync();
         }
 

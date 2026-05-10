@@ -37,9 +37,9 @@ public sealed partial class SettingsModule
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
         => GuildSettingDisabled.Create(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow)
-            .MatchAsync(
-                setting => SetGuildSetting(setting, cancellationToken).Map(_ => guildId),
-                errors => Result<GuildId>.Fail(errors));
+            .ToResult()
+            .BindAsync(
+                setting => SetGuildSetting(setting, cancellationToken).Map(_ => guildId));
 
     public Task<Result<RoleId>> SetMuteRole(
         GuildId guildId,
@@ -48,9 +48,9 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
         => GuildSettingCustomValue.Create(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow,
                 muteRoleId.Value.ToString(CultureInfo.InvariantCulture))
-            .MatchAsync(
-                setting => SetGuildSetting(setting, cancellationToken).Map(_ => muteRoleId),
-                errors => Result<RoleId>.Fail(errors));
+            .ToResult()
+            .BindAsync(
+                setting => SetGuildSetting(setting, cancellationToken).Map(_ => muteRoleId));
 
     public async Task<Result<bool>> IsMemberMuted(
         UserId userId,

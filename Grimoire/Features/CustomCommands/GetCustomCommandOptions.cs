@@ -15,7 +15,7 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
     : IAutoCompleteProvider
 {
     private static readonly Func<GrimoireDbContext, GuildId, string, IAsyncEnumerable<DiscordAutoCompleteChoice>>
-        _getCommandsAsync =
+        s_getCommandsAsync =
             EF.CompileAsyncQuery((GrimoireDbContext context, GuildId guildId, string cleanedText) =>
                 context.CustomCommands
                     .AsNoTracking()
@@ -27,22 +27,40 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
                     .Take(5)
                     .Select(x => new DiscordAutoCompleteChoice(
                         x.Name
-                        + (x.Content.Contains("%mention") ? " <Mention>" : string.Empty)
-                        + (x.Content.Contains("%message") ? " <Message>" : string.Empty),
+                        + (x.Content.Value.ToLower().Contains("%mention") ? " <Mention>" : string.Empty)
+                        + (x.Content.Value.ToLower().Contains("%message") ? " <Message>" : string.Empty),
+                        x.Name.Value))
+            );
+
+    private static readonly Func<GrimoireDbContext, GuildId, IAsyncEnumerable<DiscordAutoCompleteChoice>>
+        s_getAllCommandsAsync =
+            EF.CompileAsyncQuery((GrimoireDbContext context, GuildId guildId) =>
+                context.CustomCommands
+                    .AsNoTracking()
+                    .Where(x => x.GuildId == guildId)
+                    .Where(x => !context.CustomCommands.Any(y =>
+                        y.GuildId == x.GuildId && y.Name == x.Name && y.CreatedAt > x.CreatedAt))
+                    .OrderBy(x => x.Name.Value)
+                    .Take(5)
+                    .Select(x => new DiscordAutoCompleteChoice(
+                        x.Name
+                        + (x.Content.Value.ToLower().Contains("%mention") ? " <Mention>" : string.Empty)
+                        + (x.Content.Value.ToLower().Contains("%message") ? " <Message>" : string.Empty),
                         x.Name.Value))
             );
 
     public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
     {
-        if (context.Guild is null || context.UserInput is null)
+        if (context.Guild is null)
             return [];
-        var cleanedText = context.UserInput.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
 
-        if (string.IsNullOrEmpty(cleanedText))
-            return [];
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var guildId = new GuildId(context.Guild.Id);
 
-        return await _getCommandsAsync(dbContext, new GuildId(context.Guild.Id), cleanedText)
-            .ToListAsync();
+        var cleanedText = context.UserInput?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (string.IsNullOrEmpty(cleanedText))
+            return await s_getAllCommandsAsync(dbContext, guildId).ToListAsync();
+
+        return await s_getCommandsAsync(dbContext, guildId, cleanedText).ToListAsync();
     }
 }

@@ -54,7 +54,9 @@ public sealed record ThreadUnlocked : ThreadLock
         GuildId guildId,
         DateTimeOffset setAt,
         ModerationReason? reason)
-        : base(moderatorId, channelId, guildId, setAt, reason) { }
+        : base(moderatorId, channelId, guildId, setAt, reason)
+    {
+    }
 
     public static Validation<ThreadUnlocked> Create(
         ModeratorId moderatorId,

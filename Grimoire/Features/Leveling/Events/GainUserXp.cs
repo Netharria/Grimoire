@@ -46,10 +46,10 @@ public sealed partial class GainUserXp(
             return;
 
         if (!await this._settingsModule.IsMessageIgnored(
-                member.GetGuildId(),
-                args.GetAuthorUserId(),
-                member.Roles.Select(x => x.GetRoleId()).ToHashSet(),
-                args.GetChannelId())
+                    member.GetGuildId(),
+                    args.GetAuthorUserId(),
+                    member.Roles.Select(x => x.GetRoleId()).ToHashSet(),
+                    args.GetChannelId())
                 .GetOrElse(() => false))
             return;
 

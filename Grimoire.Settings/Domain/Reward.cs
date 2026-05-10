@@ -49,7 +49,9 @@ public sealed record RewardRemoved : Reward
         GuildId guildId,
         ModeratorId setBy,
         DateTimeOffset setAt)
-        : base(roleId, guildId, setBy, setAt) { }
+        : base(roleId, guildId, setBy, setAt)
+    {
+    }
 
     public static Validation<RewardRemoved> Create(
         RoleId roleId,

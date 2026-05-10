@@ -30,7 +30,8 @@ public sealed class UpdateMessageEvent(
         if (args.Message.Author?.Id == args.Guild.CurrentMember.Id)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
+                .GetOrElse(() => false))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
@@ -94,9 +95,9 @@ public sealed class UpdateMessageEvent(
             if (user is not null)
                 embed.AddField("Original Author", user.Mention, true);
             embed.AddField("System Id",
-                    string.IsNullOrWhiteSpace(message.SystemId) ? "Private" : message.SystemId, true)
+                    string.IsNullOrWhiteSpace(message.SystemId.Value) ? "Private" : message.SystemId.Value, true)
                 .AddField("Member Id",
-                    string.IsNullOrWhiteSpace(message.MemberId) ? "Private" : message.MemberId, true);
+                    string.IsNullOrWhiteSpace(message.MemberId.Value) ? "Private" : message.MemberId.Value, true);
         }
         else
             embed.AddField("Author", args.Author.Mention, true);

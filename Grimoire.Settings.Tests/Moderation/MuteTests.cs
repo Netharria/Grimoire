@@ -124,6 +124,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
             db.Mutes.Add(((Validation<MuteAdded>.Valid)recentMute).Value);
             await db.SaveChangesAsync();
         }
+
         await this._sut.AddMute(futureUser, _guildId, _modId, new SinId(11L), DateTimeOffset.UtcNow.AddHours(1));
 
         var expired = await this._sut.GetAllExpiredMutes().ToListAsync();
@@ -180,7 +181,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         var result = await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(-1));
 
         var invalid = result.ShouldBeOfType<Result<MuteAdded>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "mute.invalid");
+        invalid.Error.Code.ShouldBe("mute.invalid");
     }
 
     [Fact]

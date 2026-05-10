@@ -31,17 +31,20 @@ public sealed class UpdatedNicknameEvent(
             .OrderByDescending(x => x.Timestamp)
             .Select(y => y.Nickname)
             .FirstOrDefaultAsync();
+
+        var after = Nickname.CreateIfNotEmpty(args.NicknameAfter);
+
         if (currentNickname is null
-            || Nickname.Equals(currentNickname, new Nickname(args.NicknameAfter),
-                StringComparison.CurrentCultureIgnoreCase))
+            || currentNickname == after
+            || (currentNickname.HasValue && after.HasValue
+                                         && currentNickname.Value.Equals(after.Value,
+                                             StringComparison.CurrentCultureIgnoreCase)))
             return;
 
         await dbContext.NicknameHistory.AddAsync(
             new NicknameHistory
             {
-                GuildId = args.Guild.GetGuildId(),
-                UserId = args.Member.GetUserId(),
-                Nickname = new Nickname(args.NicknameAfter)
+                GuildId = args.Guild.GetGuildId(), UserId = args.Member.GetUserId(), Nickname = after
             });
         await dbContext.SaveChangesAsync();
 
@@ -52,10 +55,7 @@ public sealed class UpdatedNicknameEvent(
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor("Nickname Updated")
                 .AddField("User", args.Member.Mention)
-                .AddField("Before",
-                    Nickname.IsNullOrWhiteSpace(currentNickname)
-                        ? "`None`"
-                        : currentNickname.Value.Value, true)
+                .AddField("Before", currentNickname?.Value ?? "`None`", true)
                 .AddField("After",
                     string.IsNullOrWhiteSpace(args.NicknameAfter)
                         ? "`None`"

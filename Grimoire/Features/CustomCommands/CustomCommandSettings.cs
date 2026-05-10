@@ -13,4 +13,5 @@ namespace Grimoire.Features.CustomCommands;
 public sealed partial class CustomCommandSettings(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     GuildLog guildLog)
-{ }
+{
+}

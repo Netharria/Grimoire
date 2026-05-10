@@ -29,7 +29,8 @@ public sealed partial class LevelSettingsCommandGroup
 
         var response = await this._settingsModule.GetLevelingSettings(guild.GetGuildId())
             .GetOrElse(() => default!);
-        var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId()).GetOrElse(() => false);
+        var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId())
+            .GetOrElse(() => false);
         var levelChannelLog =
             await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
 

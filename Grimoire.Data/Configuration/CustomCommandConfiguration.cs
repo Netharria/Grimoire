@@ -11,7 +11,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Grimoire.Configuration;
 
 [ExcludeFromCodeCoverage]
-internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<CustomCommand>
+internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<CustomCommand>,
+    IEntityTypeConfiguration<EmbedCustomCommand>
 {
     public void Configure(EntityTypeBuilder<CustomCommand> builder)
     {
@@ -23,14 +24,10 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
 
         builder.Property(e => e.Content)
             .HasMaxLength(2000)
-            .IsRequired();
-
-        builder.Property(e => e.EmbedColor)
-            .HasMaxLength(6)
             .HasConversion(
-                color => color.GetValueOrDefault().Value,
-                color => CustomCommandEmbedColor.ParseFromDatabase(color))
-            .IsRequired(false);
+                content => content.Value,
+                value => CustomCommandContent.ParseFromDatabase(value))
+            .IsRequired();
 
         builder.Property(e => e.GuildId)
             .HasConversion(guildId => guildId.Value, id => new GuildId(id));
@@ -40,7 +37,19 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
 
         builder.HasIndex(e => new { e.GuildId, e.Name });
 
-        builder.Ignore(e => e.OutputFormat);
-        builder.Ignore(e => e.Access);
+        builder.HasDiscriminator<string>("CommandType")
+            .HasValue<TextCustomCommand>("Text")
+            .HasValue<EmbedCustomCommand>("Embed")
+            .IsComplete();
+    }
+
+    public void Configure(EntityTypeBuilder<EmbedCustomCommand> builder)
+    {
+        builder.Property(e => e.EmbedColor)
+            .HasMaxLength(6)
+            .HasConversion(
+                color => color.GetValueOrDefault().Value,
+                color => CustomCommandEmbedColor.ParseFromDatabase(color))
+            .IsRequired(false);
     }
 }

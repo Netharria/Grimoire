@@ -18,7 +18,7 @@ internal sealed class AvatarConfiguration : IEntityTypeConfiguration<Avatar>
             .HasMaxLength(2048)
             .HasConversion(
                 avatarFileName => avatarFileName.ToString(),
-                value => new AvatarFileName(value))
+                value => AvatarFileName.FromDatabase(value))
             .IsRequired();
         builder.Property(e => e.UserId)
             .HasConversion(e => e.Value, value => new UserId(value));

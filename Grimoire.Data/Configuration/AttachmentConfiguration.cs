@@ -30,6 +30,9 @@ internal sealed class AttachmentConfiguration : IEntityTypeConfiguration<Attachm
 
         builder.Property(e => e.FileName)
             .HasMaxLength(2048)
+            .HasConversion(
+                fileName => fileName.Value,
+                value => AttachmentFileName.FromDatabase(value))
             .IsRequired();
     }
 }

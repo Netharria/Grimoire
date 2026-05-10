@@ -66,7 +66,9 @@ public sealed record MuteRemoved : Mute
         GuildId guildId,
         ModeratorId moderatorId,
         DateTimeOffset setAt)
-        : base(userId, guildId, moderatorId, setAt) { }
+        : base(userId, guildId, moderatorId, setAt)
+    {
+    }
 
     public static Validation<MuteRemoved> Create(
         UserId userId,

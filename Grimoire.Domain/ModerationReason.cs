@@ -16,7 +16,7 @@ public readonly record struct ModerationReason
 
     public string Value { get; }
 
-    public static ModerationReason FromDatabase(string value) => new(value);
+    internal static ModerationReason FromDatabase(string value) => new(value);
 
     public static Validation<ModerationReason?> CreateIfNotNull(string? input)
         => input switch
