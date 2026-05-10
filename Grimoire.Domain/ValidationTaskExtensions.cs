@@ -57,6 +57,7 @@ public static class ValidationTaskExtensions
 
         public async Task<Validation<T>> OrElse(Func<Validation<T>> fallback)
             => (await task).OrElse(fallback);
+
         public async Task<T> GetOrElse(Func<T> fallback)
             => (await task).GetOrElse(fallback);
     }

@@ -31,10 +31,10 @@ public sealed partial class CustomCommandSettings
         [Parameter("Content")]
         [Description("The content of the command. Use %mention or %message to add a message arguments")]
         string content,
-        [Parameter("Embed")]
-        [Description("Put the message in an embed")]
+        [Parameter("Embed")] [Description("Put the message in an embed")]
         bool embed = false,
-        [Parameter("EmbedColor")] [Description("Hexadecimal color of the embed (only used when OutputType is Embedded)")]
+        [Parameter("EmbedColor")]
+        [Description("Hexadecimal color of the embed (only used when OutputType is Embedded)")]
         CustomCommandEmbedColor? embedColor = null,
         [Parameter("RestrictedUse")] [Description("Restrict this command to specific roles.")]
         bool restrictedUse = false,
@@ -52,7 +52,8 @@ public sealed partial class CustomCommandSettings
         await ctx.DeferResponseAsync();
         var guild = ctx.Guild!;
         var guildId = guild.GetGuildId();
-        var roleIds = CollectRoleIds(permissionRole1, permissionRole2, permissionRole3, permissionRole4, permissionRole5,
+        var roleIds = CollectRoleIds(permissionRole1, permissionRole2, permissionRole3, permissionRole4,
+            permissionRole5,
             permissionRole6, permissionRole7, permissionRole8, permissionRole9, permissionRole10);
 
         if (restrictedUse && roleIds.Count == 0)
@@ -63,7 +64,9 @@ public sealed partial class CustomCommandSettings
 
         ICollection<CustomCommandRole> roles = restrictedUse
             ? roleIds.Select(id => (CustomCommandRole)new CustomCommandAllowRole
-                { RoleId = id, Name = name, GuildId = guildId, CreatedAt = default }).ToList()
+            {
+                RoleId = id, Name = name, GuildId = guildId, CreatedAt = default
+            }).ToList()
             : [];
 
         await CustomCommandContent.Create(content)

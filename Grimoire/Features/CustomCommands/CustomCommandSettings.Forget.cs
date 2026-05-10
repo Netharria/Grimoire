@@ -32,8 +32,8 @@ public sealed partial class CustomCommandSettings
         var guild = ctx.Guild!;
         await DeleteCommandAsync(guild.GetGuildId(), name)
             .Match(
-            alreadyForgotten => OnForgetSuccess(ctx, guild, name, alreadyForgotten),
-            error => ctx.SendErrorResponseAsync(error.Message).AsTask());
+                alreadyForgotten => OnForgetSuccess(ctx, guild, name, alreadyForgotten),
+                error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
 
     private async Task<Result<bool>> DeleteCommandAsync(GuildId guildId, CustomCommandName name)
@@ -56,7 +56,8 @@ public sealed partial class CustomCommandSettings
         }
     }
 
-    private async Task OnForgetSuccess(CommandContext ctx, DiscordGuild guild, CustomCommandName name, bool alreadyForgotten)
+    private async Task OnForgetSuccess(CommandContext ctx, DiscordGuild guild, CustomCommandName name,
+        bool alreadyForgotten)
     {
         await ctx.ReplyAsync(GrimoireColor.Green,
             alreadyForgotten

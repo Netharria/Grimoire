@@ -45,11 +45,13 @@ public sealed partial class CustomCommandSettings
             .Select(x => new CommandVersion(x.CreatedAt, x.ModeratorId, x.Content))
             .ToListAsync();
         return versions.Count == 0
-            ? Result<IReadOnlyList<CommandVersion>>.Fail(new Error("command.history.not_found", $"No command named `{name}` exists."))
+            ? Result<IReadOnlyList<CommandVersion>>.Fail(new Error("command.history.not_found",
+                $"No command named `{name}` exists."))
             : Result<IReadOnlyList<CommandVersion>>.Ok(versions);
     }
 
-    private static async Task SendHistoryPagesAsync(CommandContext ctx, CustomCommandName name, IReadOnlyList<CommandVersion> versions)
+    private static async Task SendHistoryPagesAsync(CommandContext ctx, CustomCommandName name,
+        IReadOnlyList<CommandVersion> versions)
     {
         foreach (var page in BuildPages(versions))
             await ctx.ReplyAsync(GrimoireColor.Purple, page, $"Version history for {name}");
@@ -66,8 +68,10 @@ public sealed partial class CustomCommandSettings
                 yield return builder.ToString();
                 builder.Clear();
             }
+
             builder.Append(entry);
         }
+
         if (builder.Length > 0)
             yield return builder.ToString();
     }
@@ -78,10 +82,14 @@ public sealed partial class CustomCommandSettings
         var preview = content.Length > 100
             ? string.Concat(content.AsSpan(0, 100), "…")
             : content;
-        return $"**v{index + 1}{(index == 0 ? " (current)" : string.Empty)}** — <t:{version.CreatedAt.ToUnixTimeSeconds()}:f>"
+        return
+            $"**v{index + 1}{(index == 0 ? " (current)" : string.Empty)}** — <t:{version.CreatedAt.ToUnixTimeSeconds()}:f>"
             + (version.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty)
             + $"\n> {preview}\n";
     }
 
-    private sealed record CommandVersion(DateTimeOffset CreatedAt, ModeratorId? ModeratorId, CustomCommandContent Content);
+    private sealed record CommandVersion(
+        DateTimeOffset CreatedAt,
+        ModeratorId? ModeratorId,
+        CustomCommandContent Content);
 }

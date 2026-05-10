@@ -39,5 +39,3 @@ public sealed record Sin
 
     public required GuildId GuildId { get; init; }
 }
-
-

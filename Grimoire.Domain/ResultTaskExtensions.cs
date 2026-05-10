@@ -61,6 +61,7 @@ public static class ResultTaskExtensions
 
         public async Task<Result<T>> OrElse(Func<Result<T>> fallback)
             => (await task).OrElse(fallback);
+
         public async Task<T> GetOrElse(Func<T> fallback)
             => (await task).GetOrElse(fallback);
     }

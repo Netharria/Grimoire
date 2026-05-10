@@ -232,7 +232,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 1);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(1));
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().XpTimeoutPeriod.Value
+            .ShouldBe(TimeSpan.FromMinutes(1));
     }
 
     [Fact]
@@ -241,7 +242,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 60);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(60));
+        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().XpTimeoutPeriod.Value
+            .ShouldBe(TimeSpan.FromMinutes(60));
     }
 
     [Fact]
@@ -348,7 +350,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     public void GetXpNeededForLevel_WithLevelModifier_AdjustsResult()
     {
         var entry = DefaultEntry();
-        entry.GetXpNeededForLevel(3, 0).ShouldBe(entry.GetXpNeededForLevel(2, 1));
+        entry.GetXpNeededForLevel(3).ShouldBe(entry.GetXpNeededForLevel(2, 1));
     }
 
     private static LevelingSettingEntry DefaultEntry()

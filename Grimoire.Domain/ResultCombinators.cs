@@ -25,7 +25,8 @@ public static class Result
         Task<Result<T3>> t3)
     {
         await Task.WhenAll(t1, t2, t3);
-        return Validation.Combine(t1.Result.ToValidation(), t2.Result.ToValidation(), t3.Result.ToValidation()).ToResult();
+        return Validation.Combine(t1.Result.ToValidation(), t2.Result.ToValidation(), t3.Result.ToValidation())
+            .ToResult();
     }
 
     public static async Task<Result<(T1, T2, T3, T4)>> WhenAll<T1, T2, T3, T4>(
@@ -73,12 +74,10 @@ public static class Result
         var values = new List<T>(results.Length);
         var errors = new List<Error>();
         foreach (var result in results)
-        {
             if (result is Result<T>.Success(var v))
                 values.Add(v);
             else
                 errors.Add(ExtractError(result));
-        }
         return errors.Count == 0
             ? Result<IReadOnlyList<T>>.Ok(values)
             : Result<IReadOnlyList<T>>.Fail(CombineErrors([.. errors.Distinct()]));

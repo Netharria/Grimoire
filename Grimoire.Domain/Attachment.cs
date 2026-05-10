@@ -20,16 +20,20 @@ public sealed record Attachment
 
 public readonly record struct AttachmentFileName
 {
-    public string Value { get; }
+    private AttachmentFileName(string value)
+    {
+        Value = value;
+    }
 
-    private AttachmentFileName(string value) => Value = value;
+    public string Value { get; }
 
     internal static AttachmentFileName FromDatabase(string value) => new(value);
 
     public static Validation<AttachmentFileName> Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Validation<AttachmentFileName>.Fail(new Error("attachment-file-name.empty", "Attachment file name cannot be empty."));
+            return Validation<AttachmentFileName>.Fail(new Error("attachment-file-name.empty",
+                "Attachment file name cannot be empty."));
         return Validation<AttachmentFileName>.Succeed(new AttachmentFileName(value));
     }
 

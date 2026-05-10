@@ -37,7 +37,7 @@ public static class Validation
         Validation<T1> v1, Validation<T2> v2, Validation<T3> v3, Validation<T4> v4)
     {
         if (v1 is Validation<T1>.Valid(var a) && v2 is Validation<T2>.Valid(var b)
-            && v3 is Validation<T3>.Valid(var c) && v4 is Validation<T4>.Valid(var d))
+                                              && v3 is Validation<T3>.Valid(var c) && v4 is Validation<T4>.Valid(var d))
             return Validation<(T1, T2, T3, T4)>.Succeed((a, b, c, d));
         var errors = ImmutableArray.CreateBuilder<Error>();
         if (v1 is Validation<T1>.Invalid(var e1)) errors.AddRange(e1);
@@ -51,8 +51,8 @@ public static class Validation
         Validation<T1> v1, Validation<T2> v2, Validation<T3> v3, Validation<T4> v4, Validation<T5> v5)
     {
         if (v1 is Validation<T1>.Valid(var a) && v2 is Validation<T2>.Valid(var b)
-            && v3 is Validation<T3>.Valid(var c) && v4 is Validation<T4>.Valid(var d)
-            && v5 is Validation<T5>.Valid(var f))
+                                              && v3 is Validation<T3>.Valid(var c) && v4 is Validation<T4>.Valid(var d)
+                                              && v5 is Validation<T5>.Valid(var f))
             return Validation<(T1, T2, T3, T4, T5)>.Succeed((a, b, c, d, f));
         var errors = ImmutableArray.CreateBuilder<Error>();
         if (v1 is Validation<T1>.Invalid(var e1)) errors.AddRange(e1);
@@ -64,11 +64,12 @@ public static class Validation
     }
 
     public static Validation<(T1, T2, T3, T4, T5, T6)> Combine<T1, T2, T3, T4, T5, T6>(
-        Validation<T1> v1, Validation<T2> v2, Validation<T3> v3, Validation<T4> v4, Validation<T5> v5, Validation<T6> v6)
+        Validation<T1> v1, Validation<T2> v2, Validation<T3> v3, Validation<T4> v4, Validation<T5> v5,
+        Validation<T6> v6)
     {
         if (v1 is Validation<T1>.Valid(var a) && v2 is Validation<T2>.Valid(var b)
-            && v3 is Validation<T3>.Valid(var c) && v4 is Validation<T4>.Valid(var d)
-            && v5 is Validation<T5>.Valid(var f) && v6 is Validation<T6>.Valid(var g))
+                                              && v3 is Validation<T3>.Valid(var c) && v4 is Validation<T4>.Valid(var d)
+                                              && v5 is Validation<T5>.Valid(var f) && v6 is Validation<T6>.Valid(var g))
             return Validation<(T1, T2, T3, T4, T5, T6)>.Succeed((a, b, c, d, f, g));
         var errors = ImmutableArray.CreateBuilder<Error>();
         if (v1 is Validation<T1>.Invalid(var e1)) errors.AddRange(e1);

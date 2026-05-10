@@ -39,12 +39,14 @@ public abstract record Result<T>
             _ => throw new UnreachableException()
         };
 
-    public Result<T> Tap(Action<T> action){
+    public Result<T> Tap(Action<T> action)
+    {
         if (this is Success(var v)) action(v);
         return this;
     }
 
-    public async Task<Result<T>> TapAsync(Func<T, Task> action){
+    public async Task<Result<T>> TapAsync(Func<T, Task> action)
+    {
         if (this is Success(var v)) await action(v);
         return this;
     }
@@ -94,9 +96,13 @@ public abstract record Result<T>
             Success(var v) => onSuccess(v),
             Invalid(var e) => Task.FromResult(onFailure(e)),
             NotFound(var e) => onNotFound is not null ? Task.FromResult(onNotFound(e)) : Task.FromResult(onFailure(e)),
-            NotModified(var e) => onNotModified is not null ? Task.FromResult(onNotModified(e)) : Task.FromResult(onFailure(e)),
+            NotModified(var e) => onNotModified is not null
+                ? Task.FromResult(onNotModified(e))
+                : Task.FromResult(onFailure(e)),
             Conflict(var e) => onConflict is not null ? Task.FromResult(onConflict(e)) : Task.FromResult(onFailure(e)),
-            Forbidden(var e) => onForbidden is not null ? Task.FromResult(onForbidden(e)) : Task.FromResult(onFailure(e)),
+            Forbidden(var e) => onForbidden is not null
+                ? Task.FromResult(onForbidden(e))
+                : Task.FromResult(onFailure(e)),
             _ => throw new UnreachableException()
         };
 

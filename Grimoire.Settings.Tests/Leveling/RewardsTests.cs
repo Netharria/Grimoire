@@ -28,7 +28,8 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
 
     private Task RemoveReward(RoleId roleId)
         => this._sut.SetRewardAsync(
-            ((Validation<RewardRemoved>.Valid)RewardRemoved.Create(roleId, _guildId, _modId, DateTimeOffset.UtcNow)).Value);
+            ((Validation<RewardRemoved>.Valid)RewardRemoved.Create(roleId, _guildId, _modId, DateTimeOffset.UtcNow))
+            .Value);
 
     [Fact]
     public async Task NoRewards_ReturnsEmptySet()

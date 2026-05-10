@@ -34,12 +34,10 @@ public sealed partial class SettingsModule
                 true => await GuildSettingCustomValue.Create(settingType, guildId, moderatorId,
                         DateTimeOffset.UtcNow, bool.TrueString)
                     .ToResult()
-                    .BindAsync(
-                        setting => SetGuildSetting(setting, cancellationToken)),
+                    .BindAsync(setting => SetGuildSetting(setting, cancellationToken)),
                 false => await GuildSettingDisabled.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow)
                     .ToResult()
-                    .BindAsync(
-                        setting => SetGuildSetting(setting, cancellationToken))
+                    .BindAsync(setting => SetGuildSetting(setting, cancellationToken))
             }).Map(_ => enableModule);
 
     private static bool ParseEnabled(CachedSetting? setting) =>
@@ -82,5 +80,4 @@ public sealed partial class SettingsModule
             GetGuildSetting(t, guildId, cancellationToken)
                 .AsTask();
     }
-
 }

@@ -179,17 +179,19 @@ public sealed partial class SettingsModule(
         CancellationToken cancellationToken = default)
         => (channelId switch
         {
-            not null => ApplyGuildSetting(GuildSettingCustomValue.Create(GuildSettingType.UserCommandChannel, guildId, moderatorId,
-                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture)), cancellationToken),
+            not null => ApplyGuildSetting(GuildSettingCustomValue.Create(GuildSettingType.UserCommandChannel, guildId,
+                    moderatorId,
+                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture)),
+                cancellationToken),
             _ => ApplyGuildSetting(
-                    GuildSettingDisabled.Create(GuildSettingType.UserCommandChannel, guildId, moderatorId, DateTimeOffset.UtcNow),
-                    cancellationToken)
+                GuildSettingDisabled.Create(GuildSettingType.UserCommandChannel, guildId, moderatorId,
+                    DateTimeOffset.UtcNow),
+                cancellationToken)
         }).Map(_ => channelId);
 
     private Task<Result<GuildSetting>> ApplyGuildSetting(Validation<GuildSetting> validation,
         CancellationToken cancellationToken = default)
-        => validation.ToResult().BindAsync(
-            setting => SetGuildSetting(setting, cancellationToken));
+        => validation.ToResult().BindAsync(setting => SetGuildSetting(setting, cancellationToken));
 
     private static T? ParseId<T>(CachedSetting setting, Func<ulong, T> create) where T : struct =>
         setting is CachedCustomSetting { Value: var v }

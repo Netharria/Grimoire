@@ -32,7 +32,8 @@ public sealed partial class CustomCommandSettings
                 ? GetOverallLeaderboardAsync(guildId)
                 : GetCommandLeaderboardAsync(guildId, name.Value))
             .Match(
-                display => ctx.ReplyAsync(GrimoireColor.Purple, display.Text, display.Title, display.Footer ?? "").AsTask(),
+                display => ctx.ReplyAsync(GrimoireColor.Purple, display.Text, display.Title, display.Footer ?? "")
+                    .AsTask(),
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
@@ -65,9 +66,11 @@ public sealed partial class CustomCommandSettings
             .Take(15)
             .ToListAsync();
         return rankings.Count == 0
-            ? Result<LeaderboardDisplay>.Fail(new Error("command.leaderboard.command_empty", $"Command `!{name}` has not been used yet."))
+            ? Result<LeaderboardDisplay>.Fail(new Error("command.leaderboard.command_empty",
+                $"Command `!{name}` has not been used yet."))
             : Result<LeaderboardDisplay>.Ok(new LeaderboardDisplay(
-                string.Join("\n", rankings.Select((r, i) => $"**{i + 1}.** {UserExtensions.Mention(r.UserId)} — {r.Count} uses")),
+                string.Join("\n",
+                    rankings.Select((r, i) => $"**{i + 1}.** {UserExtensions.Mention(r.UserId)} — {r.Count} uses")),
                 $"Leaderboard for !{name}",
                 $"{rankings.Sum(r => r.Count)} total uses"));
     }
