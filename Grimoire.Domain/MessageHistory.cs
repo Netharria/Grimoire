@@ -14,7 +14,7 @@ public abstract record MessageHistoryEntry
 {
     public required MessageId MessageId { get; init; }
     public required GuildId GuildId { get; init; }
-    public DateTimeOffset TimeStamp { get; } = DateTimeOffset.UtcNow;
+    public required DateTimeOffset Timestamp { get; init; }
     public Message? Message { get; init; }
 }
 
@@ -53,13 +53,9 @@ public readonly record struct MessageContent
         return Validation<MessageContent>.Succeed(new MessageContent(content));
     }
 
+    [Pure]
+    public bool Equals(MessageContent other, StringComparison comparison)
+        => string.Equals(Content, other.Content, comparison);
+
     public override string ToString() => Content;
-
-    [Pure]
-    public static bool Equals(MessageContent? a, MessageContent? b)
-        => a is { } aObj && b is { } bObj && string.Equals(aObj.Content, bObj.Content);
-
-    [Pure]
-    public static bool Equals(MessageContent? a, MessageContent? b, StringComparison stringComparison)
-        => a is { } aObj && b is { } bObj && string.Equals(aObj.Content, bObj.Content, stringComparison);
 }

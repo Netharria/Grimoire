@@ -22,7 +22,7 @@ public sealed record Sin
 {
     public ModeratorId? ModeratorId { get; init; }
 
-    public DateTimeOffset SinOn { get; } = DateTimeOffset.UtcNow;
+    public required DateTimeOffset SinOn { get; init; }
 
     public required SinType SinType { get; init; }
 
@@ -32,8 +32,8 @@ public sealed record Sin
 
     public ICollection<SinReasonHistory> ReasonHistory { get; init; } = [];
 
-    // ReSharper disable once UnusedAutoPropertyAccessor.Local
-    public SinId Id { get; private set; }
+    // EF Core sets this via field access after INSERT for the PostgreSQL bigserial identity.
+    public SinId Id { get; init; }
 
     public required UserId UserId { get; init; }
 

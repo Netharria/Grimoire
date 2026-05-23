@@ -15,7 +15,7 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
 {
     public void Configure(EntityTypeBuilder<MessageHistoryEntry> builder)
     {
-        builder.HasKey(x => new { x.MessageId, x.TimeStamp });
+        builder.HasKey(x => new { x.MessageId, x.Timestamp });
 
         builder.HasDiscriminator<string>("Discriminator")
             .HasValue<MessageCreatedEntry>("Created")
@@ -29,8 +29,8 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
 
-        builder.Property(e => e.TimeStamp)
-            .HasDefaultValueSql("now()");
+        builder.Property(e => e.Timestamp)
+            .HasColumnName("TimeStamp");
 
         builder.Property(e => e.GuildId)
             .HasConversion(e => e.Value, value => new GuildId(value));

@@ -71,6 +71,7 @@ public partial class BanAddedEvent(
                 {
                     GuildId = args.Guild.GetGuildId(),
                     UserId = args.Member.GetUserId(),
+                    SinOn = DateTimeOffset.UtcNow,
                     SinType = SinType.Ban,
                     ModeratorId = auditModeratorId,
                     ReasonHistory = string.IsNullOrWhiteSpace(auditReason)

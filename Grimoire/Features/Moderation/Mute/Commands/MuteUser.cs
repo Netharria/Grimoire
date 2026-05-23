@@ -66,6 +66,7 @@ public sealed class MuteUser(
         {
             UserId = member.GetUserId(),
             GuildId = guild.GetGuildId(),
+            SinOn = DateTimeOffset.UtcNow,
             ModeratorId = ctx.GetModeratorId(),
             SinType = SinType.Mute,
             ReasonHistory = string.IsNullOrWhiteSpace(reason)

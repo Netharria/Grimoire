@@ -14,7 +14,7 @@ public sealed record UsernameHistory
 {
     public required UserId UserId { get; init; }
     public required Username Username { get; init; }
-    public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
+    public required DateTimeOffset Timestamp { get; init; }
 }
 
 public readonly record struct Username

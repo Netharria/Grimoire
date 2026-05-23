@@ -30,7 +30,7 @@ public static class UserDatabaseQueryHelpers
 
         var usernamesToAdd = discordGuild.Members.Values
             .Where(x => !existingUsernames.Contains((x.GetUserId(), x.GetUsername())))
-            .Select(x => new UsernameHistory { UserId = x.GetUserId(), Username = x.GetUsername() })
+            .Select(x => new UsernameHistory { UserId = x.GetUserId(), Username = x.GetUsername(), Timestamp = DateTimeOffset.UtcNow })
             .ToArray();
 
         if (usernamesToAdd.Length == 0)

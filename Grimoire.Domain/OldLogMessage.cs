@@ -16,7 +16,7 @@ public sealed record OldLogMessage
 
     public required GuildId GuildId { get; init; }
 
-    public DateTimeOffset CreatedAt { get; } = DateTimeOffset.UtcNow;
+    public required DateTimeOffset CreatedAt { get; init; }
 
     public int TimesTried { get; init; }
     public required MessageId Id { get; init; }

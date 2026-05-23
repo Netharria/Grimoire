@@ -44,7 +44,8 @@ public sealed class UpdatedNicknameEvent(
         await dbContext.NicknameHistory.AddAsync(
             new NicknameHistory
             {
-                GuildId = args.Guild.GetGuildId(), UserId = args.Member.GetUserId(), Nickname = after
+                GuildId = args.Guild.GetGuildId(), UserId = args.Member.GetUserId(), Nickname = after,
+                Timestamp = DateTimeOffset.UtcNow
             });
         await dbContext.SaveChangesAsync();
 

@@ -7,7 +7,7 @@
 
 namespace Grimoire.Domain;
 
-public record LeaderboardView
+public sealed record LeaderboardView
 {
     public required GuildId GuildId { get; init; }
     public required UserId UserId { get; init; }

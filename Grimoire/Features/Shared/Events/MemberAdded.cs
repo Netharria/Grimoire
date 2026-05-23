@@ -56,15 +56,15 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
 
         if (usernameChanged)
             await dbContext.UsernameHistory.AddAsync(
-                new UsernameHistory { Username = newUsername, UserId = userId });
+                new UsernameHistory { Username = newUsername, UserId = userId, Timestamp = DateTimeOffset.UtcNow });
 
         if (nicknameChanged)
             await dbContext.NicknameHistory.AddAsync(
-                new NicknameHistory { UserId = userId, GuildId = guildId, Nickname = newNickname });
+                new NicknameHistory { UserId = userId, GuildId = guildId, Nickname = newNickname, Timestamp = DateTimeOffset.UtcNow });
 
         if (avatarChanged)
             await dbContext.Avatars.AddAsync(
-                new Avatar { UserId = userId, GuildId = guildId, FileName = newAvatar!.Value });
+                new Avatar { UserId = userId, GuildId = guildId, FileName = newAvatar!.Value, Timestamp = DateTimeOffset.UtcNow });
 
         if (usernameChanged || nicknameChanged || avatarChanged)
             await dbContext.SaveChangesAsync();

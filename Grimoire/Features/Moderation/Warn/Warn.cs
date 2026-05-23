@@ -44,6 +44,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         {
             UserId = user.GetUserId(),
             GuildId = guild.GetGuildId(),
+            SinOn = DateTimeOffset.UtcNow,
             ModeratorId = ctx.GetModeratorId(),
             SinType = SinType.Warn,
             ReasonHistory = string.IsNullOrWhiteSpace(reason)

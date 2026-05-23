@@ -48,7 +48,7 @@ public sealed class BulkMessageDeletedEvent(
                 Content = dbContext.MessageHistory
                     .OfType<MessageHistoryContentEntry>()
                     .Where(h => h.MessageId == m.Id)
-                    .OrderByDescending(h => h.TimeStamp)
+                    .OrderByDescending(h => h.Timestamp)
                     .Select(h => (MessageContent?)h.Content)
                     .FirstOrDefault(),
                 Attachments = m.Attachments
@@ -61,7 +61,7 @@ public sealed class BulkMessageDeletedEvent(
             return;
 
         await dbContext.MessageHistory.AddRangeAsync(
-            messages.Select(x => new MessageDeletedEntry { MessageId = x.MessageId, GuildId = guildId }));
+            messages.Select(x => new MessageDeletedEntry { MessageId = x.MessageId, GuildId = guildId, Timestamp = DateTimeOffset.UtcNow }));
         await dbContext.SaveChangesAsync();
 
         var embed = new DiscordEmbedBuilder()

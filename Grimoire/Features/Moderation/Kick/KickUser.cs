@@ -45,6 +45,7 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
         {
             UserId = member.GetUserId(),
             GuildId = guild.GetGuildId(),
+            SinOn = DateTimeOffset.UtcNow,
             ModeratorId = ctx.GetModeratorId(),
             SinType = SinType.Kick,
             ReasonHistory = string.IsNullOrWhiteSpace(reason)

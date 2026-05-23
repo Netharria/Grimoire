@@ -47,7 +47,7 @@ public sealed class UpdateMessageEvent(
                 Content = dbContext.MessageHistory
                     .OfType<MessageHistoryContentEntry>()
                     .Where(h => h.MessageId == m.Id)
-                    .OrderByDescending(h => h.TimeStamp)
+                    .OrderByDescending(h => h.Timestamp)
                     .Select(h => (MessageContent?)h.Content)
                     .FirstOrDefault(),
                 OriginalUserId = (UserId?)m.ProxiedMessageLink!.OriginalMessage!.UserId,
@@ -57,15 +57,16 @@ public sealed class UpdateMessageEvent(
             .FirstOrDefaultAsync();
 
         if (message is null
-            || MessageContent.Equals(message.Content, args.Message.GetMessageContent(),
-                StringComparison.CurrentCultureIgnoreCase))
+            || (message.Content?.Equals(args.Message.GetMessageContent(),
+                StringComparison.CurrentCultureIgnoreCase) ?? false))
             return;
 
         await dbContext.MessageHistory.AddAsync(new MessageEditedEntry
         {
             MessageId = message.MessageId,
             GuildId = args.Guild.GetGuildId(),
-            Content = args.Message.GetMessageContent()
+            Content = args.Message.GetMessageContent(),
+            Timestamp = DateTimeOffset.UtcNow
         });
         try
         {

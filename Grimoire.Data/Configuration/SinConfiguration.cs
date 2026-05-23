@@ -17,7 +17,8 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
     {
         builder.HasKey(sin => sin.Id);
         builder.Property(sin => sin.Id)
-            .UseIdentityAlwaysColumn();
+            .UseIdentityAlwaysColumn()
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Property(sin => sin.SinOn)
             .HasDefaultValueSql("now()");
         // Primary query pattern: Filter by UserId + GuildId, order by SinOn

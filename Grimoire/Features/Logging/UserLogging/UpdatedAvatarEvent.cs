@@ -43,7 +43,8 @@ public sealed class UpdatedAvatarEvent(
             {
                 GuildId = args.Guild.GetGuildId(),
                 UserId = args.Member.GetUserId(),
-                FileName = args.MemberAfter.GetAvatarFileName()
+                FileName = args.MemberAfter.GetAvatarFileName(),
+                Timestamp = DateTimeOffset.UtcNow
             });
         await dbContext.SaveChangesAsync();
 

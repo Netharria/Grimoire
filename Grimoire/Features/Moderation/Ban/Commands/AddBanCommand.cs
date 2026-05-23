@@ -63,6 +63,7 @@ public sealed partial class AddBanCommand(
         {
             GuildId = guild.GetGuildId(),
             UserId = user.GetUserId(),
+            SinOn = DateTimeOffset.UtcNow,
             SinType = SinType.Ban,
             ModeratorId = ctx.GetModeratorId(),
             ReasonHistory = string.IsNullOrWhiteSpace(reason)

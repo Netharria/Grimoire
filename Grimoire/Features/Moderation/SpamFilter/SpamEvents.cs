@@ -52,6 +52,7 @@ internal sealed class SpamEvents(
         {
             UserId = member.GetUserId(),
             GuildId = args.Guild.GetGuildId(),
+            SinOn = DateTimeOffset.UtcNow,
             ModeratorId = new ModeratorId(args.Guild.CurrentMember.Id),
             SinType = SinType.Mute,
             ReasonHistory =

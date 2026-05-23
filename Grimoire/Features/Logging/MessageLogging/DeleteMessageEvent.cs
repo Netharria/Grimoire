@@ -99,7 +99,7 @@ public sealed partial class DeleteMessageEvent(
                 Content = dbContext.MessageHistory
                     .OfType<MessageHistoryContentEntry>()
                     .Where(h => h.MessageId == m.Id)
-                    .OrderByDescending(h => h.TimeStamp)
+                    .OrderByDescending(h => h.Timestamp)
                     .Select(h => (MessageContent?)h.Content)
                     .FirstOrDefault(),
                 ReferencedMessage = m.ReferencedMessageId,
@@ -121,11 +121,13 @@ public sealed partial class DeleteMessageEvent(
                 {
                     MessageId = args.Message.GetMessageId(),
                     GuildId = args.Guild.GetGuildId(),
-                    ModeratorId = new ModeratorId(modId)
+                    ModeratorId = new ModeratorId(modId),
+                    Timestamp = DateTimeOffset.UtcNow
                 }
                 : new MessageDeletedEntry
                 {
-                    MessageId = args.Message.GetMessageId(), GuildId = args.Guild.GetGuildId()
+                    MessageId = args.Message.GetMessageId(), GuildId = args.Guild.GetGuildId(),
+                    Timestamp = DateTimeOffset.UtcNow
                 });
         await dbContext.SaveChangesAsync();
 

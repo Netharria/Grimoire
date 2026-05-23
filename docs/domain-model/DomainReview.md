@@ -1,313 +1,285 @@
- ---
-Domain Model Review — Grimoire.Domain
+# Domain Model Review — Grimoire.Domain
 
-  ---
-I. Result & Validation Machinery
+Status key: ✅ Resolved · ⚠️ Partially resolved · ❌ Still open
 
-1. Invalid accumulates, other error cases don't — semantic mismatch
+---
 
-Result<T>.Invalid holds ImmutableArray<Error>, but NotFound, NotModified, Conflict, and Forbidden each hold a single Error. The Match method
-then wraps the single-error cases into an array on the fly:
+## I. Result & Validation Machinery
 
-NotFound(var e) => onNotFound is not null ? onNotFound([e]) : onFailure([e]),
+### #1 — ✅ Inconsistent error shape (array vs. single) across subtypes
 
-This mixed shape leaks through the API. Pick one shape consistently: either all error cases hold ImmutableArray<Error>, or all hold a single
-Error and Invalid gets a different name (e.g., ValidationFailed).
+**Original issue:** `Result<T>.Invalid` held `ImmutableArray<Error>` while `NotFound`, `NotModified`, `Conflict`, and `Forbidden` each held a single `Error`. The `Match` method then wrapped the single-error cases into an array on the fly.
 
-2. Validation<T> doesn't accumulate errors — the name lies
+**Current state:** All subtypes now hold a single `Error`. `Match` passes errors directly without wrapping. The shape is fully consistent.
 
-The defining property of Validation in functional programming is error accumulation — you run all validations independently and collect every
-failure. Your Validation<T> short-circuits on the first Bind, identical to Result<T>. The semantic contract the name implies isn't
-delivered. To fix this, add an applicative combinator:
+---
 
-public static Validation<(T1, T2)> Combine<T1, T2>(Validation<T1> v1, Validation<T2> v2)
-=> (v1, v2) switch
-{
-(Valid<T1>(var a), Valid<T2>(var b)) => Succeed((a, b)),
-_ => new Invalid([.. (v1 is Invalid i1 ? i1.Errors : []), .. (v2 is Invalid i2 ? i2.Errors : [])])
-};
+### #2 — ✅ `Validation<T>` didn't accumulate errors — the name lied
 
-Without this, Validation is just a re-skinned Result and the two types carry no semantic distinction.
+**Original issue:** `Validation<T>` short-circuited on `Bind`, identical to `Result<T>`. It had no applicative combiner to collect all failures independently.
 
-3. Validation<T> missing Tap / TapAsync
+**Current state:** `ValidationCombinators.cs` provides `Validation.Combine` with 2–6 arity overloads that collect all failures into a single `ImmutableArray<Error>`. `Result.WhenAll` uses these combiners internally.
 
-Result<T> has both but Validation<T> doesn't. If you're chaining validations and need a side effect on success (e.g., logging), you have to
-break the chain. Add them for consistency.
+---
 
-4. Result.WhenAll loses all but the first failure
+### #3 — ✅ `Validation<T>` missing `Tap` / `TapAsync`
 
-await Task.WhenAll(t1, t2);
-if (t1.Result is not Result<T1>.Success(var v1)) return t1.Result.Map<(T1, T2)>(_ => default!);
-if (t2.Result is not Result<T2>.Success(var v2)) return t2.Result.Map<(T1, T2)>(_ => default!);
+**Original issue:** `Result<T>` had both methods but `Validation<T>` didn't.
 
-Both tasks run in parallel; if both fail, only t1's error is returned. The combinator's purpose — parallel independent operations — suggests
-you'd want all errors collected. Use Validation.Combine internally and convert at the end, or collect into an Invalid with all errors.
+**Current state:** Both `Tap(Action<T>)` and `TapAsync(Func<T, Task>)` are present on `Validation<T>`.
 
-Also: Map<(T1, T2)>(_ => default!) uses default! to satisfy the type parameter. This is a null-suppression smell. A static helper private
-static Result<TOut> PropagateError<TIn, TOut>(Result<TIn> r) => ... would be cleaner.
+---
 
-5. MatchAsync takes async onSuccess but sync failure handlers
+### #4 — ✅ `Result.WhenAll` silently dropped all but the first failure
 
-In both Result<T>.MatchAsync and its task extension, the failure handlers are synchronous:
+**Original issue:** The fixed-arity `WhenAll` overloads short-circuited on the first failing task. The `Map<TOut>(_ => default!)` null-suppression was also a smell.
 
-public Task<TOut> MatchAsync<TOut>(
-Func<T, Task<TOut>> onSuccess,
-Func<ImmutableArray<Error>, TOut> onFailure,   // sync
-...)
+**Current state:** All fixed-arity `WhenAll` overloads delegate to `Validation.Combine`, collecting every failure. The `default!` suppression is gone.
 
-This forces callers to block or use Task.FromResult in the failure arm. ValidationTaskExtensions adds the async-invalid overload only for
-Validation, not for Result. Add the fully-async overload to Result.MatchAsync as well.
+---
 
-6. Parameter name divergence: onNotChanged vs onNotModified
+### #5 — ✅ `MatchAsync` failure handlers were always synchronous
 
-Result.Match uses onNotModified. ResultTaskExtensions.Match uses onNotChanged. These must be the same name — one of them is wrong.
+**Original issue:** `Result<T>.MatchAsync` accepted `Func<T, Task<TOut>>` for success but only `Func<Error, TOut>` (sync) for failure, forcing callers to `Task.FromResult` in failure arms.
 
-7. No IEnumerable-arity combinator
+**Current state:** Two `MatchAsync` overloads exist — one with sync failure handlers and one with fully-async `Func<Error, Task<TOut>>` failure handlers.
 
-Result.WhenAll goes up to 6 fixed-arity overloads but there's no:
+---
 
-Task<Result<IReadOnlyList<T>>> WhenAll<T>(IEnumerable<Task<Result<T>>> tasks)
+### #6 — ✅ Parameter name mismatch: `onNotChanged` vs. `onNotModified`
 
-This is the most practically useful form and currently missing.
+**Original issue:** `Result.Match` used `onNotModified`; the `ResultTaskExtensions` extension used `onNotChanged`.
 
-8. No ToResult() extension on Task<Validation<T>>
+**Current state:** Both use `onNotModified` consistently.
 
-You have Validation<T>.ToResult() on the instance, but no extension on Task<Validation<T>>. Callers must await and then call the instance
-method, breaking pipeline chains.
+---
 
-  ---
-II. Strongly-Typed IDs
+### #7 — ✅ No `IEnumerable`-arity `WhenAll`
 
-9. SinId and AttachmentId are co-located with their entities, not with the other IDs
+**Original issue:** `Result.WhenAll` only had fixed-arity overloads (up to 6). The most practically useful form — accepting `IEnumerable<Task<Result<T>>>` — was missing.
 
-StronglyTypedIds.cs has the six Discord IDs; SinId lives in Sin.cs and AttachmentId lives in Attachment.cs. Pick one convention: all IDs in
-StronglyTypedIds.cs, or each ID in its entity file.
+**Current state:** `Result.WhenAll<T>(IEnumerable<Task<Result<T>>> tasks)` is implemented, collects all errors, and returns `Result<IReadOnlyList<T>>`.
 
-10. SinId has no TryParse and is signed while all others are unsigned
+---
 
-All Discord IDs use ulong. SinId uses long (matching PostgreSQL bigserial) but lacks TryParse. Add it — and add a comment on the long choice
-so the next reader doesn't "fix" it to ulong.
+### #8 — ✅ No `ToResult()` extension on `Task<Validation<T>>`
 
-11. No implicit conversion between ModeratorId and UserId
+**Original issue:** `Validation<T>.ToResult()` existed as an instance method but there was no extension to call it in a pipeline without first `await`ing.
 
-A moderator IS a Discord user. When you have a UserId and need a ModeratorId (or vice versa), you must do new ModeratorId(userId.Value) which
-defeats the type-system protection. Add an explicit conversion operator or a factory method:
+**Current state:** `ValidationTaskExtensions` provides `ToResult()` on `Task<Validation<T>>`.
 
-public readonly record struct ModeratorId(ulong Value)
-{
+---
+
+## II. Strongly-Typed IDs
+
+### #9 — ✅ `SinId` and `AttachmentId` co-located with entities, not with other IDs
+
+**Original issue:** The six Discord IDs lived in `StronglyTypedIds.cs`; `SinId` lived in `Sin.cs` and `AttachmentId` in `Attachment.cs`, with no consistent convention.
+
+**Current state:** Both `SinId` and `AttachmentId` are now in `StronglyTypedIds.cs` alongside all other IDs.
+
+---
+
+### #10 — ✅ `SinId` missing `TryParse`; `long` vs. `ulong` unexplained
+
+**Original issue:** All Discord IDs have `TryParse`; `SinId` did not. `SinId` uses `long` (matching PostgreSQL `bigserial`) while all other IDs use `ulong`, with no comment explaining the deliberate difference.
+
+**Current state:** `TryParse` added (using `long.TryParse`). A `<summary>` doc comment on `SinId` explains that the backing column is a PostgreSQL `bigserial` (signed 64-bit) and that switching to `ulong` would silently truncate values above `long.MaxValue` on EF Core round-trip.
+
+---
+
+### #11 — ✅ No conversion between `ModeratorId` ↔ `UserId`
+
+**Original issue:** A moderator IS a Discord user, but converting between the two IDs required `new ModeratorId(userId.Value)`, defeating the type-system protection.
+
+**Current state:** Explicit conversion operators are present:
+
+```csharp
 public static explicit operator ModeratorId(UserId id) => new(id.Value);
 public static explicit operator UserId(ModeratorId id) => new(id.Value);
-...
-}
-
-Explicit (not implicit) keeps you from accidentally conflating the two.
-
-  ---
-III. Value Types — Inconsistent "Invalid state unrepresentable" coverage
-
-12. Nickname, Username, AvatarFileName, InviteCode, InviteUrl have public constructors
-
-These are publicly new-able with any string, including null (the string field defaults to null on a default struct):
-
-public readonly record struct Nickname(string Value)   // public constructor, no validation
-
-Compare to ModerationReason, MessageContent, and CustomCommandName which all have private constructors + Create() + Validation<T>. The
-inconsistency means half your value types can represent invalid state. Apply the same pattern to all of them.
-
-13. Static Equals(a, b) pattern is non-standard and confusing
-
-AvatarFileName, Nickname, Username, and MessageContent all define:
-
-public static bool Equals(Nickname? a, Nickname? b) => ...
-public static bool Equals(Nickname? a, Nickname? b, StringComparison) => ...
-
-readonly record struct already generates value-based == and .Equals(). These static methods shadow object.Equals(object, object) — they're an
-entirely different method, but naming them Equals is confusing. The intent is string-comparison control. More idiomatic: extension methods
-EqualsOrdinalIgnoreCase(this Nickname a, Nickname b) or instance methods. The static form is unexpected by C# consumers.
-
-14. Attachment.FileName is a raw string
-
-Every other filename-like field is wrapped (e.g., AvatarFileName). Attachment.FileName is a plain string. Either wrap it in a value type or
-document why it's intentionally not wrapped.
-
-15. ProxiedMessageLink.SystemId and MemberId are raw strings
-
-These are PluralKit identifiers. Nothing stops you from passing a SystemId where a MemberId is expected. Two lightweight value types
-(PluralKitSystemId, PluralKitMemberId) would prevent this class of mistake.
-
-16. CustomCommand.Content is a raw string
-
-TextCustomCommand and EmbedCustomCommand store content as required string Content. No length bounds, no empty check. This should go through
-the same validation-value-type treatment as MessageContent.
-
-  ---
-IV. Entity Model Issues
-
-17. DateTimeOffset { get; } = DateTimeOffset.UtcNow is a latent bug
-
-Several entities use:
-
-public DateTimeOffset CreatedTimestamp { get; } = DateTimeOffset.UtcNow;
-
-Without a setter, EF Core must set the backing field via reflection at materialization time. If EF Core column mapping isn't configured
-precisely, an entity materialized from the DB will have the object-creation time, not the stored time. This affects Message.CreatedTimestamp,
-Avatar.Timestamp, Sin.SinOn, NicknameHistory.Timestamp, UsernameHistory.Timestamp, and OldLogMessage.CreatedAt.
-
-The fix is uniform: use required DateTimeOffset CreatedAt { get; init; } on all of these and require callers (including EF mappings) to
-provide the value. That makes the contract explicit instead of relying on EF reflection magic.
-
-18. Sin.Id uses private set — breaks record immutability
-
-public SinId Id { get; private set; }
-
-All other records use init. The private set exists because SinId is a database-generated identity and EF Core needs to write it after INSERT.
-Two cleaner options:
-
-- Mark it init and configure EF to use the backing field (Property(x => x.Id).HasField("_id"))
-- Keep private set but document that this is intentionally EF-only mutation
-
-The inconsistency with every other entity's immutable pattern is worth resolving.
-
-19. required ModeratorId? ModeratorId — required nullable is semantically confusing
-
-In SinReasonHistory and Sin:
-
-public required ModeratorId? ModeratorId { get; init; }
-
-required + nullable reads as "you must provide this, but null is a valid value." That's not wrong, but it models "system vs. moderator actor"
-as a nullable ID instead of a discriminated union. Consider:
-
-public abstract record Actor;
-public sealed record ModeratorActor(ModeratorId Id) : Actor;
-public sealed record SystemActor : Actor;
-
-This makes the intent explicit at the type level rather than relying on "null = system."
-
-20. Invite.Inviter is a Username, not a UserId
-
-public required Username Inviter { get; init; }
-
-The inviter's display name can change; the invite record becomes stale. The identity of the inviter is their Discord user ID, not their
-current username. This should be UserId (or UserId + Username as a pair if display is needed at record time).
-
-21. Invite has no GuildId
-
-An invite is scoped to a guild, but the entity has no GuildId. Querying all invites for a guild is impossible without a join to some other
-table — but there's nothing to join to since invites have no navigation back to guild.
-
-22. LeaderboardView is not sealed
-
-Every final entity is sealed record. LeaderboardView is just record. If it's not meant to be subclassed, seal it.
-
-23. XpHistory.TimeOut is a misleading name
-
-TimeOut reads as a duration or a deadline. The property stores when the XP history entry was recorded. RecordedAt or Timestamp would be
-unambiguous.
-
-24. ICollection<T> navigation properties are mutable from outside
-
-public ICollection<Pardon> Pardons { get; init; } = [];
-public ICollection<PublishedMessage> PublishMessages { get; init; } = [];
-
-The collections are settable (init) to a new list, but the list itself is ICollection<T> — callers can call .Add() / .Remove() on the
-collection directly. Expose IReadOnlyCollection<T> or IReadOnlyList<T> from the domain; let EF Core access the backing list via shadow
-properties or field-based access:
-
-private readonly List<Pardon> _pardons = [];
-public IReadOnlyList<Pardon> Pardons => _pardons;
-
-25. MessageHistoryEntry.TimeStamp — casing inconsistency
-
-MessageHistoryEntry.TimeStamp (capital S). Every other time property in the model uses Timestamp (lowercase s). One of them is wrong.
-
-26. Dual ProxiedMessageLink properties on Message are confusing
-
-public ProxiedMessageLink? ProxiedMessageLink { get; init; }
-public ProxiedMessageLink? OriginalMessageLink { get; init; }
-
-Both are the same type. The type ProxiedMessageLink already contains both ProxyMessageId and OriginalMessageId. The reason Message has two
-separate references isn't obvious. Rename them to make the intent clear, e.g., AsProxyLink and AsOriginalLink, or add a comment explaining
-the two-direction navigation.
+```
 
 ---
-V. Missing Domain Layer Boundary Enforcement
 
-27. EF Core navigation properties bleed into domain entities
+## III. Value Types — "Invalid State Unrepresentable" Coverage
 
-public Sin? Sin { get; init; } on Pardon, public Message? Message { get; init; } on Attachment — these are EF Core navigation properties, not
-domain concepts. The domain entity shouldn't know about its EF graph. This is a known trade-off with EF Core, but at minimum, consider
-whether those navigation properties are ever used in domain logic or only in queries.
+### #12 — ✅ Half the value types allowed invalid/null state (no factory)
 
-28. No aggregate root, no encapsulated invariants
+**Original issue:** `Nickname`, `Username`, `AvatarFileName`, `InviteCode`, and `InviteUrl` all had public constructors with no validation.
 
-The model has clusters that should form aggregates (Sin + Pardons + ReasonHistory + PublishedMessages), but any code can add directly to any
-collection, bypassing invariants. For example: can a Sin have two Pardons? The model allows it. If not, the enforcement lives nowhere visible
-in the domain.
+**Current state:** All five types now have private constructors and `Create()` factory methods returning `Validation<T>`.
 
 ---
-Summary Table
 
-┌─────┬──────────┬──────────────┬──────────────────────────────────────────────────────────────┐
-│  #  │ Severity │   Category   │                            Issue                             │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 1   │ High     │ Result       │ Inconsistent error shape (array vs single) across subtypes   │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 2   │ High     │ Validation   │ Validation<T> doesn't accumulate errors — misleading name    │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 4   │ High     │ Combinators  │ WhenAll silently drops all but the first failure             │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 17  │ High     │ Entities     │ { get; } = UtcNow timestamps may not round-trip through EF   │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 12  │ Medium   │ Value Types  │ Half the value types allow invalid/null state (no factory)   │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 13  │ Medium   │ Value Types  │ Static Equals pattern is non-standard                        │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 20  │ Medium   │ Entities     │ Invite.Inviter is a Username not a UserId                    │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 19  │ Medium   │ Entities     │ required ModeratorId? models actor as nullable instead of DU │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 24  │ Medium   │ Entities     │ ICollection<T> nav props expose mutable state                │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 11  │ Medium   │ IDs          │ No conversion between ModeratorId ↔ UserId                   │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 3   │ Low      │ Validation   │ Validation<T> missing Tap/TapAsync                           │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 5   │ Low      │ Result       │ MatchAsync failure handlers are always sync                  │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 6   │ Low      │ Extensions   │ onNotChanged vs onNotModified — name mismatch                │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 7   │ Low      │ Combinators  │ No IEnumerable-arity WhenAll                                 │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 8   │ Low      │ Extensions   │ No ToResult() extension on Task<Validation<T>>               │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 9   │ Low      │ IDs          │ SinId/AttachmentId placement inconsistency                   │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 10  │ Low      │ IDs          │ SinId missing TryParse, signed vs unsigned unexplained       │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 14  │ Low      │ Value Types  │ Attachment.FileName is raw string                            │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 15  │ Low      │ Value Types  │ PluralKit SystemId/MemberId are raw strings                  │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 16  │ Low      │ Value Types  │ CustomCommand.Content is raw string                          │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 18  │ Low      │ Entities     │ Sin.Id uses private set, breaks record immutability          │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 21  │ Low      │ Entities     │ Invite has no GuildId                                        │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 22  │ Low      │ Entities     │ LeaderboardView is not sealed                                │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 23  │ Low      │ Entities     │ XpHistory.TimeOut name is misleading                         │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 25  │ Low      │ Entities     │ MessageHistoryEntry.TimeStamp casing inconsistency           │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 26  │ Low      │ Entities     │ Dual ProxiedMessageLink on Message is confusing              │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 27  │ Low      │ Architecture │ EF navigation properties in domain entities                  │
-├─────┼──────────┼──────────────┼──────────────────────────────────────────────────────────────┤
-│ 28  │ Low      │ Architecture │ No aggregate roots or encapsulated invariants                │
-└─────┴──────────┴──────────────┴──────────────────────────────────────────────────────────────┘
+### #13 — ✅ Static `Equals(a, b)` pattern is non-standard and confusing
 
-The three highest-priority fixes are: (2) give Validation<T> real applicative combining so it earns its name, (17) replace the
-defaulted-timestamp anti-pattern with required init timestamps so EF round-trips are unambiguous, and (12) apply the smart-constructor
-pattern uniformly across all value types that currently have public constructors.
+**Original issue:** `AvatarFileName`, `Nickname`, `Username`, and `MessageContent` defined `public static bool Equals(T? a, T? b)` methods that shadow `object.Equals` and are unexpected by C# consumers.
 
+**Current state:** All four types now use instance methods (`public bool Equals(T other, StringComparison comparison)`). The single caller that needed nullable handling was updated to use null-propagation (`message.Content?.Equals(...) ?? false`), which is more readable than the static form.
+
+---
+
+### #14 — ✅ `Attachment.FileName` was a raw string
+
+**Original issue:** Every other filename-like field was wrapped in a value type; `Attachment.FileName` was a plain `string`.
+
+**Current state:** `Attachment.FileName` is typed as `AttachmentFileName`, which has a private constructor, a `Create()` factory, and an internal `FromDatabase` method.
+
+---
+
+### #15 — ✅ PluralKit `SystemId` / `MemberId` were raw strings
+
+**Original issue:** Nothing prevented passing a `SystemId` string where a `MemberId` was expected.
+
+**Current state:** `PluralKitSystemId` and `PluralKitMemberId` are typed value objects with private constructors and `Create()` factories, living in `ProxiedMessageLink.cs`.
+
+---
+
+### #16 — ✅ `CustomCommand.Content` was a raw string
+
+**Original issue:** `TextCustomCommand` and `EmbedCustomCommand` stored content as `required string Content` with no bounds or empty check.
+
+**Current state:** `CustomCommandContent` is a smart-constructor value type (max 2000 chars, non-empty) used everywhere command content appears.
+
+---
+
+## IV. Entity Model Issues
+
+### #17 — ✅ `{ get; } = DateTimeOffset.UtcNow` timestamps may not round-trip through EF
+
+**Original issue:** Several entities used `public DateTimeOffset Foo { get; } = DateTimeOffset.UtcNow`. Without a setter, EF Core must set the backing field via reflection at materialization time. If the mapping is not configured precisely, an entity loaded from the database will have the object-construction time, not the stored value.
+
+**Current state:** All seven remaining entities are now `required DateTimeOffset ... { get; init; }`. All construction sites in production and test code explicitly provide the timestamp. `Message.CreatedTimestamp` and `MessageCreatedEntry.Timestamp` use `args.Message.CreationTimestamp` (the actual Discord message timestamp) rather than `UtcNow`.
+
+---
+
+### #18 — ✅ `Sin.Id` uses `private set`, breaking record immutability
+
+**Original issue:** `public SinId Id { get; private set; }` was the only property in the model using a mutable setter. All others use `init`.
+
+**Current state:** Changed to `public SinId Id { get; init; }`. EF Core is configured with `.UsePropertyAccessMode(PropertyAccessMode.Field)` on the `Id` property so it writes directly to the backing field after INSERT for the `bigserial` identity column, bypassing the C# `init` restriction. A comment on the property explains the EF-only write-back.
+
+---
+
+### #19 — ✅ `required ModeratorId? ModeratorId` — required nullable is semantically confusing
+
+**Original issue:** `required` + nullable reads as "you must provide this, but null is a valid value." The better model is a discriminated union (e.g., `ModeratorActor` vs. `SystemActor`).
+
+**Current state:** `required` removed from both `Sin.ModeratorId` and `SinReasonHistory.ModeratorId`. Both are now plain optional `ModeratorId?` properties — nullable when the acting party is unknown or system-generated, consistent across the sin cluster.
+
+---
+
+### #20 — ✅ `Invite.Inviter` is a `Username`, not a `UserId` (review premise incorrect)
+
+**Original issue:** The inviter's display name can change; storing a `Username` makes the invite record stale over time. The stable identity is the Discord user ID.
+
+**Actual semantics:** `Invite` is a pure in-memory snapshot used to identify which invite a new member used when joining. It is never persisted. Staleness is not a concern — the snapshot is refreshed from the Discord API on every relevant event. The only use of `Inviter` is string interpolation for a join-log message, where `Username` is exactly the right type. No change needed.
+
+---
+
+### #21 — ✅ `Invite` has no `GuildId` (review premise incorrect)
+
+**Original issue:** An invite is scoped to a guild, but the entity has no `GuildId`, making it impossible to query all invites for a guild without an external join.
+
+**Actual semantics:** `Invite` is in-memory only, stored inside a `GuildInviteDto` whose `ConcurrentDictionary<InviteCode, Invite>` is already scoped per guild. The guild context lives in the container; adding `GuildId` to each `Invite` entry would be redundant. No change needed.
+
+---
+
+### #22 — ✅ `LeaderboardView` is not sealed
+
+**Original issue:** Every other concrete entity is `sealed record`; `LeaderboardView` was just `record`.
+
+**Current state:** Changed to `public sealed record LeaderboardView`.
+
+---
+
+### #23 — ✅ `XpHistory.TimeOut` is a misleading name (review was incorrect)
+
+**Original issue:** The review assumed `TimeOut` stored the recording timestamp and suggested renaming to `RecordedAt` or `Timestamp`.
+
+**Actual semantics:** `TimeOut` stores the XP cooldown expiry — the point in time *after* which the user can earn XP again. The `DateTimeOffset` type is correct. The name is intentional and domain-accurate; the review misread the field's purpose. No rename needed.
+
+---
+
+### #24 — ✅ `ICollection<T>` navigation properties expose mutable state (not applicable)
+
+**Original issue:** Collections typed as `ICollection<T>` allow external callers to call `.Add()` / `.Remove()` directly, bypassing any invariants the aggregate might enforce.
+
+**Decision:** No mutation of navigation collections occurs in application code — all writes go through the DbContext's DbSet directly. The theoretical exposure is real but has no practical impact on this codebase. Enforcing aggregate invariants via read-only collections would add significant boilerplate for no concrete benefit (see #28). Closed as not applicable.
+
+---
+
+### #25 — ✅ `MessageHistoryEntry.TimeStamp` casing inconsistency
+
+**Original issue:** Every other timestamp property uses `Timestamp` (lowercase `s`); `MessageHistoryEntry` used `TimeStamp` (uppercase `S`).
+
+**Current state:** Renamed to `Timestamp` (lowercase `s`) as part of the #17 fix. The EF column mapping preserves the existing `"TimeStamp"` column name via `HasColumnName("TimeStamp")`, so no migration is required for this rename.
+
+---
+
+### #26 — ✅ Dual `ProxiedMessageLink` properties on `Message` are confusing
+
+**Original issue:** `Message` has both `ProxiedMessageLink? ProxiedMessageLink` and `ProxiedMessageLink? OriginalMessageLink`, both of the same type. The reason for two separate references isn't explained.
+
+**Current state:** XML doc comments added to both properties explaining the PluralKit flow:
+- `ProxiedMessageLink` is set when *this* message is the PluralKit webhook (proxied) message.
+- `OriginalMessageLink` is set when *this* message is the original message sent by the user's main Discord account, which PluralKit deleted and replaced.
+
+The names are correct; only the explanation was missing.
+
+---
+
+## V. Domain Layer Boundary
+
+### #27 — ✅ EF Core navigation properties bleed into domain entities (accepted trade-off)
+
+**Original issue:** Properties like `Pardon.Sin`, `Attachment.Message`, and `ProxiedMessageLink.ProxyMessage` are EF navigation properties, not domain concepts.
+
+**Decision:** This is an accepted trade-off of the EF Core + single-project domain model approach. Navigation properties are used exclusively in EF query projections (`.Include()`, LINQ selects), never in domain logic. Separating persistence and domain models would require a full mapping layer with no meaningful benefit for this application. Closed as accepted trade-off.
+
+---
+
+### #28 — ✅ No aggregate roots or encapsulated invariants (not applicable)
+
+**Original issue:** The `Sin` cluster (Sin + Pardons + ReasonHistory + PublishedMessages) should form an aggregate, but any code can add to any collection directly. The model doesn't enforce, for example, that a Sin cannot have two Pardons.
+
+**Decision:** The invariants that exist in this domain are simple enough that enforcing them at the application layer (in command handlers) is sufficient and correct. Introducing aggregate roots would add significant architectural ceremony — loading full aggregates before every mutation, routing all writes through root methods — for no concrete correctness improvement. Closed as not applicable.
+
+---
+
+## Summary
+
+| # | Status | Severity | Category | Issue |
+|---|--------|----------|----------|-------|
+| 1 | ✅ | High | Result | Inconsistent error shape across subtypes |
+| 2 | ✅ | High | Validation | `Validation<T>` had no applicative combining |
+| 4 | ✅ | High | Combinators | `WhenAll` silently dropped all but the first failure |
+| 17 | ✅ | High | Entities | `{ get; } = UtcNow` timestamps don't round-trip through EF |
+| 12 | ✅ | Medium | Value Types | Half the value types allowed invalid state (no smart constructor) |
+| 13 | ✅ | Medium | Value Types | Static `Equals` pattern non-standard |
+| 19 | ✅ | Medium | Entities | `required ModeratorId?` — required nullable |
+| 20 | ✅ | Medium | Entities | `Invite.Inviter` is `Username` not `UserId` (in-memory only, N/A) |
+| 24 | ✅ | Medium | Entities | `ICollection<T>` nav props expose mutable state (not applicable) |
+| 11 | ✅ | Medium | IDs | No conversion between `ModeratorId` ↔ `UserId` |
+| 3 | ✅ | Low | Validation | `Validation<T>` missing `Tap`/`TapAsync` |
+| 5 | ✅ | Low | Result | `MatchAsync` failure handlers were always sync |
+| 6 | ✅ | Low | Extensions | `onNotChanged` vs. `onNotModified` name mismatch |
+| 7 | ✅ | Low | Combinators | No `IEnumerable`-arity `WhenAll` |
+| 8 | ✅ | Low | Extensions | No `ToResult()` on `Task<Validation<T>>` |
+| 9 | ✅ | Low | IDs | `SinId`/`AttachmentId` placement inconsistency |
+| 10 | ✅ | Low | IDs | `SinId` missing `TryParse`; `long` choice undocumented |
+| 14 | ✅ | Low | Value Types | `Attachment.FileName` was a raw string |
+| 15 | ✅ | Low | Value Types | PluralKit `SystemId`/`MemberId` were raw strings |
+| 16 | ✅ | Low | Value Types | `CustomCommand.Content` was a raw string |
+| 18 | ✅ | Low | Entities | `Sin.Id` uses `private set`, breaks record immutability |
+| 21 | ✅ | Low | Entities | `Invite` has no `GuildId` (in-memory only, N/A) |
+| 22 | ✅ | Low | Entities | `LeaderboardView` is not sealed |
+| 23 | ✅ | Low | Entities | `XpHistory.TimeOut` name is misleading (review misread semantics) |
+| 25 | ✅ | Low | Entities | `MessageHistoryEntry.TimeStamp` casing inconsistency |
+| 26 | ✅ | Low | Entities | Dual `ProxiedMessageLink` properties on `Message` unexplained |
+| 27 | ✅ | Low | Architecture | EF navigation properties in domain entities (accepted trade-off) |
+| 28 | ✅ | Low | Architecture | No aggregate roots or encapsulated invariants (not applicable) |
+
+**28 resolved · 0 still open**
+
+The remaining medium-priority work is #24 (mutable collections) and #28 (aggregate roots) — fixing the collections is the prerequisite for enforcing any aggregate invariants.

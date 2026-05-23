@@ -44,6 +44,7 @@ public sealed partial class AddMessageEvent(
         {
             Id = args.GetMessageId(),
             UserId = args.GetAuthorUserId(),
+            CreatedTimestamp = args.Message.CreationTimestamp,
             Attachments =
             [
                 .. args.Message.Attachments
@@ -64,7 +65,8 @@ public sealed partial class AddMessageEvent(
                 {
                     MessageId = args.GetMessageId(),
                     GuildId = args.Guild.GetGuildId(),
-                    Content = args.Message.GetMessageContent()
+                    Content = args.Message.GetMessageContent(),
+                    Timestamp = args.Message.CreationTimestamp
                 }
             ]
         };
