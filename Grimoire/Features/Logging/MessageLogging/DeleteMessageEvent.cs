@@ -126,7 +126,8 @@ public sealed partial class DeleteMessageEvent(
                 }
                 : new MessageDeletedEntry
                 {
-                    MessageId = args.Message.GetMessageId(), GuildId = args.Guild.GetGuildId(),
+                    MessageId = args.Message.GetMessageId(),
+                    GuildId = args.Guild.GetGuildId(),
                     Timestamp = DateTimeOffset.UtcNow
                 });
         await dbContext.SaveChangesAsync();

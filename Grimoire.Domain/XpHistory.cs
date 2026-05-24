@@ -12,7 +12,10 @@ namespace Grimoire.Domain;
 /// <summary>A non-zero positive XP amount. Used for Earned, Awarded, and Migrated entries.</summary>
 public readonly record struct PositiveXpAmount
 {
-    private PositiveXpAmount(long value) => Value = value;
+    private PositiveXpAmount(long value)
+    {
+        Value = value;
+    }
 
     public long Value { get; }
 
@@ -21,7 +24,7 @@ public readonly record struct PositiveXpAmount
 
     public static Validation<PositiveXpAmount> Create(long value)
         => value > 0
-            ? Validation<PositiveXpAmount>.Succeed(new(value))
+            ? Validation<PositiveXpAmount>.Succeed(new PositiveXpAmount(value))
             : Validation<PositiveXpAmount>.Fail(
                 new Error("xp-amount.must-be-positive", "XP amount must be greater than zero."));
 
@@ -31,7 +34,10 @@ public readonly record struct PositiveXpAmount
 /// <summary>A non-zero negative XP amount. Used for Reclaimed entries.</summary>
 public readonly record struct NegativeXpAmount
 {
-    private NegativeXpAmount(long value) => Value = value;
+    private NegativeXpAmount(long value)
+    {
+        Value = value;
+    }
 
     public long Value { get; }
 
@@ -40,7 +46,7 @@ public readonly record struct NegativeXpAmount
 
     public static Validation<NegativeXpAmount> Create(long value)
         => value < 0
-            ? Validation<NegativeXpAmount>.Succeed(new(value))
+            ? Validation<NegativeXpAmount>.Succeed(new NegativeXpAmount(value))
             : Validation<NegativeXpAmount>.Fail(
                 new Error("xp-amount.must-be-negative", "XP amount must be less than zero."));
 
@@ -55,8 +61,8 @@ public abstract record XpHistoryEntry
     public required GuildId GuildId { get; init; }
 
     /// <summary>
-    /// Raw XP value from the database column. Use the typed <c>Xp</c> property on the
-    /// concrete subtype when possible; use this for EF Core aggregate queries across all subtypes.
+    ///     Raw XP value from the database column. Use the typed <c>Xp</c> property on the
+    ///     concrete subtype when possible; use this for EF Core aggregate queries across all subtypes.
     /// </summary>
     internal long RawXp { get; init; }
 }
@@ -90,7 +96,11 @@ public sealed record AwardedXp : XpHistoryEntry
                 new Error("awarded-xp.awarder-id.invalid", "AwarderId must be specified."));
         return Validation<AwardedXp>.Succeed(new AwardedXp
         {
-            RawXp = xp.Value, AwarderId = awarderId, UserId = userId, GuildId = guildId, TimeOut = timeOut
+            RawXp = xp.Value,
+            AwarderId = awarderId,
+            UserId = userId,
+            GuildId = guildId,
+            TimeOut = timeOut
         });
     }
 }
@@ -110,9 +120,9 @@ public sealed record ReclaimedXp : XpHistoryEntry
 }
 
 /// <summary>
-/// XP carried over from a legacy database migration. Read-only historical record;
-/// no factory is provided because no new Migrated entries will be created.
-/// EF Core materialises these directly from the database.
+///     XP carried over from a legacy database migration. Read-only historical record;
+///     no factory is provided because no new Migrated entries will be created.
+///     EF Core materialises these directly from the database.
 /// </summary>
 [UsedImplicitly]
 public sealed record MigratedXp : XpHistoryEntry

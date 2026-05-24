@@ -44,20 +44,22 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         var now = DateTimeOffset.UtcNow;
         var sin = Sin.ForWarn(actor, user.GetUserId(), guild.GetGuildId(), now)
             .Match(
-                s => string.IsNullOrWhiteSpace(reason) ? s : s with
-                {
-                    ReasonHistory =
-                    [
-                        new SinReasonHistory
-                        {
-                            SinId = default,
-                            Reason = ModerationReason.Create(reason)
-                                .Match(r => r, _ => throw new UnreachableException()),
-                            Actor = actor,
-                            SetAt = now
-                        }
-                    ]
-                },
+                s => string.IsNullOrWhiteSpace(reason)
+                    ? s
+                    : s with
+                    {
+                        ReasonHistory =
+                        [
+                            new SinReasonHistory
+                            {
+                                SinId = default,
+                                Reason = ModerationReason.Create(reason)
+                                    .Match(r => r, _ => throw new UnreachableException()),
+                                Actor = actor,
+                                SetAt = now
+                            }
+                        ]
+                    },
                 _ => throw new UnreachableException());
         dbcontext.Sins.Add(sin);
         await dbcontext.SaveChangesAsync();

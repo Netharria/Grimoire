@@ -47,9 +47,9 @@ public readonly record struct RoleId(ulong Value)
 }
 
 /// <summary>
-/// Uses <see langword="long"/> (not <see langword="ulong"/>) because the backing column is a PostgreSQL
-/// <c>bigserial</c> (signed 64-bit integer), not a Discord snowflake. Changing to <see langword="ulong"/>
-/// would silently truncate any ID above <see cref="long.MaxValue"/> on round-trip through EF Core.
+///     Uses <see langword="long" /> (not <see langword="ulong" />) because the backing column is a PostgreSQL
+///     <c>bigserial</c> (signed 64-bit integer), not a Discord snowflake. Changing to <see langword="ulong" />
+///     would silently truncate any ID above <see cref="long.MaxValue" /> on round-trip through EF Core.
 /// </summary>
 public readonly record struct SinId(long Value)
 {

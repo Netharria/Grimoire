@@ -16,6 +16,7 @@
     <InternalsVisibleTo Include="Grimoire.Data"/>
     <InternalsVisibleTo Include="Grimoire.Settings"/>
     <InternalsVisibleTo Include="Grimoire.Settings.Tests"/>
+    <InternalsVisibleTo Include="Grimoire.Tests"/>
   </ItemGroup>
 
 </Project>

@@ -29,7 +29,13 @@ public sealed partial class CustomCommandSettings
         CustomCommandName name)
     {
         await ctx.DeferResponseAsync();
-        await GetVersionsAsync(ctx.Guild!.GetGuildId(), name)
+        if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
+        {
+            await ctx.SendErrorResponseAsync("This command can only be used in a server.");
+            return;
+        }
+
+        await GetVersionsAsync(guild.GetGuildId(), name)
             .Match(
                 versions => SendHistoryPagesAsync(ctx, name, versions),
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());

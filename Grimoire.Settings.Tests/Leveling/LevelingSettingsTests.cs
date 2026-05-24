@@ -16,13 +16,14 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     private static readonly ModeratorId _modId = new(999UL);
     private readonly SettingsModule _sut = SettingsModuleFactory.Create(factory.ConnectionString);
 
-    public Task InitializeAsync() => Task.CompletedTask;
-    public Task DisposeAsync() => factory.ResetDatabase();
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+    public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
     [Fact]
     public async Task NoRows_ReturnsAllDefaults()
     {
-        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
+        var settings = await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         settings.XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(3));
         settings.Base.Value.ShouldBe(15);
@@ -33,9 +34,11 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task SetTextTime_RoundTrips()
     {
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 10);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 10,
+            TestContext.Current.CancellationToken);
 
-        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
+        var settings = await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         settings.XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromMinutes(10));
     }
@@ -43,9 +46,11 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task SetBase_RoundTrips()
     {
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20,
+            TestContext.Current.CancellationToken);
 
-        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
+        var settings = await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         settings.Base.Value.ShouldBe(20);
     }
@@ -53,9 +58,11 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task SetModifier_RoundTrips()
     {
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 100);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 100,
+            TestContext.Current.CancellationToken);
 
-        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
+        var settings = await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         settings.Modifier.Value.ShouldBe(100);
     }
@@ -63,9 +70,11 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task SetAmount_RoundTrips()
     {
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 10);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 10,
+            TestContext.Current.CancellationToken);
 
-        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
+        var settings = await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         settings.Amount.Value.ShouldBe(10);
     }
@@ -74,7 +83,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     public async Task TextTime_BelowRange_ReturnsInvalid()
     {
         var result =
-            await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 0);
+            await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 0,
+                TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Invalid>();
     }
@@ -83,7 +93,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     public async Task TextTime_AboveRange_ReturnsInvalid()
     {
         var result =
-            await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 61);
+            await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 61,
+                TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Invalid>();
     }
@@ -91,7 +102,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task Amount_BelowRange_ReturnsInvalid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 0);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 0,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Invalid>();
     }
@@ -99,7 +111,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task Amount_AboveRange_ReturnsInvalid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 101);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 101,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Invalid>();
     }
@@ -107,7 +120,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task Base_AboveRange_ReturnsInvalid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 501);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 501,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Invalid>();
     }
@@ -115,7 +129,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task Modifier_AboveRange_ReturnsInvalid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 201);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 201,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Invalid>();
     }
@@ -123,12 +138,15 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task MultipleWrites_LatestWins()
     {
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20);
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 30);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20,
+            TestContext.Current.CancellationToken);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 30,
+            TestContext.Current.CancellationToken);
 
         // Fresh SUT to bypass the cache populated by the second write.
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var settings = await freshSut.GetLevelingSettings(_guildId).ShouldSucceed();
+        var settings = await freshSut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         settings.Base.Value.ShouldBe(30);
     }
@@ -136,124 +154,150 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [Fact]
     public async Task RedundantWrite_ReturnsUnchanged_NoNewRow()
     {
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20,
+            TestContext.Current.CancellationToken);
 
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.NotModified>();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
             .Where(x => x.GuildId == _guildId && x.Type == GuildSettingType.LevelScalingBase)
-            .CountAsync();
+            .CountAsync(TestContext.Current.CancellationToken);
         count.ShouldBe(1);
     }
 
     [Fact]
     public async Task NewValue_ReturnsWritten_CacheInvalidated()
     {
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20,
+            TestContext.Current.CancellationToken);
 
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 30);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 30,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
 
-        var settings = await this._sut.GetLevelingSettings(_guildId).ShouldSucceed();
+        var settings = await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
         settings.Base.Value.ShouldBe(30);
     }
 
     [Fact]
     public async Task Base_MinExact_IsValid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 1);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 1,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(1);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Base
+            .Value.ShouldBe(1);
     }
 
     [Fact]
     public async Task Base_MaxExact_IsValid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 500);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 500,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(500);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Base
+            .Value.ShouldBe(500);
     }
 
     [Fact]
     public async Task Base_BelowMin_ReturnsInvalid()
-        => (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 0))
+        => (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 0,
+                TestContext.Current.CancellationToken))
             .ShouldBeOfType<Result<int>.Invalid>();
 
     [Fact]
     public async Task Modifier_MinExact_IsValid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 1);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 1,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Modifier.Value.ShouldBe(1);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Modifier
+            .Value.ShouldBe(1);
     }
 
     [Fact]
     public async Task Modifier_MaxExact_IsValid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 200);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 200,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Modifier.Value.ShouldBe(200);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Modifier
+            .Value.ShouldBe(200);
     }
 
     [Fact]
     public async Task Modifier_BelowMin_ReturnsInvalid()
-        => (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 0))
+        => (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 0,
+                TestContext.Current.CancellationToken))
             .ShouldBeOfType<Result<int>.Invalid>();
 
     [Fact]
     public async Task Amount_MinExact_IsValid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 1);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 1,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Amount.Value.ShouldBe(1);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Amount
+            .Value.ShouldBe(1);
     }
 
     [Fact]
     public async Task Amount_MaxExact_IsValid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 100);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 100,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Amount.Value.ShouldBe(100);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Amount
+            .Value.ShouldBe(100);
     }
 
     [Fact]
     public async Task TextTime_MinExact_IsValid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 1);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 1,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().XpTimeoutPeriod.Value
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .XpTimeoutPeriod.Value
             .ShouldBe(TimeSpan.FromMinutes(1));
     }
 
     [Fact]
     public async Task TextTime_MaxExact_IsValid()
     {
-        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 60);
+        var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 60,
+            TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<int>.Success>();
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().XpTimeoutPeriod.Value
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .XpTimeoutPeriod.Value
             .ShouldBe(TimeSpan.FromMinutes(60));
     }
 
     [Fact]
     public async Task CacheInvalidated_AfterSuccessfulWrite()
     {
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(15);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Base
+            .Value.ShouldBe(15);
 
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 99);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 99,
+            TestContext.Current.CancellationToken);
 
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(99);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Base
+            .Value.ShouldBe(99);
     }
 
     [Fact]
@@ -261,11 +305,15 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         var guildB = new GuildId(2UL);
 
-        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 100);
-        await this._sut.SetLevelingSettings(guildB, _modId, LevelSettings.Base, 200);
+        await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 100,
+            TestContext.Current.CancellationToken);
+        await this._sut.SetLevelingSettings(guildB, _modId, LevelSettings.Base, 200,
+            TestContext.Current.CancellationToken);
 
-        (await this._sut.GetLevelingSettings(_guildId)).ShouldSucceed().Base.Value.ShouldBe(100);
-        (await this._sut.GetLevelingSettings(guildB)).ShouldSucceed().Base.Value.ShouldBe(200);
+        (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Base
+            .Value.ShouldBe(100);
+        (await this._sut.GetLevelingSettings(guildB, TestContext.Current.CancellationToken)).ShouldSucceed().Base.Value
+            .ShouldBe(200);
     }
 
     // ── LevelingSettingEntry math ─────────────────────────────────────────────

@@ -40,7 +40,10 @@ public sealed class UpdatedUsernameEvent(
             return;
 
         await dbContext.UsernameHistory.AddAsync(
-            new UsernameHistory { UserId = args.Member.GetUserId(), Username = after, Timestamp = DateTimeOffset.UtcNow });
+            new UsernameHistory
+            {
+                UserId = args.Member.GetUserId(), Username = after, Timestamp = DateTimeOffset.UtcNow
+            });
         await dbContext.SaveChangesAsync();
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed

@@ -70,28 +70,27 @@ public partial class BanAddedEvent(
                 var now = DateTimeOffset.UtcNow;
                 var sin = Sin.ForBan(auditActor, args.Member.GetUserId(), args.Guild.GetGuildId(), now)
                     .Match(
-                        s => string.IsNullOrWhiteSpace(auditReason) ? s : s with
-                        {
-                            ReasonHistory =
-                            [
-                                new SinReasonHistory
-                                {
-                                    SinId = default,
-                                    Reason = ModerationReason.Create(auditReason)
-                                        .Match(r => r, _ => throw new UnreachableException()),
-                                    Actor = auditActor,
-                                    SetAt = now
-                                }
-                            ]
-                        },
+                        s => string.IsNullOrWhiteSpace(auditReason)
+                            ? s
+                            : s with
+                            {
+                                ReasonHistory =
+                                [
+                                    new SinReasonHistory
+                                    {
+                                        SinId = default,
+                                        Reason = ModerationReason.Create(auditReason)
+                                            .Match(r => r, _ => throw new UnreachableException()),
+                                        Actor = auditActor,
+                                        SetAt = now
+                                    }
+                                ]
+                            },
                         _ => throw new UnreachableException());
                 dbContext.Sins.Add(sin);
                 await dbContext.SaveChangesAsync();
 
-                lastBan = new LastSin
-                {
-                    SinId = sin.Id, Actor = sin.Actor, Reason = auditReason, SinOn = sin.SinOn
-                };
+                lastBan = new LastSin { SinId = sin.Id, Actor = sin.Actor, Reason = auditReason, SinOn = sin.SinOn };
             }
             catch (Exception ex) when (ex is UnauthorizedException or ServerErrorException)
             {

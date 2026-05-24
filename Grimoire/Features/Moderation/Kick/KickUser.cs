@@ -45,20 +45,22 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
         var now = DateTimeOffset.UtcNow;
         var sin = Sin.ForKick(actor, member.GetUserId(), guild.GetGuildId(), now)
             .Match(
-                s => string.IsNullOrWhiteSpace(reason) ? s : s with
-                {
-                    ReasonHistory =
-                    [
-                        new SinReasonHistory
-                        {
-                            SinId = default,
-                            Reason = ModerationReason.Create(reason!)
-                                .Match(r => r, _ => throw new UnreachableException()),
-                            Actor = actor,
-                            SetAt = now
-                        }
-                    ]
-                },
+                s => string.IsNullOrWhiteSpace(reason)
+                    ? s
+                    : s with
+                    {
+                        ReasonHistory =
+                        [
+                            new SinReasonHistory
+                            {
+                                SinId = default,
+                                Reason = ModerationReason.Create(reason)
+                                    .Match(r => r, _ => throw new UnreachableException()),
+                                Actor = actor,
+                                SetAt = now
+                            }
+                        ]
+                    },
                 _ => throw new UnreachableException());
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();

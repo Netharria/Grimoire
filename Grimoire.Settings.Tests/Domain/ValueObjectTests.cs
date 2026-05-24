@@ -292,6 +292,6 @@ public sealed class ValueObjectTests
     {
         var result = RewardMessage.FromDatabase("hello");
         result.ShouldNotBeNull();
-        result!.Value.Value.ShouldBe("hello");
+        result.Value.Value.ShouldBe("hello");
     }
 }

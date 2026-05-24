@@ -66,20 +66,22 @@ public sealed class MuteUser(
         var muteEndTime = durationType.GetDateTimeOffset(durationAmount);
         var sin = Sin.ForMute(actor, member.GetUserId(), guild.GetGuildId(), now)
             .Match(
-                s => string.IsNullOrWhiteSpace(reason) ? s : s with
-                {
-                    ReasonHistory =
-                    [
-                        new SinReasonHistory
-                        {
-                            SinId = default,
-                            Reason = ModerationReason.Create(reason!)
-                                .Match(r => r, _ => throw new UnreachableException()),
-                            Actor = actor,
-                            SetAt = now
-                        }
-                    ]
-                },
+                s => string.IsNullOrWhiteSpace(reason)
+                    ? s
+                    : s with
+                    {
+                        ReasonHistory =
+                        [
+                            new SinReasonHistory
+                            {
+                                SinId = default,
+                                Reason = ModerationReason.Create(reason)
+                                    .Match(r => r, _ => throw new UnreachableException()),
+                                Actor = actor,
+                                SetAt = now
+                            }
+                        ]
+                    },
                 _ => throw new UnreachableException());
 
         dbContext.Sins.Add(sin);

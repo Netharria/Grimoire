@@ -17,10 +17,10 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     private static readonly RoleId _roleId = new(300UL);
     private readonly SettingsModule _sut = SettingsModuleFactory.Create(factory.ConnectionString);
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
         => await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
 
-    public Task DisposeAsync() => factory.ResetDatabase();
+    public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
     private Task AddReward(RoleId roleId, int level, string? message = null)
         => this._sut.SetRewardAsync(
@@ -34,7 +34,8 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task NoRewards_ReturnsEmptySet()
     {
-        var result = await this._sut.GetLevelingRewardsAsync(_guildId).ShouldSucceed();
+        var result = await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.ShouldBeEmpty();
     }
@@ -43,9 +44,11 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     public async Task SingleReward_ReturnedCorrectly()
     {
         await this._sut.SetRewardAsync(
-            new RewardAdded(_roleId, _guildId, _modId, DateTimeOffset.UtcNow, 5, RewardMessage.FromDatabase("GG")));
+            new RewardAdded(_roleId, _guildId, _modId, DateTimeOffset.UtcNow, 5, RewardMessage.FromDatabase("GG")),
+            TestContext.Current.CancellationToken);
 
-        var result = await this._sut.GetLevelingRewardsAsync(_guildId).ShouldSucceed();
+        var result = await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.ShouldHaveSingleItem();
         var entry = result.Single();
@@ -64,7 +67,8 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
         await AddReward(roleId3, 15);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId).ShouldSucceed();
+        var result = await freshSut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.Count.ShouldBe(3);
         result.Select(x => x.RoleId).ShouldContain(_roleId);
@@ -79,7 +83,8 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
         await AddReward(_roleId, 10);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId).ShouldSucceed();
+        var result = await freshSut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.ShouldHaveSingleItem();
         result.Single().RewardLevel.ShouldBe(10);
@@ -92,7 +97,8 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
         await RemoveReward(_roleId);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId).ShouldSucceed();
+        var result = await freshSut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.ShouldBeEmpty();
     }
@@ -105,7 +111,8 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
         await AddReward(_roleId, 5);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var result = await freshSut.GetLevelingRewardsAsync(_guildId).ShouldSucceed();
+        var result = await freshSut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.ShouldHaveSingleItem();
         result.Single().RoleId.ShouldBe(_roleId);
@@ -114,11 +121,13 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task CacheInvalidated_AfterSetReward()
     {
-        (await this._sut.GetLevelingRewardsAsync(_guildId)).ShouldSucceed().ShouldBeEmpty();
+        (await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeEmpty();
 
         await AddReward(_roleId, 5);
 
-        (await this._sut.GetLevelingRewardsAsync(_guildId)).ShouldSucceed().ShouldHaveSingleItem();
+        (await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldHaveSingleItem();
     }
 
     [Fact]
@@ -126,13 +135,16 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     {
         var guildB = new GuildId(2UL);
         var roleB = new RoleId(301UL);
-        await this._sut.SetModuleState(Module.Leveling, guildB, _modId, true);
+        await this._sut.SetModuleState(Module.Leveling, guildB, _modId, true, TestContext.Current.CancellationToken);
 
         await AddReward(_roleId, 5);
-        await this._sut.SetRewardAsync(new RewardAdded(roleB, guildB, _modId, DateTimeOffset.UtcNow, 10, null));
+        await this._sut.SetRewardAsync(new RewardAdded(roleB, guildB, _modId, DateTimeOffset.UtcNow, 10, null),
+            TestContext.Current.CancellationToken);
 
-        var resultA = await this._sut.GetLevelingRewardsAsync(_guildId).ShouldSucceed();
-        var resultB = await this._sut.GetLevelingRewardsAsync(guildB).ShouldSucceed();
+        var resultA = await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
+        var resultB = await this._sut.GetLevelingRewardsAsync(guildB, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         resultA.ShouldHaveSingleItem();
         resultA.Single().RoleId.ShouldBe(_roleId);

@@ -17,7 +17,7 @@ namespace Grimoire.Settings.Tests;
 public sealed class SettingsTestsFactory : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgreSqlContainer =
-        new PostgreSqlBuilder("postgres:15-alpine")
+        new PostgreSqlBuilder("postgres:18-alpine")
             .Build();
 
     private DbConnection _dbConnection = null!;
@@ -25,7 +25,7 @@ public sealed class SettingsTestsFactory : IAsyncLifetime
 
     public string ConnectionString => this._postgreSqlContainer.GetConnectionString();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await this._postgreSqlContainer.StartAsync();
 
@@ -43,7 +43,7 @@ public sealed class SettingsTestsFactory : IAsyncLifetime
             new RespawnerOptions { SchemasToInclude = ["Settings"], DbAdapter = DbAdapter.Postgres });
     }
 
-    public Task DisposeAsync() => this._postgreSqlContainer.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => this._postgreSqlContainer.DisposeAsync();
 
     public Task ResetDatabase() => this._respawner.ResetAsync(this._dbConnection);
 

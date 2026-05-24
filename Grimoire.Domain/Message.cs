@@ -15,18 +15,20 @@ public sealed record Message
     public required ChannelId ChannelId { get; init; }
     public required DateTimeOffset CreatedTimestamp { get; init; }
     public MessageId? ReferencedMessageId { get; init; }
+
     /// <summary>
-    /// Set when this message is the PluralKit webhook (proxied) message.
-    /// Links back to the original message the user sent with their main Discord account before PluralKit deleted it.
+    ///     Set when this message is the PluralKit webhook (proxied) message.
+    ///     Links back to the original message the user sent with their main Discord account before PluralKit deleted it.
     /// </summary>
     public ProxiedMessageLink? ProxiedMessageLink { get; init; }
 
     /// <summary>
-    /// Set when this message is the original message sent by the user's main Discord account,
-    /// which PluralKit subsequently deleted and replaced with a webhook message.
-    /// Links forward to the proxied webhook message.
+    ///     Set when this message is the original message sent by the user's main Discord account,
+    ///     which PluralKit subsequently deleted and replaced with a webhook message.
+    ///     Links forward to the proxied webhook message.
     /// </summary>
     public ProxiedMessageLink? OriginalMessageLink { get; init; }
+
     public ICollection<Attachment> Attachments { get; init; } = [];
     public ICollection<MessageHistoryEntry> MessageHistory { get; init; } = [];
     public required MessageId Id { get; init; }

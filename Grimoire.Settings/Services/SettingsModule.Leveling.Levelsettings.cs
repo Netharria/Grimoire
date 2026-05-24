@@ -67,10 +67,10 @@ public sealed partial class SettingsModule
                 }, cancellationToken: cancellationToken);
 
         return Validation.Combine(
-            XpTimeoutPeriod.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),
-            LevelScalingModifier.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier)),
-            LevelScalingBase.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase)),
-            XpGainAmount.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount)))
+                XpTimeoutPeriod.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),
+                LevelScalingModifier.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier)),
+                LevelScalingBase.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase)),
+                XpGainAmount.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount)))
             .Map(v => new LevelingSettingEntry(v.Item1, v.Item2, v.Item3, v.Item4))
             .Match(
                 entry => entry,

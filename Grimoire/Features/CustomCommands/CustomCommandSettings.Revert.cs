@@ -33,7 +33,12 @@ public sealed partial class CustomCommandSettings
         string version)
     {
         await ctx.DeferResponseAsync();
-        var guild = ctx.Guild!;
+        if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
+        {
+            await ctx.SendErrorResponseAsync("This command can only be used in a server.");
+            return;
+        }
+
         await ParseVersion(version)
             .ToResult()
             .BindAsync(unixSeconds =>

@@ -28,10 +28,16 @@ public sealed partial class CustomCommandSettings
         CustomCommandName name)
     {
         await ctx.DeferResponseAsync();
-        await QueryStatsAsync(ctx.Guild!.GetGuildId(), name)
+        if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
+        {
+            await ctx.SendErrorResponseAsync("This command can only be used in a server.");
+            return;
+        }
+
+        await QueryStatsAsync(guild.GetGuildId(), name)
             .Match(
-            r => ctx.ReplyAsync(embed: BuildStatsEmbed(name, r.Usage, r.TopUsers)).AsTask(),
-            error => ctx.SendErrorResponseAsync(error.Message).AsTask());
+                r => ctx.ReplyAsync(embed: BuildStatsEmbed(name, r.Usage, r.TopUsers)).AsTask(),
+                error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
 
     private async Task<Result<StatsQueryResult>> QueryStatsAsync(GuildId guildId, CustomCommandName name)

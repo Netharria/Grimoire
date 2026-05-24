@@ -17,8 +17,8 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     private static readonly PreviouslyDeniedPermissions _prevDenied = new(0L);
     private readonly SettingsModule _sut = SettingsModuleFactory.Create(factory.ConnectionString);
 
-    public Task InitializeAsync() => Task.CompletedTask;
-    public Task DisposeAsync() => factory.ResetDatabase();
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+    public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
     private Task<Result<ChannelLocked>> Lock(
         ChannelId channelId,
@@ -39,7 +39,8 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     [Fact]
     public async Task NoLock_IsChannelLocked_ReturnsFalse()
     {
-        var result = await this._sut.IsChannelLocked(_channelId, _guildId).ShouldSucceed();
+        var result = await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.ShouldBeFalse();
     }
@@ -49,7 +50,8 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     {
         await Lock(_channelId, _guildId, DateTimeOffset.UtcNow.AddHours(1));
 
-        var result = await this._sut.IsChannelLocked(_channelId, _guildId).ShouldSucceed();
+        var result = await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.ShouldBeTrue();
     }
@@ -64,14 +66,15 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         await Lock(_channelId, _guildId, newEndTime, newReason);
 
         await using var db = factory.CreateDbContext();
-        var count = await db.ChannelLocks.CountAsync(x => x.ChannelId == _channelId && x.GuildId == _guildId);
+        var count = await db.ChannelLocks.CountAsync(x => x.ChannelId == _channelId && x.GuildId == _guildId,
+            TestContext.Current.CancellationToken);
         count.ShouldBe(2);
 
         var latest = await db.ChannelLocks
             .OfType<ChannelLocked>()
             .Where(x => x.ChannelId == _channelId)
             .OrderByDescending(x => x.SetAt)
-            .FirstAsync();
+            .FirstAsync(TestContext.Current.CancellationToken);
         latest.Reason?.Value.ShouldBe(newReason);
         latest.EndTime.ShouldBe(newEndTime, TimeSpan.FromSeconds(1));
     }
@@ -91,7 +94,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
             .OfType<ChannelLocked>()
             .Where(x => x.ChannelId == _channelId)
             .OrderByDescending(x => x.SetAt)
-            .FirstAsync();
+            .FirstAsync(TestContext.Current.CancellationToken);
         latest.PreviouslyAllowed.ShouldBe(originalAllowed);
         latest.PreviouslyDenied.ShouldBe(originalDenied);
     }
@@ -115,12 +118,15 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         ((Result<ChannelLocked>.Success)result).Value.ShouldNotBeNull();
 
         await using var db = factory.CreateDbContext();
-        var count = await db.ChannelLocks.CountAsync(x => x.ChannelId == _channelId);
+        var count = await db.ChannelLocks.CountAsync(x => x.ChannelId == _channelId,
+            TestContext.Current.CancellationToken);
         count.ShouldBe(2);
-        (await db.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(x => x.ChannelId == _channelId)).ShouldBeTrue();
+        (await db.ChannelLocks.OfType<ChannelUnlocked>()
+            .AnyAsync(x => x.ChannelId == _channelId, TestContext.Current.CancellationToken)).ShouldBeTrue();
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        (await freshSut.IsChannelLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeFalse();
+        (await freshSut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeFalse();
     }
 
     [Fact]
@@ -136,9 +142,10 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         db.ChannelLocks.Add(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("future"), futureChannel, _guildId, DateTimeOffset.UtcNow,
             _prevAllowed, _prevDenied, DateTimeOffset.UtcNow.AddHours(1)).ShouldSucceed());
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var expired = await this._sut.GetAllExpiredChannelLocks().ToListAsync();
+        var expired = await this._sut.GetAllExpiredChannelLocks(TestContext.Current.CancellationToken)
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         expired.Count.ShouldBe(1);
         expired.Single().ChannelId.ShouldBe(_channelId);
@@ -149,11 +156,13 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     {
         await Lock(_channelId, _guildId, DateTimeOffset.UtcNow.AddHours(1));
 
-        (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeTrue();
+        (await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeTrue();
 
         await Unlock(_channelId, _guildId);
 
-        (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeFalse();
+        (await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeFalse();
     }
 
     [Fact]
@@ -168,11 +177,13 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     [Fact]
     public async Task CacheInvalidated_AfterAddChannelLock()
     {
-        (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeFalse();
+        (await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeFalse();
 
         await Lock(_channelId, _guildId, DateTimeOffset.UtcNow.AddHours(1));
 
-        (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeTrue();
+        (await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeTrue();
     }
 
     [Fact]
@@ -185,10 +196,12 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         db.ChannelLocks.Add(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("locked"), _channelId, _guildId, t1,
             _prevAllowed, _prevDenied, t1.AddHours(4)).ShouldSucceed());
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        (await this._sut.IsChannelLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeTrue();
-        (await this._sut.IsChannelLocked(_channelId, guildB)).ShouldSucceed().ShouldBeFalse();
+        (await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeTrue();
+        (await this._sut.IsChannelLocked(_channelId, guildB, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeFalse();
     }
 
     [Fact]
@@ -201,9 +214,10 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         db.ChannelLocks.Add(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("locked"), _channelId, guildB, t1,
             _prevAllowed, _prevDenied, t1.AddHours(4)).ShouldSucceed());
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await this._sut.IsChannelLocked(_channelId, _guildId).ShouldSucceed();
+        var result = await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
 
         result.ShouldBeFalse();
     }
@@ -222,10 +236,11 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         db.ChannelLocks.Add(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
             _prevAllowed, _prevDenied, t2.AddHours(4)).ShouldSucceed());
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        (await freshSut.IsChannelLocked(_channelId, _guildId)).ShouldSucceed().ShouldBeTrue();
+        (await freshSut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .ShouldBeTrue();
     }
 
     [Fact]
@@ -254,7 +269,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         db.ChannelLocks.Add(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
             _prevAllowed, _prevDenied, t2.AddHours(4)).ShouldSucceed());
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await Unlock(_channelId, _guildId);
 
@@ -275,9 +290,10 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         db.ChannelLocks.Add(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
             _prevAllowed, _prevDenied, t2.AddHours(4)).ShouldSucceed());
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var expired = await this._sut.GetAllExpiredChannelLocks().ToListAsync();
+        var expired = await this._sut.GetAllExpiredChannelLocks(TestContext.Current.CancellationToken)
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         expired.ShouldContain(x => x.ChannelId == _channelId);
     }
@@ -295,9 +311,10 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         db.ChannelLocks.Add(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("guild-b"), _channelId, guildB, t1.AddMinutes(10),
             _prevAllowed, _prevDenied, t1.AddHours(2)).ShouldSucceed());
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var expired = await this._sut.GetAllExpiredChannelLocks().ToListAsync();
+        var expired = await this._sut.GetAllExpiredChannelLocks(TestContext.Current.CancellationToken)
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         expired.Count.ShouldBe(2);
     }
@@ -322,7 +339,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
             .OfType<ChannelLocked>()
             .Where(x => x.ChannelId == _channelId)
             .OrderByDescending(x => x.SetAt)
-            .FirstAsync();
+            .FirstAsync(TestContext.Current.CancellationToken);
         latest.PreviouslyAllowed.ShouldBe(p1Allowed);
         latest.PreviouslyDenied.ShouldBe(p1Denied);
     }
@@ -340,9 +357,10 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         db.ChannelLocks.Add(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("newer-active"), _channelId, _guildId, t2,
             _prevAllowed, _prevDenied, t2.AddHours(4)).ShouldSucceed());
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var expired = await this._sut.GetAllExpiredChannelLocks().ToListAsync();
+        var expired = await this._sut.GetAllExpiredChannelLocks(TestContext.Current.CancellationToken)
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         expired.ShouldBeEmpty();
     }

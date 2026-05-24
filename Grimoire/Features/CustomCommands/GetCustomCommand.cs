@@ -36,7 +36,11 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         string message = "")
     {
         await ctx.DeferResponseAsync();
-        var guild = ctx.Guild!;
+        if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
+        {
+            await ctx.SendErrorResponseAsync("This command can only be used in a server.");
+            return;
+        }
 
         var result = await FetchAuthorizedCommandAsync(guild.GetGuildId(), name, ctx.Member);
         if (result is not Result<CustomCommand>.Success { Value: var response })

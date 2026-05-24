@@ -27,7 +27,13 @@ public sealed partial class CustomCommandSettings
         CustomCommandName? name = null)
     {
         await ctx.DeferResponseAsync();
-        var guildId = ctx.Guild!.GetGuildId();
+        if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
+        {
+            await ctx.SendErrorResponseAsync("This command can only be used in a server.");
+            return;
+        }
+
+        var guildId = guild.GetGuildId();
         await (name is null
                 ? GetOverallLeaderboardAsync(guildId)
                 : GetCommandLeaderboardAsync(guildId, name.Value))

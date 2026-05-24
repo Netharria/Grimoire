@@ -46,7 +46,11 @@ public sealed class ValidationTests
     public void Map_OnInvalid_PropagatesErrorsWithoutCallingMapper()
     {
         var called = false;
-        var result = Validation<int>.Fail(_errorA).Map(x => { called = true; return x; });
+        var result = Validation<int>.Fail(_errorA).Map(x =>
+        {
+            called = true;
+            return x;
+        });
         result.ShouldBeOfType<Validation<int>.Invalid>().Errors.ShouldContain(_errorA);
         called.ShouldBeFalse();
     }
@@ -71,7 +75,11 @@ public sealed class ValidationTests
     public void Bind_OnInvalid_DoesNotCallBinder()
     {
         var called = false;
-        Validation<int>.Fail(_errorA).Bind(x => { called = true; return Validation<string>.Succeed($"{x}"); });
+        Validation<int>.Fail(_errorA).Bind(x =>
+        {
+            called = true;
+            return Validation<string>.Succeed($"{x}");
+        });
         called.ShouldBeFalse();
     }
 
@@ -117,7 +125,11 @@ public sealed class ValidationTests
     {
         var validation = Validation<int>.Succeed(1);
         var called = false;
-        validation.OrElse(() => { called = true; return Validation<int>.Succeed(99); }).ShouldBe(validation);
+        validation.OrElse(() =>
+        {
+            called = true;
+            return Validation<int>.Succeed(99);
+        }).ShouldBe(validation);
         called.ShouldBeFalse();
     }
 
@@ -174,7 +186,11 @@ public sealed class ValidationTests
     public async Task TapAsync_OnValid_ExecutesAction()
     {
         var seen = -1;
-        await Validation<int>.Succeed(3).TapAsync(x => { seen = x; return Task.CompletedTask; });
+        await Validation<int>.Succeed(3).TapAsync(x =>
+        {
+            seen = x;
+            return Task.CompletedTask;
+        });
         seen.ShouldBe(3);
     }
 

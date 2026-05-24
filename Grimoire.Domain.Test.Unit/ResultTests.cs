@@ -32,7 +32,11 @@ public sealed class ResultTests
     public void Map_OnInvalid_PropagatesWithoutCallingMapper()
     {
         var called = false;
-        Result<int>.Fail(_errorA).Map(x => { called = true; return x; });
+        Result<int>.Fail(_errorA).Map(x =>
+        {
+            called = true;
+            return x;
+        });
         called.ShouldBeFalse();
     }
 
@@ -84,7 +88,11 @@ public sealed class ResultTests
     public void Bind_OnInvalid_DoesNotCallBinder()
     {
         var called = false;
-        Result<int>.Fail(_errorA).Bind(x => { called = true; return Result<string>.Ok($"{x}"); });
+        Result<int>.Fail(_errorA).Bind(x =>
+        {
+            called = true;
+            return Result<string>.Ok($"{x}");
+        });
         called.ShouldBeFalse();
     }
 
@@ -133,7 +141,7 @@ public sealed class ResultTests
     [Fact]
     public void Match_OnNotFound_WithSpecificHandler_CallsHandler()
         => new Result<int>.NotFound(_errorA)
-            .Match(_ => 0, _ => 1, onNotFound: _ => 2)
+            .Match(_ => 0, _ => 1, _ => 2)
             .ShouldBe(2);
 
     [Fact]
@@ -167,7 +175,11 @@ public sealed class ResultTests
     {
         var result = Result<int>.Ok(1);
         var called = false;
-        result.OrElse(() => { called = true; return Result<int>.Ok(99); }).ShouldBe(result);
+        result.OrElse(() =>
+        {
+            called = true;
+            return Result<int>.Ok(99);
+        }).ShouldBe(result);
         called.ShouldBeFalse();
     }
 
@@ -222,7 +234,11 @@ public sealed class ResultTests
     public async Task TapAsync_OnSuccess_ExecutesAction()
     {
         var seen = -1;
-        await Result<int>.Ok(3).TapAsync(x => { seen = x; return Task.CompletedTask; });
+        await Result<int>.Ok(3).TapAsync(x =>
+        {
+            seen = x;
+            return Task.CompletedTask;
+        });
         seen.ShouldBe(3);
     }
 

@@ -66,6 +66,23 @@ public static class CommandContextExtension
             };
         }
 
+        /// <summary>
+        ///     Returns the <see cref="DiscordGuild" /> for the current context wrapped in a
+        ///     <see cref="Validation{T}" /> so callers are forced to handle the case where the
+        ///     command is invoked outside a guild.
+        /// </summary>
+        /// <remarks>
+        ///     Commands decorated with <c>[RequireGuild]</c> will never reach this point with a
+        ///     <c>null</c> guild at runtime, but returning <see cref="Validation{T}" /> makes that
+        ///     contract explicit to the compiler and prevents accidental <c>ctx.Guild!</c> suppression.
+        /// </remarks>
+        [Pure]
+        public Validation<DiscordGuild> GetRequiredGuild()
+            => ctx.Guild is { } guild
+                ? Validation<DiscordGuild>.Succeed(guild)
+                : Validation<DiscordGuild>.Fail(
+                    new Error("guild.required", "This command can only be used in a server."));
+
         [Pure]
         public ModeratorId GetModeratorId() => new(ctx.User.Id);
 

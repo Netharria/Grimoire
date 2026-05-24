@@ -126,8 +126,7 @@ public sealed class ValidationCombinatorTests
     {
         var tasks = new[]
         {
-            Task.FromResult(Result<int>.Ok(1)),
-            Task.FromResult(Result<int>.Ok(2)),
+            Task.FromResult(Result<int>.Ok(1)), Task.FromResult(Result<int>.Ok(2)),
             Task.FromResult(Result<int>.Ok(3))
         };
         var list = await Result.WhenAll(tasks).ShouldSucceed();
@@ -139,8 +138,7 @@ public sealed class ValidationCombinatorTests
     {
         var tasks = new[]
         {
-            Task.FromResult(Result<int>.Ok(1)),
-            Task.FromResult(Result<int>.Fail(_errorA)),
+            Task.FromResult(Result<int>.Ok(1)), Task.FromResult(Result<int>.Fail(_errorA)),
             Task.FromResult(Result<int>.Ok(3))
         };
         var result = await Result.WhenAll(tasks);
@@ -152,8 +150,7 @@ public sealed class ValidationCombinatorTests
     {
         var tasks = new[]
         {
-            Task.FromResult(Result<int>.Fail(_errorA)),
-            Task.FromResult(Result<int>.Ok(2)),
+            Task.FromResult(Result<int>.Fail(_errorA)), Task.FromResult(Result<int>.Ok(2)),
             Task.FromResult(Result<int>.Fail(_errorB))
         };
         var result = await Result.WhenAll(tasks);
@@ -165,11 +162,7 @@ public sealed class ValidationCombinatorTests
     [Fact]
     public async Task WhenAllList_DuplicateFailures_DeduplicatesBeforeCombining()
     {
-        var tasks = new[]
-        {
-            Task.FromResult(Result<int>.Fail(_errorA)),
-            Task.FromResult(Result<int>.Fail(_errorA))
-        };
+        var tasks = new[] { Task.FromResult(Result<int>.Fail(_errorA)), Task.FromResult(Result<int>.Fail(_errorA)) };
         var result = await Result.WhenAll(tasks);
         // Both failures carry the same error, so after dedup there is one — returned as-is.
         result.ShouldBeOfType<Result<IReadOnlyList<int>>.Invalid>().Error.ShouldBe(_errorA);

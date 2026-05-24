@@ -61,7 +61,11 @@ public sealed class BulkMessageDeletedEvent(
             return;
 
         await dbContext.MessageHistory.AddRangeAsync(
-            messages.Select(x => new MessageDeletedEntry { MessageId = x.MessageId, GuildId = guildId, Timestamp = DateTimeOffset.UtcNow }));
+            messages.Select(x =>
+                new MessageDeletedEntry
+                {
+                    MessageId = x.MessageId, GuildId = guildId, Timestamp = DateTimeOffset.UtcNow
+                }));
         await dbContext.SaveChangesAsync();
 
         var embed = new DiscordEmbedBuilder()

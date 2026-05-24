@@ -15,16 +15,19 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
     private static readonly ChannelId _channelId = new(200UL);
     private readonly SettingsModule _sut = SettingsModuleFactory.Create(factory.ConnectionString);
 
-    public Task InitializeAsync() => Task.CompletedTask;
-    public Task DisposeAsync() => factory.ResetDatabase();
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+    public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
     [Fact]
     public async Task ModuleEnabled_ChannelSet_GetEffectiveReturnsChannel()
     {
-        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
-        await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, _channelId);
+        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true, TestContext.Current.CancellationToken);
+        await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, _channelId,
+            TestContext.Current.CancellationToken);
 
-        var result = await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId);
+        var result =
+            await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId,
+                TestContext.Current.CancellationToken);
 
         result.ShouldSucceed().ShouldBe(_channelId);
     }
@@ -32,9 +35,11 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
     [Fact]
     public async Task ModuleEnabled_NoChannel_GetEffectiveReturnsNull()
     {
-        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true);
+        await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true, TestContext.Current.CancellationToken);
 
-        var result = await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId);
+        var result =
+            await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId,
+                TestContext.Current.CancellationToken);
 
         result.ShouldSucceed().ShouldBeNull();
     }
@@ -42,10 +47,14 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
     [Fact]
     public async Task SetNull_WritesDisabled_GetConfiguredReturnsNull()
     {
-        await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, _channelId);
-        await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, null);
+        await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, _channelId,
+            TestContext.Current.CancellationToken);
+        await this._sut.SetLogChannelSetting(GuildLogType.Leveling, _guildId, _modId, null,
+            TestContext.Current.CancellationToken);
 
-        var result = await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId);
+        var result =
+            await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId,
+                TestContext.Current.CancellationToken);
 
         result.ShouldSucceed().ShouldBeNull();
     }

@@ -129,7 +129,10 @@ public sealed partial class GuildLog(
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var logMessage = new OldLogMessage { ChannelId = channelId, GuildId = guildId, Id = messageId, CreatedAt = DateTimeOffset.UtcNow };
+        var logMessage = new OldLogMessage
+        {
+            ChannelId = channelId, GuildId = guildId, Id = messageId, CreatedAt = DateTimeOffset.UtcNow
+        };
         await dbContext.OldLogMessages.AddAsync(logMessage, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }

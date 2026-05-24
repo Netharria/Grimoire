@@ -32,7 +32,13 @@ public static class MemberDatabaseQueryHelpers
         var nicknamesToAdd = discordGuild.Members.Values
             .Where(x => !existingNicknames.Contains((x.GetUserId(), x.GetGuildId(), x.GetNickname())))
             .Select(x =>
-                new NicknameHistory { GuildId = x.GetGuildId(), UserId = x.GetUserId(), Nickname = x.GetNickname(), Timestamp = DateTimeOffset.UtcNow })
+                new NicknameHistory
+                {
+                    GuildId = x.GetGuildId(),
+                    UserId = x.GetUserId(),
+                    Nickname = x.GetNickname(),
+                    Timestamp = DateTimeOffset.UtcNow
+                })
             .ToArray();
 
         if (nicknamesToAdd.Length == 0)
@@ -65,7 +71,13 @@ public static class MemberDatabaseQueryHelpers
         var avatarsToAdd = discordGuild.Members.Values
             .Where(x => !existingAvatars.Contains((x.GetUserId(), x.GetGuildId(), x.GetAvatarFileName())))
             .Select(x =>
-                new Avatar { UserId = x.GetUserId(), GuildId = x.GetGuildId(), FileName = x.GetAvatarFileName(), Timestamp = DateTimeOffset.UtcNow })
+                new Avatar
+                {
+                    UserId = x.GetUserId(),
+                    GuildId = x.GetGuildId(),
+                    FileName = x.GetAvatarFileName(),
+                    Timestamp = DateTimeOffset.UtcNow
+                })
             .ToArray();
 
         if (avatarsToAdd.Length == 0)

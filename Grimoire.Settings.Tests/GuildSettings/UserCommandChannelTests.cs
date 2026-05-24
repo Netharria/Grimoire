@@ -15,15 +15,16 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
     private static readonly ChannelId _channelId = new(200UL);
     private readonly SettingsModule _sut = SettingsModuleFactory.Create(factory.ConnectionString);
 
-    public Task InitializeAsync() => Task.CompletedTask;
-    public Task DisposeAsync() => factory.ResetDatabase();
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+    public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
     [Fact]
     public async Task SetChannel_StoresValue_GetReturnsIt()
     {
-        await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId);
+        await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId,
+            TestContext.Current.CancellationToken);
 
-        var result = await this._sut.GetUserCommandChannel(_guildId);
+        var result = await this._sut.GetUserCommandChannel(_guildId, TestContext.Current.CancellationToken);
 
         result.ShouldSucceed().ShouldBe(_channelId);
     }
@@ -31,10 +32,11 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
     [Fact]
     public async Task SetNull_WritesDisabled_GetReturnsNull()
     {
-        await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId);
-        await this._sut.SetUserCommandChannelSetting(_guildId, _modId, null);
+        await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId,
+            TestContext.Current.CancellationToken);
+        await this._sut.SetUserCommandChannelSetting(_guildId, _modId, null, TestContext.Current.CancellationToken);
 
-        var result = await this._sut.GetUserCommandChannel(_guildId);
+        var result = await this._sut.GetUserCommandChannel(_guildId, TestContext.Current.CancellationToken);
 
         result.ShouldSucceed().ShouldBeNull();
     }
@@ -42,9 +44,12 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
     [Fact]
     public async Task RedundantWrite_ReturnsNotModified()
     {
-        await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId);
+        await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId,
+            TestContext.Current.CancellationToken);
 
-        var result = await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId);
+        var result =
+            await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId,
+                TestContext.Current.CancellationToken);
 
         result.ShouldBeOfType<Result<ChannelId?>.NotModified>();
     }
@@ -52,7 +57,7 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
     [Fact]
     public async Task NoRow_GetReturnsNull()
     {
-        var result = await this._sut.GetUserCommandChannel(_guildId);
+        var result = await this._sut.GetUserCommandChannel(_guildId, TestContext.Current.CancellationToken);
 
         result.ShouldSucceed().ShouldBeNull();
     }

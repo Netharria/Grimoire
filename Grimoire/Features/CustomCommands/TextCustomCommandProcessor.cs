@@ -34,7 +34,8 @@ public sealed class TextCustomCommandProcessor(IDbContextFactory<GrimoireDbConte
             .Bind(x => CustomCommandName.Create(x.Args[0]).Map(name => (x.Member, Name: name, x.Args)))
             .ToResult()
             .BindAsync(x => FetchCommandAsync(x.Member, x.Name, x.Args))
-            .TapAsync(cmd => dbContextFactory.RecordCommandUsageAsync(cmd.Name, cmd.Member.GetGuildId(), cmd.Member.GetUserId()))
+            .TapAsync(cmd =>
+                dbContextFactory.RecordCommandUsageAsync(cmd.Name, cmd.Member.GetGuildId(), cmd.Member.GetUserId()))
             .TapAsync(cmd => SendCommandResponseAsync(cmd, sender, eventArgs));
 
     private async Task<Result<ParsedCommand>> FetchCommandAsync(DiscordMember member, CustomCommandName name,

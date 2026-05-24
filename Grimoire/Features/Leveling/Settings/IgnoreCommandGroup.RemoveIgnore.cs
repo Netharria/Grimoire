@@ -25,8 +25,11 @@ public partial class IgnoreCommandGroup
         params SnowflakeObject[] value)
     {
         await ctx.DeferResponseAsync();
-        var guild = ctx.Guild!;
-
+        if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
+        {
+            await ctx.SendErrorResponseAsync("This command can only be used in a server.");
+            return;
+        }
 
         if (value.Length == 0)
         {

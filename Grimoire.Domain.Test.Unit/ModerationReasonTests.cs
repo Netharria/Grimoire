@@ -76,7 +76,7 @@ public sealed class ModerationReasonTests
         var result = ModerationReason.CreateIfNotNull("harassment");
         var reason = result.ShouldSucceed();
         reason.ShouldNotBeNull();
-        reason!.Value.Value.ShouldBe("harassment");
+        reason.Value.Value.ShouldBe("harassment");
     }
 
     [Fact]
