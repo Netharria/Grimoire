@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Data.Common;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
@@ -49,7 +50,7 @@ public sealed partial class CustomCommandSettings
                 .ExecuteDeleteAsync();
             return Result<bool>.Ok(deletedCount == 0);
         }
-        catch (Exception)
+        catch (DbException)
         {
             return Result<bool>.Fail(new Error("command.forget.db_error",
                 "Could not forget that command right now due to a database error. Please try again."));

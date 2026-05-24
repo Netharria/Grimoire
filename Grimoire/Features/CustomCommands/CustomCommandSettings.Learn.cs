@@ -56,23 +56,11 @@ public sealed partial class CustomCommandSettings
             permissionRole5,
             permissionRole6, permissionRole7, permissionRole8, permissionRole9, permissionRole10);
 
-        if (restrictedUse && roleIds.Count == 0)
-        {
-            await ctx.SendWarningResponseAsync("A restricted command must have at least one permission role.");
-            return;
-        }
-
-        ICollection<CustomCommandRole> roles = restrictedUse
-            ? roleIds.Select(id => (CustomCommandRole)new CustomCommandAllowRole
-            {
-                RoleId = id, Name = name, GuildId = guildId, CreatedAt = default
-            }).ToList()
-            : [];
-
-        await CustomCommandContent.Create(content)
-            .Bind(validContent => embed
-                ? EmbedCustomCommand.Create(name, guildId, validContent, embedColor, roles, ctx.GetModeratorId())
-                : TextCustomCommand.Create(name, guildId, validContent, roles, ctx.GetModeratorId()))
+        await BuildRoles(restrictedUse, roleIds, name, guildId)
+            .Bind(roles => CustomCommandContent.Create(content)
+                .Bind(validContent => embed
+                    ? EmbedCustomCommand.Create(name, guildId, validContent, embedColor, roles, ctx.GetModeratorId())
+                    : TextCustomCommand.Create(name, guildId, validContent, roles, ctx.GetModeratorId())))
             .ToResult()
             .BindAsync(SaveCommandAsync)
             .Match(
@@ -82,6 +70,21 @@ public sealed partial class CustomCommandSettings
 
     private static IReadOnlyList<RoleId> CollectRoleIds(params DiscordRole?[] roles)
         => roles.OfType<DiscordRole>().Select(r => r.GetRoleId()).Distinct().ToList();
+
+    private static Validation<ICollection<CustomCommandRole>> BuildRoles(
+        bool restrictedUse, IReadOnlyList<RoleId> roleIds, CustomCommandName name, GuildId guildId)
+        => restrictedUse switch
+        {
+            false => Validation<ICollection<CustomCommandRole>>.Succeed([]),
+            true when roleIds.Count == 0 => Validation<ICollection<CustomCommandRole>>.Fail(new Error(
+                "command.learn.restricted-no-roles",
+                "A restricted command must have at least one permission role.")),
+            _ => Validation<ICollection<CustomCommandRole>>.Succeed(
+                roleIds.Select(id => (CustomCommandRole)new CustomCommandAllowRole
+                {
+                    RoleId = id, Name = name, GuildId = guildId, CreatedAt = default
+                }).ToList())
+        };
 
     private async Task<Result<CustomCommand>> SaveCommandAsync(CustomCommand command)
     {

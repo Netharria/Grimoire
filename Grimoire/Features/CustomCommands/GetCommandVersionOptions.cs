@@ -31,14 +31,14 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
             .BindAsync(async name => await Versions(context.Guild!.GetGuildId(), name))
             .Match(
                 versions => versions.Select((v, i) =>
-                    new DiscordAutoCompleteChoice($"v{i + 1} — {v.Item1:yyyy-MM-dd HH:mm} UTC"
-                                                  + (v.Item2 is { } mod
+                    new DiscordAutoCompleteChoice($"v{i + 1} — {v.CreatedAt:yyyy-MM-dd HH:mm} UTC"
+                                                  + (v.ModeratorId is { } mod
                                                       ? $" by {UserExtensions.Mention(mod)}"
                                                       : string.Empty),
-                        v.Item1.ToUnixTimeSeconds().ToString())),
+                        v.CreatedAt.ToUnixTimeSeconds().ToString())),
                 _ => []);
 
-    private async ValueTask<Result<IEnumerable<(DateTimeOffset, ModeratorId?)>>> Versions(GuildId guildId,
+    private async ValueTask<Result<IEnumerable<CommandVersionEntry>>> Versions(GuildId guildId,
         CustomCommandName name)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -49,7 +49,9 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
             .Take(25)
             .Select(x => new { x.CreatedAt, x.ModeratorId })
             .ToListAsync();
-        return Result<IEnumerable<(DateTimeOffset, ModeratorId?)>>.Ok(
-            versions.Select(result => (result.CreatedAt, result.ModeratorId)));
+        return Result<IEnumerable<CommandVersionEntry>>.Ok(
+            versions.Select(v => new CommandVersionEntry(v.CreatedAt, v.ModeratorId)));
     }
+
+    private sealed record CommandVersionEntry(DateTimeOffset CreatedAt, ModeratorId? ModeratorId);
 }

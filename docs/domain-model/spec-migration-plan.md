@@ -160,7 +160,7 @@ ALTER TABLE "Mutes"
 
 ---
 
-## Step 6 — `CustomCommands`: TPH discriminator, versioning, `RolePrecedence`, usage tracking
+## Step 6 — `CustomCommands`: TPH discriminator, versioning, usage tracking
 
 **Source:** existing pending work + [`spec-custom-command-role-policy.md`](spec-custom-command-role-policy.md)
 **Depends on:** nothing
@@ -169,17 +169,15 @@ This step restructures `CustomCommands` and `CustomCommandsRole` to support:
 - TPH inheritance (`TextCustomCommand` / `EmbedCustomCommand` via `CommandType` discriminator)
 - TPH inheritance (`CustomCommandAllowRole` / `CustomCommandDenyRole` via `RoleType` discriminator)
 - Version history (composite PK with `CreatedAt`)
-- Conflict-resolution policy (`RolePrecedence`, from spec-custom-command-role-policy)
 - Usage tracking (`CustomCommandUsages` table)
 
 **Up:**
 ```sql
 -- 1. Add new CustomCommands columns with safe defaults.
 ALTER TABLE "CustomCommands"
-    ADD COLUMN "CreatedAt"      timestamptz  NOT NULL DEFAULT '0001-01-01T00:00:00Z',
-    ADD COLUMN "ModeratorId"    numeric(20,0) NULL,
-    ADD COLUMN "RolePrecedence" varchar(12)  NOT NULL DEFAULT 'DenyOverride',
-    ADD COLUMN "CommandType"    varchar(13)  NOT NULL DEFAULT '';
+    ADD COLUMN "CreatedAt"   timestamptz   NOT NULL DEFAULT '0001-01-01T00:00:00Z',
+    ADD COLUMN "ModeratorId" numeric(20,0) NULL,
+    ADD COLUMN "CommandType" varchar(13)   NOT NULL DEFAULT '';
 
 -- 2. Backfill CreatedAt and CommandType from the old IsEmbedded boolean flag.
 --    Must run before IsEmbedded is dropped.
@@ -284,7 +282,6 @@ ALTER TABLE "CustomCommands" DROP CONSTRAINT "PK_CustomCommands";
 ALTER TABLE "CustomCommands"
     DROP COLUMN "CreatedAt",
     DROP COLUMN "ModeratorId",
-    DROP COLUMN "RolePrecedence",
     DROP COLUMN "CommandType";
 
 ALTER TABLE "CustomCommands"

@@ -121,13 +121,6 @@ namespace Grimoire.Migrations
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
-                name: "RolePrecedence",
-                table: "CustomCommands",
-                type: "text",
-                nullable: false,
-                defaultValue: "DenyOverride");
-
-            migrationBuilder.AddColumn<string>(
                 name: "Name",
                 table: "CustomCommandsRole",
                 type: "character varying(24)",
@@ -553,10 +546,6 @@ namespace Grimoire.Migrations
 
             migrationBuilder.DropColumn(
                 name: "ModeratorId",
-                table: "CustomCommands");
-
-            migrationBuilder.DropColumn(
-                name: "RolePrecedence",
                 table: "CustomCommands");
 
             migrationBuilder.AddColumn<string>(

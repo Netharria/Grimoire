@@ -45,7 +45,7 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             return;
         }
 
-        await RecordUsageAsync(name, guild.GetGuildId(), ctx.User.GetUserId());
+        await dbContextFactory.RecordCommandUsageAsync(name, guild.GetGuildId(), ctx.User.GetUserId());
         await ctx.EditResponseAsync(BuildWebhookResponse(
             TruncateForDiscord(
                 ApplyMessage(
@@ -68,16 +68,6 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         return response is null || !IsUserAuthorized(member, response)
             ? Result<CustomCommand>.Fail(new Error("command.not_found", "Command not found or not authorized."))
             : Result<CustomCommand>.Ok(response);
-    }
-
-    private async Task RecordUsageAsync(CustomCommandName name, GuildId guildId, UserId userId)
-    {
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        await dbContext.CustomCommandUsages.AddAsync(new CustomCommandUsage
-        {
-            Name = name, GuildId = guildId, UserId = userId, UsedAt = DateTimeOffset.UtcNow
-        });
-        await dbContext.SaveChangesAsync();
     }
 
     internal static string SanitizeUserMessageMentions(string input, ulong guildId)
@@ -114,13 +104,7 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         if (allowRoles.Count == 0 && denyRoles.Count == 0) return true;
         if (allowRoles.Count == 0) return !hasDeny;
         if (denyRoles.Count == 0) return hasAllow;
-
-        return command.RolePrecedence switch
-        {
-            RolePrecedence.DenyOverride => hasAllow && !hasDeny,
-            RolePrecedence.AllowOverride => hasAllow || !hasDeny,
-            _ => throw new UnreachableException()
-        };
+        return hasAllow && !hasDeny;
     }
 
     internal static string TruncateForDiscord(string input, int maxLength)

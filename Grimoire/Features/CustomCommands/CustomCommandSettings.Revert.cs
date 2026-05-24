@@ -33,20 +33,23 @@ public sealed partial class CustomCommandSettings
         string version)
     {
         await ctx.DeferResponseAsync();
-
-        if (!long.TryParse(version, out var unixSeconds))
-        {
-            await ctx.SendWarningResponseAsync("Invalid version selected. Use the autocomplete to pick a version.");
-            return;
-        }
-
         var guild = ctx.Guild!;
-        await FetchVersionAsync(guild.GetGuildId(), name, DateTimeOffset.FromUnixTimeSeconds(unixSeconds))
-            .BindAsync(target => SaveRevertedCommandAsync(target, ctx.GetModeratorId()))
+        await ParseVersion(version)
+            .ToResult()
+            .BindAsync(unixSeconds =>
+                FetchVersionAsync(guild.GetGuildId(), name, DateTimeOffset.FromUnixTimeSeconds(unixSeconds))
+                    .BindAsync(target => SaveRevertedCommandAsync(target, ctx.GetModeratorId()))
+                    .Map(_ => unixSeconds))
             .Match(
-                _ => OnRevertSuccessAsync(ctx, guild, name, unixSeconds),
+                unixSeconds => OnRevertSuccessAsync(ctx, guild, name, unixSeconds),
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
+
+    private static Validation<long> ParseVersion(string version)
+        => long.TryParse(version, out var unixSeconds)
+            ? Validation<long>.Succeed(unixSeconds)
+            : Validation<long>.Fail(new Error("command.revert.invalid-version",
+                "Invalid version selected. Use the autocomplete to pick a version."));
 
     private async Task<Result<CustomCommand>> FetchVersionAsync(GuildId guildId, CustomCommandName name,
         DateTimeOffset targetCreatedAt)
@@ -88,15 +91,13 @@ public sealed partial class CustomCommandSettings
                     embedCustomCommand.Content,
                     embedCustomCommand.EmbedColor,
                     roles,
-                    moderatorId,
-                    embedCustomCommand.RolePrecedence),
+                    moderatorId),
                 TextCustomCommand textCustomCommand => TextCustomCommand.Create(
                     textCustomCommand.Name,
                     textCustomCommand.GuildId,
                     textCustomCommand.Content,
                     roles,
-                    moderatorId,
-                    textCustomCommand.RolePrecedence),
+                    moderatorId),
                 _ => Validation<CustomCommand>.Fail(new Error("custom-command-revert.type.unidentifiable",
                     "Failed to match the type of the target custom command."))
             })

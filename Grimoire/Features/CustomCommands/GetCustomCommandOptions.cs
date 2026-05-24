@@ -49,18 +49,24 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
                         x.Name.Value))
             );
 
-    public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
-    {
-        if (context.Guild is null)
-            return [];
-
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var guildId = new GuildId(context.Guild.Id);
-
-        var cleanedText = context.UserInput?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-        if (string.IsNullOrEmpty(cleanedText))
-            return await s_getAllCommandsAsync(dbContext, guildId).ToListAsync();
-
-        return await s_getCommandsAsync(dbContext, guildId, cleanedText).ToListAsync();
-    }
+    public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context) =>
+        await Validation<AutoCompleteContext>.Succeed(context)
+            .Bind(ctx => ctx switch
+            {
+                { Guild: not null } => Validation<AutoCompleteContext>.Succeed(ctx),
+                _ => Validation<AutoCompleteContext>.Fail(new Error(
+                    "command-autocomplete.not-in-guild", "This command was not used in a guild"))
+            })
+            .ToResult()
+            .BindAsync(async ctx =>
+            {
+                await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+                var guildId = ctx.Guild!.GetGuildId();
+                var cleanedText = ctx.UserInput?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                var choices = string.IsNullOrEmpty(cleanedText)
+                    ? await s_getAllCommandsAsync(dbContext, guildId).ToListAsync()
+                    : await s_getCommandsAsync(dbContext, guildId, cleanedText).ToListAsync();
+                return Result<IEnumerable<DiscordAutoCompleteChoice>>.Ok(choices);
+            })
+            .Match(choices => choices, _ => []);
 }

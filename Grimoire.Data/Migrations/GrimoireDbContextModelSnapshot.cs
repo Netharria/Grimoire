@@ -91,13 +91,6 @@ namespace Grimoire.Migrations
                     b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<string>("RolePrecedence")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("DenyOverride")
-                        .HasColumnName("RolePrecedence");
-
                     b.HasKey("Name", "GuildId", "CreatedAt");
 
                     b.HasIndex("GuildId", "Name");

@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Data.Common;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Settings.Enums;
@@ -27,18 +28,28 @@ public sealed partial class CustomCommandSettings
         CustomCommandName name)
     {
         await ctx.DeferResponseAsync();
-        var (usage, topUsers) = await QueryStatsAsync(ctx.Guild!.GetGuildId(), name);
-        await ctx.ReplyAsync(embed: BuildStatsEmbed(name, usage, topUsers));
+        await QueryStatsAsync(ctx.Guild!.GetGuildId(), name)
+            .Match(
+            r => ctx.ReplyAsync(embed: BuildStatsEmbed(name, r.Usage, r.TopUsers)).AsTask(),
+            error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
 
-    private async Task<(UsageStats? Usage, IReadOnlyList<TopUser> TopUsers)> QueryStatsAsync(GuildId guildId,
-        CustomCommandName name)
+    private async Task<Result<StatsQueryResult>> QueryStatsAsync(GuildId guildId, CustomCommandName name)
     {
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var now = DateTimeOffset.UtcNow;
-        var usage = await FetchUsageStatsAsync(dbContext, guildId, name, now);
-        var topUsers = await FetchTopUsersAsync(dbContext, guildId, name);
-        return (usage, topUsers);
+        try
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var now = DateTimeOffset.UtcNow;
+            var usage = await FetchUsageStatsAsync(dbContext, guildId, name, now);
+            var topUsers = await FetchTopUsersAsync(dbContext, guildId, name);
+            return Result<StatsQueryResult>.Ok(new StatsQueryResult(usage, topUsers));
+        }
+        catch (DbException)
+        {
+            return Result<StatsQueryResult>.Fail(
+                new Error("command.stats.db_error",
+                    "Could not retrieve stats right now. Please try again."));
+        }
     }
 
     private static async Task<UsageStats?> FetchUsageStatsAsync(GrimoireDbContext dbContext, GuildId guildId,
@@ -91,6 +102,8 @@ public sealed partial class CustomCommandSettings
             .AddField("Top Users", topUsersText)
             .Build();
     }
+
+    private sealed record StatsQueryResult(UsageStats? Usage, IReadOnlyList<TopUser> TopUsers);
 
     private sealed record UsageStats(int Total, int LastMonth, int LastYear, DateTimeOffset? LastUsed);
 

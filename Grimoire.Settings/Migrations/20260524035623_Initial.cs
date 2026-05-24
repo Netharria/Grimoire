@@ -265,191 +265,190 @@ namespace Grimoire.Settings.Migrations
             // row means "use the default" (no channel configured).
             // ================================================================
 
+            // Each block is wrapped in a DO $$ ... $$ guard that checks pg_tables before
+            // reading from the source table. This makes the migration safe to run on a
+            // fresh database (where the public-schema tables do not yet exist) as well as
+            // in test environments that only migrate SettingsDbContext in isolation.
+
             // ---- GuildSettings: CustomCommandsModuleEnabled ----
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'CustomCommandsModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                FROM public."GuildCommandsSettings"
-                WHERE "ModuleEnabled";
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildCommandsSettings') THEN
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'CustomCommandsModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
+                        FROM public."GuildCommandsSettings"
+                        WHERE "ModuleEnabled";
+                    END IF;
+                END $$;
                 """);
 
             // ---- GuildSettings: General channel settings (from Guilds) ----
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'ModerationLogChannel', "Id", '0001-01-01T00:00:00Z', 0, 'CustomValue', "ModChannelLog"::text
-                FROM public."Guilds"
-                WHERE "ModChannelLog" IS NOT NULL;
-                """);
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Guilds') THEN
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'ModerationLogChannel', "Id", '0001-01-01T00:00:00Z', 0, 'CustomValue', "ModChannelLog"::text
+                        FROM public."Guilds"
+                        WHERE "ModChannelLog" IS NOT NULL;
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'UserCommandChannel', "Id", '0001-01-01T00:00:00Z', 0, 'CustomValue', "UserCommandChannelId"::text
-                FROM public."Guilds"
-                WHERE "UserCommandChannelId" IS NOT NULL;
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'UserCommandChannel', "Id", '0001-01-01T00:00:00Z', 0, 'CustomValue', "UserCommandChannelId"::text
+                        FROM public."Guilds"
+                        WHERE "UserCommandChannelId" IS NOT NULL;
+                    END IF;
+                END $$;
                 """);
 
             // ---- GuildSettings: Leveling ----
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'LevelingModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                FROM public."GuildLevelSettings"
-                WHERE "ModuleEnabled";
-                """);
-
             // TextTime is a PostgreSQL interval; convert to C# TimeSpan "c" format (HH:MM:SS).
             // XpTimeoutPeriod is constrained 1–60 minutes so a day component never appears.
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'XpTimeoutPeriod', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue',
-                    lpad(floor(extract(epoch from "TextTime") / 3600)::bigint::text, 2, '0') || ':' ||
-                    lpad((floor(extract(epoch from "TextTime") / 60) % 60)::bigint::text, 2, '0') || ':' ||
-                    lpad((floor(extract(epoch from "TextTime")) % 60)::bigint::text, 2, '0')
-                FROM public."GuildLevelSettings";
-                """);
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildLevelSettings') THEN
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'LevelingModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
+                        FROM public."GuildLevelSettings"
+                        WHERE "ModuleEnabled";
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'LevelScalingBase', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Base"::text
-                FROM public."GuildLevelSettings";
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'XpTimeoutPeriod', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue',
+                            lpad(floor(extract(epoch from "TextTime") / 3600)::bigint::text, 2, '0') || ':' ||
+                            lpad((floor(extract(epoch from "TextTime") / 60) % 60)::bigint::text, 2, '0') || ':' ||
+                            lpad((floor(extract(epoch from "TextTime")) % 60)::bigint::text, 2, '0')
+                        FROM public."GuildLevelSettings";
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'LevelScalingModifier', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Modifier"::text
-                FROM public."GuildLevelSettings";
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'LevelScalingBase', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Base"::text
+                        FROM public."GuildLevelSettings";
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'XpGainAmount', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Amount"::text
-                FROM public."GuildLevelSettings";
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'LevelScalingModifier', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Modifier"::text
+                        FROM public."GuildLevelSettings";
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'LevelingLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "LevelChannelLogId"::text
-                FROM public."GuildLevelSettings"
-                WHERE "LevelChannelLogId" IS NOT NULL;
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'XpGainAmount', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Amount"::text
+                        FROM public."GuildLevelSettings";
+
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'LevelingLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "LevelChannelLogId"::text
+                        FROM public."GuildLevelSettings"
+                        WHERE "LevelChannelLogId" IS NOT NULL;
+                    END IF;
+                END $$;
                 """);
 
             // ---- GuildSettings: Message log ----
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'MessageLogModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                FROM public."GuildMessageLogSettings"
-                WHERE "ModuleEnabled";
-                """);
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildMessageLogSettings') THEN
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'MessageLogModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
+                        FROM public."GuildMessageLogSettings"
+                        WHERE "ModuleEnabled";
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'DeleteLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "DeleteChannelLogId"::text
-                FROM public."GuildMessageLogSettings"
-                WHERE "DeleteChannelLogId" IS NOT NULL;
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'DeleteLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "DeleteChannelLogId"::text
+                        FROM public."GuildMessageLogSettings"
+                        WHERE "DeleteChannelLogId" IS NOT NULL;
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'BulkDeleteLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "BulkDeleteChannelLogId"::text
-                FROM public."GuildMessageLogSettings"
-                WHERE "BulkDeleteChannelLogId" IS NOT NULL;
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'BulkDeleteLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "BulkDeleteChannelLogId"::text
+                        FROM public."GuildMessageLogSettings"
+                        WHERE "BulkDeleteChannelLogId" IS NOT NULL;
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'EditLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "EditChannelLogId"::text
-                FROM public."GuildMessageLogSettings"
-                WHERE "EditChannelLogId" IS NOT NULL;
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'EditLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "EditChannelLogId"::text
+                        FROM public."GuildMessageLogSettings"
+                        WHERE "EditChannelLogId" IS NOT NULL;
+                    END IF;
+                END $$;
                 """);
 
             // ---- GuildSettings: Moderation ----
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'ModerationModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                FROM public."GuildModerationSettings"
-                WHERE "ModuleEnabled";
-                """);
-
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'AntiSpamModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                FROM public."GuildModerationSettings"
-                WHERE "AntiSpamEnabled";
-                """);
-
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'PublicModerationLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "PublicBanLog"::text
-                FROM public."GuildModerationSettings"
-                WHERE "PublicBanLog" IS NOT NULL;
-                """);
-
             // AutoPardonAfter is an interval that can span multiple days (default 10950 d = 30 yr).
             // C# TimeSpan "c" format: "d.HH:MM:SS" when days > 0, else "HH:MM:SS".
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'SinAutoPardonDuration', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue',
-                    CASE
-                        WHEN extract(epoch from "AutoPardonAfter") >= 86400 THEN
-                            floor(extract(epoch from "AutoPardonAfter") / 86400)::bigint::text || '.' ||
-                            lpad((floor(extract(epoch from "AutoPardonAfter") / 3600) % 24)::bigint::text, 2, '0') || ':' ||
-                            lpad((floor(extract(epoch from "AutoPardonAfter") / 60) % 60)::bigint::text, 2, '0') || ':' ||
-                            lpad((floor(extract(epoch from "AutoPardonAfter")) % 60)::bigint::text, 2, '0')
-                        ELSE
-                            lpad(floor(extract(epoch from "AutoPardonAfter") / 3600)::bigint::text, 2, '0') || ':' ||
-                            lpad((floor(extract(epoch from "AutoPardonAfter") / 60) % 60)::bigint::text, 2, '0') || ':' ||
-                            lpad((floor(extract(epoch from "AutoPardonAfter")) % 60)::bigint::text, 2, '0')
-                    END
-                FROM public."GuildModerationSettings";
-                """);
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildModerationSettings') THEN
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'ModerationModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
+                        FROM public."GuildModerationSettings"
+                        WHERE "ModuleEnabled";
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'MuteRole', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "MuteRole"::text
-                FROM public."GuildModerationSettings"
-                WHERE "MuteRole" IS NOT NULL;
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'AntiSpamModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
+                        FROM public."GuildModerationSettings"
+                        WHERE "AntiSpamEnabled";
+
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'PublicModerationLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "PublicBanLog"::text
+                        FROM public."GuildModerationSettings"
+                        WHERE "PublicBanLog" IS NOT NULL;
+
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'SinAutoPardonDuration', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue',
+                            CASE
+                                WHEN extract(epoch from "AutoPardonAfter") >= 86400 THEN
+                                    floor(extract(epoch from "AutoPardonAfter") / 86400)::bigint::text || '.' ||
+                                    lpad((floor(extract(epoch from "AutoPardonAfter") / 3600) % 24)::bigint::text, 2, '0') || ':' ||
+                                    lpad((floor(extract(epoch from "AutoPardonAfter") / 60) % 60)::bigint::text, 2, '0') || ':' ||
+                                    lpad((floor(extract(epoch from "AutoPardonAfter")) % 60)::bigint::text, 2, '0')
+                                ELSE
+                                    lpad(floor(extract(epoch from "AutoPardonAfter") / 3600)::bigint::text, 2, '0') || ':' ||
+                                    lpad((floor(extract(epoch from "AutoPardonAfter") / 60) % 60)::bigint::text, 2, '0') || ':' ||
+                                    lpad((floor(extract(epoch from "AutoPardonAfter")) % 60)::bigint::text, 2, '0')
+                            END
+                        FROM public."GuildModerationSettings";
+
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'MuteRole', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "MuteRole"::text
+                        FROM public."GuildModerationSettings"
+                        WHERE "MuteRole" IS NOT NULL;
+                    END IF;
+                END $$;
                 """);
 
             // ---- GuildSettings: User log ----
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'UserLogModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                FROM public."GuildUserLogSettings"
-                WHERE "ModuleEnabled";
-                """);
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildUserLogSettings') THEN
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'UserLogModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
+                        FROM public."GuildUserLogSettings"
+                        WHERE "ModuleEnabled";
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'JoinLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "JoinChannelLogId"::text
-                FROM public."GuildUserLogSettings"
-                WHERE "JoinChannelLogId" IS NOT NULL;
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'JoinLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "JoinChannelLogId"::text
+                        FROM public."GuildUserLogSettings"
+                        WHERE "JoinChannelLogId" IS NOT NULL;
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'LeaveLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "LeaveChannelLogId"::text
-                FROM public."GuildUserLogSettings"
-                WHERE "LeaveChannelLogId" IS NOT NULL;
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'LeaveLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "LeaveChannelLogId"::text
+                        FROM public."GuildUserLogSettings"
+                        WHERE "LeaveChannelLogId" IS NOT NULL;
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'UsernameLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "UsernameChannelLogId"::text
-                FROM public."GuildUserLogSettings"
-                WHERE "UsernameChannelLogId" IS NOT NULL;
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'UsernameLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "UsernameChannelLogId"::text
+                        FROM public."GuildUserLogSettings"
+                        WHERE "UsernameChannelLogId" IS NOT NULL;
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'NicknameLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "NicknameChannelLogId"::text
-                FROM public."GuildUserLogSettings"
-                WHERE "NicknameChannelLogId" IS NOT NULL;
-                """);
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'NicknameLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "NicknameChannelLogId"::text
+                        FROM public."GuildUserLogSettings"
+                        WHERE "NicknameChannelLogId" IS NOT NULL;
 
-            migrationBuilder.Sql("""
-                INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                SELECT 'AvatarLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "AvatarChannelLogId"::text
-                FROM public."GuildUserLogSettings"
-                WHERE "AvatarChannelLogId" IS NOT NULL;
+                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
+                        SELECT 'AvatarLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "AvatarChannelLogId"::text
+                        FROM public."GuildUserLogSettings"
+                        WHERE "AvatarChannelLogId" IS NOT NULL;
+                    END IF;
+                END $$;
                 """);
 
             // ---- XpTrackedItems (IgnoredChannels / IgnoredMembers / IgnoredRoles) ----
@@ -457,76 +456,116 @@ namespace Grimoire.Settings.Migrations
             // Discord snowflake IDs are globally unique per entity type so channel/user/role
             // ID collisions for the same GuildId are astronomically unlikely.
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
-                SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredChannel'
-                FROM public."IgnoredChannels";
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'IgnoredChannels') THEN
+                        INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
+                        SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredChannel'
+                        FROM public."IgnoredChannels";
+                    END IF;
+                END $$;
                 """);
 
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
-                SELECT "UserId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredMember'
-                FROM public."IgnoredMembers";
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'IgnoredMembers') THEN
+                        INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
+                        SELECT "UserId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredMember'
+                        FROM public."IgnoredMembers";
+                    END IF;
+                END $$;
                 """);
 
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
-                SELECT "RoleId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredRole'
-                FROM public."IgnoredRoles";
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'IgnoredRoles') THEN
+                        INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
+                        SELECT "RoleId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredRole'
+                        FROM public."IgnoredRoles";
+                    END IF;
+                END $$;
                 """);
 
             // ---- ChannelLocks (from public.Locks) ----
             // Old Locks.ModeratorId is nullable; COALESCE to 0 for the sentinel.
             // Old Locks.Reason is an empty string when not set; NULLIF maps it to NULL.
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."ChannelLocks"
-                    ("ChannelId", "GuildId", "SetAt", "ModeratorId", "Reason", "EventType",
-                     "PreviouslyAllowed", "PreviouslyDenied", "EndTime")
-                SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
-                    COALESCE("ModeratorId", 0), NULLIF("Reason", ''), 'Locked',
-                    "PreviouslyAllowed", "PreviouslyDenied", "EndTime"
-                FROM public."Locks";
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Locks') THEN
+                        INSERT INTO "Settings"."ChannelLocks"
+                            ("ChannelId", "GuildId", "SetAt", "ModeratorId", "Reason", "EventType",
+                             "PreviouslyAllowed", "PreviouslyDenied", "EndTime")
+                        SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
+                            COALESCE("ModeratorId", 0), NULLIF("Reason", ''), 'Locked',
+                            "PreviouslyAllowed", "PreviouslyDenied", "EndTime"
+                        FROM public."Locks";
+                    END IF;
+                END $$;
                 """);
 
             // ---- Mutes (from public.Mutes) ----
             // Old Mutes table has no ModeratorId column; use sentinel 0.
             // SinId is the PK of the old table and is always non-null, but guard anyway.
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."Mutes"
-                    ("UserId", "GuildId", "SetAt", "ModeratorId", "EventType", "SinId", "EndTime")
-                SELECT "UserId", "GuildId", '0001-01-01T00:00:00Z', 0, 'Added', "SinId", "EndTime"
-                FROM public."Mutes"
-                WHERE "SinId" IS NOT NULL;
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Mutes') THEN
+                        INSERT INTO "Settings"."Mutes"
+                            ("UserId", "GuildId", "SetAt", "ModeratorId", "EventType", "SinId", "EndTime")
+                        SELECT "UserId", "GuildId", '0001-01-01T00:00:00Z', 0, 'Added', "SinId", "EndTime"
+                        FROM public."Mutes"
+                        WHERE "SinId" IS NOT NULL;
+                    END IF;
+                END $$;
                 """);
 
             // ---- Rewards (from public.Rewards) ----
             // Old Rewards table has no SetBy/SetAt; use sentinel values.
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."Rewards"
-                    ("GuildId", "RoleId", "SetAt", "SetBy", "RewardType", "RewardLevel", "RewardMessage")
-                SELECT "GuildId", "RoleId", '0001-01-01T00:00:00Z', 0, 'Added', "RewardLevel", "RewardMessage"
-                FROM public."Rewards";
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Rewards') THEN
+                        INSERT INTO "Settings"."Rewards"
+                            ("GuildId", "RoleId", "SetAt", "SetBy", "RewardType", "RewardLevel", "RewardMessage")
+                        SELECT "GuildId", "RoleId", '0001-01-01T00:00:00Z', 0, 'Added', "RewardLevel", "RewardMessage"
+                        FROM public."Rewards";
+                    END IF;
+                END $$;
                 """);
 
             // ---- MessageLogChannelOverrides (from public.MessagesLogChannelOverrides) ----
             // Old ChannelOption is stored as int: 0 = AlwaysLog, 1 = NeverLog.
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."MessageLogChannelOverrides"
-                    ("ChannelId", "GuildId", "SetAt", "ChannelOption", "SetBy")
-                SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
-                    CASE "ChannelOption" WHEN 0 THEN 'AlwaysLog' WHEN 1 THEN 'NeverLog' ELSE 'Inherit' END,
-                    0
-                FROM public."MessagesLogChannelOverrides";
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'MessagesLogChannelOverrides') THEN
+                        INSERT INTO "Settings"."MessageLogChannelOverrides"
+                            ("ChannelId", "GuildId", "SetAt", "ChannelOption", "SetBy")
+                        SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
+                            CASE "ChannelOption" WHEN 0 THEN 'AlwaysLog' WHEN 1 THEN 'NeverLog' ELSE 'Inherit' END,
+                            0
+                        FROM public."MessagesLogChannelOverrides";
+                    END IF;
+                END $$;
                 """);
 
             // ---- SpamFilterOverrides (from public.SpamFilterOverrides) ----
             // Old ChannelOption is stored as int: 0 = AlwaysFilter, 1 = NeverFilter.
             migrationBuilder.Sql("""
-                INSERT INTO "Settings"."SpamFilterOverrides"
-                    ("ChannelId", "GuildId", "SetAt", "ChannelOption", "SetBy")
-                SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
-                    CASE "ChannelOption" WHEN 0 THEN 'AlwaysFilter' WHEN 1 THEN 'NeverFilter' ELSE 'Inherit' END,
-                    0
-                FROM public."SpamFilterOverrides";
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'SpamFilterOverrides') THEN
+                        INSERT INTO "Settings"."SpamFilterOverrides"
+                            ("ChannelId", "GuildId", "SetAt", "ChannelOption", "SetBy")
+                        SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
+                            CASE "ChannelOption" WHEN 0 THEN 'AlwaysFilter' WHEN 1 THEN 'NeverFilter' ELSE 'Inherit' END,
+                            0
+                        FROM public."SpamFilterOverrides";
+                    END IF;
+                END $$;
                 """);
         }
 

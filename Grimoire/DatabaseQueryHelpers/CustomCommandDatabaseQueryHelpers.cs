@@ -24,4 +24,18 @@ public static class CustomCommandDatabaseQueryHelpers
             .Where(command => command.GuildId == guildId && command.Name == commandName)
             .Where(command => !customCommands.Any(y =>
                 y.GuildId == command.GuildId && y.Name == command.Name && y.CreatedAt > command.CreatedAt));
+
+    public static async Task RecordCommandUsageAsync(
+        this IDbContextFactory<GrimoireDbContext> dbContextFactory,
+        CustomCommandName name,
+        GuildId guildId,
+        UserId userId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        await dbContext.CustomCommandUsages.AddAsync(new CustomCommandUsage
+        {
+            Name = name, GuildId = guildId, UserId = userId, UsedAt = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+    }
 }

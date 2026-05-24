@@ -34,16 +34,8 @@ public sealed class TextCustomCommandProcessor(IDbContextFactory<GrimoireDbConte
             .Bind(x => CustomCommandName.Create(x.Args[0]).Map(name => (x.Member, Name: name, x.Args)))
             .ToResult()
             .BindAsync(x => FetchCommandAsync(x.Member, x.Name, x.Args))
-            .TapAsync(cmd => RecordUsageAsync(cmd.Name, cmd.Member.GetGuildId(), cmd.Member.GetUserId()))
-            .TapAsync(async cmd =>
-            {
-                var snowflake = cmd.Response.Content.Value.Contains("%Mention", StringComparison.OrdinalIgnoreCase) &&
-                                cmd.Args.Length > 1
-                    ? await ResolveSnowflake(cmd.Args[1], sender, eventArgs.Guild)
-                    : null;
-                await eventArgs.Channel.SendMessageAsync(
-                    BuildResponse(cmd.Response, cmd.Args, snowflake, eventArgs.Guild.Id));
-            });
+            .TapAsync(cmd => dbContextFactory.RecordCommandUsageAsync(cmd.Name, cmd.Member.GetGuildId(), cmd.Member.GetUserId()))
+            .TapAsync(cmd => SendCommandResponseAsync(cmd, sender, eventArgs));
 
     private async Task<Result<ParsedCommand>> FetchCommandAsync(DiscordMember member, CustomCommandName name,
         string[] args)
@@ -56,16 +48,6 @@ public sealed class TextCustomCommandProcessor(IDbContextFactory<GrimoireDbConte
         return response is null || !GetCustomCommand.IsUserAuthorized(member, response)
             ? Result<ParsedCommand>.Fail(new Error("text-command.not-found", "Command not found or not authorized"))
             : Result<ParsedCommand>.Ok(new ParsedCommand(response, member, name, args));
-    }
-
-    private async Task RecordUsageAsync(CustomCommandName name, GuildId guildId, UserId userId)
-    {
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        await dbContext.CustomCommandUsages.AddAsync(new CustomCommandUsage
-        {
-            Name = name, GuildId = guildId, UserId = userId, UsedAt = DateTimeOffset.UtcNow
-        });
-        await dbContext.SaveChangesAsync();
     }
 
     private static DiscordMessageBuilder BuildResponse(
@@ -86,6 +68,17 @@ public sealed class TextCustomCommandProcessor(IDbContextFactory<GrimoireDbConte
                 ? GetCustomCommand.MaxEmbedDescriptionLength
                 : GetCustomCommand.MaxMessageLength);
         return GetCustomCommand.BuildMessageResponse(content, outputFormat);
+    }
+
+    private static async Task SendCommandResponseAsync(
+        ParsedCommand cmd, DiscordClient sender, MessageCreatedEventArgs eventArgs)
+    {
+        var snowflake = cmd.Response.Content.Value.Contains("%Mention", StringComparison.OrdinalIgnoreCase)
+                        && cmd.Args.Length > 1
+            ? await ResolveSnowflake(cmd.Args[1], sender, eventArgs.Guild)
+            : null;
+        await eventArgs.Channel.SendMessageAsync(
+            BuildResponse(cmd.Response, cmd.Args, snowflake, eventArgs.Guild.Id));
     }
 
     private static async Task<SnowflakeObject?> ResolveSnowflake(string arg, DiscordClient sender, DiscordGuild guild)
