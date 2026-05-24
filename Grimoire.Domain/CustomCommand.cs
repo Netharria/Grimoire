@@ -98,7 +98,7 @@ public sealed record TextCustomCommand : CustomCommand
         GuildId guildId,
         CustomCommandContent content,
         ICollection<CustomCommandRole> customCommandRoles,
-        ModeratorId? moderatorId)
+        ModeratorId moderatorId)
     {
         var now = DateTimeOffset.UtcNow;
         return Validation<CustomCommand>.Succeed(new TextCustomCommand
@@ -128,7 +128,7 @@ public sealed record EmbedCustomCommand : CustomCommand
         CustomCommandContent content,
         CustomCommandEmbedColor? embedColor,
         ICollection<CustomCommandRole> customCommandRoles,
-        ModeratorId? moderatorId)
+        ModeratorId moderatorId)
     {
         var now = DateTimeOffset.UtcNow;
         return Validation<CustomCommand>.Succeed(new EmbedCustomCommand
@@ -168,10 +168,16 @@ public readonly record struct CustomCommandContent
         if (string.IsNullOrWhiteSpace(value))
             return Validation<CustomCommandContent>.Fail(new Error("custom-command-content.empty",
                 "Command content cannot be empty."));
-        return value.Length > 2000
+        var unescaped = value
+            .Replace(@"\n", "\n")
+            .Replace(@"\t", "\t");
+        if (string.IsNullOrWhiteSpace(unescaped))
+            return Validation<CustomCommandContent>.Fail(new Error("custom-command-content.empty",
+                "Command content cannot be empty."));
+        return unescaped.Length > 2000
             ? Validation<CustomCommandContent>.Fail(new Error("custom-command-content.too-long",
                 "Command content cannot exceed 2000 characters."))
-            : Validation<CustomCommandContent>.Succeed(new CustomCommandContent(value));
+            : Validation<CustomCommandContent>.Succeed(new CustomCommandContent(unescaped));
     }
 
     public override string ToString() => Value;

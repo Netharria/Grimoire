@@ -28,10 +28,6 @@ public sealed partial class AddMessageEvent(
             || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
-                .GetOrElse(() => false))
-            return;
-
         if (!await this._settingsModule.ShouldLogMessage(
                 args.GetChannelId(),
                 args.Guild.GetGuildId(),

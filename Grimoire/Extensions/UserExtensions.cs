@@ -10,19 +10,19 @@ namespace Grimoire.Extensions;
 public static class UserExtensions
 {
     public static string Mention(UserId? id)
-        => id is not null
-            ? $"<@!{id}>"
+        => id is { } uid
+            ? $"<@{uid}>"
             : "Unknown User";
 
     public static string Mention(ModeratorId? id)
-        => id is not null
-            ? $"<@!{id}>"
+        => id is { } mod
+            ? $"<@{mod}>"
             : "Unknown User";
 
     public static string Mention(ModerationActor actor)
         => actor switch
         {
-            ModerationActor.Moderator m => $"<@!{m.Id}>",
+            ModerationActor.Moderator m => $"<@{m.Id}>",
             ModerationActor.System => "System",
             _ => throw new UnreachableException()
         };

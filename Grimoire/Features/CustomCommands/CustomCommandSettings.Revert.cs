@@ -22,7 +22,7 @@ public sealed partial class CustomCommandSettings
     [Command("Revert")]
     [Description("Revert a command to a previous version.")]
     public async Task Revert(
-        CommandContext ctx,
+        SlashCommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
         [Parameter("Name")]
         [Description("The name of the command to revert.")]
@@ -41,18 +41,18 @@ public sealed partial class CustomCommandSettings
 
         await ParseVersion(version)
             .ToResult()
-            .BindAsync(unixSeconds =>
-                FetchVersionAsync(guild.GetGuildId(), name, DateTimeOffset.FromUnixTimeSeconds(unixSeconds))
+            .BindAsync(ticks =>
+                FetchVersionAsync(guild.GetGuildId(), name, new DateTimeOffset(ticks, TimeSpan.Zero))
                     .BindAsync(target => SaveRevertedCommandAsync(target, ctx.GetModeratorId()))
-                    .Map(_ => unixSeconds))
+                    .Map(_ => ticks))
             .Match(
-                unixSeconds => OnRevertSuccessAsync(ctx, guild, name, unixSeconds),
+                ticks => OnRevertSuccessAsync(ctx, guild, name, ticks),
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
     private static Validation<long> ParseVersion(string version)
-        => long.TryParse(version, out var unixSeconds)
-            ? Validation<long>.Succeed(unixSeconds)
+        => long.TryParse(version, out var ticks)
+            ? Validation<long>.Succeed(ticks)
             : Validation<long>.Fail(new Error("command.revert.invalid-version",
                 "Invalid version selected. Use the autocomplete to pick a version."));
 
@@ -70,7 +70,7 @@ public sealed partial class CustomCommandSettings
             : Result<CustomCommand>.Ok(target);
     }
 
-    private Task<Result<CustomCommand>> SaveRevertedCommandAsync(CustomCommand target, ModeratorId? moderatorId)
+    private Task<Result<CustomCommand>> SaveRevertedCommandAsync(CustomCommand target, ModeratorId moderatorId)
     {
         ICollection<CustomCommandRole> roles =
         [
@@ -111,8 +111,9 @@ public sealed partial class CustomCommandSettings
     }
 
     private async Task OnRevertSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name,
-        long unixSeconds)
+        long ticks)
     {
+        var unixSeconds = new DateTimeOffset(ticks, TimeSpan.Zero).ToUnixTimeSeconds();
         await ctx.ReplyAsync(GrimoireColor.Green, $"Reverted `{name}` to version from <t:{unixSeconds}:f>.");
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {

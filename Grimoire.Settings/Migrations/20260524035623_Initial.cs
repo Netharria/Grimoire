@@ -318,19 +318,23 @@ namespace Grimoire.Settings.Migrations
                             lpad(floor(extract(epoch from "TextTime") / 3600)::bigint::text, 2, '0') || ':' ||
                             lpad((floor(extract(epoch from "TextTime") / 60) % 60)::bigint::text, 2, '0') || ':' ||
                             lpad((floor(extract(epoch from "TextTime")) % 60)::bigint::text, 2, '0')
-                        FROM public."GuildLevelSettings";
+                        FROM public."GuildLevelSettings"
+                        WHERE "TextTime" <> INTERVAL '3 minutes';
 
                         INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
                         SELECT 'LevelScalingBase', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Base"::text
-                        FROM public."GuildLevelSettings";
+                        FROM public."GuildLevelSettings"
+                        WHERE "Base" <> 15;
 
                         INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
                         SELECT 'LevelScalingModifier', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Modifier"::text
-                        FROM public."GuildLevelSettings";
+                        FROM public."GuildLevelSettings"
+                        WHERE "Modifier" <> 50;
 
                         INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
                         SELECT 'XpGainAmount', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Amount"::text
-                        FROM public."GuildLevelSettings";
+                        FROM public."GuildLevelSettings"
+                        WHERE "Amount" <> 5;
 
                         INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
                         SELECT 'LevelingLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "LevelChannelLogId"::text
@@ -403,7 +407,8 @@ namespace Grimoire.Settings.Migrations
                                     lpad((floor(extract(epoch from "AutoPardonAfter") / 60) % 60)::bigint::text, 2, '0') || ':' ||
                                     lpad((floor(extract(epoch from "AutoPardonAfter")) % 60)::bigint::text, 2, '0')
                             END
-                        FROM public."GuildModerationSettings";
+                        FROM public."GuildModerationSettings"
+                        WHERE "AutoPardonAfter" <> INTERVAL '10950 days';
 
                         INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
                         SELECT 'MuteRole', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "MuteRole"::text

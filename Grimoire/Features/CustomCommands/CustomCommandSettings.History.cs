@@ -22,7 +22,7 @@ public sealed partial class CustomCommandSettings
     [Command("History")]
     [Description("View the version history of a command.")]
     public async Task History(
-        CommandContext ctx,
+        SlashCommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
         [Parameter("Name")]
         [Description("The name of the command to view history for.")]
@@ -66,9 +66,10 @@ public sealed partial class CustomCommandSettings
     private static IEnumerable<string> BuildPages(IReadOnlyList<CommandVersion> versions)
     {
         var builder = new StringBuilder();
+        var total = versions.Count;
         foreach (var (index, version) in versions.Index())
         {
-            var entry = FormatEntry(version, index);
+            var entry = FormatEntry(version, versionNumber: total - index, isCurrent: index == 0);
             if (builder.Length + entry.Length > 2048)
             {
                 yield return builder.ToString();
@@ -82,14 +83,16 @@ public sealed partial class CustomCommandSettings
             yield return builder.ToString();
     }
 
-    private static string FormatEntry(CommandVersion version, int index)
+    private static string FormatEntry(CommandVersion version, int versionNumber, bool isCurrent)
     {
         var content = version.Content.Value;
-        var preview = content.Length > 100
-            ? string.Concat(content.AsSpan(0, 100), "…")
-            : content;
+        // Re-escape newlines and tabs so the single-line "> " block-quote stays intact.
+        var previewContent = content.Replace("\n", @"\n").Replace("\t", @"\t");
+        var preview = previewContent.Length > 100
+            ? string.Concat(previewContent.AsSpan(0, 100), "…")
+            : previewContent;
         return
-            $"**v{index + 1}{(index == 0 ? " (current)" : string.Empty)}** — <t:{version.CreatedAt.ToUnixTimeSeconds()}:f>"
+            $"**v{versionNumber}{(isCurrent ? " (current)" : string.Empty)}** — <t:{version.CreatedAt.ToUnixTimeSeconds()}:f>"
             + (version.ModeratorId is { } mod ? $" by {UserExtensions.Mention(mod)}" : string.Empty)
             + $"\n> {preview}\n";
     }

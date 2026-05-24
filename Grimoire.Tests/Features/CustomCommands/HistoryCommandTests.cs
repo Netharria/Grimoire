@@ -70,7 +70,7 @@ public sealed class HistoryCommandTests(GrimoireCoreFactory factory) : IAsyncLif
         {
             var c = CustomCommandContent.Create(text).ShouldSucceed();
             await using var db = factory.CreateDbContext();
-            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, c, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, c, [], _modId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
             await Task.Delay(10, TestContext.Current.CancellationToken); // distinct timestamps
@@ -93,9 +93,9 @@ public sealed class HistoryCommandTests(GrimoireCoreFactory factory) : IAsyncLif
 
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, content1, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, content1, [], _modId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
-            await db.AddAsync(TextCustomCommand.Create(_name, otherGuildId, content2, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_name, otherGuildId, content2, [], _modId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }

@@ -23,7 +23,7 @@ public sealed partial class CustomCommandSettings
     [Command("Learn")]
     [Description("Learn a new command or update an existing one")]
     public async Task Learn(
-        CommandContext ctx,
+        SlashCommandContext ctx,
         [Parameter("Name")]
         [Description("The name that the command will be called. This is used to activate the command.")]
         CustomCommandName name,

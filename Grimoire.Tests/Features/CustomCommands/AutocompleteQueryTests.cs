@@ -16,6 +16,7 @@ namespace Grimoire.Tests.Features.CustomCommands;
 public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsyncLifetime
 {
     private static readonly GuildId _guildId = new(1UL);
+    private static readonly ModeratorId _moderatorId = new(1UL);
     private static readonly CustomCommandName _wave = CustomCommandName.Create("wave").ShouldSucceed();
     private static readonly CustomCommandName _greet = CustomCommandName.Create("greet").ShouldSucceed();
 
@@ -45,7 +46,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, [], _moderatorId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -64,7 +65,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, [], _moderatorId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -73,7 +74,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
 
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v2Content, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v2Content, [], _moderatorId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -98,7 +99,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
 
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, roles, null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, roles, _moderatorId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -118,7 +119,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, new GuildId(2UL), _v1Content, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, new GuildId(2UL), _v1Content, [], _moderatorId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -139,9 +140,9 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
 
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, waveContent, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, waveContent, [], _moderatorId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
-            await db.AddAsync(TextCustomCommand.Create(_greet, _guildId, greetContent, [], null).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_greet, _guildId, greetContent, [], _moderatorId).ShouldSucceed(),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }

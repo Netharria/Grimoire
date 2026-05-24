@@ -14,41 +14,6 @@ namespace Grimoire.Features.CustomCommands;
 internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IAutoCompleteProvider
 {
-    private static readonly Func<GrimoireDbContext, GuildId, string, IAsyncEnumerable<DiscordAutoCompleteChoice>>
-        s_getCommandsAsync =
-            EF.CompileAsyncQuery((GrimoireDbContext context, GuildId guildId, string cleanedText) =>
-                context.CustomCommands
-                    .AsNoTracking()
-                    .Where(x => x.GuildId == guildId)
-                    .Where(x => !context.CustomCommands.Any(y =>
-                        y.GuildId == x.GuildId && y.Name == x.Name && y.CreatedAt > x.CreatedAt))
-                    .OrderBy(x =>
-                        EF.Functions.FuzzyStringMatchLevenshtein(x.Name.Value.ToLower(), cleanedText.ToLower()))
-                    .Take(5)
-                    .Select(x => new DiscordAutoCompleteChoice(
-                        x.Name
-                        + (x.Content.Value.ToLower().Contains("%mention") ? " <Mention>" : string.Empty)
-                        + (x.Content.Value.ToLower().Contains("%message") ? " <Message>" : string.Empty),
-                        x.Name.Value))
-            );
-
-    private static readonly Func<GrimoireDbContext, GuildId, IAsyncEnumerable<DiscordAutoCompleteChoice>>
-        s_getAllCommandsAsync =
-            EF.CompileAsyncQuery((GrimoireDbContext context, GuildId guildId) =>
-                context.CustomCommands
-                    .AsNoTracking()
-                    .Where(x => x.GuildId == guildId)
-                    .Where(x => !context.CustomCommands.Any(y =>
-                        y.GuildId == x.GuildId && y.Name == x.Name && y.CreatedAt > x.CreatedAt))
-                    .OrderBy(x => x.Name.Value)
-                    .Take(5)
-                    .Select(x => new DiscordAutoCompleteChoice(
-                        x.Name
-                        + (x.Content.Value.ToLower().Contains("%mention") ? " <Mention>" : string.Empty)
-                        + (x.Content.Value.ToLower().Contains("%message") ? " <Message>" : string.Empty),
-                        x.Name.Value))
-            );
-
     public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context) =>
         await Validation<AutoCompleteContext>.Succeed(context)
             .Bind(ctx => ctx switch
@@ -63,10 +28,42 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
                 await using var dbContext = await dbContextFactory.CreateDbContextAsync();
                 var guildId = ctx.Guild!.GetGuildId();
                 var cleanedText = ctx.UserInput?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-                var choices = string.IsNullOrEmpty(cleanedText)
-                    ? await s_getAllCommandsAsync(dbContext, guildId).ToListAsync()
-                    : await s_getCommandsAsync(dbContext, guildId, cleanedText).ToListAsync();
+                var choices = await GetChoicesAsync(dbContext, guildId, cleanedText);
                 return Result<IEnumerable<DiscordAutoCompleteChoice>>.Ok(choices);
             })
             .Match(choices => choices, _ => []);
+
+    private static async Task<IEnumerable<DiscordAutoCompleteChoice>> GetChoicesAsync(
+        GrimoireDbContext dbContext, GuildId guildId, string? cleanedText)
+    {
+        // Restrict to the latest version of each command (no newer entry with the same Name + GuildId).
+        // Project to raw strings server-side so value-converter wrapper types never appear in
+        // the materialised result — the choice label and value are built from plain strings on
+        // the client side.
+        var latestVersions = dbContext.CustomCommands
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId)
+            .Where(x => !dbContext.CustomCommands.Any(y =>
+                y.GuildId == x.GuildId && y.Name == x.Name && y.CreatedAt > x.CreatedAt));
+
+        var ordered = string.IsNullOrEmpty(cleanedText)
+            ? latestVersions.OrderBy(x => x.Name)
+            : latestVersions.OrderBy(x =>
+                EF.Functions.FuzzyStringMatchLevenshtein(
+                    EF.Property<string>(x, "Name").ToLower(), cleanedText.ToLower()));
+
+        // Project to the real CLR types so EF's value converters materialise normally.
+        // Accessing .Value happens after ToListAsync, on already-hydrated objects — no
+        // shaper coercion between CustomCommandName and string required.
+        var commands = await ordered
+            .Take(5)
+            .Select(x => new { x.Name, x.Content })
+            .ToListAsync();
+
+        return commands.Select(x => new DiscordAutoCompleteChoice(
+            x.Name.Value
+            + (x.Content.Value.Contains("%mention", StringComparison.OrdinalIgnoreCase) ? " <Mention>" : string.Empty)
+            + (x.Content.Value.Contains("%message", StringComparison.OrdinalIgnoreCase) ? " <Message>" : string.Empty),
+            x.Name.Value));
+    }
 }

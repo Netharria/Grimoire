@@ -3,6 +3,7 @@ using System;
 using Grimoire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Migrations
 {
     [DbContext(typeof(GrimoireDbContext))]
-    partial class GrimoireDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260524202942_DropOrphanedCustomCommandGuildFKs")]
+    partial class DropOrphanedCustomCommandGuildFKs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -212,10 +215,16 @@ namespace Grimoire.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("TimeStamp");
 
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("Content");
+
                     b.Property<string>("Discriminator")
                         .IsRequired()
-                        .HasMaxLength(34)
-                        .HasColumnType("character varying(34)");
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
 
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
@@ -866,6 +875,13 @@ namespace Grimoire.Migrations
                     b.HasDiscriminator().HasValue("Deny");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.MessageCreatedEntry", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.MessageHistoryEntry");
+
+                    b.HasDiscriminator().HasValue("Created");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.MessageDeletedByModeratorEntry", b =>
                 {
                     b.HasBaseType("Grimoire.Domain.MessageHistoryEntry");
@@ -880,17 +896,11 @@ namespace Grimoire.Migrations
                     b.HasDiscriminator().HasValue("Deleted");
                 });
 
-            modelBuilder.Entity("Grimoire.Domain.MessageHistoryContentEntry", b =>
+            modelBuilder.Entity("Grimoire.Domain.MessageEditedEntry", b =>
                 {
                     b.HasBaseType("Grimoire.Domain.MessageHistoryEntry");
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("Content");
-
-                    b.HasDiscriminator().HasValue("MessageHistoryContentEntry");
+                    b.HasDiscriminator().HasValue("Edited");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.AwardedXp", b =>
@@ -923,20 +933,6 @@ namespace Grimoire.Migrations
                     b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
 
                     b.HasDiscriminator().HasValue("Reclaimed");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.MessageCreatedEntry", b =>
-                {
-                    b.HasBaseType("Grimoire.Domain.MessageHistoryContentEntry");
-
-                    b.HasDiscriminator().HasValue("Created");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.MessageEditedEntry", b =>
-                {
-                    b.HasBaseType("Grimoire.Domain.MessageHistoryContentEntry");
-
-                    b.HasDiscriminator().HasValue("Edited");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Attachment", b =>

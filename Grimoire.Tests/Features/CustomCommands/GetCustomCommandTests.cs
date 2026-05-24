@@ -135,7 +135,7 @@ public sealed class GetCustomCommandTests
     {
         var name = CustomCommandName.Create("cmd").ShouldSucceed();
         var content = CustomCommandContent.Create("hi").ShouldSucceed();
-        var cmd = TextCustomCommand.Create(name, new GuildId(1), content, [], null).ShouldSucceed();
+        var cmd = TextCustomCommand.Create(name, new GuildId(1), content, [], new ModeratorId(1UL)).ShouldSucceed();
 
         GetCustomCommand.IsUserAuthorized(null, cmd).ShouldBeFalse();
     }

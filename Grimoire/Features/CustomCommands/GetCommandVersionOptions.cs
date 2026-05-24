@@ -14,6 +14,8 @@ namespace Grimoire.Features.CustomCommands;
 internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IAutoCompleteProvider
 {
+    private const int MaxLabelLength = 100;
+
     public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context) =>
         await Validation<AutoCompleteContext>.Succeed(context)
             .Bind(ctx =>
@@ -28,18 +30,37 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
                 ?.Value as string)
             .Bind(CustomCommandName.Create)
             .ToResult()
-            .BindAsync(async name => await Versions(context.Guild!.GetGuildId(), name))
+            .BindAsync(async name => await this.GetVersionsAsync(context.Guild!.GetGuildId(), name))
             .Match(
-                versions => versions.Select((v, i) =>
-                    new DiscordAutoCompleteChoice($"v{i + 1} — {v.CreatedAt:yyyy-MM-dd HH:mm} UTC"
-                                                  + (v.ModeratorId is { } mod
-                                                      ? $" by {UserExtensions.Mention(mod)}"
-                                                      : string.Empty),
-                        v.CreatedAt.ToUnixTimeSeconds().ToString())),
+                versions => BuildChoices(versions, context.Guild),
                 _ => []);
 
-    private async ValueTask<Result<IEnumerable<CommandVersionEntry>>> Versions(GuildId guildId,
-        CustomCommandName name)
+    private static IEnumerable<DiscordAutoCompleteChoice> BuildChoices(
+        IEnumerable<CommandVersionEntry> versions, DiscordGuild? guild)
+    {
+        var list = versions.ToList();
+        return list.Select((v, i) =>
+        {
+            var versionNumber = list.Count - i;
+            var label = $"v{versionNumber} — {v.CreatedAt:MMM d, yyyy h:mm tt} UTC"
+                + (v.ModeratorId is { } mod ? $" by {ResolveDisplayName(guild, mod)}" : string.Empty);
+            return new DiscordAutoCompleteChoice(
+                label.Length > MaxLabelLength ? string.Concat(label.AsSpan(0, MaxLabelLength - 1), "…") : label,
+                v.CreatedAt.Ticks.ToString());
+        });
+    }
+
+    /// <summary>
+    /// Returns the member's display name from the guild cache if available,
+    /// otherwise falls back to the bare numeric ID.
+    /// </summary>
+    private static string ResolveDisplayName(DiscordGuild? guild, ModeratorId mod)
+        => guild?.Members.TryGetValue(mod.Value, out var member) is true
+            ? member.DisplayName
+            : mod.Value.ToString();
+
+    private async ValueTask<Result<IEnumerable<CommandVersionEntry>>> GetVersionsAsync(
+        GuildId guildId, CustomCommandName name)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var versions = await dbContext.CustomCommands
