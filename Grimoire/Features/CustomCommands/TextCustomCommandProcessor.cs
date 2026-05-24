@@ -53,7 +53,7 @@ public sealed class TextCustomCommandProcessor(IDbContextFactory<GrimoireDbConte
             .AsNoTracking()
             .GetCustomCommandQuery(member.GetGuildId(), name)
             .FirstOrDefaultAsync();
-        return response is null || !GetCustomCommand.IsUserAuthorized(member, response.Roles)
+        return response is null || !GetCustomCommand.IsUserAuthorized(member, response)
             ? Result<ParsedCommand>.Fail(new Error("text-command.not-found", "Command not found or not authorized"))
             : Result<ParsedCommand>.Ok(new ParsedCommand(response, member, name, args));
     }

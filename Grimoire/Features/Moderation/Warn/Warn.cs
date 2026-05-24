@@ -40,27 +40,25 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         }
 
         await using var dbcontext = await this._dbContextFactory.CreateDbContextAsync();
-        var sin = new Sin
-        {
-            UserId = user.GetUserId(),
-            GuildId = guild.GetGuildId(),
-            SinOn = DateTimeOffset.UtcNow,
-            ModeratorId = ctx.GetModeratorId(),
-            SinType = SinType.Warn,
-            ReasonHistory = string.IsNullOrWhiteSpace(reason)
-                ? []
-                :
-                [
-                    new SinReasonHistory
-                    {
-                        SinId = default,
-                        Reason = ModerationReason.Create(reason)
-                            .Match(r => r, _ => throw new UnreachableException()),
-                        ModeratorId = ctx.GetModeratorId(),
-                        SetAt = DateTimeOffset.UtcNow
-                    }
-                ]
-        };
+        var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
+        var now = DateTimeOffset.UtcNow;
+        var sin = Sin.ForWarn(actor, user.GetUserId(), guild.GetGuildId(), now)
+            .Match(
+                s => string.IsNullOrWhiteSpace(reason) ? s : s with
+                {
+                    ReasonHistory =
+                    [
+                        new SinReasonHistory
+                        {
+                            SinId = default,
+                            Reason = ModerationReason.Create(reason)
+                                .Match(r => r, _ => throw new UnreachableException()),
+                            Actor = actor,
+                            SetAt = now
+                        }
+                    ]
+                },
+                _ => throw new UnreachableException());
         dbcontext.Sins.Add(sin);
         await dbcontext.SaveChangesAsync();
         var embed = new DiscordEmbedBuilder()

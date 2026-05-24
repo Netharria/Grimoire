@@ -11,6 +11,24 @@ using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
+/// <summary>
+/// Determines which role type wins when a user holds both an allow-listed and a deny-listed role
+/// on the same custom command.
+/// </summary>
+public enum RolePrecedence
+{
+    /// <summary>
+    /// Deny roles cancel allow roles. A user with both an allow role and a deny role is denied.
+    /// This is the default.
+    /// </summary>
+    DenyOverride,
+
+    /// <summary>
+    /// Allow roles cancel deny roles. A user with both an allow role and a deny role is allowed.
+    /// </summary>
+    AllowOverride
+}
+
 [UsedImplicitly]
 public abstract record CustomCommand
 {
@@ -19,6 +37,7 @@ public abstract record CustomCommand
     public required DateTimeOffset CreatedAt { get; init; }
     public required CustomCommandContent Content { get; init; }
     public ModeratorId? ModeratorId { get; init; }
+    public RolePrecedence RolePrecedence { get; init; } = RolePrecedence.DenyOverride;
     public ICollection<CustomCommandRole> Roles { get; protected init; } = [];
 }
 
@@ -98,7 +117,8 @@ public sealed record TextCustomCommand : CustomCommand
         GuildId guildId,
         CustomCommandContent content,
         ICollection<CustomCommandRole> customCommandRoles,
-        ModeratorId? moderatorId)
+        ModeratorId? moderatorId,
+        RolePrecedence rolePrecedence = RolePrecedence.DenyOverride)
     {
         var now = DateTimeOffset.UtcNow;
         return Validation<CustomCommand>.Succeed(new TextCustomCommand
@@ -108,6 +128,7 @@ public sealed record TextCustomCommand : CustomCommand
             CreatedAt = now,
             Content = content,
             ModeratorId = moderatorId,
+            RolePrecedence = rolePrecedence,
             Roles = customCommandRoles.Select<CustomCommandRole, CustomCommandRole>(r => r switch
             {
                 CustomCommandAllowRole allow => allow with { CreatedAt = now },
@@ -128,7 +149,8 @@ public sealed record EmbedCustomCommand : CustomCommand
         CustomCommandContent content,
         CustomCommandEmbedColor? embedColor,
         ICollection<CustomCommandRole> customCommandRoles,
-        ModeratorId? moderatorId)
+        ModeratorId? moderatorId,
+        RolePrecedence rolePrecedence = RolePrecedence.DenyOverride)
     {
         var now = DateTimeOffset.UtcNow;
         return Validation<CustomCommand>.Succeed(new EmbedCustomCommand
@@ -139,6 +161,7 @@ public sealed record EmbedCustomCommand : CustomCommand
             Content = content,
             EmbedColor = embedColor,
             ModeratorId = moderatorId,
+            RolePrecedence = rolePrecedence,
             Roles = customCommandRoles.Select<CustomCommandRole, CustomCommandRole>(r => r switch
             {
                 CustomCommandAllowRole allow => allow with { CreatedAt = now },

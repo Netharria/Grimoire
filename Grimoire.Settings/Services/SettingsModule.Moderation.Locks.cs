@@ -72,15 +72,11 @@ public sealed partial class SettingsModule
             var finalAllowed = existingPermissions?.PreviouslyAllowed ?? channelLock.PreviouslyAllowed;
             var finalDenied = existingPermissions?.PreviouslyDenied ?? channelLock.PreviouslyDenied;
 
-            return await ChannelLocked.Create(channelLock, finalAllowed, finalDenied)
-                .ToResult()
-                .BindAsync(async validLock =>
-                {
-                    dbContext.ChannelLocks.Add(validLock);
-                    await dbContext.SaveChangesAsync(ct);
-                    await this._cache.RemoveAsync(CacheKey.ChannelLocks(validLock.GuildId), ct);
-                    return Result<ChannelLocked>.Ok(validLock);
-                });
+            var validLock = channelLock.WithPermissions(finalAllowed, finalDenied);
+            dbContext.ChannelLocks.Add(validLock);
+            await dbContext.SaveChangesAsync(ct);
+            await this._cache.RemoveAsync(CacheKey.ChannelLocks(validLock.GuildId), ct);
+            return Result<ChannelLocked>.Ok(validLock);
         }, new Error("channel-lock.save-failed", "Could not save the channel lock."), cancellationToken);
 
     private Task<Result<ChannelLocked>> RemoveChannelLock(

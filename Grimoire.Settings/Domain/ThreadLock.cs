@@ -38,6 +38,15 @@ public sealed record ThreadLocked : ThreadLock
         DateTimeOffset setAt,
         DateTimeOffset endTime)
     {
+        if (moderatorId.Value == 0)
+            return Validation<ThreadLocked>.Fail(
+                new Error("thread-lock.moderator-id.invalid", "ModeratorId must be specified."));
+        if (channelId.Value == 0)
+            return Validation<ThreadLocked>.Fail(
+                new Error("thread-lock.channel-id.invalid", "ChannelId must be specified."));
+        if (guildId.Value == 0)
+            return Validation<ThreadLocked>.Fail(
+                new Error("thread-lock.guild-id.invalid", "GuildId must be specified."));
         if (endTime <= setAt)
             return Validation<ThreadLocked>.Fail(
                 new Error("thread-lock.end-time.invalid", "End time must be after the lock's set time."));

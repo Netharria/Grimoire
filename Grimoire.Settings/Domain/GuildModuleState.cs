@@ -7,7 +7,7 @@
 
 namespace Grimoire.Settings.Domain;
 
-public record GuildModuleState(
+public sealed record GuildModuleState(
     bool LevelingEnabled,
     bool UserLogEnabled,
     bool ModerationEnabled,

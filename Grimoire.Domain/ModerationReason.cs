@@ -19,11 +19,9 @@ public readonly record struct ModerationReason
     internal static ModerationReason FromDatabase(string value) => new(value);
 
     public static Validation<ModerationReason?> CreateIfNotNull(string? input)
-        => input switch
-        {
-            not null => Create(input).Map(reason => (ModerationReason?)reason),
-            _ => Validation<ModerationReason?>.Succeed(null)
-        };
+        => input is null
+            ? Validation<ModerationReason?>.Succeed(null)
+            : Create(input).Map(r => (ModerationReason?)r);
 
     public static Validation<ModerationReason> Create(string input)
     {

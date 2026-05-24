@@ -24,10 +24,10 @@ public readonly record struct XpTimeoutPeriod
 
     public TimeSpan Value { get; }
 
-    internal static XpTimeoutPeriod FromDatabaseOrDefault(string? input)
-        => input is not null
-            ? new XpTimeoutPeriod(TimeSpan.Parse(input, CultureInfo.InvariantCulture))
-            : Default;
+    internal static Validation<XpTimeoutPeriod> FromDatabase(string? input)
+        => input is null
+            ? Validation<XpTimeoutPeriod>.Succeed(Default)
+            : Create(input);
 
     public static Validation<XpTimeoutPeriod> Create(int? input)
     {
@@ -53,6 +53,9 @@ public readonly record struct XpTimeoutPeriod
 
 public static class XpTimeoutPeriodExtensions
 {
-    internal static Validation<string> ToDatabaseString(this Validation<XpTimeoutPeriod> v)
-        => v.Map(x => x.Value.ToString("c", CultureInfo.InvariantCulture));
+    extension(Validation<XpTimeoutPeriod> v)
+    {
+        internal Validation<string> ToDatabaseString()
+            => v.Map(x => x.Value.ToString("c", CultureInfo.InvariantCulture));
+    }
 }

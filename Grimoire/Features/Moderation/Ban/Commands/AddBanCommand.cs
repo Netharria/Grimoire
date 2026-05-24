@@ -59,27 +59,25 @@ public sealed partial class AddBanCommand(
         }
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var sin = new Sin
-        {
-            GuildId = guild.GetGuildId(),
-            UserId = user.GetUserId(),
-            SinOn = DateTimeOffset.UtcNow,
-            SinType = SinType.Ban,
-            ModeratorId = ctx.GetModeratorId(),
-            ReasonHistory = string.IsNullOrWhiteSpace(reason)
-                ? []
-                :
-                [
-                    new SinReasonHistory
-                    {
-                        SinId = default,
-                        Reason = ModerationReason.Create(reason)
-                            .Match(r => r, _ => throw new UnreachableException()),
-                        ModeratorId = ctx.GetModeratorId(),
-                        SetAt = DateTimeOffset.UtcNow
-                    }
-                ]
-        };
+        var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
+        var now = DateTimeOffset.UtcNow;
+        var sin = Sin.ForBan(actor, user.GetUserId(), guild.GetGuildId(), now)
+            .Match(
+                s => string.IsNullOrWhiteSpace(reason) ? s : s with
+                {
+                    ReasonHistory =
+                    [
+                        new SinReasonHistory
+                        {
+                            SinId = default,
+                            Reason = ModerationReason.Create(reason)
+                                .Match(r => r, _ => throw new UnreachableException()),
+                            Actor = actor,
+                            SetAt = now
+                        }
+                    ]
+                },
+                _ => throw new UnreachableException());
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 

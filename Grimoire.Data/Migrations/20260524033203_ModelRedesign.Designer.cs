@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Migrations
 {
     [DbContext(typeof(GrimoireDbContext))]
-    [Migration("20260510175227_DomainRemodel")]
-    partial class DomainRemodel
+    [Migration("20260524033203_ModelRedesign")]
+    partial class ModelRedesign
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -93,6 +93,13 @@ namespace Grimoire.Migrations
 
                     b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
+
+                    b.Property<string>("RolePrecedence")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DenyOverride")
+                        .HasColumnName("RolePrecedence");
 
                     b.HasKey("Name", "GuildId", "CreatedAt");
 
@@ -211,10 +218,9 @@ namespace Grimoire.Migrations
                     b.Property<decimal>("MessageId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTimeOffset>("TimeStamp")
-                        .ValueGeneratedOnAdd()
+                    b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasColumnName("TimeStamp");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -234,7 +240,7 @@ namespace Grimoire.Migrations
                         .HasColumnType("numeric(20,0)")
                         .HasColumnName("ModeratorId");
 
-                    b.HasKey("MessageId", "TimeStamp");
+                    b.HasKey("MessageId", "Timestamp");
 
                     b.ToTable("MessageHistory");
 
@@ -732,10 +738,11 @@ namespace Grimoire.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<decimal?>("Actor")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("ModeratorId");
 
-                    b.Property<decimal?>("ModeratorId")
+                    b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTimeOffset>("SinOn")
@@ -754,7 +761,7 @@ namespace Grimoire.Migrations
                     b.HasIndex("Id", "GuildId")
                         .HasDatabaseName("IX_Sin_Id_GuildId");
 
-                    b.HasIndex("ModeratorId", "GuildId", "SinType")
+                    b.HasIndex("Actor", "GuildId", "SinType")
                         .HasDatabaseName("IX_Sin_ModeratorId_GuildId_SinType");
 
                     b.HasIndex("UserId", "GuildId", "SinOn")
@@ -771,8 +778,9 @@ namespace Grimoire.Migrations
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<decimal?>("Actor")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("ModeratorId");
 
                     b.Property<string>("Reason")
                         .IsRequired()
@@ -807,7 +815,7 @@ namespace Grimoire.Migrations
                     b.ToTable("UsernameHistory");
                 });
 
-            modelBuilder.Entity("Grimoire.Domain.XpHistory", b =>
+            modelBuilder.Entity("Grimoire.Domain.XpHistoryEntry", b =>
                 {
                     b.Property<decimal>("UserId")
                         .HasColumnType("numeric(20,0)");
@@ -818,24 +826,28 @@ namespace Grimoire.Migrations
                     b.Property<DateTimeOffset>("TimeOut")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("AwarderId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("RawXp")
+                        .HasColumnType("bigint")
+                        .HasColumnName("Xp");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("Xp")
-                        .HasColumnType("bigint");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
 
                     b.HasKey("UserId", "GuildId", "TimeOut");
 
-                    b.HasIndex("GuildId", "Xp")
+                    b.HasIndex("GuildId", "RawXp")
                         .HasDatabaseName("IX_XpHistory_GuildId_Xp");
 
-                    b.HasIndex("UserId", "GuildId", "Xp")
+                    b.HasIndex("UserId", "GuildId", "RawXp")
                         .HasDatabaseName("IX_XpHistory_UserId_GuildId_Xp");
 
                     b.ToTable("XpHistory");
+
+                    b.HasDiscriminator<string>("Type").HasValue("XpHistoryEntry");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Grimoire.Domain.EmbedCustomCommand", b =>
@@ -896,6 +908,38 @@ namespace Grimoire.Migrations
                     b.HasBaseType("Grimoire.Domain.MessageHistoryEntry");
 
                     b.HasDiscriminator().HasValue("Edited");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.AwardedXp", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
+
+                    b.Property<decimal>("AwarderId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("AwarderId");
+
+                    b.HasDiscriminator().HasValue("Awarded");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.EarnedXp", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
+
+                    b.HasDiscriminator().HasValue("Earned");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.MigratedXp", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
+
+                    b.HasDiscriminator().HasValue("Migrated");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.ReclaimedXp", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
+
+                    b.HasDiscriminator().HasValue("Reclaimed");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Attachment", b =>

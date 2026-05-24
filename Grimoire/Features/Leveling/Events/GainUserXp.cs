@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
@@ -63,21 +64,17 @@ public sealed partial class GainUserXp(
         var xp = await dbContext.XpHistory
             .AsNoTracking()
             .Where(xp => xp.UserId == member.GetUserId() && xp.GuildId == member.GetGuildId())
-            .Select(xp => xp.Xp)
-            .LongCountAsync();
+            .SumAsync(xp => xp.RawXp);
 
         var levelingSettingEntry = await this._settingsModule.GetLevelingSettings(member.GetGuildId())
             .GetOrElse(() => default!);
 
-        await dbContext.XpHistory.AddAsync(
-            new XpHistory
-            {
-                Xp = levelingSettingEntry.Amount.Value,
-                UserId = args.GetAuthorUserId(),
-                GuildId = member.GetGuildId(),
-                TimeOut = DateTimeOffset.UtcNow + levelingSettingEntry.XpTimeoutPeriod.Value,
-                Type = XpHistoryType.Earned
-            });
+        var earnedXp = PositiveXpAmount.Create(levelingSettingEntry.Amount.Value)
+            .Bind(amount => EarnedXp.Create(amount, args.GetAuthorUserId(), member.GetGuildId(),
+                DateTimeOffset.UtcNow + levelingSettingEntry.XpTimeoutPeriod.Value))
+            .Match(e => e, _ => throw new UnreachableException());
+
+        await dbContext.XpHistory.AddAsync(earnedXp);
         await dbContext.SaveChangesAsync();
 
         var previousLevel = levelingSettingEntry.GetLevelFromXp(xp);
@@ -145,18 +142,18 @@ public sealed partial class GainUserXp(
                 guild.GetGuildId());
         }
 
-        foreach (var reward in newRewards.Where(reward => !string.IsNullOrWhiteSpace(reward.RewardMessage)))
+        foreach (var reward in newRewards.Where(reward => reward.RewardMessage.HasValue))
             try
             {
                 if (guild.Roles.TryGetValue(reward.RoleId.Value, out var role))
                     await member.SendMessageAsync(new DiscordEmbedBuilder()
                         .WithAuthor($"Congratulations on earning {role.Name}!", iconUrl: guild.IconUrl)
                         .WithFooter($"Message from the moderators of {guild.Name}.")
-                        .WithDescription(Regex.Unescape(reward.RewardMessage!)));
+                        .WithDescription(Regex.Unescape(reward.RewardMessage.GetValueOrDefault().Value)));
             }
             catch (Exception ex)
             {
-                LogRewardMessageFailure(this._logger, ex, reward.RoleId, reward.RewardMessage);
+                LogRewardMessageFailure(this._logger, ex, reward.RoleId, reward.RewardMessage?.Value);
             }
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

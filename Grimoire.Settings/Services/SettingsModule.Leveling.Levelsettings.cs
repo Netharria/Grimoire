@@ -38,6 +38,12 @@ public sealed partial class SettingsModule
                     this._cacheEntryOptions,
                     cancellationToken: cancellationToken));
         }
+        catch (InvalidOperationException ex)
+        {
+            return Result<LevelingSettingEntry>.Fail(new Error(
+                "levelsettings.invalid",
+                $"One or more leveling settings are invalid: {ex.Message}. Please reset them using the /leveling settings commands."));
+        }
         catch (Exception ex)
         {
             LogOperationFailure(this._logger, ex.Message, ex);
@@ -60,17 +66,16 @@ public sealed partial class SettingsModule
                     _ => null
                 }, cancellationToken: cancellationToken);
 
-        return new LevelingSettingEntry
-        (
-            XpTimeoutPeriod.FromDatabaseOrDefault(
-                latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),
-            LevelScalingModifier.FromDatabaseOrDefault(
-                latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier)),
-            LevelScalingBase.FromDatabaseOrDefault(
-                latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase)),
-            XpGainAmount.FromDatabaseOrDefault(
-                latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount))
-        );
+        return Validation.Combine(
+            XpTimeoutPeriod.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),
+            LevelScalingModifier.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier)),
+            LevelScalingBase.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase)),
+            XpGainAmount.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount)))
+            .Map(v => new LevelingSettingEntry(v.Item1, v.Item2, v.Item3, v.Item4))
+            .Match(
+                entry => entry,
+                errors => throw new InvalidOperationException(
+                    string.Join("; ", errors.Select(e => e.Message))));
     }
 
     public Task<Result<int>> SetLevelingSettings(

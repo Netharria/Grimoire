@@ -22,11 +22,9 @@ public readonly record struct RewardMessage
             : null;
 
     public static Validation<RewardMessage?> CreateIfNotNull(string? input)
-        => input switch
-        {
-            not null => Create(input).Map<RewardMessage?>(setting => setting),
-            _ => Validation<RewardMessage?>.Succeed(null)
-        };
+        => input is null
+            ? Validation<RewardMessage?>.Succeed(null)
+            : Create(input).Map(r => (RewardMessage?)r);
 
     public static Validation<RewardMessage> Create(string? input)
     {

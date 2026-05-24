@@ -48,26 +48,24 @@ internal sealed class SpamEvents(
             .CountAsync(x => x.SinOn > DateTimeOffset.UtcNow.AddDays(-1));
         var duration = TimeSpan.FromMinutes(Math.Pow(2, muteCount));
         var muteEndTime = DateTimeOffset.UtcNow.Add(duration);
-        var sin = new Sin
-        {
-            UserId = member.GetUserId(),
-            GuildId = args.Guild.GetGuildId(),
-            SinOn = DateTimeOffset.UtcNow,
-            ModeratorId = new ModeratorId(args.Guild.CurrentMember.Id),
-            SinType = SinType.Mute,
-            ReasonHistory =
-            [
-                new SinReasonHistory
+        var now = DateTimeOffset.UtcNow;
+        var sin = Sin.ForMute(new ModerationActor.System(), member.GetUserId(), args.Guild.GetGuildId(), now)
+            .Match(
+                s => s with
                 {
-                    SinId = default,
-                    Reason =
-                        ModerationReason.Create(checkSpamResult.Reason)
-                            .Match(r => r, _ => throw new UnreachableException()),
-                    ModeratorId = new ModeratorId(args.Guild.CurrentMember.Id),
-                    SetAt = DateTimeOffset.UtcNow
-                }
-            ]
-        };
+                    ReasonHistory =
+                    [
+                        new SinReasonHistory
+                        {
+                            SinId = default,
+                            Reason = ModerationReason.Create(checkSpamResult.Reason)
+                                .Match(r => r, _ => throw new UnreachableException()),
+                            Actor = new ModerationActor.System(),
+                            SetAt = now
+                        }
+                    ]
+                },
+                _ => throw new UnreachableException());
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 

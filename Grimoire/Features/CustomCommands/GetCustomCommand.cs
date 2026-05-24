@@ -65,7 +65,7 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             .AsNoTracking()
             .GetCustomCommandQuery(guildId, name)
             .FirstOrDefaultAsync();
-        return response is null || !IsUserAuthorized(member, response.Roles)
+        return response is null || !IsUserAuthorized(member, response)
             ? Result<CustomCommand>.Fail(new Error("command.not_found", "Command not found or not authorized."))
             : Result<CustomCommand>.Ok(response);
     }
@@ -100,16 +100,27 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         });
     }
 
-    public static bool IsUserAuthorized(DiscordMember? member, ICollection<CustomCommandRole> roles)
+    public static bool IsUserAuthorized(DiscordMember? member, CustomCommand command)
     {
         if (member is null) return false;
         var memberRoles = member.Roles.Select(static r => r.GetRoleId()).ToHashSet();
-        return roles.Any(role => role switch
+
+        var allowRoles = command.Roles.OfType<CustomCommandAllowRole>().Select(r => r.RoleId).ToHashSet();
+        var denyRoles = command.Roles.OfType<CustomCommandDenyRole>().Select(r => r.RoleId).ToHashSet();
+
+        var hasAllow = allowRoles.Count > 0 && memberRoles.Overlaps(allowRoles);
+        var hasDeny = denyRoles.Count > 0 && memberRoles.Overlaps(denyRoles);
+
+        if (allowRoles.Count == 0 && denyRoles.Count == 0) return true;
+        if (allowRoles.Count == 0) return !hasDeny;
+        if (denyRoles.Count == 0) return hasAllow;
+
+        return command.RolePrecedence switch
         {
-            CustomCommandAllowRole allowRole => !memberRoles.Contains(allowRole.RoleId),
-            CustomCommandDenyRole denyRole => memberRoles.Contains(denyRole.RoleId),
-            _ => false
-        });
+            RolePrecedence.DenyOverride => hasAllow && !hasDeny,
+            RolePrecedence.AllowOverride => hasAllow || !hasDeny,
+            _ => throw new UnreachableException()
+        };
     }
 
     internal static string TruncateForDiscord(string input, int maxLength)

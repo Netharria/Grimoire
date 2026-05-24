@@ -32,7 +32,7 @@ public sealed partial class SettingsModule
                                     .ToListAsync(innerCt))
                                 .OfType<RewardAdded>()
                                 .Select(added =>
-                                    new RewardEntry(added.RoleId, added.RewardLevel, added.RewardMessage?.Value))
+                                    new RewardEntry(added.RoleId, added.RewardLevel, added.RewardMessage))
                                 .ToFrozenSet();
                         }, this._cacheEntryOptions,
                         cancellationToken: ct)),

@@ -134,10 +134,8 @@ internal sealed class UserInfoCommands(
 
         var membersXp = await dbContext.XpHistory
             .AsNoTracking()
-            .Where(member => member.UserId == userId && member.GuildId == guildId)
-            .GroupBy(history => new { history.UserId, history.GuildId })
-            .Select(member => member.Sum(xpHistory => xpHistory.Xp))
-            .FirstOrDefaultAsync();
+            .Where(x => x.UserId == userId && x.GuildId == guildId)
+            .SumAsync(x => x.RawXp);
 
         var levelSettings = await this._settingsModule.GetLevelingSettings(guildId)
             .GetOrElse(() => default!);

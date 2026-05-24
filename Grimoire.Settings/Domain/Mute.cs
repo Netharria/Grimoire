@@ -48,6 +48,9 @@ public sealed record MuteAdded : Mute
         if (moderatorId.Value == 0)
             return Validation<MuteAdded>.Fail(
                 new Error("mute.moderator-id.invalid", "ModeratorId must be specified."));
+        if (guildId.Value == 0)
+            return Validation<MuteAdded>.Fail(
+                new Error("mute.guild-id.invalid", "GuildId must be specified."));
         if (moderatorId.Value == userId.Value)
             return Validation<MuteAdded>.Fail(
                 new Error("mute.self-mute.invalid", "A moderator cannot mute themselves."));
@@ -82,6 +85,9 @@ public sealed record MuteRemoved : Mute
         if (moderatorId.Value == 0)
             return Validation<MuteRemoved>.Fail(
                 new Error("mute-removed.moderator-id.invalid", "ModeratorId must be specified."));
+        if (guildId.Value == 0)
+            return Validation<MuteRemoved>.Fail(
+                new Error("mute-removed.guild-id.invalid", "GuildId must be specified."));
         return Validation<MuteRemoved>.Succeed(
             new MuteRemoved(userId, guildId, moderatorId, setAt));
     }

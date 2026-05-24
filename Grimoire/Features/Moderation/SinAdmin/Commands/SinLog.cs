@@ -59,9 +59,10 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         if (sinQueryType == SinQueryType.Mod)
         {
+            var moderatorActor = new ModerationActor.Moderator(ctx.GetModeratorId());
             var modResponse = await dbContext.Sins
                 .AsNoTracking()
-                .Where(sin => sin.ModeratorId == ctx.GetModeratorId() && sin.GuildId == guild.GetGuildId())
+                .Where(sin => sin.Actor == moderatorActor && sin.GuildId == guild.GetGuildId())
                 .GroupBy(sin => sin.SinType)
                 .ToDictionaryAsync(sinGroup => sinGroup.Key, sinGroup => sinGroup.Count());
 
@@ -106,7 +107,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
                     .Select(r => r.Reason.Value)
                     .FirstOrDefault() ?? string.Empty,
                 // ReSharper restore AccessToDisposedClosure
-                x.ModeratorId,
+                x.Actor,
                 // ReSharper disable AccessToDisposedClosure
                 Pardon = dbContext.Pardons.Any(p => p.SinId == x.Id),
                 PardonModeratorId = dbContext.Pardons
@@ -127,7 +128,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         {
             var builder = $"**{x.Id} : {x.SinType}** : <t:{x.SinOn.ToUnixTimeSeconds()}:f>\n" +
                           $"\tReason: {x.Reason}\n" +
-                          $"\tModerator: {UserExtensions.Mention(x.ModeratorId)}\n";
+                          $"\tModerator: {UserExtensions.Mention(x.Actor)}\n";
             if (x.Pardon)
                 builder = $"~~{builder}~~" +
                           $"**Pardoned by: {UserExtensions.Mention(x.PardonModeratorId)} on <t:{x.PardonDate.ToUnixTimeSeconds()}:f>**\n";

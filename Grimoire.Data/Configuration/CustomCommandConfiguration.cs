@@ -35,6 +35,11 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
         builder.Property(e => e.ModeratorId)
             .HasConversion(e => e.GetValueOrDefault().Value, value => new ModeratorId(value));
 
+        builder.Property(e => e.RolePrecedence)
+            .HasConversion<string>()
+            .HasDefaultValue(RolePrecedence.DenyOverride)
+            .HasColumnName("RolePrecedence");
+
         builder.HasIndex(e => new { e.GuildId, e.Name });
 
         builder.HasDiscriminator<string>("CommandType")

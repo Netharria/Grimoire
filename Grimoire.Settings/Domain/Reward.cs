@@ -37,6 +37,9 @@ public sealed record RewardAdded(
         if (setBy.Value == 0)
             return Validation<RewardAdded>.Fail(
                 new Error("reward.moderator-id.invalid", "ModeratorId must be specified."));
+        if (guildId.Value == 0)
+            return Validation<RewardAdded>.Fail(
+                new Error("reward.guild-id.invalid", "GuildId must be specified."));
         return Validation<RewardAdded>.Succeed(
             new RewardAdded(roleId, guildId, setBy, setAt, rewardLevel, rewardMessage));
     }
@@ -65,6 +68,9 @@ public sealed record RewardRemoved : Reward
         if (setBy.Value == 0)
             return Validation<RewardRemoved>.Fail(
                 new Error("reward-removed.set-by.invalid", "ModeratorId must be specified."));
+        if (guildId.Value == 0)
+            return Validation<RewardRemoved>.Fail(
+                new Error("reward-removed.guild-id.invalid", "GuildId must be specified."));
         return Validation<RewardRemoved>.Succeed(
             new RewardRemoved(roleId, guildId, setBy, setAt));
     }

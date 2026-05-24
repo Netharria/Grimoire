@@ -23,10 +23,10 @@ public readonly record struct LevelScalingModifier
     public int Value { get; }
 
 
-    internal static LevelScalingModifier FromDatabaseOrDefault(string? input)
-        => input is not null
-            ? new LevelScalingModifier(int.Parse(input, NumberStyles.Integer, CultureInfo.InvariantCulture))
-            : Default;
+    internal static Validation<LevelScalingModifier> FromDatabase(string? input)
+        => input is null
+            ? Validation<LevelScalingModifier>.Succeed(Default)
+            : Create(input);
 
     public static Validation<LevelScalingModifier> Create(string? inputStr)
     {

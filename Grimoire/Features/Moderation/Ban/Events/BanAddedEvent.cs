@@ -41,7 +41,7 @@ public partial class BanAddedEvent(
             .Select(sin => new LastSin
             {
                 SinId = sin.Id,
-                ModeratorId = sin.ModeratorId,
+                Actor = sin.Actor,
                 // ReSharper disable once AccessToDisposedClosure
                 Reason = dbContext.SinReasonHistory
                     .Where(r => r.SinId == sin.Id)
@@ -61,39 +61,36 @@ public partial class BanAddedEvent(
                 var auditReason = banAuditLog?.Target.Id != args.Member.Id
                     ? string.Empty
                     : banAuditLog.Reason ?? string.Empty;
-                ModeratorId? auditModeratorId = banAuditLog?.Target.Id != args.Member.Id
-                    ? null
+                ModerationActor auditActor = banAuditLog?.Target.Id != args.Member.Id
+                    ? new ModerationActor.System()
                     : banAuditLog.UserResponsible?.Id is not null
-                        ? new ModeratorId(banAuditLog.UserResponsible.Id)
-                        : null;
+                        ? new ModerationActor.Moderator(new ModeratorId(banAuditLog.UserResponsible.Id))
+                        : new ModerationActor.System();
 
-                var sin = new Sin
-                {
-                    GuildId = args.Guild.GetGuildId(),
-                    UserId = args.Member.GetUserId(),
-                    SinOn = DateTimeOffset.UtcNow,
-                    SinType = SinType.Ban,
-                    ModeratorId = auditModeratorId,
-                    ReasonHistory = string.IsNullOrWhiteSpace(auditReason)
-                        ? []
-                        :
-                        [
-                            new SinReasonHistory
-                            {
-                                SinId = default,
-                                Reason = ModerationReason.Create(auditReason)
-                                    .Match(r => r, _ => throw new UnreachableException()),
-                                ModeratorId = auditModeratorId,
-                                SetAt = DateTimeOffset.UtcNow
-                            }
-                        ]
-                };
+                var now = DateTimeOffset.UtcNow;
+                var sin = Sin.ForBan(auditActor, args.Member.GetUserId(), args.Guild.GetGuildId(), now)
+                    .Match(
+                        s => string.IsNullOrWhiteSpace(auditReason) ? s : s with
+                        {
+                            ReasonHistory =
+                            [
+                                new SinReasonHistory
+                                {
+                                    SinId = default,
+                                    Reason = ModerationReason.Create(auditReason)
+                                        .Match(r => r, _ => throw new UnreachableException()),
+                                    Actor = auditActor,
+                                    SetAt = now
+                                }
+                            ]
+                        },
+                        _ => throw new UnreachableException());
                 dbContext.Sins.Add(sin);
                 await dbContext.SaveChangesAsync();
 
                 lastBan = new LastSin
                 {
-                    SinId = sin.Id, ModeratorId = sin.ModeratorId, Reason = auditReason, SinOn = sin.SinOn
+                    SinId = sin.Id, Actor = sin.Actor, Reason = auditReason, SinOn = sin.SinOn
                 };
             }
             catch (Exception ex) when (ex is UnauthorizedException or ServerErrorException)
@@ -110,8 +107,8 @@ public partial class BanAddedEvent(
             .AddField("Sin Id", $"**{lastBan.SinId}**", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Red);
-        if (lastBan.ModeratorId is not null)
-            builder.AddField("Mod", UserExtensions.Mention(lastBan.ModeratorId), true);
+        if (lastBan.Actor is ModerationActor.Moderator)
+            builder.AddField("Mod", UserExtensions.Mention(lastBan.Actor), true);
 
         builder.AddField("Reason",
             !string.IsNullOrWhiteSpace(lastBan.Reason) ? lastBan.Reason : "None", true);
@@ -128,7 +125,7 @@ public partial class BanAddedEvent(
     private sealed record LastSin
     {
         public SinId SinId { get; init; }
-        public ModeratorId? ModeratorId { get; init; }
+        public ModerationActor Actor { get; init; } = new ModerationActor.System();
         public string Reason { get; init; } = string.Empty;
         public DateTimeOffset SinOn { get; init; }
     }

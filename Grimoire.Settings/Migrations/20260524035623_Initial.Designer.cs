@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Grimoire.Settings.Migrations
 {
     [DbContext(typeof(SettingsDbContext))]
-    [Migration("20260510194155_Initial")]
+    [Migration("20260524035623_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

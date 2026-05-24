@@ -23,10 +23,10 @@ public readonly record struct XpGainAmount
     public int Value { get; }
 
 
-    internal static XpGainAmount FromDatabaseOrDefault(string? input)
-        => input is not null
-            ? new XpGainAmount(int.Parse(input, NumberStyles.Integer, CultureInfo.InvariantCulture))
-            : Default;
+    internal static Validation<XpGainAmount> FromDatabase(string? input)
+        => input is null
+            ? Validation<XpGainAmount>.Succeed(Default)
+            : Create(input);
 
     public static Validation<XpGainAmount> Create(string? inputStr)
     {

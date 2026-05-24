@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
+
 namespace Grimoire.Extensions;
 
 public static class UserExtensions
@@ -18,4 +20,12 @@ public static class UserExtensions
         => id is not null
             ? $"<@!{id}>"
             : "Unknown User";
+
+    public static string Mention(ModerationActor actor)
+        => actor switch
+        {
+            ModerationActor.Moderator m => $"<@!{m.Id}>",
+            ModerationActor.System => "System",
+            _ => throw new UnreachableException()
+        };
 }

@@ -5,12 +5,14 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Settings.Configurations;
 
+[ExcludeFromCodeCoverage]
 internal sealed class XpTrackedItemsConfiguration : IEntityTypeConfiguration<XpTrackedItem>
 {
     public void Configure(EntityTypeBuilder<XpTrackedItem> builder)

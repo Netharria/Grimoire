@@ -34,7 +34,7 @@ public sealed partial class RewardCommandGroup
                 {
                     var role = await guild.GetRoleOrDefaultAsync(x.RoleId, token);
                     return
-                        $"Level:{x.RewardLevel} Role:{role?.Mention} {(x.RewardMessage == null ? "" : $"Reward Message: {x.RewardMessage}")}";
+                        $"Level:{x.RewardLevel} Role:{role?.Mention} {(x.RewardMessage.HasValue ? $"Reward Message: {x.RewardMessage.Value.Value}" : "")}";
                 })));
     }
 }

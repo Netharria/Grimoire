@@ -21,7 +21,7 @@ public abstract record XpWatchedItem : XpTrackedItem;
 
 public sealed record IgnoredChannel : XpIgnoredItem
 {
-    public ChannelId ChannelId { get => new(Id); init => Id = value.Value; }
+    public required ChannelId ChannelId { get => new(Id); init => Id = value.Value; }
 
     public static Validation<IgnoredChannel> Create(
         ChannelId channelId, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
@@ -42,7 +42,7 @@ public sealed record IgnoredChannel : XpIgnoredItem
 
 public sealed record WatchedChannel : XpWatchedItem
 {
-    public ChannelId ChannelId { get => new(Id); init => Id = value.Value; }
+    public required ChannelId ChannelId { get => new(Id); init => Id = value.Value; }
 
     public static Validation<WatchedChannel> Create(
         ChannelId channelId, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
@@ -63,7 +63,7 @@ public sealed record WatchedChannel : XpWatchedItem
 
 public sealed record IgnoredMember : XpIgnoredItem
 {
-    public UserId UserId { get => new(Id); init => Id = value.Value; }
+    public required UserId UserId { get => new(Id); init => Id = value.Value; }
 
     public static Validation<IgnoredMember> Create(
         UserId userId, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
@@ -84,7 +84,7 @@ public sealed record IgnoredMember : XpIgnoredItem
 
 public sealed record WatchedMember : XpWatchedItem
 {
-    public UserId UserId { get => new(Id); init => Id = value.Value; }
+    public required UserId UserId { get => new(Id); init => Id = value.Value; }
 
     public static Validation<WatchedMember> Create(
         UserId userId, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
@@ -105,7 +105,7 @@ public sealed record WatchedMember : XpWatchedItem
 
 public sealed record IgnoredRole : XpIgnoredItem
 {
-    public RoleId RoleId { get => new(Id); init => Id = value.Value; }
+    public required RoleId RoleId { get => new(Id); init => Id = value.Value; }
 
     public static Validation<IgnoredRole> Create(
         RoleId roleId, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
@@ -126,7 +126,7 @@ public sealed record IgnoredRole : XpIgnoredItem
 
 public sealed record WatchedRole : XpWatchedItem
 {
-    public RoleId RoleId { get => new(Id); init => Id = value.Value; }
+    public required RoleId RoleId { get => new(Id); init => Id = value.Value; }
 
     public static Validation<WatchedRole> Create(
         RoleId roleId, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)

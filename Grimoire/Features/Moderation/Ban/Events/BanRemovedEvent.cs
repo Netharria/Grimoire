@@ -32,7 +32,7 @@ public class BanRemovedEvent(
             .Where(m => m.UserId == args.Member.GetUserId() && m.GuildId == args.Guild.GetGuildId())
             .Where(sin => sin.SinType == SinType.Ban)
             .OrderByDescending(x => x.SinOn)
-            .Select(sin => new { SinId = sin.Id, sin.ModeratorId })
+            .Select(sin => new { SinId = sin.Id, sin.Actor })
             .FirstOrDefaultAsync();
 
         if (lastBan is null)
@@ -44,8 +44,8 @@ public class BanRemovedEvent(
             .AddField("Sin Id", $"**{lastBan.SinId}**", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green);
-        if (lastBan.ModeratorId is not null)
-            embed.AddField("Mod", UserExtensions.Mention(lastBan.ModeratorId), true);
+        if (lastBan.Actor is ModerationActor.Moderator)
+            embed.AddField("Mod", UserExtensions.Mention(lastBan.Actor), true);
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {

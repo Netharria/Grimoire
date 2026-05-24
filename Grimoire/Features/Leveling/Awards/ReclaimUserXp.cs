@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
@@ -56,7 +57,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
         var member = await dbContext.XpHistory
             .AsNoTracking()
             .GroupBy(history => new { history.UserId, history.GuildId })
-            .Select(historyGroup => new { Xp = historyGroup.Sum(xpHistory => xpHistory.Xp) })
+            .Select(historyGroup => new { Xp = historyGroup.Sum(xpHistory => xpHistory.RawXp) })
             .FirstOrDefaultAsync();
         if (member is null)
         {
@@ -75,16 +76,17 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
 
         xpToTake = Math.Min(member.Xp, xpToTake);
 
-        await dbContext.XpHistory.AddAsync(
-            new XpHistory
-            {
-                UserId = user.GetUserId(),
-                GuildId = guild.GetGuildId(),
-                Xp = -xpToTake,
-                Type = XpHistoryType.Reclaimed,
-                AwarderId = ctx.GetModeratorId(),
-                TimeOut = DateTimeOffset.UtcNow
-            });
+        if (xpToTake <= 0)
+        {
+            await ctx.ReplyAsync(GrimoireColor.Yellow, $"{user.Mention} has no xp to take.");
+            return;
+        }
+
+        var reclaimedXp = NegativeXpAmount.Create(-xpToTake)
+            .Bind(xp => ReclaimedXp.Create(xp, user.GetUserId(), guild.GetGuildId(), DateTimeOffset.UtcNow))
+            .Match(r => r, _ => throw new UnreachableException());
+
+        await dbContext.XpHistory.AddAsync(reclaimedXp);
         await dbContext.SaveChangesAsync();
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple,

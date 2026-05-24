@@ -51,7 +51,7 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
         var entry = result.Single();
         entry.RoleId.ShouldBe(_roleId);
         entry.RewardLevel.ShouldBe(5);
-        entry.RewardMessage.ShouldBe("GG");
+        entry.RewardMessage?.Value.ShouldBe("GG");
     }
 
     [Fact]

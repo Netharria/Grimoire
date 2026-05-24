@@ -88,13 +88,15 @@ public sealed partial class CustomCommandSettings
                     embedCustomCommand.Content,
                     embedCustomCommand.EmbedColor,
                     roles,
-                    moderatorId),
+                    moderatorId,
+                    embedCustomCommand.RolePrecedence),
                 TextCustomCommand textCustomCommand => TextCustomCommand.Create(
                     textCustomCommand.Name,
                     textCustomCommand.GuildId,
                     textCustomCommand.Content,
                     roles,
-                    moderatorId),
+                    moderatorId,
+                    textCustomCommand.RolePrecedence),
                 _ => Validation<CustomCommand>.Fail(new Error("custom-command-revert.type.unidentifiable",
                     "Failed to match the type of the target custom command."))
             })

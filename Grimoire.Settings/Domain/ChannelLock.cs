@@ -46,6 +46,15 @@ public sealed record ChannelLocked : ChannelLock
         PreviouslyDeniedPermissions previouslyDenied,
         DateTimeOffset endTime)
     {
+        if (moderatorId.Value == 0)
+            return Validation<ChannelLocked>.Fail(
+                new Error("channel-lock.moderator-id.invalid", "ModeratorId must be specified."));
+        if (channelId.Value == 0)
+            return Validation<ChannelLocked>.Fail(
+                new Error("channel-lock.channel-id.invalid", "ChannelId must be specified."));
+        if (guildId.Value == 0)
+            return Validation<ChannelLocked>.Fail(
+                new Error("channel-lock.guild-id.invalid", "GuildId must be specified."));
         if (endTime <= setAt)
             return Validation<ChannelLocked>.Fail(
                 new Error("channel-lock.end-time.invalid", "End time must be after the lock's set time."));
@@ -54,21 +63,10 @@ public sealed record ChannelLocked : ChannelLock
                 endTime));
     }
 
-    public static Validation<ChannelLocked> Create(
-        ChannelLocked lockAction,
+    public ChannelLocked WithPermissions(
         PreviouslyAllowedPermissions previouslyAllowed,
         PreviouslyDeniedPermissions previouslyDenied)
-    {
-        return Validation<ChannelLocked>.Succeed(new ChannelLocked(
-            lockAction.ModeratorId,
-            lockAction.ChannelId,
-            lockAction.GuildId,
-            lockAction.SetAt,
-            lockAction.Reason,
-            previouslyAllowed,
-            previouslyDenied,
-            lockAction.EndTime));
-    }
+        => new(ModeratorId, ChannelId, GuildId, SetAt, Reason, previouslyAllowed, previouslyDenied, EndTime);
 }
 
 public sealed record ChannelUnlocked : ChannelLock

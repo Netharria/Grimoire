@@ -53,7 +53,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
         {
             SinId = sinId,
             Reason = ModerationReason.Create(reason).Match(r => r, _ => throw new UnreachableException()),
-            ModeratorId = ctx.GetModeratorId(),
+            Actor = new ModerationActor.Moderator(ctx.GetModeratorId()),
             SetAt = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();

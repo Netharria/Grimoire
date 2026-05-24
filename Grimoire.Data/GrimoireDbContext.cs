@@ -118,7 +118,7 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<UsernameHistory> UsernameHistory { get; init; }
 
-    public DbSet<XpHistory> XpHistory { get; init; }
+    public DbSet<XpHistoryEntry> XpHistory { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(GrimoireDbContext).Assembly)

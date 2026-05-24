@@ -54,9 +54,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         var membersXp = await dbContext.XpHistory
             .AsNoTracking()
             .Where(x => x.UserId == user.GetUserId() && x.GuildId == ctx.Guild.GetGuildId())
-            .GroupBy(x => new { x.UserId, x.GuildId })
-            .Select(xpHistories => xpHistories.Sum(x => x.Xp))
-            .FirstOrDefaultAsync();
+            .SumAsync(x => x.RawXp);
 
         var levelingSettings =
             await this._settingsModule.GetLevelingSettings(ctx.Guild.GetGuildId()).GetOrElse(() => default!);

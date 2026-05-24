@@ -61,28 +61,26 @@ public sealed class MuteUser(
         }
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
+        var now = DateTimeOffset.UtcNow;
         var muteEndTime = durationType.GetDateTimeOffset(durationAmount);
-        var sin = new Sin
-        {
-            UserId = member.GetUserId(),
-            GuildId = guild.GetGuildId(),
-            SinOn = DateTimeOffset.UtcNow,
-            ModeratorId = ctx.GetModeratorId(),
-            SinType = SinType.Mute,
-            ReasonHistory = string.IsNullOrWhiteSpace(reason)
-                ? []
-                :
-                [
-                    new SinReasonHistory
-                    {
-                        SinId = default,
-                        Reason = ModerationReason.Create(reason!)
-                            .Match(r => r, _ => throw new UnreachableException()),
-                        ModeratorId = ctx.GetModeratorId(),
-                        SetAt = DateTimeOffset.UtcNow
-                    }
-                ]
-        };
+        var sin = Sin.ForMute(actor, member.GetUserId(), guild.GetGuildId(), now)
+            .Match(
+                s => string.IsNullOrWhiteSpace(reason) ? s : s with
+                {
+                    ReasonHistory =
+                    [
+                        new SinReasonHistory
+                        {
+                            SinId = default,
+                            Reason = ModerationReason.Create(reason!)
+                                .Match(r => r, _ => throw new UnreachableException()),
+                            Actor = actor,
+                            SetAt = now
+                        }
+                    ]
+                },
+                _ => throw new UnreachableException());
 
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();

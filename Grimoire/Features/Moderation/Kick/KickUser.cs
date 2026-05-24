@@ -41,27 +41,25 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
         }
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var sin = new Sin
-        {
-            UserId = member.GetUserId(),
-            GuildId = guild.GetGuildId(),
-            SinOn = DateTimeOffset.UtcNow,
-            ModeratorId = ctx.GetModeratorId(),
-            SinType = SinType.Kick,
-            ReasonHistory = string.IsNullOrWhiteSpace(reason)
-                ? []
-                :
-                [
-                    new SinReasonHistory
-                    {
-                        SinId = default,
-                        Reason = ModerationReason.Create(reason!)
-                            .Match(r => r, _ => throw new UnreachableException()),
-                        ModeratorId = ctx.GetModeratorId(),
-                        SetAt = DateTimeOffset.UtcNow
-                    }
-                ]
-        };
+        var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
+        var now = DateTimeOffset.UtcNow;
+        var sin = Sin.ForKick(actor, member.GetUserId(), guild.GetGuildId(), now)
+            .Match(
+                s => string.IsNullOrWhiteSpace(reason) ? s : s with
+                {
+                    ReasonHistory =
+                    [
+                        new SinReasonHistory
+                        {
+                            SinId = default,
+                            Reason = ModerationReason.Create(reason!)
+                                .Match(r => r, _ => throw new UnreachableException()),
+                            Actor = actor,
+                            SetAt = now
+                        }
+                    ]
+                },
+                _ => throw new UnreachableException());
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 

@@ -40,7 +40,7 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("MessageId");
 
-                    b.ToTable("Attachments");
+                    b.ToTable("Attachments", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Avatar", b =>
@@ -63,7 +63,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("UserId", "GuildId", "Timestamp");
 
-                    b.ToTable("Avatars");
+                    b.ToTable("Avatars", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.CustomCommand", b =>
@@ -91,11 +91,18 @@ namespace Grimoire.Migrations
                     b.Property<decimal?>("ModeratorId")
                         .HasColumnType("numeric(20,0)");
 
+                    b.Property<string>("RolePrecedence")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DenyOverride")
+                        .HasColumnName("RolePrecedence");
+
                     b.HasKey("Name", "GuildId", "CreatedAt");
 
                     b.HasIndex("GuildId", "Name");
 
-                    b.ToTable("CustomCommands");
+                    b.ToTable("CustomCommands", (string)null);
 
                     b.HasDiscriminator<string>("CommandType").IsComplete(true).HasValue("CustomCommand");
 
@@ -124,7 +131,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("Name", "GuildId", "CreatedAt", "RoleId");
 
-                    b.ToTable("CustomCommandsRole");
+                    b.ToTable("CustomCommandsRole", (string)null);
 
                     b.HasDiscriminator<string>("RoleType").IsComplete(true).HasValue("CustomCommandRole");
 
@@ -152,7 +159,7 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("GuildId", "Name", "UserId");
 
-                    b.ToTable("CustomCommandUsages");
+                    b.ToTable("CustomCommandUsages", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.LeaderboardView", b =>
@@ -200,7 +207,7 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("CreatedTimestamp");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.MessageHistoryEntry", b =>
@@ -208,10 +215,9 @@ namespace Grimoire.Migrations
                     b.Property<decimal>("MessageId")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<DateTimeOffset>("TimeStamp")
-                        .ValueGeneratedOnAdd()
+                    b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasColumnName("TimeStamp");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -231,9 +237,9 @@ namespace Grimoire.Migrations
                         .HasColumnType("numeric(20,0)")
                         .HasColumnName("ModeratorId");
 
-                    b.HasKey("MessageId", "TimeStamp");
+                    b.HasKey("MessageId", "Timestamp");
 
-                    b.ToTable("MessageHistory");
+                    b.ToTable("MessageHistory", (string)null);
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("MessageHistoryEntry");
 
@@ -259,7 +265,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("UserId", "GuildId", "Timestamp");
 
-                    b.ToTable("NicknameHistory");
+                    b.ToTable("NicknameHistory", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.Channel", b =>
@@ -272,7 +278,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Channels");
+                    b.ToTable("Channels", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.Guild", b =>
@@ -288,7 +294,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Guilds");
+                    b.ToTable("Guilds", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildCommandsSettings", b =>
@@ -304,7 +310,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("GuildCommandsSettings");
+                    b.ToTable("GuildCommandsSettings", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildLevelSettings", b =>
@@ -343,7 +349,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("GuildLevelSettings");
+                    b.ToTable("GuildLevelSettings", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildMessageLogSettings", b =>
@@ -368,7 +374,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("GuildMessageLogSettings");
+                    b.ToTable("GuildMessageLogSettings", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildModerationSettings", b =>
@@ -401,7 +407,7 @@ namespace Grimoire.Migrations
                     b.HasIndex("MuteRole")
                         .IsUnique();
 
-                    b.ToTable("GuildModerationSettings");
+                    b.ToTable("GuildModerationSettings", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildUserLogSettings", b =>
@@ -432,7 +438,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("GuildUserLogSettings");
+                    b.ToTable("GuildUserLogSettings", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.IgnoredChannel", b =>
@@ -445,7 +451,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("ChannelId");
 
-                    b.ToTable("IgnoredChannels");
+                    b.ToTable("IgnoredChannels", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.IgnoredMember", b =>
@@ -458,7 +464,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("UserId", "GuildId");
 
-                    b.ToTable("IgnoredMembers");
+                    b.ToTable("IgnoredMembers", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.IgnoredRole", b =>
@@ -471,7 +477,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("RoleId");
 
-                    b.ToTable("IgnoredRoles");
+                    b.ToTable("IgnoredRoles", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.Lock", b =>
@@ -504,7 +510,7 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("EndTime");
 
-                    b.ToTable("Locks");
+                    b.ToTable("Locks", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.Member", b =>
@@ -517,7 +523,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("UserId", "GuildId");
 
-                    b.ToTable("Members");
+                    b.ToTable("Members", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.MessageLogChannelOverride", b =>
@@ -533,7 +539,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("ChannelId");
 
-                    b.ToTable("MessagesLogChannelOverrides");
+                    b.ToTable("MessagesLogChannelOverrides", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.Mute", b =>
@@ -554,7 +560,7 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("EndTime");
 
-                    b.ToTable("Mutes");
+                    b.ToTable("Mutes", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.Reward", b =>
@@ -577,7 +583,7 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("GuildId", "RewardLevel");
 
-                    b.ToTable("Rewards");
+                    b.ToTable("Rewards", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.Role", b =>
@@ -592,7 +598,7 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.SpamFilterOverride", b =>
@@ -608,7 +614,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("ChannelId");
 
-                    b.ToTable("SpamFilterOverrides");
+                    b.ToTable("SpamFilterOverrides", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Obsolete.User", b =>
@@ -618,7 +624,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.OldLogMessage", b =>
@@ -646,7 +652,7 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("CreatedAt");
 
-                    b.ToTable("OldLogMessages");
+                    b.ToTable("OldLogMessages", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Pardon", b =>
@@ -673,7 +679,7 @@ namespace Grimoire.Migrations
                     b.HasIndex("SinId", "SetAt")
                         .IsDescending(false, true);
 
-                    b.ToTable("Pardons");
+                    b.ToTable("Pardons", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.ProxiedMessageLink", b =>
@@ -702,7 +708,7 @@ namespace Grimoire.Migrations
                     b.HasIndex("ProxyMessageId")
                         .IsUnique();
 
-                    b.ToTable("ProxiedMessages");
+                    b.ToTable("ProxiedMessages", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.PublishedMessage", b =>
@@ -718,7 +724,7 @@ namespace Grimoire.Migrations
 
                     b.HasKey("SinId", "PublishType");
 
-                    b.ToTable("PublishedMessages");
+                    b.ToTable("PublishedMessages", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Sin", b =>
@@ -729,10 +735,11 @@ namespace Grimoire.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<decimal?>("Actor")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("ModeratorId");
 
-                    b.Property<decimal?>("ModeratorId")
+                    b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
 
                     b.Property<DateTimeOffset>("SinOn")
@@ -751,13 +758,13 @@ namespace Grimoire.Migrations
                     b.HasIndex("Id", "GuildId")
                         .HasDatabaseName("IX_Sin_Id_GuildId");
 
-                    b.HasIndex("ModeratorId", "GuildId", "SinType")
+                    b.HasIndex("Actor", "GuildId", "SinType")
                         .HasDatabaseName("IX_Sin_ModeratorId_GuildId_SinType");
 
                     b.HasIndex("UserId", "GuildId", "SinOn")
                         .HasDatabaseName("IX_Sin_UserId_GuildId_SinOn");
 
-                    b.ToTable("Sins");
+                    b.ToTable("Sins", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.SinReasonHistory", b =>
@@ -768,8 +775,9 @@ namespace Grimoire.Migrations
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<decimal?>("Actor")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("ModeratorId");
 
                     b.Property<string>("Reason")
                         .IsRequired()
@@ -781,7 +789,7 @@ namespace Grimoire.Migrations
                     b.HasIndex("SinId", "SetAt")
                         .IsDescending(false, true);
 
-                    b.ToTable("SinReasonHistory");
+                    b.ToTable("SinReasonHistory", (string)null);
                 });
 
             modelBuilder.Entity("Grimoire.Domain.UsernameHistory", b =>
@@ -801,10 +809,10 @@ namespace Grimoire.Migrations
 
                     b.HasKey("UserId", "Timestamp");
 
-                    b.ToTable("UsernameHistory");
+                    b.ToTable("UsernameHistory", (string)null);
                 });
 
-            modelBuilder.Entity("Grimoire.Domain.XpHistory", b =>
+            modelBuilder.Entity("Grimoire.Domain.XpHistoryEntry", b =>
                 {
                     b.Property<decimal>("UserId")
                         .HasColumnType("numeric(20,0)");
@@ -815,24 +823,28 @@ namespace Grimoire.Migrations
                     b.Property<DateTimeOffset>("TimeOut")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("AwarderId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("RawXp")
+                        .HasColumnType("bigint")
+                        .HasColumnName("Xp");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("Xp")
-                        .HasColumnType("bigint");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
 
                     b.HasKey("UserId", "GuildId", "TimeOut");
 
-                    b.HasIndex("GuildId", "Xp")
+                    b.HasIndex("GuildId", "RawXp")
                         .HasDatabaseName("IX_XpHistory_GuildId_Xp");
 
-                    b.HasIndex("UserId", "GuildId", "Xp")
+                    b.HasIndex("UserId", "GuildId", "RawXp")
                         .HasDatabaseName("IX_XpHistory_UserId_GuildId_Xp");
 
-                    b.ToTable("XpHistory");
+                    b.ToTable("XpHistory", (string)null);
+
+                    b.HasDiscriminator<string>("Type").HasValue("XpHistoryEntry");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Grimoire.Domain.EmbedCustomCommand", b =>
@@ -893,6 +905,38 @@ namespace Grimoire.Migrations
                     b.HasBaseType("Grimoire.Domain.MessageHistoryEntry");
 
                     b.HasDiscriminator().HasValue("Edited");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.AwardedXp", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
+
+                    b.Property<decimal>("AwarderId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("AwarderId");
+
+                    b.HasDiscriminator().HasValue("Awarded");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.EarnedXp", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
+
+                    b.HasDiscriminator().HasValue("Earned");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.MigratedXp", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
+
+                    b.HasDiscriminator().HasValue("Migrated");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.ReclaimedXp", b =>
+                {
+                    b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
+
+                    b.HasDiscriminator().HasValue("Reclaimed");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Attachment", b =>

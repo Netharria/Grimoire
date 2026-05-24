@@ -355,8 +355,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
     private static LevelingSettingEntry DefaultEntry()
         => new(
-            XpTimeoutPeriod.FromDatabaseOrDefault(null),
-            LevelScalingModifier.FromDatabaseOrDefault(null),
-            LevelScalingBase.FromDatabaseOrDefault(null),
-            XpGainAmount.FromDatabaseOrDefault(null));
+            XpTimeoutPeriod.FromDatabase(null).GetOrElse(() => XpTimeoutPeriod.Default),
+            LevelScalingModifier.FromDatabase(null).GetOrElse(() => LevelScalingModifier.Default),
+            LevelScalingBase.FromDatabase(null).GetOrElse(() => LevelScalingBase.Default),
+            XpGainAmount.FromDatabase(null).GetOrElse(() => XpGainAmount.Default));
 }
