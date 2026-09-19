@@ -27,12 +27,12 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
     public async Task CallCommand(
         SlashCommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
-        [Parameter("CommandName")]
+        [Parameter("command_name")]
         [Description("The name of the command to call.")]
         CustomCommandName name,
-        [Parameter("Mention")] [Description("The person to mention if the command has one.")]
+        [Parameter("mention")] [Description("The person to mention if the command has one.")]
         SnowflakeObject? snowflakeObject = null,
-        [Parameter("Message")] [Description("The custom message to add if the command has one.")]
+        [Parameter("message")] [Description("The custom message to add if the command has one.")]
         string message = "")
     {
         await ctx.DeferResponseAsync();

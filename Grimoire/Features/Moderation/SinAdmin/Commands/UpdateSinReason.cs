@@ -23,9 +23,9 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
     [Command("Reason")]
     [Description("Update the reason for a user's sin.")]
     public async Task ReasonAsync(CommandContext ctx,
-        [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be updated.")]
+        [MinMaxValue(0)] [Parameter("sin_id")] [Description("The id of the sin to be updated.")]
         SinId sinId,
-        [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason the sin will be updated to.")]
+        [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason the sin will be updated to.")]
         string reason)
     {
         await ctx.DeferResponseAsync();

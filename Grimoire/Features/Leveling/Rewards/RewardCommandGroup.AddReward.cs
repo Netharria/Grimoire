@@ -25,12 +25,12 @@ public sealed partial class RewardCommandGroup
     [Command("Add")]
     [Description("Adds or updates rewards for the server.")]
     public async Task AddAsync(CommandContext ctx,
-        [Parameter("Role")] [Description("The role to be added as a reward.")]
+        [Parameter("role")] [Description("The role to be added as a reward.")]
         DiscordRole role,
-        [MinMaxValue(0, int.MaxValue)] [Parameter("Level")] [Description("The level the reward is awarded at.")]
+        [MinMaxValue(0, int.MaxValue)] [Parameter("level")] [Description("The level the reward is awarded at.")]
         int level,
         [MinMaxLength(maxLength: 4096)]
-        [Parameter("Message")]
+        [Parameter("message")]
         [Description("The message to send to users when they earn a reward. Discord Markdown applies.")]
         string? message = null)
     {

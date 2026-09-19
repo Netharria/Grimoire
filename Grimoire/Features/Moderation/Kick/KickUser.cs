@@ -25,9 +25,9 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
     [Command("Kick")]
     [Description("Kick a member from the server.")]
     public async Task KickAsync(CommandContext ctx,
-        [Parameter("Member")] [Description("The member to kick.")]
+        [Parameter("member")] [Description("The member to kick.")]
         DiscordMember member,
-        [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason for the kick.")]
+        [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason for the kick.")]
         string? reason = null)
     {
         await ctx.DeferResponseAsync();

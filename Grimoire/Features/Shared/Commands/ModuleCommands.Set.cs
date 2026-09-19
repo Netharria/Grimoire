@@ -30,9 +30,9 @@ internal sealed partial class ModuleCommands
     [Command("Set")]
     [Description("Enable or Disable a module.")]
     public async Task SetAsync(CommandContext ctx,
-        [Parameter("Module")] [Description("The module to enable or disable.")]
+        [Parameter("module")] [Description("The module to enable or disable.")]
         ModuleArguments module,
-        [Parameter("Enable")] [Description("Whether to enable or disable the module.")]
+        [Parameter("enable")] [Description("Whether to enable or disable the module.")]
         bool enable)
     {
         await ctx.DeferResponseAsync();

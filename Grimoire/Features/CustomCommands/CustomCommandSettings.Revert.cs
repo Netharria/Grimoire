@@ -24,11 +24,11 @@ public sealed partial class CustomCommandSettings
     public async Task Revert(
         SlashCommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
-        [Parameter("Name")]
+        [Parameter("name")]
         [Description("The name of the command to revert.")]
         CustomCommandName name,
         [SlashAutoCompleteProvider<GetCommandVersionOptions>]
-        [Parameter("Version")]
+        [Parameter("version")]
         [Description("The version to revert to.")]
         string version)
     {

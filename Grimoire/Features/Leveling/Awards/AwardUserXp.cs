@@ -23,9 +23,9 @@ internal sealed class AwardUserXp(IDbContextFactory<GrimoireDbContext> dbContext
     [Command("Award")]
     [Description("Awards a user some xp.")]
     public async Task AwardAsync(CommandContext ctx,
-        [Parameter("User")] [Description("The user to award xp.")]
+        [Parameter("user")] [Description("The user to award xp.")]
         DiscordMember user,
-        [MinMaxValue(1)] [Parameter("XP")] [Description("The amount of xp to grant.")]
+        [MinMaxValue(1)] [Parameter("xp")] [Description("The amount of xp to grant.")]
         int xpToAward)
     {
         await ctx.DeferResponseAsync();

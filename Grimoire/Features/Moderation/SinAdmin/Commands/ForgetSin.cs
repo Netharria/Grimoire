@@ -23,7 +23,7 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
     [Command("Forget")]
     [Description("Forget a user's sin. This will permanently remove the sin from the bots memory.")]
     public async Task ForgetAsync(CommandContext ctx,
-        [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be forgotten.")]
+        [MinMaxValue(0)] [Parameter("sin_id")] [Description("The id of the sin to be forgotten.")]
         SinId sinId)
     {
         await ctx.DeferResponseAsync();

@@ -50,9 +50,9 @@ public sealed partial class LevelSettingsCommandGroup
     [Description("Set a leveling setting.")]
     public async Task SetAsync(
         CommandContext ctx,
-        [Parameter("Setting")] [Description("The setting to change.")]
+        [Parameter("setting")] [Description("The setting to change.")]
         LevelSettingsOptions levelSettingsOptions,
-        [MinMaxValue(1, int.MaxValue)] [Parameter("Value")] [Description("The value to change the setting to.")]
+        [MinMaxValue(1, int.MaxValue)] [Parameter("value")] [Description("The value to change the setting to.")]
         int value)
     {
         await ctx.DeferResponseAsync();
@@ -90,10 +90,10 @@ public sealed partial class LevelSettingsCommandGroup
     [Description("Set the leveling log channel.")]
     public async Task LogSetAsync(
         CommandContext ctx,
-        [Parameter("Option")]
+        [Parameter("option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel")]
         ChannelOption option,
-        [Parameter("Channel")] [Description("The channel to change the log to.")]
+        [Parameter("channel")] [Description("The channel to change the log to.")]
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();

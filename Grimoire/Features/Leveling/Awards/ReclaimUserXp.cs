@@ -33,11 +33,11 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
     [Command("Reclaim")]
     [Description("Takes away xp from user.")]
     public async Task ReclaimAsync(CommandContext ctx,
-        [Parameter("User")] [Description("The user to take xp from.")]
+        [Parameter("user")] [Description("The user to take xp from.")]
         DiscordUser user,
-        [Parameter("Option")] [Description("Select either to take all of their xp or a specific amount.")]
+        [Parameter("option")] [Description("Select either to take all of their xp or a specific amount.")]
         XpOption option,
-        [MinMaxValue(0)] [Parameter("Amount")] [Description("The amount of xp to take.")]
+        [MinMaxValue(0)] [Parameter("amount")] [Description("The amount of xp to take.")]
         int amount = 0)
     {
         await ctx.DeferResponseAsync();

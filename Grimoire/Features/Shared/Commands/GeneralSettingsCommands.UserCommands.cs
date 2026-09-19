@@ -18,10 +18,10 @@ internal sealed partial class GeneralSettingsCommands
     [Description("Set the channel where some commands are visible for non moderators.")]
     public async Task SetUserCommandChannelAsync(
         CommandContext ctx,
-        [Parameter("Option")]
+        [Parameter("option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel.")]
         ChannelOption option,
-        [Parameter("Channel")] [Description("The channel to send the logs to.")]
+        [Parameter("channel")] [Description("The channel to send the logs to.")]
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();

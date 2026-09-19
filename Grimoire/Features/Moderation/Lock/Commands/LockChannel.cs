@@ -26,16 +26,16 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
     [Description("Locks a channel for a specified amount of time.")]
     public async Task LockChannelAsync(
         CommandContext ctx,
-        [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days.")]
+        [Parameter("duration_type")] [Description("Select whether the duration will be in minutes hours or days.")]
         DurationType durationType,
-        [MinMaxValue(0)] [Parameter("DurationAmount")] [Description("The amount of time the lock will last.")]
+        [MinMaxValue(0)] [Parameter("duration_amount")] [Description("The amount of time the lock will last.")]
         int durationAmount,
         [ChannelTypes(DiscordChannelType.Text, DiscordChannelType.PublicThread, DiscordChannelType.PrivateThread,
             DiscordChannelType.Category, DiscordChannelType.GuildForum)]
-        [Parameter("Channel")]
+        [Parameter("channel")]
         [Description("The channel to lock. Current channel if not specified.")]
         DiscordChannel? channel = null,
-        [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason for the lock.")]
+        [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason for the lock.")]
         string? reason = null)
     {
         await ctx.DeferResponseAsync();

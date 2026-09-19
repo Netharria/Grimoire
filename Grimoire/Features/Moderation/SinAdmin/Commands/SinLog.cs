@@ -33,9 +33,9 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
     [Description("Looks up the sin logs for the provided user.")]
     public async Task SinLogAsync(
         CommandContext ctx,
-        [Parameter("Type")] [Description("The type of logs to look up.")]
+        [Parameter("type")] [Description("The type of logs to look up.")]
         SinQueryType sinQueryType,
-        [Parameter("User")] [Description("The user to look up the logs for. Leave blank for self.")]
+        [Parameter("user")] [Description("The user to look up the logs for. Leave blank for self.")]
         DiscordUser? user = null)
     {
         var guild = ctx.Guild!;

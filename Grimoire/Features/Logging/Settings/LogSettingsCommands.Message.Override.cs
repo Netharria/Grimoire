@@ -27,9 +27,9 @@ public partial class LogSettingsCommands
         [Description("Overrides the default message logging settings. Use this to control which channels are logged.")]
         public async Task Override(
             CommandContext ctx,
-            [Parameter("Option")] [Description("Override option to set the channel to")]
+            [Parameter("option")] [Description("Override option to set the channel to")]
             MessageLogOverrideSetting overrideSetting,
-            [Parameter("Channel")]
+            [Parameter("channel")]
             [Description("The channel to override the message log settings of. Leave empty for current channel.")]
             DiscordChannel? channel = null)
         {

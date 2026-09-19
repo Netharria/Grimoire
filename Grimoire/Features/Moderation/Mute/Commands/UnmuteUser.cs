@@ -25,7 +25,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
     [Description("Unmutes a user.")]
     public async Task UnmuteUserAsync(
         CommandContext ctx,
-        [Parameter("User")] [Description("The user to unmute.")]
+        [Parameter("user")] [Description("The user to unmute.")]
         DiscordMember member)
     {
         await ctx.DeferResponseAsync();

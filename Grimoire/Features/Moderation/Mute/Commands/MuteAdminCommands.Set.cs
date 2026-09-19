@@ -16,7 +16,7 @@ public partial class MuteAdminCommands
     [Description("Sets the role that is used for muting users.")]
     public async Task SetMuteRoleAsync(
         CommandContext ctx,
-        [Parameter("Role")] [Description("The role to use for muting users.")]
+        [Parameter("role")] [Description("The role to use for muting users.")]
         DiscordRole role)
     {
         await ctx.DeferResponseAsync();

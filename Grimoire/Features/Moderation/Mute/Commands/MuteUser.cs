@@ -30,13 +30,13 @@ public sealed class MuteUser(
     [Description("Mutes a user for a specified amount of time.")]
     public async Task MuteUserAsync(
         CommandContext ctx,
-        [Parameter("User")] [Description("The user to mute.")]
+        [Parameter("user")] [Description("The user to mute.")]
         DiscordMember member,
-        [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days")]
+        [Parameter("duration_type")] [Description("Select whether the duration will be in minutes hours or days")]
         DurationType durationType,
-        [MinMaxValue(0)] [Parameter("DurationAmount")] [Description("The amount of time the mute will last.")]
+        [MinMaxValue(0)] [Parameter("duration_amount")] [Description("The amount of time the mute will last.")]
         int durationAmount,
-        [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason for the mute.")]
+        [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason for the mute.")]
         string? reason = null
     )
     {

@@ -37,12 +37,12 @@ public partial class LogSettingsCommands
         [Description("Set a User Log setting.")]
         public async Task SetAsync(
             CommandContext ctx,
-            [Parameter("Setting")] [Description("The setting to change.")]
+            [Parameter("setting")] [Description("The setting to change.")]
             UserLogSetting logSetting,
-            [Parameter("Option")]
+            [Parameter("option")]
             [Description("Select whether to turn log off, use the current channel, or specify a channel")]
             ChannelOption option,
-            [Parameter("Value")] [Description("The channel to change the log setting to.")]
+            [Parameter("value")] [Description("The channel to change the log setting to.")]
             DiscordChannel? channel = null)
         {
             await ctx.DeferResponseAsync();

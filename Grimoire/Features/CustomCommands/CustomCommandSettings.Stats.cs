@@ -23,7 +23,7 @@ public sealed partial class CustomCommandSettings
     public async Task Stats(
         CommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
-        [Parameter("Name")]
+        [Parameter("name")]
         [Description("The name of the command to view stats for.")]
         CustomCommandName name)
     {

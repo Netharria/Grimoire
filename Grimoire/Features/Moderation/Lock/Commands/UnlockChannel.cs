@@ -25,7 +25,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
     [Description("Unlocks a channel.")]
     public async Task UnlockChannelAsync(
         CommandContext ctx,
-        [Parameter("Channel")] [Description("The channel to unlock. Current channel if not specified.")]
+        [Parameter("channel")] [Description("The channel to unlock. Current channel if not specified.")]
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();

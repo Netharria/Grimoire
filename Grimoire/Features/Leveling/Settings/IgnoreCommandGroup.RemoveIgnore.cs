@@ -21,7 +21,7 @@ public partial class IgnoreCommandGroup
     [Command("Remove")]
     [Description("Removes a user, channel, or role from the ignored xp list.")]
     public async Task WatchAsync(CommandContext ctx,
-        [Parameter("Item")] [Description("The user, channel or role to remove from the ignore xp list.")]
+        [Parameter("item")] [Description("The user, channel or role to remove from the ignore xp list.")]
         params SnowflakeObject[] value)
     {
         await ctx.DeferResponseAsync();

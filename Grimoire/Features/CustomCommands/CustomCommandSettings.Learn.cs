@@ -24,30 +24,30 @@ public sealed partial class CustomCommandSettings
     [Description("Learn a new command or update an existing one")]
     public async Task Learn(
         SlashCommandContext ctx,
-        [Parameter("Name")]
+        [Parameter("name")]
         [Description("The name that the command will be called. This is used to activate the command.")]
         CustomCommandName name,
         [MinMaxLength(maxLength: 2000)]
-        [Parameter("Content")]
+        [Parameter("content")]
         [Description("The content of the command. Use %mention or %message to add a message arguments")]
         string content,
-        [Parameter("Embed")] [Description("Put the message in an embed")]
+        [Parameter("embed")] [Description("Put the message in an embed")]
         bool embed = false,
-        [Parameter("EmbedColor")]
+        [Parameter("embed_color")]
         [Description("Hexadecimal color of the embed (only used when OutputType is Embedded)")]
         CustomCommandEmbedColor? embedColor = null,
-        [Parameter("RestrictedUse")] [Description("Restrict this command to specific roles.")]
+        [Parameter("restricted_use")] [Description("Restrict this command to specific roles.")]
         bool restrictedUse = false,
-        [Parameter("PermissionRole_1")] DiscordRole? permissionRole1 = null,
-        [Parameter("PermissionRole_2")] DiscordRole? permissionRole2 = null,
-        [Parameter("PermissionRole_3")] DiscordRole? permissionRole3 = null,
-        [Parameter("PermissionRole_4")] DiscordRole? permissionRole4 = null,
-        [Parameter("PermissionRole_5")] DiscordRole? permissionRole5 = null,
-        [Parameter("PermissionRole_6")] DiscordRole? permissionRole6 = null,
-        [Parameter("PermissionRole_7")] DiscordRole? permissionRole7 = null,
-        [Parameter("PermissionRole_8")] DiscordRole? permissionRole8 = null,
-        [Parameter("PermissionRole_9")] DiscordRole? permissionRole9 = null,
-        [Parameter("PermissionRole_10")] DiscordRole? permissionRole10 = null)
+        [Parameter("permission_role_1")] DiscordRole? permissionRole1 = null,
+        [Parameter("permission_role_2")] DiscordRole? permissionRole2 = null,
+        [Parameter("permission_role_3")] DiscordRole? permissionRole3 = null,
+        [Parameter("permission_role_4")] DiscordRole? permissionRole4 = null,
+        [Parameter("permission_role_5")] DiscordRole? permissionRole5 = null,
+        [Parameter("permission_role_6")] DiscordRole? permissionRole6 = null,
+        [Parameter("permission_role_7")] DiscordRole? permissionRole7 = null,
+        [Parameter("permission_role_8")] DiscordRole? permissionRole8 = null,
+        [Parameter("permission_role_9")] DiscordRole? permissionRole9 = null,
+        [Parameter("permission_role_10")] DiscordRole? permissionRole10 = null)
     {
         await ctx.DeferResponseAsync();
         if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })

@@ -19,7 +19,7 @@ public sealed partial class RewardCommandGroup
     [Command("Remove")]
     [Description("Removes a reward from the server.")]
     public async Task RemoveAsync(CommandContext ctx,
-        [Parameter("Role")] [Description("The role to be removed as a reward.")]
+        [Parameter("role")] [Description("The role to be removed as a reward.")]
         DiscordRole role)
     {
         await ctx.DeferResponseAsync();

@@ -25,7 +25,7 @@ public sealed partial class CustomCommandSettings
     public async Task Forget(
         SlashCommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
-        [Parameter("Name")]
+        [Parameter("name")]
         [Description("The name of the command to forget.")]
         CustomCommandName name)
     {

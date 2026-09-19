@@ -16,10 +16,10 @@ internal sealed partial class ModSettings
     [Description("Set the public channel to publish ban and unbans to.")]
     public async Task BanLogAsync(
         CommandContext ctx,
-        [Parameter("Option")]
+        [Parameter("option")]
         [Description("Select whether to turn log off, use the current channel, or specify a channel.")]
         ChannelOption option,
-        [Parameter("Channel")] [Description("The channel to send the logs to.")]
+        [Parameter("channel")] [Description("The channel to send the logs to.")]
         DiscordChannel? channel = null)
     {
         if (ctx is SlashCommandContext slashContext)

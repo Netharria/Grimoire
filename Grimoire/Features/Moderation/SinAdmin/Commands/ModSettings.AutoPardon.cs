@@ -17,10 +17,10 @@ internal sealed partial class ModSettings
     [Description("Updates how long till sins are automatically pardoned.")]
     public async Task AutoPardonAsync(
         CommandContext ctx,
-        [Parameter("DurationType")] [Description("Select whether the duration will be in minutes hours or days")]
+        [Parameter("duration_type")] [Description("Select whether the duration will be in minutes hours or days")]
         Duration durationType,
         [MinMaxValue(0, int.MaxValue)]
-        [Parameter("DurationAmount")]
+        [Parameter("duration_amount")]
         [Description("The amount of time before sins are auto pardoned.")]
         int durationAmount)
     {

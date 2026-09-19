@@ -24,9 +24,9 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
     [Command("Warn")]
     [Description("Issue a warning to the user.")]
     public async Task WarnAsync(CommandContext ctx,
-        [Parameter("User")] [Description("The user to warn.")]
+        [Parameter("user")] [Description("The user to warn.")]
         DiscordUser user,
-        [MinMaxLength(maxLength: 1000)] [Parameter("Reason")] [Description("The reason for the warn.")]
+        [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason for the warn.")]
         string reason)
     {
         await ctx.DeferResponseAsync();

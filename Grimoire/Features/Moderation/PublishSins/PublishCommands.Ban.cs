@@ -17,7 +17,7 @@ public sealed partial class PublishCommands
     [Description("Publish a ban reason to the public ban log.")]
     public async Task PublishBanAsync(
         CommandContext ctx,
-        [MinMaxValue(0)] [Parameter("SinId")] [Description("The id of the sin to be published.")]
+        [MinMaxValue(0)] [Parameter("sin_id")] [Description("The id of the sin to be published.")]
         SinId sinId)
     {
         await ctx.DeferResponseAsync();

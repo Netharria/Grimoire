@@ -24,7 +24,7 @@ public sealed partial class CustomCommandSettings
     public async Task History(
         SlashCommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
-        [Parameter("Name")]
+        [Parameter("name")]
         [Description("The name of the command to view history for.")]
         CustomCommandName name)
     {

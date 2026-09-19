@@ -22,7 +22,7 @@ public sealed partial class CustomCommandSettings
     public async Task Leaderboard(
         CommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
-        [Parameter("Name")]
+        [Parameter("name")]
         [Description("A specific command to see its per-user leaderboard. Leave blank for overall.")]
         CustomCommandName? name = null)
     {

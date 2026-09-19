@@ -22,9 +22,9 @@ internal class SpamFilterOverrideCommands(
     [RequireUserGuildPermissions(DiscordPermission.ManageChannels)]
     public async Task Override(
         CommandContext ctx,
-        [Parameter("Option")] [Description("Override option to set the channel to")]
+        [Parameter("option")] [Description("Override option to set the channel to")]
         SpamFilterOverrideSetting overrideSetting,
-        [Parameter("Channel")]
+        [Parameter("channel")]
         [Description("The channel to override the spam filter settings of. Leave empty for current channel.")]
         DiscordChannel? channel = null)
     {
