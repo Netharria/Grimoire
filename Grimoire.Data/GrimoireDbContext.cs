@@ -19,6 +19,8 @@ namespace Grimoire;
 /// <param name="options"></param>
 public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> options) : DbContext(options)
 {
+    public DbSet<AlertOccurrence> AlertOccurrences { get; init; }
+
     public DbSet<Attachment> Attachments { get; init; }
 
     public DbSet<Avatar> Avatars { get; init; }

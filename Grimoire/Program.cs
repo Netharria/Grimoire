@@ -37,13 +37,16 @@ using Grimoire.Features.Moderation.SpamFilter;
 using Grimoire.Features.Moderation.SpamFilter.Commands;
 using Grimoire.Features.Moderation.Warn;
 using Grimoire.Features.Shared;
+using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Commands;
 using Grimoire.Features.Shared.Events;
+using Grimoire.Features.Shared.Gateway;
 using Grimoire.Features.Shared.PluralKit;
 using Grimoire.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Serilog;
@@ -103,6 +106,12 @@ await Host.CreateDefaultBuilder(args)
             .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
             .AddScoped<IPluralkitService, PluralkitService>()
             .AddSingleton<SpamTrackerModule>()
+            .AddSingleton(TimeProvider.System)
+            .AddSingleton<AlertChannels>()
+            .AddSingleton<WarningBuffer>()
+            .AddSingleton<GatewayHealth>()
+            .AddSingleton<AlertService>()
+            .AddSingleton<IAlertSender>(provider => provider.GetRequiredService<AlertService>())
             .AddSingleton<IInviteService, InviteService>()
             .ConfigureEventHandlers(eventHandlerBuilder =>
                 eventHandlerBuilder
@@ -127,6 +136,7 @@ await Host.CreateDefaultBuilder(args)
                     .AddEventHandlers<UserJoinedWhileMuted>()
                     .AddEventHandlers<SpamEvents>()
                     //General Events
+                    .AddEventHandlers<GatewayEvents>()
                     .AddEventHandlers<GuildAdded>()
                     .AddEventHandlers<InviteEvents>()
                     .AddEventHandlers<MemberAdded>()
@@ -205,6 +215,10 @@ await Host.CreateDefaultBuilder(args)
             }, new CommandsConfiguration { UseDefaultCommandErrorHandler = false })
             .AddSingleton<GuildLog>()
             .AddHostedService<GuildLog>()
+            .AddHostedService(provider => provider.GetRequiredService<AlertService>())
+            .AddHostedService<GatewayWatchdogService>()
+            .AddHostedService<WarningFlushService>()
+            .AddHostedService<DailyWarningReportService>()
             .AddHostedService<DiscordStartService>()
             // .AddHostedService<CleanupLogsBackgroundTask>()
             // .AddHostedService<LockBackgroundTasks>()
@@ -213,6 +227,9 @@ await Host.CreateDefaultBuilder(args)
             .AddHttpClient("Default")
             .AddStandardResilienceHandler();
         services.AddHttpClient();
+
+        // Replaces DSharpPlus's log-only default so event handler and gateway errors raise alerts.
+        services.Replace(ServiceDescriptor.Singleton<IClientErrorHandler, CommandHandler>());
 
         services.AddFusionCache()
             .AsHybridCache();

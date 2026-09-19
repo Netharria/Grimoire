@@ -7,9 +7,12 @@
 
 using System.Security.Cryptography;
 using System.Text;
+using DSharpPlus.Commands;
 using DSharpPlus.Commands.EventArgs;
 using DSharpPlus.Commands.Exceptions;
+using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Trees;
+using Grimoire.Features.Shared.Alerts;
 using DSharpPlus.Exceptions;
 using EntityFramework.Exceptions.Common;
 using Microsoft.Extensions.Configuration;
@@ -19,13 +22,37 @@ using Microsoft.Extensions.Logging;
 namespace Grimoire.Features.Shared;
 
 //todo: convert these to static methods if DI is not possible
-public sealed partial class CommandHandler : IClientErrorHandler
+public sealed partial class CommandHandler(IServiceProvider services, ILogger<CommandHandler> logger)
+    : IClientErrorHandler
 {
-    public async ValueTask HandleEventHandlerError(string name, Exception exception, Delegate invokedDelegate,
+    // Resolved lazily: IAlertSender depends on DiscordClient, which depends on this handler.
+    public ValueTask HandleEventHandlerError(string name, Exception exception, Delegate invokedDelegate,
         object sender,
-        object args) => await SendErrorLogToLogChannel((DiscordClient)sender, name, exception);
+        object args)
+    {
+        LogEventHandlerError(logger, exception, name);
+        SendErrorAlert(services, name, exception);
+        return ValueTask.CompletedTask;
+    }
 
-    public ValueTask HandleGatewayError(Exception exception) => ValueTask.CompletedTask;
+    public ValueTask HandleGatewayError(Exception exception)
+    {
+        LogGatewayError(logger, exception);
+        services.GetRequiredService<IAlertSender>().Send(new Alert
+        {
+            Severity = AlertSeverity.Warning,
+            Type = "GatewayError",
+            Message = exception.Message,
+            Exception = exception
+        });
+        return ValueTask.CompletedTask;
+    }
+
+    [LoggerMessage(LogLevel.Error, "Unhandled exception in event handler {HandlerName}")]
+    private static partial void LogEventHandlerError(ILogger logger, Exception exception, string handlerName);
+
+    [LoggerMessage(LogLevel.Error, "Gateway error")]
+    private static partial void LogGatewayError(ILogger logger, Exception exception);
 
     private static void BuildCommandLogAsync(StringBuilder builder,
         IReadOnlyDictionary<CommandParameter, object?> commandParameters)
@@ -35,50 +62,46 @@ public sealed partial class CommandHandler : IClientErrorHandler
                 .Append('\'').Append(commandParameter.Value).Append("' ");
     }
 
-    private static async Task SendErrorLogToLogChannel(DiscordClient client, string action, Exception exception,
-        string? errorId = "")
-    {
-        if (action.Equals("COMMAND_ERRORED") && exception is NullReferenceException)
-            return;
-        if (exception is UniqueConstraintException)
-            return;
-        var configuration = client.ServiceProvider.GetRequiredService<IConfiguration>();
-        if (ChannelId.TryParse(configuration.GetSection("channelId").Value) is not { } channelId)
-            return;
-        var channel = await client.GetChannelOrDefaultAsync(channelId);
-        if (channel is not null)
+    private static void SendErrorAlert(IServiceProvider services, string action, Exception exception,
+        string? errorId = null, GuildId? guildId = null)
+        => services.GetRequiredService<IAlertSender>().Send(new Alert
         {
-            var errorIdString = string.IsNullOrWhiteSpace(errorId) ? string.Empty : $"[Id `{errorId}`]";
-            var shortStackTrace = string.Empty;
-            if (exception.StackTrace is not null)
-                shortStackTrace = string.Join('\n', exception.StackTrace.Split('\n')
-                    .Where(x => x.StartsWith("   at Grimoire", StringComparison.OrdinalIgnoreCase))
-                    .Select(x => x[(x.IndexOf(" in ", StringComparison.OrdinalIgnoreCase) + 4)..])
-                    .Select(x => '\"' + x.Replace(":line", "\" line")));
-            var innerException = exception.InnerException;
-            var exceptionMessage = new StringBuilder().AppendLine(exception.Message);
-            while (innerException is not null)
-            {
-                exceptionMessage.AppendLine(innerException.Message);
-                innerException = innerException.InnerException;
-            }
+            // Known noisy exception types are still recorded, but only in the daily report.
+            Severity = exception is NullReferenceException or UniqueConstraintException
+                ? AlertSeverity.Warning
+                : AlertSeverity.Urgent,
+            Type = "UnhandledException",
+            Discriminator = action,
+            Message = string.IsNullOrWhiteSpace(errorId)
+                ? $"Encountered exception while executing {action}"
+                : $"Encountered exception while executing {action} [Id `{errorId}`]",
+            Exception = exception,
+            GuildId = guildId
+        });
 
-            await channel.SendMessageAsync($"Encountered exception while executing {action} {errorIdString}\n" +
-                                           $"```csharp\n{exceptionMessage}\n{shortStackTrace}\n```");
-        }
-    }
+    private static void SendWarning(DiscordClient client, string type, string command, string message, GuildId? guildId)
+        => client.ServiceProvider.GetRequiredService<IAlertSender>().Send(new Alert
+        {
+            Severity = AlertSeverity.Warning,
+            Type = type,
+            Discriminator = command,
+            Message = message,
+            GuildId = guildId
+        });
 
     public static async Task HandleEventAsync(DiscordClient sender, CommandErroredEventArgs args)
     {
         switch (args.Exception)
         {
             case UnauthorizedException:
+                LogCommandOutcome(sender, args.Context, CommandOutcome.BotMissingPermissions);
                 await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
                     .WithColor(GrimoireColor.Yellow)
                     .WithDescription(
                         $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
                 return;
             case ChecksFailedException checksFailedException:
+                LogCommandOutcome(sender, args.Context, CommandOutcome.CheckFailed);
                 await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
                     .WithColor(GrimoireColor.Yellow)
                     .WithDescription(string.Join('\n',
@@ -89,6 +112,7 @@ public sealed partial class CommandHandler : IClientErrorHandler
                             .ToArray())));
                 return;
             case ArgumentParseException argumentParseException:
+                LogCommandOutcome(sender, args.Context, CommandOutcome.ParseError);
                 await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
                     .WithColor(GrimoireColor.Yellow)
                     .WithDescription(argumentParseException.Message));
@@ -103,14 +127,16 @@ public sealed partial class CommandHandler : IClientErrorHandler
             args.Exception,
             errorHexString,
             args.Context.Command.FullName,
-            log.ToString());
+            log.ToString(),
+            args.Context.Guild?.Id,
+            GetElapsedMilliseconds(args.Context));
 
         await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
             .WithColor(GrimoireColor.Yellow)
             .WithDescription(
                 $"Encountered exception while executing {args.Context.Command.FullName} [ID {errorHexString}]"));
-        await SendErrorLogToLogChannel(sender, args.Context.Command.FullName, args.Exception,
-            errorHexString);
+        SendErrorAlert(sender.ServiceProvider, args.Context.Command.FullName, args.Exception, errorHexString,
+            args.Context.Guild is { } guild ? new GuildId(guild.Id) : null);
     }
 
     private static async Task SendOrEditMessageAsync(CommandErroredEventArgs args, DiscordEmbedBuilder embed)
@@ -125,21 +151,66 @@ public sealed partial class CommandHandler : IClientErrorHandler
 
     [LoggerMessage(LogLevel.Error, "Error on Command: [ID {ErrorId}] {InteractionName}{InteractionOptions}")]
     static partial void LogCommandError(ILogger logger, Exception ex, string errorId,
-        string interactionName, string interactionOptions);
+        string interactionName, string interactionOptions, ulong? guildId, long durationMs);
 
     public static Task HandleEventAsync(DiscordClient sender, CommandExecutedEventArgs args)
     {
-        var commandOptions = args.Context.Arguments;
-        var log = new StringBuilder();
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (commandOptions.Count > 0)
-            BuildCommandLogAsync(log.Append(' '), commandOptions);
-        LogCommandInvoked(sender.Logger,
-            args.Context.Command.FullName,
-            log.ToString());
+        LogCommandOutcome(sender, args.Context, CommandOutcome.Success);
         return Task.CompletedTask;
     }
 
-    [LoggerMessage(LogLevel.Information, "Slash Command Invoked: {InteractionName}{InteractionOptions}")]
-    static partial void LogCommandInvoked(ILogger logger, string interactionName, string interactionOptions);
+    private static void LogCommandOutcome(DiscordClient sender, CommandContext context, CommandOutcome outcome)
+    {
+        var options = new StringBuilder();
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (context.Arguments.Count > 0)
+            BuildCommandLogAsync(options.Append(' '), context.Arguments);
+
+        var durationMs = GetElapsedMilliseconds(context);
+        var guildId = context.Guild?.Id;
+        var command = context.Command.FullName;
+
+        LogCommandFinished(sender.Logger, command, outcome, durationMs, guildId, options.ToString());
+        if (durationMs > SlowCommandThresholdMs)
+        {
+            LogSlowCommand(sender.Logger, command, durationMs, guildId);
+            SendWarning(sender, "SlowCommand", command, $"{command} took {durationMs}ms", guildId is { } id ? new GuildId(id) : null);
+        }
+
+        if (outcome is CommandOutcome.BotMissingPermissions)
+            SendWarning(sender, "BotMissingPermissions", command, $"Bot lacks the permissions needed for {command}",
+                guildId is { } guild ? new GuildId(guild) : null);
+    }
+
+    // Elapsed time since Discord created the interaction/message. Includes gateway delay, which is what the user waits for.
+    private static long GetElapsedMilliseconds(CommandContext context)
+    {
+        var createdAt = context switch
+        {
+            SlashCommandContext slash => slash.Interaction.CreationTimestamp,
+            TextCommandContext text => text.Message.CreationTimestamp,
+            _ => (DateTimeOffset?)null
+        };
+        return createdAt is { } value ? (long)(DateTimeOffset.UtcNow - value).TotalMilliseconds : -1;
+    }
+
+    // Discord requires an initial interaction response within 3 seconds.
+    private const long SlowCommandThresholdMs = 2000;
+
+    [LoggerMessage(LogLevel.Information,
+        "Command {Command} finished with {Outcome} in {DurationMs}ms (Guild {GuildId}){CommandOptions}")]
+    static partial void LogCommandFinished(ILogger logger, string command, CommandOutcome outcome, long durationMs,
+        ulong? guildId, string commandOptions);
+
+    [LoggerMessage(LogLevel.Warning, "Slow command {Command} took {DurationMs}ms (Guild {GuildId})")]
+    static partial void LogSlowCommand(ILogger logger, string command, long durationMs, ulong? guildId);
+}
+
+public enum CommandOutcome
+{
+    Success,
+    CheckFailed,
+    ParseError,
+    BotMissingPermissions,
+    Exception
 }
