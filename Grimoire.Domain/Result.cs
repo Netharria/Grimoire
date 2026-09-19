@@ -125,6 +125,19 @@ public abstract record Result<T>
             _ => throw new UnreachableException()
         };
 
+    /// <summary>Runs a side-effecting async action on success or failure. Returns a plain <c>Task</c> so both branches can be <c>async Task</c> without forcing a generic return type.</summary>
+    public Task MatchAsync(Func<T, Task> onSuccess, Func<Error, Task> onFailure)
+        => this switch
+        {
+            Success(var v) => onSuccess(v),
+            Invalid(var e) => onFailure(e),
+            NotFound(var e) => onFailure(e),
+            NotModified(var e) => onFailure(e),
+            Conflict(var e) => onFailure(e),
+            Forbidden(var e) => onFailure(e),
+            _ => throw new UnreachableException()
+        };
+
     public Result<T> OrElse(Func<Result<T>> fallback)
         => this is Success ? this : fallback();
 

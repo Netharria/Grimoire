@@ -42,49 +42,61 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
     {
         await ctx.DeferResponseAsync();
 
-
-        if (option == XpOption.Amount && amount == 0)
-        {
-            await ctx.SendErrorResponseAsync("Specify an amount greater than 0");
-            return;
-        }
-
-
         var guild = ctx.Guild!;
 
+        await ValidateOption(option, amount)
+            .BindAsync(_ => this.FetchXpToTakeAsync(user, guild, option, amount))
+            .BindAsync(xpToTake => this.PersistReclaimAsync(ctx, user, guild, xpToTake))
+            .MatchAsync(
+                _ => Task.CompletedTask,
+                error => ctx.SendErrorResponseAsync(error.Message).AsTask());
+    }
+
+    internal static Result<Unit> ValidateOption(XpOption option, int amount)
+        => option == XpOption.Amount && amount == 0
+            ? Result<Unit>.Fail(new Error("reclaim.amount.zero", "Specify an amount greater than 0"))
+            : Result<Unit>.Ok(Unit.Value);
+
+    private async Task<Result<long>> FetchXpToTakeAsync(
+        DiscordUser user,
+        DiscordGuild guild,
+        XpOption option,
+        int amount)
+    {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var member = await dbContext.XpHistory
+
+        var memberXp = await dbContext.XpHistory
             .AsNoTracking()
-            .GroupBy(history => new { history.UserId, history.GuildId })
-            .Select(historyGroup => new { Xp = historyGroup.Sum(xpHistory => xpHistory.RawXp) })
-            .FirstOrDefaultAsync();
-        if (member is null)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow,
-                $"{user.Mention} has no xp to take.");
-            return;
-        }
+            .Where(history => history.UserId == user.GetUserId() && history.GuildId == guild.GetGuildId())
+            .SumAsync(history => (long?)history.RawXp);
 
-        var xpToTake = option switch
+        if (memberXp is null or 0)
+            return new Result<long>.NotFound(
+                new Error("reclaim.member.no-xp", $"{user.Mention} has no xp to take."));
+
+        var xpToTake = Math.Min(memberXp.Value, option switch
         {
-            XpOption.All => member.Xp,
+            XpOption.All => memberXp.Value,
             XpOption.Amount => amount,
-            _ => throw new ArgumentOutOfRangeException(nameof(option),
-                "XpOption not implemented in switch statement.")
-        };
+            _ => throw new ArgumentOutOfRangeException(nameof(option), "XpOption not implemented in switch statement.")
+        });
 
-        xpToTake = Math.Min(member.Xp, xpToTake);
+        return xpToTake <= 0
+            ? new Result<long>.NotFound(new Error("reclaim.member.no-xp", $"{user.Mention} has no xp to take."))
+            : Result<long>.Ok(xpToTake);
+    }
 
-        if (xpToTake <= 0)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, $"{user.Mention} has no xp to take.");
-            return;
-        }
-
+    private async Task<Result<Unit>> PersistReclaimAsync(
+        CommandContext ctx,
+        DiscordUser user,
+        DiscordGuild guild,
+        long xpToTake)
+    {
         var reclaimedXp = NegativeXpAmount.Create(-xpToTake)
             .Bind(xp => ReclaimedXp.Create(xp, user.GetUserId(), guild.GetGuildId(), DateTimeOffset.UtcNow))
             .Match(r => r, _ => throw new UnreachableException());
 
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         await dbContext.XpHistory.AddAsync(reclaimedXp);
         await dbContext.SaveChangesAsync();
 
@@ -97,5 +109,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             Description = $"{xpToTake} xp has been taken from {user.Mention} by {ctx.User.Mention}.",
             Color = GrimoireColor.Purple
         });
+
+        return Result<Unit>.Ok(Unit.Value);
     }
 }

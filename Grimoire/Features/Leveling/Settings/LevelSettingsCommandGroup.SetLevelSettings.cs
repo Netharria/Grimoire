@@ -59,22 +59,14 @@ public sealed partial class LevelSettingsCommandGroup
 
         var guild = ctx.Guild!;
 
-        try
-        {
-            await this._settingsModule.SetLevelingSettings(
-                guild.GetGuildId(),
-                ctx.GetModeratorId(),
-                ToLevelSettings(levelSettingsOptions),
-                value);
-            await HandleSettingSuccess(ctx, guild, levelSettingsOptions, value, this._guildLog);
-        }
-        catch (Exception e)
-        {
-            await ctx.ReplyAsync(message: e.Message);
-        }
+        await this._settingsModule
+            .SetLevelingSettings(guild.GetGuildId(), ctx.GetModeratorId(), ToLevelSettings(levelSettingsOptions), value)
+            .MatchAsync(
+                _ => HandleSettingSuccessAsync(ctx, guild, levelSettingsOptions, value, this._guildLog),
+                error => ctx.ReplyAsync(message: error.Message).AsTask());
     }
 
-    private static async Task HandleSettingSuccess(
+    private static async Task HandleSettingSuccessAsync(
         CommandContext ctx,
         DiscordGuild guild,
         LevelSettingsOptions levelSettingsOptions,
@@ -90,7 +82,6 @@ public sealed partial class LevelSettingsCommandGroup
             Description = $"{ctx.User.Mention} updated {levelSettingsOptions} level setting to {value}"
         });
     }
-
 
     [RequireGuild]
     [RequireModuleEnabled(Module.Leveling)]
@@ -108,19 +99,12 @@ public sealed partial class LevelSettingsCommandGroup
         await ctx.DeferResponseAsync();
 
         var guild = ctx.Guild!;
-
         channel = ctx.GetChannelOption(option, channel);
 
-        if (channel is not null)
+        if (ValidateChannelPermission(guild, channel) is Validation<Unit>.Invalid { Errors: var errors })
         {
-            var permissions = channel.PermissionsFor(guild.CurrentMember);
-            if (!permissions.HasPermission(DiscordPermission.SendMessages))
-            {
-                await ctx.ReplyAsync(
-                    message:
-                    $"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel.");
-                return;
-            }
+            await ctx.ReplyAsync(message: string.Join("; ", errors.Select(e => e.Message)));
+            return;
         }
 
         await this._settingsModule.SetLogChannelSetting(
@@ -129,7 +113,8 @@ public sealed partial class LevelSettingsCommandGroup
             ctx.GetModeratorId(),
             channel?.GetChannelId());
 
-        await ctx.ReplyAsync(message: option is ChannelOption.Off
+        var isOff = option is ChannelOption.Off;
+        await ctx.ReplyAsync(message: isOff
             ? "Disabled the level log."
             : $"Updated the level log to {channel?.Mention}");
 
@@ -138,9 +123,15 @@ public sealed partial class LevelSettingsCommandGroup
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
-            Description = option is ChannelOption.Off
+            Description = isOff
                 ? $"{ctx.User.Mention} disabled the level log."
                 : $"{ctx.User.Mention} updated the level log to {channel?.Mention}."
         });
     }
+
+    private static Validation<Unit> ValidateChannelPermission(DiscordGuild guild, DiscordChannel? channel)
+        => channel is not null && !channel.PermissionsFor(guild.CurrentMember).HasPermission(DiscordPermission.SendMessages)
+            ? Validation<Unit>.Fail(new Error("log-channel.permission",
+                $"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel."))
+            : Validation<Unit>.Succeed(Unit.Value);
 }

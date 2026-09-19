@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Text;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Settings.Enums;
@@ -37,13 +36,6 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
     {
         var guild = ctx.Guild!;
         var member = ctx.Member!;
-        var targetUser = option switch
-        {
-            LeaderboardOption.Top => null,
-            LeaderboardOption.Me => ctx.User,
-            LeaderboardOption.User => user,
-            _ => throw new UnreachableException()
-        };
 
         if (option == LeaderboardOption.User && user is null)
         {
@@ -61,88 +53,76 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
                  && userCommandChannel.GetOrElse(() => null) != ctx.GetChannelId())
             return;
 
-        var getUserCenteredLeaderboardQuery =
-            new Request { UserId = targetUser?.GetUserId(), GuildId = guild.GetGuildId() };
-
-        var response = await Handle(getUserCenteredLeaderboardQuery, CancellationToken.None);
-
-        if (response is null)
+        var targetUserId = option switch
         {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "User not found on the leaderboard");
-            return;
-        }
+            LeaderboardOption.Top => (UserId?)null,
+            LeaderboardOption.Me => ctx.User.GetUserId(),
+            LeaderboardOption.User => user!.GetUserId(),
+            _ => throw new UnreachableException()
+        };
 
-        await ctx.ReplyAsync(
-            GrimoireColor.DarkPurple,
-            title: "LeaderBoard",
-            message: response.LeaderboardText,
-            footer: $"Total Users {response.TotalUserCount}");
+        var response = targetUserId is null
+            ? await this.GetTopLeaderboardAsync(guild.GetGuildId(), CancellationToken.None)
+            : await this.GetUserCenteredLeaderboardAsync(guild.GetGuildId(), targetUserId.Value,
+                CancellationToken.None);
+
+        await response.Match(
+            r => ctx.ReplyAsync(GrimoireColor.DarkPurple, title: "LeaderBoard",
+                message: r.LeaderboardText, footer: $"Total Users {r.TotalUserCount}").AsTask(),
+            _ => ctx.ReplyAsync(GrimoireColor.Yellow, "User not found on the leaderboard").AsTask());
     }
 
-    private async Task<Response?> Handle(Request request, CancellationToken cancellationToken)
+    internal async Task<Result<Response>> GetTopLeaderboardAsync(GuildId guildId, CancellationToken ct)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
 
-        if (request.UserId is null)
-        {
-            var rankedMembers = await dbContext.LeaderboardView
-                .AsNoTracking()
-                .Where(x => x.GuildId == request.GuildId)
-                .OrderBy(x => x.Rank)
-                .Take(15)
-                .ToArrayAsync(cancellationToken);
+        var rankedMembers = await dbContext.LeaderboardView
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId)
+            .OrderBy(x => x.Rank)
+            .Take(15)
+            .ToArrayAsync(ct);
 
-            var totalMemberCount = await dbContext.LeaderboardView
-                .Where(x => x.GuildId == request.GuildId)
-                .CountAsync(cancellationToken);
+        var totalMemberCount = await dbContext.LeaderboardView
+            .Where(x => x.GuildId == guildId)
+            .CountAsync(ct);
 
-            var leaderboardText = new StringBuilder();
-            foreach (var rankedMember in rankedMembers)
-                leaderboardText.AppendLine(
-                    $"**{rankedMember.Rank}** {UserExtensions.Mention(rankedMember.UserId)} **XP:** {rankedMember.TotalXp}");
-            return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalMemberCount };
-        }
-        else
-        {
-            var userEntry = await dbContext.Set<LeaderboardView>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.GuildId == request.GuildId && x.UserId == request.UserId,
-                    cancellationToken);
+        var leaderboardText = string.Join('\n', rankedMembers.Select(m =>
+            $"**{m.Rank}** {UserExtensions.Mention(m.UserId)} **XP:** {m.TotalXp}"));
 
-            if (userEntry is null)
-                return null;
-
-            var surroundingUsers = await dbContext.Set<LeaderboardView>()
-                .AsNoTracking()
-                .Where(x => x.GuildId == request.GuildId &&
-                            x.Rank >= userEntry.Rank - 5 &&
-                            x.Rank <= userEntry.Rank + 9)
-                .OrderBy(x => x.Rank)
-                .ToArrayAsync(cancellationToken);
-
-            var totalCount = await dbContext.Set<LeaderboardView>()
-                .Where(x => x.GuildId == request.GuildId)
-                .CountAsync(cancellationToken);
-
-
-            var leaderboardText = new StringBuilder();
-            foreach (var member in surroundingUsers)
-                leaderboardText.AppendLine(
-                    $"**{member.Rank}** {UserExtensions.Mention(member.UserId)} **XP:** {member.TotalXp}");
-
-            return new Response { LeaderboardText = leaderboardText.ToString(), TotalUserCount = totalCount };
-        }
+        return Result<Response>.Ok(new Response(leaderboardText, totalMemberCount));
     }
 
-    private sealed record Request
+    internal async Task<Result<Response>> GetUserCenteredLeaderboardAsync(
+        GuildId guildId, UserId userId, CancellationToken ct)
     {
-        public required GuildId GuildId { get; init; }
-        public UserId? UserId { get; init; }
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+
+        var userEntry = await dbContext.Set<LeaderboardView>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.GuildId == guildId && x.UserId == userId, ct);
+
+        if (userEntry is null)
+            return new Result<Response>.NotFound(
+                new Error("leaderboard.user-not-found", "User not found on the leaderboard"));
+
+        var surroundingUsers = await dbContext.Set<LeaderboardView>()
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId &&
+                        x.Rank >= userEntry.Rank - 5 &&
+                        x.Rank <= userEntry.Rank + 9)
+            .OrderBy(x => x.Rank)
+            .ToArrayAsync(ct);
+
+        var totalCount = await dbContext.Set<LeaderboardView>()
+            .Where(x => x.GuildId == guildId)
+            .CountAsync(ct);
+
+        var leaderboardText = string.Join('\n', surroundingUsers.Select(m =>
+            $"**{m.Rank}** {UserExtensions.Mention(m.UserId)} **XP:** {m.TotalXp}"));
+
+        return Result<Response>.Ok(new Response(leaderboardText, totalCount));
     }
 
-    private sealed record Response
-    {
-        public required string LeaderboardText { get; init; }
-        public required int TotalUserCount { get; init; }
-    }
+    internal sealed record Response(string LeaderboardText, int TotalUserCount);
 }

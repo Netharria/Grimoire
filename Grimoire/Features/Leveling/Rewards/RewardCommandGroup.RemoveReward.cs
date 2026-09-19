@@ -22,28 +22,21 @@ public sealed partial class RewardCommandGroup
         [Parameter("Role")] [Description("The role to be removed as a reward.")]
         DiscordRole role)
     {
-        var guild = ctx.Guild!;
-
         await ctx.DeferResponseAsync();
 
-        if (RewardRemoved.Create(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow)
-            is not Validation<RewardRemoved>.Valid(var removeReward))
-        {
-            await ctx.EditResponseAsync("Failed to create reward removal event.");
-            return;
-        }
+        var guild = ctx.Guild!;
 
-        var result = await this._settingsModule.SetRewardAsync(removeReward);
-
-        await result.Match(
-            _ => OnRemoveSuccess(ctx, role, guild),
-            error => OnFail(ctx, error));
+        await RewardRemoved.Create(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow)
+            .ToResult()
+            .BindAsync(reward => this._settingsModule.SetRewardAsync(reward))
+            .Match(
+                _ => OnRemoveSuccess(ctx, role, guild),
+                error => OnFail(ctx, error));
     }
 
     private async Task OnRemoveSuccess(CommandContext ctx, DiscordRole role, DiscordGuild guild)
     {
-        var responseMessage =
-            $"{ctx.User.Mention} removed {role.Mention} reward";
+        var responseMessage = $"{ctx.User.Mention} removed {role.Mention} reward";
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, responseMessage);
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

@@ -26,15 +26,14 @@ public sealed partial class RewardCommandGroup
         var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
             .GetOrElse(() => default!);
 
+        var rewardLines = await Task.WhenAll(rewards.Select(async x =>
+        {
+            var role = await guild.GetRoleOrDefaultAsync(x.RoleId);
+            return $"Level:{x.RewardLevel} Role:{role?.Mention} {(x.RewardMessage.HasValue ? $"Reward Message: {x.RewardMessage.Value.Value}" : "")}";
+        }));
+
         await ctx.ReplyAsync(GrimoireColor.DarkPurple,
             title: "Rewards",
-            message: string.Join('\n', rewards
-                .ToAsyncEnumerable()
-                .Select(async (x, token) =>
-                {
-                    var role = await guild.GetRoleOrDefaultAsync(x.RoleId, token);
-                    return
-                        $"Level:{x.RewardLevel} Role:{role?.Mention} {(x.RewardMessage.HasValue ? $"Reward Message: {x.RewardMessage.Value.Value}" : "")}";
-                })));
+            message: string.Join('\n', rewardLines));
     }
 }

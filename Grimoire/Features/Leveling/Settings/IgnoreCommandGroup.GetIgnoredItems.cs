@@ -43,16 +43,16 @@ public sealed partial class IgnoreCommandGroup
             .GetOrElse(() => default!);
         var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
         ignoredMessageBuilder.Append(string.Join(' ',
-            ignoredItems.OfType<IgnoredChannel>().Select(x => $"<#{x}>"))).Append('\n');
+            ignoredItems.OfType<IgnoredChannel>().Select(x => $"<#{x.ChannelId.Value}>"))).Append('\n');
 
 
         ignoredMessageBuilder.Append("\n**Roles**\n");
         ignoredMessageBuilder.Append(string.Join(' ',
-            ignoredItems.OfType<IgnoredRole>().Select(x => $"<@&{x}>"))).Append('\n');
+            ignoredItems.OfType<IgnoredRole>().Select(x => $"<@&{x.RoleId.Value}>"))).Append('\n');
 
         ignoredMessageBuilder.Append("\n**Users**\n");
         ignoredMessageBuilder.Append(string.Join(' ',
-            ignoredItems.OfType<IgnoredMember>().Select(x => $"<@&{x}>"))).Append('\n');
+            ignoredItems.OfType<IgnoredMember>().Select(x => $"<@{x.UserId.Value}>"))).Append('\n');
         return ignoredMessageBuilder.ToString();
     }
 }

@@ -265,4 +265,123 @@ public sealed class ResultTests
     [Fact]
     public async Task MatchAsync_OnInvalid_CallsOnFailure()
         => (await Result<int>.Fail(_errorB).MatchAsync(_ => Task.FromResult(0), _ => 99)).ShouldBe(99);
+
+    // ── MatchAsync (void Task, side-effecting) ──────────────────────────────
+
+    [Fact]
+    public async Task MatchAsync_VoidTask_OnSuccess_InvokesOnSuccessOnly()
+    {
+        var successCalled = false;
+        var failureCalled = false;
+
+        await Result<int>.Ok(1).MatchAsync(
+            _ =>
+            {
+                successCalled = true;
+                return Task.CompletedTask;
+            },
+            _ =>
+            {
+                failureCalled = true;
+                return Task.CompletedTask;
+            });
+
+        successCalled.ShouldBeTrue();
+        failureCalled.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task MatchAsync_VoidTask_OnInvalid_InvokesOnFailureOnly()
+    {
+        var successCalled = false;
+        Error? seen = null;
+
+        await Result<int>.Fail(_errorA).MatchAsync(
+            _ =>
+            {
+                successCalled = true;
+                return Task.CompletedTask;
+            },
+            e =>
+            {
+                seen = e;
+                return Task.CompletedTask;
+            });
+
+        successCalled.ShouldBeFalse();
+        seen.ShouldBe(_errorA);
+    }
+
+    [Fact]
+    public Task MatchAsync_VoidTask_OnNotFound_RoutesToOnFailure()
+        => AssertVoidMatchRoutesToFailure(new Result<int>.NotFound(_errorA));
+
+    [Fact]
+    public Task MatchAsync_VoidTask_OnConflict_RoutesToOnFailure()
+        => AssertVoidMatchRoutesToFailure(new Result<int>.Conflict(_errorA));
+
+    [Fact]
+    public Task MatchAsync_VoidTask_OnForbidden_RoutesToOnFailure()
+        => AssertVoidMatchRoutesToFailure(new Result<int>.Forbidden(_errorA));
+
+    [Fact]
+    public Task MatchAsync_VoidTask_OnNotModified_RoutesToOnFailure()
+        => AssertVoidMatchRoutesToFailure(new Result<int>.NotModified(_errorA));
+
+    private static async Task AssertVoidMatchRoutesToFailure(Result<int> result)
+    {
+        var failureCalled = false;
+        await result.MatchAsync(_ => Task.CompletedTask, _ =>
+        {
+            failureCalled = true;
+            return Task.CompletedTask;
+        });
+        failureCalled.ShouldBeTrue();
+    }
+
+    // ── Task<Result<T>>.MatchAsync (ResultTaskExtensions, void Task) ────────
+
+    [Fact]
+    public async Task TaskMatchAsync_VoidTask_OnSuccess_InvokesOnSuccessOnly()
+    {
+        var successCalled = false;
+        var failureCalled = false;
+
+        await Task.FromResult(Result<int>.Ok(1)).MatchAsync(
+            _ =>
+            {
+                successCalled = true;
+                return Task.CompletedTask;
+            },
+            _ =>
+            {
+                failureCalled = true;
+                return Task.CompletedTask;
+            });
+
+        successCalled.ShouldBeTrue();
+        failureCalled.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task TaskMatchAsync_VoidTask_OnInvalid_InvokesOnFailureOnly()
+    {
+        var successCalled = false;
+        Error? seen = null;
+
+        await Task.FromResult(Result<int>.Fail(_errorB)).MatchAsync(
+            _ =>
+            {
+                successCalled = true;
+                return Task.CompletedTask;
+            },
+            e =>
+            {
+                seen = e;
+                return Task.CompletedTask;
+            });
+
+        successCalled.ShouldBeFalse();
+        seen.ShouldBe(_errorB);
+    }
 }

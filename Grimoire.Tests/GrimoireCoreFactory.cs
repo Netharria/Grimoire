@@ -53,4 +53,15 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
             .LogTo(Console.WriteLine)
             .UseExceptionProcessor()
             .Options);
+
+    /// <summary>For constructing production classes that take an <see cref="IDbContextFactory{TContext}"/> dependency directly.</summary>
+    public IDbContextFactory<GrimoireDbContext> CreateDbContextFactory() => new TestDbContextFactory(this);
+
+    private sealed class TestDbContextFactory(GrimoireCoreFactory factory) : IDbContextFactory<GrimoireDbContext>
+    {
+        public GrimoireDbContext CreateDbContext() => factory.CreateDbContext();
+
+        public Task<GrimoireDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(factory.CreateDbContext());
+    }
 }

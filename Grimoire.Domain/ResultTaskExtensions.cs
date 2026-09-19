@@ -59,6 +59,10 @@ public static class ResultTaskExtensions
             Func<Error, Task<TOut>>? onForbidden = null)
             => await (await task).MatchAsync(onSuccess, onFail, onNotFound, onNotModified, onConflict, onForbidden);
 
+        /// <summary>Runs a side-effecting async action on success or failure. Returns a plain <c>Task</c> so both branches can be <c>async Task</c> without forcing a generic return type.</summary>
+        public async Task MatchAsync(Func<T, Task> onSuccess, Func<Error, Task> onFail)
+            => await (await task).MatchAsync(onSuccess, onFail);
+
         public async Task<Result<T>> OrElse(Func<Result<T>> fallback)
             => (await task).OrElse(fallback);
 
