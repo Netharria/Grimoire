@@ -41,7 +41,7 @@ public sealed partial class GuildLog(
         await foreach (var result in this._channel.Reader.ReadAllAsync(cancellationToken))
             try
             {
-                if (await this._settingsModule.IsModuleEnabled(result.GuildLogType.GetLogTypeModule(), result.GuildId,
+                if (!await this._settingsModule.IsModuleEnabled(result.GuildLogType.GetLogTypeModule(), result.GuildId,
                             cancellationToken)
                         .GetOrElse(() => false))
                     continue;
