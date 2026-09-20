@@ -18,7 +18,7 @@ namespace Grimoire.Settings.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Settings")
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -54,6 +54,34 @@ namespace Grimoire.Settings.Migrations
                     b.ToTable("ChannelLocks", "Settings");
 
                     b.HasDiscriminator<string>("EventType").IsComplete(true).HasValue("ChannelLock");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.DiagnosticsIgnoredItem", b =>
+                {
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("Id")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("SetBy")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(34)
+                        .HasColumnType("character varying(34)");
+
+                    b.HasKey("GuildId", "Id");
+
+                    b.ToTable("DiagnosticsIgnoredItems", "Settings");
+
+                    b.HasDiscriminator<string>("Type").IsComplete(true).HasValue("DiagnosticsIgnoredItem");
 
                     b.UseTphMappingStrategy();
                 });
@@ -302,6 +330,20 @@ namespace Grimoire.Settings.Migrations
                     b.HasBaseType("Grimoire.Settings.Domain.ChannelLock");
 
                     b.HasDiscriminator().HasValue("Unlocked");
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.DiagnosticsIgnoredMember", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.DiagnosticsIgnoredItem");
+
+                    b.HasDiscriminator().HasValue("Member");
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Domain.DiagnosticsIgnoredRole", b =>
+                {
+                    b.HasBaseType("Grimoire.Settings.Domain.DiagnosticsIgnoredItem");
+
+                    b.HasDiscriminator().HasValue("Role");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.GuildSettingCustomValue", b =>

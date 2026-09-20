@@ -27,6 +27,7 @@ using Grimoire.Features.Logging.Settings;
 using Grimoire.Features.Logging.UserLogging;
 using Grimoire.Features.Moderation.Ban.Commands;
 using Grimoire.Features.Moderation.Ban.Events;
+using Grimoire.Features.Moderation.Diagnostics;
 using Grimoire.Features.Moderation.Lock;
 using Grimoire.Features.Moderation.Lock.Commands;
 using Grimoire.Features.Moderation.Mute;
@@ -152,15 +153,15 @@ await Host.CreateDefaultBuilder(args)
                 PaginationDeletion = PaginationDeletion.DeleteMessage
             }).AddCommandsExtension((_, extension) =>
             {
-                if (!ulong.TryParse(context.Configuration["guildId"], out var guildId))
-                {
-                }
+                // Experimental commands are registered only in the configured guild.
+                if (ulong.TryParse(context.Configuration["guildId"], out var guildId)) { }
 
                 //Shared
                 extension.AddCommands<ModuleCommands>();
                 extension.AddCommands<GeneralSettingsCommands>();
                 extension.AddCommands<PurgeCommands>();
                 extension.AddCommands<UserInfoCommands>();
+                extension.AddCommands<DiagnosticsCommands>();
 
                 // Leveling
                 extension.AddCommands<AwardUserXp>();

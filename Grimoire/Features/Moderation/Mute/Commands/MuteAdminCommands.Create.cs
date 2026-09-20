@@ -47,5 +47,7 @@ public partial class MuteAdminCommands
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} created {role.Mention} to use as a mute role."
         });
+
+        await PublishDiagnosticsAsync(ctx, guild, role.GetRoleId());
     }
 }

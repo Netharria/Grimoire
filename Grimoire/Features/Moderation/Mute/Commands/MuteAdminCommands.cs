@@ -6,10 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Exceptions;
+using Grimoire.Features.Moderation.Diagnostics;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
@@ -25,16 +28,39 @@ public sealed partial class MuteAdminCommands(SettingsModule settingsModule, Gui
     private readonly GuildLog _guildLog = guildLog;
     private readonly SettingsModule _settingsModule = settingsModule;
 
+    /// <summary>Follows up a mute role create or refresh with a report on where mutes might still not work.</summary>
+    private async Task PublishDiagnosticsAsync(CommandContext ctx, DiscordGuild guild, RoleId muteRoleId)
+    {
+        try
+        {
+            // Channel updates from the permission changes arrive over the gateway, so give the cache a moment.
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            var ignores = await this._settingsModule.GetDiagnosticsIgnores(guild.GetGuildId());
+            await ctx.FollowupAsync(DiagnosticsResponse.Build(guild, muteRoleId, ignores));
+        }
+        catch (DiscordException ex)
+        {
+            LogDiagnosticsFailed(ctx.Client.Logger, ex, guild.Id);
+        }
+    }
+
+    [LoggerMessage(LogLevel.Warning, "Could not publish moderation diagnostics for guild {GuildId}")]
+    private static partial void LogDiagnosticsFailed(ILogger logger, Exception exception, ulong guildId);
+
     private static async IAsyncEnumerable<OverwriteChannelResult> SetMuteRolePermissionsAsync(DiscordGuild guild,
         DiscordRole role)
     {
         foreach (var (_, channel) in guild.Channels)
             switch (channel.Type)
             {
-                case DiscordChannelType.Text or DiscordChannelType.Category or DiscordChannelType.GuildForum:
+                // Announcement channels are moderator only and threads inherit from their parent, so both are skipped.
+                case DiscordChannelType.Text
+                    or DiscordChannelType.Category
+                    or DiscordChannelType.GuildForum
+                    or DiscordChannelType.GuildMedia:
                     yield return await OverwriteChannelAsync(channel, role);
                     break;
-                case DiscordChannelType.Voice:
+                case DiscordChannelType.Voice or DiscordChannelType.Stage:
                     yield return await OverwriteVoiceChannelAsync(channel, role);
                     break;
             }
