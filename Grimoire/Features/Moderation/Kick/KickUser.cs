@@ -7,7 +7,6 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 
@@ -62,18 +61,12 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
                         ]
                     },
                 _ => throw new UnreachableException());
+
+        // Kick first so a refused kick (e.g. missing permissions) does not leave a kick recorded.
+        await member.RemoveAsync(reason ?? string.Empty);
+
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
-
-        try
-        {
-            await member.RemoveAsync(reason ?? string.Empty);
-        }
-        catch (UnauthorizedException)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "I do not have permissions to kick that member.");
-            return;
-        }
 
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Kick")
