@@ -14,7 +14,7 @@ namespace Grimoire.Features.Shared.Alerts;
 /// <summary>Persists buffered warnings so the daily report survives restarts.</summary>
 public sealed partial class WarningFlushService(
     IServiceProvider serviceProvider,
-    ILogger<GenericBackgroundService> baseLogger,
+    ILogger<WarningFlushService> baseLogger,
     ILogger<WarningFlushService> logger,
     WarningBuffer warningBuffer)
     : GenericBackgroundService(serviceProvider, baseLogger, TimeSpan.FromSeconds(30))
