@@ -52,6 +52,22 @@ public static class GuildIssueCatalog
             $"I could not post in <#{channelId}>.",
             "Give my role **View Channel** and **Send Messages** in that channel, and check its permission overwrites.");
 
+    public static GuildIssue CannotUnlockChannel(GuildId guildId, ChannelId channelId)
+        => new(guildId, $"lock.cannot-unlock:{channelId}",
+            $"I could not unlock <#{channelId}>. It is still locked, and I will keep retrying.",
+            "Give my role **Manage Channels** in that channel, and check that its permission overwrites do not deny it to my role.");
+
+    public static GuildIssue CannotUnmuteMember(GuildId guildId, UserId userId)
+        => new(guildId, $"mute.cannot-unmute:{userId}",
+            $"I could not remove the mute role from <@{userId}>. They are still muted, and I will keep retrying.",
+            "Give my role **Manage Roles** and move it above the mute role in Server Settings > Roles. "
+            + "If you remove the role by hand, I will stop retrying.");
+
+    public static GuildIssue MuteRoleMissing(GuildId guildId)
+        => new(guildId, "mute.role-missing",
+            "A mute expired but the configured mute role no longer exists, so I could not remove it from the member.",
+            "Run `/Mutes Create` to make a new mute role, or `/Mutes Set` to choose an existing one, then remove the old role from the member by hand.");
+
     public static GuildIssue CannotReadAuditLog(GuildId guildId)
         => new(guildId, "audit-log.forbidden",
             "I cannot read the audit log, so I cannot tell who deleted messages or banned members outside my commands.",

@@ -51,6 +51,30 @@ public sealed partial class SettingsModule
             _ => throw new UnreachableException()
         };
 
+    /// <summary>The lock currently in force on the channel, without changing anything.</summary>
+    public Task<Result<ChannelLocked>> GetActiveChannelLockAsync(
+        ChannelId channelId,
+        GuildId guildId,
+        CancellationToken cancellationToken = default)
+        => ExecuteSafelyAsync(async ct =>
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+            var activeLock = await dbContext.ChannelLocks
+                .AsNoTracking()
+                .OfType<ChannelLocked>()
+                .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
+                // ReSharper disable once AccessToDisposedClosure
+                .Where(x => !dbContext.ChannelLocks
+                    .Any(y => y.ChannelId == x.ChannelId &&
+                              y.GuildId == x.GuildId &&
+                              y.SetAt > x.SetAt))
+                .FirstOrDefaultAsync(ct);
+            return activeLock is null
+                ? new Result<ChannelLocked>.NotFound(
+                    new Error("channel-lock.not-found", "The channel is not currently locked."))
+                : Result<ChannelLocked>.Ok(activeLock);
+        }, new Error("channel-lock.lookup-failed", "Failed to retrieve channel lock state."), cancellationToken);
+
     private Task<Result<ChannelLocked>> AddChannelLock(
         ChannelLocked channelLock,
         CancellationToken cancellationToken = default)

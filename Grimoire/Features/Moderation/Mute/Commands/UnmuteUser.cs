@@ -39,25 +39,25 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
             return;
         }
 
-        await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId());
-
         var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
-        if (muteRoleId.GetOrElse(() => null) is not { } muteId)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow,
-                "The mute role is not configured. Please configure it before using this command.");
-            return;
-        }
+        var muteRole = muteRoleId.GetOrElse(() => null) is { } muteId
+            ? await guild.GetRoleOrDefaultAsync(muteId)
+            : null;
 
-        var muteRole = await guild.GetRoleOrDefaultAsync(muteId);
         if (muteRole is null)
         {
+            // There is no role to take off, so clear the record: leaving it would keep the member marked as muted.
+            await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId());
             await ctx.ReplyAsync(GrimoireColor.Yellow,
-                "The configured mute role does not exist. Please configure it again before using this command.");
+                "The mute role is not configured or no longer exists, so I could not remove it from "
+                + $"{member.Mention}. Their mute is cleared; remove any mute role they still have by hand.");
             return;
         }
 
+        // Take the role off first and only then clear the record. If Discord refuses (for example the bot's role is
+        // below the mute role) the error is reported and the mute stays recorded, so it can be retried.
         await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.User.Mention}");
+        await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId());
 
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Unmute")

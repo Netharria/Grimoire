@@ -116,16 +116,21 @@ public sealed partial class SettingsModule
     public async IAsyncEnumerable<MuteAdded> GetAllExpiredMutes(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await foreach (var expiredMute in dbContext.Mutes
-                           .AsNoTracking()
-                           .OfType<MuteAdded>()
-                           .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
-                           // ReSharper disable once AccessToDisposedClosure
-                           .Where(x => !dbContext.Mutes.Any(y =>
-                               y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
-                           .AsAsyncEnumerable()
-                           .WithCancellation(cancellationToken))
+        // Read everything up front so no database connection is held open while the caller talks to Discord.
+        List<MuteAdded> expiredMutes;
+        await using (var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            expiredMutes = await dbContext.Mutes
+                .AsNoTracking()
+                .OfType<MuteAdded>()
+                .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
+                // ReSharper disable once AccessToDisposedClosure
+                .Where(x => !dbContext.Mutes.Any(y =>
+                    y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
+                .ToListAsync(cancellationToken);
+        }
+
+        foreach (var expiredMute in expiredMutes)
             yield return expiredMute;
     }
 

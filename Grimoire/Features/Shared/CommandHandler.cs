@@ -67,8 +67,9 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
         string? errorId = null, GuildId? guildId = null)
         => services.GetRequiredService<IAlertSender>().Send(new Alert
         {
-            // Known noisy exception types are still recorded, but only in the daily report.
-            Severity = exception is NullReferenceException or UniqueConstraintException
+            // Known noisy exception types are still recorded, but only in the daily report. NotFound usually means a
+            // guild, channel or message was deleted.
+            Severity = exception is NullReferenceException or UniqueConstraintException or NotFoundException
                 ? AlertSeverity.Warning
                 : AlertSeverity.Urgent,
             Type = "UnhandledException",

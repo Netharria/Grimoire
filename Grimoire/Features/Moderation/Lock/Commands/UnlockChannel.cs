@@ -62,17 +62,19 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
             .ToResult()
             .BindAsync(lockAction => this._settingsModule.ApplyThreadLockAction(lockAction));
 
-    private Task<Result<ChannelLocked>> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel,
+    /// <summary>
+    ///     Reverts the channel's permissions first and only then records the unlock. If Discord refuses, the channel is
+    ///     still recorded as locked, so it can be unlocked again or the expiry task will finish the job.
+    /// </summary>
+    private async Task<Result<ChannelLocked>> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel,
         ModeratorId moderatorId)
-        => ChannelUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow)
-            .ToResult()
-            .BindAsync(lockAction => this._settingsModule.ApplyChannelLockAction(lockAction))
-            .TapAsync(lockAction =>
+        => await (await this._settingsModule.GetActiveChannelLockAsync(channel.GetChannelId(), guild.GetGuildId()))
+            .BindAsync(async activeLock =>
             {
-                var permissions = guild.Channels[channel.Id].PermissionOverwrites
-                    .First(x => x.Id == guild.EveryoneRole.Id);
-                return channel.AddOverwriteAsync(guild.EveryoneRole,
-                    permissions.Allowed.RevertLockPermissions(lockAction.PreviouslyAllowed.Permissions),
-                    permissions.Denied.RevertLockPermissions(lockAction.PreviouslyDenied.Permissions));
+                await ChannelLockReverter.RevertAsync(channel, guild.EveryoneRole, activeLock);
+                return await ChannelUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(),
+                        DateTimeOffset.UtcNow)
+                    .ToResult()
+                    .BindAsync(unlock => this._settingsModule.ApplyChannelLockAction(unlock));
             });
 }

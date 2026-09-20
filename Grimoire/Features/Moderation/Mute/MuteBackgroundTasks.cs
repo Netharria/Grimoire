@@ -7,6 +7,8 @@
 
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.GuildIssues;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,51 +24,103 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
         var settingsModule = serviceProvider.GetRequiredService<SettingsModule>();
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
         var guildLog = serviceProvider.GetRequiredService<GuildLog>();
+        var issueReporter = serviceProvider.GetRequiredService<GuildIssueReporter>();
 
         await foreach (var expiredMute in settingsModule.GetAllExpiredMutes(cancellationToken))
+            await this.ProcessItemAsync(
+                $"the expired mute of user {expiredMute.UserId} in guild {expiredMute.GuildId}",
+                () => ProcessExpiredMuteAsync(expiredMute, settingsModule, discordClient, guildLog, issueReporter,
+                    cancellationToken));
+    }
+
+    private static async Task ProcessExpiredMuteAsync(
+        MuteAdded expiredMute,
+        SettingsModule settingsModule,
+        DiscordClient discordClient,
+        GuildLog guildLog,
+        GuildIssueReporter issueReporter,
+        CancellationToken cancellationToken)
+    {
+        // Only ask Discord about guilds the bot is in. For the rest the mute is kept, so it is handled if the bot is
+        // invited back, and nothing is requested on every tick.
+        var botIsInGuild = discordClient.Guilds.TryGetValue(expiredMute.GuildId.Value, out var guild);
+        var user = botIsInGuild ? await FindMemberAsync(guild!, expiredMute.UserId) : null;
+
+        switch (ExpiredItemTriage.For(botIsInGuild, user is not null))
         {
-            var guild = await discordClient.GetGuildOrDefaultAsync(expiredMute.GuildId);
-            if (guild is null) continue;
+            case ExpiredItemAction.KeepForLater:
+                return;
+            case ExpiredItemAction.Resolve:
+                // The member left, so there is no role to remove and nobody to notify.
+                await RemoveMuteAsync(expiredMute, settingsModule, discordClient, cancellationToken);
+                return;
+        }
 
-            var user = await guild.GetMemberOrDefaultAsync(expiredMute.UserId);
+        // Triage guarantees both exist from here on.
+        var activeGuild = guild!;
+        var activeUser = user!;
 
-            var muteRole = await settingsModule.GetConfiguredMuteRole(guild.GetGuildId(), cancellationToken)
-                .GetOrElse(() => null);
+        var muteRoleId = await settingsModule.GetConfiguredMuteRole(activeGuild.GetGuildId(), cancellationToken)
+            .GetOrElse(() => null);
+        if (muteRoleId is not { } roleId || !activeGuild.Roles.TryGetValue(roleId.Value, out var role))
+        {
+            // Nothing can be removed, and retrying every few seconds would not change that.
+            await issueReporter.ReportAsync(GuildIssueCatalog.MuteRoleMissing(activeGuild.GetGuildId()),
+                cancellationToken);
+            await RemoveMuteAsync(expiredMute, settingsModule, discordClient, cancellationToken);
+            return;
+        }
 
-            if (user is null) continue;
-            var role = await guild.GetRoleOrDefaultAsync(muteRole, cancellationToken);
-            if (role is null) continue;
+        // A moderator may already have taken the role off by hand.
+        if (activeUser.Roles.Any(memberRole => memberRole.Id == role.Id))
             try
             {
-                await user.RevokeRoleAsync(role);
+                await activeUser.RevokeRoleAsync(role, "Mute expired");
             }
-            catch (DiscordException)
+            catch (UnauthorizedException)
             {
-                await guildLog.SendLogMessageAsync(
-                    new GuildLogMessage
-                    {
-                        GuildId = guild.GetGuildId(),
-                        GuildLogType = GuildLogType.Moderation,
-                        Description =
-                            $"Tried to unmute {user.Mention} but was unable to. Please remove the mute role manually."
-                    }, cancellationToken);
+                // Keep the mute recorded so it is retried (with a growing delay) once the permissions are fixed.
+                await issueReporter.ReportAsync(
+                    GuildIssueCatalog.CannotUnmuteMember(activeGuild.GetGuildId(), expiredMute.UserId),
+                    cancellationToken);
+                throw;
             }
 
-            await settingsModule.RemoveMute(expiredMute.UserId, expiredMute.GuildId,
-                new ModeratorId(discordClient.CurrentUser.Id), cancellationToken);
+        await RemoveMuteAsync(expiredMute, settingsModule, discordClient, cancellationToken);
 
-            var embed = new DiscordEmbedBuilder()
-                .WithDescription($"Mute on {user.Mention} has expired.");
+        try
+        {
+            await activeUser.SendMessageAsync(new DiscordEmbedBuilder().WithDescription($"Mute on {activeUser.Mention} has expired."));
+        }
+        catch (DiscordException)
+        {
+            // Members with closed DMs cannot be told; the guild log below still records the expiry.
+        }
 
-            await user.SendMessageAsync(embed);
+        await guildLog.SendLogMessageAsync(
+            new GuildLogMessage
+            {
+                GuildId = activeGuild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Description = $"Mute on {activeUser.Mention} has expired."
+            }, cancellationToken);
+    }
 
-            await guildLog.SendLogMessageAsync(
-                new GuildLogMessage
-                {
-                    GuildId = guild.GetGuildId(),
-                    GuildLogType = GuildLogType.Moderation,
-                    Description = $"Mute on {user.Mention} has expired."
-                }, cancellationToken);
+    /// <summary>Only a NotFound means the member is gone. Any other failure is retried on the next tick.</summary>
+    private static async Task<DiscordMember?> FindMemberAsync(DiscordGuild guild, UserId userId)
+    {
+        try
+        {
+            return await guild.GetMemberAsync(userId.Value);
+        }
+        catch (NotFoundException)
+        {
+            return null;
         }
     }
+
+    private static Task RemoveMuteAsync(MuteAdded mute, SettingsModule settingsModule, DiscordClient discordClient,
+        CancellationToken cancellationToken)
+        => settingsModule.RemoveMute(mute.UserId, mute.GuildId, new ModeratorId(discordClient.CurrentUser.Id),
+            cancellationToken);
 }

@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Alerts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,6 +22,7 @@ public abstract partial class GenericBackgroundService(
     private const int UrgentAfterConsecutiveFailures = 3;
     private static readonly TimeSpan SummaryInterval = TimeSpan.FromMinutes(5);
 
+    private readonly RetryBackoff _backoff = new(TimeProvider.System);
     private readonly PeriodicTimer _timer = new(timeSpan);
 
     private long _runs;
@@ -61,11 +63,44 @@ public abstract partial class GenericBackgroundService(
         }
     }
 
+    /// <summary>
+    ///     Runs the work for one item so that a failure does not stop the remaining items. An item that fails is not
+    ///     retried straight away but after a growing delay. <paramref name="item" /> must be the same on every tick.
+    /// </summary>
+    protected async Task ProcessItemAsync(string item, Func<Task> work)
+    {
+        if (!this._backoff.ShouldAttempt(item))
+            return;
+
+        try
+        {
+            await work();
+            this._backoff.RecordSuccess(item);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            this._backoff.RecordFailure(item);
+            LogItemError(logger, ex, this.TaskName, item);
+
+            // Missing permissions are expected and are reported to the guild by the work itself.
+            if (ex is not UnauthorizedException)
+                serviceProvider.GetService<IAlertSender>()?.Send(new Alert
+                {
+                    Severity = AlertSeverity.Warning,
+                    Type = "BackgroundTaskItemFailure",
+                    Discriminator = this.TaskName,
+                    Message = $"{this.TaskName} could not process {item}: {ex.Message}",
+                    Exception = ex
+                });
+        }
+    }
+
     private void RaiseFailureAlert(Exception ex)
         => serviceProvider.GetService<IAlertSender>()?.Send(new Alert
         {
-            // A single failure is a warning; repeated failures mean the task is effectively down.
-            Severity = this._consecutiveFailures >= UrgentAfterConsecutiveFailures
+            // A single failure is a warning; repeated failures mean the task is effectively down. A NotFound from
+            // Discord means a guild or channel is gone, which is expected and never urgent.
+            Severity = this._consecutiveFailures >= UrgentAfterConsecutiveFailures && ex is not NotFoundException
                 ? AlertSeverity.Urgent
                 : AlertSeverity.Warning,
             Type = "BackgroundTaskFailure",
@@ -95,6 +130,9 @@ public abstract partial class GenericBackgroundService(
         this._runs = this._failures = this._totalMs = this._maxMs = 0;
         this._nextSummary = DateTimeOffset.UtcNow + SummaryInterval;
     }
+
+    [LoggerMessage(LogLevel.Warning, "Background task {TaskName} could not process {Item}")]
+    static partial void LogItemError(ILogger logger, Exception ex, string taskName, string item);
 
     [LoggerMessage(LogLevel.Information, "Starting Background task {TaskName} with delay {TimeSpan}")]
     static partial void LogBackgroundTaskStart(ILogger logger, string taskName, TimeSpan timeSpan);

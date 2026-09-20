@@ -130,6 +130,58 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     }
 
     [Fact]
+    public async Task GetActiveChannelLock_NotLocked_ReturnsNotFound()
+        => (await this._sut.GetActiveChannelLockAsync(_channelId, _guildId, TestContext.Current.CancellationToken))
+            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+
+    [Fact]
+    public async Task GetActiveChannelLock_Locked_ReturnsTheLockWithItsPreviousPermissions()
+    {
+        await Lock(_channelId, _guildId, DateTimeOffset.UtcNow.AddHours(1),
+            allowed: new PreviouslyAllowedPermissions(2048L), denied: new PreviouslyDeniedPermissions(64L));
+
+        var active = await this._sut
+            .GetActiveChannelLockAsync(_channelId, _guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed();
+
+        active.PreviouslyAllowed.Permissions.ShouldBe(2048L);
+        active.PreviouslyDenied.Permissions.ShouldBe(64L);
+    }
+
+    [Fact]
+    public async Task GetActiveChannelLock_DoesNotChangeAnything()
+    {
+        await Lock(_channelId, _guildId, DateTimeOffset.UtcNow.AddHours(1));
+
+        await this._sut.GetActiveChannelLockAsync(_channelId, _guildId, TestContext.Current.CancellationToken);
+
+        await using var db = factory.CreateDbContext();
+        (await db.ChannelLocks.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await this._sut.IsChannelLocked(_channelId, _guildId, TestContext.Current.CancellationToken)
+            .ShouldSucceed()).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetActiveChannelLock_AfterUnlock_ReturnsNotFound()
+    {
+        await Lock(_channelId, _guildId, DateTimeOffset.UtcNow.AddHours(1));
+        await Unlock(_channelId, _guildId);
+
+        (await this._sut.GetActiveChannelLockAsync(_channelId, _guildId, TestContext.Current.CancellationToken))
+            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+    }
+
+    [Fact]
+    public async Task GetActiveChannelLock_OtherGuild_ReturnsNotFound()
+    {
+        await Lock(_channelId, _guildId, DateTimeOffset.UtcNow.AddHours(1));
+
+        (await this._sut.GetActiveChannelLockAsync(_channelId, new GuildId(2UL),
+                TestContext.Current.CancellationToken))
+            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+    }
+
+    [Fact]
     public async Task GetAllExpiredChannelLocks_OnlyReturnsPastEndTime()
     {
         var futureChannel = new ChannelId(201UL);

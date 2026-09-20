@@ -74,8 +74,11 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         string? reason,
         DurationType durationType, long durationAmount)
     {
+        // The @everyone overwrite should always exist, but a channel without one is treated as having no overrides.
         var previousSetting = guild.Channels[channel.Id].PermissionOverwrites
-            .First(x => x.Id == guild.EveryoneRole.Id);
+            .FirstOrDefault(x => x.Id == guild.EveryoneRole.Id);
+        var previousAllowed = previousSetting?.Allowed ?? DiscordPermissions.None;
+        var previousDenied = previousSetting?.Denied ?? DiscordPermissions.None;
         return ModerationReason.CreateIfNotNull(reason)
             .Bind(validatedReason =>
                 ChannelLocked.Create(
@@ -84,16 +87,16 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     channel.GetChannelId(),
                     guild.GetGuildId(),
                     DateTimeOffset.UtcNow,
-                    previousSetting.GetPreviouslyAllowedPermissions(),
-                    previousSetting.GetPreviouslyDeniedPermissions(),
+                    new PreviouslyAllowedPermissions(long.Parse(previousAllowed.GetLockPermissions().ToString())),
+                    new PreviouslyDeniedPermissions(long.Parse(previousDenied.GetLockPermissions().ToString())),
                     durationType.GetDateTimeOffset(durationAmount)))
             .ToResult()
             .BindAsync(channelLock =>
                 this._settingsModule.ApplyChannelLockAction(channelLock))
             .TapAsync(_ =>
                 channel.AddOverwriteAsync(guild.EveryoneRole,
-                    previousSetting.Allowed.RevokeLockPermissions(),
-                    previousSetting.Denied.SetLockPermissions()));
+                    previousAllowed.RevokeLockPermissions(),
+                    previousDenied.SetLockPermissions()));
     }
 
     private Task<Result<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,

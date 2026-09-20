@@ -22,8 +22,14 @@ public static class PermissionsExtensions
         public DiscordPermissions RevokeLockPermissions()
             => permissions - PermissionValues.LockPermissions;
 
+        /// <summary>
+        ///     Puts the lock bits back to what they were before the lock and leaves every other bit as it is now.
+        ///     Works on both the allowed and the denied side, and whether <paramref name="previousPermissions" /> holds
+        ///     only the lock bits or every bit.
+        /// </summary>
         public DiscordPermissions RevertLockPermissions(DiscordPermissions previousPermissions)
-            => permissions & (previousPermissions ^ ~PermissionValues.LockPermissions);
+            => (permissions & ~PermissionValues.LockPermissions)
+               | (previousPermissions & PermissionValues.LockPermissions);
 
         public DiscordPermissions RevertLockPermissions(long previousPermissions)
             => permissions.RevertLockPermissions(new DiscordPermissions(previousPermissions));
