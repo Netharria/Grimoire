@@ -7,6 +7,8 @@
 
 using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
+using Grimoire.Features.Shared.Alerts;
+using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
@@ -20,7 +22,9 @@ public sealed partial class GainUserXp(
     SettingsModule settingsModule,
     DiscordClient client,
     GuildLog guildLog,
-    ILogger<EventHandler> logger) : IEventHandler<MessageCreatedEventArgs>
+    IAlertSender alerts,
+    GuildIssueReporter issueReporter,
+    ILogger<GainUserXp> logger) : IEventHandler<MessageCreatedEventArgs>
 {
     private static readonly Func<GrimoireDbContext, UserId, GuildId, Task<DateTimeOffset?>>
         _getUserXpInfoQuery = EF.CompileAsyncQuery((GrimoireDbContext context, UserId userId, GuildId guildId) =>
@@ -32,7 +36,7 @@ public sealed partial class GainUserXp(
     private readonly DiscordClient _client = client;
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
-    private readonly ILogger<EventHandler> _logger = logger;
+    private readonly ILogger<GainUserXp> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
@@ -65,9 +69,21 @@ public sealed partial class GainUserXp(
             .Where(entry => entry.UserId == member.GetUserId() && entry.GuildId == member.GetGuildId())
             .SumAsync(entry => entry.RawXp);
 
-        if (await this._settingsModule.GetLevelingSettings(member.GetGuildId())
-                is not Result<LevelingSettingEntry>.Success { Value: var levelingSettings })
+        var settingsResult = await this._settingsModule.GetLevelingSettings(member.GetGuildId());
+        if (settingsResult is not Result<LevelingSettingEntry>.Success { Value: var levelingSettings })
+        {
+            // Without settings XP silently stops for the guild, so make it visible.
+            var reason = settingsResult.Match(_ => string.Empty, error => error.Code);
+            LogSettingsUnavailable(this._logger, member.GetGuildId(), reason);
+            alerts.Send(new Alert
+            {
+                Severity = AlertSeverity.Warning,
+                Type = "LevelingSettingsUnavailable",
+                Message = $"Could not load leveling settings: {reason}",
+                GuildId = member.GetGuildId()
+            });
             return;
+        }
 
         var earnedXp = BuildEarnedXp(levelingSettings, args.GetAuthorUserId(), member.GetGuildId());
         await dbContext.XpHistory.AddAsync(earnedXp);
@@ -125,6 +141,13 @@ public sealed partial class GainUserXp(
         if (newRewards.Length == 0)
             return;
 
+        var missingRoles = newRewards
+            .Where(reward => !guild.Roles.ContainsKey(reward.RoleId.Value))
+            .Select(reward => reward.RoleId)
+            .ToArray();
+        if (missingRoles.Length > 0)
+            await issueReporter.ReportAsync(GuildIssueCatalog.RewardRolesMissing(guildId, missingRoles), cancellationToken);
+
         var rolesToAdd = newRewards
             .Join(guild.Roles,
                 reward => reward.RoleId,
@@ -140,10 +163,8 @@ public sealed partial class GainUserXp(
         }
         catch (UnauthorizedException)
         {
-            await this.SendPermissionErrorLogsAsync(
-                guild.CurrentMember.DisplayName,
-                newRewards.Select(x => x.RoleId),
-                guild.GetGuildId());
+            await issueReporter.ReportAsync(
+                GuildIssueCatalog.RewardRolesNotGrantable(guildId, newRewards.Select(x => x.RoleId)), cancellationToken);
         }
 
         await Task.WhenAll(newRewards
@@ -178,25 +199,10 @@ public sealed partial class GainUserXp(
         }
     }
 
-    [LoggerMessage(LogLevel.Warning, "Failure to send reward message Reward: {roleId} Message: {message}")]
+    // Closed DMs are common and expected, so this is not a warning.
+    [LoggerMessage(LogLevel.Information, "Failure to send reward message Reward: {roleId} Message: {message}")]
     static partial void LogRewardMessageFailure(ILogger logger, Exception ex, RoleId roleId, string? message);
 
-    private Task SendPermissionErrorLogsAsync(
-        string displayName,
-        IEnumerable<RoleId> rewards,
-        GuildId guildId)
-    {
-        var description = $"{displayName} tried to grant roles " +
-                          $"{string.Join(' ', rewards.Select(RoleExtensions.Mention))} but did not have sufficient permissions.";
-
-        return Task.WhenAll(
-            new[] { GuildLogType.Moderation, GuildLogType.Leveling }.Select(logType =>
-                this._guildLog.SendLogMessageAsync(new GuildLogMessage
-                {
-                    GuildId = guildId,
-                    GuildLogType = logType,
-                    Description = description,
-                    Color = GrimoireColor.Red
-                }).AsTask()));
-    }
+    [LoggerMessage(LogLevel.Warning, "Could not load leveling settings for guild {GuildId}: {Reason}")]
+    static partial void LogSettingsUnavailable(ILogger logger, GuildId guildId, string reason);
 }

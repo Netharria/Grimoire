@@ -7,10 +7,11 @@
 
 
 using DSharpPlus.Commands.Processors.TextCommands;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Extensions;
 
-public static class CommandContextExtension
+public static partial class CommandContextExtension
 {
     extension(CommandContext ctx)
     {
@@ -45,11 +46,17 @@ public static class CommandContextExtension
             };
         }
 
-        public ValueTask SendErrorResponseAsync(string message) =>
-            ctx.ReplyAsync(GrimoireColor.Red, message, ephemeral: true);
+        public ValueTask SendErrorResponseAsync(string message)
+        {
+            LogUserFacingError(ctx.Client.Logger, ctx.Command.FullName, ctx.Guild?.Id, message);
+            return ctx.ReplyAsync(GrimoireColor.Red, message, ephemeral: true);
+        }
 
-        public ValueTask SendWarningResponseAsync(string message) =>
-            ctx.ReplyAsync(GrimoireColor.Yellow, message, ephemeral: true);
+        public ValueTask SendWarningResponseAsync(string message)
+        {
+            LogUserFacingError(ctx.Client.Logger, ctx.Command.FullName, ctx.Guild?.Id, message);
+            return ctx.ReplyAsync(GrimoireColor.Yellow, message, ephemeral: true);
+        }
 
         [Pure]
         public DiscordChannel? GetChannelOption(ChannelOption channelOption,
@@ -89,4 +96,8 @@ public static class CommandContextExtension
         [Pure]
         public ChannelId GetChannelId() => new(ctx.Channel.Id);
     }
+
+    // These commands finish normally as far as the command handler can tell, so this is where users hitting problems shows up.
+    [LoggerMessage(LogLevel.Information, "Command {Command} rejected in guild {GuildId}: {Reason}")]
+    private static partial void LogUserFacingError(ILogger logger, string command, ulong? guildId, string reason);
 }

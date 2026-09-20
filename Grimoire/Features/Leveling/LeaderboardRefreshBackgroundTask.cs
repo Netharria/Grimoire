@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Leveling;
 
-internal sealed partial class LeaderboardRefreshBackgroundTask(
+internal sealed class LeaderboardRefreshBackgroundTask(
     IServiceProvider serviceProvider,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     ILogger<LeaderboardRefreshBackgroundTask> logger)
@@ -19,13 +19,9 @@ internal sealed partial class LeaderboardRefreshBackgroundTask(
 
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        LogLeaderboardRefresh(logger);
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
         await dbContext.Database.ExecuteSqlRawAsync(
             "REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_view",
             cancellationToken);
     }
-
-    [LoggerMessage(LogLevel.Warning, "Refreshing leaderboard")]
-    static partial void LogLeaderboardRefresh(ILogger logger);
 }

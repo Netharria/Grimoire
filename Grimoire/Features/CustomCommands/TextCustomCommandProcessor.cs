@@ -5,13 +5,25 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
 using Grimoire.DatabaseQueryHelpers;
+using Grimoire.Features.Shared.GuildIssues;
+using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.CustomCommands;
 
-public sealed class TextCustomCommandProcessor(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+public sealed partial class TextCustomCommandProcessor(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    SettingsModule settingsModule,
+    GuildIssueReporter issueReporter,
+    ILogger<TextCustomCommandProcessor> logger)
     : IEventHandler<MessageCreatedEventArgs>
 {
+    private const string NotFoundCode = "text-command.not-found";
+    private const string ModuleDisabledCode = "text-command.module-disabled";
+
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs eventArgs) =>
         await Validation<MessageCreatedEventArgs>.Succeed(eventArgs)
             .Bind(ev => ev switch
@@ -36,18 +48,51 @@ public sealed class TextCustomCommandProcessor(IDbContextFactory<GrimoireDbConte
             .BindAsync(x => FetchCommandAsync(x.Member, x.Name, x.Args))
             .TapAsync(cmd =>
                 dbContextFactory.RecordCommandUsageAsync(cmd.Name, cmd.Member.GetGuildId(), cmd.Member.GetUserId()))
-            .TapAsync(cmd => SendCommandResponseAsync(cmd, sender, eventArgs));
+            .TapAsync(cmd => this.SendCommandResponseAsync(cmd, sender, eventArgs))
+            .Match(
+                _ => Task.CompletedTask,
+                error => this.LogFailure(error, eventArgs));
+
+    // Only lookups worth knowing about are logged. Most messages are not commands and fail earlier.
+    private Task LogFailure(Error error, MessageCreatedEventArgs eventArgs)
+    {
+        switch (error.Code)
+        {
+            case NotFoundCode:
+                LogCommandNotFound(logger, error.Target, eventArgs.Guild?.Id);
+                break;
+            case ModuleDisabledCode:
+                LogModuleDisabled(logger, eventArgs.Guild?.Id);
+                break;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    [LoggerMessage(LogLevel.Information,
+        "Custom command {CommandName} not found or user not authorized (Guild {GuildId})")]
+    private static partial void LogCommandNotFound(ILogger logger, string? commandName, ulong? guildId);
+
+    [LoggerMessage(LogLevel.Debug, "Ignored text command because the Commands module is disabled (Guild {GuildId})")]
+    private static partial void LogModuleDisabled(ILogger logger, ulong? guildId);
+
+    [LoggerMessage(LogLevel.Warning,
+        "Could not send custom command response {CommandName} (Guild {GuildId}, Channel {ChannelId}): missing permissions")]
+    private static partial void LogSendForbidden(ILogger logger, string commandName, ulong guildId, ulong channelId);
 
     private async Task<Result<ParsedCommand>> FetchCommandAsync(DiscordMember member, CustomCommandName name,
         string[] args)
     {
+        if (!await settingsModule.IsModuleEnabled(Module.Commands, member.GetGuildId()).GetOrElse(() => false))
+            return Result<ParsedCommand>.Fail(new Error(ModuleDisabledCode, "The Commands module is disabled"));
+
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var response = await dbContext.CustomCommands
             .AsNoTracking()
             .GetCustomCommandQuery(member.GetGuildId(), name)
             .FirstOrDefaultAsync();
         return response is null || !GetCustomCommand.IsUserAuthorized(member, response)
-            ? Result<ParsedCommand>.Fail(new Error("text-command.not-found", "Command not found or not authorized"))
+            ? Result<ParsedCommand>.Fail(new Error(NotFoundCode, "Command not found or not authorized", name.Value))
             : Result<ParsedCommand>.Ok(new ParsedCommand(response, member, name, args));
     }
 
@@ -71,15 +116,25 @@ public sealed class TextCustomCommandProcessor(IDbContextFactory<GrimoireDbConte
         return GetCustomCommand.BuildMessageResponse(content, outputFormat);
     }
 
-    private static async Task SendCommandResponseAsync(
+    private async Task SendCommandResponseAsync(
         ParsedCommand cmd, DiscordClient sender, MessageCreatedEventArgs eventArgs)
     {
         var snowflake = cmd.Response.Content.Value.Contains("%Mention", StringComparison.OrdinalIgnoreCase)
                         && cmd.Args.Length > 1
             ? await ResolveSnowflake(cmd.Args[1], sender, eventArgs.Guild)
             : null;
-        await eventArgs.Channel.SendMessageAsync(
-            BuildResponse(cmd.Response, cmd.Args, snowflake, eventArgs.Guild.Id));
+        try
+        {
+            await eventArgs.Channel.SendMessageAsync(
+                BuildResponse(cmd.Response, cmd.Args, snowflake, eventArgs.Guild.Id));
+        }
+        catch (UnauthorizedException)
+        {
+            // Expected when the bot cannot post in that channel: tell the moderators rather than raising an error.
+            LogSendForbidden(logger, cmd.Name.Value, eventArgs.Guild.Id, eventArgs.Channel.Id);
+            await issueReporter.ReportAsync(GuildIssueCatalog.CannotSendInChannel(
+                new GuildId(eventArgs.Guild.Id), new ChannelId(eventArgs.Channel.Id)));
+        }
     }
 
     private static async Task<SnowflakeObject?> ResolveSnowflake(string arg, DiscordClient sender, DiscordGuild guild)

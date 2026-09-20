@@ -50,8 +50,9 @@ public sealed partial class CustomCommandSettings
             var topUsers = await FetchTopUsersAsync(dbContext, guildId, name);
             return Result<StatsQueryResult>.Ok(new StatsQueryResult(usage, topUsers));
         }
-        catch (DbException)
+        catch (DbException ex)
         {
+            this.ReportDatabaseFailure(ex, "Commands Stats");
             return Result<StatsQueryResult>.Fail(
                 new Error("command.stats.db_error",
                     "Could not retrieve stats right now. Please try again."));

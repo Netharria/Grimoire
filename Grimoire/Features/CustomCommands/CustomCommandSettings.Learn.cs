@@ -100,8 +100,9 @@ public sealed partial class CustomCommandSettings
             await dbContext.SaveChangesAsync();
             return Result<CustomCommand>.Ok(command);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
+            this.ReportDatabaseFailure(ex, "Commands Learn");
             return Result<CustomCommand>.Fail(new Error("command.learn.db_error",
                 "Could not save that command right now due to a database error. Please try again."));
         }

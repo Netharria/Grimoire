@@ -55,8 +55,9 @@ public sealed partial class CustomCommandSettings
                 .ExecuteDeleteAsync();
             return Result<bool>.Ok(deletedCount == 0);
         }
-        catch (DbException)
+        catch (DbException ex)
         {
+            this.ReportDatabaseFailure(ex, "Commands Forget");
             return Result<bool>.Fail(new Error("command.forget.db_error",
                 "Could not forget that command right now due to a database error. Please try again."));
         }
