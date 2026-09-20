@@ -42,6 +42,7 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.Commands;
 using Grimoire.Features.Shared.Events;
 using Grimoire.Features.Shared.Gateway;
+using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Features.Shared.PluralKit;
 using Grimoire.Settings;
 using Microsoft.Extensions.Configuration;
@@ -110,6 +111,7 @@ await Host.CreateDefaultBuilder(args)
             .AddSingleton<AlertChannels>()
             .AddSingleton<WarningBuffer>()
             .AddSingleton<GatewayHealth>()
+            .AddSingleton<GuildIssueReporter>()
             .AddSingleton<AlertService>()
             .AddSingleton<IAlertSender>(provider => provider.GetRequiredService<AlertService>())
             .AddSingleton<IInviteService, InviteService>()

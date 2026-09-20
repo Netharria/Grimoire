@@ -13,6 +13,7 @@ using DSharpPlus.Commands.Exceptions;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Trees;
 using Grimoire.Features.Shared.Alerts;
+using Grimoire.Features.Shared.GuildIssues;
 using DSharpPlus.Exceptions;
 using EntityFramework.Exceptions.Common;
 using Microsoft.Extensions.Configuration;
@@ -95,10 +96,14 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
         {
             case UnauthorizedException:
                 LogCommandOutcome(sender, args.Context, CommandOutcome.BotMissingPermissions);
+                var issue = GuildIssueCatalog.BotMissingPermissions(
+                    new GuildId(args.Context.Guild?.Id ?? 0), args.Context.Command.FullName);
+                // Tell the moderator what went wrong and how to fix it, and record it for the guild and for us.
                 await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
                     .WithColor(GrimoireColor.Yellow)
-                    .WithDescription(
-                        $"{args.Context.Client.CurrentUser.Mention} does not have the permissions needed to complete this request."));
+                    .WithDescription($"{issue.Summary}\n**Suggested fix:** {issue.SuggestedFix}"));
+                if (args.Context.Guild is not null)
+                    await sender.ServiceProvider.GetRequiredService<GuildIssueReporter>().ReportAsync(issue);
                 return;
             case ChecksFailedException checksFailedException:
                 LogCommandOutcome(sender, args.Context, CommandOutcome.CheckFailed);
@@ -176,10 +181,6 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
             LogSlowCommand(sender.Logger, command, durationMs, guildId);
             SendWarning(sender, "SlowCommand", command, $"{command} took {durationMs}ms", guildId is { } id ? new GuildId(id) : null);
         }
-
-        if (outcome is CommandOutcome.BotMissingPermissions)
-            SendWarning(sender, "BotMissingPermissions", command, $"Bot lacks the permissions needed for {command}",
-                guildId is { } guild ? new GuildId(guild) : null);
     }
 
     // Elapsed time since Discord created the interaction/message. Includes gateway delay, which is what the user waits for.

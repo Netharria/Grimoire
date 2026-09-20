@@ -8,6 +8,7 @@
 using DSharpPlus.Entities.AuditLogs;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,7 @@ public partial class BanAddedEvent(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule,
     GuildLog guildLog,
+    GuildIssueReporter issueReporter,
     ILogger<BanAddedEvent> logger)
     : IEventHandler<GuildBanAddedEventArgs>
 {
@@ -92,7 +94,12 @@ public partial class BanAddedEvent(
 
                 lastBan = new LastSin { SinId = sin.Id, Actor = sin.Actor, Reason = auditReason, SinOn = sin.SinOn };
             }
-            catch (Exception ex) when (ex is UnauthorizedException or ServerErrorException)
+            catch (UnauthorizedException ex)
+            {
+                LogAuditException(this._logger, ex);
+                await issueReporter.ReportAsync(GuildIssueCatalog.CannotReadAuditLog(args.Guild.GetGuildId()));
+            }
+            catch (ServerErrorException ex)
             {
                 LogAuditException(this._logger, ex);
             }

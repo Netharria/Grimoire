@@ -6,6 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Entities.AuditLogs;
+using DSharpPlus.Exceptions;
+using Grimoire.Features.Shared.GuildIssues;
 using Microsoft.Extensions.Caching.Hybrid;
 
 namespace Grimoire.Utilities;
@@ -19,7 +21,8 @@ public interface IDiscordAuditLogParserService
 public sealed class DiscordAuditLogParserService(
     DiscordClient discordClient,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
-    HybridCache cache) : IDiscordAuditLogParserService
+    HybridCache cache,
+    GuildIssueReporter issueReporter) : IDiscordAuditLogParserService
 {
     private static readonly HybridCacheEntryOptions _entryOptions = new() { Expiration = TimeSpan.FromMinutes(10) };
     private readonly HybridCache _cache = cache;
@@ -30,9 +33,14 @@ public sealed class DiscordAuditLogParserService(
         ChannelId channelId,
         MessageId messageId)
     {
-        if (!this._discordClient.Guilds.TryGetValue(guildId.Value, out var guild)
-            || !guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ViewAuditLog))
+        if (!this._discordClient.Guilds.TryGetValue(guildId.Value, out var guild))
             return null;
+        if (!guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ViewAuditLog))
+        {
+            await issueReporter.ReportAsync(GuildIssueCatalog.CannotReadAuditLog(guildId));
+            return null;
+        }
+
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         var result = await dbContext.Messages
@@ -53,6 +61,11 @@ public sealed class DiscordAuditLogParserService(
                 .Where(x => x.Target.GetUserId() == result.UserId && x.Channel.GetChannelId() == channelId)
                 .OrderByDescending(x => x.CreationTimestamp)
                 .FirstOrDefaultAsync(token));
+        }
+        catch (UnauthorizedException)
+        {
+            await issueReporter.ReportAsync(GuildIssueCatalog.CannotReadAuditLog(guildId));
+            return null;
         }
         catch (Exception)
         {
