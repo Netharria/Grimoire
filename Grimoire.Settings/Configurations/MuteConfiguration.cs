@@ -41,5 +41,10 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>, IEntit
 
         builder.Property(e => e.SinId)
             .HasConversion(e => e.Value, value => new SinId(value));
+
+        builder.Property(e => e.MuteRoleId)
+            .HasConversion(
+                e => e.HasValue ? e.Value.Value : (ulong?)null,
+                value => value.HasValue ? new RoleId(value.Value) : null);
     }
 }

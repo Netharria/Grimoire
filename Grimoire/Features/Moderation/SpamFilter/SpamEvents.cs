@@ -70,7 +70,7 @@ internal sealed class SpamEvents(
         await dbContext.SaveChangesAsync();
 
         await this._settingsModule.AddMute(member.GetUserId(), args.Guild.GetGuildId(),
-            new ModeratorId(args.Guild.CurrentMember.Id), sin.Id, muteEndTime);
+            new ModeratorId(args.Guild.CurrentMember.Id), sin.Id, muteEndTime, muteRoleId);
 
         var muteRole = await args.Guild.GetRoleOrDefaultAsync(muteRoleId.Value);
 

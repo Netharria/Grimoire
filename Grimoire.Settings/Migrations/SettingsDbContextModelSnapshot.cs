@@ -394,6 +394,9 @@ namespace Grimoire.Settings.Migrations
                     b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal?>("MuteRoleId")
+                        .HasColumnType("numeric(20,0)");
+
                     b.Property<long>("SinId")
                         .HasColumnType("bigint");
 

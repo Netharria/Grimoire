@@ -21,15 +21,23 @@ public sealed record MuteAdded : Mute
         ModeratorId moderatorId,
         SinId sinId,
         DateTimeOffset setAt,
-        DateTimeOffset endTime)
+        DateTimeOffset endTime,
+        RoleId? muteRoleId)
         : base(userId, guildId, moderatorId, setAt)
     {
         SinId = sinId;
         EndTime = endTime;
+        MuteRoleId = muteRoleId;
     }
 
     public SinId SinId { get; }
     public DateTimeOffset EndTime { get; }
+
+    /// <summary>
+    ///     The role that was given to the member, so it is the one taken off again even if the server's mute role has
+    ///     changed since. Empty for mutes recorded before this was stored.
+    /// </summary>
+    public RoleId? MuteRoleId { get; }
 
     public static Validation<MuteAdded> Create(
         UserId userId,
@@ -37,7 +45,8 @@ public sealed record MuteAdded : Mute
         ModeratorId moderatorId,
         SinId sinId,
         DateTimeOffset setAt,
-        DateTimeOffset endTime)
+        DateTimeOffset endTime,
+        RoleId? muteRoleId = null)
     {
         if (endTime <= setAt)
             return Validation<MuteAdded>.Fail(
@@ -58,7 +67,7 @@ public sealed record MuteAdded : Mute
             return Validation<MuteAdded>.Fail(
                 new Error("mute.sin-id.invalid", "Sin Id must be a positive number."));
         return Validation<MuteAdded>.Succeed(
-            new MuteAdded(userId, guildId, moderatorId, sinId, setAt, endTime));
+            new MuteAdded(userId, guildId, moderatorId, sinId, setAt, endTime, muteRoleId));
     }
 }
 

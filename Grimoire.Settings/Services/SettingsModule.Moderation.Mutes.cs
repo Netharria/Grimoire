@@ -72,10 +72,11 @@ public sealed partial class SettingsModule
         ModeratorId moderatorId,
         SinId sinId,
         DateTimeOffset endTime,
+        RoleId? muteRoleId,
         CancellationToken cancellationToken = default)
     {
         var setAt = DateTimeOffset.UtcNow;
-        if (MuteAdded.Create(userId, guildId, moderatorId, sinId, setAt, endTime)
+        if (MuteAdded.Create(userId, guildId, moderatorId, sinId, setAt, endTime, muteRoleId)
             is not Validation<MuteAdded>.Valid(var mute))
             return Result<MuteAdded>.Fail(new Error("mute.invalid", "Mute parameters are invalid."));
 
@@ -83,6 +84,26 @@ public sealed partial class SettingsModule
         dbContext.Mutes.Add(mute);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result<MuteAdded>.Ok(mute);
+    }
+
+    /// <summary>The member's current mute, expired or not, without changing anything.</summary>
+    public async Task<Result<MuteAdded>> GetActiveMute(
+        UserId userId,
+        GuildId guildId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var activeMute = await dbContext.Mutes
+            .AsNoTracking()
+            .OfType<MuteAdded>()
+            .Where(x => x.UserId == userId && x.GuildId == guildId)
+            // ReSharper disable once AccessToDisposedClosure
+            .Where(x => !dbContext.Mutes.Any(y =>
+                y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
+            .FirstOrDefaultAsync(cancellationToken);
+        return activeMute is null
+            ? new Result<MuteAdded>.NotFound(new Error("mute.not-found", "No active mute found for this user."))
+            : Result<MuteAdded>.Ok(activeMute);
     }
 
     public async Task<Result<MuteAdded>> RemoveMute(

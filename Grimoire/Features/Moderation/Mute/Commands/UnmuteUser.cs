@@ -39,9 +39,14 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
             return;
         }
 
-        var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
-        var muteRole = muteRoleId.GetOrElse(() => null) is { } muteId
-            ? await guild.GetRoleOrDefaultAsync(muteId)
+        var recordedRoleId = await this._settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
+            .Map(mute => mute.MuteRoleId)
+            .GetOrElse(() => null);
+        var configuredRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId())
+            .GetOrElse(() => null);
+        var muteRole = MuteRoleResolver.Resolve(recordedRoleId, configuredRoleId,
+                id => guild.Roles.ContainsKey(id.Value)) is { } muteRoleId
+            ? guild.Roles[muteRoleId.Value]
             : null;
 
         if (muteRole is null)
@@ -49,7 +54,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
             // There is no role to take off, so clear the record: leaving it would keep the member marked as muted.
             await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId());
             await ctx.ReplyAsync(GrimoireColor.Yellow,
-                "The mute role is not configured or no longer exists, so I could not remove it from "
+                "The role this member was muted with no longer exists and no mute role is set, so I could not remove it from "
                 + $"{member.Mention}. Their mute is cleared; remove any mute role they still have by hand.");
             return;
         }

@@ -60,16 +60,27 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
         var activeGuild = guild!;
         var activeUser = user!;
 
-        var muteRoleId = await settingsModule.GetConfiguredMuteRole(activeGuild.GetGuildId(), cancellationToken)
-            .GetOrElse(() => null);
-        if (muteRoleId is not { } roleId || !activeGuild.Roles.TryGetValue(roleId.Value, out var role))
+        var configuredResult = await settingsModule.GetConfiguredMuteRole(activeGuild.GetGuildId(), cancellationToken);
+        // Not being able to read the setting is not the same as having no mute role. Retry later instead of dropping
+        // the mute without taking the role off.
+        if (configuredResult is Result<RoleId?>.Invalid)
+            throw new InvalidOperationException("Could not read the mute role setting.");
+        var configuredRoleId = configuredResult.GetOrElse(() => null);
+
+        var muteRoleId = MuteRoleResolver.Resolve(expiredMute.MuteRoleId, configuredRoleId,
+            id => activeGuild.Roles.ContainsKey(id.Value));
+        if (muteRoleId is not { } roleId)
         {
-            // Nothing can be removed, and retrying every few seconds would not change that.
-            await issueReporter.ReportAsync(GuildIssueCatalog.MuteRoleMissing(activeGuild.GetGuildId()),
-                cancellationToken);
+            // Nothing can be removed, and retrying would not change that. Only mention it if the server has a mute
+            // role set that cannot be found; with no mute role set there is nothing to complain about.
+            if (configuredRoleId is not null)
+                await issueReporter.ReportAsync(GuildIssueCatalog.MuteRoleMissing(activeGuild.GetGuildId()),
+                    cancellationToken);
             await RemoveMuteAsync(expiredMute, settingsModule, discordClient, cancellationToken);
             return;
         }
+
+        var role = activeGuild.Roles[roleId.Value];
 
         // A moderator may already have taken the role off by hand.
         if (activeUser.Roles.Any(memberRole => memberRole.Id == role.Id))

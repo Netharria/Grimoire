@@ -88,7 +88,7 @@ public sealed class MuteUser(
         await dbContext.SaveChangesAsync();
 
         await this._settingsModule.AddMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId(), sin.Id,
-            muteEndTime);
+            muteEndTime, muteId);
 
         var muteRole = await guild.GetRoleOrDefaultAsync(muteId);
         if (muteRole is null)
