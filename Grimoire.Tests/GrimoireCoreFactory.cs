@@ -68,6 +68,11 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
             .UseExceptionProcessor()
             .Options);
 
+    public SettingsDbContext CreateSettingsDbContext()
+        => new(new DbContextOptionsBuilder<SettingsDbContext>()
+            .UseNpgsql(this.ConnectionString)
+            .Options);
+
     /// <summary>For constructing production classes that take an <see cref="IDbContextFactory{TContext}"/> dependency directly.</summary>
     public IDbContextFactory<GrimoireDbContext> CreateDbContextFactory() => new TestDbContextFactory(this);
 

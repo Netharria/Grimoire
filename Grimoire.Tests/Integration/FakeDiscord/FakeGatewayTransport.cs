@@ -20,7 +20,7 @@ namespace Grimoire.Tests.Integration.FakeDiscord;
 ///     handshake, event parsing, caching and dispatch to Grimoire's handlers are all the production code paths.
 ///     Frames are plain JSON: compression lives inside the real transport, which this replaces.
 /// </summary>
-public sealed class FakeGatewayTransport(FakeGuild guild) : ITransportService
+public sealed class FakeGatewayTransport(FakeGuild guild, FakeGuild? secondGuild = null) : ITransportService
 {
     private const int HelloOpCode = 10;
     private const int HeartbeatOpCode = 1;
@@ -41,12 +41,27 @@ public sealed class FakeGatewayTransport(FakeGuild guild) : ITransportService
     {
     }
 
+    /// <summary>While set, a reconnecting bot gets no hello, so it stays disconnected until this is cleared.</summary>
+    public bool HoldReconnects { get; set; }
+
+    public int Connects => Volatile.Read(ref this._connects);
+
+    private int _connects;
+
     public ValueTask ConnectAsync(string url)
     {
         Volatile.Write(ref this._inbound, Channel.CreateUnbounded<TransportFrame>());
-        this.Enqueue(new JsonObject { ["op"] = HelloOpCode, ["d"] = new JsonObject { ["heartbeat_interval"] = 41_250 } });
+        if (Interlocked.Increment(ref this._connects) == 1 || !this.HoldReconnects)
+            this.Enqueue(new JsonObject { ["op"] = HelloOpCode, ["d"] = new JsonObject { ["heartbeat_interval"] = 41_250 } });
         return ValueTask.CompletedTask;
     }
+
+    /// <summary>Discord asks the bot to reconnect (op 7). The bot resumes its session.</summary>
+    public void RequestReconnect() => this.Enqueue(new JsonObject { ["op"] = 7, ["d"] = null });
+
+    /// <summary>Discord closes the websocket with a close code, as on a network drop or server restart.</summary>
+    public void CloseFromServer(int closeCode)
+        => Volatile.Read(ref this._inbound).Writer.TryWrite(new TransportFrame(closeCode, WebSocketMessageType.Close));
 
     public async ValueTask<TransportFrame> ReadAsync()
         => await Volatile.Read(ref this._inbound).Reader.ReadAsync();
@@ -61,8 +76,13 @@ public sealed class FakeGatewayTransport(FakeGuild guild) : ITransportService
         switch (sent["op"]?.GetValue<int>())
         {
             case IdentifyOpCode:
-                this.Dispatch("READY", this._guild.ReadyPayload());
+                var ready = this._guild.ReadyPayload();
+                if (secondGuild is not null)
+                    ready["guilds"]!.AsArray().Add(new JsonObject { ["id"] = secondGuild.Id.ToString(), ["unavailable"] = true });
+                this.Dispatch("READY", ready);
                 this.Dispatch("GUILD_CREATE", this._guild.GuildCreatePayload());
+                if (secondGuild is not null)
+                    this.Dispatch("GUILD_CREATE", secondGuild.GuildCreatePayload());
                 break;
             case ResumeOpCode:
                 this.Dispatch("RESUMED", new JsonObject());

@@ -231,7 +231,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var expired = await this._sut.GetAllExpiredMutes(TestContext.Current.CancellationToken).ToListAsync();
+        var expired = await this._sut.GetAllExpiredMutes(TestContext.Current.CancellationToken).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         expired.ShouldHaveSingleItem().MuteRoleId.ShouldBe(_roleId);
     }

@@ -420,9 +420,29 @@ Record failures here as `ID - observed - expected - severity`.
 
 Integration tests in `Grimoire.Tests/Integration/Moderation/` now cover these cases. They no longer need a manual run.
 
-- `WarnTests`: MOD-57, the reply, sin record and mod-log post. The DM part is a skipped test (KI-19).
+- `WarnTests`: MOD-57 (the reply, sin record and mod-log post), 59 to 63 (61 to 63 through registration), and 65 to 68.
+  MOD-64 is enforced by Discord from the registered permission. The DM parts of MOD-57 and MOD-58 are skipped
+  tests, because the DM is never attempted (KI-19).
+- `BanTests`: MOD-01 to MOD-10, 12 to 17, 22, 24, 27 to 42 (MOD-03 to 06 through the deletion window sent to Discord;
+  MOD-07 and 08 through registration). Skipped: MOD-18 to 20 and 23 (KI-19 and KI-03), MOD-21 (KI-01) and MOD-26
+  (KI-03). The DMs in MOD-01 and MOD-11 are never sent (KI-19). MOD-25 is in A-35.
+- `KickTests`: MOD-43 to MOD-52, 54 and 55, against a test bot that registers `/Kick` itself, because production never
+  does (KI-25). MOD-53 is skipped (KI-01). MOD-56 (rejoining) is Discord's behaviour.
+- `MuteTests`: MOD-90 to 92, 94 to 97, 100 to 107, 109, 110, 112, 113 and 115 to 122. Skipped: MOD-92's DM text
+  (KI-05), MOD-93 (zero-length mutes are never recorded, KI-07), MOD-106 and 107's phantom records (KI-04), MOD-109
+  (KI-01) and MOD-114 (KI-11). MOD-99 and 123 are in A-11, MOD-111 in A-35, and MOD-108 stays manual.
+- `ModerationCrossCheckTests`: MOD-190, 193 and 194.
+- `MuteExpiryTests`: MOD-124 to 134 and 136 to 140. `LockExpiryTests`: MOD-178 to 184 and 186 to 189. MOD-135 and
+  185 (retries after backoff) stay manual, and 141 to 143 are blocked by KI-26.
+- `MuteAdminTests`: MOD-69 to MOD-80, 82 to 86, and 88. MOD-81 is skipped (KI-27). Listing muted members is skipped
+  (KI-26). MOD-87's diagnostics contents are in A-20, and MOD-89 in A-35. The progress messages in MOD-79 and MOD-86
+  are successive edits of one response, so the moderator only sees the last.
+- `LockCommandTests`: MOD-144 to 158, 163, 164 and 169 to 177 (MOD-156, 158 and 169 through registration). The
+  lock-and-reply half of MOD-159 is here too. Skipped: MOD-173 and 174's leftover lock record (KI-06). MOD-176 is in
+  A-35, and expiry (MOD-178 onward) in A-11.
 - `ThreadLockTests`: the enforcement half of MOD-159, plus MOD-160, 161, 162, 165, 166 and 167, and the lifting half
   of MOD-163. MOD-168 is a skipped test (KI-12). The `/Lock` and `/Unlock` replies are still manual (backlog A-10).
+- `Integration/Shared/MultiGuildTests.cs`: MOD-25 (as its mirror, a ban in Test-B), 89, 111, 176 and 196.
 
 ### Candidates
 

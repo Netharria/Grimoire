@@ -118,6 +118,23 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <summary>With the message log off, reactions on a logged message are neither saved nor marked removed.</summary>
+    [Fact]
+    public async Task WithTheMessageLogOff_ReactionsAreIgnored()
+    {
+        var messageId = await this.SendLoggedMessageAsync();
+        this._bot.AddReaction(this.Guild.User1, this.Channel, messageId, ThumbsUp);
+        await this.WaitForReactionsAsync(messageId, reactions => reactions.Count == 1);
+        await this._bot.SetModuleAsync(Grimoire.Settings.Enums.Module.MessageLog, false);
+
+        this._bot.AddReaction(this.Guild.Moderator, this.Channel, messageId, Party);
+        this._bot.RemoveReaction(this.Guild.User1, this.Channel, messageId, ThumbsUp);
+
+        var reactions = await this.WaitForReactionsAsync(messageId,
+            current => current.Count > 1 || current.Any(reaction => reaction.IsRemoved), TimeSpan.FromSeconds(2));
+        reactions.ShouldHaveSingleItem().IsRemoved.ShouldBeFalse();
+    }
+
     [Fact]
     public async Task PurgingOldMessages_DeletesTheirReactions_RemovedOrNot()
     {

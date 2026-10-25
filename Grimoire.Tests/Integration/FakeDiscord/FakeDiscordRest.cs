@@ -17,8 +17,21 @@ namespace Grimoire.Tests.Integration.FakeDiscord;
 ///     One REST call the bot made, with the path relative to <c>/api/v10/</c>. <paramref name="AuditLogReason" /> is
 ///     the decoded <c>X-Audit-Log-Reason</c> header, which Discord shows in the audit log.
 /// </summary>
-public sealed record RecordedRequest(HttpMethod Method, string Path, string? Body, string? AuditLogReason = null)
+public sealed record RecordedRequest(
+    HttpMethod Method,
+    string Path,
+    string? Body,
+    string? AuditLogReason = null,
+    string Query = "",
+    IReadOnlyDictionary<string, string>? Attachments = null)
 {
+    /// <summary>Files uploaded with the request, by file name, as text.</summary>
+    public IReadOnlyDictionary<string, string> Files => this.Attachments ?? new Dictionary<string, string>();
+
+    /// <summary>One query-string value, such as <c>before</c> on a message history page.</summary>
+    public string? QueryValue(string name)
+        => System.Web.HttpUtility.ParseQueryString(this.Query)[name];
+
     public JsonNode? Json => this.Body is null ? null : JsonNode.Parse(this.Body);
 
     public override string ToString() => $"{this.Method} {this.Path}";
@@ -34,7 +47,128 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     private const string ApiPrefix = "/api/v10/";
 
     private readonly ConcurrentDictionary<string, ulong> _commandIds = new(StringComparer.OrdinalIgnoreCase);
-    private readonly FakeGuild _guild = guild;
+    private readonly Dictionary<ulong, SortedDictionary<ulong, JsonObject>> _channelHistory = [];
+    private readonly List<(HttpMethod Method, Regex Path, Func<RecordedRequest, HttpResponseMessage> Respond)> _overrides = [];
+    private readonly HashSet<ulong> _banned = [];
+    private readonly List<JsonObject> _auditLog = [];
+    private readonly Dictionary<ulong, FakeUser> _knownUsers = [];
+
+    private readonly HashSet<ulong> _kicked = [];
+
+    public const int KickAuditAction = 20;
+    public const int BanAuditAction = 22;
+    public const int MessageDeleteAuditAction = 72;
+    public const int UnbanAuditAction = 23;
+
+    /// <summary>
+    ///     Sends a gateway event, set by the test host. The fake uses it for Discord's side effects, such as the
+    ///     <c>GUILD_BAN_ADD</c> that follows a ban.
+    /// </summary>
+    public Action<string, JsonNode>? Dispatch { get; set; }
+
+    /// <summary>Users currently banned from the guild.</summary>
+    public IReadOnlyCollection<ulong> Banned
+    {
+        get
+        {
+            lock (this._lock)
+                return [.. this._banned];
+        }
+    }
+
+    /// <summary>Lets the fake describe users who aren't guild members, in events and audit logs.</summary>
+    public void RememberUser(FakeUser user)
+    {
+        lock (this._lock)
+            this._knownUsers[user.Id] = user;
+    }
+
+    /// <summary>Adds an audit-log entry, dated now by its id, the way Discord dates every entry.</summary>
+    public void AddAuditLogEntry(int actionType, FakeUser responsible, ulong targetId, string? reason, JsonObject? options = null)
+    {
+        lock (this._lock)
+        {
+            this._knownUsers[responsible.Id] = responsible;
+            this._auditLog.Add(new JsonObject
+            {
+                ["id"] = FakeUser.Snowflake(SnowflakeAt(DateTimeOffset.UtcNow, this._auditLog.Count)),
+                ["user_id"] = FakeUser.Snowflake(responsible.Id),
+                ["target_id"] = FakeUser.Snowflake(targetId),
+                ["action_type"] = actionType,
+                ["reason"] = reason,
+                ["changes"] = new JsonArray(),
+                ["options"] = options
+            });
+        }
+    }
+
+    /// <summary>
+    ///     Records a ban as Discord does: it enters the ban list and audit log, and the gateway announces it.
+    ///     Banning someone already banned changes nothing and sends no event.
+    /// </summary>
+    public void ApplyBan(FakeUser moderator, ulong targetId, string? reason)
+    {
+        lock (this._lock)
+            if (!this._banned.Add(targetId))
+                return;
+        this.AddAuditLogEntry(BanAuditAction, moderator, targetId, reason);
+        this.Dispatch?.Invoke("GUILD_BAN_ADD", new JsonObject
+        {
+            ["guild_id"] = FakeUser.Snowflake(this._guild.Id),
+            ["user"] = this.UserJson(targetId)
+        });
+    }
+
+    /// <summary>Puts someone on the ban list with no event or audit entry, as if banned before the bot joined.</summary>
+    public void MarkBanned(ulong userId)
+    {
+        lock (this._lock)
+            this._banned.Add(userId);
+    }
+
+    /// <summary>Lifts a ban as Discord does. Returns false when the user wasn't banned.</summary>
+    public bool ApplyUnban(FakeUser moderator, ulong targetId)
+    {
+        lock (this._lock)
+            if (!this._banned.Remove(targetId))
+                return false;
+        this.AddAuditLogEntry(UnbanAuditAction, moderator, targetId, null);
+        this.Dispatch?.Invoke("GUILD_BAN_REMOVE", new JsonObject
+        {
+            ["guild_id"] = FakeUser.Snowflake(this._guild.Id),
+            ["user"] = this.UserJson(targetId)
+        });
+        return true;
+    }
+
+    private JsonObject UserJson(ulong userId)
+    {
+        lock (this._lock)
+            return (this._guild.Members.Select(member => member.User).FirstOrDefault(user => user.Id == userId)
+                    ?? this._knownUsers.GetValueOrDefault(userId)
+                    ?? new FakeUser(userId, $"user-{userId}")).ToJson();
+    }
+    private readonly FakeGuild _primary = guild;
+
+    // The guild the request in flight is about, picked from its path. Responses read it through _guild.
+    private readonly AsyncLocal<FakeGuild?> _current = new();
+
+    /// <summary>A second guild. Requests whose path names its id or one of its channels act on it.</summary>
+    public FakeGuild? SecondGuild { get; set; }
+
+    private FakeGuild _guild => this._current.Value ?? this._primary;
+
+    private FakeGuild GuildForPath(string path)
+    {
+        if (this.SecondGuild is not { } second)
+            return this._primary;
+        var parts = path.Split('/');
+        if (parts.Length > 1 && ulong.TryParse(parts[1], out var id)
+            && (parts[0] == "guilds" ? id == second.Id
+                : parts[0] == "channels" && (second.Channels.Any(c => c.Id == id) || second.Threads.Any(c => c.Id == id))))
+            return second;
+        return this._primary;
+    }
     private readonly Lock _lock = new();
     private readonly List<RecordedRequest> _requests = [];
     private readonly List<RecordedRequest> _unhandled = [];
@@ -67,6 +201,21 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
             ? id
             : throw new InvalidOperationException(
                 $"Slash command '{name}' was not registered. Registered: {string.Join(", ", this._commandIds.Keys)}");
+
+    /// <summary>
+    ///     Answers matching requests with <paramref name="respond" /> instead of the built-in route, for example a 403
+    ///     on a DM channel. <paramref name="pathPattern" /> is a regex over the path after <c>/api/v10/</c>. The newest
+    ///     override wins.
+    /// </summary>
+    public void On(HttpMethod method, string pathPattern, Func<RecordedRequest, HttpResponseMessage> respond)
+    {
+        lock (this._lock)
+            this._overrides.Insert(0, (method, new Regex($"^{pathPattern}$"), respond));
+    }
+
+    /// <summary>A Discord error response, such as 403 with code 50007 "Cannot send messages to this user".</summary>
+    public static HttpResponseMessage Error(HttpStatusCode status, int code, string message)
+        => Json(status, new JsonObject { ["message"] = message, ["code"] = code });
 
     /// <summary>Waits until the bot makes a request that matches, including one it already made.</summary>
     public async Task<RecordedRequest> WaitForRequestAsync(Func<RecordedRequest, bool> match, TimeSpan? timeout = null)
@@ -117,9 +266,15 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
             ? Uri.UnescapeDataString(reasons.First())
             : null;
         var recorded = new RecordedRequest(request.Method, Uri.UnescapeDataString(path),
-            await ReadBodyAsync(request.Content, cancellationToken), auditLogReason);
+            await ReadBodyAsync(request.Content, cancellationToken), auditLogReason, request.RequestUri.Query,
+            await ReadFilesAsync(request.Content, cancellationToken));
 
-        var response = this.Respond(recorded);
+        Func<RecordedRequest, HttpResponseMessage>? overridden;
+        lock (this._lock)
+            overridden = this._overrides
+                .FirstOrDefault(o => o.Method == recorded.Method && o.Path.IsMatch(recorded.Path)).Respond;
+        this._current.Value = this.GuildForPath(recorded.Path);
+        var response = overridden is not null ? overridden(recorded) : this.Respond(recorded);
 
         lock (this._lock)
         {
@@ -156,23 +311,370 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
                 "PUT" => Json(new JsonArray([.. request.Json!.AsArray().Select(c => (JsonNode)this.RegisterCommand(c!.AsObject()))])),
                 _ => null
             },
-            _ when GuildInvites().IsMatch(request.Path) && get => Json(new JsonArray()),
+            _ when GuildInvites().IsMatch(request.Path) && get
+                => Json(new JsonArray([.. this._guild.Invites.Select(invite => (JsonNode)this._guild.InviteJson(invite))])),
+            _ when GuildBan().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Put
+                => this.Ban(ulong.Parse(match.Groups[1].Value), request),
+            _ when GuildBan().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Delete
+                => this.ApplyUnban(this._guild.Bot, ulong.Parse(match.Groups[1].Value))
+                    ? new HttpResponseMessage(HttpStatusCode.NoContent)
+                    : Error(HttpStatusCode.NotFound, 10026, "Unknown Ban"),
+            _ when AuditLogs().IsMatch(request.Path) && get => this.AuditLogPage(request),
+            _ when GuildMember().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Delete
+                => this.Kick(ulong.Parse(match.Groups[1].Value), request),
+            _ when GuildMember().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Patch
+                => this.ModifyMember(ulong.Parse(match.Groups[1].Value), request),
+            _ when GuildMember().Match(request.Path) is { Success: true } match && get
+                => this._guild.Members.FirstOrDefault(member => member.User.Id == ulong.Parse(match.Groups[1].Value)) is { } member
+                    ? Json(FakeGuild.MemberJson(member))
+                    : Error(HttpStatusCode.NotFound, 10007, "Unknown Member"),
+            _ when GuildRoles().IsMatch(request.Path) && post => this.CreateRole(request),
+            _ when MemberRole().Match(request.Path) is { Success: true } match
+                   && (request.Method == HttpMethod.Put || request.Method == HttpMethod.Delete)
+                => this.ChangeMemberRole(ulong.Parse(match.Groups[1].Value), ulong.Parse(match.Groups[2].Value),
+                    request.Method == HttpMethod.Put),
+            _ when GuildRole().Match(request.Path) is { Success: true } match && get
+                => this._guild.RoleJsonOf(ulong.Parse(match.Groups[1].Value)) is { } role
+                    ? Json(role)
+                    : Error(HttpStatusCode.NotFound, 10011, "Unknown Role"),
+            _ when ChannelPermission().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Put
+                => this.SetOverwrite(ulong.Parse(match.Groups[1].Value), ulong.Parse(match.Groups[2].Value), request),
             _ when InteractionCallback().IsMatch(request.Path) && post => new HttpResponseMessage(HttpStatusCode.NoContent),
+            _ when OriginalResponse().IsMatch(request.Path) && request.Method == HttpMethod.Delete
+                => new HttpResponseMessage(HttpStatusCode.NoContent),
             _ when OriginalResponse().IsMatch(request.Path) && request.Method == HttpMethod.Patch
                 => Json(this.MessageJson(this._guild.General.Id, request)),
             _ when FollowupMessage().IsMatch(request.Path) && post
                 => Json(this.MessageJson(this._guild.General.Id, request)),
-            _ when (Message().IsMatch(request.Path) || Reaction().IsMatch(request.Path))
-                   && request.Method == HttpMethod.Delete => new HttpResponseMessage(HttpStatusCode.NoContent),
+            _ when Message().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Delete
+                => this.DeleteFromHistory(ulong.Parse(match.Groups[1].Value), [ulong.Parse(match.Groups[2].Value)]),
+            _ when BulkDelete().Match(request.Path) is { Success: true } match && post
+                => this.DeleteFromHistory(ulong.Parse(match.Groups[1].Value),
+                    [.. request.Json!["messages"]!.AsArray().Select(id => ulong.Parse(id!.ToString()))]),
+            _ when Reaction().IsMatch(request.Path) && request.Method == HttpMethod.Delete
+                => new HttpResponseMessage(HttpStatusCode.NoContent),
+            _ when ChannelMessages().Match(request.Path) is { Success: true } match && get
+                => Json(this.HistoryPage(ulong.Parse(match.Groups[1].Value), request)),
             _ when ChannelMessages().Match(request.Path) is { Success: true } match && post
-                => Json(this.MessageJson(ulong.Parse(match.Groups[1].Value), request)),
+                => this._guild.Channels.Any(channel => channel.Id == ulong.Parse(match.Groups[1].Value))
+                   && !this._guild.BotCanSend(ulong.Parse(match.Groups[1].Value))
+                    ? Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions")
+                    : Json(this.PostToHistory(ulong.Parse(match.Groups[1].Value), request)),
+            _ when Message().Match(request.Path) is { Success: true } match && get
+                => this.FromHistory(ulong.Parse(match.Groups[1].Value), ulong.Parse(match.Groups[2].Value)) is { } stored
+                    ? Json(stored)
+                    : Error(HttpStatusCode.NotFound, 10008, "Unknown Message"),
+            _ when Message().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Patch
+                => this.EditInHistory(ulong.Parse(match.Groups[1].Value), ulong.Parse(match.Groups[2].Value), request) is { } edited
+                    ? Json(edited)
+                    : Error(HttpStatusCode.NotFound, 10008, "Unknown Message"),
             _ when Channel().Match(request.Path) is { Success: true } match && get
                 => this._guild.Channels.Concat(this._guild.Threads)
                     .FirstOrDefault(c => c.Id == ulong.Parse(match.Groups[1].Value)) is { } channel
                     ? Json(this._guild.ChannelJson(channel))
-                    : null,
+                    : Error(HttpStatusCode.NotFound, 10003, "Unknown Channel"),
             _ => null
         };
+    }
+
+    /// <summary>Discord refuses a ban without Ban Members, or of anyone ranked at or above the bot.</summary>
+    private HttpResponseMessage Ban(ulong targetId, RecordedRequest request)
+    {
+        if (!this._guild.BotHas(FakeGuild.BanMembersPermission)
+            || this._guild.HierarchyOf(targetId) >= this._guild.HierarchyOf(this._guild.Bot.Id))
+            return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+        this.ApplyBan(this._guild.Bot, targetId, request.AuditLogReason);
+        return new HttpResponseMessage(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>
+    ///     Discord refuses a kick without Kick Members, or of anyone ranked at or above the bot. A kick removes the
+    ///     member, which the gateway announces with <c>GUILD_MEMBER_REMOVE</c>.
+    /// </summary>
+    private HttpResponseMessage Kick(ulong targetId, RecordedRequest request)
+    {
+        if (!this._guild.BotHas(FakeGuild.KickMembersPermission)
+            || this._guild.HierarchyOf(targetId) >= this._guild.HierarchyOf(this._guild.Bot.Id))
+            return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+        lock (this._lock)
+            this._kicked.Add(targetId);
+        this.AddAuditLogEntry(KickAuditAction, this._guild.Bot, targetId, request.AuditLogReason);
+        this.Dispatch?.Invoke("GUILD_MEMBER_REMOVE", new JsonObject
+        {
+            ["guild_id"] = FakeUser.Snowflake(this._guild.Id),
+            ["user"] = this.UserJson(targetId)
+        });
+        return new HttpResponseMessage(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>Creating a role needs Manage Roles. Discord announces it with <c>GUILD_ROLE_CREATE</c>.</summary>
+    private HttpResponseMessage CreateRole(RecordedRequest request)
+    {
+        if (!this._guild.BotHas(FakeGuild.ManageRolesPermission))
+            return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+        var body = request.Json as JsonObject;
+        var permissions = ulong.TryParse(body?["permissions"]?.ToString(), out var parsed) ? parsed : 0;
+        var roleId = this._guild.AddRole(body?["name"]?.GetValue<string>() ?? "new role", permissions);
+        var role = this._guild.RoleJsonOf(roleId)!;
+        this.Dispatch?.Invoke("GUILD_ROLE_CREATE", new JsonObject
+        {
+            ["guild_id"] = FakeUser.Snowflake(this._guild.Id),
+            ["role"] = role.DeepClone()
+        });
+        return Json(role);
+    }
+
+    /// <summary>
+    ///     Editing an overwrite needs Manage Roles and a channel the bot can see. Discord announces the new
+    ///     overwrites with <c>CHANNEL_UPDATE</c>, which is how the bot's cache learns them.
+    /// </summary>
+    private HttpResponseMessage SetOverwrite(ulong channelId, ulong targetId, RecordedRequest request)
+    {
+        if (!this._guild.BotHas(FakeGuild.ManageRolesPermission) || !this._guild.BotCanView(channelId))
+            return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+        var body = request.Json!;
+        this._guild.SetOverwrite(channelId, targetId, body["type"]?.GetValue<int>() ?? 0,
+            ulong.Parse(body["allow"]?.ToString() ?? "0"), ulong.Parse(body["deny"]?.ToString() ?? "0"));
+        if (this._guild.Channels.FirstOrDefault(channel => channel.Id == channelId) is { } updated)
+            this.Dispatch?.Invoke("CHANNEL_UPDATE", this._guild.ChannelJson(updated));
+        return new HttpResponseMessage(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>
+    ///     Granting or revoking a role needs Manage Roles and a role below the bot's top role. Discord announces the
+    ///     member's new roles with <c>GUILD_MEMBER_UPDATE</c>.
+    /// </summary>
+    private HttpResponseMessage ChangeMemberRole(ulong userId, ulong roleId, bool grant)
+    {
+        var user = this._guild.Members.Select(member => member.User).FirstOrDefault(member => member.Id == userId);
+        if (user is null)
+            return Error(HttpStatusCode.NotFound, 10007, "Unknown Member");
+        if (!this._guild.HasRole(roleId))
+            return Error(HttpStatusCode.NotFound, 10011, "Unknown Role");
+        if (!this._guild.BotCanManageRole(roleId))
+            return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+
+        if (grant)
+            this._guild.GrantRole(user, roleId);
+        else
+            this._guild.RevokeRole(user, roleId);
+        var update = FakeGuild.MemberJson(this._guild.GetMember(user));
+        update["guild_id"] = FakeUser.Snowflake(this._guild.Id);
+        this.Dispatch?.Invoke("GUILD_MEMBER_UPDATE", update);
+        return new HttpResponseMessage(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>
+    ///     Modifying a member. Only a new role list is applied: every role added or removed must be below the bot's top
+    ///     role, as on Discord. The new roles are announced with <c>GUILD_MEMBER_UPDATE</c>.
+    /// </summary>
+    private HttpResponseMessage ModifyMember(ulong userId, RecordedRequest request)
+    {
+        var member = this._guild.Members.FirstOrDefault(candidate => candidate.User.Id == userId);
+        if (member is null)
+            return Error(HttpStatusCode.NotFound, 10007, "Unknown Member");
+        if (request.Json?["roles"] is not JsonArray roles)
+            return Json(FakeGuild.MemberJson(member));
+
+        var newRoles = roles.Select(role => ulong.Parse(role!.ToString())).Where(role => role != this._guild.Id).Distinct().ToArray();
+        var changed = newRoles.Except(member.RoleIds).Concat(member.RoleIds.Except(newRoles)).ToArray();
+        if (changed.Any(role => !this._guild.HasRole(role)))
+            return Error(HttpStatusCode.BadRequest, 50035, "Invalid Form Body");
+        if (changed.Any(role => !this._guild.BotCanManageRole(role)))
+            return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+
+        this._guild.SetRoles(member.User, newRoles);
+        var update = FakeGuild.MemberJson(this._guild.GetMember(member.User));
+        update["guild_id"] = FakeUser.Snowflake(this._guild.Id);
+        this.Dispatch?.Invoke("GUILD_MEMBER_UPDATE", update);
+        return Json(FakeGuild.MemberJson(this._guild.GetMember(member.User)));
+    }
+
+    /// <summary>A moderator deletes a role from Discord's client.</summary>
+    public void DeleteRole(ulong roleId)
+    {
+        this._guild.RemoveRole(roleId);
+        this.Dispatch?.Invoke("GUILD_ROLE_DELETE", new JsonObject
+        {
+            ["guild_id"] = FakeUser.Snowflake(this._guild.Id),
+            ["role_id"] = FakeUser.Snowflake(roleId)
+        });
+    }
+
+    /// <summary>A moderator creates a role from Discord's client. Returns its id.</summary>
+    public ulong CreateRole(string name, ulong permissions = 0, int position = 1)
+    {
+        var roleId = this._guild.AddRole(name, permissions, position);
+        this.Dispatch?.Invoke("GUILD_ROLE_CREATE", new JsonObject
+        {
+            ["guild_id"] = FakeUser.Snowflake(this._guild.Id),
+            ["role"] = this._guild.RoleJsonOf(roleId)!.DeepClone()
+        });
+        return roleId;
+    }
+
+    /// <summary>Members the bot has kicked.</summary>
+    public IReadOnlyCollection<ulong> Kicked
+    {
+        get
+        {
+            lock (this._lock)
+                return [.. this._kicked];
+        }
+    }
+
+    private HttpResponseMessage AuditLogPage(RecordedRequest request)
+    {
+        if (!this._guild.BotHas(FakeGuild.ViewAuditLogPermission))
+            return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+        var limit = int.TryParse(request.QueryValue("limit"), out var parsed) ? parsed : 50;
+        var actionType = int.TryParse(request.QueryValue("action_type"), out var action) ? action : (int?)null;
+        lock (this._lock)
+        {
+            var entries = this._auditLog
+                .Where(entry => actionType is null || entry["action_type"]!.GetValue<int>() == actionType)
+                .Reverse()
+                .Take(limit)
+                .Select(entry => (JsonNode)entry.DeepClone());
+            var users = this._guild.Members.Select(member => member.User)
+                .Concat(this._knownUsers.Values)
+                .DistinctBy(user => user.Id)
+                .Select(user => (JsonNode)user.ToJson());
+            return Json(new JsonObject
+            {
+                ["audit_log_entries"] = new JsonArray([.. entries]),
+                ["users"] = new JsonArray([.. users]),
+                ["webhooks"] = new JsonArray(),
+                ["integrations"] = new JsonArray(),
+                ["threads"] = new JsonArray(),
+                ["guild_scheduled_events"] = new JsonArray(),
+                ["application_commands"] = new JsonArray(),
+                ["auto_moderation_rules"] = new JsonArray()
+            });
+        }
+    }
+
+    /// <summary>
+    ///     Puts messages in a channel's history, as if members had posted them earlier. Ids are minted from each
+    ///     timestamp, so id order matches time order as it does on Discord. Returns the ids in the order given.
+    /// </summary>
+    public ulong[] SeedHistory(FakeChannel channel, params (FakeUser Author, DateTimeOffset At)[] messages)
+    {
+        lock (this._lock)
+        {
+            var history = this.HistoryOf(channel.Id);
+            return
+            [
+                .. messages.Select(message =>
+                {
+                    var id = SnowflakeAt(message.At, history.Count);
+                    history[id] = new JsonObject
+                    {
+                        ["id"] = FakeUser.Snowflake(id),
+                        ["channel_id"] = FakeUser.Snowflake(channel.Id),
+                        ["guild_id"] = FakeUser.Snowflake(this._guild.Id),
+                        ["author"] = message.Author.ToJson(),
+                        ["content"] = "seeded",
+                        ["embeds"] = new JsonArray(),
+                        ["attachments"] = new JsonArray(),
+                        ["mentions"] = new JsonArray(),
+                        ["mention_roles"] = new JsonArray(),
+                        ["mention_everyone"] = false,
+                        ["tts"] = false,
+                        ["pinned"] = false,
+                        ["type"] = 0,
+                        ["timestamp"] = message.At.ToString("O"),
+                        ["edited_timestamp"] = null
+                    };
+                    return id;
+                })
+            ];
+        }
+    }
+
+    /// <summary>The ids still in a channel's seeded history, oldest first.</summary>
+    public IReadOnlyList<ulong> HistoryIds(FakeChannel channel)
+    {
+        lock (this._lock)
+            return [.. this.HistoryOf(channel.Id).Keys];
+    }
+
+    private SortedDictionary<ulong, JsonObject> HistoryOf(ulong channelId)
+        => this._channelHistory.TryGetValue(channelId, out var history)
+            ? history
+            : this._channelHistory[channelId] = [];
+
+    /// <summary>Answers <c>GET channels/{id}/messages</c> like Discord: newest first, paged by <c>before</c>.</summary>
+    private JsonArray HistoryPage(ulong channelId, RecordedRequest request)
+    {
+        var limit = int.TryParse(request.QueryValue("limit"), out var parsed) ? parsed : 50;
+        var before = ulong.TryParse(request.QueryValue("before"), out var beforeId) ? beforeId : ulong.MaxValue;
+        lock (this._lock)
+            return new JsonArray([
+                .. this.HistoryOf(channelId).Where(message => message.Key < before).Reverse().Take(limit)
+                    .Select(message => (JsonNode)message.Value.DeepClone())
+            ]);
+    }
+
+    /// <summary>The bot's own post is kept in the channel's history, so it can later be fetched, edited or deleted.</summary>
+    private JsonObject PostToHistory(ulong channelId, RecordedRequest request)
+    {
+        var message = this.MessageJson(channelId, request);
+        lock (this._lock)
+            this.HistoryOf(channelId)[ulong.Parse(message["id"]!.ToString())] = message;
+        return (JsonObject)message.DeepClone();
+    }
+
+    private JsonObject? FromHistory(ulong channelId, ulong messageId)
+    {
+        lock (this._lock)
+            return this.HistoryOf(channelId).TryGetValue(messageId, out var message) ? (JsonObject)message.DeepClone() : null;
+    }
+
+    private JsonObject? EditInHistory(ulong channelId, ulong messageId, RecordedRequest request)
+    {
+        lock (this._lock)
+        {
+            if (!this.HistoryOf(channelId).TryGetValue(messageId, out var message))
+                return null;
+            var body = request.Json as JsonObject;
+            if (body?["embeds"] is { } embeds)
+                message["embeds"] = embeds.DeepClone();
+            if (body?["content"] is { } content)
+                message["content"] = content.DeepClone();
+            message["edited_timestamp"] = DateTimeOffset.UtcNow.ToString("O");
+            return (JsonObject)message.DeepClone();
+        }
+    }
+
+    /// <summary>The bot's posts to a channel, oldest first, as stored in its history.</summary>
+    public IReadOnlyList<JsonObject> PostsIn(FakeChannel channel)
+    {
+        lock (this._lock)
+            return [.. this.HistoryOf(channel.Id).Values
+                .Where(message => message["author"]?["id"]?.ToString() == FakeUser.Snowflake(this._guild.Bot.Id))
+                .Select(message => (JsonObject)message.DeepClone())];
+    }
+
+    /// <summary>A moderator deletes a message by hand.</summary>
+    public void DeleteMessageByHand(FakeChannel channel, ulong messageId)
+    {
+        lock (this._lock)
+            this.HistoryOf(channel.Id).Remove(messageId);
+    }
+
+    private HttpResponseMessage DeleteFromHistory(ulong channelId, ulong[] messageIds)
+    {
+        lock (this._lock)
+            foreach (var id in messageIds)
+                this.HistoryOf(channelId).Remove(id);
+        return new HttpResponseMessage(HttpStatusCode.NoContent);
+    }
+
+    private static ulong SnowflakeAt(DateTimeOffset at, int sequence)
+    {
+        const long discordEpochMilliseconds = 1_420_070_400_000;
+        return ((ulong)(at.ToUnixTimeMilliseconds() - discordEpochMilliseconds) << 22) | (uint)(sequence & 0xFFF);
     }
 
     private JsonObject RegisterCommand(JsonObject command)
@@ -280,6 +782,18 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
         return body.Length == 0 ? null : body;
     }
 
+    private static async Task<IReadOnlyDictionary<string, string>?> ReadFilesAsync(HttpContent? content,
+        CancellationToken cancellationToken)
+    {
+        if (content is not MultipartFormDataContent multipart)
+            return null;
+        Dictionary<string, string> files = [];
+        foreach (var part in multipart)
+            if (part.Headers.ContentDisposition?.FileName is { } fileName)
+                files[fileName.Trim('"')] = await part.ReadAsStringAsync(cancellationToken);
+        return files;
+    }
+
     private static HttpResponseMessage Json(JsonNode body) => Json(HttpStatusCode.OK, body);
 
     private static HttpResponseMessage Json(HttpStatusCode status, JsonNode body)
@@ -306,8 +820,32 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     [GeneratedRegex(@"^channels/(\d+)$")]
     private static partial Regex Channel();
 
-    [GeneratedRegex(@"^channels/\d+/messages/\d+$")]
+    [GeneratedRegex(@"^channels/(\d+)/messages/(\d+)$")]
     private static partial Regex Message();
+
+    [GeneratedRegex(@"^guilds/\d+/bans/(\d+)$")]
+    private static partial Regex GuildBan();
+
+    [GeneratedRegex(@"^guilds/\d+/members/(\d+)$")]
+    private static partial Regex GuildMember();
+
+    [GeneratedRegex(@"^guilds/\d+/roles$")]
+    private static partial Regex GuildRoles();
+
+    [GeneratedRegex(@"^guilds/\d+/roles/(\d+)$")]
+    private static partial Regex GuildRole();
+
+    [GeneratedRegex(@"^guilds/\d+/members/(\d+)/roles/(\d+)$")]
+    private static partial Regex MemberRole();
+
+    [GeneratedRegex(@"^channels/(\d+)/permissions/(\d+)$")]
+    private static partial Regex ChannelPermission();
+
+    [GeneratedRegex(@"^guilds/\d+/audit-logs$")]
+    private static partial Regex AuditLogs();
+
+    [GeneratedRegex(@"^channels/(\d+)/messages/bulk-delete$")]
+    private static partial Regex BulkDelete();
 
     /// <summary>Deleting one member's reaction: <c>.../reactions/{emoji}/{userId}</c>.</summary>
     [GeneratedRegex(@"^channels/\d+/messages/\d+/reactions/[^/]+/\d+$")]

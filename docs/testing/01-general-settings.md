@@ -272,6 +272,26 @@ Record failures here as `ID - observed - expected - severity`.
 
 ## Promote to automated tests **[auto]**
 
+### Automated
+
+Integration tests in `Grimoire.Tests/Integration/Shared/` now cover these cases. They no longer need a manual run.
+
+- `CommandChecksTests`: GEN-01 to GEN-07 (GEN-07 through the registered DM permission), GEN-10 to GEN-15 and GEN-17.
+- `ModuleCommandsTests`: GEN-70, GEN-73, GEN-80 to GEN-84, GEN-86, GEN-87 and GEN-89, plus the message-log half of
+  GEN-88.
+- `GeneralSettingsCommandsTests`: GEN-20, 21, 23, 30 to 35, 37 to 40, 50 to 55 and 60. GEN-32's wording (KI-22) and
+  GEN-37's ephemeral flag (KI-21) are skipped tests.
+- `UserInfoCommandTests`: GEN-08, 100 to 118, 120 and 121, with GEN-103 using XP rows from another guild id. The User
+  Log section (GEN-100, 101, 109) is skipped because the command throws (KI-23). Member join date and role-based
+  ignores (GEN-100, 104, 114, 115, 117) are skipped because the member is never resolved (KI-19).
+- `PurgeCommandsTests`: GEN-130 to 138, 140, 142, 145, 147 (no mod-log entry), 150 to 154, 156 to 158. Over 100
+  messages (GEN-135, 136) is skipped because the scan stops at 100 (KI-24).
+- Still manual or elsewhere: GEN-16, GEN-22, GEN-72 and GEN-85 (two guilds, A-35), GEN-36 (Embed
+  Links, manual), GEN-56 to GEN-59 (A-26), GEN-71 (restart, A-37), GEN-90 (spam filter, A-18), GEN-139 (enforced by
+  Discord's client), GEN-141, 143, 144, 146 and 148 (manual), GEN-155 (A-34), and GEN-170 to GEN-173 (A-37).
+
+### Candidates
+
 - `RequireUserGuildPermissionsCheck`: owner bypass, Administrator bypass, exact permission, missing permission,
   null guild, null member (GEN-01..07). Pure logic, NSubstitute-friendly.
 - `RequireModuleEnabledCheck`: enabled, disabled, and null guild (GEN-10..16), using a real settings DB.
