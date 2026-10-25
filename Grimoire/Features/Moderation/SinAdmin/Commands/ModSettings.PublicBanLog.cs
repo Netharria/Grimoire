@@ -29,7 +29,14 @@ internal sealed partial class ModSettings
 
         var guild = ctx.Guild!;
 
-        channel = ctx.GetChannelOption(option, channel);
+        var channelChoice = ctx.GetChannelOption(option, channel);
+        if (channelChoice is Validation<DiscordChannel?>.Invalid { Errors: var channelErrors })
+        {
+            await ctx.SendErrorResponseAsync(channelErrors);
+            return;
+        }
+
+        channel = channelChoice.GetOrElse(() => null);
 
         if (channel is not null)
         {

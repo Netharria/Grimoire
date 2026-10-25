@@ -99,7 +99,14 @@ public sealed partial class LevelSettingsCommandGroup
         await ctx.DeferResponseAsync();
 
         var guild = ctx.Guild!;
-        channel = ctx.GetChannelOption(option, channel);
+        var channelChoice = ctx.GetChannelOption(option, channel);
+        if (channelChoice is Validation<DiscordChannel?>.Invalid { Errors: var channelErrors })
+        {
+            await ctx.SendErrorResponseAsync(channelErrors);
+            return;
+        }
+
+        channel = channelChoice.GetOrElse(() => null);
 
         if (ValidateChannelPermission(guild, channel) is Validation<Unit>.Invalid { Errors: var errors })
         {

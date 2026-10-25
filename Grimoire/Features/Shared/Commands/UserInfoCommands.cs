@@ -138,10 +138,10 @@ internal sealed class UserInfoCommands(
             .SumAsync(x => x.RawXp);
 
         var levelSettings = await this._settingsModule.GetLevelingSettings(guildId)
-            .GetOrElse(() => default!);
+            .GetOrElse(() => null!);
 
         var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId)
-            .GetOrElse(() => default!);
+            .GetOrElse(() => null!);
 
 
         var membersLevel = levelSettings.GetLevelFromXp(membersXp);
@@ -156,7 +156,7 @@ internal sealed class UserInfoCommands(
         embed.AddField("Level", membersLevel.ToString(), true)
             .AddField("Can Gain Xp", isXpIgnored ? "No" : "Yes", true)
             .AddField("Earned Rewards",
-                earnedRewards.Length > 0
+                earnedRewards.Length == 0
                     ? "None"
                     : string.Join('\n', earnedRewards.Select(x => $"<@&{x}>")),
                 true);

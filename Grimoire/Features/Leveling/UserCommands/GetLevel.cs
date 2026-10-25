@@ -68,7 +68,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         var nextLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel, 1);
 
         var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
-            .GetOrElse(() => default!);
+            .GetOrElse(() => null!);
         var nextReward = rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 
         var (color, displayName, avatarUrl) = user is DiscordMember member

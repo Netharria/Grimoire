@@ -21,7 +21,7 @@ internal sealed partial class ModuleCommands
         var guild = ctx.Guild!;
 
         var guildSettings = await this._settingsModule.GetAllModuleState(guild.GetGuildId())
-            .GetOrElse(() => default!);
+            .GetOrElse(() => null!);
 
         await ctx.ReplyAsync(
             title: "Current states of modules.",
@@ -29,6 +29,7 @@ internal sealed partial class ModuleCommands
                      $"**User Log Enabled:** {guildSettings.UserLogEnabled}\n" +
                      $"**Message Log Enabled:** {guildSettings.MessageLogEnabled}\n" +
                      $"**Moderation Enabled:** {guildSettings.ModerationEnabled}\n" +
-                     $"**Commands Enabled:** {guildSettings.CommandsEnabled}\n");
+                     $"**Commands Enabled:** {guildSettings.CommandsEnabled}\n" +
+                     $"**Anti Spam Enabled:** {guildSettings.AntiSpamEnabled}\n");
     }
 }

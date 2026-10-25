@@ -30,7 +30,10 @@ public static class DiscordChannelExtensions
                 break;
             case > 1:
                 await foreach (var messageChunk in messages.Chunk(100).ToAsyncEnumerable())
-                    await channel.DeleteMessagesAsync(messageChunk, reason);
+                    if (messageChunk.Length == 1)
+                        await messageChunk[0].DeleteAsync(reason);
+                    else
+                        await channel.DeleteMessagesAsync(messageChunk, reason);
                 break;
         }
 

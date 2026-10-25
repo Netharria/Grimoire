@@ -22,6 +22,7 @@ internal sealed partial class ModuleCommands
             ModuleArguments.Moderation => Module.Moderation,
             ModuleArguments.MessageLog => Module.MessageLog,
             ModuleArguments.Commands => Module.Commands,
+            ModuleArguments.AntiSpam => Module.AntiSpam,
             _ => throw new UnreachableException("Invalid module argument.")
         };
     }
@@ -59,6 +60,7 @@ internal sealed partial class ModuleCommands
         UserLog,
         Moderation,
         MessageLog,
-        Commands
+        Commands,
+        AntiSpam
     }
 }

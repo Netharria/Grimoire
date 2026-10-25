@@ -40,7 +40,7 @@ public sealed partial class IgnoreCommandGroup
     private async Task<string> BuildMessageAsync(GuildId guildId)
     {
         var ignoredItems = await this._settingsModule.GetAllIgnoredItems(guildId)
-            .GetOrElse(() => default!);
+            .GetOrElse(() => null!);
         var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
         ignoredMessageBuilder.Append(string.Join(' ',
             ignoredItems.OfType<IgnoredChannel>().Select(x => $"<#{x.ChannelId.Value}>"))).Append('\n');

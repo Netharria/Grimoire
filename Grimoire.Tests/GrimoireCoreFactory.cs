@@ -7,6 +7,7 @@
 
 using System.Data.Common;
 using EntityFramework.Exceptions.PostgreSQL;
+using Grimoire.Settings;
 using JetBrains.Annotations;
 using Npgsql;
 using Respawn;
@@ -24,7 +25,7 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
     private DbConnection _dbConnection = null!;
     private Respawner _respawner = null!;
 
-    private string ConnectionString => this._postgreSqlContainer.GetConnectionString();
+    internal string ConnectionString => this._postgreSqlContainer.GetConnectionString();
 
     public async ValueTask InitializeAsync()
     {
@@ -37,10 +38,23 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
 
         await dbContext.Database.MigrateAsync();
 
+        // Integration tests run the whole bot, which also reads guild settings, so the settings schema must exist
+        // before Respawn takes its table snapshot or it would never be reset between tests.
+        await using var settingsDbContext = new SettingsDbContext(
+            new DbContextOptionsBuilder<SettingsDbContext>()
+                .UseNpgsql(this._postgreSqlContainer.GetConnectionString())
+                .Options);
+        await settingsDbContext.Database.MigrateAsync();
+
         this._dbConnection = new NpgsqlConnection(this._postgreSqlContainer.GetConnectionString());
         await this._dbConnection.OpenAsync();
         this._respawner = await Respawner.CreateAsync(this._dbConnection,
-            new RespawnerOptions { DbAdapter = DbAdapter.Postgres });
+            new RespawnerOptions
+            {
+                DbAdapter = DbAdapter.Postgres,
+                // The bot checks for pending migrations at startup; wiping the history would make it re-run them.
+                TablesToIgnore = [new Respawn.Graph.Table("__EFMigrationsHistory")]
+            });
     }
 
     public ValueTask DisposeAsync() => this._postgreSqlContainer.DisposeAsync();
@@ -49,7 +63,7 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
 
     public GrimoireDbContext CreateDbContext()
         => new(new DbContextOptionsBuilder<GrimoireDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(this.ConnectionString)
             .LogTo(Console.WriteLine)
             .UseExceptionProcessor()
             .Options);

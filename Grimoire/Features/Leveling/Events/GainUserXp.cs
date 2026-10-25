@@ -131,7 +131,7 @@ public sealed partial class GainUserXp(
             return;
 
         var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)
-            .GetOrElse(() => default!);
+            .GetOrElse(() => null!);
 
         var newRewards = rewards
             .Where(reward => reward.RewardLevel <= userLevel)

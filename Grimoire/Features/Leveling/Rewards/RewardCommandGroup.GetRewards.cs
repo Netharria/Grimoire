@@ -24,7 +24,7 @@ public sealed partial class RewardCommandGroup
         var guild = ctx.Guild!;
 
         var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
-            .GetOrElse(() => default!);
+            .GetOrElse(() => null!);
 
         var rewardLines = await Task.WhenAll(rewards.Select(async x =>
         {

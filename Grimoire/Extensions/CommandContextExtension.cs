@@ -58,20 +58,22 @@ public static partial class CommandContextExtension
             return ctx.ReplyAsync(GrimoireColor.Yellow, message, ephemeral: true);
         }
 
+        public ValueTask SendErrorResponseAsync(IEnumerable<Error> errors)
+            => ctx.SendErrorResponseAsync(string.Join("; ", errors.Select(error => error.Message)));
+
         [Pure]
-        public DiscordChannel? GetChannelOption(ChannelOption channelOption,
+        public Validation<DiscordChannel?> GetChannelOption(ChannelOption channelOption,
             DiscordChannel? selectedChannel)
-        {
-            return channelOption switch
+            => channelOption switch
             {
-                ChannelOption.Off => null,
-                ChannelOption.CurrentChannel => ctx.Channel,
-                ChannelOption.SelectChannel => selectedChannel ?? throw new ArgumentNullException(
-                    nameof(selectedChannel),
-                    "Selected channel cannot be empty when ChannelOption is SelectChannel."),
+                ChannelOption.Off => Validation<DiscordChannel?>.Succeed(null),
+                ChannelOption.CurrentChannel => Validation<DiscordChannel?>.Succeed(ctx.Channel),
+                ChannelOption.SelectChannel when selectedChannel is not null
+                    => Validation<DiscordChannel?>.Succeed(selectedChannel),
+                ChannelOption.SelectChannel => Validation<DiscordChannel?>.Fail(
+                    new Error("channel.required", "Select a channel when using the Select Channel option.")),
                 _ => throw new UnreachableException("Invalid ChannelOption value.")
             };
-        }
 
         /// <summary>
         ///     Returns the <see cref="DiscordGuild" /> for the current context wrapped in a
