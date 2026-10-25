@@ -16,6 +16,7 @@ using Grimoire.Features.Moderation.Lock;
 using Grimoire.Features.Moderation.Mute;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Gateway;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.Tests.Integration.FakeDiscord;
@@ -170,6 +171,27 @@ public sealed class GrimoireTestBot : IAsyncDisposable
         (await settings.SetLogChannelSetting(GuildLogType.Moderation, guildId, moderatorId,
             new ChannelId(this.Guild.ModLog.Id))).ShouldSucceed();
     }
+
+    /// <summary>Records a thread lock the way <c>/Lock</c> does, without going through the command.</summary>
+    public async Task LockThreadAsync(FakeChannel thread, TimeSpan duration)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var threadLock = ThreadLocked.Create(new ModeratorId(this.Guild.Moderator.Id), null,
+            new ChannelId(thread.Id), new GuildId(this.Guild.Id), now, now + duration).ShouldSucceed();
+        (await this.Services.GetRequiredService<SettingsModule>().ApplyThreadLockAction(threadLock)).ShouldSucceed();
+    }
+
+    /// <summary>Records an unlock, as <c>/Unlock</c> or the lock background task does when the timer runs out.</summary>
+    public async Task UnlockThreadAsync(FakeChannel thread)
+    {
+        var unlock = ThreadUnlocked.Create(new ModeratorId(this.Guild.Moderator.Id), new ChannelId(thread.Id),
+            new GuildId(this.Guild.Id), DateTimeOffset.UtcNow).ShouldSucceed();
+        (await this.Services.GetRequiredService<SettingsModule>().ApplyThreadLockAction(unlock)).ShouldSucceed();
+    }
+
+    public async Task SetModuleAsync(Module module, bool enabled)
+        => (await this.Services.GetRequiredService<SettingsModule>().SetModuleState(module,
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), enabled)).ShouldSucceed();
 
     /// <summary>Turns on the message log, which logs every channel unless an override says otherwise.</summary>
     public async Task ConfigureMessageLogAsync()

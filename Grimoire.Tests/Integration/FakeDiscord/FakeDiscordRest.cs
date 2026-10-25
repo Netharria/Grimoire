@@ -13,8 +13,11 @@ using System.Text.RegularExpressions;
 
 namespace Grimoire.Tests.Integration.FakeDiscord;
 
-/// <summary>One REST call the bot made, with the path relative to <c>/api/v10/</c>.</summary>
-public sealed record RecordedRequest(HttpMethod Method, string Path, string? Body)
+/// <summary>
+///     One REST call the bot made, with the path relative to <c>/api/v10/</c>. <paramref name="AuditLogReason" /> is
+///     the decoded <c>X-Audit-Log-Reason</c> header, which Discord shows in the audit log.
+/// </summary>
+public sealed record RecordedRequest(HttpMethod Method, string Path, string? Body, string? AuditLogReason = null)
 {
     public JsonNode? Json => this.Body is null ? null : JsonNode.Parse(this.Body);
 
@@ -110,8 +113,11 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
         var path = absolutePath.StartsWith(ApiPrefix, StringComparison.Ordinal)
             ? absolutePath[ApiPrefix.Length..]
             : absolutePath.TrimStart('/');
+        var auditLogReason = request.Headers.TryGetValues("X-Audit-Log-Reason", out var reasons)
+            ? Uri.UnescapeDataString(reasons.First())
+            : null;
         var recorded = new RecordedRequest(request.Method, Uri.UnescapeDataString(path),
-            await ReadBodyAsync(request.Content, cancellationToken));
+            await ReadBodyAsync(request.Content, cancellationToken), auditLogReason);
 
         var response = this.Respond(recorded);
 
@@ -156,10 +162,13 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
                 => Json(this.MessageJson(this._guild.General.Id, request)),
             _ when FollowupMessage().IsMatch(request.Path) && post
                 => Json(this.MessageJson(this._guild.General.Id, request)),
+            _ when (Message().IsMatch(request.Path) || Reaction().IsMatch(request.Path))
+                   && request.Method == HttpMethod.Delete => new HttpResponseMessage(HttpStatusCode.NoContent),
             _ when ChannelMessages().Match(request.Path) is { Success: true } match && post
                 => Json(this.MessageJson(ulong.Parse(match.Groups[1].Value), request)),
             _ when Channel().Match(request.Path) is { Success: true } match && get
-                => this._guild.Channels.FirstOrDefault(c => c.Id == ulong.Parse(match.Groups[1].Value)) is { } channel
+                => this._guild.Channels.Concat(this._guild.Threads)
+                    .FirstOrDefault(c => c.Id == ulong.Parse(match.Groups[1].Value)) is { } channel
                     ? Json(this._guild.ChannelJson(channel))
                     : null,
             _ => null
@@ -296,4 +305,11 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
 
     [GeneratedRegex(@"^channels/(\d+)$")]
     private static partial Regex Channel();
+
+    [GeneratedRegex(@"^channels/\d+/messages/\d+$")]
+    private static partial Regex Message();
+
+    /// <summary>Deleting one member's reaction: <c>.../reactions/{emoji}/{userId}</c>.</summary>
+    [GeneratedRegex(@"^channels/\d+/messages/\d+/reactions/[^/]+/\d+$")]
+    private static partial Regex Reaction();
 }

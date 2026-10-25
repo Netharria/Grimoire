@@ -136,6 +136,7 @@ internal static class GrimoireServiceRegistration
                         .AddEventHandlers<BanAddedEvent>()
                         .AddEventHandlers<BanRemovedEvent>()
                         .AddEventHandlers<UserJoinedWhileMuted>()
+                        .AddEventHandlers<LockedTreadEvents>()
                         .AddEventHandlers<SpamEvents>()
                         //General Events
                         .AddEventHandlers<GatewayEvents>()
@@ -216,7 +217,7 @@ internal static class GrimoireServiceRegistration
                     extension.AddProcessor(slashCommandProcessor);
                 }, new CommandsConfiguration { UseDefaultCommandErrorHandler = false })
                 .AddSingleton<GuildLog>()
-                .AddHostedService<GuildLog>()
+                .AddHostedService<GuildLogPublisher>()
                 .AddHostedService(provider => provider.GetRequiredService<AlertService>())
                 .AddHostedService<GatewayWatchdogService>()
                 .AddHostedService<WarningFlushService>()

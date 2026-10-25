@@ -29,6 +29,17 @@ ManageMessages for legacy compatibility (see 02).
 | KI-16 | low | **Inconsistent DM failure handling**: `/Ban` swallows everything (logs non-403 only), `/Warn` catches only BadRequest/Unauthorized and posts to the mod log, `/Mute` and `/Unmute` catch every `Exception`, `/Kick` never DMs. | Ban, Warn, Mute, Unmute, Kick | MOD-11, 43, 58, 95, 113 |
 | KI-17 | low | **`/Warn` has no `RequireUserGuildPermissions`** and no bot gate; it relies on `RequirePermissions` alone, unlike the other actions. Should behave the same in practice but is inconsistent. | `Warn` | MOD-63, 64, 65 |
 
+## Found by automated tests
+
+Each entry has a skipped test, or a planned one, that fails until the issue is fixed. The work items are in
+`automation-backlog.md`.
+
+| ID | Sev | Issue | Where | Confirm with |
+|----|-----|-------|-------|--------------|
+| KI-18 | fixed | **Fixed 2026-10-25. The guild logs never posted.** `GuildLog` was registered as a singleton and again as a separate hosted-service instance, each with its own queue, so nothing read the queue commands wrote to. After 1024 messages, senders would also have blocked forever. It is now split into `GuildLog`, the queue singleton, and `GuildLogPublisher`, the hosted service that reads it. | `Features/Shared/Channels/GuildLog/` | `WarnTests.Warn_PostsTheWarnEmbedToTheModLog` |
+| KI-19 | med | **`/Warn` never DMs the member.** Slash commands resolve a user option to a plain `DiscordUser`, never a `DiscordMember`, so the `user is DiscordMember` check is always false. Other commands that DM through the same pattern are likely affected. | `Warn.cs` | `WarnTests.Warn_DirectMessagesTheWarnedMember` (skipped), MOD-57 |
+| KI-20 | fixed | **Fixed 2026-10-25. Locked threads enforced nothing.** Threads inherit their parent's permissions, so thread locks rely on `LockedTreadEvents` to delete new messages and reactions until the lock is lifted. The handler replaced `ModerationEvents` in the DSharpPlus 5 migration but was never registered. It is now registered in `GrimoireServiceRegistration.cs`. KI-12, the missing module check, is still open. | `GrimoireServiceRegistration.cs` | `ThreadLockTests`, MOD-159 to MOD-167 |
+
 ## Area 01 - General settings
 
 The Code observations section of `01-general-settings.md` lists the open items for that area (Purge has no mod-log

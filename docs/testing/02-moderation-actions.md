@@ -416,6 +416,16 @@ Record failures here as `ID - observed - expected - severity`.
 
 ## Promote to automated tests **[auto]**
 
+### Automated
+
+Integration tests in `Grimoire.Tests/Integration/Moderation/` now cover these cases. They no longer need a manual run.
+
+- `WarnTests`: MOD-57, the reply, sin record and mod-log post. The DM part is a skipped test (KI-19).
+- `ThreadLockTests`: the enforcement half of MOD-159, plus MOD-160, 161, 162, 165, 166 and 167, and the lifting half
+  of MOD-163. MOD-168 is a skipped test (KI-12). The `/Lock` and `/Unlock` replies are still manual (backlog A-10).
+
+### Candidates
+
 - `MuteRoleResolver.Resolve`: recorded role exists / recorded missing with configured present / both missing /
   both null (MOD-116..118, 132, 138).
 - `ExpiredItemTriage.For`: all four (in-guild, target-exists) combinations (MOD-127, 136, 139, 182).

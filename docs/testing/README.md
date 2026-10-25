@@ -33,6 +33,12 @@ denied, module disabled, bad input, bot-lacks-permission, and target-is-higher-r
 | 08 | `08-alerts-health.md` | `AlertService`, warning buffer/flush/daily report, `GuildIssueReporter` + throttle, `GatewayWatchdogService`, `GuildLog`, `GuildAdded`, `InviteEvents`, `MemberAdded`, `UpdateAllGuilds` | todo |
 | 09 | `09-cross-cutting.md` | Startup / migrations, PluralKit (proxied messages in leveling, logging, spam), permission matrix, module-toggle matrix, settings cache invalidation, restart persistence | todo |
 
+## Automated integration tests
+
+`automation-backlog.md` is the ordered work list for fake-Discord integration tests, built on the harness in
+`Grimoire.Tests/Integration/`. Start a session with: "Work on automation item A-NN from
+`docs/testing/automation-backlog.md`." Cases a test covers are marked **[auto]** in the area docs.
+
 ## Known issues
 
 Bugs and design gaps found while writing the area docs, to fix later, are collected in `known-issues.md`

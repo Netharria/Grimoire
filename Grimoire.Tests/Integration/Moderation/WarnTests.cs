@@ -95,8 +95,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
             .ShouldBe(["user", "reason"]);
     }
 
-    [Fact(Skip = "Fails: GuildLog is registered as a singleton and again as a separate hosted-service instance, " +
-                 "so commands queue log messages on an instance nobody reads. See GrimoireServiceRegistration.")]
+    [Fact]
     public async Task Warn_PostsTheWarnEmbedToTheModLog()
     {
         this._bot.RunSlashCommand("Warn", this.Guild.Moderator,
