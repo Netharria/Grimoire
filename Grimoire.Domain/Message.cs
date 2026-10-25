@@ -31,6 +31,7 @@ public sealed record Message
 
     public ICollection<Attachment> Attachments { get; init; } = [];
     public ICollection<MessageHistoryEntry> MessageHistory { get; init; } = [];
+    public ICollection<Reaction> Reactions { get; init; } = [];
     public required MessageId Id { get; init; }
     public required UserId UserId { get; init; }
     public required GuildId GuildId { get; init; }

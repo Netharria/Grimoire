@@ -75,3 +75,11 @@ public readonly record struct AttachmentId(ulong Value)
 {
     public override string ToString() => this.Value.ToString();
 }
+
+public readonly record struct EmojiId(ulong Value)
+{
+    public static EmojiId? TryParse(string? value)
+        => ulong.TryParse(value, out var id) ? new EmojiId(id) : null;
+
+    public override string ToString() => this.Value.ToString();
+}

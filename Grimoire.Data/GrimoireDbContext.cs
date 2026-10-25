@@ -98,6 +98,8 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<ProxiedMessageLink> ProxiedMessages { get; init; }
 
+    public DbSet<Reaction> Reactions { get; init; }
+
     public DbSet<PublishedMessage> PublishedMessages { get; init; }
 
 

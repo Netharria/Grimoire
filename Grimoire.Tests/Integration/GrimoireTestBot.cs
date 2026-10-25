@@ -56,6 +56,7 @@ public sealed class GrimoireTestBot : IAsyncDisposable
 
     private readonly IHost _host;
     private int _interactionCount;
+    private long _snowflakeCount;
 
     private GrimoireTestBot(IHost host, FakeGuild guild, FakeGatewayTransport gateway, FakeDiscordRest rest,
         TestLogSink logs)
@@ -81,15 +82,9 @@ public sealed class GrimoireTestBot : IAsyncDisposable
     }
 
     /// <param name="database">The shared Postgres fixture. Reset it before starting a bot.</param>
-    /// <param name="seedLegacyRows">
-    ///     Insert the obsolete <c>Guilds</c>, <c>Users</c> and <c>Members</c> rows a long-running production guild
-    ///     already has. Pass <c>false</c> to see a guild the bot joined after those rows stopped being written.
-    /// </param>
-    public static async Task<GrimoireTestBot> StartAsync(GrimoireCoreFactory database, bool seedLegacyRows = true)
+    public static async Task<GrimoireTestBot> StartAsync(GrimoireCoreFactory database)
     {
         var guild = new FakeGuild();
-        if (seedLegacyRows)
-            await SeedLegacyRowsAsync(database, guild);
 
         var gateway = new FakeGatewayTransport(guild);
         var rest = new FakeDiscordRest(guild);
@@ -150,25 +145,6 @@ public sealed class GrimoireTestBot : IAsyncDisposable
     }
 
     /// <summary>
-    ///     Workaround, remove once fixed: 36 foreign keys from the original schema still point at the obsolete
-    ///     <c>Guilds</c>, <c>Members</c> and <c>Users</c> tables. The DomainRemodel migration dropped them, but it
-    ///     was replaced by ModelRedesign in commit 16528ff without those drops, and the model snapshot no longer
-    ///     knows about them. Nothing inserts these rows any more, so without them sins and user-log history fail.
-    /// </summary>
-    private static async Task SeedLegacyRowsAsync(GrimoireCoreFactory database, FakeGuild guild)
-    {
-        await using var dbContext = database.CreateDbContext();
-        var guildId = (decimal)guild.Id;
-        await dbContext.Database.ExecuteSqlAsync($"""INSERT INTO "Guilds" ("Id") VALUES ({guildId})""");
-        foreach (var userId in guild.Members.Select(member => (decimal)member.User.Id))
-        {
-            await dbContext.Database.ExecuteSqlAsync($"""INSERT INTO "Users" ("Id") VALUES ({userId})""");
-            await dbContext.Database.ExecuteSqlAsync(
-                $"""INSERT INTO "Members" ("UserId", "GuildId") VALUES ({userId}, {guildId})""");
-        }
-    }
-
-    /// <summary>
     ///     Ready means the guild is cached and slash commands are mapped. DSharpPlus logs the mapping once it is
     ///     built, and that line is the only signal that comes after it.
     /// </summary>
@@ -193,6 +169,109 @@ public sealed class GrimoireTestBot : IAsyncDisposable
         (await settings.SetModuleState(Module.Moderation, guildId, moderatorId, true)).ShouldSucceed();
         (await settings.SetLogChannelSetting(GuildLogType.Moderation, guildId, moderatorId,
             new ChannelId(this.Guild.ModLog.Id))).ShouldSucceed();
+    }
+
+    /// <summary>Turns on the message log, which logs every channel unless an override says otherwise.</summary>
+    public async Task ConfigureMessageLogAsync()
+        => (await this.Services.GetRequiredService<SettingsModule>().SetModuleState(Module.MessageLog,
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), true)).ShouldSucceed();
+
+    /// <summary>
+    ///     Sends a <c>MESSAGE_CREATE</c> and returns the message id. Ids are minted from the current time because the
+    ///     bot dates a message by its snowflake, and the log cleanup purges messages by that date.
+    /// </summary>
+    public ulong SendMessage(FakeUser author, FakeChannel channel, string content)
+    {
+        var messageId = this.NextSnowflake();
+        this.Gateway.Dispatch("MESSAGE_CREATE", new JsonObject
+        {
+            ["id"] = FakeUser.Snowflake(messageId),
+            ["channel_id"] = FakeUser.Snowflake(channel.Id),
+            ["guild_id"] = FakeUser.Snowflake(this.Guild.Id),
+            ["author"] = author.ToJson(),
+            ["member"] = FakeGuild.MemberJson(this.Guild.GetMember(author), false),
+            ["content"] = content,
+            ["timestamp"] = DateTimeOffset.UtcNow.ToString("O"),
+            ["edited_timestamp"] = null,
+            ["tts"] = false,
+            ["mention_everyone"] = false,
+            ["mentions"] = new JsonArray(),
+            ["mention_roles"] = new JsonArray(),
+            ["attachments"] = new JsonArray(),
+            ["embeds"] = new JsonArray(),
+            ["components"] = new JsonArray(),
+            ["pinned"] = false,
+            ["type"] = 0,
+            ["flags"] = 0
+        });
+        return messageId;
+    }
+
+    public void AddReaction(FakeUser user, FakeChannel channel, ulong messageId, FakeEmoji emoji)
+        => this.Gateway.Dispatch("MESSAGE_REACTION_ADD", new JsonObject
+        {
+            ["user_id"] = FakeUser.Snowflake(user.Id),
+            ["channel_id"] = FakeUser.Snowflake(channel.Id),
+            ["message_id"] = FakeUser.Snowflake(messageId),
+            ["guild_id"] = FakeUser.Snowflake(this.Guild.Id),
+            ["member"] = FakeGuild.MemberJson(this.Guild.GetMember(user)),
+            ["emoji"] = emoji.ToJson(),
+            ["burst"] = false,
+            ["type"] = 0
+        });
+
+    public void RemoveReaction(FakeUser user, FakeChannel channel, ulong messageId, FakeEmoji emoji)
+        => this.Gateway.Dispatch("MESSAGE_REACTION_REMOVE", new JsonObject
+        {
+            ["user_id"] = FakeUser.Snowflake(user.Id),
+            ["channel_id"] = FakeUser.Snowflake(channel.Id),
+            ["message_id"] = FakeUser.Snowflake(messageId),
+            ["guild_id"] = FakeUser.Snowflake(this.Guild.Id),
+            ["emoji"] = emoji.ToJson(),
+            ["burst"] = false,
+            ["type"] = 0
+        });
+
+    /// <summary>A moderator removing one emoji from a message for everyone.</summary>
+    public void RemoveEmoji(FakeChannel channel, ulong messageId, FakeEmoji emoji)
+        => this.Gateway.Dispatch("MESSAGE_REACTION_REMOVE_EMOJI", new JsonObject
+        {
+            ["channel_id"] = FakeUser.Snowflake(channel.Id),
+            ["message_id"] = FakeUser.Snowflake(messageId),
+            ["guild_id"] = FakeUser.Snowflake(this.Guild.Id),
+            ["emoji"] = emoji.ToJson()
+        });
+
+    public void RemoveAllReactions(FakeChannel channel, ulong messageId)
+        => this.Gateway.Dispatch("MESSAGE_REACTION_REMOVE_ALL", new JsonObject
+        {
+            ["channel_id"] = FakeUser.Snowflake(channel.Id),
+            ["message_id"] = FakeUser.Snowflake(messageId),
+            ["guild_id"] = FakeUser.Snowflake(this.Guild.Id)
+        });
+
+    private ulong NextSnowflake()
+    {
+        const long discordEpochMilliseconds = 1_420_070_400_000;
+        var sinceEpoch = (ulong)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - discordEpochMilliseconds);
+        return (sinceEpoch << 22) | (ulong)(Interlocked.Increment(ref this._snowflakeCount) & 0xFFF);
+    }
+
+    /// <summary>
+    ///     Gateway events are handled in the background, so a test polls until the bot's write is visible.
+    ///     Returns the last value read so the assertion that follows reports what was actually there.
+    /// </summary>
+    public static async Task<T> EventuallyAsync<T>(Func<Task<T>> read, Func<T, bool> isDone, TimeSpan? timeout = null)
+    {
+        using var deadline = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(10));
+        var value = await read();
+        while (!isDone(value) && !deadline.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(25), CancellationToken.None);
+            value = await read();
+        }
+
+        return value;
     }
 
     /// <summary>Sends an <c>INTERACTION_CREATE</c> for a slash command, as Discord does when a member runs it.</summary>

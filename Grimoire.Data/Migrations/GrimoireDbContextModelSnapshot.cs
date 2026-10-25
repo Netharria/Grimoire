@@ -768,6 +768,32 @@ namespace Grimoire.Migrations
                     b.ToTable("PublishedMessages");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.Reaction", b =>
+                {
+                    b.Property<decimal>("MessageId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<string>("Emoji")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
+
+                    b.Property<DateTimeOffset>("ReactedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("RemovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("MessageId", "UserId", "Emoji");
+
+                    b.ToTable("Reactions");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.Sin", b =>
                 {
                     b.Property<long>("Id")
@@ -1087,6 +1113,17 @@ namespace Grimoire.Migrations
                     b.Navigation("Sin");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.Reaction", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Message", "Message")
+                        .WithMany("Reactions")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.SinReasonHistory", b =>
                 {
                     b.HasOne("Grimoire.Domain.Sin", "Sin")
@@ -1112,6 +1149,8 @@ namespace Grimoire.Migrations
                     b.Navigation("OriginalMessageLink");
 
                     b.Navigation("ProxiedMessageLink");
+
+                    b.Navigation("Reactions");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.Sin", b =>

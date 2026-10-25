@@ -99,7 +99,7 @@ internal sealed class CleanupLogsBackgroundTask(
         }
     }
 
-    private static async Task DeleteOldMessageAndUserLogs(GrimoireDbContext grimoireDbContext,
+    internal static async Task DeleteOldMessageAndUserLogs(GrimoireDbContext grimoireDbContext,
         CancellationToken cancellationToken)
     {
         var oldDate = DateTimeOffset.UtcNow - TimeSpan.FromDays(31);

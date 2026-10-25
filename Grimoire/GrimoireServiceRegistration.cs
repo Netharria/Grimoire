@@ -125,6 +125,7 @@ internal static class GrimoireServiceRegistration
                         .AddEventHandlers<DeleteMessageEvent>()
                         .AddEventHandlers<BulkMessageDeletedEvent>()
                         .AddEventHandlers<UpdateMessageEvent>()
+                        .AddEventHandlers<ReactionEvents>()
                         //User Log
                         .AddEventHandlers<GuildMemberAddedEvent>()
                         .AddEventHandlers<GuildMemberRemovedEvent>()
