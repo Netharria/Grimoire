@@ -140,6 +140,23 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <summary>I-1: a log post that times out loses that log only; the publisher keeps posting the rest.</summary>
+    [Fact]
+    public async Task AfterALogPostTimesOut_LaterLogsAreStillPosted()
+    {
+        var first = await this.SendLoggedAsync("times out");
+        var second = await this.SendLoggedAsync("gets through");
+        var timedOut = this._bot.Rest.TimeOutOnce(HttpMethod.Post, $"channels/{this.Guild.ModLog.Id}/messages");
+
+        // One at a time: delete handlers run concurrently, so either log could otherwise take the timeout.
+        this._bot.DeleteMessage(first, this.Channel);
+        await timedOut.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        this._bot.DeleteMessage(second, this.Channel);
+
+        await this._bot.Rest.WaitForRequestAsync(request => this._bot.IsModLogPost(request)
+                                                            && request.Body?.Contains("gets through", StringComparison.Ordinal) == true);
+    }
+
     /// <summary>KI-39: when the audit log shows a moderator deleted it, that's recorded and shown.</summary>
     [Fact]
     public async Task Delete_ByAModerator_IsAttributed()

@@ -190,6 +190,26 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
             .ShouldBe([new UserId(this.Guild.Admin.Id)]);
     }
 
+    /// <summary>
+    ///     I-1: a timed-out request is an ordinary item failure, not a shutdown. It must not escape the tick, which on
+    ///     the real loop would stop the whole bot, and the other mutes are still handled.
+    /// </summary>
+    [Fact]
+    public async Task ExpiredMutes_WhenARequestTimesOut_TheOthersAreStillHandled()
+    {
+        await this.MuteByHandAsync(this.Guild.User1, expired: true);
+        await this.MuteByHandAsync(this.Guild.Admin, expired: true);
+        this._bot.Rest.TimeOutOnce(HttpMethod.Delete, $"guilds/{this.Guild.Id}/members/{this.Guild.User1.Id}/roles/{this._muteRoleId}");
+
+        await this._bot.RunBackgroundTickAsync<MuteBackgroundTasks>();
+
+        this.Guild.GetMember(this.Guild.Admin).RoleIds.ShouldNotContain(this._muteRoleId);
+        this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldContain(this._muteRoleId);
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        (await settingsContext.Mutes.OfType<MuteRemoved>().Select(mute => mute.UserId).ToListAsync(TestContext.Current.CancellationToken))
+            .ShouldBe([new UserId(this.Guild.Admin.Id)]);
+    }
+
     /// <summary>The real timer picks up an expired mute without being ticked by hand.</summary>
     [Fact]
     public async Task TheRealTimer_ExpiresMutes()

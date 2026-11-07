@@ -19,7 +19,7 @@ note says otherwise.
 | Rank | Finding | Decision | Note |
 |------|---------|----------|------|
 | 1 | L-1 | **Done** 2026-11-07, uncommitted | Store the full `x.Url` again, as `main` did (Discord's signed URLs mean building it from the file name no longer works) |
-| 2 | I-1 | Fix | |
+| 2 | I-1 | **Done** 2026-11-07, uncommitted | Also fixed `GainUserXp.cs:197` (same catch). Found KI-54 (DSharpPlus send fails after a timeout) |
 | 3 | I-2, I-13 `ToInvite` | Fix | |
 | 4 | M-1 | Fix | |
 | 5 | M-2 | Fix | |

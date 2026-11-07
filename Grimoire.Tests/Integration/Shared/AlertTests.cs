@@ -71,6 +71,29 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <summary>
+    ///     I-1: a post that times out loses that alert only; the queue keeps reading. The later alert is a warning,
+    ///     which goes to the buffer without a request, because the next post to the same channel can fail inside
+    ///     DSharpPlus after a timeout (KI-54).
+    /// </summary>
+    [Fact]
+    public async Task AfterAPostTimesOut_LaterAlertsAreStillProcessed()
+    {
+        var timedOut = this._bot.Rest.TimeOutOnce(HttpMethod.Post, $"channels/{this.Guild.General.Id}/messages");
+        var buffer = this._bot.Services.GetRequiredService<WarningBuffer>();
+
+        this.Alerts.Send(Urgent("first", "times out"));
+        await timedOut.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        this.Alerts.Send(Warning("after the timeout"));
+
+        List<PendingWarning> drained = [];
+        (await GrimoireTestBot.EventuallyAsync(() =>
+        {
+            drained.AddRange(buffer.Drain());
+            return Task.FromResult(drained);
+        }, warnings => warnings.Count > 0)).ShouldHaveSingleItem().Type.ShouldBe("TestWarning (after the timeout)");
+    }
+
     /// <summary>The same problem posts once per cooldown, and the next post says how many repeats it held back.</summary>
     [Fact]
     public async Task RepeatsOfTheSameProblem_AreHeldBack_ThenCounted()

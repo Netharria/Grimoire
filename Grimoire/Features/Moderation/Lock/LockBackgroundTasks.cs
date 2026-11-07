@@ -30,13 +30,15 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
             await this.ProcessItemAsync(
                 $"the expired lock on channel {expiredLock.ChannelId} in guild {expiredLock.GuildId}",
                 () => ProcessExpiredChannelLockAsync(expiredLock, settingsModule, discordClient, guildLog,
-                    issueReporter, cancellationToken));
+                    issueReporter, cancellationToken),
+                cancellationToken);
 
         await foreach (var expiredLock in settingsModule.GetAllExpiredThreadLocks(cancellationToken))
             await this.ProcessItemAsync(
                 $"the expired lock on thread {expiredLock.ChannelId} in guild {expiredLock.GuildId}",
                 () => ProcessExpiredThreadLockAsync(expiredLock, settingsModule, discordClient, guildLog,
-                    cancellationToken));
+                    cancellationToken),
+                cancellationToken);
     }
 
     private static async Task ProcessExpiredChannelLockAsync(

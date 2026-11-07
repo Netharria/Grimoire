@@ -30,7 +30,8 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             await this.ProcessItemAsync(
                 $"the expired mute of user {expiredMute.UserId} in guild {expiredMute.GuildId}",
                 () => ProcessExpiredMuteAsync(expiredMute, settingsModule, discordClient, guildLog, issueReporter,
-                    cancellationToken));
+                    cancellationToken),
+                cancellationToken);
     }
 
     private static async Task ProcessExpiredMuteAsync(

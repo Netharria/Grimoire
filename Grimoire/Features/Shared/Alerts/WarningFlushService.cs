@@ -30,7 +30,7 @@ public sealed partial class WarningFlushService(
                 .CreateDbContextAsync(cancellationToken);
             await AlertOccurrenceStore.UpsertAsync(db, warnings, cancellationToken);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             // Drop the batch and only log. Raising an alert here would feed the buffer this service is draining.
             LogFlushFailed(logger, ex, warnings.Count);

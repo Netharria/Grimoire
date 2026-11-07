@@ -226,6 +226,29 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
             this._overrides.Insert(0, (method, new Regex($"^{pathPattern}$"), respond));
     }
 
+    /// <summary>
+    ///     The next matching request times out the way <c>HttpClient</c> reports it, with a
+    ///     <see cref="TaskCanceledException" /> although nobody cancelled anything. Later requests get the usual answer.
+    ///     The returned task completes once the timeout has fired.
+    /// </summary>
+    public Task TimeOutOnce(HttpMethod method, string pathPattern)
+    {
+        var fired = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        (HttpMethod Method, Regex Path, Func<RecordedRequest, HttpResponseMessage> Respond) entry = default;
+        entry = (method, new Regex($"^{pathPattern}$"), _ =>
+        {
+            lock (this._lock)
+                this._overrides.Remove(entry);
+            fired.TrySetResult();
+            throw new TaskCanceledException(
+                "The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.",
+                new TimeoutException());
+        });
+        lock (this._lock)
+            this._overrides.Insert(0, entry);
+        return fired.Task;
+    }
+
     /// <summary>A Discord error response, such as 403 with code 50007 "Cannot send messages to this user".</summary>
     public static HttpResponseMessage Error(HttpStatusCode status, int code, string message)
         => Json(status, new JsonObject { ["message"] = message, ["code"] = code });

@@ -42,7 +42,8 @@ public sealed partial class AlertService(
             {
                 await this.ProcessAsync(alert, cancellationToken);
             }
-            catch (OperationCanceledException)
+            // A timed-out request also throws OperationCanceledException; only shutdown may end the loop.
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 break;
             }

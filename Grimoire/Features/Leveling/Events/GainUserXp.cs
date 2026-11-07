@@ -194,7 +194,8 @@ public sealed partial class GainUserXp(
                     .WithFooter($"Message from the moderators of {guild.Name}.")
                     .WithDescription(Regex.Unescape(reward.RewardMessage.GetValueOrDefault().Value)));
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        // No token reaches this DM, so a cancellation here can only be a timed-out request.
+        catch (Exception ex)
         {
             LogRewardMessageFailure(this._logger, ex, reward.RoleId, reward.RewardMessage?.Value);
         }

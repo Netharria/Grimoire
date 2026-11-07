@@ -51,7 +51,9 @@ public abstract partial class GenericBackgroundService(
                 await RunTask(scope.ServiceProvider, cancellationToken);
                 this._consecutiveFailures = 0;
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            // Only this service's own token means shutdown. A timed-out HttpClient request throws
+            // TaskCanceledException too, and that is an ordinary failure.
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 this._failures++;
                 this._consecutiveFailures++;
@@ -67,7 +69,7 @@ public abstract partial class GenericBackgroundService(
     ///     Runs the work for one item so that a failure does not stop the remaining items. An item that fails is not
     ///     retried straight away but after a growing delay. <paramref name="item" /> must be the same on every tick.
     /// </summary>
-    protected async Task ProcessItemAsync(string item, Func<Task> work)
+    protected async Task ProcessItemAsync(string item, Func<Task> work, CancellationToken cancellationToken)
     {
         if (!this._backoff.ShouldAttempt(item))
             return;
@@ -77,7 +79,7 @@ public abstract partial class GenericBackgroundService(
             await work();
             this._backoff.RecordSuccess(item);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             this._backoff.RecordFailure(item);
             LogItemError(logger, ex, this.TaskName, item);
