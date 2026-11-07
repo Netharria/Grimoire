@@ -59,12 +59,12 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
     {
         var latestByKey =
-            await GetGuildSettings(guildId, _levelingSettingKeys, cancellationToken)
-                .ToDictionaryAsync(x => x.Type, x => x switch
+            (await GetGuildSettings(guildId, _levelingSettingKeys, cancellationToken))
+                .ToDictionary(x => x.Type, x => x switch
                 {
                     GuildSettingCustomValue customValue => customValue.Value,
                     _ => null
-                }, cancellationToken: cancellationToken);
+                });
 
         return Validation.Combine(
                 XpTimeoutPeriod.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),

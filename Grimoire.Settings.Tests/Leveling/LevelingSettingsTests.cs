@@ -31,6 +31,26 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         settings.Amount.Value.ShouldBe(5);
     }
 
+    /// <summary>
+    ///     S-2: a failed lookup is reported as a failure and isn't cached. Caching the defaults would give the guild
+    ///     the wrong XP amount, timeout and level curve for a day.
+    /// </summary>
+    [Fact]
+    public async Task ALookupDuringAnOutage_Fails_AndIsNotCached()
+    {
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 42,
+            TestContext.Current.CancellationToken)).ShouldSucceed();
+        var down = true;
+        var sut = SettingsModuleFactory.Create(factory.ConnectionString, () => down);
+
+        (await sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken))
+            .ShouldBeOfType<Result<LevelingSettingEntry>.Invalid>();
+
+        down = false;
+        (await sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
+            .Amount.Value.ShouldBe(42);
+    }
+
     [Fact]
     public async Task SetTextTime_RoundTrips()
     {

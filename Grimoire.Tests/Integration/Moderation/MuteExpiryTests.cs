@@ -199,7 +199,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     {
         await this.MuteByHandAsync(this.Guild.User1, expired: true);
         await this.MuteByHandAsync(this.Guild.Admin, expired: true);
-        this._bot.Rest.TimeOutOnce(HttpMethod.Delete, $"guilds/{this.Guild.Id}/members/{this.Guild.User1.Id}/roles/{this._muteRoleId}");
+        _ = this._bot.Rest.TimeOutOnce(HttpMethod.Delete, $"guilds/{this.Guild.Id}/members/{this.Guild.User1.Id}/roles/{this._muteRoleId}");
 
         await this._bot.RunBackgroundTickAsync<MuteBackgroundTasks>();
 

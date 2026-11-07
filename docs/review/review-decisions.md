@@ -27,7 +27,7 @@ note says otherwise.
 | 7 | L-2 | **Done** 2026-11-07, uncommitted | Skip the bot's own messages in `AddMessageEvent`, plus `main`'s stored-author check in `DeleteMessageEvent` for rows saved before the deploy |
 | 8 | X-1, X-11 | **Done** 2026-11-07, uncommitted | `FakeGuild` roles can now be `managed` (test-harness item) |
 | 9 | X-2 | **Done** 2026-11-07, uncommitted | Auto-remove as proposed, recorded as removed by the bot. Moderators are told through the guild issue system (`RewardsForDeletedRolesRemoved`, a "Setup problem" in the mod log and the daily warning report), not a separate message; the role ids are in the issue code so a second removal on the same day isn't throttled. Replaces `RewardRolesMissing` |
-| 10 | S-2 | Fix | |
+| 10 | S-2 | **Done** 2026-11-07, uncommitted | |
 | 11 | I-4, I-13, L-12, X-13 `LogSetAsync` | Fix | One `ctx.ReplyResultAsync` helper |
 | 12 | I-5, X-5 | Fix | |
 | 13 | L-3, L-4, L-5, L-6, D-7 | Fix all | |

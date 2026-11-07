@@ -7,7 +7,6 @@
 
 using System.Collections.Frozen;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Helpers;
@@ -68,30 +67,22 @@ public sealed partial class SettingsModule(
         "Was not able to retrieve a setting from the database or cache for the following reason : {message}")]
     private static partial void LogSettingLookupFailure(ILogger logger, string message, Exception? ex);
 
-    private async IAsyncEnumerable<GuildSetting> GetGuildSettings(
+    /// <remarks>
+    ///     A failure is thrown, not swallowed: an empty result would read as "no custom settings", and the caller
+    ///     caches what it builds from that.
+    /// </remarks>
+    private async Task<List<GuildSetting>> GetGuildSettings(
         GuildId guildId,
         FrozenSet<GuildSettingType> settingTypes,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
-        List<GuildSetting> settings;
-        try
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            settings = await dbContext.GuildSettings
-                .AsNoTracking()
-                .Where(s => s.GuildId == guildId && settingTypes.Contains(s.Type))
-                .GroupBy(s => s.Type)
-                .Select(g => g.OrderByDescending(s => s.SetAt).First())
-                .ToListAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            LogSettingLookupFailure(this._logger, ex.Message, ex);
-            yield break;
-        }
-
-        foreach (var setting in settings)
-            yield return setting;
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await dbContext.GuildSettings
+            .AsNoTracking()
+            .Where(s => s.GuildId == guildId && settingTypes.Contains(s.Type))
+            .GroupBy(s => s.Type)
+            .Select(g => g.OrderByDescending(s => s.SetAt).First())
+            .ToListAsync(cancellationToken);
     }
 
 

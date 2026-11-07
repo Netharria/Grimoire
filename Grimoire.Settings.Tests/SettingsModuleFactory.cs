@@ -16,7 +16,8 @@ namespace Grimoire.Settings.Tests;
 
 internal static class SettingsModuleFactory
 {
-    internal static SettingsModule Create(string connectionString)
+    /// <param name="isDown">While it returns true, every database call fails, as in an outage.</param>
+    internal static SettingsModule Create(string connectionString, Func<bool>? isDown = null)
     {
         var services = new ServiceCollection();
         services.AddFusionCache().AsHybridCache();
@@ -25,7 +26,9 @@ internal static class SettingsModuleFactory
 
         var mockFactory = Substitute.For<IDbContextFactory<SettingsDbContext>>();
         mockFactory.CreateDbContextAsync(Arg.Any<CancellationToken>())
-            .Returns(_ => Task.FromResult(CreateDbContext(connectionString)));
+            .Returns(_ => isDown?.Invoke() == true
+                ? Task.FromException<SettingsDbContext>(new Npgsql.NpgsqlException("The database is down."))
+                : Task.FromResult(CreateDbContext(connectionString)));
 
         return new SettingsModule(mockFactory, hybridCache, NullLogger<SettingsModule>.Instance);
     }
