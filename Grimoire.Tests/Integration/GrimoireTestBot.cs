@@ -585,6 +585,9 @@ public sealed record FakeInteraction(ulong Id, string Token)
     public bool IsOriginalResponseEdit(RecordedRequest request)
         => request.Method == HttpMethod.Patch && request.Path.EndsWith($"/{this.Token}/messages/@original", StringComparison.Ordinal);
 
+    public bool IsFollowup(RecordedRequest request)
+        => request.Method == HttpMethod.Post && request.Path.EndsWith($"/{this.Token}", StringComparison.Ordinal);
+
     /// <summary>The bot deleted its deferred response, which leaves the invoker with nothing.</summary>
     public bool IsOriginalResponseDelete(RecordedRequest request)
         => request.Method == HttpMethod.Delete && request.Path.EndsWith($"/{this.Token}/messages/@original", StringComparison.Ordinal);
@@ -612,8 +615,11 @@ public sealed record FakeReply(JsonNode Message, bool IsEphemeral, bool WasDefer
         if (callback["type"]!.GetValue<int>() != DeferredCallbackType)
             return new FakeReply(data!, isEphemeral, false);
 
-        var edit = await rest.WaitForRequestAsync(interaction.IsOriginalResponseEdit);
-        return new FakeReply(edit.Json!, isEphemeral, true);
+        // An error replaces the deferred response with an ephemeral follow-up, which has its own visibility.
+        var response = await rest.WaitForRequestAsync(request => interaction.IsOriginalResponseEdit(request) || interaction.IsFollowup(request));
+        return interaction.IsFollowup(response)
+            ? new FakeReply(response.Json!, ((response.Json!["flags"]?.GetValue<int>() ?? 0) & EphemeralFlag) != 0, true)
+            : new FakeReply(response.Json!, isEphemeral, true);
     }
 }
 

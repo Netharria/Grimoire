@@ -39,15 +39,21 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
             return;
         }
 
-        var recordedRoleId = await this._settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
-            .Map(mute => mute.MuteRoleId)
-            .GetOrElse(() => null);
+        var activeMute = await this._settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
+            .GetOrElse(() => null!);
         var configuredRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId())
             .GetOrElse(() => null);
-        var muteRole = MuteRoleResolver.Resolve(recordedRoleId, configuredRoleId,
+        var muteRole = MuteRoleResolver.Resolve(activeMute?.MuteRoleId, configuredRoleId,
                 id => guild.Roles.ContainsKey(id.Value)) is { } muteRoleId
             ? guild.Roles[muteRoleId.Value]
             : null;
+
+        // A mute role with no record, such as one added by hand, can still be taken off.
+        if (activeMute is null && (muteRole is null || member.Roles.All(role => role.Id != muteRole.Id)))
+        {
+            await ctx.SendWarningResponseAsync($"{member.Mention} is not muted.");
+            return;
+        }
 
         if (muteRole is null)
         {
@@ -74,24 +80,10 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         await ctx.ReplyAsync(embed: embed);
 
-        try
-        {
-            await member.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor("Unmuted")
-                .WithDescription($"You have been unmuted by {ctx.User.Mention}")
-                .WithColor(GrimoireColor.Green));
-        }
-        catch (Exception)
-        {
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Color = GrimoireColor.Red,
-                Description =
-                    $"Was not able to send a direct message with the unmute details to {member.Mention}"
-            });
-        }
+        await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+            .WithAuthor("Unmuted")
+            .WithDescription($"You have been unmuted by {ctx.User.Mention}")
+            .WithColor(GrimoireColor.Green), "unmute");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {

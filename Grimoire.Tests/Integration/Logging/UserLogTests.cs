@@ -142,8 +142,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>A member's first nickname should be logged too.</summary>
-    [Fact(Skip = "Fails: the handler returns when the newest stored nickname is null, which it is for every member " +
-                 "without one, so a first nickname is never recorded or logged. KI-40")]
+    [Fact]
     public async Task FirstNickname_IsRecorded_AndLogged()
     {
         await this.PointUserLogsAtModLogAsync();

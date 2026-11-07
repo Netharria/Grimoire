@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Entities.AuditLogs;
+using DSharpPlus.Exceptions;
 
 namespace Grimoire.Extensions;
 
@@ -66,7 +67,7 @@ public static class DiscordGuildExtensions
             {
                 return await guild.GetMemberAsync(userId.Value);
             }
-            catch (Exception)
+            catch (NotFoundException)
             {
                 return null;
             }

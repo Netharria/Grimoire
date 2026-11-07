@@ -34,10 +34,11 @@ public sealed partial class PublishCommands
             {
                 // ReSharper disable AccessToDisposedClosure
                 sin.UserId,
-                dbContext.UsernameHistory
+                Username = dbContext.UsernameHistory
                     .Where(history => history.UserId == sin.UserId)
                     .OrderByDescending(x => x.Timestamp)
-                    .First().Username,
+                    .Select(history => (Username?)history.Username)
+                    .FirstOrDefault(),
                 sin.SinOn,
                 Reason = dbContext.SinReasonHistory
                     .Where(r => r.SinId == sin.Id)
@@ -68,15 +69,7 @@ public sealed partial class PublishCommands
             return;
         }
 
-        if (result.KickMessageId is null)
-        {
-            await dbContext.PublishedMessages.AddAsync(
-                new PublishedMessage
-                {
-                    MessageId = kickLogMessage.GetMessageId(), SinId = sinId, PublishType = PublishType.Kick
-                });
-            await dbContext.SaveChangesAsync();
-        }
+        await SavePublishedMessageAsync(dbContext, sinId, PublishType.Kick, result.KickMessageId, kickLogMessage.GetMessageId());
 
         await ctx.ReplyAsync(GrimoireColor.Green, $"Successfully published kick : {sinId}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

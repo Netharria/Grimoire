@@ -73,8 +73,9 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
             SlashOption.User("user", this.Guild.Moderator),
             SlashOption.String("reason", "testing"));
 
-        var reply = await this._bot.Rest.WaitForRequestAsync(interaction.IsOriginalResponseEdit);
-        reply.Json!["embeds"]![0]!["description"]!.GetValue<string>().ShouldBe("You cannot warn yourself.");
+        var reply = await FakeReply.WaitForAsync(this._bot.Rest, interaction);
+        reply.Description.ShouldBe("You cannot warn yourself.");
+        reply.IsEphemeral.ShouldBeTrue();
 
         await using var dbContext = this._database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
@@ -110,8 +111,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
         Field(embed, "Reason").ShouldBe("be nice");
     }
 
-    [Fact(Skip = "Fails: slash commands resolve the user option to a DiscordUser, never a DiscordMember, " +
-                 "so Warn's `user is DiscordMember` check is always false and no DM is sent.")]
+    [Fact]
     public async Task Warn_DirectMessagesTheWarnedMember()
     {
         var interaction = this._bot.RunSlashCommand("Warn", this.Guild.Moderator,
@@ -137,7 +137,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-58: when the DM fails, the mod log gets a red line as well as the warn embed.</summary>
-    [Fact(Skip = "Blocked: Warn never attempts the DM, because the user option is never a DiscordMember. KI-19")]
+    [Fact]
     public async Task Warn_WhenTheMemberHasDmsClosed_TellsTheModLog()
     {
         this._bot.Rest.On(HttpMethod.Post, @"channels/\d+/messages", request =>
@@ -164,7 +164,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
             SlashOption.User("user", this.Guild.User1), SlashOption.String("reason", "x"));
 
         await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()
-            == $"Was not able to send a direct message with the warn details to {this.Guild.User1.Mention}");
+            == $"Was not able to send a direct message with the warn details to {this.Guild.User1.MemberMention}");
     }
 
     /// <summary>MOD-59: a user who isn't in the server is still warned, with no DM attempted.</summary>

@@ -23,14 +23,7 @@ public static partial class CommandContextExtension
             DateTime? timeStamp = null,
             bool ephemeral = false)
         {
-            timeStamp ??= DateTime.UtcNow;
-            embed ??= new DiscordEmbedBuilder()
-                .WithColor(color ?? GrimoireColor.Purple)
-                .WithAuthor(title)
-                .WithDescription(message)
-                .WithFooter(footer)
-                .WithTimestamp(timeStamp)
-                .Build();
+            embed ??= BuildReplyEmbed(color, message, title, footer, timeStamp);
 
             return ctx switch
             {
@@ -46,16 +39,45 @@ public static partial class CommandContextExtension
             };
         }
 
+        /// <summary>Sends another message after the first reply, for answers too long to fit in one.</summary>
+        public async ValueTask FollowUpAsync(DiscordColor color, string message, string title, bool ephemeral)
+        {
+            var embed = BuildReplyEmbed(color, message, title);
+            await DiscordRetryPolicy.RetryDiscordCall(async _ =>
+                ctx is SlashCommandContext slashCommandContext
+                    ? await slashCommandContext.FollowupAsync(embed, ephemeral)
+                    : await ctx.FollowupAsync(embed));
+        }
+
         public ValueTask SendErrorResponseAsync(string message)
         {
             LogUserFacingError(ctx.Client.Logger, ctx.Command.FullName, ctx.Guild?.Id, message);
-            return ctx.ReplyAsync(GrimoireColor.Red, message, ephemeral: true);
+            return ctx.SendPrivateResponseAsync(GrimoireColor.Red, message);
         }
 
         public ValueTask SendWarningResponseAsync(string message)
         {
             LogUserFacingError(ctx.Client.Logger, ctx.Command.FullName, ctx.Guild?.Id, message);
-            return ctx.ReplyAsync(GrimoireColor.Yellow, message, ephemeral: true);
+            return ctx.SendPrivateResponseAsync(GrimoireColor.Yellow, message);
+        }
+
+        /// <summary>
+        ///     Replies so only the invoker sees it. A deferred response keeps the visibility it was deferred with, and a
+        ///     follow-up sent straight after a defer just edits that response, so the deferred response is deleted first.
+        /// </summary>
+        private async ValueTask SendPrivateResponseAsync(DiscordColor color, string message)
+        {
+            if (ctx is not SlashCommandContext
+                {
+                    Interaction.ResponseState: not DiscordInteractionResponseState.Unacknowledged
+                } slashCommandContext)
+            {
+                await ctx.ReplyAsync(color, message, ephemeral: true);
+                return;
+            }
+
+            await DiscordRetryPolicy.RetryDiscordCall(async _ => await slashCommandContext.DeleteResponseAsync());
+            await ctx.FollowUpAsync(color, message, string.Empty, ephemeral: true);
         }
 
         public ValueTask SendErrorResponseAsync(IEnumerable<Error> errors)
@@ -98,6 +120,16 @@ public static partial class CommandContextExtension
         [Pure]
         public ChannelId GetChannelId() => new(ctx.Channel.Id);
     }
+
+    private static DiscordEmbed BuildReplyEmbed(DiscordColor? color, string message, string title = "",
+        string footer = "", DateTime? timeStamp = null)
+        => new DiscordEmbedBuilder()
+            .WithColor(color ?? GrimoireColor.Purple)
+            .WithAuthor(title)
+            .WithDescription(message)
+            .WithFooter(footer)
+            .WithTimestamp(timeStamp ?? DateTime.UtcNow)
+            .Build();
 
     // These commands finish normally as far as the command handler can tell, so this is where users hitting problems shows up.
     [LoggerMessage(LogLevel.Information, "Command {Command} rejected in guild {GuildId}: {Reason}")]

@@ -107,8 +107,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>The next reward shows its role and the level it's given at.</summary>
-    [Fact(Skip = "Fails: Next Reward prints the XP needed for the next level after \"at level\", not the reward's " +
-                 "level. KI-42")]
+    [Fact]
     public async Task Level_ShowsTheNextRewardAndItsLevel()
     {
         await this.AddRewardAsync(this.Guild.KickerRoleId, 4);
@@ -119,8 +118,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>With several rewards ahead, the nearest one is shown.</summary>
-    [Fact(Skip = "Fails: Next Reward takes the first reward above the member's level from an unordered set, so it " +
-                 "can show a later reward than the nearest. KI-42")]
+    [Fact]
     public async Task Level_ShowsTheNearestReward()
     {
         await this.AddRewardAsync(this.Guild.BannerRoleId, 9);

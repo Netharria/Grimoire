@@ -37,7 +37,7 @@ public partial class MuteAdminCommands
 
         if (result.Length == 0)
             await ctx.ReplyAsync(GrimoireColor.DarkPurple,
-                $"Succussfully refreshed permissions for {role.Mention} role.");
+                $"Successfully refreshed permissions for {role.Mention} role.");
         else
             await ctx.ReplyAsync(GrimoireColor.Yellow,
                 $"Was not able to set permissions for the following channels. " +

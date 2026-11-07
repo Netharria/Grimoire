@@ -83,8 +83,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>SIN-72.</summary>
-    [Fact(Skip = "Fails: when the published message was deleted, a new one is posted but its id is never stored, so " +
-                 "every later publish posts another message. KI-36")]
+    [Fact]
     public async Task PublishBan_AfterThePostWasDeleted_PostsOnceAndKeepsEditingIt()
     {
         var sin = await this.SeedSinAsync(SinType.Ban, "spam");
@@ -166,7 +165,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>SIN-79.</summary>
-    [Fact(Skip = "Fails: the username lookup uses First() on an empty history, so the command errors. KI-33")]
+    [Fact]
     public async Task PublishBan_ForAUserWithNoUsernameHistory_StillPublishes()
     {
         var sin = await this.SeedSinAsync(SinType.Ban, "spam", new FakeUser(1_100_000_000_000_000_094, "stranger"), withUsername: false);

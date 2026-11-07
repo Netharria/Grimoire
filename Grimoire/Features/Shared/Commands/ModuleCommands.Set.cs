@@ -49,7 +49,7 @@ internal sealed partial class ModuleCommands
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
-            Description = $"{ctx.User.Username} {(enable ? "Enabled" : "Disabled")} {module}",
+            Description = $"{ctx.User.Mention} {(enable ? "Enabled" : "Disabled")} {module}",
             Color = GrimoireColor.Purple
         });
     }

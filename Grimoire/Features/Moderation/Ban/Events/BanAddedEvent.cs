@@ -3,7 +3,7 @@
 // Copyright (c) Netharia 2021-Present.
 //
 // All rights reserved.
-// Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Entities.AuditLogs;
 using DSharpPlus.Exceptions;
@@ -20,9 +20,11 @@ public partial class BanAddedEvent(
     SettingsModule settingsModule,
     GuildLog guildLog,
     GuildIssueReporter issueReporter,
+    BanHandoff banHandoff,
     ILogger<BanAddedEvent> logger)
     : IEventHandler<GuildBanAddedEventArgs>
 {
+    private readonly BanHandoff _banHandoff = banHandoff;
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
     private readonly ILogger<BanAddedEvent> _logger = logger;
@@ -34,90 +36,24 @@ public partial class BanAddedEvent(
                 .GetOrElse(() => false))
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var lastBan = await dbContext.Sins
-            .AsNoTracking()
-            .Where(m => m.UserId == args.Member.GetUserId() && m.GuildId == args.Guild.GetGuildId())
-            .Where(sin => sin.SinType == SinType.Ban)
-            .OrderByDescending(x => x.SinOn)
-            .Select(sin => new LastSin
-            {
-                SinId = sin.Id,
-                Actor = sin.Actor,
-                // ReSharper disable once AccessToDisposedClosure
-                Reason = dbContext.SinReasonHistory
-                    .Where(r => r.SinId == sin.Id)
-                    .OrderByDescending(r => r.SetAt)
-                    .Select(r => r.Reason.Value)
-                    .FirstOrDefault() ?? string.Empty,
-                SinOn = sin.SinOn
-            })
-            .FirstOrDefaultAsync();
-        if (lastBan is null || lastBan.SinOn < DateTimeOffset.UtcNow.AddSeconds(-30))
-            try
-            {
-                var banAuditLog =
-                    await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(DiscordAuditLogActionType.Ban,
-                        1500);
+        var pending = this._banHandoff.TakeBan(args.Guild.GetGuildId(), args.Member.GetUserId());
+        var (actor, reason) = pending is not null
+            ? (new ModerationActor.Moderator(pending.Moderator), pending.Reason)
+            : await this.FindWhoBannedAsync(args);
 
-                var auditReason = banAuditLog?.Target.Id != args.Member.Id
-                    ? string.Empty
-                    : banAuditLog.Reason ?? string.Empty;
-                ModerationActor auditActor = banAuditLog?.Target.Id != args.Member.Id
-                    ? new ModerationActor.System()
-                    : banAuditLog.UserResponsible?.Id is not null
-                        ? new ModerationActor.Moderator(new ModeratorId(banAuditLog.UserResponsible.Id))
-                        : new ModerationActor.System();
-
-                var now = DateTimeOffset.UtcNow;
-                var sin = Sin.ForBan(auditActor, args.Member.GetUserId(), args.Guild.GetGuildId(), now)
-                    .Match(
-                        s => string.IsNullOrWhiteSpace(auditReason)
-                            ? s
-                            : s with
-                            {
-                                ReasonHistory =
-                                [
-                                    new SinReasonHistory
-                                    {
-                                        SinId = default,
-                                        Reason = ModerationReason.Create(auditReason)
-                                            .Match(r => r, _ => throw new UnreachableException()),
-                                        Actor = auditActor,
-                                        SetAt = now
-                                    }
-                                ]
-                            },
-                        _ => throw new UnreachableException());
-                dbContext.Sins.Add(sin);
-                await dbContext.SaveChangesAsync();
-
-                lastBan = new LastSin { SinId = sin.Id, Actor = sin.Actor, Reason = auditReason, SinOn = sin.SinOn };
-            }
-            catch (UnauthorizedException ex)
-            {
-                LogAuditException(this._logger, ex);
-                await issueReporter.ReportAsync(GuildIssueCatalog.CannotReadAuditLog(args.Guild.GetGuildId()));
-            }
-            catch (ServerErrorException ex)
-            {
-                LogAuditException(this._logger, ex);
-            }
-
-        if (lastBan is null)
-            return;
+        var sinId = await this.RecordSinAsync(args, actor, reason);
+        pending?.MarkRecorded(sinId);
 
         var builder = new DiscordEmbedBuilder()
             .WithAuthor("Banned")
             .AddField("User", args.Member.Mention, true)
-            .AddField("Sin Id", $"**{lastBan.SinId}**", true)
+            .AddField("Sin Id", $"**{sinId}**", true)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Red);
-        if (lastBan.Actor is ModerationActor.Moderator)
-            builder.AddField("Mod", UserExtensions.Mention(lastBan.Actor), true);
+        if (actor is ModerationActor.Moderator)
+            builder.AddField("Mod", UserExtensions.Mention(actor), true);
 
-        builder.AddField("Reason",
-            !string.IsNullOrWhiteSpace(lastBan.Reason) ? lastBan.Reason : "None", true);
+        builder.AddField("Reason", !string.IsNullOrWhiteSpace(reason) ? reason : "None", true);
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
@@ -125,14 +61,71 @@ public partial class BanAddedEvent(
         });
     }
 
+    private async Task<SinId> RecordSinAsync(GuildBanAddedEventArgs args, ModerationActor actor, string reason)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var now = DateTimeOffset.UtcNow;
+        var sin = Sin.ForBan(actor, args.Member.GetUserId(), args.Guild.GetGuildId(), now)
+            .Match(
+                s => string.IsNullOrWhiteSpace(reason)
+                    ? s
+                    : s with
+                    {
+                        ReasonHistory =
+                        [
+                            new SinReasonHistory
+                            {
+                                SinId = default,
+                                Reason = ModerationReason.Create(reason)
+                                    .Match(r => r, _ => throw new UnreachableException()),
+                                Actor = actor,
+                                SetAt = now
+                            }
+                        ]
+                    },
+                _ => throw new UnreachableException());
+        dbContext.Sins.Add(sin);
+        await dbContext.SaveChangesAsync();
+        return sin.Id;
+    }
+
+    /// <summary>A ban made outside the bot. If the audit log can't say who did it, the ban is still recorded.</summary>
+    private async Task<(ModerationActor Actor, string Reason)> FindWhoBannedAsync(GuildBanAddedEventArgs args)
+    {
+        try
+        {
+            var entry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(DiscordAuditLogActionType.Ban, 1500);
+            return entry?.Target.Id != args.Member.Id
+                ? (new ModerationActor.System(), string.Empty)
+                : (entry.UserResponsible?.Id is { } moderatorId
+                    ? new ModerationActor.Moderator(new ModeratorId(moderatorId))
+                    : new ModerationActor.System(), entry.Reason ?? string.Empty);
+        }
+        catch (UnauthorizedException ex)
+        {
+            LogAuditException(this._logger, ex);
+            await issueReporter.ReportAsync(GuildIssueCatalog.CannotReadAuditLog(args.Guild.GetGuildId()));
+        }
+        catch (ServerErrorException ex)
+        {
+            LogAuditException(this._logger, ex);
+        }
+
+        return (new ModerationActor.System(), await GetBanReasonAsync(args));
+    }
+
+    private static async Task<string> GetBanReasonAsync(GuildBanAddedEventArgs args)
+    {
+        try
+        {
+            return (await args.Guild.GetBanAsync(args.Member)).Reason ?? string.Empty;
+        }
+        catch (DiscordException)
+        {
+            return string.Empty;
+        }
+    }
+
     [LoggerMessage(LogLevel.Information, "Exception while accessing audit log.")]
     static partial void LogAuditException(ILogger<BanAddedEvent> logger, Exception ex);
-
-    private sealed record LastSin
-    {
-        public SinId SinId { get; init; }
-        public ModerationActor Actor { get; init; } = new ModerationActor.System();
-        public string Reason { get; init; } = string.Empty;
-        public DateTimeOffset SinOn { get; init; }
-    }
 }

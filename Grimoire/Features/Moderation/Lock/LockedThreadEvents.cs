@@ -5,11 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.Lock;
 
-public sealed class LockedTreadEvents(SettingsModule settingsModule)
+public sealed class LockedThreadEvents(SettingsModule settingsModule)
     : IEventHandler<MessageCreatedEventArgs>
         , IEventHandler<MessageReactionAddedEventArgs>
 {
@@ -27,8 +28,7 @@ public sealed class LockedTreadEvents(SettingsModule settingsModule)
             return;
         if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermission.ManageMessages))
             return;
-        if (await this._settingsModule.IsThreadLocked(args.GetChannelId(), args.Guild.GetGuildId())
-                .GetOrElse(() => false))
+        if (await this.IsEnforcedAsync(args.GetChannelId(), args.Guild.GetGuildId()))
             await args.Message.DeleteAsync("Thread is locked.");
     }
 
@@ -42,8 +42,11 @@ public sealed class LockedTreadEvents(SettingsModule settingsModule)
             return;
         if (args.Channel.PermissionsFor(member).HasPermission(DiscordPermission.ManageMessages))
             return;
-        if (await this._settingsModule.IsThreadLocked(args.Channel.GetChannelId(), args.Guild.GetGuildId())
-                .GetOrElse(() => false))
+        if (await this.IsEnforcedAsync(args.Channel.GetChannelId(), args.Guild.GetGuildId()))
             await args.Message.DeleteReactionAsync(args.Emoji, args.User, "Thread is locked.");
     }
+
+    private async Task<bool> IsEnforcedAsync(ChannelId channelId, GuildId guildId)
+        => await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId).GetOrElse(() => false)
+           && await this._settingsModule.IsThreadLocked(channelId, guildId).GetOrElse(() => false);
 }

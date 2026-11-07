@@ -100,15 +100,40 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
             .EndTime.ShouldBeInRange(before.AddMinutes(minutes), DateTimeOffset.UtcNow.AddMinutes(minutes));
     }
 
-    /// <summary>MOD-93: a zero-length mute should be recorded, so the expiry task can lift it.</summary>
-    [Fact(Skip = "Fails: MuteAdded rejects an end time that isn't after its set time, /Mute ignores the failed AddMute, " +
-                 "and the role is granted with no record, so the mute never expires. KI-07")]
-    public async Task Mute_ForZeroMinutes_IsRecordedSoItExpires()
+    /// <summary>MOD-93: a mute that can't be recorded must not stay in place, because nothing would ever lift it.</summary>
+    [Fact]
+    public async Task Mute_ThatCannotBeRecorded_IsUndone()
     {
-        await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 0);
-
         await using var settingsContext = this._database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteAdded>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
+        var table = settingsContext.Model.FindEntityType(typeof(Mute))!;
+        var mutes = $"\"{table.GetSchema()}\".\"{table.GetTableName()}\"";
+        await settingsContext.Database.ExecuteSqlRawAsync(
+            $"""ALTER TABLE {mutes} ADD CONSTRAINT "TestRefusesMutes" CHECK (false) NOT VALID""", TestContext.Current.CancellationToken);
+        try
+        {
+            (await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 2)).Description
+                .ShouldBe("The mute could not be recorded, so it has been undone.");
+        }
+        finally
+        {
+            await settingsContext.Database.ExecuteSqlRawAsync(
+                $"""ALTER TABLE {mutes} DROP CONSTRAINT "TestRefusesMutes" """, TestContext.Current.CancellationToken);
+        }
+
+        this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldNotContain(this._muteRoleId);
+        await this.ShouldHaveNoRecordsAsync();
+    }
+
+    /// <summary>The mute role can sit above a moderator's, which shouldn't shield the member from them.</summary>
+    [Fact]
+    public async Task Mute_OfSomeoneAlreadyMuted_IgnoresTheMuteRoleInTheRankCheck()
+    {
+        this._muteRoleId = await this.ConfigureMuteRoleAsync("Muted high", FakeGuild.RoleAboveTheBot - 2);
+        this.Guild.GrantRole(this.Guild.User1, this._muteRoleId);
+        await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+
+        (await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 2)).Embed!["author"]!["name"]!
+            .GetValue<string>().ShouldBe("Mute");
     }
 
     /// <summary>MOD-92: without a reason there is no Reason field and nothing stored.</summary>
@@ -122,7 +147,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-92, observation 5.</summary>
-    [Fact(Skip = "Fails: with no reason the DM still ends \"... for \" with nothing after it. KI-05")]
+    [Fact]
     public async Task Mute_WithoutAReason_DmsWithoutADanglingFor()
     {
         await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 2);
@@ -136,7 +161,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     public void Mute_IsRegisteredWithTheDurationAndReasonLimits()
     {
         var options = this._bot.Rest.RegisteredCommands["mute"]["options"]!.AsArray();
-        options.Single(o => o!["name"]!.GetValue<string>() == "duration_amount")!["min_value"]!.GetValue<int>().ShouldBe(0);
+        options.Single(o => o!["name"]!.GetValue<string>() == "duration_amount")!["min_value"]!.GetValue<int>().ShouldBe(1);
         options.Single(o => o!["name"]!.GetValue<string>() == "reason")!["max_length"]!.GetValue<int>().ShouldBe(1000);
     }
 
@@ -149,7 +174,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 2);
 
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
-            == $"Was not able to send a direct message with the mute details to {this.Guild.User1.MemberMention}.");
+            == $"Was not able to send a direct message with the mute details to {this.Guild.User1.MemberMention}");
         await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Mute");
     }
 
@@ -179,6 +204,8 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         var moderator = who switch { "owner" => this.Guild.Owner, "admin" => this.Guild.Admin, _ => this.Guild.User1 };
         if (who == "manage messages")
             this.Guild.SetRoles(this.Guild.User1, this.Guild.ModeratorRoleId);
+        if (allowed)
+            this.Guild.SetRoles(this.Guild.Moderator);
 
         var reply = await this.MuteAsync(moderator, this.Guild.Moderator == moderator ? this.Guild.User1 : this.Guild.Moderator,
             DurationType.Minutes, 2);
@@ -241,7 +268,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-106 and MOD-107: a refused or impossible mute should leave no sin or mute behind.</summary>
-    [Theory(Skip = "Fails: the Sin and MuteAdded rows are saved before the role is checked or granted. KI-04")]
+    [Theory]
     [InlineData("deleted")]
     [InlineData("above the bot")]
     public async Task Mute_ThatCannotGrantTheRole_LeavesNoRecords(string problem)
@@ -270,7 +297,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-109: nothing checks that the moderator outranks the target.</summary>
-    [Fact(Skip = "Fails: a moderator can mute someone ranked above them. KI-01")]
+    [Fact]
     public async Task Mute_OfSomeoneRankedAboveTheModerator_IsRefused()
     {
         await this.MuteAsync(this.Guild.Moderator, this.Guild.Admin, DurationType.Minutes, 2);
@@ -278,13 +305,15 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.ShouldHaveNoRecordsAsync();
     }
 
-    /// <summary>MOD-110: there's no self-mute check. This pins the current behaviour.</summary>
+    /// <summary>MOD-110: a mute can't be recorded against the moderator who gave it, so it's refused up front.</summary>
     [Fact]
-    public async Task Mute_OfYourself_IsAllowed()
+    public async Task Mute_OfYourself_IsRefused()
     {
-        (await this.MuteAsync(this.Guild.Moderator, this.Guild.Moderator, DurationType.Minutes, 2)).Embed!["author"]!["name"]!
-            .GetValue<string>().ShouldBe("Mute");
-        this.Guild.GetMember(this.Guild.Moderator).RoleIds.ShouldContain(this._muteRoleId);
+        (await this.MuteAsync(this.Guild.Moderator, this.Guild.Moderator, DurationType.Minutes, 2)).Description
+            .ShouldBe("You can't mute yourself.");
+
+        this.Guild.GetMember(this.Guild.Moderator).RoleIds.ShouldNotContain(this._muteRoleId);
+        await this.ShouldHaveNoRecordsAsync();
     }
 
     // ── /Unmute ───────────────────────────────────────────────────────────────
@@ -326,7 +355,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-114.</summary>
-    [Fact(Skip = "Fails: unmuting someone who isn't muted still revokes, replies \"Unmute\", DMs and logs. KI-11")]
+    [Fact]
     public async Task Unmute_OfSomeoneNotMuted_SaysSo()
         => (await this.UnmuteAsync(this.Guild.Moderator, this.Guild.User1)).Embed?["author"]?["name"]?.GetValue<string>()
             .ShouldNotBe("Unmute");

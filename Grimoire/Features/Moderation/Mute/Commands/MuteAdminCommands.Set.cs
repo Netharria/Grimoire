@@ -23,6 +23,12 @@ public partial class MuteAdminCommands
 
         var guild = ctx.Guild!;
 
+        if (MuteRoleProblem(guild, role) is { } problem)
+        {
+            await ctx.SendWarningResponseAsync(problem);
+            return;
+        }
+
         await this._settingsModule.SetMuteRole(guild.GetGuildId(), ctx.GetModeratorId(), role.GetRoleId());
 
         await ctx.ReplyAsync(message: $"Will now use role {role.Mention} for muting users.");
@@ -34,4 +40,14 @@ public partial class MuteAdminCommands
             Description = $"{ctx.User.Mention} updated the mute role to {role.Mention}"
         });
     }
+
+    private static string? MuteRoleProblem(DiscordGuild guild, DiscordRole role)
+        => role switch
+        {
+            _ when role.Id == guild.Id => "@everyone can't be the mute role.",
+            { IsManaged: true } => "A role managed by an integration can't be the mute role.",
+            _ when role.Position >= guild.CurrentMember.Hierarchy =>
+                $"{role.Mention} is at or above my highest role, so I couldn't give it to anyone.",
+            _ => null
+        };
 }

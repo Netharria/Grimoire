@@ -25,16 +25,17 @@ public sealed class UpdatedNicknameEvent(
         if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var currentNickname = await dbContext.NicknameHistory
+        var latest = await dbContext.NicknameHistory
             .AsNoTracking()
             .Where(x => x.GuildId == args.Guild.GetGuildId() && x.UserId == args.Member.GetUserId())
             .OrderByDescending(x => x.Timestamp)
-            .Select(y => y.Nickname)
+            .Select(y => new { y.Nickname })
             .FirstOrDefaultAsync();
 
         var after = Nickname.CreateIfNotEmpty(args.NicknameAfter);
 
-        if (currentNickname is null
+        // A row with no nickname is a member without one; only a missing row means there's no history yet.
+        if (latest is not { Nickname: var currentNickname }
             || currentNickname == after
             || (currentNickname.HasValue && after.HasValue
                                          && currentNickname.Value.Equals(after.Value,

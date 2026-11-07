@@ -55,7 +55,7 @@ internal sealed partial class GeneralSettingsCommands
             channel?.GetChannelId());
 
         await ctx.ReplyAsync(message: option is ChannelOption.Off
-            ? $"{ctx.User.Mention} disabled the moderation log to {channel?.Mention}"
+            ? $"{ctx.User.Mention} disabled the moderation log."
             : $"Updated the moderation log to {channel?.Mention}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {

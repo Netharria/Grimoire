@@ -20,11 +20,14 @@ public enum Duration
 public static class DurationExtensions
 {
     public static TimeSpan GetTimeSpan(this Duration duration, long timeValue)
+        => TimeSpan.FromDays(duration.GetDays(timeValue));
+
+    public static long GetDays(this Duration duration, long timeValue)
         => duration switch
         {
-            Duration.Days => TimeSpan.FromDays(timeValue),
-            Duration.Months => TimeSpan.FromDays(timeValue * 30),
-            Duration.Years => TimeSpan.FromDays(timeValue * 365),
+            Duration.Days => timeValue,
+            Duration.Months => timeValue * 30,
+            Duration.Years => timeValue * 365,
             _ => throw new NotSupportedException()
         };
 }

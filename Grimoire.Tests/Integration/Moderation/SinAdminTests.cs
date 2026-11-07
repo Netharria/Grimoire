@@ -59,14 +59,22 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
-    /// <summary>SIN-21.</summary>
-    [Fact(Skip = "Fails: with no reason the command creates a ModerationReason from \"\", which is invalid, and throws. KI-32")]
-    public async Task Pardon_WithoutAReason_StillPardons()
+    /// <summary>SIN-21: a pardon always says why, so Discord requires the option.</summary>
+    [Fact]
+    public void Pardon_RequiresAReason()
+        => this._bot.Rest.RegisteredCommands["pardon"]["options"]!.AsArray()
+            .Single(option => option!["name"]!.GetValue<string>() == "reason")!["required"]!.GetValue<bool>().ShouldBeTrue();
+
+    /// <summary>Discord's length limit accepts spaces, which a reason can't be made from.</summary>
+    [Fact]
+    public async Task Pardon_WithABlankReason_IsRefused()
     {
         var sin = await this.SeedWarnAsync(this.Guild.User1);
 
-        (await this._bot.RunSlashCommandAndWaitAsync("pardon", this.Guild.Moderator, SlashOption.String("sin_id", sin.Id.ToString())))
-            .Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Pardoned");
+        (await this.PardonAsync(sin.Id, "   ")).Description.ShouldBe("The reason can't be empty.");
+        await using var dbContext = this._database.CreateDbContext();
+        (await dbContext.Pardons.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
     /// <summary>SIN-22 and SIN-23: an unknown id, or one from another guild.</summary>
@@ -85,8 +93,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>SIN-24.</summary>
-    [Fact(Skip = "Fails: the username lookup doubles as the existence check, so a user with no username history looks " +
-                 "like a missing sin. KI-33")]
+    [Fact]
     public async Task Pardon_ForAUserWithNoUsernameHistory_StillPardons()
     {
         var sin = await this.SeedWarnAsync(new FakeUser(1_100_000_000_000_000_095, "stranger"), withUsername: false);
@@ -218,7 +225,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
             .Description.ShouldBe(NotFound);
 
     /// <summary>SIN-42.</summary>
-    [Fact(Skip = "Fails: as SIN-24, a user with no username history looks like a missing sin. KI-33")]
+    [Fact]
     public async Task Reason_ForAUserWithNoUsernameHistory_StillUpdates()
     {
         var sin = await this.SeedWarnAsync(new FakeUser(1_100_000_000_000_000_095, "stranger"), withUsername: false);

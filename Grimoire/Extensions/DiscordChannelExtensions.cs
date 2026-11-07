@@ -9,18 +9,22 @@ namespace Grimoire.Extensions;
 
 public static class DiscordChannelExtensions
 {
+    /// <summary>How far back a filtered purge looks. Unfiltered purges read exactly the number they're asked to delete.</summary>
+    private const int FilteredPurgeScanLimit = 1000;
+
+    /// <summary>Stops a message from reaching Discord's 14-day bulk delete limit between being read and being deleted.</summary>
+    private static readonly TimeSpan _bulkDeleteAgeMargin = TimeSpan.FromMinutes(5);
+
     public static async Task<int> PurgeMessagesAsync(
         this DiscordChannel channel,
         int count,
         string reason = "",
         Func<DiscordMessage, bool>? filter = null)
     {
-        filter ??= _ => true;
-        var oldTimestamp = DateTimeOffset.UtcNow.AddDays(-14);
-        var messages = await channel.GetMessagesAsync()
-            .OrderByDescending(x => x.Timestamp)
-            .Where(filter)
+        var oldTimestamp = DateTimeOffset.UtcNow.AddDays(-14) + _bulkDeleteAgeMargin;
+        var messages = await channel.GetMessagesAsync(filter is null ? count : FilteredPurgeScanLimit)
             .TakeWhile(x => x.Timestamp > oldTimestamp)
+            .Where(filter ?? (_ => true))
             .Take(count)
             .ToArrayAsync();
         switch (messages.Length)

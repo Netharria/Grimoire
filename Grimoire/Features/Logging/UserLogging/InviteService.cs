@@ -75,7 +75,7 @@ public sealed class InviteService : IInviteService
             return null;
         return !DeleteInvite(guildInvites.GuildId, inviteUsed.Code)
             ? throw new Exception("Was not able to delete invite.")
-            : inviteUsed;
+            : inviteUsed with { Uses = inviteUsed.Uses + 1 };
     }
 
     public bool DeleteInvite(GuildId guildId, InviteCode inviteCode)

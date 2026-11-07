@@ -43,7 +43,7 @@ public sealed class ModerationCrossCheckTests(GrimoireCoreFactory database) : IA
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
     private static Task<GrimoireTestBot> StartBotAsync(GrimoireCoreFactory database, Action<FakeGuild>? configureGuild = null)
-        => GrimoireTestBot.StartAsync(database, configureGuild, [typeof(KickUser)]);
+        => GrimoireTestBot.StartAsync(database, configureGuild);
 
     private async Task ConfigureAsync()
     {

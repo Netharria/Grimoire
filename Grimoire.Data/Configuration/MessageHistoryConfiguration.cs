@@ -37,9 +37,14 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
 
         builder.Property(e => e.MessageId)
             .HasConversion(e => e.Value, value => new MessageId(value));
-
-        builder.Property<ModeratorId?>("ModeratorId")
-            .HasColumnName("ModeratorId")
-            .HasConversion(e => e.GetValueOrDefault().Value, value => new ModeratorId(value));
     }
+}
+
+[ExcludeFromCodeCoverage]
+internal sealed class MessageDeletedByModeratorEntryConfiguration : IEntityTypeConfiguration<MessageDeletedByModeratorEntry>
+{
+    public void Configure(EntityTypeBuilder<MessageDeletedByModeratorEntry> builder)
+        => builder.Property(e => e.ModeratorId)
+            .HasColumnName("ModeratorId")
+            .HasConversion(e => e.Value, value => new ModeratorId(value));
 }

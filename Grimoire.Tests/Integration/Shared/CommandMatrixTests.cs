@@ -43,7 +43,7 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
     {
         { "award", Everyone }, { "ban", null }, { "command", Everyone }, { "commands", Everyone },
         { "diagnostics", Everyone }, { "forget", Everyone }, { "general_settings", Everyone }, { "ignore", Everyone },
-        { "leaderboard", Everyone }, { "level", Everyone }, { "level_settings", Everyone }, { "lock", ManageMessages },
+        { "kick", null }, { "leaderboard", Everyone }, { "level", Everyone }, { "level_settings", Everyone }, { "lock", ManageMessages },
         { "log", Everyone }, { "mod_settings", Everyone }, { "modules", Everyone }, { "mute", null }, { "mutes", null },
         { "pardon", Everyone }, { "publish", Everyone }, { "purge", ManageMessages }, { "reason", Everyone },
         { "reclaim", Everyone }, { "rewards", Everyone }, { "sin_log", Everyone }, { "spam_filter", Everyone },
@@ -56,7 +56,7 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
     public void EachCommand_IsRegisteredForTheExpectedMembers(string command, string? permissions)
         => this._bot.Rest.RegisteredCommands[command]["default_member_permissions"]?.ToString().ShouldBe(permissions);
 
-    /// <summary>No command is registered that the table above doesn't know about (<c>/Kick</c> is missing, KI-25).</summary>
+    /// <summary>No command is registered that the table above doesn't know about.</summary>
     [Fact]
     public void EveryRegisteredCommand_IsInTheTable()
         => this._bot.Rest.RegisteredCommands.Keys.Order().ShouldBe(
@@ -71,15 +71,15 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
         { "sin_log", Module.Moderation }, { "mod_settings view", Module.Moderation }, { "diagnostics check", Module.Moderation },
         { "level", Module.Leveling }, { "leaderboard", Module.Leveling }, { "award", Module.Leveling },
         { "reclaim", Module.Leveling }, { "rewards add", Module.Leveling }, { "rewards view", Module.Leveling },
-        { "ignore add", Module.Leveling }, { "ignore remove", Module.Leveling }, { "level_settings view", Module.Leveling },
+        { "ignore add", Module.Leveling }, { "ignore remove", Module.Leveling }, { "ignore view", Module.Leveling },
+        { "rewards remove", Module.Leveling }, { "level_settings view", Module.Leveling },
         { "commands learn", Module.Commands }, { "commands forget", Module.Commands }, { "commands history", Module.Commands },
         { "commands revert", Module.Commands }, { "commands stats", Module.Commands }, { "commands leaderboard", Module.Commands },
         { "command", Module.Commands }, { "log message view", Module.MessageLog }, { "log user view", Module.UserLog }
     };
 
     /// <summary>
-    ///     Each module-gated command refuses when its module is off, even for an administrator. <c>/Rewards Remove</c>
-    ///     and <c>/Ignore View</c> have no gate (KI-45) and are left out.
+    ///     Each module-gated command refuses when its module is off, even for an administrator.
     /// </summary>
     [Theory]
     [MemberData(nameof(ModuleGated))]

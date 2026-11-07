@@ -490,6 +490,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
         ["id"] = FakeUser.Snowflake(id),
         ["name"] = name,
         ["color"] = 0,
+        ["colors"] = new JsonObject { ["primary_color"] = 0, ["secondary_color"] = null, ["tertiary_color"] = null },
         ["hoist"] = false,
         ["icon"] = null,
         ["unicode_emoji"] = null,

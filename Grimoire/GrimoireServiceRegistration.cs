@@ -24,10 +24,12 @@ using Grimoire.Features.LogCleanup;
 using Grimoire.Features.Logging.MessageLogging;
 using Grimoire.Features.Logging.Settings;
 using Grimoire.Features.Logging.UserLogging;
+using Grimoire.Features.Moderation.Ban;
 using Grimoire.Features.Moderation.Ban.Commands;
 using Grimoire.Features.Moderation.Ban.Events;
 using Grimoire.Features.Moderation.Diagnostics;
 using Grimoire.Features.Moderation.Lock;
+using Grimoire.Features.Moderation.Kick;
 using Grimoire.Features.Moderation.Lock.Commands;
 using Grimoire.Features.Moderation.Mute;
 using Grimoire.Features.Moderation.Mute.Commands;
@@ -106,6 +108,7 @@ internal static class GrimoireServiceRegistration
                 .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
                 .AddScoped<IPluralkitService, PluralkitService>()
                 .AddSingleton<SpamTrackerModule>()
+                .AddSingleton<BanHandoff>()
                 .AddSingleton(TimeProvider.System)
                 .AddSingleton<AlertChannels>()
                 .AddSingleton<WarningBuffer>()
@@ -136,7 +139,7 @@ internal static class GrimoireServiceRegistration
                         .AddEventHandlers<BanAddedEvent>()
                         .AddEventHandlers<BanRemovedEvent>()
                         .AddEventHandlers<UserJoinedWhileMuted>()
-                        .AddEventHandlers<LockedTreadEvents>()
+                        .AddEventHandlers<LockedThreadEvents>()
                         .AddEventHandlers<SpamEvents>()
                         //General Events
                         .AddEventHandlers<GatewayEvents>()
@@ -183,6 +186,7 @@ internal static class GrimoireServiceRegistration
                     extension.AddCommands<MuteAdminCommands>();
                     extension.AddCommands<MuteUser>();
                     extension.AddCommands<UnmuteUser>();
+                    extension.AddCommands<KickUser>();
                     extension.AddCommands<PublishCommands>();
                     extension.AddCommands<ForgetSin>();
                     extension.AddCommands<ModSettings>();

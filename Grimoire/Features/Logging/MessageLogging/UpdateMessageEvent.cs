@@ -51,8 +51,8 @@ public sealed class UpdateMessageEvent(
                     .Select(h => (MessageContent?)h.Content)
                     .FirstOrDefault(),
                 OriginalUserId = (UserId?)m.ProxiedMessageLink!.OriginalMessage!.UserId,
-                m.ProxiedMessageLink.SystemId,
-                m.ProxiedMessageLink.MemberId
+                SystemId = (PluralKitSystemId?)m.ProxiedMessageLink.SystemId,
+                MemberId = (PluralKitMemberId?)m.ProxiedMessageLink.MemberId
             })
             .FirstOrDefaultAsync();
 
@@ -96,9 +96,9 @@ public sealed class UpdateMessageEvent(
             if (user is not null)
                 embed.AddField("Original Author", user.Mention, true);
             embed.AddField("System Id",
-                    string.IsNullOrWhiteSpace(message.SystemId.Value) ? "Private" : message.SystemId.Value, true)
+                    string.IsNullOrWhiteSpace(message.SystemId?.Value) ? "Private" : message.SystemId.Value.Value, true)
                 .AddField("Member Id",
-                    string.IsNullOrWhiteSpace(message.MemberId.Value) ? "Private" : message.MemberId.Value, true);
+                    string.IsNullOrWhiteSpace(message.MemberId?.Value) ? "Private" : message.MemberId.Value.Value, true);
         }
         else
             embed.AddField("Author", args.Author.Mention, true);

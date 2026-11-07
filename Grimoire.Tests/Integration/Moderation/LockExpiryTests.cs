@@ -47,7 +47,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task ExpiredChannelLock_IsReverted_Announced_AndClosed()
     {
-        await this.LockForZeroMinutesAsync(this.Guild.General);
+        await this.LockThenExpireAsync(this.Guild.General);
         this.Guild.OverwriteOf(this.Guild.General.Id, this.Guild.Id).ShouldBe((0UL, TextLock));
 
         await this._bot.RunBackgroundTickAsync<LockBackgroundTasks>();
@@ -85,7 +85,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task UnlockedBeforeExpiry_NothingMoreHappens()
     {
-        await this.LockForZeroMinutesAsync(this.Guild.General);
+        await this.LockThenExpireAsync(this.Guild.General);
         await this._bot.RunSlashCommandAndWaitAsync(this.Guild.General, "unlock", this.Guild.Moderator);
         await this._bot.WaitForModLogEmbedAsync(embed =>
             embed["description"]?.GetValue<string>()?.Contains("unlocked", StringComparison.Ordinal) == true);
@@ -103,7 +103,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task LockedAgainForLonger_StaysLocked()
     {
-        await this.LockForZeroMinutesAsync(this.Guild.General);
+        await this.LockThenExpireAsync(this.Guild.General);
         await this._bot.RunSlashCommandAndWaitAsync(this.Guild.General, "lock", this.Guild.Moderator,
             SlashOption.Enum("duration_type", DurationType.Hours), SlashOption.Integer("duration_amount", 1));
 
@@ -192,9 +192,20 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
-    private Task<FakeReply> LockForZeroMinutesAsync(FakeChannel channel)
-        => this._bot.RunSlashCommandAndWaitAsync(channel, "lock", this.Guild.Moderator,
-            SlashOption.Enum("duration_type", DurationType.Minutes), SlashOption.Integer("duration_amount", 0));
+    /// <summary>Locks through the command, then moves the end time into the past so the next tick lifts it.</summary>
+    private async Task<FakeReply> LockThenExpireAsync(FakeChannel channel)
+    {
+        var reply = await this._bot.RunSlashCommandAndWaitAsync(channel, "lock", this.Guild.Moderator,
+            SlashOption.Enum("duration_type", DurationType.Minutes), SlashOption.Integer("duration_amount", 1));
+        var past = DateTimeOffset.UtcNow.AddSeconds(-1);
+        var token = TestContext.Current.CancellationToken;
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await settingsContext.ChannelLocks.OfType<ChannelLocked>().Where(locked => locked.ChannelId == new ChannelId(channel.Id))
+            .ExecuteUpdateAsync(update => update.SetProperty(locked => locked.EndTime, past), token);
+        await settingsContext.ThreadLocks.OfType<ThreadLocked>().Where(locked => locked.ChannelId == new ChannelId(channel.Id))
+            .ExecuteUpdateAsync(update => update.SetProperty(locked => locked.EndTime, past), token);
+        return reply;
+    }
 
     /// <summary>
     ///     Writes an expired channel lock straight to the settings database, as if the bot was down when it ended. The

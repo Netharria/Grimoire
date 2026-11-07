@@ -26,9 +26,6 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     /// <summary>The User Log section makes the command throw (KI-23), so most tests leave that module off.</summary>
     private static readonly Module[] WorkingSectionModules = [Module.Leveling, Module.Moderation];
 
-    private const string UserLogThrows = "Fails: with the User Log module on, the nickname query can't be translated " +
-                                         "by EF (it selects Nickname? then calls OfType<string>()), so the command throws. KI-23";
-
     private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
@@ -47,7 +44,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
     /// <summary>GEN-100: the fields each section adds, in order, and what is always there.</summary>
-    [Fact(Skip = UserLogThrows)]
+    [Fact]
     public async Task WithEverySectionEnabled_ShowsEveryField()
     {
         await this._bot.SetModuleAsync(Module.UserLog, true);
@@ -62,13 +59,12 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     }
 
     /// <summary>GEN-100, GEN-114, GEN-115 and GEN-117: a member shows their join date, and their roles count.</summary>
-    [Fact(Skip = "Fails: slash commands pass the user option as a DiscordUser, so UserInfo always takes the " +
-                 "\"Not On Server\" path and ignores the member's roles. KI-19")]
+    [Fact]
     public async Task ForAMember_ShowsTheirJoinDate()
         => Field(await this.UserInfoAsync(this.Guild.User1), "Joined On").ShouldStartWith("<t:");
 
     /// <summary>GEN-101 and GEN-121: newest first, at most three, and empty nicknames left out.</summary>
-    [Fact(Skip = UserLogThrows)]
+    [Fact]
     public async Task UsernamesAndNicknames_ShowTheNewestThree()
     {
         await this._bot.SetModuleAsync(Module.UserLog, true);
@@ -148,8 +144,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     }
 
     /// <summary>GEN-104 for an ignored role. The member's roles never reach the check.</summary>
-    [Fact(Skip = "Fails: the user option arrives as a DiscordUser, so the member's roles are empty and a role " +
-                 "ignore is never seen. KI-19")]
+    [Fact]
     public async Task CanGainXp_IsNoForAMemberWithAnIgnoredRole()
     {
         var ignored = IgnoredRole.Create(new RoleId(this.Guild.ModeratorRoleId), this.GuildId, new ModeratorId(this.Guild.Owner.Id),
@@ -206,7 +201,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     }
 
     /// <summary>GEN-109: the User Log section, which currently makes the command throw.</summary>
-    [Fact(Skip = UserLogThrows)]
+    [Fact]
     public async Task UserLogSection_AppearsWithItsModule()
     {
         foreach (var other in WorkingSectionModules)
@@ -234,14 +229,16 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
-    /// <summary>GEN-08 and GEN-120: UserInfo needs ManageGuild, which the moderator role doesn't have.</summary>
-    [Theory]
-    [InlineData("mod")]
-    [InlineData("user1")]
-    public async Task WithoutManageGuild_IsDenied(string who)
-        => (await this._bot.RunSlashCommandAndWaitAsync("user_info", who == "mod" ? this.Guild.Moderator : this.Guild.User1,
-                SlashOption.User("user", this.Guild.User1)))
+    /// <summary>GEN-08 and GEN-120: UserInfo needs ManageMessages, the same gate as the other moderator commands.</summary>
+    [Fact]
+    public async Task WithoutManageMessages_IsDenied()
+        => (await this._bot.RunSlashCommandAndWaitAsync("user_info", this.Guild.User1, SlashOption.User("user", this.Guild.User1)))
             .Description.ShouldBe("You do not have the required permissions to use this command.");
+
+    [Fact]
+    public async Task AModerator_CanUseIt()
+        => (await this._bot.RunSlashCommandAndWaitAsync("user_info", this.Guild.Moderator, SlashOption.User("user", this.Guild.User1)))
+            .Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("User info for user1");
 
     private async Task<JsonNode> UserInfoAsync(FakeUser target)
     {

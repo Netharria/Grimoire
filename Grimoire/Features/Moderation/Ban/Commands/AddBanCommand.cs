@@ -1,4 +1,4 @@
-// This file is part of the Grimoire Project.
+﻿// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -7,9 +7,9 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Exceptions;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
-using Microsoft.Extensions.Logging;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.Ban.Commands;
 
@@ -17,12 +17,11 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [RequirePermissions([DiscordPermission.BanMembers], [])]
-public sealed partial class AddBanCommand(
-    IDbContextFactory<GrimoireDbContext> dbContextFactory,
-    ILogger<AddBanCommand> logger)
+public sealed class AddBanCommand(BanHandoff banHandoff, GuildLog guildLog, SettingsModule settingsModule)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly ILogger<AddBanCommand> _logger = logger;
+    private readonly BanHandoff _banHandoff = banHandoff;
+    private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("Ban")]
     [Description("Bans a user from the server.")]
@@ -46,82 +45,49 @@ public sealed partial class AddBanCommand(
 
         var guild = ctx.Guild!;
 
-        if (!CheckIfCanBan(guild.CurrentMember, user))
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "I do not have permissions to ban that user.");
-            return;
-        }
-
         if (ctx.User.Id == user.Id)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "You can't ban yourself.");
             return;
         }
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
-        var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForBan(actor, user.GetUserId(), guild.GetGuildId(), now)
-            .Match(
-                s => string.IsNullOrWhiteSpace(reason)
-                    ? s
-                    : s with
-                    {
-                        ReasonHistory =
-                        [
-                            new SinReasonHistory
-                            {
-                                SinId = default,
-                                Reason = ModerationReason.Create(reason)
-                                    .Match(r => r, _ => throw new UnreachableException()),
-                                Actor = actor,
-                                SetAt = now
-                            }
-                        ]
-                    },
-                _ => throw new UnreachableException());
-        dbContext.Sins.Add(sin);
-        await dbContext.SaveChangesAsync();
+        var member = await guild.GetMemberOrDefaultAsync(user.GetUserId());
+        if (member is not null
+            && await ModerationRank.GetRefusalReasonAsync(this._settingsModule, ctx, member, "ban") is { } refusal)
+        {
+            await ctx.ReplyAsync(GrimoireColor.Yellow, refusal);
+            return;
+        }
 
+        if (member is not null)
+            await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+                .WithAuthor("Banned")
+                .WithDescription($"You have been banned from {guild.Name}{ModerationDirectMessage.ForReason(reason)}")
+                .WithColor(GrimoireColor.Red), "ban");
+
+        var pending = this._banHandoff.ExpectBan(guild.GetGuildId(), user.GetUserId(), ctx.GetModeratorId(), reason);
         try
         {
-            if (user is DiscordMember member)
-                await member.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithAuthor($"Ban ID {sin.Id}")
-                    .WithDescription($"You have been banned from {guild.Name} "
-                                     + (!string.IsNullOrWhiteSpace(reason) ? $"for {reason}" : ""))
-                    .WithColor(GrimoireColor.Red));
+            await guild.BanMemberAsync(
+                user,
+                deleteMessages ? TimeSpan.FromDays(deleteDays) : TimeSpan.Zero,
+                reason);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            if (ex is not UnauthorizedException)
-                LogFailedDirectMessage(this._logger, ex);
+            this._banHandoff.CancelBan(guild.GetGuildId(), user.GetUserId());
+            throw;
         }
 
-        await guild.BanMemberAsync(
-            user,
-            deleteMessages ? TimeSpan.FromDays(deleteDays) : TimeSpan.Zero,
-            reason);
+        var sinId = await pending.WaitUntilRecordedAsync();
 
-        var embed = new DiscordEmbedBuilder()
+        await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
             .WithAuthor("Banned")
             .AddField("User", user.Mention, true)
-            .AddField("Sin Id", $"**{sin.Id}**", true)
+            .AddField("Sin Id", sinId is { } id ? $"**{id}**" : "Not recorded yet", true)
             .AddField("Moderator", ctx.User.Mention, true)
             .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason)
             .WithColor(GrimoireColor.Red)
-            .WithTimestamp(DateTimeOffset.UtcNow);
-
-        await ctx.ReplyAsync(embed: embed);
-    }
-
-    [LoggerMessage(LogLevel.Warning, "Was not able to send a direct message to user.")]
-    static partial void LogFailedDirectMessage(ILogger<AddBanCommand> logger, Exception ex);
-
-    private static bool CheckIfCanBan(DiscordMember botMember, DiscordUser user)
-    {
-        if (user is not DiscordMember member)
-            return true;
-        return botMember.Hierarchy > member.Hierarchy;
+            .WithTimestamp(DateTimeOffset.UtcNow));
     }
 }

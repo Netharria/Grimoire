@@ -16,7 +16,7 @@ namespace Grimoire.Features.Moderation.Lock.Commands;
 
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
-[RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
+[RequirePermissions([DiscordPermission.ManageChannels, DiscordPermission.ManageRoles], [DiscordPermission.ManageMessages])]
 public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog)
 {
     private readonly GuildLog _guildLog = guildLog;
@@ -28,7 +28,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         CommandContext ctx,
         [Parameter("duration_type")] [Description("Select whether the duration will be in minutes hours or days.")]
         DurationType durationType,
-        [MinMaxValue(0)] [Parameter("duration_amount")] [Description("The amount of time the lock will last.")]
+        [MinMaxValue(1)] [Parameter("duration_amount")] [Description("The amount of time the lock will last.")]
         int durationAmount,
         [ChannelTypes(DiscordChannelType.Text, DiscordChannelType.PublicThread, DiscordChannelType.PrivateThread,
             DiscordChannelType.Category, DiscordChannelType.GuildForum)]
@@ -43,15 +43,24 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
 
         var guild = ctx.Guild!;
 
+        Error? failure;
         if (channel.IsThread)
-            await ThreadLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount);
+            failure = (await ThreadLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount))
+                .Match<Error?>(_ => null, error => error);
         else if (channel.Type is DiscordChannelType.Text
                  or DiscordChannelType.Category
                  or DiscordChannelType.GuildForum)
-            await ChannelLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount);
+            failure = (await ChannelLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount))
+                .Match<Error?>(_ => null, error => error);
         else
         {
             await ctx.ReplyAsync(message: "Channel not of valid type.");
+            return;
+        }
+
+        if (failure is not null)
+        {
+            await ctx.SendErrorResponseAsync(failure.Message);
             return;
         }
 
@@ -91,12 +100,12 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     new PreviouslyDeniedPermissions(long.Parse(previousDenied.GetLockPermissions().ToString())),
                     durationType.GetDateTimeOffset(durationAmount)))
             .ToResult()
-            .BindAsync(channelLock =>
-                this._settingsModule.ApplyChannelLockAction(channelLock))
             .TapAsync(_ =>
                 channel.AddOverwriteAsync(guild.EveryoneRole,
                     previousAllowed.RevokeLockPermissions(),
-                    previousDenied.SetLockPermissions()));
+                    previousDenied.SetLockPermissions()))
+            .BindAsync(channelLock =>
+                this._settingsModule.ApplyChannelLockAction(channelLock));
     }
 
     private Task<Result<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,

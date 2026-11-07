@@ -50,6 +50,7 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     private readonly Dictionary<ulong, SortedDictionary<ulong, JsonObject>> _channelHistory = [];
     private readonly List<(HttpMethod Method, Regex Path, Func<RecordedRequest, HttpResponseMessage> Respond)> _overrides = [];
     private readonly HashSet<ulong> _banned = [];
+    private readonly Dictionary<ulong, string?> _banReasons = [];
     private readonly List<JsonObject> _auditLog = [];
     private readonly Dictionary<ulong, FakeUser> _knownUsers = [];
 
@@ -109,14 +110,26 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     public void ApplyBan(FakeUser moderator, ulong targetId, string? reason)
     {
         lock (this._lock)
+        {
             if (!this._banned.Add(targetId))
                 return;
+            this._banReasons[targetId] = reason;
+        }
+
         this.AddAuditLogEntry(BanAuditAction, moderator, targetId, reason);
         this.Dispatch?.Invoke("GUILD_BAN_ADD", new JsonObject
         {
             ["guild_id"] = FakeUser.Snowflake(this._guild.Id),
             ["user"] = this.UserJson(targetId)
         });
+    }
+
+    private JsonObject? BanJson(ulong userId)
+    {
+        lock (this._lock)
+            return this._banned.Contains(userId)
+                ? new JsonObject { ["reason"] = this._banReasons.GetValueOrDefault(userId), ["user"] = this.UserJson(userId) }
+                : null;
     }
 
     /// <summary>Puts someone on the ban list with no event or audit entry, as if banned before the bot joined.</summary>
@@ -313,6 +326,8 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
             },
             _ when GuildInvites().IsMatch(request.Path) && get
                 => Json(new JsonArray([.. this._guild.Invites.Select(invite => (JsonNode)this._guild.InviteJson(invite))])),
+            _ when GuildBan().Match(request.Path) is { Success: true } match && get
+                => this.BanJson(ulong.Parse(match.Groups[1].Value)) is { } ban ? Json(ban) : Error(HttpStatusCode.NotFound, 10026, "Unknown Ban"),
             _ when GuildBan().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Put
                 => this.Ban(ulong.Parse(match.Groups[1].Value), request),
             _ when GuildBan().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Delete

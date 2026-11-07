@@ -66,7 +66,7 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Embed = new DiscordEmbedBuilder()
-                .WithAuthor($"{guild.CurrentMember.Nickname} has been commanded to forget.")
+                .WithAuthor($"{guild.CurrentMember.DisplayName} has been commanded to forget.")
                 .AddField("User", result.UserName.ToString() ?? "Unknown", true)
                 .AddField("Sin Id", result.Sin.Id.ToString(), true)
                 .AddField("Moderator", ctx.User.Mention, true)

@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
@@ -20,8 +21,10 @@ public partial class IgnoreCommandGroup
     [Command("Add")]
     [Description("Adds a user, channel, or role to the ignored xp list.")]
     public async Task IgnoreAsync(CommandContext ctx,
-        [Parameter("items")] [Description("The user, channel or role to ignore")]
-        params SnowflakeObject[] value)
+        [Parameter("channel")] [Description("The channel to ignore.")]
+        DiscordChannel? channel = null,
+        [VariadicArgument(24)] [Parameter("items")] [Description("The users or roles to ignore.")]
+        SnowflakeObject[]? items = null)
     {
         await ctx.DeferResponseAsync();
         if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
@@ -30,6 +33,7 @@ public partial class IgnoreCommandGroup
             return;
         }
 
+        var value = CombineItems(channel, items);
         if (value.Length == 0)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not parse any ids from the submitted values.");

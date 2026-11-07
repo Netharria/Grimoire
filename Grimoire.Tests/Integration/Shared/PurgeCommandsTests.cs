@@ -67,7 +67,6 @@ public sealed class PurgeCommandsTests(GrimoireCoreFactory database) : IAsyncLif
 
     /// <summary>GEN-132, GEN-133 and GEN-134.</summary>
     [Theory]
-    [InlineData(10, 0, 0)]
     [InlineData(3, 50, 3)]
     [InlineData(0, 10, 0)]
     public async Task All_DeletesAtMostWhatExists(int seeded, int count, int expected)
@@ -92,8 +91,7 @@ public sealed class PurgeCommandsTests(GrimoireCoreFactory database) : IAsyncLif
     }
 
     /// <summary>GEN-135 and GEN-136: more than 100 messages should be deleted in chunks of 100.</summary>
-    [Theory(Skip = "Fails: PurgeMessagesAsync calls GetMessagesAsync() with DSharpPlus's default limit of 100, so it " +
-                   "never sees more than the newest 100 messages. KI-24")]
+    [Theory]
     [InlineData(250)]
     [InlineData(101)]
     public async Task All_WithMoreThanOneHundred_DeletesThemAll(int count)
@@ -151,16 +149,60 @@ public sealed class PurgeCommandsTests(GrimoireCoreFactory database) : IAsyncLif
         this._bot.Rest.HistoryIds(this.Guild.PublicThread).ShouldBeEmpty();
     }
 
-    /// <summary>GEN-147, area 01 code observation 9: purging leaves no mod-log entry.</summary>
+    /// <summary>GEN-147: a purge is logged with who did it, how many and where.</summary>
     [Fact]
-    public async Task All_PostsNothingToTheModLog()
+    public async Task All_IsLoggedToTheModLog()
     {
         await this._bot.ConfigureModerationAsync();
         this.SeedRecent(3, this.Guild.User1);
 
         await this.PurgeAllAsync(3);
 
+        await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()
+            == $"{this.Guild.Moderator.MemberMention} purged 3 messages in {this.Channel.Mention}");
+    }
+
+    [Fact]
+    public async Task User_IsLoggedWithTheTarget()
+    {
+        await this._bot.ConfigureModerationAsync();
+        this.SeedRecent(1, this.Guild.User1);
+
+        await this.PurgeUserAsync(this.Guild.User1, 5);
+
+        await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()
+            == $"{this.Guild.Moderator.MemberMention} purged 1 message from {this.Guild.User1.Mention} in {this.Channel.Mention}");
+    }
+
+    [Fact]
+    public async Task APurgeThatDeletesNothing_IsNotLogged()
+    {
+        await this._bot.ConfigureModerationAsync();
+
+        await this.PurgeAllAsync(3);
+
         (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, NothingHappensWindow)).ShouldBeFalse();
+    }
+
+    /// <summary>Area 01 code observation 9.</summary>
+    [Fact]
+    public void Count_HasAMinimumOfOne()
+    {
+        var subcommands = this._bot.Rest.RegisteredCommands["purge"]["options"]!.AsArray();
+        foreach (var subcommand in subcommands)
+            subcommand!["options"]!.AsArray().Single(option => option!["name"]!.GetValue<string>() == "count")!["min_value"]!
+                .GetValue<int>().ShouldBe(1);
+    }
+
+    /// <summary>Area 01 code observation 8: a message about to pass 14 days could fail its whole bulk delete.</summary>
+    [Fact]
+    public async Task All_LeavesMessagesAboutToPassFourteenDays()
+    {
+        var old = this._bot.Rest.SeedHistory(this.Channel, [(this.Guild.User1, DateTimeOffset.UtcNow.AddDays(-14).AddMinutes(2))]);
+
+        (await this.PurgeAllAsync(5)).Description.ShouldBe("Purged 0 messages");
+
+        this._bot.Rest.HistoryIds(this.Channel).ShouldBe(old);
     }
 
     // ── Purge User ────────────────────────────────────────────────────────────
@@ -229,8 +271,7 @@ public sealed class PurgeCommandsTests(GrimoireCoreFactory database) : IAsyncLif
     }
 
     /// <summary>The target's messages behind the newest 100 in the channel should still be found.</summary>
-    [Fact(Skip = "Fails: only the newest 100 messages in the channel are scanned, so older messages from the target " +
-                 "are never found. KI-24")]
+    [Fact]
     public async Task User_FindsTheTargetsMessagesBehindTheNewestHundred()
     {
         this._bot.Rest.SeedHistory(this.Channel, [.. RecentTimes(2, minutesAgo: 300).Select(at => (this.Guild.User1, at))]);

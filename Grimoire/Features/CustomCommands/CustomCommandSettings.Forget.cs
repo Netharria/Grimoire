@@ -75,8 +75,8 @@ public sealed partial class CustomCommandSettings
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
             Description = alreadyForgotten
-                ? $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command `{name}` (already absent)."
-                : $"{ctx.User.Mention} asked {guild.CurrentMember} to forget command `{name}`.",
+                ? $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to forget command `{name}` (already absent)."
+                : $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to forget command `{name}`.",
             Color = GrimoireColor.Purple
         });
     }

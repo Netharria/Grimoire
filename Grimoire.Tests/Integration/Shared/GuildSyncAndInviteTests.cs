@@ -80,7 +80,8 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
 
     // ── Invites ───────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Fact(Skip = "Flaky: passes alone, but times out waiting on a REST request in some full runs, on an unmodified " +
+                 "nightly too. Cause unknown. KI-52")]
     public async Task AJoin_ShowsTheInviteThatWasUsed()
     {
         var invite = new FakeInvite("abc123", new FakeGuild().Moderator, uses: 4);
@@ -108,8 +109,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
         inviteUsed.ShouldEndWith("\n**Created By:** admin");
     }
 
-    [Fact(Skip = "Fails: for a used-up single-use invite the log shows the use count from before the join, " +
-                 "\"(0 uses)\". KI-50")]
+    [Fact]
     public async Task AJoin_WithASingleUseInvite_CountsTheUse()
     {
         var invite = new FakeInvite("once", new FakeGuild().Admin, uses: 0, maxUses: 1);
@@ -142,8 +142,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     // ── MemberAdded ───────────────────────────────────────────────────────────
 
     /// <summary>A rejoining member's next profile event shouldn't read as an avatar change.</summary>
-    [Fact(Skip = "Fails: MemberAdded stores the avatar as a size-128 guild avatar URL, but UpdatedAvatarEvent compares " +
-                 "the plain URL, so the first update after a rejoin logs a false avatar change. KI-49")]
+    [Fact]
     public async Task ARejoin_DoesNotCauseAFalseAvatarChange()
     {
         await this.StartAsync();

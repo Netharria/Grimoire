@@ -34,10 +34,11 @@ public sealed partial class PublishCommands
             {
                 // ReSharper disable AccessToDisposedClosure
                 x.UserId,
-                dbContext.UsernameHistory
+                Username = dbContext.UsernameHistory
                     .Where(history => history.UserId == x.UserId)
                     .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
-                    .First().Username,
+                    .Select(history => (Username?)history.Username)
+                    .FirstOrDefault(),
                 LatestPardon = dbContext.Pardons
                     .Where(p => p.SinId == x.Id)
                     .OrderByDescending(p => p.SetAt)
@@ -82,15 +83,7 @@ public sealed partial class PublishCommands
             return;
         }
 
-        if (result.UnbanMessageId is null)
-        {
-            await dbContext.PublishedMessages.AddAsync(
-                new PublishedMessage
-                {
-                    MessageId = banLogMessage.GetMessageId(), SinId = sinId, PublishType = PublishType.Unban
-                });
-            await dbContext.SaveChangesAsync();
-        }
+        await SavePublishedMessageAsync(dbContext, sinId, PublishType.Unban, result.UnbanMessageId, banLogMessage.GetMessageId());
 
         await ctx.ReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage

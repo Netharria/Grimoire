@@ -34,16 +34,17 @@ public static class DiscordRetryPolicy
         CancellationToken cancellationToken = default)
         => _resiliencePipeline.ExecuteAsync(function, cancellationToken);
 
-    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function, T defaultValue,
+    /// <returns>The call's result, or <paramref name="defaultValue" /> if Discord refuses it or retries run out.</returns>
+    public static async ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function, T defaultValue,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            return _resiliencePipeline.ExecuteAsync(function, cancellationToken);
+            return await _resiliencePipeline.ExecuteAsync(function, cancellationToken);
         }
-        catch (ServerErrorException)
+        catch (DiscordException)
         {
-            return ValueTask.FromResult(defaultValue);
+            return defaultValue;
         }
     }
 }

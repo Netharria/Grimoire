@@ -42,7 +42,7 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
 
         var newUsername = eventArgs.Member.GetUsername();
         var newNickname = eventArgs.Member.GetNickname();
-        var newAvatar = eventArgs.Member.GetAvatarFileName(MediaFormat.Auto, 128);
+        var newAvatar = eventArgs.Member.GetAvatarFileName();
 
         var usernameChanged = latestUsername is null
                               || !latestUsername.Value.Equals(newUsername, StringComparison.CurrentCultureIgnoreCase);
@@ -50,9 +50,8 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
                               && !(latestNickname.HasValue && newNickname.HasValue
                                                            && latestNickname.Value.Equals(newNickname.Value,
                                                                StringComparison.CurrentCultureIgnoreCase));
-        var avatarChanged = newAvatar is not null
-                            && (latestAvatar is null ||
-                                !latestAvatar.Value.Equals(newAvatar.Value, StringComparison.Ordinal));
+        var avatarChanged = latestAvatar is null
+                            || !latestAvatar.Value.Equals(newAvatar, StringComparison.Ordinal);
 
         if (usernameChanged)
             await dbContext.UsernameHistory.AddAsync(
@@ -71,7 +70,7 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
                 {
                     UserId = userId,
                     GuildId = guildId,
-                    FileName = newAvatar!.Value,
+                    FileName = newAvatar,
                     Timestamp = DateTimeOffset.UtcNow
                 });
 

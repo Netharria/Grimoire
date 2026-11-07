@@ -324,3 +324,4 @@ Add one line per session: the date, the item, what changed, and what was skipped
 - 2026-10-25: A-36 done. 64 matrix tests, no new bugs.
 - 2026-10-25: A-37 done. 5 cache and restart tests, no bugs.
 - 2026-10-25: A-38 done. 3 startup and migration tests, no bugs. The numbered backlog is complete.
+- 2026-10-31: Fixed the triaged KIs. Enabled 51 skipped tests; KI-39, KI-48 (2 tests) and KI-52 stay skipped. Added KI-51 to KI-53. Harness: `FakeInteraction.IsFollowup`, ban lookups, and role `colors`.

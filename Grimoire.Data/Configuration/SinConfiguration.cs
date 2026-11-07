@@ -35,17 +35,21 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
         builder.HasIndex(sin => new { sin.Id, sin.GuildId })
             .HasDatabaseName("IX_Sin_Id_GuildId");
 
-        var actorConverter = new ValueConverter<ModerationActor, ulong?>(
+        // The provider type is decimal? rather than ulong? because EF's own ulong-to-decimal step can't take a null, and
+        // convertsNulls is what lets a null column come back as a System actor.
+        var actorConverter = new ValueConverter<ModerationActor, decimal?>(
             actor => actor as ModerationActor.Moderator != null
                 ? ((ModerationActor.Moderator)actor).Id.Value
                 : null,
             value => value.HasValue
-                ? new ModerationActor.Moderator(new ModeratorId(value.Value))
-                : new ModerationActor.System());
+                ? new ModerationActor.Moderator(new ModeratorId((ulong)value.Value))
+                : new ModerationActor.System(),
+            convertsNulls: true);
 
         builder.Property(e => e.Actor)
             .HasConversion(actorConverter)
             .HasColumnName("ModeratorId")
+            .HasColumnType("numeric(20,0)")
             .IsRequired(false);
 
         builder.Property(e => e.GuildId)

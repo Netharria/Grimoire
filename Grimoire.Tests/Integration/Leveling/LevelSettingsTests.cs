@@ -48,8 +48,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
-    [Fact(Skip = "Fails: Base, Modifier and Reward Amount are value types without a ToString override, so View " +
-                 "shows \"LevelScalingBase { Value = 15 }\" instead of 15. KI-43")]
+    [Fact]
     public async Task View_ShowsTheNumbersPlainly()
         => (await this.LevelSettingsAsync("view")).Description.ShouldNotBeNull()
             .ShouldContain("**Base:** 15\n**Modifier:** 50\n**Reward Amount:** 5\n");

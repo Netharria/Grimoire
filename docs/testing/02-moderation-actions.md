@@ -2,7 +2,7 @@
 
 Scope: `/Ban`, `/Unban`, `/Kick`, `/Warn`, `/Mute`, `/Unmute`, `/Lock`, `/Unlock`; `/Mutes` (Create, Set, View,
 Refresh); the ban added/removed events; `UserJoinedWhileMuted`; `MuteBackgroundTasks` and `LockBackgroundTasks`
-expiry; `LockedTreadEvents`.
+expiry; `LockedThreadEvents`.
 
 Source: `Grimoire/Features/Moderation/{Ban,Kick,Warn,Mute,Lock}/`, `Grimoire/Utilities/ExpiredItemTriage.cs`,
 `Grimoire/Utilities/GenericBackgroundService.cs`, `Grimoire.Settings/Services/SettingsModule.Moderation.{Mutes,Locks}.cs`.
@@ -106,7 +106,7 @@ durations and allow about 10 s after expiry before asserting.
 | MOD-33 | `user2` banned via `/Ban` | `admin` runs `/Unban user:user2` | Green embed "Unbanned" with User and Moderator. `user2` removed from the ban list | No new Sin. `#modlog` "Unbanned" embed from `BanRemovedEvent` with the original Sin id and `Mod` = **the original banner** (not the person who unbanned: observation 9) |
 | MOD-34 | `user2` banned from the client only (Sin created by MOD-27) | Unban from the client | `#modlog` "Unbanned" embed with the Sin id from MOD-27 | none |
 | MOD-35 | `user2` banned before the bot existed (delete their Sin rows first) | Unban | No mod-log embed (no ban sin to attach) | none |
-| MOD-36 | `user2` **not** banned | `/Unban user:user2` | Yellow "Error: user2 was not unbanned because user could not be found." Wording is misleading (the user exists, they are just not banned) | none |
+| MOD-36 | `user2` **not** banned | `/Unban user:user2` | Yellow "Error: user2 was not unbanned because user is not banned." | none |
 | MOD-37 | none | `user1` (no perms) runs `/Unban` | Permission error | none |
 | MOD-38 | `user1` has only ManageMessages | `/Unban user:user2` | Allowed (legacy ManageMessages gate, as MOD-14) | none |
 | MOD-39 | Bot lacks BanMembers | `/Unban` | Bot-permission check message | none |
@@ -181,7 +181,7 @@ Run these first: `/Mute` cases depend on a configured role. Start with no mute r
 | MOD-83 | Run `/Mutes Create` twice | Second run | Second role named "Muted" is created and **replaces** the configured role; the first is orphaned. Note the duplicate name | Setting = second role |
 | MOD-84 | No mute role set | `/Mutes Refresh` | Yellow "No mute role is configured." | none |
 | MOD-85 | Configured role deleted in Discord | `/Mutes Refresh` | Yellow "Could not find configured mute role." | none |
-| MOD-86 | Valid role, new channel added since | `/Mutes Refresh` | "Refreshing permissions for @Muted role." then "Succussfully refreshed..." (typo in code; record whether it is still there), then diagnostics follow-up. The new channel now has the deny overwrite | none |
+| MOD-86 | Valid role, new channel added since | `/Mutes Refresh` | "Refreshing permissions for @Muted role." then "Successfully refreshed...", then diagnostics follow-up. The new channel now has the deny overwrite | none |
 | MOD-87 | A role higher than `@Muted` grants Send Messages in a channel (so the mute would not hold) | `/Mutes Refresh` | Diagnostics follow-up embed and attached `moderation-diagnostics.txt` flag that channel (details are covered in area 04) | none |
 | MOD-88 | Bot lacks ManageRoles / ManageChannels | `/Mutes Create` | Permission check message, no role created (Create requires bot ManageRoles) | Setting unchanged |
 | MOD-89 | Test-B | Run `/Mutes View` in Test-B | Shows Test-B's own setting (isolation) | none |
@@ -358,6 +358,9 @@ Use `#locktest` unless stated. Verify the lock by having `user1` try to send a m
 | MOD-196 | Run `/Ban` and `/Mute` from Test-B for a user in both guilds | Only Test-B is affected |
 
 ## Code observations
+
+These were written before the 2026-10-31 fixes. `known-issues.md` has the current state of each one, and cases that
+describe old behaviour follow it, not this list.
 
 Things noticed while reading the source. Each has cases above to confirm it. Everything except item 1 is tracked in
 `known-issues.md`.

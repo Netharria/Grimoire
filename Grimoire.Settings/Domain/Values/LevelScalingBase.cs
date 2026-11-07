@@ -22,6 +22,8 @@ public readonly record struct LevelScalingBase
 
     public int Value { get; }
 
+    public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
+
     internal static Validation<LevelScalingBase> FromDatabase(string? input)
         => input is null
             ? Validation<LevelScalingBase>.Succeed(Default)

@@ -42,7 +42,7 @@ Moderation, MessageLog, Commands, AntiSpam (`General` is always on and is not to
 | GEN-05 | Give `user1` a role with only ManageGuild | `user1` runs `/Modules View` | Allowed (exact permission match works) | none |
 | GEN-06 | Remove the role from GEN-05 | `user1` runs `/Modules View` again | Denied again (permission read live, not cached) | none |
 | GEN-07 | Bot DM | Run `/GeneralSettings View` in a DM with the bot | Not available / "only be used in a server" (`RequireGuild`) | none |
-| GEN-08 | `mod` | `mod` runs `/UserInfo user:user1` | Denied (UserInfo needs ManageGuild, not just Ban/Kick/ManageMessages). **Confirm this is intended.** | none |
+| GEN-08 | `mod` | `mod` runs `/UserInfo user:user1` | Allowed: UserInfo needs ManageMessages. Older note: **confirm this is intended.** | none |
 
 ### A2. RequireModuleEnabled (sampled across modules)
 
@@ -78,7 +78,7 @@ Use one command per gated module. Disable the module with `/Modules Set`, run, r
 |----|--------------|--------|-------------------------|-------------------|
 | GEN-30 | none | `/GeneralSettings ModLogChannel option:Select Channel channel:#modlog` | Public reply "Updated the moderation log to #modlog" | Settings DB: mod log channel = `#modlog` id, modified-by = admin id |
 | GEN-31 | none | Run in `#locktest` with `option:Current Channel` | Reply names `#locktest`; setting updated | Setting = `#locktest` id |
-| GEN-32 | Mod log set | `option:Off` | Reply "`@admin` disabled the moderation log to " (**trailing "to" with empty mention is cosmetic bug**) | Setting cleared (null) |
+| GEN-32 | Mod log set | `option:Off` | Reply "`@admin` disabled the moderation log." | Setting cleared (null) |
 | GEN-33 | Mod log set to `#modlog` | Change to `#userlog` | Reply OK; **the "updated" log message is sent to the new channel** (`#userlog`) since the log reads the new setting | Setting = `#userlog` |
 | GEN-34 | Mod log set | Set `option:Off` | Reply sent; no log message posted anywhere (log is disabled by the time it is sent) | Setting null |
 | GEN-35 | `#private` hidden from bot (deny View/Send for bot) | Select `#private` | Red error "`@Grimoire` doesn't have permission to send messages in that channel."; setting unchanged | Setting unchanged |
@@ -168,7 +168,7 @@ history (Moderation on) and a level reward at a level `user1` has reached.
 | GEN-117 | Target is a user who left the guild (or was banned) | Pass the user through the user picker (or by id) | "Joined On: Not On Server", user colour/blurple fallback, default avatar path, no roles (Can Gain Xp evaluated without roles) | none |
 | GEN-118 | Target ID of a user who never joined the server (any Discord user) | Run UserInfo | Same "Not On Server" path | none |
 | GEN-119 | Target is `pk` PluralKit system member (optional) | Run UserInfo on the proxy webhook user | Note behaviour; no crash | none |
-| GEN-120 | `user1`, `mod` | Run UserInfo | Permission error (GEN-03/08) | none |
+| GEN-120 | `user1` | Run UserInfo | Permission error (GEN-03) | none |
 | GEN-121 | Long histories | User with 20+ renames | Only 3 shown | none |
 
 ---
@@ -239,28 +239,25 @@ matching cases to confirm the fix.
 
 1. **`UserInfo` Earned Rewards condition was inverted** (**fixed**: now `Length == 0 ? "None" : join`).
    Covered by GEN-105, GEN-106.
-2. **`/GeneralSettings ModLogChannel option:Off`** reply reads "disabled the moderation log to " (dangling "to"
-   with an empty mention). Cosmetic, open.
+2. **`/GeneralSettings ModLogChannel option:Off`** reply read "disabled the moderation log to ". **Fixed** (KI-22).
 3. **`/GeneralSettings UserCommands` lacks the bot Send Messages permission check** that `ModLogChannel` has.
-   May be fine, since replies are interaction responses. Inconsistent, open (GEN-53).
+   Closed: replies are interaction responses, so the check wouldn't prevent a real failure (GEN-53).
 4. **`SelectChannel` without a channel** used to throw `ArgumentNullException`. **Fixed**: `GetChannelOption` now
    returns `Validation<DiscordChannel?>` and all six callers reply with an ephemeral error (GEN-37, GEN-54; also
    spot check `/Log Message Set`, `/Log User Set`, `/LevelSettings LogSet`, `/ModSettings PublicBanLog`).
-5. **AntiSpam toggle**: `/Modules Set` and `/Modules View` now include AntiSpam, but `SpamEvents` does not
-   check `Module.AntiSpam`, so toggling it likely has no effect on spam handling yet (GEN-90).
-6. **`/Modules Set` mod log message uses `ctx.User.Username`** while the other settings commands use `Mention`.
-7. **`PurgeMessagesAsync` enumerates the entire channel history** (`GetMessagesAsync()` with no limit, then
-   `OrderByDescending`, which buffers everything). Accepted as a known limitation: no sensible filter exists;
-   GEN-148 records the latency so it is documented.
+5. **AntiSpam toggle**: `SpamEvents` now checks `Module.AntiSpam` (**fixed**, GEN-90). The module is off by default,
+   so a server has to turn it on to get spam filtering.
+6. **`/Modules Set` mod log message** now uses `Mention` (**fixed**).
+7. **`PurgeMessagesAsync`** read at most 100 messages (KI-24). **Fixed**: Purge All reads `count` messages and Purge
+   User scans the newest 1000, stopping at `count` or the 14-day limit. GEN-148 records the latency.
 8. **Bulk-delete chunking**: a trailing chunk of one message is now deleted individually (**fixed**, GEN-136).
-   Still open: `DeleteMessagesAsync` fails the whole chunk if any message aged past 14 days between fetch and call.
-9. **Purge has no mod-log entry**, and `count:0` is accepted and does nothing (the minimum should probably be 1).
+   Messages within 5 minutes of the 14-day limit are now left alone, so none can age past it between fetch and call
+   (**fixed**).
+9. **Purge now posts to the mod log**, and the minimum `count` is 1 (**fixed**).
    `RequirePermissions(ManageMessages)` checks both the caller and the bot (confirmed), so GEN-140 should report
    a permission error.
-10. **`UserInfo` requires ManageGuild**, which the `mod` role does not have. That makes it unusable for regular
-    moderators; ManageMessages/BanMembers might be the intended gate.
-11. **`GetLevel` has both `[RequireModuleEnabled(Leveling)]` and an in-body module check.** The in-body check
-    (different wording) is unreachable when the attribute is present. Compare the error text in GEN-11.
+10. **`UserInfo` now requires ManageMessages**, the gate regular moderators have (**fixed**).
+11. **`GetLevel`'s unreachable in-body module check** was removed (**fixed**).
 
 ## Findings
 

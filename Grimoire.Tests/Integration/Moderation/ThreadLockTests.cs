@@ -128,8 +128,7 @@ public sealed class ThreadLockTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>MOD-168.</summary>
-    [Fact(Skip = "Fails: LockedTreadEvents never checks the Moderation module, so it still deletes messages " +
-                 "when the module is off. KI-12")]
+    [Fact]
     public async Task WithModerationDisabled_MessagesInALockedThreadStay()
     {
         var thread = this.Guild.PublicThread;

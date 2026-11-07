@@ -22,6 +22,8 @@ public readonly record struct XpGainAmount
 
     public int Value { get; }
 
+    public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
+
 
     internal static Validation<XpGainAmount> FromDatabase(string? input)
         => input is null

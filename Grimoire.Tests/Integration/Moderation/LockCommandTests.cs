@@ -163,23 +163,10 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         var options = lockCommand["options"]!.AsArray();
         options.Single(o => o!["name"]!.GetValue<string>() == "channel")!["channel_types"]!.AsArray()
             .Select(type => type!.GetValue<int>()).ShouldBe([0, 11, 12, 4, 15], ignoreOrder: true);
-        options.Single(o => o!["name"]!.GetValue<string>() == "duration_amount")!["min_value"]!.GetValue<int>().ShouldBe(0);
+        options.Single(o => o!["name"]!.GetValue<string>() == "duration_amount")!["min_value"]!.GetValue<int>().ShouldBe(1);
         var manageMessages = FakeGuild.ManageMessagesPermission.ToString(CultureInfo.InvariantCulture);
         lockCommand["default_member_permissions"]!.ToString().ShouldBe(manageMessages);
         this._bot.Rest.RegisteredCommands["unlock"]["default_member_permissions"]!.ToString().ShouldBe(manageMessages);
-    }
-
-    /// <summary>
-    ///     MOD-157: a zero-length lock is valid, because the end time is computed a moment after the set time. The
-    ///     expiry task lifts it on its next tick (A-11). Unlike /Mute, which takes those two times the other way round.
-    /// </summary>
-    [Fact]
-    public async Task Lock_ForZeroMinutes_LocksAndIsRecorded()
-    {
-        await this.LockAsync(this.Guild.General, DurationType.Minutes, 0);
-
-        this.EveryoneOverwrite(this.Guild.General).ShouldBe((0UL, TextLock));
-        (await this.ActiveLockAsync(this.Guild.General)).EndTime.ShouldBeLessThanOrEqualTo(DateTimeOffset.UtcNow);
     }
 
     /// <summary>MOD-171: owner and Administrator can lock; Discord gates everyone else on Manage Messages.</summary>
@@ -215,13 +202,11 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     ///     MOD-173 and MOD-174: Discord refuses the overwrite without Manage Roles or channel access, and the error
     ///     handler explains it.
     /// </summary>
-    [Theory]
-    [InlineData("no manage roles")]
-    [InlineData("hidden channel")]
-    public async Task Lock_ThatDiscordRefuses_ShowsTheMissingPermissionsHelp(string problem)
+    [Fact]
+    public async Task Lock_ThatDiscordRefuses_ShowsTheMissingPermissionsHelp()
     {
-        await this.RestartBotWithAsync(problem == "no manage roles" ? FakeGuild.ManageChannelsPermission : FakeGuild.ManageChannelsPermission | FakeGuild.ManageRolesPermission);
-        var channel = problem == "no manage roles" ? this.Guild.General : this.Guild.Private;
+        await this.RestartBotWithAsync(FakeGuild.ManageChannelsPermission | FakeGuild.ManageRolesPermission);
+        var channel = this.Guild.Private;
         var issue = GuildIssueCatalog.BotMissingPermissions(new GuildId(this.Guild.Id), "Lock");
 
         (await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, channel)).Description
@@ -229,28 +214,27 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>MOD-173 and MOD-174: a refused lock should leave no lock recorded.</summary>
-    [Fact(Skip = "Fails: the lock row is saved before the overwrite is applied, so a refused lock stays recorded. KI-06")]
+    [Fact]
     public async Task Lock_ThatDiscordRefuses_RecordsNothing()
     {
-        await this.RestartBotWithAsync(FakeGuild.ManageChannelsPermission);
+        await this.RestartBotWithAsync(FakeGuild.ManageChannelsPermission | FakeGuild.ManageRolesPermission);
 
-        await this.LockAsync(this.Guild.General, DurationType.Minutes, 2);
+        await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, this.Guild.Private);
 
-        (await this.Settings.GetActiveChannelLockAsync(new ChannelId(this.Guild.General.Id), new GuildId(this.Guild.Id), TestContext.Current.CancellationToken))
+        (await this.Settings.GetActiveChannelLockAsync(new ChannelId(this.Guild.Private.Id), new GuildId(this.Guild.Id), TestContext.Current.CancellationToken))
             .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
     }
 
-    /// <summary>MOD-177: once the permission is back, unlocking a lock that was never applied leaves things as they were.</summary>
+    /// <summary>MOD-177: overwrites need Manage Roles, so a bot without it is stopped before anything changes.</summary>
     [Fact]
-    public async Task Unlock_AfterARefusedLock_RestoresNothingBroken()
+    public async Task Lock_WithoutManageRoles_IsRefused()
     {
         await this.RestartBotWithAsync(FakeGuild.ManageChannelsPermission);
-        await this.LockAsync(this.Guild.General, DurationType.Minutes, 2);
-        await this.RestartBotWithAsync(FakeGuild.ManageChannelsPermission | FakeGuild.ManageRolesPermission);
 
-        (await this.UnlockAsync(this.Guild.General)).Description.ShouldBe($"{this.Guild.General.Mention} has been unlocked");
+        (await this.LockAsync(this.Guild.General, DurationType.Minutes, 2)).Description
+            .ShouldBe("The bot did not have the needed permissions to execute this command.");
 
-        this.EveryoneOverwrite(this.Guild.General).ShouldBe((0UL, 0UL));
+        this.EveryoneOverwrite(this.Guild.General).ShouldBeNull();
     }
 
     /// <summary>MOD-175.</summary>

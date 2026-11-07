@@ -127,17 +127,17 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this._bot.WaitForModLogEmbedAsync(IsBannedEmbed);
     }
 
-    /// <summary>MOD-10: banning someone already banned records a second sin, but Discord sends no second event.</summary>
+    /// <summary>MOD-10: Discord sends no second event for someone already banned, so there's no second sin.</summary>
     [Fact]
-    public async Task Ban_OfSomeoneAlreadyBanned_RecordsASecondSin_ButLogsOnce()
+    public async Task Ban_OfSomeoneAlreadyBanned_RecordsOneSin_AndLogsOnce()
     {
         await this.BanAsync(this.Guild.Admin, this.Guild.User1);
         await this._bot.WaitForModLogEmbedAsync(IsBannedEmbed);
 
-        await this.BanAsync(this.Guild.Admin, this.Guild.User1);
+        Field((await this.BanAsync(this.Guild.Admin, this.Guild.User1)).Embed!, "Sin Id").ShouldBe("Not recorded yet");
 
         await using var dbContext = this._database.CreateDbContext();
-        (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
+        (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         (await this.ModLogEmbedCountAsync(IsBannedEmbed)).ShouldBe(1);
     }
 
@@ -184,8 +184,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-18, MOD-19, MOD-20 and MOD-23: the bot can't act on anyone ranked at or above it.</summary>
-    [Theory(Skip = "Fails: the hierarchy check only runs for a DiscordMember, which a slash option never is, so the bot " +
-                   "tries the ban, Discord refuses it, and the sin is already saved. KI-19 and KI-03")]
+    [Theory]
     [InlineData("higher")]
     [InlineData("owner")]
     [InlineData("bot")]
@@ -204,7 +203,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-21: nothing checks that the moderator outranks the target.</summary>
-    [Fact(Skip = "Fails: a moderator can ban someone ranked above them, as long as the bot outranks the target. KI-01")]
+    [Fact]
     public async Task Ban_OfSomeoneRankedAboveTheModerator_IsRefused()
     {
         await this.BanAsync(this.Guild.Moderator, this.Guild.Admin);
@@ -244,7 +243,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-26: when Discord refuses the ban, no sin should be left behind.</summary>
-    [Fact(Skip = "Fails: the sin is saved before calling Discord, so a refused ban leaves a phantom sin. KI-03")]
+    [Fact]
     public async Task Ban_ThatDiscordRefuses_LeavesNoSin()
     {
         this._bot.Rest.On(HttpMethod.Put, @"guilds/\d+/bans/\d+",
@@ -279,8 +278,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
     ///     A client ban the audit log can't attribute (no matching entry) is recorded with a System actor, and logged
     ///     without a Mod field.
     /// </summary>
-    [Fact(Skip = "Fails: a sin with a System actor can't be saved; EF throws \"Nullable object must have a value\", so " +
-                 "the ban is never recorded or logged. KI-31")]
+    [Fact]
     public async Task ClientBan_TheAuditLogCannotAttribute_IsRecordedAsSystem()
     {
         this._bot.Rest.RememberUser(this.Guild.User1);
@@ -296,9 +294,9 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.SingleSinAsync()).Actor.ShouldBe(new ModerationActor.System());
     }
 
-    /// <summary>MOD-29: without View Audit Log the ban can't be attributed, so a guild issue is posted instead.</summary>
+    /// <summary>MOD-29: without View Audit Log nobody can be named, so an issue is posted and the ban is recorded as System.</summary>
     [Fact]
-    public async Task ClientBan_WithoutViewAuditLog_ReportsAnIssue_AndRecordsNothing()
+    public async Task ClientBan_WithoutViewAuditLog_ReportsAnIssue_AndRecordsItAsSystem()
     {
         await this._bot.DisposeAsync();
         this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
@@ -309,14 +307,15 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         await this._bot.WaitForModLogEmbedAsync(embed =>
             embed["description"]?.GetValue<string>().Contains("cannot read the audit log", StringComparison.Ordinal) == true);
-        (await this.ModLogEmbedCountAsync(IsBannedEmbed)).ShouldBe(0);
-        await using var dbContext = this._database.CreateDbContext();
-        (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        Field(await this._bot.WaitForModLogEmbedAsync(IsBannedEmbed), "Reason").ShouldBe("manual");
+        var sin = await this.SingleSinAsync();
+        sin.Actor.ShouldBe(new ModerationActor.System());
+        sin.ReasonHistory.Select(history => history.Reason.Value).ShouldBe(["manual"]);
     }
 
-    /// <summary>MOD-30: a ban within 30 seconds of the last one reuses that sin.</summary>
+    /// <summary>MOD-30: a ban soon after the last one is still a ban of its own.</summary>
     [Fact]
-    public async Task ClientBan_WithinThirtySecondsOfTheLastBan_ReusesItsSin()
+    public async Task ClientBan_SoonAfterTheLastBan_GetsItsOwnSin()
     {
         await this.BanAsync(this.Guild.Admin, this.Guild.User1, SlashOption.String("reason", "first"));
         await this._bot.WaitForModLogEmbedAsync(IsBannedEmbed);
@@ -327,9 +326,10 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         var embeds = await GrimoireTestBot.EventuallyAsync(
             () => Task.FromResult(this.ModLogEmbeds(IsBannedEmbed)), found => found.Count >= 2);
         embeds.Count.ShouldBe(2);
-        Field(embeds[1], "Mod").ShouldBe($"<@{this.Guild.Admin.Id}>");
-        Field(embeds[1], "Reason").ShouldBe("first");
-        (await this.SingleSinAsync()).Actor.ShouldBe(new ModerationActor.Moderator(new ModeratorId(this.Guild.Admin.Id)));
+        Field(embeds[1], "Mod").ShouldBe($"<@{this.Guild.Moderator.Id}>");
+        Field(embeds[1], "Reason").ShouldBe("second");
+        await using var dbContext = this._database.CreateDbContext();
+        (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
     /// <summary>MOD-31 and MOD-41.</summary>
@@ -348,7 +348,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     // ── /Unban ────────────────────────────────────────────────────────────────
 
-    /// <summary>MOD-33: the reply names the moderator, and the mod log names the original banner (KI-09).</summary>
+    /// <summary>MOD-33: the reply names the moderator, and the mod log names both the banner and the unbanner.</summary>
     [Fact]
     public async Task Unban_LiftsTheBan_AndLogsTheBansSin()
     {
@@ -364,8 +364,8 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         var logged = await this._bot.WaitForModLogEmbedAsync(IsUnbannedEmbed);
         Field(logged, "Sin Id").ShouldBe($"**{sin.Id.Value.ToString(CultureInfo.InvariantCulture)}**");
-        // KI-09: this is the original banner, not the moderator who unbanned.
-        Field(logged, "Mod").ShouldBe($"<@{this.Guild.Admin.Id}>");
+        Field(logged, "Banned by").ShouldBe($"<@{this.Guild.Admin.Id}>");
+        Field(logged, "Unbanned by").ShouldBe($"<@{this.Guild.Moderator.Id}>");
         (await this.SingleSinAsync()).Id.ShouldBe(sin.Id);
     }
 
@@ -404,7 +404,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         var reply = await this._bot.RunSlashCommandAndWaitAsync("unban", this.Guild.Admin, SlashOption.User("user", this.Guild.User1));
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Error");
-        reply.Description.ShouldBe("user1 was not unbanned because user could not be found.");
+        reply.Description.ShouldBe("user1 was not unbanned because user is not banned.");
     }
 
     /// <summary>MOD-37 and MOD-38.</summary>

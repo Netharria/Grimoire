@@ -25,7 +25,12 @@ internal sealed class SpamEvents(
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
-        if (args.Author.IsBot)
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (args.Author.IsBot || args.Guild is null)
+            return;
+
+        if (!await this._settingsModule.IsModuleEnabled(Module.AntiSpam, args.Guild.GetGuildId())
+                .GetOrElse(() => false))
             return;
 
         var checkSpamResult = await this._spamModule.CheckSpam(args.Message);

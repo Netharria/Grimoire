@@ -40,17 +40,18 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
     {
         var guild = ctx.Guild!;
         var member = ctx.Member!;
+        var isPrivate = !member.Permissions.HasPermission(DiscordPermission.ManageMessages);
 
         if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(!member.Permissions.HasPermission(DiscordPermission.ManageMessages));
-        else if (!member.Permissions.HasPermission(DiscordPermission.ManageMessages))
+            await slashContext.DeferResponseAsync(isPrivate);
+        else if (isPrivate)
             return;
         else
             await ctx.DeferResponseAsync();
         user ??= ctx.User;
 
 
-        if (!member.Permissions.HasPermission(DiscordPermission.ManageMessages) && ctx.User != user)
+        if (isPrivate && ctx.User != user)
         {
             await ctx.ReplyAsync(GrimoireColor.Red, "You do not have permission to view other users' logs.");
             return;
@@ -59,7 +60,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         if (sinQueryType == SinQueryType.Mod)
         {
-            var moderatorActor = new ModerationActor.Moderator(ctx.GetModeratorId());
+            var moderatorActor = new ModerationActor.Moderator(new ModeratorId(user.Id));
             var modResponse = await dbContext.Sins
                 .AsNoTracking()
                 .Where(sin => sin.Actor == moderatorActor && sin.GuildId == guild.GetGuildId())
@@ -71,6 +72,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
                 .AddField("Bans", modResponse.GetValueOrDefault(SinType.Ban, 0).ToString(), true)
                 .AddField("Mutes", modResponse.GetValueOrDefault(SinType.Mute, 0).ToString(), true)
                 .AddField("Warns", modResponse.GetValueOrDefault(SinType.Warn, 0).ToString(), true)
+                .AddField("Kicks", modResponse.GetValueOrDefault(SinType.Kick, 0).ToString(), true)
                 .WithColor(GrimoireColor.Purple));
             return;
         }
@@ -145,8 +147,10 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         if (resultStrings.Count == 0)
             await ctx.ReplyAsync(GrimoireColor.Green, "That user does not have any logs",
                 $"Sin log for {user.Username}");
-        foreach (var message in resultStrings)
-            await ctx.ReplyAsync(GrimoireColor.Green, message,
-                $"Sin log for {user.Username}");
+        foreach (var (index, message) in resultStrings.Index())
+            if (index == 0)
+                await ctx.ReplyAsync(GrimoireColor.Green, message, $"Sin log for {user.Username}");
+            else
+                await ctx.FollowUpAsync(GrimoireColor.Green, message, $"Sin log for {user.Username}", isPrivate);
     }
 }

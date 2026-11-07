@@ -35,15 +35,10 @@ public sealed class KickTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this._bot.ConfigureModerationAsync();
     }
 
-    /// <summary>
-    ///     <c>KickUser</c> is never registered in production (KI-25), so the test bot adds it to test the command's
-    ///     logic. <see cref="Kick_IsRegisteredByTheBot" /> fails until the real registration is fixed.
-    /// </summary>
     private static Task<GrimoireTestBot> StartBotAsync(GrimoireCoreFactory database, Action<FakeGuild>? configureGuild = null)
-        => GrimoireTestBot.StartAsync(database, configureGuild, [typeof(Grimoire.Features.Moderation.Kick.KickUser)]);
+        => GrimoireTestBot.StartAsync(database, configureGuild);
 
-    [Fact(Skip = "Fails: KickUser is never passed to AddCommands in GrimoireServiceRegistration, so /Kick doesn't " +
-                 "exist. KI-25")]
+    [Fact]
     public async Task Kick_IsRegisteredByTheBot()
     {
         await using var plainBot = await GrimoireTestBot.StartAsync(this._database);
@@ -52,7 +47,7 @@ public sealed class KickTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
-    /// <summary>MOD-43: the kick, the sin, the reply, and the same embed in the mod log. No DM is sent.</summary>
+    /// <summary>MOD-43: the kick, the sin, the reply, the same embed in the mod log, and a DM sent before the kick.</summary>
     [Fact]
     public async Task Kick_KicksRecordsTheSinRepliesAndLogs()
     {
@@ -76,7 +71,8 @@ public sealed class KickTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         var logged = await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Kick");
         Field(logged, "Sin Id").ShouldBe(Field(embed, "Sin Id"));
-        this._bot.Rest.Requests.Count(request => request.Path == "users/@me/channels").ShouldBe(0);
+        var requests = this._bot.Rest.Requests.ToList();
+        requests.FindIndex(request => request.Path == "users/@me/channels").ShouldBeLessThan(requests.FindIndex(this.IsKickOf(this.Guild.User1).Invoke));
         this._bot.Rest.Unhandled.ShouldBeEmpty();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
@@ -122,6 +118,8 @@ public sealed class KickTests(GrimoireCoreFactory database) : IAsyncLifetime
             ? [this.Guild.KickerRoleId]
             : [this.Guild.ModeratorRoleId, this.Guild.KickerRoleId]);
         var target = moderator == this.Guild.User1 ? this.Guild.Moderator : this.Guild.User1;
+        if (target == this.Guild.Moderator)
+            this.Guild.SetRoles(target);
 
         (await this.KickAsync(moderator, target)).Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Kick");
 
@@ -145,7 +143,7 @@ public sealed class KickTests(GrimoireCoreFactory database) : IAsyncLifetime
     [InlineData("higher")]
     [InlineData("owner")]
     [InlineData("bot")]
-    public async Task Kick_OfSomeoneTheBotCantOutrank_ShowsTheMissingPermissionsHelp_AndLeavesNoSin(string who)
+    public async Task Kick_OfSomeoneTheBotCantOutrank_SaysSo_AndLeavesNoSin(string who)
     {
         var target = who switch
         {
@@ -153,16 +151,14 @@ public sealed class KickTests(GrimoireCoreFactory database) : IAsyncLifetime
             "bot" => this.Guild.Bot,
             _ => this.Guild.Higher
         };
-        var issue = GuildIssueCatalog.BotMissingPermissions(new GuildId(this.Guild.Id), "Kick");
 
-        (await this.KickAsync(this.Guild.Admin, target)).Description
-            .ShouldBe($"{issue.Summary}\n**Suggested fix:** {issue.SuggestedFix}");
+        (await this.KickAsync(this.Guild.Admin, target)).Description.ShouldBe("I do not have permissions to kick that user.");
 
         await this.ShouldHaveNoSinsOrKicksAsync();
     }
 
     /// <summary>MOD-53: nothing checks that the moderator outranks the target.</summary>
-    [Fact(Skip = "Fails: a moderator can kick someone ranked above them, as long as the bot outranks the target. KI-01")]
+    [Fact]
     public async Task Kick_OfSomeoneRankedAboveTheModerator_IsRefused()
     {
         this.Guild.SetRoles(this.Guild.Moderator, this.Guild.ModeratorRoleId, this.Guild.KickerRoleId);

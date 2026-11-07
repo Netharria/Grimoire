@@ -9,6 +9,7 @@ using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.Kick;
 
@@ -16,10 +17,14 @@ namespace Grimoire.Features.Moderation.Kick;
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.KickMembers)]
 [RequirePermissions([DiscordPermission.KickMembers], [])]
-internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
+internal sealed class KickUser(
+    IDbContextFactory<GrimoireDbContext> dbContextFactory,
+    GuildLog guildLog,
+    SettingsModule settingsModule)
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("Kick")]
     [Description("Kick a member from the server.")]
@@ -36,6 +41,12 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
         if (ctx.User.Id == member.Id)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "You can't kick yourself.");
+            return;
+        }
+
+        if (await ModerationRank.GetRefusalReasonAsync(this._settingsModule, ctx, member, "kick") is { } refusal)
+        {
+            await ctx.ReplyAsync(GrimoireColor.Yellow, refusal);
             return;
         }
 
@@ -61,6 +72,12 @@ internal sealed class KickUser(IDbContextFactory<GrimoireDbContext> dbContextFac
                         ]
                     },
                 _ => throw new UnreachableException());
+
+        // Once they're gone the bot usually can't reach them, so the DM goes first.
+        await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+            .WithAuthor("Kicked")
+            .WithDescription($"You have been kicked from {guild.Name}{ModerationDirectMessage.ForReason(reason)}")
+            .WithColor(GrimoireColor.Yellow), "kick");
 
         // Kick first so a refused kick (e.g. missing permissions) does not leave a kick recorded.
         await member.RemoveAsync(reason ?? string.Empty);

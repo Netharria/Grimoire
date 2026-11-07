@@ -123,8 +123,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         => (await this.CommandsAsync("forget", SlashOption.String("name", "nope"))).Description
             .ShouldBe("Command `nope` was already forgotten.");
 
-    [Fact(Skip = "Fails: Forget's mod log interpolates the bot's member object instead of its mention, so it reads " +
-                 "\"asked Member 1100…; Grimoire#0 to forget\". KI-47")]
+    [Fact]
     public async Task Forget_IsLoggedWithTheBotsMention()
     {
         await this.LearnAsync("hello", "first");

@@ -32,12 +32,6 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             return;
         }
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId()).GetOrElse(() => false))
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "The leveling module is not enabled on this server.");
-            return;
-        }
-
         var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId());
 
         if (ctx is SlashCommandContext slashContext)
@@ -69,9 +63,10 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
             .GetOrElse(() => null!);
-        var nextReward = rewards.FirstOrDefault(reward => reward.RewardLevel > currentLevel);
+        var nextReward = rewards.OrderBy(reward => reward.RewardLevel)
+            .FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 
-        var (color, displayName, avatarUrl) = user is DiscordMember member
+        var (color, displayName, avatarUrl) = await guild.GetMemberOrDefaultAsync(user.GetUserId()) is { } member
             ? (member.Color.PrimaryColor, member.DisplayName, member.GetGuildAvatarUrl(MediaFormat.Auto))
             : (user.BannerColor ?? DiscordColor.Blurple, user.Username, user.GetAvatarUrl(MediaFormat.Auto));
 
@@ -89,7 +84,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .AddField("Level", $"{currentLevel}", true)
             .AddField("Progress", $"{membersXp - currentLevelXp}/{nextLevelXp - currentLevelXp}", true)
             .AddField("Next Reward",
-                roleReward is null ? "None" : $"{roleReward.Mention}\n at level {nextLevelXp}", true)
+                roleReward is null ? "None" : $"{roleReward.Mention}\n at level {nextReward?.RewardLevel}", true)
             .WithThumbnail(avatarUrl)
             .WithFooter($"{guild.Name}", guild.IconUrl)
             .Build();

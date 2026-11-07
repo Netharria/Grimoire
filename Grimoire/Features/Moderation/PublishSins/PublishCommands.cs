@@ -33,7 +33,7 @@ public sealed partial class PublishCommands(
 
     private async Task<DiscordMessage?> SendPublicLogMessage(CommandContext ctx,
         UserId userId,
-        Username username,
+        Username? username,
         string reason,
         MessageId? publishedMessageId,
         DateTimeOffset actionDate,
@@ -51,11 +51,7 @@ public sealed partial class PublishCommands(
         if (banLogChannel is null)
             return null;
 
-        if (string.IsNullOrWhiteSpace(username.Value))
-        {
-            var user = await ctx.Client.GetUserAsync(userId);
-            username = user.GetUsername();
-        }
+        var shownName = username?.Value ?? UserExtensions.Mention(userId);
 
         if (publishedMessageId is not null)
             try
@@ -65,7 +61,7 @@ public sealed partial class PublishCommands(
                     .WithTitle(publish.ToString())
                     .WithDescription(
                         $"**Date:** {Formatter.Timestamp(actionDate, TimestampFormat.ShortDateTime)}\n" +
-                        $"**User:** {username} ({userId})\n" +
+                        $"**User:** {shownName} ({userId})\n" +
                         $"**Reason:** {reason}")
                     .WithColor(GrimoireColor.Purple).Build());
             }
@@ -77,9 +73,29 @@ public sealed partial class PublishCommands(
         return await banLogChannel.SendMessageAsync(new DiscordEmbedBuilder()
             .WithTitle(publish.ToString())
             .WithDescription($"**Date:** {Formatter.Timestamp(actionDate, TimestampFormat.ShortDateTime)}\n" +
-                             $"**User:** {username} ({userId})\n" +
+                             $"**User:** {shownName} ({userId})\n" +
                              $"**Reason:** {reason}")
             .WithColor(GrimoireColor.Purple));
+    }
+
+    /// <summary>Remembers the public post, so a replacement for a deleted post is the one edited next time.</summary>
+    private static async Task SavePublishedMessageAsync(GrimoireDbContext dbContext, SinId sinId, PublishType publish,
+        MessageId? storedMessageId, MessageId messageId)
+    {
+        if (storedMessageId == messageId)
+            return;
+
+        if (storedMessageId is not null)
+        {
+            await dbContext.PublishedMessages
+                .Where(message => message.SinId == sinId && message.PublishType == publish)
+                .ExecuteUpdateAsync(update => update.SetProperty(message => message.MessageId, messageId));
+            return;
+        }
+
+        await dbContext.PublishedMessages.AddAsync(
+            new PublishedMessage { MessageId = messageId, SinId = sinId, PublishType = publish });
+        await dbContext.SaveChangesAsync();
     }
 
     [LoggerMessage(LogLevel.Warning, "Could not find published message {id}")]

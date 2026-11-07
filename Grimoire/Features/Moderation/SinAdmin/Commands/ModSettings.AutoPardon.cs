@@ -13,6 +13,8 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed partial class ModSettings
 {
+    private const long MaxAutoPardonDays = 36_500;
+
     [Command("AutoPardon")]
     [Description("Updates how long till sins are automatically pardoned.")]
     public async Task AutoPardonAsync(
@@ -27,6 +29,12 @@ internal sealed partial class ModSettings
         await ctx.DeferResponseAsync();
 
         var guild = ctx.Guild!;
+
+        if (durationType.GetDays(durationAmount) > MaxAutoPardonDays)
+        {
+            await ctx.SendWarningResponseAsync("Auto pardon can't be longer than 100 years.");
+            return;
+        }
 
         await this._settingsModule.SetAutoPardonDuration(guild.GetGuildId(), ctx.GetModeratorId(),
             durationType.GetTimeSpan(durationAmount));

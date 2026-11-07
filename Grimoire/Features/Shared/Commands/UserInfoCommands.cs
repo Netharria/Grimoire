@@ -12,7 +12,7 @@ using Grimoire.Settings.Services;
 namespace Grimoire.Features.Shared.Commands;
 
 [RequireGuild]
-[RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+[RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 internal sealed class UserInfoCommands(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule)
@@ -30,7 +30,8 @@ internal sealed class UserInfoCommands(
 
         var guild = ctx.Guild!;
 
-        var (color, displayName, avatarUrl, joinDate, roles) = GetUserInfo(user);
+        var (color, displayName, avatarUrl, joinDate, roles) =
+            GetUserInfo(user, await guild.GetMemberOrDefaultAsync(user.GetUserId()));
 
 
         var embed = new DiscordEmbedBuilder()
@@ -51,7 +52,8 @@ internal sealed class UserInfoCommands(
         await ctx.ReplyAsync(embed: embed);
     }
 
-    private static (DiscordColor, string, string, string, ulong[]) GetUserInfo(DiscordUser user)
+    private static (DiscordColor, string, string, string, ulong[]) GetUserInfo(DiscordUser user,
+        DiscordMember? member)
     {
         DiscordColor color;
         string displayName;
@@ -59,7 +61,7 @@ internal sealed class UserInfoCommands(
         string joinDate;
         ulong[] roles;
 
-        if (user is DiscordMember member)
+        if (member is not null)
         {
             color = member.Color.PrimaryColor;
             displayName = member.DisplayName;
@@ -105,8 +107,7 @@ internal sealed class UserInfoCommands(
             .Where(nicknameHistory => nicknameHistory.Nickname != null)
             .OrderByDescending(nicknameHistory => nicknameHistory.Timestamp)
             .Take(3)
-            .Select(nicknameHistory => nicknameHistory.Nickname)
-            .OfType<string>()
+            .Select(nicknameHistory => nicknameHistory.Nickname!.Value.Value)
             .ToArrayAsync();
 
         embed.AddField("Usernames",

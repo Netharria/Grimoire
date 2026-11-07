@@ -46,8 +46,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     // ── Edits ─────────────────────────────────────────────────────────────────
 
     /// <summary>An edit is recorded and logged with the content before and after.</summary>
-    [Fact(Skip = "Fails: the edit handler's query reads PluralKit ids through a null proxy link into non-nullable " +
-                 "value types, so every edit of an ordinary message throws. KI-38")]
+    [Fact]
     public async Task Edit_IsRecorded_AndLoggedWithBeforeAndAfter()
     {
         var messageId = await this.SendLoggedAsync("before");
@@ -80,7 +79,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>An edit that only changes letter case isn't logged.</summary>
-    [Fact(Skip = "Blocked: every edit of a logged message throws before the comparison is reached. KI-38")]
+    [Fact]
     public async Task Edit_ThatOnlyChangesCase_IsIgnored()
     {
         var messageId = await this.SendLoggedAsync("Hello There");
@@ -108,9 +107,8 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         (await this.HistoryOfAsync<MessageDeletedEntry>(messageId)).ShouldHaveSingleItem();
     }
 
-    /// <summary>When the audit log shows a moderator deleted it, that's recorded and shown.</summary>
-    [Fact(Skip = "Fails: this DSharpPlus nightly sets a message-delete audit entry's Target to the responsible user, so " +
-                 "Grimoire's \"target is the author\" filter never matches. KI-39")]
+    /// <summary>KI-39: when the audit log shows a moderator deleted it, that's recorded and shown.</summary>
+    [Fact]
     public async Task Delete_ByAModerator_IsAttributed()
     {
         var messageId = await this.SendLoggedAsync("rule breaking");
@@ -123,6 +121,27 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         Field(embed, "Deleted By").ShouldBe(this.Guild.Moderator.MemberMention);
         (await this.HistoryOfAsync<MessageDeletedByModeratorEntry>(messageId)).ShouldHaveSingleItem()
             .ModeratorId.ShouldBe(new ModeratorId(this.Guild.Moderator.Id));
+    }
+
+    /// <summary>KI-51: the moderator id used to be mapped to a shadow property, so it was never saved.</summary>
+    [Fact]
+    public async Task DeletedByModeratorEntry_KeepsItsModerator()
+    {
+        var messageId = await this.SendLoggedAsync("rule breaking");
+        var moderator = new ModeratorId(this.Guild.Moderator.Id);
+        await using (var seed = this._database.CreateDbContext())
+        {
+            seed.MessageHistory.Add(new MessageDeletedByModeratorEntry
+            {
+                MessageId = new MessageId(messageId),
+                GuildId = new GuildId(this.Guild.Id),
+                ModeratorId = moderator,
+                Timestamp = DateTimeOffset.UtcNow
+            });
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        (await this.HistoryOfAsync<MessageDeletedByModeratorEntry>(messageId)).ShouldHaveSingleItem().ModeratorId.ShouldBe(moderator);
     }
 
     /// <summary>Deleting a message the log never saved posts nothing.</summary>

@@ -182,8 +182,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>When the role couldn't be granted, the log shouldn't say the member earned it.</summary>
-    [Fact(Skip = "Fails: after Discord refuses the role change, GainUserXp still DMs the reward messages and logs " +
-                 "\"has earned\" for roles the member never got. KI-41")]
+    [Fact]
     public async Task ARewardRoleTheBotCannotGrant_IsNotLoggedAsEarned()
     {
         await this.SetAmountAsync(15);

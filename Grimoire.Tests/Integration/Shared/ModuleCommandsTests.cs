@@ -70,13 +70,12 @@ public sealed class ModuleCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         (await this.SetAsync(module, true)).Description.ShouldBe($"Enabled {module}");
         (await this.StoredStateAsync(module)).ShouldBe((true, this.Guild.Admin.Id));
         await this._bot.WaitForModLogEmbedAsync(embed =>
-            embed["description"]?.GetValue<string>() == $"{this.Guild.Admin.Username} Enabled {module}");
+            embed["description"]?.GetValue<string>() == $"{this.Guild.Admin.MemberMention} Enabled {module}");
 
         (await this.SetAsync(module, false)).Description.ShouldBe($"Disabled {module}");
         (await this.StoredStateAsync(module)).ShouldBe((false, this.Guild.Admin.Id));
-        // GEN-89: the mod log names the user by username, not by mention like other commands do.
         await this._bot.WaitForModLogEmbedAsync(embed =>
-            embed["description"]?.GetValue<string>() == $"{this.Guild.Admin.Username} Disabled {module}");
+            embed["description"]?.GetValue<string>() == $"{this.Guild.Admin.MemberMention} Disabled {module}");
     }
 
     /// <summary>GEN-82: setting the current state again is not an error, and is logged again.</summary>

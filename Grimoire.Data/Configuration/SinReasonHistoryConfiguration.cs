@@ -35,17 +35,19 @@ internal sealed class SinReasonHistoryConfiguration : IEntityTypeConfiguration<S
         builder.Property(e => e.SinId)
             .HasConversion(e => e.Value, value => new SinId(value));
 
-        var actorConverter = new ValueConverter<ModerationActor, ulong?>(
+        var actorConverter = new ValueConverter<ModerationActor, decimal?>(
             actor => actor as ModerationActor.Moderator != null
                 ? ((ModerationActor.Moderator)actor).Id.Value
                 : null,
             value => value.HasValue
-                ? new ModerationActor.Moderator(new ModeratorId(value.Value))
-                : new ModerationActor.System());
+                ? new ModerationActor.Moderator(new ModeratorId((ulong)value.Value))
+                : new ModerationActor.System(),
+            convertsNulls: true);
 
         builder.Property(e => e.Actor)
             .HasConversion(actorConverter)
             .HasColumnName("ModeratorId")
+            .HasColumnType("numeric(20,0)")
             .IsRequired(false);
     }
 }

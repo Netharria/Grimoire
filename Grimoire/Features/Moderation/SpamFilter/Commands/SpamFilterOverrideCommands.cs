@@ -58,8 +58,8 @@ internal class SpamFilterOverrideCommands(
                 $"Will now always filter spam messages from {channel.Mention} and its sub channels/threads.",
             SpamFilterOverrideSetting.Never =>
                 $"Will now never filter spam messages from {channel.Mention} and its sub channels/threads.",
-            SpamFilterOverrideSetting.Inherit => throw new ArgumentOutOfRangeException(nameof(overrideSetting),
-                overrideSetting, null),
+            SpamFilterOverrideSetting.Inherit =>
+                $"{channel.Mention} and its sub channels/threads will now follow the parent channel's spam filter setting.",
             _ => throw new NotImplementedException(
                 "A spam filter override option was selected that has not been implemented.")
         });

@@ -6,15 +6,20 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text;
+using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Settings;
 
 public sealed partial class IgnoreCommandGroup
 {
+    [RequireGuild]
+    [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
+    [RequireModuleEnabled(Module.Leveling)]
     [Command("View")]
     [Description("Displays all ignored users, channels and roles on this server.")]
     public async Task ShowIgnoredAsync(CommandContext ctx)

@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -34,7 +35,7 @@ public sealed class MuteUser(
         DiscordMember member,
         [Parameter("duration_type")] [Description("Select whether the duration will be in minutes hours or days")]
         DurationType durationType,
-        [MinMaxValue(0)] [Parameter("duration_amount")] [Description("The amount of time the mute will last.")]
+        [MinMaxValue(1)] [Parameter("duration_amount")] [Description("The amount of time the mute will last.")]
         int durationAmount,
         [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason for the mute.")]
         string? reason = null
@@ -50,6 +51,17 @@ public sealed class MuteUser(
             return;
         }
 
+        if (ctx.User.Id == member.Id)
+        {
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "You can't mute yourself.");
+            return;
+        }
+
+        if (await ModerationRank.GetRefusalReasonAsync(this._settingsModule, ctx, member, "mute") is { } refusal)
+        {
+            await ctx.ReplyAsync(GrimoireColor.Yellow, refusal);
+            return;
+        }
 
         var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
 
@@ -60,10 +72,21 @@ public sealed class MuteUser(
             return;
         }
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        var muteRole = await guild.GetRoleOrDefaultAsync(muteId);
+        if (muteRole is null)
+        {
+            await ctx.ReplyAsync(GrimoireColor.Yellow,
+                "The configured mute role does not exist. Please configure it again before using this command.");
+            return;
+        }
+
+        var muteEndTime = durationType.GetDateTimeOffset(durationAmount);
+
+        // Grant first so a refused role (e.g. above the bot's) does not leave a mute recorded.
+        await member.GrantRoleAsync(muteRole, reason ?? string.Empty);
+
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
-        var muteEndTime = durationType.GetDateTimeOffset(durationAmount);
         var sin = Sin.ForMute(actor, member.GetUserId(), guild.GetGuildId(), now)
             .Match(
                 s => string.IsNullOrWhiteSpace(reason)
@@ -84,22 +107,13 @@ public sealed class MuteUser(
                     },
                 _ => throw new UnreachableException());
 
-        dbContext.Sins.Add(sin);
-        await dbContext.SaveChangesAsync();
-
-        await this._settingsModule.AddMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId(), sin.Id,
-            muteEndTime, muteId);
-
-        var muteRole = await guild.GetRoleOrDefaultAsync(muteId);
-        if (muteRole is null)
+        if (!await this.TryRecordMuteAsync(sin, member, ctx.GetModeratorId(), muteEndTime, muteId))
         {
-            await ctx.ReplyAsync(GrimoireColor.Yellow,
-                "The configured mute role does not exist. Please configure it again before using this command.");
+            // Nothing would ever lift a role with no mute on record.
+            await member.RevokeRoleAsync(muteRole, "The mute could not be recorded.");
+            await ctx.SendErrorResponseAsync("The mute could not be recorded, so it has been undone.");
             return;
         }
-
-        await member.GrantRoleAsync(muteRole, reason!);
-
 
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Mute")
@@ -115,29 +129,45 @@ public sealed class MuteUser(
 
         await ctx.ReplyAsync(embed: embed);
 
-        try
-        {
-            await member.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor($"Mute Id {sin.Id}")
-                .WithDescription(
-                    $"You have been muted for {durationAmount} {durationType} by {ctx.User.Mention} for {reason}")
-                .WithColor(GrimoireColor.Red));
-        }
-        catch (Exception)
-        {
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Description =
-                    $"Was not able to send a direct message with the mute details to {member.Mention}.",
-                Color = GrimoireColor.Red
-            });
-        }
+        await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+            .WithAuthor($"Mute Id {sin.Id}")
+            .WithDescription(
+                $"You have been muted for {durationAmount} {durationType} by {ctx.User.Mention}{ModerationDirectMessage.ForReason(reason)}")
+            .WithColor(GrimoireColor.Red), "mute");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
+    }
+
+    private async Task<bool> TryRecordMuteAsync(Sin sin, DiscordMember member, ModeratorId moderatorId,
+        DateTimeOffset muteEndTime, RoleId muteId)
+    {
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        try
+        {
+            dbContext.Sins.Add(sin);
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return false;
+        }
+
+        try
+        {
+            if (await this._settingsModule.AddMute(member.GetUserId(), member.GetGuildId(), moderatorId, sin.Id,
+                    muteEndTime, muteId) is Result<MuteAdded>.Success)
+                return true;
+        }
+        catch (DbUpdateException)
+        {
+            // Falls through to take the sin back off the member's record.
+        }
+
+        dbContext.Sins.Remove(sin);
+        await dbContext.SaveChangesAsync();
+        return false;
     }
 }

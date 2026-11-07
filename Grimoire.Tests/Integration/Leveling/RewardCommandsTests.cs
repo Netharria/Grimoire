@@ -108,8 +108,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
                 SlashOption.Role("role", this.Guild.KickerRoleId), SlashOption.Integer("level", 3))))
             .Description.ShouldBe("You do not have the required permissions to use this command.");
 
-    [Fact(Skip = "Fails: /Rewards is registered for everyone and Remove has no permission check, so any member can " +
-                 "remove rewards. KI-45")]
+    [Fact]
     public async Task Remove_ByAMemberWithoutManageGuild_IsRefused()
     {
         await this.AddAsync(this.Guild.KickerRoleId, 3, null);
@@ -133,8 +132,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
             .Description.ShouldBe("This module is disabled in this server.");
     }
 
-    [Fact(Skip = "Fails: /Rewards Remove has none of the group's checks, so it runs with the leveling module off " +
-                 "and for anyone Discord lets see the command. KI-45")]
+    [Fact]
     public async Task Remove_NeedsTheModule()
     {
         await this.AddAsync(this.Guild.KickerRoleId, 3, null);

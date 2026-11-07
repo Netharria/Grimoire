@@ -154,7 +154,7 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>SIN-10: a sin with no known moderator shows System.</summary>
-    [Fact(Skip = "Fails: a sin with a System actor can't be saved; EF throws \"Nullable object must have a value\". KI-31")]
+    [Fact]
     public async Task ASinWithNoKnownModerator_ShowsSystem()
     {
         await this.SeedSinAsync(SinType.Ban, this.Guild.User1, moderator: null);
@@ -163,9 +163,9 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
             .ShouldContain("\tModerator: System\n");
     }
 
-    /// <summary>SIN-11: the invoker's own counts. Kicks are not counted.</summary>
+    /// <summary>SIN-11: the invoker's own counts.</summary>
     [Fact]
-    public async Task Mod_CountsTheModeratorsBansMutesAndWarns()
+    public async Task Mod_CountsTheModeratorsBansMutesWarnsAndKicks()
     {
         await this.SeedSinAsync(SinType.Ban, this.Guild.User1, this.Guild.Moderator);
         await this.SeedSinAsync(SinType.Warn, this.Guild.User1, this.Guild.Moderator);
@@ -176,11 +176,11 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         var embed = (await this.SinLogAsync(this.Guild.Moderator, SinQueryType.Mod)).Embed!;
 
         embed["author"]!["name"]!.GetValue<string>().ShouldBe("Moderation log for mod");
-        Fields(embed).ShouldBe([("Bans", "1"), ("Mutes", "0"), ("Warns", "2")]);
+        Fields(embed).ShouldBe([("Bans", "1"), ("Mutes", "0"), ("Warns", "2"), ("Kicks", "1")]);
     }
 
     /// <summary>SIN-12.</summary>
-    [Fact(Skip = "Fails: type Mod always counts the invoker's actions, whatever user is given. KI-29")]
+    [Fact]
     public async Task Mod_ForAnotherModerator_CountsTheirActions()
     {
         await this.SeedSinAsync(SinType.Ban, this.Guild.User1, this.Guild.Admin);
@@ -190,7 +190,7 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>SIN-13: a log long enough to need several pages should show them all.</summary>
-    [Fact(Skip = "Fails: each page edits the same response, so only the last page is ever seen. KI-30")]
+    [Fact]
     public async Task ALongLog_ShowsEveryPage()
     {
         var reason = new string('x', 300);

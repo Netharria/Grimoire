@@ -22,6 +22,8 @@ public readonly record struct LevelScalingModifier
 
     public int Value { get; }
 
+    public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
+
 
     internal static Validation<LevelScalingModifier> FromDatabase(string? input)
         => input is null

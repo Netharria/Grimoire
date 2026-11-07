@@ -26,35 +26,47 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
         [MinMaxValue(0)] [Parameter("sin_id")] [Description("The id of the sin to be pardoned.")]
         SinId sinId,
         [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason the sin is getting pardoned.")]
-        string reason = "")
+        string reason)
     {
         await ctx.DeferResponseAsync();
 
         var guild = ctx.Guild!;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var result = await dbContext.Sins
+        if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var pardonReason))
+        {
+            await ctx.SendErrorResponseAsync("The reason can't be empty.");
+            return;
+        }
+
+        var sinFound = await dbContext.Sins
             .Where(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId())
-            // ReSharper disable once AccessToDisposedClosure
-            .Select(sin => (Username?)dbContext.UsernameHistory
-                .Where(h => h.UserId == sin.UserId)
-                .OrderByDescending(h => h.Timestamp)
-                .Select(h => h.Username)
-                .FirstOrDefault())
+            .Select(sin => new
+            {
+                sin.UserId,
+                // ReSharper disable once AccessToDisposedClosure
+                Username = dbContext.UsernameHistory
+                    .Where(h => h.UserId == sin.UserId)
+                    .OrderByDescending(h => h.Timestamp)
+                    .Select(h => (Username?)h.Username)
+                    .FirstOrDefault()
+            })
             .FirstOrDefaultAsync();
 
-        if (result is not { Value: var userName })
+        if (sinFound is null)
         {
             await ctx.ReplyAsync(GrimoireColor.Red, "Could not find a sin with that ID.");
             return;
         }
+
+        var userName = sinFound.Username?.Value ?? UserExtensions.Mention(sinFound.UserId);
 
         dbContext.Pardons.Add(new Pardon
         {
             SinId = sinId,
             GuildId = guild.GetGuildId(),
             ModeratorId = ctx.GetModeratorId(),
-            Reason = ModerationReason.Create(reason).Match(r => r, _ => throw new UnreachableException()),
+            Reason = pardonReason,
             SetAt = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();
@@ -72,7 +84,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
                 .AddField("User", userName, true)
                 .AddField("Sin Id", sinId.ToString(), true)
                 .AddField("Moderator", ctx.User.Mention, true)
-                .AddField("Reason", string.IsNullOrWhiteSpace(reason) ? "None" : reason, true)
+                .AddField("Reason", reason, true)
                 .WithColor(GrimoireColor.Green)
         });
     }

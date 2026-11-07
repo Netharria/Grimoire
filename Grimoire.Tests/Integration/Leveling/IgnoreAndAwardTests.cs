@@ -72,8 +72,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         (await this.XpOfAsync(this.Guild.User1, expectAtLeast: 1)).ShouldBeGreaterThan(0);
     }
 
-    [Fact(Skip = "Fails: Remove's reply and log are built by a formatter that only knows the Ignored types, so the " +
-                 "Watched items Remove creates show as nothing: \" are no longer ignored for xp gain.\" KI-46")]
+    [Fact]
     public async Task IgnoreRemove_SaysWhatIsNoLongerIgnored()
     {
         await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1));
@@ -100,15 +99,36 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         reply.Description.ShouldContain($"**Users**\n<@{this.Guild.User1.Id}>");
     }
 
-    /// <summary>The command says it ignores channels, so its option should accept one.</summary>
-    [Fact(Skip = "Fails: the items options are mentionable, which Discord limits to users and roles, so a channel " +
-                 "can't be ignored with the command. KI-44")]
-    public void IgnoreAdd_AcceptsChannels()
+    /// <summary>Discord's mentionable options only offer users and roles, so channels get their own optional option.</summary>
+    [Theory]
+    [InlineData("add")]
+    [InlineData("remove")]
+    public void Ignore_OffersAChannelOption(string subcommand)
     {
-        var add = this._bot.Rest.RegisteredCommands["ignore"]["options"]!.AsArray()
-            .Single(option => option!["name"]!.GetValue<string>() == "add")!;
-        add["options"]![0]!["type"]!.GetValue<int>().ShouldNotBe(9);
+        var options = this._bot.Rest.RegisteredCommands["ignore"]["options"]!.AsArray()
+            .Single(option => option!["name"]!.GetValue<string>() == subcommand)!["options"]!.AsArray();
+
+        var channel = options.Single(option => option!["name"]!.GetValue<string>() == "channel")!;
+        channel["type"]!.GetValue<int>().ShouldBe(7);
+        options.ShouldAllBe(option => option!["required"] == null || !option["required"]!.GetValue<bool>());
     }
+
+    [Fact]
+    public async Task Ignore_AChannel_CanBeAddedAndRemoved()
+    {
+        (await this.IgnoreAsync("add", SlashOption.Channel("channel", this.Guild.General))).Description
+            .ShouldBe($"{this.Guild.General.Mention} are now ignored for xp gain.");
+        (await this.Settings.GetAllIgnoredItems(this.GuildId)).ShouldSucceed().ShouldHaveSingleItem()
+            .ShouldBeOfType<IgnoredChannel>();
+
+        (await this.IgnoreAsync("remove", SlashOption.Channel("channel", this.Guild.General))).Description
+            .ShouldBe($"{this.Guild.General.Mention} are no longer ignored for xp gain.");
+        (await this.Settings.GetAllIgnoredItems(this.GuildId)).ShouldSucceed().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task IgnoreAdd_WithNothingSelected_SaysSo()
+        => (await this.IgnoreAsync("add")).Description.ShouldBe("Could not parse any ids from the submitted values.");
 
     [Fact]
     public async Task IgnoreAdd_ByAMemberWithoutManageGuild_IsRefused()

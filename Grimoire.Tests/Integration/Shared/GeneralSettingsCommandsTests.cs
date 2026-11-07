@@ -137,7 +137,7 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
     }
 
     /// <summary>GEN-32, area 01 code observation 2.</summary>
-    [Fact(Skip = "Fails: the Off reply ends with a dangling \"to \" and an empty mention. KI-22")]
+    [Fact]
     public async Task ModLogChannel_Off_ReplyReadsCleanly()
         => (await this.ModLogChannelAsync(ChannelOption.Off)).Description
             .ShouldBe($"{this.Guild.Admin.MemberMention} disabled the moderation log.");
@@ -171,7 +171,7 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
     }
 
     /// <summary>GEN-37: errors sent after a public defer can't be ephemeral, so everyone in the channel sees them.</summary>
-    [Fact(Skip = "Fails: the command defers publicly, so its ephemeral error edits the public response. KI-21")]
+    [Fact]
     public async Task SelectChannelWithoutAChannel_ErrorIsEphemeral()
         => (await this._bot.RunSlashCommandAndWaitAsync("general_settings", this.Guild.Admin,
                 SlashOption.Subcommand("mod_log_channel", SlashOption.Enum("option", ChannelOption.SelectChannel))))

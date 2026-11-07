@@ -7,6 +7,7 @@
 
 using System.Text.Json.Nodes;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Services;
 using Grimoire.Tests.Integration.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
@@ -117,13 +118,54 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     }
 
     /// <summary>KI-14 area: an active mute should be listed.</summary>
-    [Fact(Skip = "Fails: View maps each mute to a Task and then filters for DiscordMember, which a Task never is, so " +
-                 "Muted Users is always None. KI-26")]
+    [Fact]
     public async Task View_ListsMutedMembers()
     {
         await this.Settings.AddMute(new UserId(this.Guild.User1.Id), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId(1), DateTimeOffset.UtcNow.AddHours(1), null, TestContext.Current.CancellationToken);
 
         Field((await this.MutesAsync(this.Guild.Admin, "view")).Embed!, "Muted Users").ShouldBe(this.Guild.User1.MemberMention);
+    }
+
+    /// <summary>MOD-141: a mute past its end time is only waiting for the expiry task.</summary>
+    [Fact]
+    public async Task View_LeavesOutExpiredMutes()
+    {
+        await this.RecordMuteAsync(this.Guild.User1.Id, expired: true);
+
+        Field((await this.MutesAsync(this.Guild.Admin, "view")).Embed!, "Muted Users").ShouldBe("None");
+    }
+
+    /// <summary>MOD-142: someone who left is still muted, and comes back muted.</summary>
+    [Fact]
+    public async Task View_ShowsMembersWhoLeftById()
+    {
+        const ulong left = 1_100_000_000_000_000_096;
+        await this.RecordMuteAsync(left);
+
+        Field((await this.MutesAsync(this.Guild.Admin, "view")).Embed!, "Muted Users").ShouldBe($"`{left}` (left the server)");
+    }
+
+    /// <summary>MOD-143: Discord refuses an embed field over 1024 characters.</summary>
+    [Fact]
+    public async Task View_SplitsALongListAcrossFields()
+    {
+        foreach (var id in Enumerable.Range(0, 60))
+            await this.RecordMuteAsync(1_100_000_000_000_010_000 + (ulong)id);
+
+        var fields = (await this.MutesAsync(this.Guild.Admin, "view")).Embed!["fields"]!.AsArray();
+
+        fields.Select(field => field!["name"]!.GetValue<string>()).ShouldContain("Muted Users (continued)");
+        fields.ShouldAllBe(field => field!["value"]!.GetValue<string>().Length <= 1024);
+    }
+
+    private async Task RecordMuteAsync(ulong userId, bool expired = false)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var mute = MuteAdded.Create(new UserId(userId), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId(1),
+            now.AddMinutes(-10), expired ? now.AddMinutes(-1) : now.AddMinutes(10), null).ShouldSucceed();
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        settingsContext.Mutes.Add(mute);
+        await settingsContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     // ── Set ───────────────────────────────────────────────────────────────────
@@ -143,17 +185,19 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
             == $"{this.Guild.Admin.MemberMention} updated the mute role to <@&{roleId}>");
     }
 
-    /// <summary>MOD-75: any role is accepted, including @everyone and roles above the bot (KI-13). Pins current behaviour.</summary>
+    /// <summary>MOD-75: a role the bot can't give to anyone would break every later mute.</summary>
     [Theory]
-    [InlineData("everyone")]
-    [InlineData("higher")]
-    public async Task Set_AcceptsAnyRoleWithoutValidation(string which)
+    [InlineData("everyone", "@everyone can't be the mute role.")]
+    [InlineData("higher", null)]
+    public async Task Set_RefusesARoleTheBotCannotUse(string which, string? expected)
     {
         var roleId = which == "everyone" ? this.Guild.Id : this.Guild.HigherRoleId;
 
-        await this._bot.RunSlashCommandAndWaitAsync("mutes", this.Guild.Admin, SlashOption.Subcommand("set", SlashOption.Role("role", roleId)));
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("mutes", this.Guild.Admin, SlashOption.Subcommand("set", SlashOption.Role("role", roleId)));
 
-        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBe(new RoleId(roleId));
+        reply.Description.ShouldBe(expected ?? $"<@&{roleId}> is at or above my highest role, so I couldn't give it to anyone.");
+        reply.IsEphemeral.ShouldBeTrue();
+        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeNull();
     }
 
     /// <summary>MOD-77 and MOD-88: every subcommand needs the bot to hold Manage Roles.</summary>
@@ -212,8 +256,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     }
 
     /// <summary>MOD-81: a channel the bot can't see should be listed, without failing the whole command.</summary>
-    [Fact(Skip = "Fails: RetryDiscordCall's fallback overload neither awaits the call nor catches a 403, so one refused " +
-                 "overwrite fails the whole command instead of being listed. KI-27")]
+    [Fact]
     public async Task Create_ListsChannelsItCouldNotSet()
     {
         await this._bot.DisposeAsync();
@@ -229,19 +272,23 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
         (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldNotBeNull();
     }
 
-    /// <summary>MOD-83: a second Create makes another "Muted" role and switches the setting to it (KI-15).</summary>
+    /// <summary>MOD-83: a second Create keeps the configured role and points at Refresh.</summary>
     [Fact]
-    public async Task Create_Twice_MakesASecondRole_AndSwitchesToIt()
+    public async Task Create_WithARoleAlreadyConfigured_KeepsItAndSaysToRefresh()
     {
         await this.CreateAndWaitAsync();
         var first = (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed()!.Value;
+        var rolesCreated = this.RolesCreated();
 
-        await this.CreateAndWaitAsync();
+        var reply = await this.MutesAsync(this.Guild.Admin, "create");
 
-        var second = (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed()!.Value;
-        second.ShouldNotBe(first);
-        this.Guild.HasRole(first.Value).ShouldBeTrue("the first role is left behind");
+        reply.Description.ShouldBe($"<@&{first}> is already the mute role. Use /Mutes Refresh to update its permissions.");
+        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBe(first);
+        this.RolesCreated().ShouldBe(rolesCreated);
     }
+
+    private int RolesCreated()
+        => this._bot.Rest.Requests.Count(request => request.Method == HttpMethod.Post && request.Path.EndsWith("/roles", StringComparison.Ordinal));
 
     // ── Refresh ───────────────────────────────────────────────────────────────
 
@@ -280,8 +327,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
         this.Guild.OverwriteOf(this.Guild.General.Id, roleId).ShouldBe((AttachFiles, TextLock));
         this.Guild.OverwriteOf(this.Guild.ModLog.Id, roleId).ShouldBe((0UL, TextLock));
         this.EditsOf(interaction)[0].ShouldBe($"Refreshing permissions for <@&{roleId}> role.");
-        // MOD-86 records the typo "Succussfully"; KI-28 tracks it.
-        this.EditsOf(interaction)[^1].ShouldBe($"Succussfully refreshed permissions for <@&{roleId}> role.");
+        this.EditsOf(interaction)[^1].ShouldBe($"Successfully refreshed permissions for <@&{roleId}> role.");
     }
 
     private Task<FakeReply> MutesAsync(FakeUser user, string subcommand)

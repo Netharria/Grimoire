@@ -7,7 +7,6 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 
@@ -74,25 +73,11 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
 
         await ctx.ReplyAsync(embed: embed);
 
-        try
-        {
-            if (user is DiscordMember member)
-                await member.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithAuthor($"Warning Id {sin.Id}")
-                    .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
-                    .WithColor(GrimoireColor.Yellow));
-        }
-        catch (Exception ex) when (ex is BadRequestException or UnauthorizedException)
-        {
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Color = GrimoireColor.Red,
-                Description =
-                    $"Was not able to send a direct message with the warn details to {user.Mention}"
-            });
-        }
+        if (await guild.GetMemberOrDefaultAsync(user.GetUserId()) is { } member)
+            await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+                .WithAuthor($"Warning Id {sin.Id}")
+                .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
+                .WithColor(GrimoireColor.Yellow), "warn");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {

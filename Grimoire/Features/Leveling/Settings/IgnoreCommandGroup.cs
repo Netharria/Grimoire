@@ -18,6 +18,13 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
     private readonly GuildLog _guildLog = guildLog;
     private readonly SettingsModule _settingsModule = settingsModule;
 
+    /// <summary>
+    ///     Joins the channel and mentionable options. They're separate because Discord's mentionable options only offer
+    ///     users and roles.
+    /// </summary>
+    private static SnowflakeObject[] CombineItems(DiscordChannel? channel, SnowflakeObject[]? items)
+        => [.. channel is null ? [] : new SnowflakeObject[] { channel }, .. items ?? []];
+
     private static string BuildIgnoreListAsync(
         IEnumerable<XpTrackedItem> ignoredItems)
     {
@@ -27,6 +34,9 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
                 IgnoredChannel c => $"<#{c.ChannelId.Value}>",
                 IgnoredMember m => $"<@{m.UserId.Value}>",
                 IgnoredRole r => $"<@&{r.RoleId.Value}>",
+                WatchedChannel c => $"<#{c.ChannelId.Value}>",
+                WatchedMember m => $"<@{m.UserId.Value}>",
+                WatchedRole r => $"<@&{r.RoleId.Value}>",
                 _ => ""
             }));
     }

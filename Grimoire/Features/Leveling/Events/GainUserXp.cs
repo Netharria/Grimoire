@@ -165,6 +165,7 @@ public sealed partial class GainUserXp(
         {
             await issueReporter.ReportAsync(
                 GuildIssueCatalog.RewardRolesNotGrantable(guildId, newRewards.Select(x => x.RoleId)), cancellationToken);
+            return;
         }
 
         await Task.WhenAll(newRewards

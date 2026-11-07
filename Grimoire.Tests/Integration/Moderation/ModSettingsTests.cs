@@ -81,7 +81,7 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>SIN-54.</summary>
-    [Fact(Skip = "Fails: a large number of years overflows TimeSpan, so the command errors instead of refusing. KI-35")]
+    [Fact]
     public async Task AutoPardon_TooLongToRepresent_IsRefusedClearly()
     {
         var reply = await this.AutoPardonAsync(Duration.Years, 1_000_000);
