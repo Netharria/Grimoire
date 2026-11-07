@@ -44,12 +44,13 @@ public sealed partial class AddMessageEvent(
             Attachments =
             [
                 .. args.Message.Attachments
-                    .Where(x => !string.IsNullOrWhiteSpace(x.FileName))
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Url))
                     .Select(x => new Attachment
                     {
                         Id = new AttachmentId(x.Id),
                         MessageId = new MessageId(args.Message.Id),
-                        FileName = AttachmentFileName.FromDatabase(x.FileName!)
+                        // The full signed URL: the delete log downloads the file from it and re-uploads it.
+                        FileName = AttachmentFileName.FromDatabase(x.Url!)
                     })
             ],
             ChannelId = args.GetChannelId(),

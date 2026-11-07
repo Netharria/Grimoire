@@ -376,12 +376,28 @@ public sealed class GrimoireTestBot : IAsyncDisposable
     ///     Sends a <c>MESSAGE_CREATE</c> and returns the message id. Ids are minted from the current time because the
     ///     bot dates a message by its snowflake, and the log cleanup purges messages by that date.
     /// </summary>
-    public ulong SendMessage(FakeUser author, FakeChannel channel, string content)
+    public ulong SendMessage(FakeUser author, FakeChannel channel, string content, params string[] attachmentFileNames)
     {
         var messageId = this.NextSnowflake();
-        this.Gateway.Dispatch("MESSAGE_CREATE", this.MessageJson(messageId, author, channel, content, edited: false));
+        var message = this.MessageJson(messageId, author, channel, content, edited: false);
+        message["attachments"] = new JsonArray([
+            .. attachmentFileNames.Select(fileName => (fileName, id: this.NextSnowflake())).Select(attachment =>
+                (JsonNode)new JsonObject
+                {
+                    ["id"] = FakeUser.Snowflake(attachment.id),
+                    ["filename"] = attachment.fileName,
+                    ["size"] = 68,
+                    ["url"] = AttachmentUrl(channel, attachment.id, attachment.fileName),
+                    ["proxy_url"] = AttachmentUrl(channel, attachment.id, attachment.fileName)
+                })
+        ]);
+        this.Gateway.Dispatch("MESSAGE_CREATE", message);
         return messageId;
     }
+
+    /// <summary>A CDN attachment URL in Discord's signed form, with the expiry and signature in the query string.</summary>
+    public static string AttachmentUrl(FakeChannel channel, ulong attachmentId, string fileName)
+        => $"https://cdn.discordapp.com/attachments/{channel.Id}/{attachmentId}/{fileName}?ex=6a1b2c3d&is=6a19dabd&hm=0123456789abcdef";
 
     /// <summary>The author edits a message, and the gateway sends <c>MESSAGE_UPDATE</c> with the new content.</summary>
     public void EditMessage(ulong messageId, FakeUser author, FakeChannel channel, string newContent)

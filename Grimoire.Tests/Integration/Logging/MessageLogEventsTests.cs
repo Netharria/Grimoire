@@ -107,6 +107,39 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         (await this.HistoryOfAsync<MessageDeletedEntry>(messageId)).ShouldHaveSingleItem();
     }
 
+    /// <summary>
+    ///     L-1: attachments are stored by their full signed URL, so a deleted image is downloaded from it and re-uploaded with
+    ///     the log, and other files are listed by name.
+    /// </summary>
+    [Fact]
+    public async Task Delete_WithAttachments_ReuploadsTheImage_AndListsTheOtherFiles()
+    {
+        var messageId = this._bot.SendMessage(this.Guild.User1, this.Channel, "look", "cat.png", "notes.txt");
+        var stored = await GrimoireTestBot.EventuallyAsync(async () =>
+        {
+            await using var dbContext = this._database.CreateDbContext();
+            return await dbContext.Attachments.Where(attachment => attachment.MessageId == new MessageId(messageId))
+                .Select(attachment => attachment.FileName.Value)
+                .ToListAsync(TestContext.Current.CancellationToken);
+        }, urls => urls.Count == 2);
+        stored.ShouldAllBe(url => url.StartsWith("https://cdn.discordapp.com/attachments/") && url.Contains("?ex="));
+
+        this._bot.DeleteMessage(messageId, this.Channel);
+
+        var post = await this._bot.Rest.WaitForRequestAsync(request => this._bot.IsModLogPost(request)
+                                                                      && request.Json?["embeds"]?[0]?["author"]?["name"]
+                                                                          ?.GetValue<string>() == $"Message deleted in #{this.Channel.Name}");
+        var embeds = post.Json!["embeds"]!.AsArray();
+        embeds.Select(embed => embed!["image"]?["url"]?.GetValue<string>()).OfType<string>()
+            .ShouldHaveSingleItem().ShouldStartWith("attachment://");
+        embeds.SelectMany(embed => embed!["fields"]!.AsArray())
+            .Single(field => field!["name"]!.GetValue<string>() == "Non-Image Attachments")!["value"]!.GetValue<string>()
+            .ShouldContain("notes.txt");
+        post.Files.ShouldHaveSingleItem();
+        this._bot.Cdn.Downloads.ShouldContain(uri => uri.OriginalString == stored.Single(url => url.Contains("cat.png")));
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     /// <summary>KI-39: when the audit log shows a moderator deleted it, that's recorded and shown.</summary>
     [Fact]
     public async Task Delete_ByAModerator_IsAttributed()
