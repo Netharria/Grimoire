@@ -112,7 +112,9 @@ public sealed partial class DeleteMessageEvent(
             })
             .FirstOrDefaultAsync();
 
-        if (message is null)
+        // The author check above needs the cached message. Rows saved before the bot stopped saving its own posts
+        // are too old to be cached, so check the stored author too.
+        if (message is null || message.UserId.Value == args.Guild.CurrentMember.Id)
             return;
 
         await dbContext.MessageHistory.AddAsync(

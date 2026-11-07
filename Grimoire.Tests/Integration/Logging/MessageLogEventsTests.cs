@@ -157,6 +157,47 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
                                                             && request.Body?.Contains("gets through", StringComparison.Ordinal) == true);
     }
 
+    /// <summary>L-2: the bot's own posts aren't saved, so purging its old log posts logs nothing.</summary>
+    [Fact]
+    public async Task TheBotsOwnMessages_AreNotSaved()
+    {
+        var botPost = this._bot.SendMessage(this.Guild.Bot, this.Channel, "a log post");
+        await this.SendLoggedAsync("a member's message");
+        await Task.Delay(NothingHappensWindow, TestContext.Current.CancellationToken);
+
+        await using var dbContext = this._database.CreateDbContext();
+        (await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(botPost), TestContext.Current.CancellationToken))
+            .ShouldBeFalse();
+    }
+
+    /// <summary>
+    ///     L-2: a post by the bot saved before it stopped saving them, and too old to be cached, is still recognised
+    ///     by its stored author. Otherwise each purged log post would be logged as deleted.
+    /// </summary>
+    [Fact]
+    public async Task Delete_OfAnUncachedPostByTheBot_IsIgnored()
+    {
+        const ulong botPost = 1_100_000_000_000_008_010;
+        await using (var seed = this._database.CreateDbContext())
+        {
+            seed.Messages.Add(new Message
+            {
+                Id = new MessageId(botPost),
+                UserId = new UserId(this.Guild.Bot.Id),
+                GuildId = new GuildId(this.Guild.Id),
+                ChannelId = new ChannelId(this.Channel.Id),
+                CreatedTimestamp = DateTimeOffset.UtcNow.AddDays(-30)
+            });
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        this._bot.DeleteMessage(botPost, this.Channel);
+
+        (await this.LoggedWithinAsync("Message deleted", NothingHappensWindow)).ShouldBeFalse();
+        (await this.HistoryOfAsync<MessageDeletedEntry>(botPost)).ShouldBeEmpty();
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     /// <summary>KI-39: when the audit log shows a moderator deleted it, that's recorded and shown.</summary>
     [Fact]
     public async Task Delete_ByAModerator_IsAttributed()

@@ -24,7 +24,7 @@ note says otherwise.
 | 4 | M-1 | **Done** 2026-11-07, uncommitted | |
 | 5 | M-2 | **Done** 2026-11-07, uncommitted | All six `sin_id` options, including `/Pardon` and the three `/Publish` ones; file renamed to `SinIdArgumentConverter.cs` |
 | 6 | P-3 | **Done** 2026-11-07, uncommitted | `SetCommandTimeout(30 min)` in code before each `MigrateAsync` |
-| 7 | L-2 | Fix | Skip the bot's own messages in `AddMessageEvent` |
+| 7 | L-2 | **Done** 2026-11-07, uncommitted | Skip the bot's own messages in `AddMessageEvent`, plus `main`'s stored-author check in `DeleteMessageEvent` for rows saved before the deploy |
 | 8 | X-1, X-11 | Fix both | |
 | 9 | X-2 | Fix, changed | Auto-remove as proposed, and send moderators an alert in the mod log channel (`Moderation`) when a reward is removed because its role was deleted; replaces `RewardRolesMissing` |
 | 10 | S-2 | Fix | |

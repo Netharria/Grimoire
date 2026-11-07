@@ -24,7 +24,10 @@ public sealed partial class AddMessageEvent(
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        // The bot's own posts are mostly logs. Saving them would log their purge as a delete, and that log would be
+        // purged and logged in turn, forever.
         if (args.Guild is null
+            || args.Author.Id == sender.CurrentUser.Id
             || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
             return;
 
