@@ -194,6 +194,17 @@ public sealed class KickTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.ShouldHaveNoSinsOrKicksAsync();
     }
 
+    /// <summary>M-1: a bot can't be sent a DM, so the kick goes ahead without one and nothing errors.</summary>
+    [Fact]
+    public async Task Kick_OfABot_KicksIt_WithoutADm()
+    {
+        var reply = await this.KickAsync(this.Guild.Admin, this.Guild.OtherBot, "raid bot");
+
+        reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Kick");
+        this._bot.Rest.Requests.Count(this.IsKickOf(this.Guild.OtherBot)).ShouldBe(1);
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     private Task<FakeReply> KickAsync(FakeUser moderator, FakeUser target, string? reason = null)
         => this._bot.RunSlashCommandAndWaitAsync("kick", moderator,
             reason is null

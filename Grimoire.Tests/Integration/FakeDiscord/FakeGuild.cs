@@ -119,6 +119,9 @@ public sealed class FakeGuild(ulong idOffset = 0)
     /// <summary>A member whose top role sits above the bot's, so the bot can't act on them.</summary>
     public FakeUser Higher { get; } = new(1_100_000_000_000_000_024, "higher");
 
+    /// <summary>Another bot in the guild. Bots can't DM each other, and DSharpPlus refuses before it sends anything.</summary>
+    public FakeUser OtherBot { get; } = new(1_100_000_000_000_000_025, "helperbot", true);
+
     public ulong BotRoleId { get; } = 1_100_000_000_000_000_101 + idOffset;
     public ulong ModeratorRoleId { get; } = 1_100_000_000_000_000_102 + idOffset;
     public ulong AdminRoleId { get; } = 1_100_000_000_000_000_103 + idOffset;
@@ -300,7 +303,8 @@ public sealed class FakeGuild(ulong idOffset = 0)
             new(this.Moderator, [this.ModeratorRoleId]),
             new(this.User1, []),
             new(this.Admin, [this.AdminRoleId]),
-            new(this.Higher, [this.HigherRoleId])
+            new(this.Higher, [this.HigherRoleId]),
+            new(this.OtherBot, [])
         }
         .Where(member => !this._departed.Contains(member.User.Id))
         .Select(member => this._roleChanges.TryGetValue(member.User.Id, out var roles) ? member with { RoleIds = roles } : member)

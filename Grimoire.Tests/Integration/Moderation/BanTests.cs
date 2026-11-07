@@ -425,6 +425,18 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
             reply.Description.ShouldBe(PermissionError);
     }
 
+    /// <summary>M-1: a bot can't be sent a DM, so the ban goes ahead without one and nothing errors.</summary>
+    [Fact]
+    public async Task Ban_OfABot_BansIt_WithoutADm()
+    {
+        var reply = await this.BanAsync(this.Guild.Admin, this.Guild.OtherBot, SlashOption.String("reason", "raid bot"));
+
+        reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Banned");
+        this._bot.Rest.Banned.ShouldContain(this.Guild.OtherBot.Id);
+        await this._bot.WaitForModLogEmbedAsync(IsBannedEmbed);
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     private Task<FakeReply> BanAsync(FakeUser moderator, FakeUser target, params SlashOption[] extra)
         => this._bot.RunSlashCommandAndWaitAsync("ban", moderator, [SlashOption.User("user", target), .. extra]);
 

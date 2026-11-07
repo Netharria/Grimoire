@@ -20,6 +20,10 @@ internal static class ModerationDirectMessage
     public static async ValueTask DirectMessageAsync(this GuildLog guildLog, DiscordMember member, DiscordEmbed embed,
         string action)
     {
+        // Bots can't DM each other. DSharpPlus throws ArgumentException before sending, which would stop the action.
+        if (member.IsBot)
+            return;
+
         try
         {
             await member.SendMessageAsync(embed);

@@ -100,14 +100,16 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
 
         await RemoveMuteAsync(expiredMute, settingsModule, discordClient, cancellationToken);
 
-        try
-        {
-            await activeUser.SendMessageAsync(new DiscordEmbedBuilder().WithDescription($"Mute on {activeUser.Mention} has expired."));
-        }
-        catch (DiscordException)
-        {
-            // Members with closed DMs cannot be told; the guild log below still records the expiry.
-        }
+        // Bots can't DM each other, and DSharpPlus refuses with ArgumentException before sending.
+        if (!activeUser.IsBot)
+            try
+            {
+                await activeUser.SendMessageAsync(new DiscordEmbedBuilder().WithDescription($"Mute on {activeUser.Mention} has expired."));
+            }
+            catch (DiscordException)
+            {
+                // Members with closed DMs cannot be told; the guild log below still records the expiry.
+            }
 
         await guildLog.SendLogMessageAsync(
             new GuildLogMessage

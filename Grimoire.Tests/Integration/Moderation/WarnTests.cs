@@ -255,6 +255,20 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
     };
 
+    /// <summary>M-1: warning a bot logs the warning, with no failed-DM notice, since a bot can't be sent one.</summary>
+    [Fact]
+    public async Task Warn_OfABot_IsLogged_WithoutADmNotice()
+    {
+        await this._bot.RunSlashCommandAndWaitAsync("Warn", this.Guild.Moderator,
+            [SlashOption.User("user", this.Guild.OtherBot), SlashOption.String("reason", "stop spamming")]);
+
+        await this._bot.WaitForModLogEmbedAsync(embed => embed["author"]?["name"]?.GetValue<string>() == "Warn");
+        (await this._bot.Rest.ReceivesRequestWithinAsync(request => this._bot.IsModLogPost(request)
+                                                                   && request.Body?.Contains("Was not able to send a direct message", StringComparison.Ordinal) == true,
+            TimeSpan.FromSeconds(1))).ShouldBeFalse();
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     private static string Field(JsonNode embed, string name)
         => embed["fields"]!.AsArray()
             .Single(field => field!["name"]!.GetValue<string>() == name)!["value"]!.GetValue<string>();

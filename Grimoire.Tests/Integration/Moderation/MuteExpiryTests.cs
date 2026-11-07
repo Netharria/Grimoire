@@ -210,6 +210,20 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
             .ShouldBe([new UserId(this.Guild.Admin.Id)]);
     }
 
+    /// <summary>M-1: a bot's mute expires and is logged, with no DM attempt and no alert.</summary>
+    [Fact]
+    public async Task ExpiredMute_OfABot_IsLiftedAndLogged_WithoutADm()
+    {
+        await this.MuteByHandAsync(this.Guild.OtherBot, expired: true);
+
+        await this._bot.RunBackgroundTickAsync<MuteBackgroundTasks>();
+
+        this.Guild.GetMember(this.Guild.OtherBot).RoleIds.ShouldNotContain(this._muteRoleId);
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"Mute on {this.Guild.OtherBot.MemberMention} has expired.");
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     /// <summary>The real timer picks up an expired mute without being ticked by hand.</summary>
     [Fact]
     public async Task TheRealTimer_ExpiresMutes()
