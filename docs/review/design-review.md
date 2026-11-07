@@ -76,7 +76,7 @@ Each section can run in a fresh session or as a subagent.
 
 | # | Status | Section | Prefix | Paths | Lines |
 |---|--------|---------|--------|-------|-------|
-| 1 | `[ ]` | Foundations: Result, errors, command boundary | `F` | `Grimoire.Domain/{Result,ResultCombinators,ResultTaskExtensions,Validation,ValidationCombinators,ValidationTaskExtensions,Error,Unit}.cs`, `Grimoire/Extensions/CommandContextExtension.cs` and the error-response helpers, `Grimoire/Utilities/GenericBackgroundService.cs`, plus three sample commands (`Moderation/Warn`, `Leveling/Rewards`, `CustomCommands`) to test the shapes on | ~900 + samples |
+| 1 | `[x]` | Foundations: Result, errors, command boundary | `F` | `Grimoire.Domain/{Result,ResultCombinators,ResultTaskExtensions,Validation,ValidationCombinators,ValidationTaskExtensions,Error,Unit}.cs`, `Grimoire/Extensions/CommandContextExtension.cs` and the error-response helpers, `Grimoire/Utilities/GenericBackgroundService.cs`, plus three sample commands (`Moderation/Warn`, `Leveling/Rewards`, `CustomCommands`) to test the shapes on | ~900 + samples |
 | 2 | `[ ]` | Domain model | `D` | `Grimoire.Domain` (except section 1 files), `Grimoire.Settings/Domain` | ~3,000 |
 | 3 | `[ ]` | Persistence and queries | `P` | `Grimoire.Data`, `Grimoire/DatabaseQueryHelpers`, the last three migrations and the model snapshot. Look at query *shapes* across the code (`grep` for `CreateDbContextAsync`), not feature logic | ~1,400 + queries |
 | 4 | `[ ]` | Settings and caching | `SET` | `Grimoire.Settings` (except `Domain`), plus every FusionCache use (`SpamTrackerModule`, `DiscordAuditLogParserService`, `GrimoireServiceRegistration`) | ~2,500 |

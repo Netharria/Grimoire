@@ -347,6 +347,8 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
                 "PUT" => Json(new JsonArray([.. request.Json!.AsArray().Select(c => (JsonNode)this.RegisterCommand(c!.AsObject()))])),
                 _ => null
             },
+            _ when GuildInvites().IsMatch(request.Path) && get && !this._guild.BotHas(FakeGuild.ManageGuildPermission)
+                => Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions"),
             _ when GuildInvites().IsMatch(request.Path) && get
                 => Json(new JsonArray([.. this._guild.Invites.Select(invite => (JsonNode)this._guild.InviteJson(invite))])),
             _ when GuildBan().Match(request.Path) is { Success: true } match && get

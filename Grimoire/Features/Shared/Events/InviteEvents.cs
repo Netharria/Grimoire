@@ -22,15 +22,7 @@ public sealed partial class InviteEvents(
 
     public Task HandleEventAsync(DiscordClient sender, InviteCreatedEventArgs args)
     {
-        this._inviteService.UpdateInvite(args.Guild.GetGuildId(),
-            new Invite
-            {
-                Code = args.Invite.GetInviteCode(),
-                Inviter = args.Invite.Inviter.GetUsername(),
-                Url = args.Invite.GetInviteUrl(),
-                Uses = args.Invite.Uses,
-                MaxUses = args.Invite.MaxUses
-            });
+        this._inviteService.UpdateInvite(args.Guild.GetGuildId(), args.Invite.ToInvite());
         return Task.CompletedTask;
     }
 

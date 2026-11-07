@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Concurrent;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
@@ -26,24 +25,13 @@ internal sealed class GuildMemberAddedEvent(
     {
         if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
-        var invites = await args.Guild.GetInvitesAsync();
-        var inviteUsed = this._inviteService.CalculateInviteUsed(new GuildInviteDto
-        {
-            GuildId = args.Guild.GetGuildId(),
-            Invites = new ConcurrentDictionary<InviteCode, Invite>(
-                invites.Select(x =>
-                    new Invite
-                    {
-                        Code = x.GetInviteCode(),
-                        Inviter = x.Inviter.GetUsername(),
-                        Url = x.GetInviteUrl(),
-                        Uses = x.Uses,
-                        MaxUses = x.MaxUses
-                    }).ToDictionary(x => x.Code))
-        });
+        // Without Manage Server the invites can't be listed, so the join is logged with no invite.
+        var invites = await args.Guild.GetGuildInvitesAsync();
+        var inviteUsed = invites is null ? null : this._inviteService.CalculateInviteUsed(invites);
         string? inviteUsedText;
         if (inviteUsed is not null)
-            inviteUsedText = $"{inviteUsed.Url} ({inviteUsed.Uses} uses)\n**Created By:** {inviteUsed.Inviter}";
+            inviteUsedText =
+                $"{inviteUsed.Url} ({inviteUsed.Uses} uses)\n**Created By:** {inviteUsed.Inviter?.ToString() ?? "Unknown"}";
         else if (!string.IsNullOrWhiteSpace(args.Guild.VanityUrlCode))
             inviteUsedText = "Vanity Invite";
         else

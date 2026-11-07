@@ -10,7 +10,7 @@ namespace Grimoire.Domain;
 public sealed record Invite
 {
     public required InviteCode Code { get; init; }
-    public required Username Inviter { get; init; }
+    public required Username? Inviter { get; init; }
     public required int Uses { get; init; }
     public required int MaxUses { get; init; }
     public required InviteUrl Url { get; init; }

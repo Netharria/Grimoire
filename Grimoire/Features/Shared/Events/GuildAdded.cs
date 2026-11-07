@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Concurrent;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Logging.UserLogging;
 
@@ -34,21 +33,8 @@ internal sealed class GuildAdded(
         var avatarsUpdated =
             await dbContext.Avatars.AddMissingAvatarsHistoryAsync(eventArgs.Guild);
 
-        this._inviteService.UpdateGuildInvites(
-            new GuildInviteDto
-            {
-                GuildId = eventArgs.Guild.GetGuildId(),
-                Invites = new ConcurrentDictionary<InviteCode, Invite>((await eventArgs.Guild.GetInvitesAsync())
-                    .Select(x => new Invite
-                    {
-                        Code = x.GetInviteCode(),
-                        Inviter = x.Inviter.GetUsername(),
-                        Url = x.GetInviteUrl(),
-                        Uses = x.Uses,
-                        MaxUses = x.MaxUses
-                    })
-                    .ToDictionary(x => x.Code))
-            });
+        this._inviteService.UpdateGuildInvites(await eventArgs.Guild.GetGuildInvitesAsync()
+                                               ?? new GuildInviteDto { GuildId = eventArgs.Guild.GetGuildId() });
 
         if (usernamesUpdated || nicknamesUpdated || avatarsUpdated)
             await dbContext.SaveChangesAsync();

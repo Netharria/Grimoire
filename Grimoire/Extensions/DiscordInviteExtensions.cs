@@ -16,5 +16,16 @@ public static class DiscordInviteExtensions
 
         [Pure]
         public InviteCode GetInviteCode() => InviteCode.FromDatabase(invite.Code);
+
+        /// <remarks>Discord leaves out the inviter for some invites, such as those made by an integration.</remarks>
+        [Pure]
+        public Invite ToInvite() => new()
+        {
+            Code = invite.GetInviteCode(),
+            Inviter = invite.Inviter?.GetUsername(),
+            Url = invite.GetInviteUrl(),
+            Uses = invite.Uses,
+            MaxUses = invite.MaxUses
+        };
     }
 }

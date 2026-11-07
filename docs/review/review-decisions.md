@@ -20,7 +20,7 @@ note says otherwise.
 |------|---------|----------|------|
 | 1 | L-1 | **Done** 2026-11-07, uncommitted | Store the full `x.Url` again, as `main` did (Discord's signed URLs mean building it from the file name no longer works) |
 | 2 | I-1 | **Done** 2026-11-07, uncommitted | Also fixed `GainUserXp.cs:197` (same catch). Found KI-54 (DSharpPlus send fails after a timeout) |
-| 3 | I-2, I-13 `ToInvite` | Fix | |
+| 3 | I-2, I-13 `ToInvite` | **Done** 2026-11-07, uncommitted | `Invite.Inviter` is now optional (Discord can leave it out); also fixed KI-52 |
 | 4 | M-1 | Fix | |
 | 5 | M-2 | Fix | |
 | 6 | P-3 | Fix | `SetCommandTimeout(30 min)` in code before each `MigrateAsync` |

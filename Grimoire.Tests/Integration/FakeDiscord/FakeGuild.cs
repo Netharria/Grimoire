@@ -57,10 +57,11 @@ public sealed record FakeChannel(ulong Id, string Name, int Type = FakeChannel.T
 ///     All ids are fixed so recorded payloads and assertions stay stable between runs.
 /// </summary>
 /// <summary>An invite to the guild. Uses is mutable: a member joining with it bumps the count, as on Discord.</summary>
-public sealed class FakeInvite(string code, FakeUser inviter, int uses = 0, int maxUses = 0)
+public sealed class FakeInvite(string code, FakeUser? inviter, int uses = 0, int maxUses = 0)
 {
     public string Code { get; } = code;
-    public FakeUser Inviter { get; } = inviter;
+    /// <summary>Discord leaves the inviter out for some invites, such as those made by an integration.</summary>
+    public FakeUser? Inviter { get; } = inviter;
     public int Uses { get; set; } = uses;
     public int MaxUses { get; } = maxUses;
 }
@@ -80,7 +81,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
         ["type"] = 0,
         ["guild"] = new JsonObject { ["id"] = FakeUser.Snowflake(this.Id), ["name"] = "Test Guild" },
         ["channel"] = new JsonObject { ["id"] = FakeUser.Snowflake(this.General.Id), ["name"] = this.General.Name, ["type"] = 0 },
-        ["inviter"] = invite.Inviter.ToJson(),
+        ["inviter"] = invite.Inviter?.ToJson(),
         ["uses"] = invite.Uses,
         ["max_uses"] = invite.MaxUses,
         ["max_age"] = 0,

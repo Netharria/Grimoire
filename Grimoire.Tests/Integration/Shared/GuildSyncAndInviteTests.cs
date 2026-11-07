@@ -46,6 +46,11 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
         foreach (var logType in new[] { GuildLogType.UserJoined, GuildLogType.AvatarUpdated })
             (await settings.SetLogChannelSetting(logType, new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id),
                 new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+
+        // Ready doesn't wait for the startup sync, which stores the invites and then the history. A join before then
+        // has no invites to match against (KI-52).
+        await GrimoireTestBot.EventuallyAsync(this.HistoryAsync,
+            history => history.Usernames.Count >= this.Guild.Members.Count);
     }
 
     // ── Startup sync ──────────────────────────────────────────────────────────
@@ -61,6 +66,47 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
         usernames.Single(row => row.UserId == new UserId(this.Guild.User1.Id)).Username.Value.ShouldBe("user1");
         nicknames.Select(row => row.UserId).ToHashSet().ShouldBe(memberIds, ignoreOrder: true);
         avatars.Select(row => row.UserId).ToHashSet().ShouldBe(memberIds, ignoreOrder: true);
+    }
+
+    /// <summary>
+    ///     I-2: without Manage Server the bot can't list invites. That must not stop the startup sync, or the join
+    ///     log, which then shows no invite. The bot doesn't ask for invites it can't list.
+    /// </summary>
+    [Fact]
+    public async Task WithoutManageServer_StartupStillSyncs_AndJoinsAreLoggedWithNoInvite()
+    {
+        var invite = new FakeInvite("once", new FakeGuild().Admin, uses: 0, maxUses: 1);
+        await this.StartAsync(guild =>
+        {
+            guild.BotPermissions = FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission
+                                   | FakeGuild.EmbedLinksPermission | FakeGuild.ViewAuditLogPermission;
+            guild.Invites.Add(invite);
+        });
+
+        var memberIds = this.Guild.Members.Select(member => new UserId(member.User.Id)).ToHashSet();
+        (await this.HistoryAsync()).Usernames.Select(row => row.UserId).ToHashSet().ShouldBe(memberIds, ignoreOrder: true);
+
+        this._bot.MemberLeaves(this.Guild.User1);
+        this._bot.MemberJoinsWithInvite(this.Guild.User1, invite);
+
+        Field(await this.WaitForJoinLogAsync(), "Invite Used").ShouldBe("Unknown Invite");
+        this._bot.Rest.Requests.ShouldNotContain(request => request.Path == $"guilds/{this.Guild.Id}/invites");
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>Discord leaves out the inviter for some invites; the join log still shows the invite.</summary>
+    [Fact]
+    public async Task AJoin_WithAnInviteThatHasNoInviter_ShowsItsCreatorAsUnknown()
+    {
+        var invite = new FakeInvite("once", inviter: null, uses: 0, maxUses: 1);
+        await this.StartAsync(guild => guild.Invites.Add(invite));
+        this._bot.MemberLeaves(this.Guild.User1);
+
+        this._bot.MemberJoinsWithInvite(this.Guild.User1, invite);
+
+        var inviteUsed = Field(await this.WaitForJoinLogAsync(), "Invite Used");
+        inviteUsed.ShouldStartWith("https://discord.gg/once ");
+        inviteUsed.ShouldEndWith("\n**Created By:** Unknown");
     }
 
     /// <summary>Restarting on the same data adds no rows.</summary>
@@ -80,8 +126,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
 
     // ── Invites ───────────────────────────────────────────────────────────────
 
-    [Fact(Skip = "Flaky: passes alone, but times out waiting on a REST request in some full runs, on an unmodified " +
-                 "nightly too. Cause unknown. KI-52")]
+    [Fact]
     public async Task AJoin_ShowsTheInviteThatWasUsed()
     {
         var invite = new FakeInvite("abc123", new FakeGuild().Moderator, uses: 4);

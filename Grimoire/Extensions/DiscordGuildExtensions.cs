@@ -5,8 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Concurrent;
 using DSharpPlus.Entities.AuditLogs;
 using DSharpPlus.Exceptions;
+using Grimoire.Features.Logging.UserLogging;
 
 namespace Grimoire.Extensions;
 
@@ -14,6 +16,20 @@ public static class DiscordGuildExtensions
 {
     extension(DiscordGuild guild)
     {
+        /// <returns>
+        ///     The guild's invites, or <c>null</c> when the bot lacks Manage Server, which listing them needs. That is
+        ///     a normal setup, so it must not stop the caller from handling the guild in other ways.
+        /// </returns>
+        public async Task<GuildInviteDto?> GetGuildInvitesAsync()
+            => guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ManageGuild)
+                ? new GuildInviteDto
+                {
+                    GuildId = guild.GetGuildId(),
+                    Invites = new ConcurrentDictionary<InviteCode, Invite>((await guild.GetInvitesAsync())
+                        .Select(invite => KeyValuePair.Create(invite.GetInviteCode(), invite.ToInvite())))
+                }
+                : null;
+
         public ValueTask<T?> GetRecentAuditLogAsync<T>(DiscordAuditLogActionType? actionType = null,
             int allowedTimeSpan = 500)
             where T : DiscordAuditLogEntry
