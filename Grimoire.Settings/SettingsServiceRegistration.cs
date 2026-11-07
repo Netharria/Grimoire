@@ -29,6 +29,12 @@ public static partial class SettingsServiceRegistration
         return services;
     }
 
+    /// <summary>
+    ///     How long one migration statement may run at startup. A migration can rewrite a large table in one
+    ///     statement, which Npgsql's default of 30 seconds can't fit, and a timeout rolls the migration back.
+    /// </summary>
+    public static readonly TimeSpan MigrationCommandTimeout = TimeSpan.FromMinutes(30);
+
     public static async Task MigrateSettingsDb(IDbContextFactory<SettingsDbContext> settingsDbContext, ILogger logger,
         CancellationToken cancellationToken)
     {
@@ -38,6 +44,7 @@ public static partial class SettingsServiceRegistration
         {
             Stopwatch sw = new();
             sw.Start();
+            context.Database.SetCommandTimeout(MigrationCommandTimeout);
             await context.Database.MigrateAsync(cancellationToken);
             sw.Stop();
             LogMigrationDuration(logger, sw.ElapsedMilliseconds);

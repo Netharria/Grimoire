@@ -40,6 +40,8 @@ internal sealed partial class DiscordStartService(
         {
             Stopwatch sw = new();
             sw.Start();
+            // A migration can rewrite a large table in one statement, which Npgsql's default 30 seconds can't fit.
+            context.Database.SetCommandTimeout(SettingsServiceRegistration.MigrationCommandTimeout);
             await context.Database.MigrateAsync(cancellationToken);
             sw.Stop();
             LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
