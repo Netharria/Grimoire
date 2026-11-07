@@ -491,7 +491,7 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
             return Error(HttpStatusCode.NotFound, 10007, "Unknown Member");
         if (!this._guild.HasRole(roleId))
             return Error(HttpStatusCode.NotFound, 10011, "Unknown Role");
-        if (!this._guild.BotCanManageRole(roleId))
+        if (!this._guild.BotCanManageRole(roleId) || this._guild.IsManaged(roleId))
             return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
 
         if (grant)
@@ -542,9 +542,9 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     }
 
     /// <summary>A moderator creates a role from Discord's client. Returns its id.</summary>
-    public ulong CreateRole(string name, ulong permissions = 0, int position = 1)
+    public ulong CreateRole(string name, ulong permissions = 0, int position = 1, bool managed = false)
     {
-        var roleId = this._guild.AddRole(name, permissions, position);
+        var roleId = this._guild.AddRole(name, permissions, position, managed);
         this.Dispatch?.Invoke("GUILD_ROLE_CREATE", new JsonObject
         {
             ["guild_id"] = FakeUser.Snowflake(this._guild.Id),

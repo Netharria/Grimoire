@@ -38,7 +38,7 @@ public sealed partial class RewardCommandGroup
 
         var guild = ctx.Guild!;
 
-        await ValidateBotHasPermission(guild, role)
+        await ValidateBotCanGrant(guild, role)
             .Bind(_ => RewardMessage.CreateIfNotNull(message))
             .Bind(validatedMessage =>
                 RewardAdded.Create(
@@ -57,12 +57,18 @@ public sealed partial class RewardCommandGroup
             );
     }
 
-    private static Validation<DiscordRole> ValidateBotHasPermission(DiscordGuild guild, DiscordRole role)
-        => guild.CurrentMember.Hierarchy < role.Position
-            ? Validation<DiscordRole>.Fail(new Error("reward.role-id.bot-permissions",
+    private static Validation<DiscordRole> ValidateBotCanGrant(DiscordGuild guild, DiscordRole role)
+        => role switch
+        {
+            { IsManaged: true } => Validation<DiscordRole>.Fail(new Error("reward.role-id.managed",
+                "That role is managed by an integration, such as a bot or Server Booster, so it can't be given out.")),
+            // Discord needs the bot's top role strictly above the role it grants.
+            _ when role.Position >= guild.CurrentMember.Hierarchy => Validation<DiscordRole>.Fail(new Error(
+                "reward.role-id.bot-permissions",
                 $"{guild.CurrentMember.DisplayName} will not be able to apply this " +
-                $"reward role because the role has a higher rank than it does."))
-            : Validation<DiscordRole>.Succeed(role);
+                $"reward role because the role has the same or a higher rank than it does.")),
+            _ => Validation<DiscordRole>.Succeed(role)
+        };
 
     private static Task OnFail(CommandContext ctx, Error error)
         => ctx.ReplyAsync(GrimoireColor.Red,

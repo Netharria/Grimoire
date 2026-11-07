@@ -165,6 +165,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
         }
     };
     private readonly Dictionary<ulong, (string Name, ulong Permissions, int Position)> _addedRoles = [];
+    private readonly HashSet<ulong> _managedRoles = [];
     private ulong _nextRoleId = 1_100_000_000_000_000_150 + idOffset;
 
     /// <summary>
@@ -225,16 +226,25 @@ public sealed class FakeGuild(ulong idOffset = 0)
 
     /// <summary>
     ///     Adds a role, as if a moderator created it, at <paramref name="position" />. The default sits below the
-    ///     bot's role; use <see cref="RoleAboveTheBot" /> for one the bot can't manage. Returns the new role's id.
+    ///     bot's role; use <see cref="RoleAboveTheBot" /> for one the bot can't manage. A <paramref name="managed" />
+    ///     role belongs to an integration, such as Server Booster, and nobody can grant it. Returns the new role's id.
     /// </summary>
-    public ulong AddRole(string name, ulong permissions = 0, int position = 1)
+    public ulong AddRole(string name, ulong permissions = 0, int position = 1, bool managed = false)
     {
         lock (this._addedRoles)
         {
             var id = this._nextRoleId++;
             this._addedRoles[id] = (name, permissions, position);
+            if (managed)
+                this._managedRoles.Add(id);
             return id;
         }
+    }
+
+    public bool IsManaged(ulong roleId)
+    {
+        lock (this._addedRoles)
+            return this._managedRoles.Contains(roleId);
     }
 
     public const int RoleAboveTheBot = BotRolePosition + 1;
@@ -267,7 +277,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
         lock (this._addedRoles)
             return this.FixedRoles().Concat(this._addedRoles.Select(role => (Id: role.Key, role.Value.Name, role.Value.Position, role.Value.Permissions)))
                 .Where(role => role.Id == roleId)
-                .Select(role => RoleJson(role.Id, role.Name, role.Position, role.Permissions))
+                .Select(role => RoleJson(role.Id, role.Name, role.Position, role.Permissions, this._managedRoles.Contains(role.Id)))
                 .FirstOrDefault();
     }
 
@@ -287,7 +297,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
     {
         lock (this._addedRoles)
             return [.. this.FixedRoles().Concat(this._addedRoles.Select(role => (Id: role.Key, role.Value.Name, role.Value.Position, role.Value.Permissions)))
-                .Select(role => (JsonNode)RoleJson(role.Id, role.Name, role.Position, role.Permissions))];
+                .Select(role => (JsonNode)RoleJson(role.Id, role.Name, role.Position, role.Permissions, this._managedRoles.Contains(role.Id)))];
     }
 
     /// <summary>Active threads, sent in <c>GUILD_CREATE</c>'s <c>threads</c> array as Discord does.</summary>
@@ -490,7 +500,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
         return json;
     }
 
-    private static JsonObject RoleJson(ulong id, string name, int position, ulong permissions) => new()
+    private static JsonObject RoleJson(ulong id, string name, int position, ulong permissions, bool managed) => new()
     {
         ["id"] = FakeUser.Snowflake(id),
         ["name"] = name,
@@ -501,7 +511,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
         ["unicode_emoji"] = null,
         ["position"] = position,
         ["permissions"] = permissions.ToString(CultureInfo.InvariantCulture),
-        ["managed"] = false,
+        ["managed"] = managed,
         ["mentionable"] = false,
         ["flags"] = 0
     };

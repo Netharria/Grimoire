@@ -67,7 +67,33 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     {
         (await this.AddAsync(this.Guild.HigherRoleId, 3, null)).Description.ShouldBe(
             "Was not able to update the rewards for the server:\n" +
-            "Grimoire will not be able to apply this reward role because the role has a higher rank than it does.");
+            "Grimoire will not be able to apply this reward role because the role has the same or a higher rank than it does.");
+
+        (await this.RewardsAsync()).ShouldBeEmpty();
+    }
+
+    /// <summary>X-11: Discord needs the bot's top role strictly above the role, so a role level with it is refused.</summary>
+    [Fact]
+    public async Task Add_ARoleLevelWithTheBot_IsRefused()
+    {
+        var level = this._bot.Rest.CreateRole("Level", 0, FakeGuild.RoleAboveTheBot - 1);
+
+        (await this.AddAsync(level, 3, null)).Description.ShouldBe(
+            "Was not able to update the rewards for the server:\n" +
+            "Grimoire will not be able to apply this reward role because the role has the same or a higher rank than it does.");
+
+        (await this.RewardsAsync()).ShouldBeEmpty();
+    }
+
+    /// <summary>X-11: a managed role, such as Server Booster, can't be granted by anyone, so it can't be a reward.</summary>
+    [Fact]
+    public async Task Add_AManagedRole_IsRefused()
+    {
+        var booster = this._bot.Rest.CreateRole("Server Booster", managed: true);
+
+        (await this.AddAsync(booster, 3, null)).Description.ShouldBe(
+            "Was not able to update the rewards for the server:\n" +
+            "That role is managed by an integration, such as a bot or Server Booster, so it can't be given out.");
 
         (await this.RewardsAsync()).ShouldBeEmpty();
     }

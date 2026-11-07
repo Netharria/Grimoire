@@ -37,7 +37,15 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await this.StartAsync();
+    }
+
+    /// <summary>Starts the bot, or restarts it on the same database for a test that needs a different guild.</summary>
+    private async Task StartAsync(Action<FakeGuild>? configureGuild = null)
+    {
+        if (this._bot is not null)
+            await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(this._database, configureGuild);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
@@ -211,6 +219,47 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
             $"Level rewards point at roles that no longer exist: `{doomed}`.", StringComparison.Ordinal) == true);
         (await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this.Guild.GetMember(this.Guild.User1).RoleIds),
             roles => roles.Contains(this.Guild.KickerRoleId))).ShouldContain(this.Guild.KickerRoleId);
+    }
+
+    /// <summary>
+    ///     X-1: a member with a managed role, such as Server Booster, still gets their reward. Granting the whole role
+    ///     list would include the managed role, which DSharpPlus refuses.
+    /// </summary>
+    [Fact]
+    public async Task AMemberWithAManagedRole_StillEarnsTheReward()
+    {
+        ulong booster = 0;
+        await this.StartAsync(guild =>
+        {
+            booster = guild.AddRole("Server Booster", managed: true);
+            guild.GrantRole(guild.User1, booster);
+        });
+        await this.SetAmountAsync(15);
+        await this.AddRewardAsync(this.Guild.KickerRoleId, 2, null);
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
+
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
+        this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldBe([booster, this.Guild.KickerRoleId], ignoreOrder: true);
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>X-1: a reward role the bot can't grant is reported, and the other rewards are still granted.</summary>
+    [Fact]
+    public async Task ARewardTheBotCannotGrant_DoesNotBlockTheOthers()
+    {
+        await this.SetAmountAsync(15);
+        await this.AddRewardAsync(this.Guild.HigherRoleId, 2, null);
+        await this.AddRewardAsync(this.Guild.KickerRoleId, 2, null);
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
+
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.Contains(
+            $"I could not give the level reward roles <@&{this.Guild.HigherRoleId}>.", StringComparison.Ordinal) == true);
+        this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldBe([this.Guild.KickerRoleId]);
     }
 
     private async Task SetAmountAsync(int amount)

@@ -148,27 +148,32 @@ public sealed partial class GainUserXp(
         if (missingRoles.Length > 0)
             await issueReporter.ReportAsync(GuildIssueCatalog.RewardRolesMissing(guildId, missingRoles), cancellationToken);
 
-        var rolesToAdd = newRewards
-            .Join(guild.Roles,
-                reward => reward.RoleId,
-                role => role.Value.GetRoleId(),
-                (_, role) => role.Value)
-            .Concat(member.Roles)
-            .Distinct()
-            .ToArray();
-
-        try
+        // One role at a time. Replacing the whole role list fails if the member has a managed role, such as Server
+        // Booster, undoes changes the cache hasn't seen yet, and lets one role the bot can't grant block the rest.
+        List<RewardEntry> granted = [];
+        List<RoleId> refused = [];
+        foreach (var reward in newRewards)
         {
-            await member.ReplaceRolesAsync(rolesToAdd);
+            if (!guild.Roles.TryGetValue(reward.RoleId.Value, out var role))
+                continue;
+            try
+            {
+                await member.GrantRoleAsync(role, "Level reward");
+                granted.Add(reward);
+            }
+            catch (UnauthorizedException)
+            {
+                refused.Add(reward.RoleId);
+            }
         }
-        catch (UnauthorizedException)
-        {
-            await issueReporter.ReportAsync(
-                GuildIssueCatalog.RewardRolesNotGrantable(guildId, newRewards.Select(x => x.RoleId)), cancellationToken);
+
+        if (refused.Count > 0)
+            await issueReporter.ReportAsync(GuildIssueCatalog.RewardRolesNotGrantable(guildId, refused), cancellationToken);
+
+        if (granted.Count == 0)
             return;
-        }
 
-        await Task.WhenAll(newRewards
+        await Task.WhenAll(granted
             .Where(reward => reward.RewardMessage.HasValue)
             .Select(reward => this.SendRewardMessageAsync(guild, member, reward)));
 
@@ -178,7 +183,7 @@ public sealed partial class GainUserXp(
             GuildLogType = GuildLogType.Leveling,
             Title = member.Username,
             Description = $"{member.Mention} has earned " +
-                          $"{string.Join(' ', newRewards.Select(x => RoleExtensions.Mention(x.RoleId)))}",
+                          $"{string.Join(' ', granted.Select(x => RoleExtensions.Mention(x.RoleId)))}",
             Footer = $"{member.Id}",
             Color = GrimoireColor.DarkPurple
         }, cancellationToken);
