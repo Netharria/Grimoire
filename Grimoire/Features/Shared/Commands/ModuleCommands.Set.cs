@@ -40,18 +40,17 @@ internal sealed partial class ModuleCommands
 
         var guild = ctx.Guild!;
 
-        await this._settingsModule.SetModuleState(MapToModule(module), guild.GetGuildId(), ctx.GetModeratorId(),
-            enable);
-
-        await ctx.ReplyAsync(message: $"{(enable ? "Enabled" : "Disabled")} {module}");
-
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Description = $"{ctx.User.Mention} {(enable ? "Enabled" : "Disabled")} {module}",
-            Color = GrimoireColor.Purple
-        });
+        await ctx.ReplyResultAsync(
+            await this._settingsModule.SetModuleState(MapToModule(module), guild.GetGuildId(), ctx.GetModeratorId(),
+                enable),
+            $"{(enable ? "Enabled" : "Disabled")} {module}",
+            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Description = $"{ctx.User.Mention} {(enable ? "Enabled" : "Disabled")} {module}",
+                Color = GrimoireColor.Purple
+            }));
     }
 
     internal enum ModuleArguments

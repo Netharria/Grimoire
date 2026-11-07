@@ -78,7 +78,7 @@ Use one command per gated module. Disable the module with `/Modules Set`, run, r
 |----|--------------|--------|-------------------------|-------------------|
 | GEN-30 | none | `/GeneralSettings ModLogChannel option:Select Channel channel:#modlog` | Public reply "Updated the moderation log to #modlog" | Settings DB: mod log channel = `#modlog` id, modified-by = admin id |
 | GEN-31 | none | Run in `#locktest` with `option:Current Channel` | Reply names `#locktest`; setting updated | Setting = `#locktest` id |
-| GEN-32 | Mod log set | `option:Off` | Reply "`@admin` disabled the moderation log." | Setting cleared (null) |
+| GEN-32 | Mod log set | `option:Off` | Reply "Disabled the moderation log." | Setting cleared (null) |
 | GEN-33 | Mod log set to `#modlog` | Change to `#userlog` | Reply OK; **the "updated" log message is sent to the new channel** (`#userlog`) since the log reads the new setting | Setting = `#userlog` |
 | GEN-34 | Mod log set | Set `option:Off` | Reply sent; no log message posted anywhere (log is disabled by the time it is sent) | Setting null |
 | GEN-35 | `#private` hidden from bot (deny View/Send for bot) | Select `#private` | Red error "`@Grimoire` doesn't have permission to send messages in that channel."; setting unchanged | Setting unchanged |
@@ -277,7 +277,7 @@ Integration tests in `Grimoire.Tests/Integration/Shared/` now cover these cases.
 - `ModuleCommandsTests`: GEN-70, GEN-73, GEN-80 to GEN-84, GEN-86, GEN-87 and GEN-89, plus the message-log half of
   GEN-88.
 - `GeneralSettingsCommandsTests`: GEN-20, 21, 23, 30 to 35, 37 to 40, 50 to 55 and 60. GEN-32's wording (KI-22) and
-  GEN-37's ephemeral flag (KI-21) are skipped tests.
+  GEN-37's ephemeral flag (KI-21) are pinned by ordinary tests.
 - `UserInfoCommandTests`: GEN-08, 100 to 118, 120 and 121, with GEN-103 using XP rows from another guild id. The User
   Log section (GEN-100, 101, 109) is skipped because the command throws (KI-23). Member join date and role-based
   ignores (GEN-100, 104, 114, 115, 117) are skipped because the member is never resolved (KI-19).

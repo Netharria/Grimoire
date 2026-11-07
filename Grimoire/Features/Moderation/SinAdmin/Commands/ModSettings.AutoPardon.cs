@@ -36,16 +36,16 @@ internal sealed partial class ModSettings
             return;
         }
 
-        await this._settingsModule.SetAutoPardonDuration(guild.GetGuildId(), ctx.GetModeratorId(),
-            durationType.GetTimeSpan(durationAmount));
-
-        await ctx.ReplyAsync(message: $"Will now auto pardon sins after {durationAmount} {durationType}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.Purple,
-            Description = $"{ctx.User.Mention} updated auto pardon to {durationAmount} {durationType}"
-        });
+        await ctx.ReplyResultAsync(
+            await this._settingsModule.SetAutoPardonDuration(guild.GetGuildId(), ctx.GetModeratorId(),
+                durationType.GetTimeSpan(durationAmount)),
+            $"Will now auto pardon sins after {durationAmount} {durationType}",
+            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.Purple,
+                Description = $"{ctx.User.Mention} updated auto pardon to {durationAmount} {durationType}"
+            }));
     }
 }

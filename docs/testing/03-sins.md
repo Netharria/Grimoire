@@ -80,7 +80,7 @@ which is 10950 days (30 years).
 | SIN-54 | none | AutoPardon Years with a very large amount | **Expected:** a clear refusal. **Actual:** the duration overflows `TimeSpan` and the command errors (KI-35) | none |
 | SIN-55 | none | `/ModSettings PublicBanLog option:Select Channel channel:#general` | Ephemeral "Updated the public ban log to #general" | Setting; `#modlog` line |
 | SIN-56 | Ban log set | `option:Off` | "Disabled the public ban log." | Setting cleared; `#modlog` line |
-| SIN-57 | Bot can't send in `#private` | Select `#private` | Red "@Grimoire don't have permission to send messages in that channel." (sic) | Setting unchanged |
+| SIN-57 | Bot can't send in `#private` | Select `#private` | Private "@Grimoire doesn't have permission to send messages in that channel." | Setting unchanged |
 | SIN-58 | none | `option:Select Channel` with no channel | Error "Select a channel when using the Select Channel option." | Setting unchanged |
 | SIN-59 | none | `mod` (no Manage Guild) runs any subcommand | Permission error | none |
 | SIN-60 | Moderation disabled | Run View | "This module is disabled in this server.", so View's "Module Enabled" line can only ever say True | none |

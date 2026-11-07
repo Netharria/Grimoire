@@ -83,6 +83,26 @@ public static partial class CommandContextExtension
         public ValueTask SendErrorResponseAsync(IEnumerable<Error> errors)
             => ctx.SendErrorResponseAsync(string.Join("; ", errors.Select(error => error.Message)));
 
+        /// <summary>
+        ///     Replies to a settings change and runs <paramref name="onSaved" />, usually the mod log entry, only if it
+        ///     saved. Setting the value it already has counts as saved, so repeating a command still replies normally.
+        /// </summary>
+        public Task ReplyResultAsync<T>(Result<T> result, string reply, Func<ValueTask>? onSaved = null,
+            DiscordColor? color = null)
+        {
+            return result.Match(
+                _ => Saved(),
+                error => ctx.SendErrorResponseAsync(error.Message).AsTask(),
+                onNotModified: _ => Saved());
+
+            async Task Saved()
+            {
+                await ctx.ReplyAsync(color, reply);
+                if (onSaved is not null)
+                    await onSaved();
+            }
+        }
+
         [Pure]
         public Validation<DiscordChannel?> GetChannelOption(ChannelOption channelOption,
             DiscordChannel? selectedChannel)

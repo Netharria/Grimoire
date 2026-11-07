@@ -37,43 +37,29 @@ public partial class LogSettingsCommands
             channel ??= ctx.Channel;
             var guild = ctx.Guild!;
 
-            await this._settingsModule.SetChannelLogOverride(channel.GetChannelId(),
-                guild.GetGuildId(),
-                ctx.GetModeratorId(),
-                overrideSetting switch
-                {
-                    MessageLogOverrideSetting.Always =>
-                        MessageLogOverrideOption.AlwaysLog,
-                    MessageLogOverrideSetting.Never =>
-                        MessageLogOverrideOption.NeverLog,
-                    MessageLogOverrideSetting.Inherit =>
-                        MessageLogOverrideOption.Inherit,
-                    _ => throw new NotImplementedException(
-                        "A Message log Override option was selected that has not been implemented.")
-                });
-
-
-            var message = overrideSetting switch
+            var (option, message) = overrideSetting switch
             {
-                MessageLogOverrideSetting.Always =>
-                    $"Will now always log messages from {channel.Mention} and its sub channels/threads.",
-                MessageLogOverrideSetting.Never =>
-                    $"Will now never log messages from {channel.Mention} and its sub channels/threads.",
-                MessageLogOverrideSetting.Inherit =>
-                    "Override was successfully removed from the channel.",
-                _ => throw new NotImplementedException(
-                    "A Message log Override option was selected that has not been implemented.")
+                MessageLogOverrideSetting.Always => (MessageLogOverrideOption.AlwaysLog,
+                    $"Will now always log messages from {channel.Mention} and its sub channels/threads."),
+                MessageLogOverrideSetting.Never => (MessageLogOverrideOption.NeverLog,
+                    $"Will now never log messages from {channel.Mention} and its sub channels/threads."),
+                MessageLogOverrideSetting.Inherit => (MessageLogOverrideOption.Inherit,
+                    "Override was successfully removed from the channel."),
+                _ => throw new UnreachableException("Invalid message log override option.")
             };
 
-            await ctx.ReplyAsync(GrimoireColor.Purple, message);
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = channel.Guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Title = $"{ctx.User.Mention} updated the channel overrides",
-                Description = message,
-                Color = GrimoireColor.Purple
-            });
+            await ctx.ReplyResultAsync(
+                await this._settingsModule.SetChannelLogOverride(channel.GetChannelId(), guild.GetGuildId(),
+                    ctx.GetModeratorId(), option),
+                message,
+                () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                {
+                    GuildId = guild.GetGuildId(),
+                    GuildLogType = GuildLogType.Moderation,
+                    Title = $"{ctx.User.Mention} updated the channel overrides",
+                    Description = message,
+                    Color = GrimoireColor.Purple
+                }));
         }
     }
 }

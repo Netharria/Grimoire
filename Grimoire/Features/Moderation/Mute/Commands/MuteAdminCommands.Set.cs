@@ -29,16 +29,16 @@ public partial class MuteAdminCommands
             return;
         }
 
-        await this._settingsModule.SetMuteRole(guild.GetGuildId(), ctx.GetModeratorId(), role.GetRoleId());
-
-        await ctx.ReplyAsync(message: $"Will now use role {role.Mention} for muting users.");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.Purple,
-            Description = $"{ctx.User.Mention} updated the mute role to {role.Mention}"
-        });
+        await ctx.ReplyResultAsync(
+            await this._settingsModule.SetMuteRole(guild.GetGuildId(), ctx.GetModeratorId(), role.GetRoleId()),
+            $"Will now use role {role.Mention} for muting users.",
+            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.Purple,
+                Description = $"{ctx.User.Mention} updated the mute role to {role.Mention}"
+            }));
     }
 
     private static string? MuteRoleProblem(DiscordGuild guild, DiscordRole role)

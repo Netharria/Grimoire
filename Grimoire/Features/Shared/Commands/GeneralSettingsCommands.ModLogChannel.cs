@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 
@@ -25,46 +24,8 @@ internal sealed partial class GeneralSettingsCommands
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();
-
-
-        var guild = ctx.Guild!;
-
-        var channelChoice = ctx.GetChannelOption(option, channel);
-        if (channelChoice is Validation<DiscordChannel?>.Invalid { Errors: var channelErrors })
-        {
-            await ctx.SendErrorResponseAsync(channelErrors);
-            return;
-        }
-
-        channel = channelChoice.GetOrElse(() => null);
-
-
-        if (channel is not null)
-        {
-            var permissions = channel.PermissionsFor(guild.CurrentMember);
-            if (!permissions.HasPermission(DiscordPermission.SendMessages))
-            {
-                await ctx.ReplyAsync(DiscordColor.Red,
-                    $"{guild.CurrentMember.Mention} doesn't have permission to send messages in that channel.");
-                return;
-            }
-        }
-
-        await this._settingsModule.SetLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId(),
-            ctx.GetModeratorId(),
-            channel?.GetChannelId());
-
-        await ctx.ReplyAsync(message: option is ChannelOption.Off
-            ? $"{ctx.User.Mention} disabled the moderation log."
-            : $"Updated the moderation log to {channel?.Mention}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Description = option is ChannelOption.Off
-                ? $"{ctx.User.Mention} disabled the moderation log."
-                : $"{ctx.User.Mention} updated the moderation log to {channel?.Mention}.",
-            Color = GrimoireColor.Purple
-        });
+        await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the moderation log",
+            channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.Moderation, ctx.Guild!.GetGuildId(),
+                ctx.GetModeratorId(), channelId));
     }
 }

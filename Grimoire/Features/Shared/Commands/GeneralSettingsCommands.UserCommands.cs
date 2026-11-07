@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
@@ -25,41 +23,10 @@ internal sealed partial class GeneralSettingsCommands
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();
-
-        var guild = ctx.Guild!;
-
-        var channelChoice = ctx.GetChannelOption(option, channel);
-        if (channelChoice is Validation<DiscordChannel?>.Invalid { Errors: var channelErrors })
-        {
-            await ctx.SendErrorResponseAsync(channelErrors);
-            return;
-        }
-
-        channel = channelChoice.GetOrElse(() => null);
-
-        await this._settingsModule.SetUserCommandChannelSetting(guild.GetGuildId(), ctx.GetModeratorId(),
-            channel?.GetChannelId());
-
-        if (option is ChannelOption.Off)
-        {
-            await ctx.ReplyAsync(message: "Disabled the User Command Channel.");
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Description = $"{ctx.User.Mention} disabled the User Command Channel.",
-                Color = GrimoireColor.Purple
-            });
-            return;
-        }
-
-        await ctx.ReplyAsync(message: $"Updated the User Command Channel to {channel?.Mention}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Description = $"{ctx.User.Mention} updated the User Command Channel to {channel?.Mention}.",
-            Color = GrimoireColor.Purple
-        });
+        // Replies there are interaction responses, so the bot needn't be able to send in it.
+        await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the User Command Channel",
+            channelId => this._settingsModule.SetUserCommandChannelSetting(ctx.Guild!.GetGuildId(),
+                ctx.GetModeratorId(), channelId),
+            botMustSend: false);
     }
 }

@@ -129,18 +129,12 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
 
         var reply = await this.ModLogChannelAsync(ChannelOption.Off, this.Guild.General);
 
-        reply.Description.ShouldNotBeNull().ShouldStartWith($"{this.Guild.Admin.MemberMention} disabled the moderation log");
+        reply.Description.ShouldBe("Disabled the moderation log.");
         (await this.ModLogSettingAsync()).ShouldBeNull();
         (await this._bot.Rest.ReceivesRequestWithinAsync(
             request => request.Method == HttpMethod.Post && request.Path.EndsWith("/messages", StringComparison.Ordinal),
             NothingHappensWindow)).ShouldBeFalse();
     }
-
-    /// <summary>GEN-32, area 01 code observation 2.</summary>
-    [Fact]
-    public async Task ModLogChannel_Off_ReplyReadsCleanly()
-        => (await this.ModLogChannelAsync(ChannelOption.Off)).Description
-            .ShouldBe($"{this.Guild.Admin.MemberMention} disabled the moderation log.");
 
     /// <summary>GEN-35: the bot must be able to send in the channel. Administrator would ignore the overwrite.</summary>
     [Fact]

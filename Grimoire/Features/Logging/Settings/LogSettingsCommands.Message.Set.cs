@@ -7,7 +7,7 @@
 
 
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Commands;
 using Grimoire.Settings.Enums;
 
 // ReSharper disable once CheckNamespace
@@ -42,54 +42,16 @@ public partial class LogSettingsCommands
             DiscordChannel? channel = null)
         {
             await ctx.DeferResponseAsync();
-
-            var guild = ctx.Guild!;
-
-            var channelChoice = ctx.GetChannelOption(option, channel);
-            if (channelChoice is Validation<DiscordChannel?>.Invalid { Errors: var channelErrors })
+            var logType = logSetting switch
             {
-                await ctx.SendErrorResponseAsync(channelErrors);
-                return;
-            }
-
-            channel = channelChoice.GetOrElse(() => null);
-
-            if (channel is not null)
-            {
-                var permissions = channel.PermissionsFor(guild.CurrentMember);
-                if (!permissions.HasPermission(DiscordPermission.SendMessages))
-                {
-                    await ctx.ReplyAsync(DiscordColor.Red,
-                        $"{guild.CurrentMember.Mention} don't have permission to send messages in that channel.");
-                    return;
-                }
-            }
-
-            await this._settingsModule.SetLogChannelSetting(
-                logSetting switch
-                {
-                    MessageLogSetting.DeleteLog => GuildLogType.MessageDeleted,
-                    MessageLogSetting.BulkDeleteLog => GuildLogType.BulkMessageDeleted,
-                    MessageLogSetting.EditLog => GuildLogType.MessageEdited,
-                    _ => throw new ArgumentOutOfRangeException(nameof(logSetting), logSetting, null)
-                },
-                guild.GetGuildId(),
-                ctx.GetModeratorId(),
-                option is ChannelOption.Off ? null : channel?.GetChannelId());
-
-            await ctx.ReplyAsync(message: option is ChannelOption.Off
-                ? $"Disabled {logSetting}"
-                : $"Updated {logSetting} to {channel?.Mention}");
-
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Description = option is ChannelOption.Off
-                    ? $"{ctx.User.Mention} disabled {logSetting}."
-                    : $"{ctx.User.Mention} updated {logSetting} to {channel?.Mention}.",
-                Color = GrimoireColor.Purple
-            });
+                MessageLogSetting.DeleteLog => GuildLogType.MessageDeleted,
+                MessageLogSetting.BulkDeleteLog => GuildLogType.BulkMessageDeleted,
+                MessageLogSetting.EditLog => GuildLogType.MessageEdited,
+                _ => throw new UnreachableException("Invalid message log setting.")
+            };
+            await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, logSetting.ToString(),
+                channelId => this._settingsModule.SetLogChannelSetting(logType, ctx.Guild!.GetGuildId(),
+                    ctx.GetModeratorId(), channelId));
         }
     }
 }

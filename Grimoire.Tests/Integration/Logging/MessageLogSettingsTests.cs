@@ -77,7 +77,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     {
         await this.SetAsync(LogSetting.EditLog, ChannelOption.SelectChannel, this.Guild.General);
 
-        (await this.SetAsync(LogSetting.EditLog, ChannelOption.Off, this.Guild.General)).Description.ShouldBe("Disabled EditLog");
+        (await this.SetAsync(LogSetting.EditLog, ChannelOption.Off, this.Guild.General)).Description.ShouldBe("Disabled EditLog.");
 
         (await this.LogChannelAsync(GuildLogType.MessageEdited)).ShouldBeNull();
     }
@@ -101,7 +101,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
         await this._bot.ConfigureMessageLogAsync();
 
         (await this.SetAsync(LogSetting.DeleteLog, ChannelOption.SelectChannel, this.Guild.Private)).Description
-            .ShouldBe($"{this.Guild.Bot.MemberMention} don't have permission to send messages in that channel.");
+            .ShouldBe($"{this.Guild.Bot.MemberMention} doesn't have permission to send messages in that channel.");
         (await this.LogChannelAsync(GuildLogType.MessageDeleted)).ShouldBeNull();
     }
 

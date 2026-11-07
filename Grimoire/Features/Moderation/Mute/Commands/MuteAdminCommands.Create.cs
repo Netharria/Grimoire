@@ -33,7 +33,14 @@ public partial class MuteAdminCommands
         await ctx.ReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration.");
 
-        await this._settingsModule.SetMuteRole(guild.GetGuildId(), ctx.GetModeratorId(), role.GetRoleId());
+        var saveError = (await this._settingsModule.SetMuteRole(guild.GetGuildId(), ctx.GetModeratorId(), role.GetRoleId()))
+            .Match<Error?>(_ => null, error => error, onNotModified: _ => null);
+        if (saveError is not null)
+        {
+            await ctx.SendErrorResponseAsync(
+                $"Created {role.Mention}, but couldn't save it as the mute role: {saveError.Message} Use /Mutes Set to try again.");
+            return;
+        }
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple,
             $"Role {role.Mention} is saved in {ctx.Client.CurrentUser.Mention} configuration. Now setting role permissions");

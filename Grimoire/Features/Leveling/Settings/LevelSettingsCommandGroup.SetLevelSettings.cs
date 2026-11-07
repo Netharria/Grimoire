@@ -10,6 +10,7 @@ using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Commands;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 
@@ -58,29 +59,17 @@ public sealed partial class LevelSettingsCommandGroup
         await ctx.DeferResponseAsync();
 
         var guild = ctx.Guild!;
-
-        await this._settingsModule
-            .SetLevelingSettings(guild.GetGuildId(), ctx.GetModeratorId(), ToLevelSettings(levelSettingsOptions), value)
-            .MatchAsync(
-                _ => HandleSettingSuccessAsync(ctx, guild, levelSettingsOptions, value, this._guildLog),
-                error => ctx.ReplyAsync(message: error.Message).AsTask());
-    }
-
-    private static async Task HandleSettingSuccessAsync(
-        CommandContext ctx,
-        DiscordGuild guild,
-        LevelSettingsOptions levelSettingsOptions,
-        int value,
-        GuildLog guildLog)
-    {
-        await ctx.ReplyAsync(message: $"Updated {levelSettingsOptions} level setting to {value}");
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.DarkPurple,
-            Description = $"{ctx.User.Mention} updated {levelSettingsOptions} level setting to {value}"
-        });
+        await ctx.ReplyResultAsync(
+            await this._settingsModule.SetLevelingSettings(guild.GetGuildId(), ctx.GetModeratorId(),
+                ToLevelSettings(levelSettingsOptions), value),
+            $"Updated {levelSettingsOptions} level setting to {value}",
+            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.DarkPurple,
+                Description = $"{ctx.User.Mention} updated {levelSettingsOptions} level setting to {value}"
+            }));
     }
 
     [RequireGuild]
@@ -97,48 +86,9 @@ public sealed partial class LevelSettingsCommandGroup
         DiscordChannel? channel = null)
     {
         await ctx.DeferResponseAsync();
-
-        var guild = ctx.Guild!;
-        var channelChoice = ctx.GetChannelOption(option, channel);
-        if (channelChoice is Validation<DiscordChannel?>.Invalid { Errors: var channelErrors })
-        {
-            await ctx.SendErrorResponseAsync(channelErrors);
-            return;
-        }
-
-        channel = channelChoice.GetOrElse(() => null);
-
-        if (ValidateChannelPermission(guild, channel) is Validation<Unit>.Invalid { Errors: var errors })
-        {
-            await ctx.ReplyAsync(message: string.Join("; ", errors.Select(e => e.Message)));
-            return;
-        }
-
-        await this._settingsModule.SetLogChannelSetting(
-            GuildLogType.Leveling,
-            guild.GetGuildId(),
-            ctx.GetModeratorId(),
-            channel?.GetChannelId());
-
-        var isOff = option is ChannelOption.Off;
-        await ctx.ReplyAsync(message: isOff
-            ? "Disabled the level log."
-            : $"Updated the level log to {channel?.Mention}");
-
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.DarkPurple,
-            Description = isOff
-                ? $"{ctx.User.Mention} disabled the level log."
-                : $"{ctx.User.Mention} updated the level log to {channel?.Mention}."
-        });
+        await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the level log",
+            channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.Leveling, ctx.Guild!.GetGuildId(),
+                ctx.GetModeratorId(), channelId),
+            color: GrimoireColor.DarkPurple);
     }
-
-    private static Validation<Unit> ValidateChannelPermission(DiscordGuild guild, DiscordChannel? channel)
-        => channel is not null && !channel.PermissionsFor(guild.CurrentMember).HasPermission(DiscordPermission.SendMessages)
-            ? Validation<Unit>.Fail(new Error("log-channel.permission",
-                $"{guild.CurrentMember.Mention} does not have permissions to send messages in that channel."))
-            : Validation<Unit>.Succeed(Unit.Value);
 }

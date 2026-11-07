@@ -115,7 +115,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
 
         (await this.LogSetAsync(ChannelOption.SelectChannel, this.Guild.Private)).Description
-            .ShouldBe($"{this.Guild.Bot.MemberMention} does not have permissions to send messages in that channel.");
+            .ShouldBe($"{this.Guild.Bot.MemberMention} doesn't have permission to send messages in that channel.");
         (await this.LogChannelAsync()).ShouldBeNull();
     }
 

@@ -38,31 +38,21 @@ internal class SpamFilterOverrideCommands(
             return;
         }
 
-        await this._settingsModule.SetSpamFilterOverrideAsync(
-            channel.GetChannelId(),
-            guild.GetGuildId(),
-            ctx.GetModeratorId(),
-            overrideSetting switch
-            {
-                SpamFilterOverrideSetting.Always => SpamFilterOverrideOption.AlwaysFilter,
-                SpamFilterOverrideSetting.Never => SpamFilterOverrideOption.NeverFilter,
-                SpamFilterOverrideSetting.Inherit => SpamFilterOverrideOption.Inherit,
-                _ => throw new NotImplementedException(
-                    "A spam filter override option was selected that has not been implemented.")
-            });
-
-
-        await ctx.ReplyAsync(GrimoireColor.Purple, overrideSetting switch
+        var (option, message) = overrideSetting switch
         {
-            SpamFilterOverrideSetting.Always =>
-                $"Will now always filter spam messages from {channel.Mention} and its sub channels/threads.",
-            SpamFilterOverrideSetting.Never =>
-                $"Will now never filter spam messages from {channel.Mention} and its sub channels/threads.",
-            SpamFilterOverrideSetting.Inherit =>
-                $"{channel.Mention} and its sub channels/threads will now follow the parent channel's spam filter setting.",
-            _ => throw new NotImplementedException(
-                "A spam filter override option was selected that has not been implemented.")
-        });
+            SpamFilterOverrideSetting.Always => (SpamFilterOverrideOption.AlwaysFilter,
+                $"Will now always filter spam messages from {channel.Mention} and its sub channels/threads."),
+            SpamFilterOverrideSetting.Never => (SpamFilterOverrideOption.NeverFilter,
+                $"Will now never filter spam messages from {channel.Mention} and its sub channels/threads."),
+            SpamFilterOverrideSetting.Inherit => (SpamFilterOverrideOption.Inherit,
+                $"{channel.Mention} and its sub channels/threads will now follow the parent channel's spam filter setting."),
+            _ => throw new UnreachableException("Invalid spam filter override option.")
+        };
+
+        await ctx.ReplyResultAsync(
+            await this._settingsModule.SetSpamFilterOverrideAsync(channel.GetChannelId(), guild.GetGuildId(),
+                ctx.GetModeratorId(), option),
+            message);
     }
 
     [Command("View")]

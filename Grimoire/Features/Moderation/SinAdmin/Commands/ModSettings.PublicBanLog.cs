@@ -5,7 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.Commands;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
@@ -27,43 +27,8 @@ internal sealed partial class ModSettings
         else
             await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
-
-        var channelChoice = ctx.GetChannelOption(option, channel);
-        if (channelChoice is Validation<DiscordChannel?>.Invalid { Errors: var channelErrors })
-        {
-            await ctx.SendErrorResponseAsync(channelErrors);
-            return;
-        }
-
-        channel = channelChoice.GetOrElse(() => null);
-
-        if (channel is not null)
-        {
-            var permissions = channel.PermissionsFor(guild.CurrentMember);
-            if (!permissions.HasPermission(DiscordPermission.SendMessages))
-            {
-                await ctx.ReplyAsync(DiscordColor.Red,
-                    $"{guild.CurrentMember.Mention} don't have permission to send messages in that channel.");
-                return;
-            }
-        }
-
-        await this._settingsModule.SetLogChannelSetting(GuildLogType.PublicModeration, guild.GetGuildId(),
-            ctx.GetModeratorId(),
-            channel?.GetChannelId());
-
-        await ctx.ReplyAsync(message: option is ChannelOption.Off
-            ? "Disabled the public ban log."
-            : $"Updated the public ban log to {channel?.Mention}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.Purple,
-            Description = option is ChannelOption.Off
-                ? $"{ctx.User.Mention} disabled the public ban log."
-                : $"{ctx.User.Mention} updated the public ban log to {channel?.Mention}."
-        });
+        await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the public ban log",
+            channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.PublicModeration,
+                ctx.Guild!.GetGuildId(), ctx.GetModeratorId(), channelId));
     }
 }

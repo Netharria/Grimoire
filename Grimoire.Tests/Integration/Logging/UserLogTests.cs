@@ -75,7 +75,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
             .ShouldBe($"Updated {setting} to {this.Guild.General.Mention}");
         (await this.LogChannelAsync(logType)).ShouldBe(this.Guild.General.Id);
 
-        (await this.SetAsync(setting, ChannelOption.Off)).Description.ShouldBe($"Disabled {setting}");
+        (await this.SetAsync(setting, ChannelOption.Off)).Description.ShouldBe($"Disabled {setting}.");
         (await this.LogChannelAsync(logType)).ShouldBeNull();
     }
 

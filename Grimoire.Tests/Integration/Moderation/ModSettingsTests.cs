@@ -117,7 +117,7 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
         await this._bot.ConfigureModerationAsync();
 
         (await this.PublicBanLogAsync(ChannelOption.SelectChannel, this.Guild.Private)).Description
-            .ShouldBe($"{this.Guild.Bot.MemberMention} don't have permission to send messages in that channel.");
+            .ShouldBe($"{this.Guild.Bot.MemberMention} doesn't have permission to send messages in that channel.");
         (await this.BanLogSettingAsync()).ShouldBeNull();
     }
 
