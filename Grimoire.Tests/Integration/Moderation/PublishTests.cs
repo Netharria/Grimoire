@@ -72,7 +72,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
         var sin = await this.SeedSinAsync(SinType.Ban, "spam");
         await this.PublishAsync("ban", sin.Id);
         await this._bot.RunSlashCommandAndWaitAsync("reason", this.Guild.Moderator,
-            SlashOption.String("sin_id", sin.Id.ToString()), SlashOption.String("reason", "spam and scams"));
+            SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "spam and scams"));
 
         await this.PublishAsync("ban", sin.Id);
 
@@ -140,7 +140,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
             .ShouldBe("The ban must be pardoned first before the unban can be published.");
 
         await this._bot.RunSlashCommandAndWaitAsync("pardon", this.Guild.Moderator,
-            SlashOption.String("sin_id", sin.Id.ToString()), SlashOption.String("reason", "appealed"));
+            SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "appealed"));
         await using var dbContext = this._database.CreateDbContext();
         var pardon = await dbContext.Pardons.SingleAsync(TestContext.Current.CancellationToken);
 
@@ -184,7 +184,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
             await this._bot.SetModuleAsync(Module.Moderation, false);
 
         var reply = await this._bot.RunSlashCommandAndWaitAsync("publish", missing == "module" ? this.Guild.Moderator : this.Guild.User1,
-            SlashOption.Subcommand("ban", SlashOption.String("sin_id", sin.Id.ToString())));
+            SlashOption.Subcommand("ban", SlashOption.Integer("sin_id", sin.Id.Value)));
 
         reply.Description.ShouldBe(missing == "module"
             ? "This module is disabled in this server."
@@ -194,7 +194,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     private Task<FakeReply> PublishAsync(string type, SinId sinId)
         => this._bot.RunSlashCommandAndWaitAsync("publish", this.Guild.Moderator,
-            SlashOption.Subcommand(type, SlashOption.String("sin_id", sinId.ToString())));
+            SlashOption.Subcommand(type, SlashOption.Integer("sin_id", sinId.Value)));
 
     private async Task<Sin> SeedSinAsync(SinType type, string reason, FakeUser? user = null, bool withUsername = true)
     {

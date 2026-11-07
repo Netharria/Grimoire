@@ -97,7 +97,7 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
     private SlashOption[] OptionsFor(string command)
     {
         var user = SlashOption.User("user", this.Guild.User1);
-        var sinId = SlashOption.String("sin_id", "1");
+        var sinId = SlashOption.Integer("sin_id", 1);
         return command switch
         {
             "warn" => [user, SlashOption.String("reason", "x")],

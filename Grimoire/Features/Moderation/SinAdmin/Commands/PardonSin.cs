@@ -23,7 +23,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
     [Command("Pardon")]
     [Description("Pardon a user's sin. This leaves the sin in the logs but marks it as pardoned.")]
     public async Task PardonAsync(CommandContext ctx,
-        [MinMaxValue(0)] [Parameter("sin_id")] [Description("The id of the sin to be pardoned.")]
+        [MinMaxValue(1)] [Parameter("sin_id")] [Description("The id of the sin to be pardoned.")]
         SinId sinId,
         [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason the sin is getting pardoned.")]
         string reason)

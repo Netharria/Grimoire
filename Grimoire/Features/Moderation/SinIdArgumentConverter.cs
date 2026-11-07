@@ -15,8 +15,8 @@ namespace Grimoire.Features.Moderation;
 public class SinIdArgumentConverter
     : ITextArgumentConverter<SinId>, ISlashArgumentConverter<SinId>
 {
-    public DiscordApplicationCommandOptionType ParameterType => DiscordApplicationCommandOptionType.String;
-    public string ReadableName => "Command Name";
+    public DiscordApplicationCommandOptionType ParameterType => DiscordApplicationCommandOptionType.Integer;
+    public string ReadableName => "Sin Id";
     public ConverterInputType RequiresText => ConverterInputType.Always;
 
     public Task<Optional<SinId>> ConvertAsync(ConverterContext context) =>

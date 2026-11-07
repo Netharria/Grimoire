@@ -116,12 +116,12 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     /// <summary>SIN-26: an id that isn't a positive number is rejected before anything happens.</summary>
     [Theory]
-    [InlineData("abc")]
-    [InlineData("0")]
-    public async Task Pardon_WithAnInvalidId_IsRejected(string sinId)
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task Pardon_WithAnInvalidId_IsRejected(long sinId)
     {
         var reply = await this._bot.RunSlashCommandAndWaitAsync("pardon", this.Guild.Moderator,
-            SlashOption.String("sin_id", sinId), SlashOption.String("reason", "x"));
+            SlashOption.Integer("sin_id", sinId), SlashOption.String("reason", "x"));
 
         reply.Embed!["author"]?["name"]?.GetValue<string>().ShouldNotBe("Pardoned");
         await using var dbContext = this._database.CreateDbContext();
@@ -142,8 +142,8 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         if (missing == "module")
             await this._bot.SetModuleAsync(Module.Moderation, false);
         SlashOption[] options = command == "forget"
-            ? [SlashOption.String("sin_id", sin.Id.ToString())]
-            : [SlashOption.String("sin_id", sin.Id.ToString()), SlashOption.String("reason", "x")];
+            ? [SlashOption.Integer("sin_id", sin.Id.Value)]
+            : [SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "x")];
 
         var reply = await this._bot.RunSlashCommandAndWaitAsync(command, missing == "module" ? this.Guild.Moderator : this.Guild.User1, options);
 
@@ -163,6 +163,27 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         => this._bot.Rest.RegisteredCommands[command]["options"]!.AsArray()
             .Single(option => option!["name"]!.GetValue<string>() == "reason")!["max_length"]!.GetValue<int>().ShouldBe(1000);
 
+    /// <summary>
+    ///     M-2: sin ids register as integers with a minimum of 1. Discord documents min_value for numbers only, so on a
+    ///     string option it could refuse the whole registration.
+    /// </summary>
+    [Theory]
+    [InlineData("pardon")]
+    [InlineData("reason")]
+    [InlineData("forget")]
+    [InlineData("publish")]
+    public void SinIds_AreRegisteredAsIntegersFromOne(string command)
+    {
+        static IEnumerable<JsonNode> SinIdOptions(JsonNode node)
+            => node["options"]?.AsArray().OfType<JsonNode>()
+                   .SelectMany(option => option["name"]!.GetValue<string>() == "sin_id" ? [option] : SinIdOptions(option))
+               ?? [];
+
+        var sinIds = SinIdOptions(this._bot.Rest.RegisteredCommands[command]).ToList();
+        sinIds.ShouldNotBeEmpty();
+        sinIds.ShouldAllBe(option => option["type"]!.GetValue<int>() == 4 && option["min_value"]!.GetValue<long>() == 1);
+    }
+
     // ── /Forget ───────────────────────────────────────────────────────────────
 
     /// <summary>SIN-30 and SIN-32: the sin goes, with its reasons and pardons, and the mod log is told.</summary>
@@ -172,9 +193,9 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         var sin = await this.SeedWarnAsync(this.Guild.User1);
         await this.PardonAsync(sin.Id, "forgiven");
         await this._bot.RunSlashCommandAndWaitAsync("reason", this.Guild.Moderator,
-            SlashOption.String("sin_id", sin.Id.ToString()), SlashOption.String("reason", "changed"));
+            SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "changed"));
 
-        var reply = await this._bot.RunSlashCommandAndWaitAsync("forget", this.Guild.Moderator, SlashOption.String("sin_id", sin.Id.ToString()));
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("forget", this.Guild.Moderator, SlashOption.Integer("sin_id", sin.Id.Value));
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Forgot");
         reply.Description.ShouldBe($"**ID:** {sin.Id} **User:** user1");
@@ -190,7 +211,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
     /// <summary>SIN-31.</summary>
     [Fact]
     public async Task Forget_OfAnUnknownSin_IsNotFound()
-        => (await this._bot.RunSlashCommandAndWaitAsync("forget", this.Guild.Moderator, SlashOption.String("sin_id", "999999")))
+        => (await this._bot.RunSlashCommandAndWaitAsync("forget", this.Guild.Moderator, SlashOption.Integer("sin_id", 999999)))
             .Description.ShouldBe(NotFound);
 
     // ── /Reason ───────────────────────────────────────────────────────────────
@@ -202,7 +223,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         var sin = await this.SeedWarnAsync(this.Guild.User1);
 
         var reply = await this._bot.RunSlashCommandAndWaitAsync("reason", this.Guild.Moderator,
-            SlashOption.String("sin_id", sin.Id.ToString()), SlashOption.String("reason", "updated"));
+            SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "updated"));
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Reason Updated");
         Fields(reply.Embed!).ShouldBe([("Id", sin.Id.ToString()), ("User", "user1"), ("Reason", "updated")]);
@@ -221,7 +242,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
     [Fact]
     public async Task Reason_ForAnUnknownSin_IsNotFound()
         => (await this._bot.RunSlashCommandAndWaitAsync("reason", this.Guild.Moderator,
-                SlashOption.String("sin_id", "999999"), SlashOption.String("reason", "x")))
+                SlashOption.Integer("sin_id", 999999), SlashOption.String("reason", "x")))
             .Description.ShouldBe(NotFound);
 
     /// <summary>SIN-42.</summary>
@@ -231,13 +252,13 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         var sin = await this.SeedWarnAsync(new FakeUser(1_100_000_000_000_000_095, "stranger"), withUsername: false);
 
         (await this._bot.RunSlashCommandAndWaitAsync("reason", this.Guild.Moderator,
-                SlashOption.String("sin_id", sin.Id.ToString()), SlashOption.String("reason", "x")))
+                SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "x")))
             .Description.ShouldNotBe(NotFound);
     }
 
     private Task<FakeReply> PardonAsync(SinId sinId, string reason)
         => this._bot.RunSlashCommandAndWaitAsync("pardon", this.Guild.Moderator,
-            SlashOption.String("sin_id", sinId.ToString()), SlashOption.String("reason", reason));
+            SlashOption.Integer("sin_id", sinId.Value), SlashOption.String("reason", reason));
 
     /// <summary>Seeds a warn and, unless told not to, a username newer than the startup sync's.</summary>
     private async Task<Sin> SeedWarnAsync(FakeUser user, GuildId? guildId = null, bool withUsername = true)
