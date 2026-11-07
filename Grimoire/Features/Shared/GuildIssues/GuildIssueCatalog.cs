@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain;
+
 namespace Grimoire.Features.Shared.GuildIssues;
 
 /// <summary>The known moderator-fixable problems and what to tell moderators to do about them.</summary>
@@ -42,10 +44,17 @@ public static class GuildIssueCatalog
             $"I could not give the level reward roles {Mentions(roles)}.",
             "Give my role the **Manage Roles** permission and move it above the reward roles in Server Settings > Roles.");
 
-    public static GuildIssue RewardRolesMissing(GuildId guildId, IEnumerable<RoleId> roles)
-        => new(guildId, "leveling.reward-roles-missing",
-            $"Level rewards point at roles that no longer exist: {string.Join(' ', roles.Select(r => $"`{r}`"))}.",
-            "Remove those rewards with the reward commands, or re-create the roles and add the rewards again.");
+    /// <remarks>
+    ///     The code names the roles, so each removal is shown, even a second one on the same day. Each reward is only
+    ///     removed once, so this can't repeat.
+    /// </remarks>
+    public static GuildIssue RewardsForDeletedRolesRemoved(GuildId guildId, IReadOnlyCollection<RewardEntry> rewards)
+        => new(guildId,
+            $"leveling.reward-roles-deleted:{string.Join(',', rewards.Select(reward => reward.RoleId).Order())}",
+            "These level rewards were removed because their roles were deleted:\n"
+            + string.Join('\n', rewards.OrderBy(reward => reward.RewardLevel)
+                .Select(reward => $"**Level {reward.RewardLevel}:** role `{reward.RoleId}`")),
+            "Nothing else needs fixing. To keep rewarding these levels, create new roles and add them with `/Rewards Add`.");
 
     public static GuildIssue CannotSendInChannel(GuildId guildId, ChannelId channelId)
         => new(guildId, $"channel.cannot-send:{channelId}",

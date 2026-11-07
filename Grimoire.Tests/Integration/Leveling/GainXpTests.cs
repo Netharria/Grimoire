@@ -202,23 +202,57 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.LoggedWithinAsync("has earned", NothingHappensWindow)).ShouldBeFalse();
     }
 
-    /// <summary>A reward whose role was deleted is reported, and the other rewards are still granted.</summary>
+    /// <summary>
+    ///     X-2: a reward whose role was deleted is removed, recorded as removed by the bot, and reported once as a
+    ///     setup problem. That happens even when nobody has reached its level yet, and the other rewards are still
+    ///     granted.
+    /// </summary>
     [Fact]
-    public async Task ARewardForADeletedRole_IsReported_AndTheOthersAreGranted()
+    public async Task ARewardForADeletedRole_IsRemoved_TheModeratorsAreTold_AndTheOthersAreGranted()
     {
         await this.SetAmountAsync(15);
         var doomed = this._bot.Rest.CreateRole("doomed");
-        await this.AddRewardAsync(doomed, 2, null);
+        await this.AddRewardAsync(doomed, 50, null);
         await this.AddRewardAsync(this.Guild.KickerRoleId, 2, null);
         this._bot.Rest.DeleteRole(doomed);
         await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.StartsWith(
-            $"Level rewards point at roles that no longer exist: `{doomed}`.", StringComparison.Ordinal) == true);
-        (await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this.Guild.GetMember(this.Guild.User1).RoleIds),
-            roles => roles.Contains(this.Guild.KickerRoleId))).ShouldContain(this.Guild.KickerRoleId);
+        var notice = await this._bot.WaitForModLogEmbedAsync(IsRewardsRemovedIssue);
+        notice["author"]!["name"]!.GetValue<string>().ShouldBe("Setup problem");
+        notice["description"]!.GetValue<string>().ShouldStartWith(
+            $"These level rewards were removed because their roles were deleted:\n**Level 50:** role `{doomed}`\n**Suggested fix:** ");
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
+
+        (await this.Settings.GetLevelingRewardsAsync(this.GuildId)).ShouldSucceed()
+            .Select(reward => reward.RoleId).ShouldBe([new RoleId(this.Guild.KickerRoleId)]);
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        (await settingsContext.Rewards.OfType<RewardRemoved>().SingleAsync(TestContext.Current.CancellationToken))
+            .SetBy.ShouldBe(new ModeratorId(this.Guild.Bot.Id));
+    }
+
+    /// <summary>X-2: once removed, the reward for a deleted role isn't removed or reported again.</summary>
+    [Fact]
+    public async Task ARewardForADeletedRole_IsOnlyRemovedOnce()
+    {
+        await this.SetAmountAsync(15);
+        var doomed = this._bot.Rest.CreateRole("doomed");
+        await this.AddRewardAsync(doomed, 50, null);
+        this._bot.Rest.DeleteRole(doomed);
+        await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "first");
+        await this._bot.WaitForModLogEmbedAsync(IsRewardsRemovedIssue);
+        this._bot.SendMessage(this.Guild.Moderator, this.Guild.General, "second");
+        await this.WaitForEarnedAsync(this.Guild.Moderator, 1);
+        await Task.Delay(NothingHappensWindow, TestContext.Current.CancellationToken);
+
+        this._bot.Rest.Requests.Where(this._bot.IsModLogPost)
+            .Count(request => request.Body?.Contains("level rewards were removed", StringComparison.Ordinal) == true).ShouldBe(1);
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        (await settingsContext.Rewards.OfType<RewardRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
     /// <summary>
@@ -261,6 +295,35 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
             $"I could not give the level reward roles <@&{this.Guild.HigherRoleId}>.", StringComparison.Ordinal) == true);
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldBe([this.Guild.KickerRoleId]);
     }
+
+    /// <summary>
+    ///     X-2: setup problems are shown once a day per problem, but a removal is a different problem from the last one,
+    ///     so a second removal on the same day is still shown.
+    /// </summary>
+    [Fact]
+    public async Task ASecondRemovalOnTheSameDay_IsStillShown()
+    {
+        await this.SetAmountAsync(15);
+        var first = this._bot.Rest.CreateRole("first");
+        await this.AddRewardAsync(first, 50, null);
+        this._bot.Rest.DeleteRole(first);
+        await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "first");
+        await this._bot.WaitForModLogEmbedAsync(embed => IsRewardsRemovedIssue(embed)
+                                                         && embed["description"]!.GetValue<string>().Contains($"`{first}`", StringComparison.Ordinal));
+
+        var second = this._bot.Rest.CreateRole("second");
+        await this.AddRewardAsync(second, 60, null);
+        this._bot.Rest.DeleteRole(second);
+        await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        this._bot.SendMessage(this.Guild.Moderator, this.Guild.General, "second");
+
+        await this._bot.WaitForModLogEmbedAsync(embed => IsRewardsRemovedIssue(embed)
+                                                         && embed["description"]!.GetValue<string>().Contains($"`{second}`", StringComparison.Ordinal));
+    }
+
+    private static bool IsRewardsRemovedIssue(JsonNode embed)
+        => embed["description"]?.GetValue<string>().StartsWith("These level rewards were removed", StringComparison.Ordinal) == true;
 
     private async Task SetAmountAsync(int amount)
         => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldSucceed();

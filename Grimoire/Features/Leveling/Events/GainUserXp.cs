@@ -133,20 +133,20 @@ public sealed partial class GainUserXp(
         var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)
             .GetOrElse(() => null!);
 
+        // Nothing else removes a reward whose role was deleted, including while the bot was offline, and a deleted
+        // role can't be picked in /Rewards Remove.
+        var orphaned = rewards.Where(reward => !guild.Roles.ContainsKey(reward.RoleId.Value)).ToArray();
+        if (orphaned.Length > 0)
+            await this.RemoveRewardsForDeletedRolesAsync(guild, orphaned, cancellationToken);
+
         var newRewards = rewards
+            .Except(orphaned)
             .Where(reward => reward.RewardLevel <= userLevel)
             .Where(reward => member.Roles.All(role => role.GetRoleId() != reward.RoleId))
             .ToArray();
 
         if (newRewards.Length == 0)
             return;
-
-        var missingRoles = newRewards
-            .Where(reward => !guild.Roles.ContainsKey(reward.RoleId.Value))
-            .Select(reward => reward.RoleId)
-            .ToArray();
-        if (missingRoles.Length > 0)
-            await issueReporter.ReportAsync(GuildIssueCatalog.RewardRolesMissing(guildId, missingRoles), cancellationToken);
 
         // One role at a time. Replacing the whole role list fails if the member has a managed role, such as Server
         // Booster, undoes changes the cache hasn't seen yet, and lets one role the bot can't grant block the rest.
@@ -187,6 +187,26 @@ public sealed partial class GainUserXp(
             Footer = $"{member.Id}",
             Color = GrimoireColor.DarkPurple
         }, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Removes the rewards, recorded as removed by the bot, and reports which ones went as a guild issue, so the
+    ///     moderators see it with the server's other setup problems.
+    /// </summary>
+    private async Task RemoveRewardsForDeletedRolesAsync(DiscordGuild guild, RewardEntry[] orphaned,
+        CancellationToken cancellationToken)
+    {
+        List<RewardEntry> removed = [];
+        foreach (var reward in orphaned)
+            if (await RewardRemoved.Create(reward.RoleId, guild.GetGuildId(), new ModeratorId(guild.CurrentMember.Id),
+                        DateTimeOffset.UtcNow)
+                    .ToResult()
+                    .BindAsync(removal => this._settingsModule.SetRewardAsync(removal, cancellationToken)) is Result<RewardRemoved>.Success)
+                removed.Add(reward);
+
+        if (removed.Count > 0)
+            await issueReporter.ReportAsync(
+                GuildIssueCatalog.RewardsForDeletedRolesRemoved(guild.GetGuildId(), removed), cancellationToken);
     }
 
     private async Task SendRewardMessageAsync(DiscordGuild guild, DiscordMember member, RewardEntry reward)

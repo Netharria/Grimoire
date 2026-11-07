@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.GuildIssues;
+using Grimoire.Settings.Domain;
 using Grimoire.Tests.Features.Alerts;
 
 namespace Grimoire.Tests.Features.GuildIssues;
@@ -78,7 +79,7 @@ public sealed class GuildIssueCatalogTests
         [
             GuildIssueCatalog.BotMissingPermissions(_guild, "Ban"),
             GuildIssueCatalog.RewardRolesNotGrantable(_guild, [new RoleId(5)]),
-            GuildIssueCatalog.RewardRolesMissing(_guild, [new RoleId(5)]),
+            GuildIssueCatalog.RewardsForDeletedRolesRemoved(_guild, [new RewardEntry(new RoleId(5), 3, null)]),
             GuildIssueCatalog.CannotSendInChannel(_guild, new ChannelId(7)),
             GuildIssueCatalog.CannotReadAuditLog(_guild)
         ];
