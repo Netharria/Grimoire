@@ -49,16 +49,22 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             return;
         }
 
-        await dbContextFactory.RecordCommandUsageAsync(name, guild.GetGuildId(), ctx.User.GetUserId());
-        await ctx.EditResponseAsync(BuildWebhookResponse(
-            TruncateForDiscord(
-                ApplyMessage(
-                    ApplyMention(response.Content.Value, snowflakeObject, guild.Id),
-                    message, guild.Id),
-                response is EmbedCustomCommand ? MaxEmbedDescriptionLength : MaxMessageLength),
+        var content = TruncateForDiscord(
+            ApplyMessage(ApplyMention(response.Content.Value, snowflakeObject, guild.Id), message, guild.Id),
+            response is EmbedCustomCommand ? MaxEmbedDescriptionLength : MaxMessageLength);
+        // A command made only of %Message or %Mention renders empty without them, and Discord refuses an empty reply.
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            await ctx.DeleteResponseAsync();
+            return;
+        }
+
+        await ctx.EditResponseAsync(BuildWebhookResponse(content,
             response is EmbedCustomCommand embedCmd
                 ? new CommandOutputFormat.Embedded(embedCmd.EmbedColor)
                 : new CommandOutputFormat.Text()));
+        // Counted once the reply is out, so a failed count can't stop the reply.
+        await dbContextFactory.RecordCommandUsageAsync(name, guild.GetGuildId(), ctx.User.GetUserId());
     }
 
     private async Task<Result<CustomCommand>> FetchAuthorizedCommandAsync(

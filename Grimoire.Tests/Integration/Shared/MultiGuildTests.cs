@@ -147,6 +147,12 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
         (await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post
                                                             && request.Path == $"channels/{this.B.General.Id}/messages"))
             .Json!["content"]!.GetValue<string>().ShouldBe("from B");
+        // The use is recorded after the post. Waiting keeps it from landing after the next test's reset.
+        (await GrimoireTestBot.EventuallyAsync(async () =>
+        {
+            await using var dbContext = this._database.CreateDbContext();
+            return await dbContext.CustomCommandUsages.CountAsync(TestContext.Current.CancellationToken);
+        }, count => count == 1)).ShouldBe(1);
     }
 
     /// <summary>MOD-111: with a mute role only in A, a mute in B says B has none.</summary>

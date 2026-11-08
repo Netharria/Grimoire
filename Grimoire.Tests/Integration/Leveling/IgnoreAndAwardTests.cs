@@ -99,6 +99,22 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         reply.Description.ShouldContain($"**Users**\n<@{this.Guild.User1.Id}>");
     }
 
+    /// <summary>X-3: one item per line, so the paginator can split a long list across pages.</summary>
+    [Fact]
+    public async Task IgnoreView_WithHundredsOfItems_IsSplitAcrossPages()
+    {
+        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, Enumerable.Range(0, 300)
+            .Select(i => (XpTrackedItem)IgnoredMember.Create(new UserId(1_100_000_000_000_100_000 + (ulong)i), this.GuildId,
+                new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())
+            .ToHashSet())).ShouldSucceed();
+
+        var reply = await this.IgnoreAsync("view");
+
+        reply.Description.ShouldNotBeNull().Length.ShouldBeLessThanOrEqualTo(4096);
+        reply.Description.ShouldContain("**Users**\n<@1100000000000100");
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     /// <summary>Discord's mentionable options only offer users and roles, so channels get their own optional option.</summary>
     [Theory]
     [InlineData("add")]

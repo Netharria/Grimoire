@@ -52,16 +52,16 @@ public sealed partial class IgnoreCommandGroup
     private static string BuildMessage(FrozenSet<XpIgnoredItem> ignoredItems)
     {
         var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
-        ignoredMessageBuilder.Append(string.Join(' ',
+        ignoredMessageBuilder.Append(string.Join('\n',
             ignoredItems.OfType<IgnoredChannel>().Select(x => $"<#{x.ChannelId.Value}>"))).Append('\n');
 
 
         ignoredMessageBuilder.Append("\n**Roles**\n");
-        ignoredMessageBuilder.Append(string.Join(' ',
+        ignoredMessageBuilder.Append(string.Join('\n',
             ignoredItems.OfType<IgnoredRole>().Select(x => $"<@&{x.RoleId.Value}>"))).Append('\n');
 
         ignoredMessageBuilder.Append("\n**Users**\n");
-        ignoredMessageBuilder.Append(string.Join(' ',
+        ignoredMessageBuilder.Append(string.Join('\n',
             ignoredItems.OfType<IgnoredMember>().Select(x => $"<@{x.UserId.Value}>"))).Append('\n');
         return ignoredMessageBuilder.ToString();
     }

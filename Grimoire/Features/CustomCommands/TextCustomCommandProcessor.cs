@@ -46,9 +46,13 @@ public sealed partial class TextCustomCommandProcessor(
             .Bind(x => CustomCommandName.Create(x.Args[0]).Map(name => (x.Member, Name: name, x.Args)))
             .ToResult()
             .BindAsync(x => FetchCommandAsync(x.Member, x.Name, x.Args))
-            .TapAsync(cmd =>
-                dbContextFactory.RecordCommandUsageAsync(cmd.Name, cmd.Member.GetGuildId(), cmd.Member.GetUserId()))
-            .TapAsync(cmd => this.SendCommandResponseAsync(cmd, sender, eventArgs))
+            // A use counts once the reply is out, so a refused or empty reply isn't counted, and a failed count
+            // can't stop the reply.
+            .TapAsync(async cmd =>
+            {
+                if (await this.SendCommandResponseAsync(cmd, sender, eventArgs))
+                    await dbContextFactory.RecordCommandUsageAsync(cmd.Name, cmd.Member.GetGuildId(), cmd.Member.GetUserId());
+            })
             .Match(
                 _ => Task.CompletedTask,
                 error => this.LogFailure(error, eventArgs));
@@ -96,7 +100,7 @@ public sealed partial class TextCustomCommandProcessor(
             : Result<ParsedCommand>.Ok(new ParsedCommand(response, member, name, args));
     }
 
-    private static DiscordMessageBuilder BuildResponse(
+    private static (string Content, CommandOutputFormat Format) BuildResponse(
         CustomCommand response,
         string[] args, SnowflakeObject? snowflake, ulong guildId)
     {
@@ -113,20 +117,25 @@ public sealed partial class TextCustomCommandProcessor(
             outputFormat is CommandOutputFormat.Embedded
                 ? GetCustomCommand.MaxEmbedDescriptionLength
                 : GetCustomCommand.MaxMessageLength);
-        return GetCustomCommand.BuildMessageResponse(content, outputFormat);
+        return (content, outputFormat);
     }
 
-    private async Task SendCommandResponseAsync(
+    /// <returns>Whether the reply was sent.</returns>
+    private async Task<bool> SendCommandResponseAsync(
         ParsedCommand cmd, DiscordClient sender, MessageCreatedEventArgs eventArgs)
     {
         var snowflake = cmd.Response.Content.Value.Contains("%Mention", StringComparison.OrdinalIgnoreCase)
                         && cmd.Args.Length > 1
             ? await ResolveSnowflake(cmd.Args[1], sender, eventArgs.Guild)
             : null;
+        var (content, format) = BuildResponse(cmd.Response, cmd.Args, snowflake, eventArgs.Guild.Id);
+        // A command made only of %Message or %Mention renders empty without them, and Discord refuses an empty message.
+        if (string.IsNullOrWhiteSpace(content))
+            return false;
         try
         {
-            await eventArgs.Channel.SendMessageAsync(
-                BuildResponse(cmd.Response, cmd.Args, snowflake, eventArgs.Guild.Id));
+            await eventArgs.Channel.SendMessageAsync(GetCustomCommand.BuildMessageResponse(content, format));
+            return true;
         }
         catch (UnauthorizedException)
         {
@@ -134,6 +143,7 @@ public sealed partial class TextCustomCommandProcessor(
             LogSendForbidden(logger, cmd.Name.Value, eventArgs.Guild.Id, eventArgs.Channel.Id);
             await issueReporter.ReportAsync(GuildIssueCatalog.CannotSendInChannel(
                 new GuildId(eventArgs.Guild.Id), new ChannelId(eventArgs.Channel.Id)));
+            return false;
         }
     }
 

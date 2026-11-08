@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Text.RegularExpressions;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.GuildIssues;
@@ -220,7 +219,9 @@ public sealed partial class GainUserXp(
                 await member.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithAuthor($"Congratulations on earning {role.Name}!", iconUrl: guild.IconUrl)
                     .WithFooter($"Message from the moderators of {guild.Name}.")
-                    .WithDescription(Regex.Unescape(reward.RewardMessage.GetValueOrDefault().Value)));
+                    // Slash options can't hold a newline, so "\n" stands for one. Nothing else is unescaped: a
+                    // backslash is often meant, as in \o/, or escapes Markdown.
+                    .WithDescription(reward.RewardMessage.GetValueOrDefault().Value.Replace("\\n", "\n", StringComparison.Ordinal)));
         }
         // No token reaches this DM, so a cancellation here can only be a timed-out request.
         catch (Exception ex)

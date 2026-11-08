@@ -161,6 +161,23 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         dm.Json!["embeds"]![0]!["description"]!.GetValue<string>().ShouldBe("well done");
     }
 
+    /// <summary>
+    ///     X-4: only "\n" is turned into a line break. Any other backslash is kept: Regex.Unescape threw on \o/ and
+    ///     lost the DM, and it stripped Markdown escapes.
+    /// </summary>
+    [Fact]
+    public async Task ARewardMessageWithBackslashes_IsSentAsWritten_ExceptForLineBreaks()
+    {
+        await this.SetAmountAsync(15);
+        await this.AddRewardAsync(this.Guild.KickerRoleId, 2, """well done \o/ \*really\* in C:\dir\nsee you""");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
+
+        var dm = await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post
+                                                                    && request.Path == $"channels/{this.Guild.User1.Id + 1000}/messages");
+        dm.Json!["embeds"]![0]!["description"]!.GetValue<string>().ShouldBe("well done \\o/ \\*really\\* in C:\\dir\nsee you");
+    }
+
     /// <summary>A reward for a higher level isn't granted yet.</summary>
     [Fact]
     public async Task ARewardForAHigherLevel_IsNotGrantedYet()

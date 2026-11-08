@@ -34,7 +34,7 @@ note says otherwise.
 | 14 | S-4, M-5 | **Done** 2026-11-07, uncommitted | A failed ignore lookup counts as **ignored** (no XP during an outage), not as not-ignored; `/Lock` revert half not taken. `GetAllExpiredMutes` and `GetAllMutes` still throw on purpose: they return no `Result`, and an empty list would read as "no mutes" |
 | 15 | I-3, I-15 | **Done** 2026-11-07, uncommitted | A failed lookup logs at Information and the delete is logged as an ordinary message |
 | 16 | M-3, M-11 | **Done** 2026-11-07, uncommitted | `UsernameHistory.GetDisplayNameAsync` used by all six; `/Publish` shares one path; one overwrite method |
-| 17 | X-3, X-4, C-1, C-7 | Fix all | |
+| 17 | X-3, X-4, C-1, C-7 | **Done** 2026-11-07, uncommitted | A use is counted only after the reply was sent, so a refused send doesn't count either |
 | 18 | S-3 | Fix | |
 | 18 | M-6, KI-53 | Fix together | |
 | 19 | I-6, I-7, I-16 | Fix all | |

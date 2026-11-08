@@ -46,7 +46,8 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         var reply = await this._bot.RunSlashCommandAndWaitAsync("command", this.Guild.User1, SlashOption.String("command_name", "hello"));
 
         reply.Message["content"]!.GetValue<string>().ShouldBe("Hello there!");
-        (await this.UsesAsync()).ShouldBe([(this.Guild.User1.Id, "hello")]);
+        // The use is recorded after the reply.
+        (await this.WaitForUsesAsync(1)).ShouldBe([(this.Guild.User1.Id, "hello")]);
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
@@ -60,6 +61,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 
         reply.Message["content"]!.GetValue<string>()
             .ShouldMatch($"^<@!?{this.Guild.Moderator.Id}> gets a hug: hi @ everyone$");
+        await this.WaitForUsesAsync(1);
     }
 
     [Fact]
@@ -71,6 +73,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 
         reply.Description.ShouldBe("Be nice");
         reply.Embed!["color"]!.GetValue<int>().ShouldBe(0xFF0000);
+        await this.WaitForUsesAsync(1);
     }
 
     /// <summary>A restricted command works for a member with one of its roles, and silently does nothing otherwise.</summary>
@@ -86,7 +89,10 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         var interaction = this._bot.RunSlashCommand("command", invoker, SlashOption.String("command_name", "secret"));
 
         if (hasRole)
+        {
             (await this._bot.Rest.WaitForRequestAsync(interaction.IsOriginalResponseEdit)).Json!["content"]!.GetValue<string>().ShouldBe("shh");
+            await this.WaitForUsesAsync(1);
+        }
         else
         {
             await this._bot.Rest.WaitForRequestAsync(interaction.IsOriginalResponseDelete);
@@ -124,6 +130,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 
         (await this.WaitForPostAsync(this.Guild.General))["content"]!.GetValue<string>()
             .ShouldMatch($"^<@!?{this.Guild.Moderator.Id}> gets a hug: you are great$");
+        await this.WaitForUsesAsync(1);
     }
 
     /// <summary>Unknown names, messages from bots, restricted commands and a disabled module post nothing.</summary>
@@ -164,6 +171,52 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <summary>
+    ///     C-1: a command made only of %Message renders empty when called without one. Discord refuses an empty
+    ///     message, and that error raised an urgent alert on every use. C-7: nothing was sent, so no use counts.
+    /// </summary>
+    [Fact]
+    public async Task TextTrigger_ThatRendersEmpty_PostsNothing_AndRecordsNoUse()
+    {
+        await this.LearnAsync("say", "%Message");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!say");
+
+        (await this._bot.Rest.ReceivesRequestWithinAsync(request => request.Method == HttpMethod.Post
+                                                                    && request.Path == $"channels/{this.Guild.General.Id}/messages", NothingHappensWindow))
+            .ShouldBeFalse();
+        (await this.UsesAsync()).ShouldBeEmpty();
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task SlashCommand_ThatRendersEmpty_DeletesTheResponse_AndRecordsNoUse()
+    {
+        await this.LearnAsync("say", "%Message");
+
+        var interaction = this._bot.RunSlashCommand("command", this.Guild.User1, SlashOption.String("command_name", "say"));
+
+        await this._bot.Rest.WaitForRequestAsync(interaction.IsOriginalResponseDelete);
+        this._bot.Rest.Requests.Count(interaction.IsOriginalResponseEdit).ShouldBe(0);
+        (await this.UsesAsync()).ShouldBeEmpty();
+    }
+
+    /// <summary>C-7: a reply the bot isn't allowed to post isn't a use.</summary>
+    [Fact]
+    public async Task TextTrigger_WhereTheBotCannotPost_RecordsNoUse()
+    {
+        await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+            FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
+        await this.LearnAsync("hello", "Hello there!");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.Private, "!hello");
+
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.StartsWith(
+            $"I could not post in {this.Guild.Private.Mention}.", StringComparison.Ordinal) == true);
+        (await this.UsesAsync()).ShouldBeEmpty();
+    }
+
     private Task<FakeReply> LearnAsync(string name, string content, params SlashOption[] options)
         => this._bot.RunSlashCommandAndWaitAsync("commands", this.Guild.Admin, SlashOption.Subcommand("learn",
             [SlashOption.String("name", name), SlashOption.String("content", content), .. options]));
@@ -171,6 +224,13 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     private async Task<System.Text.Json.Nodes.JsonNode> WaitForPostAsync(FakeChannel channel)
         => (await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post
                                                                && request.Path == $"channels/{channel.Id}/messages")).Json!;
+
+    /// <summary>
+    ///     A use is recorded after the reply, so a test that ends on the reply must wait for it. Otherwise the write
+    ///     can land after the next test has reset the database.
+    /// </summary>
+    private Task<List<(ulong, string)>> WaitForUsesAsync(int count)
+        => GrimoireTestBot.EventuallyAsync(this.UsesAsync, uses => uses.Count >= count);
 
     private async Task<List<(ulong, string)>> UsesAsync()
     {
