@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ContextChecks;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Settings;
@@ -27,8 +28,13 @@ public sealed partial class LevelSettingsCommandGroup
             return;
         }
 
-        var response = await this._settingsModule.GetLevelingSettings(guild.GetGuildId())
-            .GetOrElse(() => null!);
+        if (await this._settingsModule.GetLevelingSettings(guild.GetGuildId())
+            is not Result<LevelingSettingEntry>.Success { Value: var response })
+        {
+            await ctx.SendErrorResponseAsync("Could not load the leveling settings. Please try again later.");
+            return;
+        }
+
         var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId())
             .GetOrElse(() => false);
         var levelChannelLog =

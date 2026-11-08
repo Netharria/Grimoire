@@ -130,8 +130,10 @@ public sealed partial class GainUserXp(
         if (member is null)
             return;
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)
-            .GetOrElse(() => null!);
+        // The next XP gain tries again.
+        if (await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)
+            is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })
+            return;
 
         // Nothing else removes a reward whose role was deleted, including while the bot was offline, and a deleted
         // role can't be picked in /Rewards Remove.

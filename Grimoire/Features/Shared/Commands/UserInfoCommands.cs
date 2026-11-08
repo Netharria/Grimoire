@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ContextChecks;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -138,12 +139,12 @@ internal sealed class UserInfoCommands(
             .Where(x => x.UserId == userId && x.GuildId == guildId)
             .SumAsync(x => x.RawXp);
 
-        var levelSettings = await this._settingsModule.GetLevelingSettings(guildId)
-            .GetOrElse(() => null!);
-
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guildId)
-            .GetOrElse(() => null!);
-
+        // The rest of the profile is still worth showing, so a failed lookup only leaves out the level fields.
+        if (await this._settingsModule.GetLevelingSettings(guildId)
+                is not Result<LevelingSettingEntry>.Success { Value: var levelSettings }
+            || await this._settingsModule.GetLevelingRewardsAsync(guildId)
+                is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })
+            return;
 
         var membersLevel = levelSettings.GetLevelFromXp(membersXp);
         var earnedRewards = rewards

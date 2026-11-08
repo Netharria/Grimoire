@@ -61,9 +61,10 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         var currentLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel);
         var nextLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel, 1);
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
-            .GetOrElse(() => null!);
-        var nextReward = rewards.OrderBy(reward => reward.RewardLevel)
+        // The level is what the member asked for, so a failed rewards lookup only loses the next reward.
+        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId());
+        var nextReward = rewards.GetOrElse(() => new HashSet<RewardEntry>())
+            .OrderBy(reward => reward.RewardLevel)
             .FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 
         var (color, displayName, avatarUrl) = await guild.GetMemberOrDefaultAsync(user.GetUserId()) is { } member
@@ -84,7 +85,9 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .AddField("Level", $"{currentLevel}", true)
             .AddField("Progress", $"{membersXp - currentLevelXp}/{nextLevelXp - currentLevelXp}", true)
             .AddField("Next Reward",
-                roleReward is null ? "None" : $"{roleReward.Mention}\n at level {nextReward?.RewardLevel}", true)
+                rewards is not Result<IReadOnlySet<RewardEntry>>.Success ? "Unavailable"
+                : roleReward is null ? "None"
+                : $"{roleReward.Mention}\n at level {nextReward?.RewardLevel}", true)
             .WithThumbnail(avatarUrl)
             .WithFooter($"{guild.Name}", guild.IconUrl)
             .Build();

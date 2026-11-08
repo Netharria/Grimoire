@@ -7,6 +7,7 @@
 
 
 using DSharpPlus.Commands.ContextChecks;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Rewards;
@@ -23,8 +24,12 @@ public sealed partial class RewardCommandGroup
         await ctx.DeferResponseAsync();
         var guild = ctx.Guild!;
 
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
-            .GetOrElse(() => null!);
+        if (await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
+            is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })
+        {
+            await ctx.SendErrorResponseAsync("Could not load the rewards. Please try again later.");
+            return;
+        }
 
         var rewardLines = await Task.WhenAll(rewards.Select(async x =>
         {

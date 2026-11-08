@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Frozen;
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Interactivity;
@@ -28,12 +29,18 @@ public sealed partial class IgnoreCommandGroup
 
         var guild = ctx.Guild!;
 
+        if (await this._settingsModule.GetAllIgnoredItems(guild.GetGuildId())
+            is not Result<FrozenSet<XpIgnoredItem>>.Success { Value: var ignoredItems })
+        {
+            await ctx.SendErrorResponseAsync("Could not load the ignored items. Please try again later.");
+            return;
+        }
 
         var embed = new DiscordEmbedBuilder()
             .WithTitle("Ignored Channels Roles and Users.")
             .WithTimestamp(DateTime.UtcNow);
         var embedPages = InteractivityExtension.GeneratePagesInEmbed(
-            await BuildMessageAsync(guild.GetGuildId()),
+            BuildMessage(ignoredItems),
             SplitType.Line,
             embed);
         if (ctx is SlashCommandContext slashContext)
@@ -42,10 +49,8 @@ public sealed partial class IgnoreCommandGroup
             await ctx.Channel.SendPaginatedMessageAsync(ctx.User, embedPages);
     }
 
-    private async Task<string> BuildMessageAsync(GuildId guildId)
+    private static string BuildMessage(FrozenSet<XpIgnoredItem> ignoredItems)
     {
-        var ignoredItems = await this._settingsModule.GetAllIgnoredItems(guildId)
-            .GetOrElse(() => null!);
         var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
         ignoredMessageBuilder.Append(string.Join(' ',
             ignoredItems.OfType<IgnoredChannel>().Select(x => $"<#{x.ChannelId.Value}>"))).Append('\n');

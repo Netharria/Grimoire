@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain;
 using JetBrains.Annotations;
 
 namespace Grimoire.Features.Shared.Commands;
@@ -20,8 +21,12 @@ internal sealed partial class ModuleCommands
 
         var guild = ctx.Guild!;
 
-        var guildSettings = await this._settingsModule.GetAllModuleState(guild.GetGuildId())
-            .GetOrElse(() => null!);
+        if (await this._settingsModule.GetAllModuleState(guild.GetGuildId())
+            is not Result<GuildModuleState>.Success { Value: var guildSettings })
+        {
+            await ctx.SendErrorResponseAsync("Could not load the module states. Please try again later.");
+            return;
+        }
 
         await ctx.ReplyAsync(
             title: "Current states of modules.",

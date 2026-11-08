@@ -29,7 +29,7 @@ note says otherwise.
 | 9 | X-2 | **Done** 2026-11-07, uncommitted | Auto-remove as proposed, recorded as removed by the bot. Moderators are told through the guild issue system (`RewardsForDeletedRolesRemoved`, a "Setup problem" in the mod log and the daily warning report), not a separate message; the role ids are in the issue code so a second removal on the same day isn't throttled. Replaces `RewardRolesMissing` |
 | 10 | S-2 | **Done** 2026-11-07, uncommitted | |
 | 11 | I-4, I-13, L-12, X-13 `LogSetAsync` | **Done** 2026-11-07, uncommitted | `ctx.ReplyResultAsync`, plus `ChannelSettingCommand` for the six channel setters. Also merged the double switches in both Override commands (L-12, M-12) |
-| 12 | I-5, X-5 | Fix | |
+| 12 | I-5, X-5 | **Done** 2026-11-07, uncommitted | All nine sites. `/Level` shows "Unavailable" for Next Reward instead of failing, like `/UserInfo` skipping its level fields |
 | 13 | L-3, L-4, L-5, L-6, D-7 | Fix all | |
 | 14 | S-4, M-5 | Fix, changed | A failed ignore lookup counts as **ignored** (no XP during an outage), not as not-ignored; `/Lock` revert half not taken |
 | 15 | I-3, I-15 | Fix both | |

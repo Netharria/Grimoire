@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -40,7 +41,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         }
 
         var activeMute = await this._settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
-            .GetOrElse(() => null!);
+            .Match(mute => (MuteAdded?)mute, _ => null);
         var configuredRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId())
             .GetOrElse(() => null);
         var muteRole = MuteRoleResolver.Resolve(activeMute?.MuteRoleId, configuredRoleId,
