@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.Text;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Services;
 
@@ -65,25 +64,18 @@ internal class SpamFilterOverrideCommands(
 
         var guild = ctx.Guild!;
 
-        var spamFilterOverrideString = new StringBuilder();
-
+        List<string> lines = [];
         await foreach (var spamFilterOverride in this._settingsModule.GetAllSpamFilterOverrideAsync(guild.GetGuildId()))
-        {
-            var channel = await guild.GetChannelOrDefaultAsync(spamFilterOverride.ChannelId);
-            if (channel is null)
-                continue;
-
-            spamFilterOverrideString.Append(channel.Mention)
-                .Append(spamFilterOverride.ChannelOption switch
+            if (await guild.GetChannelOrDefaultAsync(spamFilterOverride.ChannelId) is { } channel)
+                lines.Add(channel.Mention + spamFilterOverride.ChannelOption switch
                 {
                     SpamFilterOverrideOption.AlwaysFilter => " - Always Filter",
                     SpamFilterOverrideOption.NeverFilter => " - Never Filter",
                     _ => " - Inherit/Default"
-                }).AppendLine();
-        }
+                });
 
-        await ctx.ReplyAsync(GrimoireColor.Purple, title: "Spam Filter Override Settings",
-            message: spamFilterOverrideString.ToString());
+        await ctx.ReplyPagedAsync(
+            new DiscordEmbedBuilder().WithColor(GrimoireColor.Purple).WithAuthor("Spam Filter Override Settings"), lines);
     }
 }
 

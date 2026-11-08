@@ -269,7 +269,7 @@ Use 1-minute mutes. Console at Debug for `Grimoire.Features.Moderation.Mute`.
 | MOD-140 | Two users muted with expiries within the same tick | Wait | Both handled independently. A failure on one (MOD-134) does not block the other | one `MuteRemoved` each; failed one absent |
 | MOD-141 | `/Mutes View` while a mute has expired but the task has not yet run | View | The member is still listed (expired mutes are not filtered) | none |
 | MOD-142 | Muted user leaves | `/Mutes View` | Leaver is **not** listed even though the mute is active | none |
-| MOD-143 | 30+ muted members | `/Mutes View` | Embed field may exceed Discord's 1024-character limit and error; record behaviour | none |
+| MOD-143 | 30+ muted members | `/Mutes View` | The list is paged: every muted member is listed, with Page N of M in the footer and buttons for the invoker | none |
 
 ---
 

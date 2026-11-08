@@ -60,7 +60,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
 
         reply.IsEphemeral.ShouldBeTrue();
         Field(reply.Embed!, "Mute Role").ShouldBe("None");
-        Field(reply.Embed!, "Muted Users").ShouldBe("None");
+        reply.Description.ShouldBe("**Muted Users**\nNone");
         this._bot.Rest.Unhandled.ShouldBeEmpty();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
@@ -123,7 +123,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     {
         await this.Settings.AddMute(new UserId(this.Guild.User1.Id), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId(1), DateTimeOffset.UtcNow.AddHours(1), null, TestContext.Current.CancellationToken);
 
-        Field((await this.MutesAsync(this.Guild.Admin, "view")).Embed!, "Muted Users").ShouldBe(this.Guild.User1.MemberMention);
+        (await this.MutesAsync(this.Guild.Admin, "view")).Description.ShouldBe($"**Muted Users**\n{this.Guild.User1.MemberMention}");
     }
 
     /// <summary>MOD-141: a mute past its end time is only waiting for the expiry task.</summary>
@@ -132,7 +132,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     {
         await this.RecordMuteAsync(this.Guild.User1.Id, expired: true);
 
-        Field((await this.MutesAsync(this.Guild.Admin, "view")).Embed!, "Muted Users").ShouldBe("None");
+        (await this.MutesAsync(this.Guild.Admin, "view")).Description.ShouldBe("**Muted Users**\nNone");
     }
 
     /// <summary>MOD-142: someone who left is still muted, and comes back muted.</summary>
@@ -142,20 +142,22 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
         const ulong left = 1_100_000_000_000_000_096;
         await this.RecordMuteAsync(left);
 
-        Field((await this.MutesAsync(this.Guild.Admin, "view")).Embed!, "Muted Users").ShouldBe($"`{left}` (left the server)");
+        (await this.MutesAsync(this.Guild.Admin, "view")).Description.ShouldBe($"**Muted Users**\n`{left}` (left the server)");
     }
 
-    /// <summary>MOD-143: Discord refuses an embed field over 1024 characters.</summary>
+    /// <summary>MOD-143: a long list is paged, every user listed, instead of cut off with "too many to list".</summary>
     [Fact]
-    public async Task View_SplitsALongListAcrossFields()
+    public async Task View_PagesALongList()
     {
-        foreach (var id in Enumerable.Range(0, 60))
+        foreach (var id in Enumerable.Range(0, 200))
             await this.RecordMuteAsync(1_100_000_000_000_010_000 + (ulong)id);
 
-        var fields = (await this.MutesAsync(this.Guild.Admin, "view")).Embed!["fields"]!.AsArray();
+        var reply = await this.MutesAsync(this.Guild.Admin, "view");
 
-        fields.Select(field => field!["name"]!.GetValue<string>()).ShouldContain("Muted Users (continued)");
-        fields.ShouldAllBe(field => field!["value"]!.GetValue<string>().Length <= 1024);
+        reply.Description.ShouldNotBeNull().Length.ShouldBeLessThanOrEqualTo(4096);
+        reply.Embed!["footer"]!["text"]!.GetValue<string>().ShouldStartWith("Page 1 of ");
+        Field(reply.Embed!, "Mute Role").ShouldNotBeNull();
+        reply.IsEphemeral.ShouldBeTrue();
     }
 
     private async Task RecordMuteAsync(ulong userId, bool expired = false)

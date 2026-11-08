@@ -66,17 +66,19 @@ public sealed partial class CustomCommandSettings
     private async Task OnForgetSuccess(CommandContext ctx, DiscordGuild guild, CustomCommandName name,
         bool alreadyForgotten)
     {
-        await ctx.ReplyAsync(GrimoireColor.Green,
-            alreadyForgotten
-                ? $"Command `{name}` was already forgotten."
-                : $"Removed command {name}");
+        if (alreadyForgotten)
+        {
+            // Nothing changed, so there's nothing for the mod log.
+            await ctx.ReplyAsync(GrimoireColor.Green, $"Command `{name}` was already forgotten.");
+            return;
+        }
+
+        await ctx.ReplyAsync(GrimoireColor.Green, $"Removed command {name}");
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
-            Description = alreadyForgotten
-                ? $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to forget command `{name}` (already absent)."
-                : $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to forget command `{name}`.",
+            Description = $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to forget command `{name}`.",
             Color = GrimoireColor.Purple
         });
     }

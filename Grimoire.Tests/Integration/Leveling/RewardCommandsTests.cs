@@ -200,17 +200,20 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     public async Task View_WithNoRewards_SaysSo()
         => (await this.RewardsCommandAsync("view")).Description.ShouldBe("This server does not have any rewards.");
 
-    /// <summary>X-10: reward messages are cut short in the list. Two of 3,000 characters went over the embed's limit.</summary>
+    /// <summary>
+    ///     X-10: two 3,000-character messages don't fit one embed, so the list is paged, and each message is shown
+    ///     whole. It used to fail outright.
+    /// </summary>
     [Fact]
-    public async Task View_WithLongRewardMessages_FitsInTheEmbed()
+    public async Task View_WithLongRewardMessages_IsPaged_WithEachMessageWhole()
     {
         await this.AddRewardDirectlyAsync(this.Guild.KickerRoleId, 2, new string('a', 3000));
         await this.AddRewardDirectlyAsync(this.Guild.BannerRoleId, 4, new string('b', 3000));
 
-        var description = (await this.RewardsCommandAsync("view")).Description.ShouldNotBeNull();
+        var reply = await this.RewardsCommandAsync("view");
 
-        description.Length.ShouldBeLessThanOrEqualTo(4096);
-        description.Split('\n').Length.ShouldBe(2);
+        reply.Description.ShouldBe($"Level:2 Role:<@&{this.Guild.KickerRoleId}> Reward Message: {new string('a', 3000)}");
+        reply.Embed!["footer"]!["text"]!.GetValue<string>().ShouldBe("Page 1 of 2");
     }
 
     /// <summary>X-7: a role that isn't a reward can't be removed, and nothing is recorded or logged.</summary>

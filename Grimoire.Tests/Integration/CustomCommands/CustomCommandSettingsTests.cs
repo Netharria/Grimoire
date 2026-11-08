@@ -208,7 +208,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         var overall = await this.CommandsAsync("leaderboard");
         overall.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Command Leaderboard");
         overall.Description.ShouldBe("**1.** `!a` — 3 uses\n**2.** `!b` — 1 uses");
-        overall.Embed!["footer"]!["text"]!.GetValue<string>().ShouldBe("2 commands");
+        overall.Embed!["footer"]!["text"]!.GetValue<string>().ShouldBe("2 commands, 4 uses");
 
         var forA = await this.CommandsAsync("leaderboard", SlashOption.String("name", "a"));
         forA.Description.ShouldBe($"**1.** {this.Guild.User1.Mention} — 2 uses\n**2.** {this.Guild.Moderator.Mention} — 1 uses");
@@ -235,6 +235,73 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
                 ? "This module is disabled in this server."
                 : "You do not have the required permissions to use this command.");
         (await this.VersionsAsync("hello")).ShouldBeEmpty();
+    }
+
+    /// <summary>C-4: Learn says what's wrong with a name or colour, instead of "Failed to parse name."</summary>
+    [Theory]
+    [InlineData("two words", null, false, "A command name cannot contain spaces.")]
+    [InlineData("hello", "not-a-colour", true, "A command embed color must be a 6 character hex color code.")]
+    [InlineData("hello", "ff0000", false, "An embed color only applies to an embed. Set embed to true, or leave out the color.")]
+    public async Task Learn_WithABadNameOrColour_SaysWhatIsWrong(string name, string? colour, bool embed, string error)
+    {
+        var reply = await this.LearnAsync(name, "hi",
+        [
+            SlashOption.Boolean("embed", embed),
+            .. colour is null ? Array.Empty<SlashOption>() : [SlashOption.String("embed_color", colour)]
+        ]);
+
+        reply.Description.ShouldBe(error);
+        await using var dbContext = this._database.CreateDbContext();
+        (await dbContext.CustomCommands.AnyAsync(Token)).ShouldBeFalse();
+    }
+
+    /// <summary>C-4: with the name a plain string again, Discord's client enforces its length.</summary>
+    [Fact]
+    public void Learn_RegistersTheNameLength()
+    {
+        var name = this._bot.Rest.RegisteredCommands["commands"]["options"]!.AsArray()
+            .Single(option => option!["name"]!.GetValue<string>() == "learn")!["options"]!.AsArray()
+            .Single(option => option!["name"]!.GetValue<string>() == "name")!;
+
+        (name["min_length"]!.GetValue<int>(), name["max_length"]!.GetValue<int>()).ShouldBe((1, 24));
+    }
+
+    /// <summary>C-8: forgetting a command that isn't there changes nothing, so the mod log hears nothing.</summary>
+    [Fact]
+    public async Task Forget_AnUnknownCommand_LogsNothing()
+    {
+        await this._bot.ConfigureModerationAsync();
+
+        await this.CommandsAsync("forget", SlashOption.String("name", "nope"));
+
+        (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, TimeSpan.FromSeconds(2))).ShouldBeFalse();
+    }
+
+    /// <summary>C-8: stats for a name that was never created say so, as History does, instead of showing zeros.</summary>
+    [Fact]
+    public async Task Stats_ForAnUnknownCommand_SaysSo()
+        => (await this.CommandsAsync("stats", SlashOption.String("name", "nope"))).Description
+            .ShouldBe("No command named `nope` exists.");
+
+    /// <summary>C-8: a name that was never created isn't "not used yet".</summary>
+    [Fact]
+    public async Task Leaderboard_ForAnUnknownCommand_SaysItDoesNotExist()
+        => (await this.CommandsAsync("leaderboard", SlashOption.String("name", "nope"))).Description
+            .ShouldBe("No command named `nope` exists.");
+
+    /// <summary>C-8: the footers count everything, not only the fifteen rows shown.</summary>
+    [Fact]
+    public async Task Leaderboard_Footers_CountPastTheFifteenShown()
+    {
+        var users = Enumerable.Range(0, 20).Select(i => new FakeUser(1_100_000_000_000_011_000 + (ulong)i, $"u{i}")).ToArray();
+        await this.LearnAsync("hello", "hi");
+        await this.SeedUsageAsync("hello", [.. users.Select(user => (user, 1))]);
+        foreach (var i in Enumerable.Range(0, 20))
+            await this.SeedUsageAsync($"cmd{i}", (this.Guild.User1, 1));
+
+        (await this.CommandsAsync("leaderboard")).Embed!["footer"]!["text"]!.GetValue<string>().ShouldBe("21 commands, 40 uses");
+        (await this.CommandsAsync("leaderboard", SlashOption.String("name", "hello"))).Embed!["footer"]!["text"]!
+            .GetValue<string>().ShouldBe("20 total uses");
     }
 
     private Task<FakeReply> CommandsAsync(string subcommand, params SlashOption[] options)

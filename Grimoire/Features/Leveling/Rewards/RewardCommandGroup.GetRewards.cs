@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
-using System.Text;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
@@ -38,36 +37,14 @@ public sealed partial class RewardCommandGroup
             return;
         }
 
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple, title: "Rewards", message: DescribeRewards(rewards));
+        await ctx.ReplyPagedAsync(
+            new DiscordEmbedBuilder().WithColor(GrimoireColor.DarkPurple).WithAuthor("Rewards"),
+            DescribeRewards(rewards));
     }
 
-    private const int MaxListedMessageLength = 200;
-    private const int MaxDescriptionLength = 4096;
-
-    /// <summary>
-    ///     One line per reward, by level. A reward message can be 4,096 characters by itself, so it's cut short here,
-    ///     and lines stop before the embed's limit. The role is a mention, so a deleted role still shows its id.
-    /// </summary>
-    internal static string DescribeRewards(IEnumerable<RewardEntry> rewards)
-    {
-        var ordered = rewards.OrderBy(reward => reward.RewardLevel).ToArray();
-        var description = new StringBuilder();
-        var shown = 0;
-        foreach (var reward in ordered)
-        {
-            var line = $"Level:{reward.RewardLevel} Role:{RoleExtensions.Mention(reward.RoleId)}"
-                       + (reward.RewardMessage is { } message ? $" Reward Message: {Shorten(message.Value)}" : "") + "\n";
-            if (description.Length + line.Length > MaxDescriptionLength - 40)
-                break;
-            description.Append(line);
-            shown++;
-        }
-
-        if (shown < ordered.Length)
-            description.Append("…and ").Append(ordered.Length - shown).Append(" more rewards.");
-        return description.ToString().TrimEnd('\n');
-    }
-
-    private static string Shorten(string message)
-        => message.Length <= MaxListedMessageLength ? message : string.Concat(message.AsSpan(0, MaxListedMessageLength - 1), "…");
+    /// <summary>One line per reward, by level. The role is a mention, so a deleted role still shows its id.</summary>
+    internal static IEnumerable<string> DescribeRewards(IEnumerable<RewardEntry> rewards)
+        => rewards.OrderBy(reward => reward.RewardLevel).Select(reward =>
+            $"Level:{reward.RewardLevel} Role:{RoleExtensions.Mention(reward.RoleId)}"
+            + (reward.RewardMessage is { } message ? $" Reward Message: {message.Value}" : ""));
 }

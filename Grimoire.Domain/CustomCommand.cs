@@ -168,9 +168,9 @@ public readonly record struct CustomCommandContent
         if (string.IsNullOrWhiteSpace(value))
             return Validation<CustomCommandContent>.Fail(new Error("custom-command-content.empty",
                 "Command content cannot be empty."));
-        var unescaped = value
-            .Replace(@"\n", "\n")
-            .Replace(@"\t", "\t");
+        // Slash options can't hold a newline, so "\n" stands for one. Nothing else is unescaped: a backslash is
+        // usually meant, as in C:\temp.
+        var unescaped = value.Replace(@"\n", "\n");
         if (string.IsNullOrWhiteSpace(unescaped))
             return Validation<CustomCommandContent>.Fail(new Error("custom-command-content.empty",
                 "Command content cannot be empty."));

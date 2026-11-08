@@ -27,7 +27,10 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
             {
                 await using var dbContext = await dbContextFactory.CreateDbContextAsync();
                 var guildId = ctx.Guild!.GetGuildId();
-                var cleanedText = ctx.UserInput?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                // No name is longer than 24, and levenshtein refuses input over 255 characters.
+                var cleanedText = ctx.UserInput?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() is { } word
+                    ? word[..Math.Min(word.Length, 24)]
+                    : null;
                 var choices = await GetChoicesAsync(dbContext, guildId, cleanedText);
                 return Result<IEnumerable<DiscordAutoCompleteChoice>>.Ok(choices);
             })

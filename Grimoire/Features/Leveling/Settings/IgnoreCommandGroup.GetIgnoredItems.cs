@@ -8,9 +8,6 @@
 using System.Collections.Frozen;
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Enums;
-using DSharpPlus.Interactivity.Extensions;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 
@@ -43,17 +40,9 @@ public sealed partial class IgnoreCommandGroup
             return;
         }
 
-        var embed = new DiscordEmbedBuilder()
-            .WithTitle("Ignored Channels Roles and Users.")
-            .WithTimestamp(DateTime.UtcNow);
-        var embedPages = InteractivityExtension.GeneratePagesInEmbed(
-            BuildMessage(ignoredItems),
-            SplitType.Line,
-            embed);
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.Interaction.SendPaginatedResponseAsync(false, ctx.User, embedPages);
-        else
-            await ctx.Channel.SendPaginatedMessageAsync(ctx.User, embedPages);
+        await ctx.ReplyPagedAsync(
+            new DiscordEmbedBuilder().WithTitle("Ignored Channels Roles and Users.").WithTimestamp(DateTime.UtcNow),
+            BuildMessage(ignoredItems).TrimEnd('\n').Split('\n'));
     }
 
     private static string BuildMessage(FrozenSet<XpIgnoredItem> ignoredItems)

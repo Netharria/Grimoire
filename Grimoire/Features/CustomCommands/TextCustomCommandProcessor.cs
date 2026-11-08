@@ -105,8 +105,8 @@ public sealed partial class TextCustomCommandProcessor(
         string[] args, SnowflakeObject? snowflake, ulong guildId)
     {
         var contentValue = response.Content.Value;
-        var hasMention = contentValue.Contains("%Mention", StringComparison.OrdinalIgnoreCase);
-        var rawMessage = string.Join(' ', args.Skip(hasMention ? 2 : 1));
+        // The first word after the name is the mention only if it resolved to one; otherwise it's part of the message.
+        var rawMessage = string.Join(' ', args.Skip(snowflake is not null ? 2 : 1));
         CommandOutputFormat outputFormat = response is EmbedCustomCommand embed
             ? new CommandOutputFormat.Embedded(embed.EmbedColor)
             : new CommandOutputFormat.Text();

@@ -37,7 +37,8 @@ public sealed partial class CustomCommandSettings
         await QueryStatsAsync(guild.GetGuildId(), name)
             .Match(
                 r => ctx.ReplyAsync(embed: BuildStatsEmbed(name, r.Usage, r.TopUsers)).AsTask(),
-                error => ctx.SendErrorResponseAsync(error.Message).AsTask());
+                error => ctx.SendErrorResponseAsync(error.Message).AsTask(),
+                onNotFound: error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
     private async Task<Result<StatsQueryResult>> QueryStatsAsync(GuildId guildId, CustomCommandName name)
@@ -45,6 +46,10 @@ public sealed partial class CustomCommandSettings
         try
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            // As /Commands History says: zeros would read as a command nobody uses.
+            if (!await dbContext.CustomCommands.AnyAsync(x => x.GuildId == guildId && x.Name == name))
+                return new Result<StatsQueryResult>.NotFound(
+                    new Error("command.stats.not_found", $"No command named `{name}` exists."));
             var now = DateTimeOffset.UtcNow;
             var usage = await FetchUsageStatsAsync(dbContext, guildId, name, now);
             var topUsers = await FetchTopUsersAsync(dbContext, guildId, name);

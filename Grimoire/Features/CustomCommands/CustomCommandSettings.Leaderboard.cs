@@ -38,8 +38,7 @@ public sealed partial class CustomCommandSettings
                 ? GetOverallLeaderboardAsync(guildId)
                 : GetCommandLeaderboardAsync(guildId, name.Value))
             .Match(
-                display => ctx.ReplyAsync(GrimoireColor.Purple, display.Text, display.Title, display.Footer ?? "")
-                    .AsTask(),
+                display => ctx.ReplyAsync(GrimoireColor.Purple, display.Text, display.Title, display.Footer).AsTask(),
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
@@ -53,12 +52,15 @@ public sealed partial class CustomCommandSettings
             .OrderByDescending(x => x.Count)
             .Take(15)
             .ToListAsync();
+        // The footer counts everything, not only the fifteen shown.
+        var usages = dbContext.CustomCommandUsages.Where(x => x.GuildId == guildId);
+        var (commandCount, useCount) = (await usages.Select(x => x.Name).Distinct().CountAsync(), await usages.CountAsync());
         return rankings.Count == 0
             ? Result<LeaderboardDisplay>.Fail(new Error("command.leaderboard.empty", "No commands have been used yet."))
             : Result<LeaderboardDisplay>.Ok(new LeaderboardDisplay(
                 string.Join("\n", rankings.Select((r, i) => $"**{i + 1}.** `!{r.Name}` — {r.Count} uses")),
                 "Command Leaderboard",
-                $"{rankings.Count} commands"));
+                $"{commandCount} commands, {useCount} uses"));
     }
 
     private async Task<Result<LeaderboardDisplay>> GetCommandLeaderboardAsync(GuildId guildId, CustomCommandName name)
@@ -71,15 +73,20 @@ public sealed partial class CustomCommandSettings
             .OrderByDescending(x => x.Count)
             .Take(15)
             .ToListAsync();
-        return rankings.Count == 0
-            ? Result<LeaderboardDisplay>.Fail(new Error("command.leaderboard.command_empty",
-                $"Command `!{name}` has not been used yet."))
-            : Result<LeaderboardDisplay>.Ok(new LeaderboardDisplay(
-                string.Join("\n",
-                    rankings.Select((r, i) => $"**{i + 1}.** {UserExtensions.Mention(r.UserId)} — {r.Count} uses")),
-                $"Leaderboard for !{name}",
-                $"{rankings.Sum(r => r.Count)} total uses"));
+        if (rankings.Count == 0)
+            return Result<LeaderboardDisplay>.Fail(
+                await dbContext.CustomCommands.AnyAsync(x => x.GuildId == guildId && x.Name == name)
+                    ? new Error("command.leaderboard.command_empty", $"Command `!{name}` has not been used yet.")
+                    : new Error("command.leaderboard.not_found", $"No command named `{name}` exists."));
+
+        // The footer counts every use, not only those of the fifteen shown.
+        var useCount = await dbContext.CustomCommandUsages.CountAsync(x => x.GuildId == guildId && x.Name == name);
+        return Result<LeaderboardDisplay>.Ok(new LeaderboardDisplay(
+            string.Join("\n",
+                rankings.Select((r, i) => $"**{i + 1}.** {UserExtensions.Mention(r.UserId)} — {r.Count} uses")),
+            $"Leaderboard for !{name}",
+            $"{useCount} total uses"));
     }
 
-    private sealed record LeaderboardDisplay(string Text, string Title, string? Footer);
+    private sealed record LeaderboardDisplay(string Text, string Title, string Footer);
 }

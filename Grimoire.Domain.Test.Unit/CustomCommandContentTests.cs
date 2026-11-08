@@ -78,24 +78,25 @@ public sealed class CustomCommandContentTests
     }
 
     [Fact]
-    public void Create_BackslashT_UnescapesToTab()
+    public void Create_BackslashT_IsKeptAsTyped()
     {
+        // C-5: only "\n" is unescaped. A backslash elsewhere is usually meant, as in C:\temp.
         var content = CustomCommandContent.Create(@"col1\tcol2").ShouldSucceed();
-        content.Value.ShouldBe("col1\tcol2");
+        content.Value.ShouldBe(@"col1\tcol2");
     }
 
     [Fact]
-    public void Create_MixedEscapes_AllUnescaped()
+    public void Create_MixedEscapes_OnlyNewlinesUnescaped()
     {
         var content = CustomCommandContent.Create(@"a\nb\tc").ShouldSucceed();
-        content.Value.ShouldBe("a\nb\tc");
+        content.Value.ShouldBe("a\nb\\tc");
     }
 
     [Fact]
-    public void Create_MultipleEscapesWithText_AllUnescaped()
+    public void Create_MultipleEscapesWithText_OnlyNewlinesUnescaped()
     {
         var content = CustomCommandContent.Create(@"a\n\nb\tc").ShouldSucceed();
-        content.Value.ShouldBe("a\n\nb\tc");
+        content.Value.ShouldBe("a\n\nb\\tc");
     }
 
     [Fact]
@@ -105,10 +106,8 @@ public sealed class CustomCommandContentTests
             .Errors.ShouldContain(e => e.Code == "custom-command-content.empty");
 
     [Fact]
-    public void Create_OnlyTabEscape_IsInvalid()
-        => CustomCommandContent.Create(@"\t")
-            .ShouldBeOfType<Validation<CustomCommandContent>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-content.empty");
+    public void Create_AWindowsPath_IsKeptAsTyped_ExceptForNewlineEscapes()
+        => CustomCommandContent.Create(@"C:\temp").ShouldSucceed().Value.ShouldBe(@"C:\temp");
 
     [Fact]
     public void Create_LengthCheckedAfterUnescaping()

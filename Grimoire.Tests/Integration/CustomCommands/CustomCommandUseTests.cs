@@ -133,6 +133,18 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         await this.WaitForUsesAsync(1);
     }
 
+    /// <summary>C-8: when the first word isn't a mention, it's part of the message, not dropped.</summary>
+    [Fact]
+    public async Task TextTrigger_WithoutAMention_KeepsTheWholeMessage()
+    {
+        await this.LearnAsync("hug", "%Mention gets a hug: %Message");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!hug hello world");
+
+        (await this.WaitForPostAsync(this.Guild.General))["content"]!.GetValue<string>().ShouldEndWith("gets a hug: hello world");
+        await this.WaitForUsesAsync(1);
+    }
+
     /// <summary>Unknown names, messages from bots, restricted commands and a disabled module post nothing.</summary>
     [Theory]
     [InlineData("unknown")]

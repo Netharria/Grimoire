@@ -24,9 +24,11 @@ public sealed partial class CustomCommandSettings
     [Description("Learn a new command or update an existing one")]
     public async Task Learn(
         SlashCommandContext ctx,
+        // A string, not the converter, so the user hears what's wrong with it. The converter only says it failed.
+        [MinMaxLength(1, 24)]
         [Parameter("name")]
         [Description("The name that the command will be called. This is used to activate the command.")]
-        CustomCommandName name,
+        string name,
         [MinMaxLength(maxLength: 2000)]
         [Parameter("content")]
         [Description("The content of the command. Use %mention or %message to add a message arguments")]
@@ -34,8 +36,8 @@ public sealed partial class CustomCommandSettings
         [Parameter("embed")] [Description("Put the message in an embed")]
         bool embed = false,
         [Parameter("embed_color")]
-        [Description("Hexadecimal color of the embed (only used when OutputType is Embedded)")]
-        CustomCommandEmbedColor? embedColor = null,
+        [Description("Hexadecimal color of the embed, such as ff0000. Only used when embed is true.")]
+        string? embedColor = null,
         [Parameter("restricted_use")] [Description("Restrict this command to specific roles.")]
         bool restrictedUse = false,
         [Parameter("permission_role_1")] DiscordRole? permissionRole1 = null,
@@ -61,17 +63,29 @@ public sealed partial class CustomCommandSettings
             permissionRole5,
             permissionRole6, permissionRole7, permissionRole8, permissionRole9, permissionRole10);
 
-        await BuildRoles(restrictedUse, roleIds, name, guildId)
-            .Bind(roles => CustomCommandContent.Create(content)
-                .Bind(validContent => embed
-                    ? EmbedCustomCommand.Create(name, guildId, validContent, embedColor, roles, ctx.GetModeratorId())
-                    : TextCustomCommand.Create(name, guildId, validContent, roles, ctx.GetModeratorId())))
+        await CustomCommandName.Create(name)
+            .Bind(validName => ParseEmbedColor(embed, embedColor)
+                .Bind(color => BuildRoles(restrictedUse, roleIds, validName, guildId)
+                    .Bind(roles => CustomCommandContent.Create(content)
+                        .Bind(validContent => embed
+                            ? EmbedCustomCommand.Create(validName, guildId, validContent, color, roles, ctx.GetModeratorId())
+                            : TextCustomCommand.Create(validName, guildId, validContent, roles, ctx.GetModeratorId())))))
             .ToResult()
             .BindAsync(SaveCommandAsync)
             .Match(
-                _ => OnLearnSuccessAsync(ctx, guild, name),
+                command => OnLearnSuccessAsync(ctx, guild, command.Name),
                 error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
+
+    /// <summary>A colour only means something on an embed, so one given without it is refused rather than dropped.</summary>
+    private static Validation<CustomCommandEmbedColor?> ParseEmbedColor(bool embed, string? embedColor)
+        => embedColor switch
+        {
+            null => Validation<CustomCommandEmbedColor?>.Succeed(null),
+            _ when !embed => Validation<CustomCommandEmbedColor?>.Fail(new Error("command.learn.color-without-embed",
+                "An embed color only applies to an embed. Set embed to true, or leave out the color.")),
+            _ => CustomCommandEmbedColor.Create(embedColor).Map(color => (CustomCommandEmbedColor?)color)
+        };
 
     private static IReadOnlyList<RoleId> CollectRoleIds(params DiscordRole?[] roles)
         => roles.OfType<DiscordRole>().Select(r => r.GetRoleId()).Distinct().ToList();

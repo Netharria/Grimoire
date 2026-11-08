@@ -35,13 +35,14 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
                 versions => BuildChoices(versions, context.Guild),
                 _ => []);
 
+    /// <summary>Numbered from every version, as /Commands History does, though only the newest 25 can be offered.</summary>
     private static IEnumerable<DiscordAutoCompleteChoice> BuildChoices(
-        IEnumerable<CommandVersionEntry> versions, DiscordGuild? guild)
+        (int Total, IReadOnlyList<CommandVersionEntry> Newest) versions, DiscordGuild? guild)
     {
-        var list = versions.ToList();
+        var (total, list) = versions;
         return list.Select((v, i) =>
         {
-            var versionNumber = list.Count - i;
+            var versionNumber = total - i;
             var label = $"v{versionNumber} — {v.CreatedAt:MMM d, yyyy h:mm tt} UTC"
                 + (v.ModeratorId is { } mod ? $" by {ResolveDisplayName(guild, mod)}" : string.Empty);
             return new DiscordAutoCompleteChoice(
@@ -59,10 +60,11 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
             ? member.DisplayName
             : mod.Value.ToString();
 
-    private async ValueTask<Result<IEnumerable<CommandVersionEntry>>> GetVersionsAsync(
+    private async ValueTask<Result<(int Total, IReadOnlyList<CommandVersionEntry> Newest)>> GetVersionsAsync(
         GuildId guildId, CustomCommandName name)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var total = await dbContext.CustomCommands.CountAsync(x => x.GuildId == guildId && x.Name == name);
         var versions = await dbContext.CustomCommands
             .AsNoTracking()
             .Where(x => x.GuildId == guildId && x.Name == name)
@@ -70,8 +72,8 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
             .Take(25)
             .Select(x => new { x.CreatedAt, x.ModeratorId })
             .ToListAsync();
-        return Result<IEnumerable<CommandVersionEntry>>.Ok(
-            versions.Select(v => new CommandVersionEntry(v.CreatedAt, v.ModeratorId)));
+        return Result<(int, IReadOnlyList<CommandVersionEntry>)>.Ok(
+            (total, [.. versions.Select(v => new CommandVersionEntry(v.CreatedAt, v.ModeratorId))]));
     }
 
     private sealed record CommandVersionEntry(DateTimeOffset CreatedAt, ModeratorId? ModeratorId);
