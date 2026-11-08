@@ -49,10 +49,18 @@ public sealed class FakePluralKit : HttpMessageHandler
         this._messages[proxyId] = json;
     }
 
+    /// <summary>Every lookup gets <paramref name="status" /> with <paramref name="body" />, as when PluralKit is failing.</summary>
+    public void FailWith(HttpStatusCode status, string body = "")
+        => this._failure = (status, body);
+
+    private (HttpStatusCode Status, string Body)? _failure;
+
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var path = request.RequestUri!.AbsolutePath.Trim('/');
         this._lookups.Enqueue(path);
+        if (this._failure is var (status, body))
+            return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
         return Task.FromResult(path.StartsWith("messages/", StringComparison.Ordinal)
                                && ulong.TryParse(path["messages/".Length..], out var id)
                                && this._messages.TryGetValue(id, out var json)

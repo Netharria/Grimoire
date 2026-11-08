@@ -106,7 +106,7 @@ internal static class GrimoireServiceRegistration
                 .AddSettingsServices(connectionString)
                 .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
                 .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
-                .AddScoped<IPluralkitService, PluralkitService>()
+                .AddSingleton<IPluralkitService, PluralkitService>()
                 .AddSingleton<SpamTrackerModule>()
                 .AddSingleton<BanHandoff>()
                 .AddSingleton(TimeProvider.System)

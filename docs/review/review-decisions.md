@@ -32,7 +32,7 @@ note says otherwise.
 | 12 | I-5, X-5 | **Done** 2026-11-07, uncommitted | All nine sites. `/Level` shows "Unavailable" for Next Reward instead of failing, like `/UserInfo` skipping its level fields |
 | 13 | L-3, L-4, L-5, L-6, D-7 | **Done** 2026-11-07, uncommitted | Also the L-12 bullet on the duplicated System Id and Member Id fields (`AddMessageAuthorFields`) |
 | 14 | S-4, M-5 | **Done** 2026-11-07, uncommitted | A failed ignore lookup counts as **ignored** (no XP during an outage), not as not-ignored; `/Lock` revert half not taken. `GetAllExpiredMutes` and `GetAllMutes` still throw on purpose: they return no `Result`, and an empty list would read as "no mutes" |
-| 15 | I-3, I-15 | Fix both | |
+| 15 | I-3, I-15 | **Done** 2026-11-07, uncommitted | A failed lookup logs at Information and the delete is logged as an ordinary message |
 | 16 | M-3, M-11 | Fix all | Helper plus the `/Publish` and overwrite merges |
 | 17 | X-3, X-4, C-1, C-7 | Fix all | |
 | 18 | S-3 | Fix | |

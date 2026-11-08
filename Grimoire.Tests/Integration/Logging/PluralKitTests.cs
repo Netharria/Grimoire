@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Net;
 using System.Text.Json.Nodes;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
@@ -92,6 +93,63 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
         Field(await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == $"Message deleted in #{this.Channel.Name}"),
             "Author").ShouldBe(this.Guild.User1.Mention);
         (await this.LinksAsync()).ShouldBeEmpty();
+    }
+
+    /// <summary>
+    ///     I-3: the lookup is optional, so a PluralKit failure must not cost the delete log. A refused token, a reply
+    ///     that isn't JSON, and one whose shape changed each make it fail differently.
+    /// </summary>
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden, "")]
+    [InlineData(HttpStatusCode.OK, "<html>Service unavailable</html>")]
+    [InlineData(HttpStatusCode.OK, """{"id": 12345, "original": ["not", "a", "string"]}""")]
+    public async Task APluralKitFailure_StillLogsTheDelete(HttpStatusCode status, string body)
+    {
+        var messageId = await this.SendLoggedAsync(this.Guild.User1, "plain");
+        this._pluralKit.FailWith(status, body);
+
+        this._bot.DeleteMessage(messageId, this.Channel);
+
+        Field(await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == $"Message deleted in #{this.Channel.Name}"),
+            "Author").ShouldBe(this.Guild.User1.Mention);
+    }
+
+    /// <summary>I-3: the rate limiter allows two lookups a second with no queue, so a burst of deletes is refused by it.</summary>
+    [Fact]
+    public async Task ABurstOfDeletes_IsAllLogged()
+    {
+        ulong[] messageIds = [.. await Task.WhenAll(Enumerable.Range(0, 5).Select(i => this.SendLoggedAsync(this.Guild.User1, $"plain {i}")))];
+
+        foreach (var messageId in messageIds)
+            this._bot.DeleteMessage(messageId, this.Channel);
+
+        var logged = await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this._bot.Rest.Requests.Count(request =>
+                this._bot.IsModLogPost(request) && request.Json?["embeds"]?[0]?["author"]?["name"]?.ToString()
+                    .StartsWith("Message deleted", StringComparison.Ordinal) == true)),
+            count => count >= messageIds.Length);
+        logged.ShouldBe(messageIds.Length);
+    }
+
+    /// <summary>I-15: without PluralKit configured, the bot says so once, not on every delete.</summary>
+    [Fact]
+    public async Task WithoutPluralKitConfigured_TheWarningIsLoggedOnce()
+    {
+        await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await this._bot.ConfigureModerationAsync();
+        await this._bot.ConfigureMessageLogAsync();
+        (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(GuildLogType.MessageDeleted,
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+
+        foreach (var content in new[] { "first", "second", "third" })
+        {
+            this._bot.DeleteMessage(await this.SendLoggedAsync(this.Guild.User1, content), this.Channel);
+            await this._bot.WaitForModLogEmbedAsync(e => e["fields"]?.AsArray()
+                .Any(field => field?["value"]?.GetValue<string>() == content) == true);
+        }
+
+        this._bot.Logs.Events.Count(logEvent => logEvent.MessageTemplate.Text.Contains("Pluralkit integration disabled", StringComparison.Ordinal))
+            .ShouldBe(1);
     }
 
     /// <summary>The original, then the proxy PluralKit posts in its place, both saved by the message log.</summary>
