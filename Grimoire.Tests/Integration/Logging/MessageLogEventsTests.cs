@@ -462,6 +462,29 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         => (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(logType,
             new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(channelId))).ShouldBeSetOrUnchanged();
 
+    /// <summary>L-11: a failed save loses the message from the log, so it's raised, not only written to the log file.</summary>
+    [Fact]
+    public async Task AMessageThatCannotBeSaved_IsRaisedAsAnError()
+    {
+        await using var dbContext = this._database.CreateDbContext();
+        var messages = dbContext.Model.FindEntityType(typeof(Message))!;
+        var table = $"\"{messages.GetSchema() ?? "public"}\".\"{messages.GetTableName()}\"";
+        await dbContext.Database.ExecuteSqlRawAsync($"""ALTER TABLE {table} ADD CONSTRAINT "TestRefusesMessages" CHECK (false) NOT VALID""",
+            TestContext.Current.CancellationToken);
+        try
+        {
+            this._bot.SendMessage(this.Guild.User1, this.Channel, "lost");
+
+            await this._bot.Logs.WaitForAsync(logEvent => logEvent.MessageTemplate.Text.StartsWith(
+                "Unhandled exception in event handler", StringComparison.Ordinal), TimeSpan.FromSeconds(10));
+        }
+        finally
+        {
+            await dbContext.Database.ExecuteSqlRawAsync($"""ALTER TABLE {table} DROP CONSTRAINT "TestRefusesMessages" """,
+                TestContext.Current.CancellationToken);
+        }
+    }
+
     /// <summary>With the message log off, nothing is recorded or posted.</summary>
     [Fact]
     public async Task WithTheMessageLogOff_EditsAndDeletesAreIgnored()

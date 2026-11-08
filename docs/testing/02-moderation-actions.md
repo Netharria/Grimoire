@@ -229,7 +229,7 @@ Precondition unless stated: mute role configured (MOD-73 or MOD-79), `user2` in 
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| MOD-112 | `user2` muted by MOD-90 | `mod` runs `/Unmute user:user2` | Green embed "Unmute": User, Moderator. Role removed (audit reason "Unmuted by @mod"). DM "You have been unmuted by @mod". `user2` can speak again | New `MuteRemoved` row; original `MuteAdded` row untouched. `#modlog` embed |
+| MOD-112 | `user2` muted by MOD-90 | `mod` runs `/Unmute user:user2` | Green embed "Unmute": User, Moderator. Role removed (audit reason "Unmuted by mod", the username). DM "You have been unmuted by @mod". `user2` can speak again | New `MuteRemoved` row; original `MuteAdded` row untouched. `#modlog` embed |
 | MOD-113 | `user2` DMs closed | Unmute | Works; embed shown | `#modlog` red line "Was not able to send a direct message with the unmute details to @user2" plus the embed |
 | MOD-114 | `user2` **not** muted, no role | `/Unmute user:user2` | Configured role is resolved and "revoked" (no-op); the "Unmute" embed and DM are still sent. No "not muted" message. **Misleading**: report it | `RemoveMute` finds nothing; no rows written |
 | MOD-115 | `user2` has the Muted role added by hand, no DB record | `/Unmute user:user2` | Role is removed (fallback to configured role) | none |

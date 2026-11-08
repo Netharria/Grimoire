@@ -63,9 +63,9 @@ public sealed class InviteService : IInviteService
             .FirstOrDefault();
         if (inviteUsed is null || inviteUsed.Uses + 1 != inviteUsed.MaxUses)
             return null;
-        return !DeleteInvite(guildInvites.GuildId, inviteUsed.Code)
-            ? throw new Exception("Was not able to delete invite.")
-            : inviteUsed with { Uses = inviteUsed.Uses + 1 };
+        // An InviteDelete event may have removed it first. It's gone either way.
+        DeleteInvite(guildInvites.GuildId, inviteUsed.Code);
+        return inviteUsed with { Uses = inviteUsed.Uses + 1 };
     }
 
     /// <returns>Whether the invite was tracked. An untracked guild, such as one without Manage Server, tracks none.</returns>

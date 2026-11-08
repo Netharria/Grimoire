@@ -76,18 +76,20 @@ public sealed partial class AddMessageEvent(
         {
             await dbContext.SaveChangesAsync();
         }
+        // A message already saved, as when the gateway replays events after a resume. Nothing is lost.
         catch (UniqueConstraintException)
         {
             LogNonUniqueMessage(this._logger);
         }
+        // Rethrown, so the event handler raises the alert a lost message deserves.
         catch (Exception ex)
         {
             LogOriginalMessageForDebugging(this._logger, args.Message.Content, ex);
+            throw;
         }
     }
 
-    [LoggerMessage(LogLevel.Error,
-        "Was not able to save Message due to violating a unique constraint.")]
+    [LoggerMessage(LogLevel.Debug, "Message was already saved.")]
     static partial void LogNonUniqueMessage(ILogger logger);
 
     [LoggerMessage(LogLevel.Error,

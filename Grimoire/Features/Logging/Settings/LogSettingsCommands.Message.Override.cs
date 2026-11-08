@@ -56,7 +56,8 @@ public partial class LogSettingsCommands
                 {
                     GuildId = guild.GetGuildId(),
                     GuildLogType = GuildLogType.Moderation,
-                    Title = $"{ctx.User.Mention} updated the channel overrides",
+                    // The title is the embed's author line, where Discord doesn't render mentions.
+                    Title = $"{ctx.User.Username} updated the channel overrides",
                     Description = message,
                     Color = GrimoireColor.Purple
                 }));

@@ -240,6 +240,25 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.LoggedWithinAsync("Avatar Updated", NothingHappensWindow)).ShouldBeFalse();
     }
 
+    /// <summary>L-11: about 45 roles pass a field's 1,024 characters. They're split across fields, not lost with the log.</summary>
+    [Fact]
+    public async Task Leave_OfAMemberWithManyRoles_IsStillLogged()
+    {
+        await this.PointUserLogsAtModLogAsync();
+        var roleIds = Enumerable.Range(0, 60).Select(i => this._bot.Rest.CreateRole($"role {i}")).ToArray();
+        this._bot.SetRolesByHand(this.Guild.User1, roleIds);
+        await Task.Delay(TimeSpan.FromMilliseconds(300), TestContext.Current.CancellationToken);
+
+        this._bot.MemberLeaves(this.Guild.User1);
+
+        var embed = await this.WaitForLogAsync("User Left");
+        var fields = embed["fields"]!.AsArray().Select(field => (Name: field!["name"]!.GetValue<string>(), Value: field["value"]!.GetValue<string>())).ToArray();
+        fields.ShouldContain(field => field.Name == "Roles[60]");
+        fields.ShouldAllBe(field => field.Value.Length <= 1024);
+        string.Join(' ', fields.Where(field => field.Name is "Roles[60]" or "**Continued**").Select(field => field.Value))
+            .ShouldContain($"<@&{roleIds[^1]}>");
+    }
+
     /// <summary>A role change isn't an avatar change.</summary>
     [Fact]
     public async Task RoleChange_IsNotLoggedAsAnAvatarChange()

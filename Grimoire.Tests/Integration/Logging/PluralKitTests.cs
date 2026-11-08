@@ -95,6 +95,25 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
         (await this.LinksAsync()).ShouldBeEmpty();
     }
 
+    /// <summary>L-11: editing a proxy shows the member behind it, as the delete log does, not the webhook.</summary>
+    [Fact]
+    public async Task EditingAProxy_ShowsTheOriginalAuthorsAvatar()
+    {
+        const string hash = "abcdef0123456789abcdef0123456789";
+        (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(GuildLogType.MessageEdited,
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+        var (original, proxy) = await this.ProxyAsync("hello");
+        this._bot.DeleteMessage(original, this.Channel);
+        await GrimoireTestBot.EventuallyAsync(this.LinksAsync, links => links.Count > 0);
+        this._bot.UpdateProfile(this.Guild.User1, avatarHash: hash);
+        await Task.Delay(TimeSpan.FromMilliseconds(300), TestContext.Current.CancellationToken);
+
+        this._bot.EditMessage(proxy, this._webhook, this.Channel, "hello again");
+
+        var embed = await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == $"Message edited in #{this.Channel.Name}");
+        embed["thumbnail"]!["url"]!.GetValue<string>().ShouldContain(hash);
+    }
+
     /// <summary>L-8: a delete of a message that was never logged asks PluralKit nothing.</summary>
     [Fact]
     public async Task DeletingAnUnloggedMessage_AsksPluralKitNothing()

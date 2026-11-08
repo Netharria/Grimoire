@@ -41,7 +41,7 @@ note says otherwise.
 | 20 | L-7, L-8, L-9, rest of L-12 | **Done** 2026-11-07, uncommitted | New `SettingsModule.IsLogChannelSet`; the audit log parser takes the stored author and has no database access now |
 | 21 | I-8, I-9, I-10, I-11, R-1 | **Done** 2026-11-08, uncommitted | R-1 has its own issue, `LogChannelMissing`. The publisher reports without awaiting, so it can't block on its own full queue |
 | 21 | I-12, I-17, M-7, M-8, M-9 | **Done** 2026-11-08 except M-7, uncommitted | M-7 goes with D-2 (rank 23). `/Diagnostics` still doesn't check Manage Messages for thread locks |
-| 21 | M-10, L-11 | Fix every bullet | |
+| 21 | M-10, L-11 | **Done** 2026-11-08, uncommitted | Durations capped at 36,500. Log channels need Embed Links (and Attach Files for delete, bulk delete and avatar logs) and must hold messages. No test for the `/SinLog` order or the `InviteService` race, which the harness can't make happen |
 | 21 | L-10 | Fix | |
 | 21 | X-7, X-8, X-9, X-10 | Fix all | X-9: accept that levels drop slightly in guilds with `Base × Modifier` ≤ 15 |
 | 21 | C-4, C-5, C-8 | Fix all | C-8: every bullet |

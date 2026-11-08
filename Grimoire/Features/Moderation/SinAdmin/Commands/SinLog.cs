@@ -97,6 +97,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         var result = await queryable
             .Where(x => x.SinOn > DateTimeOffset.UtcNow - autoPardonAfter)
+            .OrderBy(x => x.Id)
             .Select(x => new
             {
                 x.Id,

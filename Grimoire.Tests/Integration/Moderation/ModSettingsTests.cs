@@ -158,6 +158,14 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
             .ShouldBe("This module is disabled in this server.");
     }
 
+    /// <summary>M-10: the description named minutes and hours, but the choices are days, months and years.</summary>
+    [Fact]
+    public void AutoPardon_DescribesItsUnitsCorrectly()
+        => this._bot.Rest.RegisteredCommands["mod_settings"]["options"]!.AsArray()
+            .Single(option => option!["name"]!.GetValue<string>() == "auto_pardon")!["options"]!.AsArray()
+            .Single(option => option!["name"]!.GetValue<string>() == "duration_type")!["description"]!.GetValue<string>()
+            .ShouldBe("Select whether the duration will be in days, months or years");
+
     private Task<FakeReply> ModSettingsAsync(FakeUser user, SlashOption subcommand)
         => this._bot.RunSlashCommandAndWaitAsync("mod_settings", user, subcommand);
 

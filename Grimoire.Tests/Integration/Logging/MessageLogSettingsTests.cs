@@ -113,8 +113,8 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     [Fact]
     public async Task View_WithADeletedChannel_SaysSo()
     {
-        await this.SetAsync(LogSetting.DeleteLog, ChannelOption.SelectChannel, this.Guild.Forum);
-        this._bot.DeleteChannel(this.Guild.Forum);
+        await this.SetAsync(LogSetting.DeleteLog, ChannelOption.SelectChannel, this.Guild.Announcements);
+        this._bot.DeleteChannel(this.Guild.Announcements);
         await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
 
         (await this.MessageAsync(SlashOption.Subcommand("view"))).Description.ShouldNotBeNull()
@@ -159,8 +159,35 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     {
         await this.OverrideAsync(OverrideSetting.Never, this.Guild.General);
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        var logged = await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"Will now never log messages from {this.Guild.General.Mention} and its sub channels/threads.");
+        // L-11: the title is the embed's author line, where Discord doesn't render mentions.
+        logged["author"]!["name"]!.GetValue<string>().ShouldBe("admin updated the channel overrides");
+    }
+
+    /// <summary>L-11: a category or forum can't hold messages, so it can't be a log channel.</summary>
+    [Fact]
+    public async Task Set_ToAForum_IsRefused()
+    {
+        (await this.SetAsync(LogSetting.EditLog, ChannelOption.SelectChannel, this.Guild.Forum)).Description
+            .ShouldBe($"{this.Guild.Forum.Mention} can't hold messages. Pick a text channel.");
+        (await this.LogChannelAsync(GuildLogType.MessageEdited)).ShouldBeNull();
+    }
+
+    /// <summary>L-11: the delete log re-uploads images, so the bot needs Attach Files there, and Embed Links for every log.</summary>
+    [Fact]
+    public async Task Set_WhereTheBotCannotAttachFiles_IsRefusedForTheDeleteLog_ButNotTheEditLog()
+    {
+        await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+            FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
+        await this._bot.ConfigureMessageLogAsync();
+
+        (await this.SetAsync(LogSetting.DeleteLog, ChannelOption.SelectChannel, this.Guild.General)).Description
+            .ShouldBe($"{this.Guild.Bot.MemberMention} also needs **Attach Files** in that channel to post these logs.");
+        (await this.LogChannelAsync(GuildLogType.MessageDeleted)).ShouldBeNull();
+        (await this.SetAsync(LogSetting.EditLog, ChannelOption.SelectChannel, this.Guild.General)).Description
+            .ShouldBe($"Updated EditLog to {this.Guild.General.Mention}");
     }
 
     // ── Gates ─────────────────────────────────────────────────────────────────

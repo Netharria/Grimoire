@@ -194,11 +194,11 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
-    /// <summary>Threads aren't guild channels, so they can't be overridden directly.</summary>
+    /// <summary>M-10: a thread can be overridden too. The filter honours it, and the reply promises it.</summary>
     [Fact]
-    public async Task Override_OfAThread_SaysTheChannelDoesNotExist()
+    public async Task Override_OfAThread_IsAccepted()
         => (await this.OverrideAsync(SpamFilterOverrideSetting.Never, this.Guild.PublicThread)).Description
-            .ShouldBe("That channel does not exist in this server.");
+            .ShouldBe($"Will now never filter spam messages from {this.Guild.PublicThread.Mention} and its sub channels/threads.");
 
     [Theory]
     [InlineData("override")]

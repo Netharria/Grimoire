@@ -75,9 +75,8 @@ public sealed class UpdateMessageEvent(
             // ignored
         }
 
-        var avatarUrl = await sender.GetUserAvatar(args.Author.GetUserId(), args.Guild);
-        if (avatarUrl is null)
-            return;
+        // As in the delete log: the avatar is optional, and a proxied message shows the member behind it.
+        var avatarUrl = await sender.GetUserAvatar(message.OriginalUserId ?? message.UserId, args.Guild);
 
         var embed = new DiscordEmbedBuilder()
             .WithDescription($"**[Jump Url]({args.Message.JumpLink})**")
@@ -85,8 +84,9 @@ public sealed class UpdateMessageEvent(
             .AddField("Message Id", args.Message.Id.ToString(), true)
             .WithAuthor($"Message edited in #{args.Channel.Name}")
             .WithTimestamp(DateTime.UtcNow)
-            .WithColor(GrimoireColor.Yellow)
-            .WithThumbnail(avatarUrl);
+            .WithColor(GrimoireColor.Yellow);
+        if (avatarUrl is not null)
+            embed.WithThumbnail(avatarUrl);
 
         embed.AddMessageAuthorFields(message.UserId, message.OriginalUserId, message.SystemId, message.MemberId);
 

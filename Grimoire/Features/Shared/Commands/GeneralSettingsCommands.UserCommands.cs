@@ -27,6 +27,6 @@ internal sealed partial class GeneralSettingsCommands
         await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the User Command Channel",
             channelId => this._settingsModule.SetUserCommandChannelSetting(ctx.Guild!.GetGuildId(),
                 ctx.GetModeratorId(), channelId),
-            botMustSend: false);
+            botNeeds: []);
     }
 }

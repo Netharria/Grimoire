@@ -73,7 +73,8 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         // Take the role off first and only then clear the record. If Discord refuses (for example the bot's role is
         // below the mute role) the error is reported and the mute stays recorded, so it can be retried.
-        await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.User.Mention}");
+        // The audit log shows text as written, so a mention would read as a raw <@id>.
+        await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.User.Username}");
         if (!await this.RemoveMuteRecordAsync(ctx, member))
         {
             await ctx.SendErrorResponseAsync($"Took the mute role off {member.Mention}, but couldn't clear their mute. "

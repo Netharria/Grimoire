@@ -133,10 +133,13 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     }
 
     /// <summary>Puts someone on the ban list with no event or audit entry, as if banned before the bot joined.</summary>
-    public void MarkBanned(ulong userId)
+    public void MarkBanned(ulong userId, string? reason = null)
     {
         lock (this._lock)
+        {
             this._banned.Add(userId);
+            this._banReasons[userId] = reason;
+        }
     }
 
     /// <summary>Lifts a ban as Discord does. Returns false when the user wasn't banned.</summary>

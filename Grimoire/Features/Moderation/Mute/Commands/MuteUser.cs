@@ -38,7 +38,8 @@ public sealed partial class MuteUser(
         DiscordMember member,
         [Parameter("duration_type")] [Description("Select whether the duration will be in minutes hours or days")]
         DurationType durationType,
-        [MinMaxValue(1)] [Parameter("duration_amount")] [Description("The amount of time the mute will last.")]
+        // 100 years in days. Far more overflows the end time, after nothing has been changed, with a generic error.
+        [MinMaxValue(1, 36_500)] [Parameter("duration_amount")] [Description("The amount of time the mute will last.")]
         int durationAmount,
         [MinMaxLength(maxLength: 1000)] [Parameter("reason")] [Description("The reason for the mute.")]
         string? reason = null

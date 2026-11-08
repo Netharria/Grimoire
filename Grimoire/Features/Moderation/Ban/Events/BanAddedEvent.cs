@@ -95,9 +95,9 @@ public partial class BanAddedEvent(
         try
         {
             var entry = await args.Guild.GetRecentAuditLogAsync<DiscordAuditLogBanEntry>(DiscordAuditLogActionType.Ban, 1500);
-            return entry?.Target.Id != args.Member.Id
-                ? (new ModerationActor.System(), string.Empty)
-                : (entry.UserResponsible?.Id is { } moderatorId
+            // Without a matching entry, the ban itself still has the reason, below.
+            if (entry?.Target.Id == args.Member.Id)
+                return (entry.UserResponsible?.Id is { } moderatorId
                     ? new ModerationActor.Moderator(new ModeratorId(moderatorId))
                     : new ModerationActor.System(), entry.Reason ?? string.Empty);
         }

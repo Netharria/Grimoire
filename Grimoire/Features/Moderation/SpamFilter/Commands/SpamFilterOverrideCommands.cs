@@ -32,7 +32,8 @@ internal class SpamFilterOverrideCommands(
         channel ??= ctx.Channel;
 
         var guild = ctx.Guild!;
-        if (!guild.Channels.ContainsKey(channel.Id))
+        // guild.Channels holds no threads, and the spam filter honours a thread's override.
+        if (channel.GuildId != guild.Id)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "That channel does not exist in this server.");
             return;

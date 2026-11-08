@@ -304,6 +304,15 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.ShouldHaveNoRecordsAsync();
     }
 
+    /// <summary>M-10: a duration past 100 years overflowed the end time. Discord's client now enforces the limit.</summary>
+    [Theory]
+    [InlineData("mute")]
+    [InlineData("lock")]
+    public void TheDuration_IsCappedAt36500(string command)
+        => this._bot.Rest.RegisteredCommands[command]["options"]!.AsArray()
+            .Single(option => option!["name"]!.GetValue<string>() == "duration_amount")!["max_value"]!.GetValue<int>()
+            .ShouldBe(36_500);
+
     // ── /Unmute ───────────────────────────────────────────────────────────────
 
     /// <summary>MOD-112: the role comes off, a MuteRemoved row is added, and the member hears about it.</summary>
@@ -318,7 +327,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         Field(reply.Embed!, "User").ShouldBe(this.Guild.User1.MemberMention);
         Field(reply.Embed!, "Moderator").ShouldBe(this.Guild.Moderator.MemberMention);
         this._bot.Rest.Requests.Single(this.IsRoleChange(HttpMethod.Delete, this.Guild.User1)).AuditLogReason
-            .ShouldBe($"Unmuted by {this.Guild.Moderator.MemberMention}");
+            .ShouldBe("Unmuted by mod", "the audit log shows a mention as raw <@id>");
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldNotContain(this._muteRoleId);
 
         (await GrimoireTestBot.EventuallyAsync(() => this.DmsTo(this.Guild.User1), dms => dms.Count >= 2))[^1]["description"]!

@@ -22,6 +22,7 @@ public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule se
         if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
+        var roles = args.Member.Roles.Where(x => x.Id != args.Guild.Id).Select(x => x.Mention).ToArray();
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("User Left")
             .AddField("Name", args.Member.Mention, true)
@@ -31,10 +32,8 @@ public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule se
             .WithThumbnail(args.Member.GetGuildAvatarUrl(MediaFormat.Auto))
             .WithFooter($"Total Members: {args.Guild.MemberCount}")
             .WithTimestamp(DateTimeOffset.UtcNow)
-            .AddField($"Roles[{args.Member.Roles.Count()}]",
-                args.Member.Roles.Any()
-                    ? string.Join(' ', args.Member.Roles.Where(x => x.Id != args.Guild.Id).Select(x => x.Mention))
-                    : "None");
+            // About 45 roles pass a field's 1,024 characters, so they're split across fields.
+            .AddMessageTextToFields($"Roles[{roles.Length}]", roles.Length > 0 ? string.Join(' ', roles) : "None");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.UserLeft, Embed = embed

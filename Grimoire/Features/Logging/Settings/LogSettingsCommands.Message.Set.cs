@@ -51,7 +51,10 @@ public partial class LogSettingsCommands
             };
             await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, logSetting.ToString(),
                 channelId => this._settingsModule.SetLogChannelSetting(logType, ctx.Guild!.GetGuildId(),
-                    ctx.GetModeratorId(), channelId));
+                    ctx.GetModeratorId(), channelId),
+                logType is GuildLogType.MessageDeleted or GuildLogType.BulkMessageDeleted
+                    ? ChannelSettingCommand.LogWithFilesPermissions
+                    : ChannelSettingCommand.LogPermissions);
         }
     }
 }

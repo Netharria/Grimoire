@@ -28,7 +28,8 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         CommandContext ctx,
         [Parameter("duration_type")] [Description("Select whether the duration will be in minutes hours or days.")]
         DurationType durationType,
-        [MinMaxValue(1)] [Parameter("duration_amount")] [Description("The amount of time the lock will last.")]
+        // 100 years in days. Far more overflows the end time, after nothing has been changed, with a generic error.
+        [MinMaxValue(1, 36_500)] [Parameter("duration_amount")] [Description("The amount of time the lock will last.")]
         int durationAmount,
         [ChannelTypes(DiscordChannelType.Text, DiscordChannelType.PublicThread, DiscordChannelType.PrivateThread,
             DiscordChannelType.Category, DiscordChannelType.GuildForum)]

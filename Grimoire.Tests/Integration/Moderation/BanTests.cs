@@ -294,6 +294,22 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.SingleSinAsync()).Actor.ShouldBe(new ModerationActor.System());
     }
 
+    /// <summary>M-10: with no audit log entry, the ban itself still says why, and that reason is kept.</summary>
+    [Fact]
+    public async Task ClientBan_TheAuditLogCannotAttribute_KeepsTheBansReason()
+    {
+        this._bot.Rest.RememberUser(this.Guild.User1);
+        this._bot.Rest.MarkBanned(this.Guild.User1.Id, "spam bot");
+        this._bot.Gateway.Dispatch("GUILD_BAN_ADD", new JsonObject
+        {
+            ["guild_id"] = FakeUser.Snowflake(this.Guild.Id),
+            ["user"] = this.Guild.User1.ToJson()
+        });
+
+        Field(await this._bot.WaitForModLogEmbedAsync(IsBannedEmbed), "Reason").ShouldBe("spam bot");
+        (await this.SingleSinAsync()).ReasonHistory.Select(history => history.Reason.Value).ShouldBe(["spam bot"]);
+    }
+
     /// <summary>MOD-29: without View Audit Log nobody can be named, so an issue is posted and the ban is recorded as System.</summary>
     [Fact]
     public async Task ClientBan_WithoutViewAuditLog_ReportsAnIssue_AndRecordsItAsSystem()
