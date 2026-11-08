@@ -12,10 +12,10 @@ public static class DiscordInviteExtensions
     extension(DiscordInvite invite)
     {
         [Pure]
-        public InviteUrl GetInviteUrl() => InviteUrl.FromDatabase(invite.ToString());
+        public InviteUrl GetInviteUrl() => InviteUrl.Create(invite.ToString());
 
         [Pure]
-        public InviteCode GetInviteCode() => InviteCode.FromDatabase(invite.Code);
+        public InviteCode GetInviteCode() => InviteCode.Create(invite.Code);
 
         /// <remarks>Discord leaves out the inviter for some invites, such as those made by an integration.</remarks>
         [Pure]

@@ -27,17 +27,10 @@ public readonly record struct AvatarFileName
 
     public string Value { get; }
 
-    internal static AvatarFileName FromDatabase(string value) => new(value);
-
-    public static Validation<AvatarFileName> Create(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Validation<AvatarFileName>.Fail(new Error("avatar-file-name.empty", "Avatar URL cannot be empty."));
-        return Validation<AvatarFileName>.Succeed(new AvatarFileName(value));
-    }
-
-    public static AvatarFileName? CreateIfNotEmpty(string? value)
-        => string.IsNullOrWhiteSpace(value) ? null : new AvatarFileName(value);
+    /// <summary>
+    ///     Stored rows and Discord's own data are both trusted as they come, so there's nothing to validate.
+    /// </summary>
+    public static AvatarFileName Create(string value) => new(value);
 
     [Pure]
     public bool Equals(AvatarFileName other, StringComparison comparison)

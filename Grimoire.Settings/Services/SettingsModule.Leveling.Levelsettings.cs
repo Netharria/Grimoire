@@ -24,35 +24,17 @@ public sealed partial class SettingsModule
         GuildSettingType.XpGainAmount
     ];
 
-    public async Task<Result<LevelingSettingEntry>> GetLevelingSettings(
+    public Task<Result<LevelingSettingEntry>> GetLevelingSettings(
         GuildId guildId,
         CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return Result<LevelingSettingEntry>.Ok(
+        => ExecuteSafelyAsync(async ct => Result<LevelingSettingEntry>.Ok(
                 await this._cache.GetOrCreateAsync(
                     CacheKey.LevelingSettings(guildId),
                     guildId,
                     GetLevelingSettingsCacheEntry,
                     this._cacheEntryOptions,
-                    cancellationToken: cancellationToken));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Result<LevelingSettingEntry>.Fail(new Error(
-                "levelsettings.invalid",
-                $"One or more leveling settings are invalid: {ex.Message}. Please reset them using the /leveling settings commands."));
-        }
-        catch (Exception ex)
-        {
-            LogOperationFailure(this._logger, ex.Message, ex);
-            return Result<LevelingSettingEntry>.Fail(new Error(
-                "levelsettings.fetch.failed",
-                "Could not fetch level settings from cache"));
-        }
-    }
-
+                    cancellationToken: ct)),
+            new Error("levelsettings.fetch.failed", "Could not fetch level settings from cache"), cancellationToken);
 
     private async ValueTask<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
         GuildId guildId,
@@ -66,16 +48,13 @@ public sealed partial class SettingsModule
                     _ => null
                 });
 
-        return Validation.Combine(
-                XpTimeoutPeriod.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),
-                LevelScalingModifier.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier)),
-                LevelScalingBase.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase)),
-                XpGainAmount.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount)))
-            .Map(v => new LevelingSettingEntry(v.Item1, v.Item2, v.Item3, v.Item4))
-            .Match(
-                entry => entry,
-                errors => throw new InvalidOperationException(
-                    string.Join("; ", errors.Select(e => e.Message))));
+        // S-1: stored values are trusted. A legacy value outside today's limits keeps the guild's curve, where
+        // rejecting it would stop leveling for the whole guild.
+        return new LevelingSettingEntry(
+            XpTimeoutPeriod.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),
+            LevelScalingModifier.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier)),
+            LevelScalingBase.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase)),
+            XpGainAmount.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount)));
     }
 
     public Task<Result<int>> SetLevelingSettings(
@@ -95,14 +74,12 @@ public sealed partial class SettingsModule
     private static Validation<(GuildSettingType, string)> CreateLevelingSetting(LevelSettings setting, int value)
         => setting switch
         {
-            LevelSettings.Amount => XpGainAmount.Create(value).ToDatabaseString()
-                .Map(x => (GuildSettingType.XpGainAmount, x)),
-            LevelSettings.Base => LevelScalingBase.Create(value).ToDatabaseString()
-                .Map(x => (GuildSettingType.LevelScalingBase, x)),
-            LevelSettings.Modifier => LevelScalingModifier.Create(value).ToDatabaseString()
-                .Map(x => (GuildSettingType.LevelScalingModifier, x)),
-            LevelSettings.XpTimeoutPeriod => XpTimeoutPeriod.Create(value).ToDatabaseString()
-                .Map(x => (GuildSettingType.XpTimeoutPeriod, x)),
+            LevelSettings.Amount => XpGainAmount.Create(value).Map(x => (GuildSettingType.XpGainAmount, x.ToString())),
+            LevelSettings.Base => LevelScalingBase.Create(value).Map(x => (GuildSettingType.LevelScalingBase, x.ToString())),
+            LevelSettings.Modifier => LevelScalingModifier.Create(value)
+                .Map(x => (GuildSettingType.LevelScalingModifier, x.ToString())),
+            LevelSettings.XpTimeoutPeriod => XpTimeoutPeriod.Create(value)
+                .Map(x => (GuildSettingType.XpTimeoutPeriod, x.ToString())),
             _ => throw new UnreachableException()
         };
 }

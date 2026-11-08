@@ -58,7 +58,7 @@ public sealed partial class DeleteMessageEvent(
                     .FirstOrDefault(),
                 ReferencedMessage = m.ReferencedMessageId,
                 Attachments = m.Attachments
-                    .Select(a => new AttachmentDto { Id = a.Id, FileName = a.FileName })
+                    .Select(a => new AttachmentDto { Id = a.Id, AttachmentUrl = a.AttachmentUrl })
                     .ToArray(),
                 OriginalUserId = m.ProxiedMessageLink!.OriginalMessage!.UserId,
                 SystemId = m.ProxiedMessageLink.SystemId,
@@ -175,7 +175,7 @@ public sealed partial class DeleteMessageEvent(
         embed.AddMessageTextToFields("**Content**", response.Content?.ToString() ?? string.Empty, false);
 
         return await this._attachmentUploadService.BuildImageEmbedAsync(
-            response.Attachments.Select(x => x.FileName.Value).ToArray(),
+            response.Attachments.Select(x => x.AttachmentUrl.Value).ToArray(),
             response.UserId,
             embed);
     }

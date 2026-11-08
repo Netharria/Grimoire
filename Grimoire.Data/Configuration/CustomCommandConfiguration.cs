@@ -19,14 +19,14 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
         builder.HasKey(e => new { e.Name, e.GuildId, e.CreatedAt });
 
         builder.Property(e => e.Name)
-            .HasConversion(name => name.Value, value => CustomCommandName.ParseFromDatabase(value))
+            .HasConversion(name => name.Value, value => CustomCommandName.FromDatabase(value))
             .HasMaxLength(24);
 
         builder.Property(e => e.Content)
             .HasMaxLength(2000)
             .HasConversion(
                 content => content.Value,
-                value => CustomCommandContent.ParseFromDatabase(value))
+                value => CustomCommandContent.FromDatabase(value))
             .IsRequired();
 
         builder.Property(e => e.GuildId)
@@ -49,7 +49,8 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
             .HasMaxLength(6)
             .HasConversion(
                 color => color.GetValueOrDefault().Value,
-                color => CustomCommandEmbedColor.ParseFromDatabase(color))
+                // main let a blank colour through. It means no colour, as DiscordColor can't parse it.
+                color => string.IsNullOrWhiteSpace(color) ? null : CustomCommandEmbedColor.FromDatabase(color))
             .IsRequired(false);
     }
 }

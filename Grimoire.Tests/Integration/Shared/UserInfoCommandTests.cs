@@ -77,7 +77,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
                 seed.UsernameHistory.Add(new UsernameHistory
                 {
                     UserId = userId,
-                    Username = Username.Create(name).ShouldSucceed(),
+                    Username = Username.Create(name),
                     Timestamp = start.AddMinutes(minutes)
                 });
                 seed.NicknameHistory.Add(new NicknameHistory

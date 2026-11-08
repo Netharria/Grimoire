@@ -217,7 +217,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
             seed.UsernameHistory.Add(new UsernameHistory
             {
                 UserId = userId,
-                Username = Username.Create(target.Username).ShouldSucceed(),
+                Username = Username.Create(target.Username),
                 Timestamp = DateTimeOffset.UtcNow.AddMinutes(1)
             });
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);

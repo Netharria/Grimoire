@@ -15,6 +15,6 @@ public static class DiscordUserExtensions
         public UserId GetUserId() => new(user.Id);
 
         [Pure]
-        public Username GetUsername() => Username.FromDatabase(user.Username);
+        public Username GetUsername() => Username.Create(user.Username);
     }
 }

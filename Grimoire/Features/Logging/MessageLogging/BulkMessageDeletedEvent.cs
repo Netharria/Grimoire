@@ -56,7 +56,7 @@ public sealed class BulkMessageDeletedEvent(
                     .OrderByDescending(h => h.Timestamp)
                     .Select(h => (MessageContent?)h.Content)
                     .FirstOrDefault(),
-                Attachments = m.Attachments.Select(a => a.FileName.Value).ToArray()
+                Attachments = m.Attachments.Select(a => a.AttachmentUrl.Value).ToArray()
             })
             .ToArrayAsync();
 

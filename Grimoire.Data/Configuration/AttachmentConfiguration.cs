@@ -28,11 +28,11 @@ internal sealed class AttachmentConfiguration : IEntityTypeConfiguration<Attachm
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();
 
-        builder.Property(e => e.FileName)
+        builder.Property(e => e.AttachmentUrl)
             .HasMaxLength(2048)
             .HasConversion(
-                fileName => fileName.Value,
-                value => AttachmentFileName.FromDatabase(value))
+                url => url.Value,
+                value => AttachmentUrl.Create(value))
             .IsRequired();
     }
 }

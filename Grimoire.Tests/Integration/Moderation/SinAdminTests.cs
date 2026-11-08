@@ -290,7 +290,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
             seed.UsernameHistory.Add(new UsernameHistory
             {
                 UserId = new UserId(user.Id),
-                Username = Username.Create(user.Username).ShouldSucceed(),
+                Username = Username.Create(user.Username),
                 Timestamp = DateTimeOffset.UtcNow.AddMinutes(1)
             });
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);

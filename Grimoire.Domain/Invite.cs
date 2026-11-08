@@ -25,14 +25,10 @@ public readonly record struct InviteCode
 
     public string Value { get; }
 
-    internal static InviteCode FromDatabase(string value) => new(value);
-
-    public static Validation<InviteCode> Create(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Validation<InviteCode>.Fail(new Error("invite-code.empty", "Invite code cannot be empty."));
-        return Validation<InviteCode>.Succeed(new InviteCode(value.Trim()));
-    }
+    /// <summary>
+    ///     Stored rows and Discord's own data are both trusted as they come, so there's nothing to validate.
+    /// </summary>
+    public static InviteCode Create(string value) => new(value);
 
     public override string ToString() => Value;
 }
@@ -46,14 +42,10 @@ public readonly record struct InviteUrl
 
     public string Value { get; }
 
-    internal static InviteUrl FromDatabase(string value) => new(value);
-
-    public static Validation<InviteUrl> Create(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Validation<InviteUrl>.Fail(new Error("invite-url.empty", "Invite URL cannot be empty."));
-        return Validation<InviteUrl>.Succeed(new InviteUrl(value));
-    }
+    /// <summary>
+    ///     Stored rows and Discord's own data are both trusted as they come, so there's nothing to validate.
+    /// </summary>
+    public static InviteUrl Create(string value) => new(value);
 
     public override string ToString() => Value;
 }

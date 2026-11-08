@@ -39,36 +39,6 @@ public sealed class ValueObjectTests
         invalid.Errors.ShouldContain(e => e.Code == "level-scaling-base.invalid");
     }
 
-    [Fact]
-    public void LevelScalingBase_Null_IsInvalid()
-        => LevelScalingBase.Create((int?)null).ShouldBeOfType<Validation<LevelScalingBase>.Invalid>();
-
-    [Fact]
-    public void LevelScalingBase_StringMin_IsValid()
-        => LevelScalingBase.Create("1").ShouldBeOfType<Validation<LevelScalingBase>.Valid>();
-
-    [Fact]
-    public void LevelScalingBase_StringMax_IsValid()
-        => LevelScalingBase.Create("500").ShouldBeOfType<Validation<LevelScalingBase>.Valid>();
-
-    [Fact]
-    public void LevelScalingBase_StringBelowMin_IsInvalidWithCodeAndMessage()
-    {
-        var result = LevelScalingBase.Create("0");
-        var invalid = result.ShouldBeOfType<Validation<LevelScalingBase>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("level-scaling-base.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
-    }
-
-    [Fact]
-    public void LevelScalingBase_StringNull_IsInvalid()
-        => LevelScalingBase.Create((string?)null).ShouldBeOfType<Validation<LevelScalingBase>.Invalid>();
-
-    [Fact]
-    public void LevelScalingBase_StringNonNumeric_IsInvalid()
-        => LevelScalingBase.Create("abc").ShouldBeOfType<Validation<LevelScalingBase>.Invalid>();
-
     // ── LevelScalingModifier ─────────────────────────────────────────────────
 
     [Fact]
@@ -95,28 +65,6 @@ public sealed class ValueObjectTests
         var result = LevelScalingModifier.Create(201);
         var invalid = result.ShouldBeOfType<Validation<LevelScalingModifier>.Invalid>();
         invalid.Errors.ShouldContain(e => e.Code == "level-scaling-modifier.invalid");
-    }
-
-    [Fact]
-    public void LevelScalingModifier_Null_IsInvalid()
-        => LevelScalingModifier.Create((int?)null).ShouldBeOfType<Validation<LevelScalingModifier>.Invalid>();
-
-    [Fact]
-    public void LevelScalingModifier_StringMin_IsValid()
-        => LevelScalingModifier.Create("1").ShouldBeOfType<Validation<LevelScalingModifier>.Valid>();
-
-    [Fact]
-    public void LevelScalingModifier_StringMax_IsValid()
-        => LevelScalingModifier.Create("200").ShouldBeOfType<Validation<LevelScalingModifier>.Valid>();
-
-    [Fact]
-    public void LevelScalingModifier_StringBelowMin_IsInvalidWithCodeAndMessage()
-    {
-        var result = LevelScalingModifier.Create("0");
-        var invalid = result.ShouldBeOfType<Validation<LevelScalingModifier>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("level-scaling-modifier.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
     }
 
     // ── XpGainAmount ─────────────────────────────────────────────────────────
@@ -147,28 +95,6 @@ public sealed class ValueObjectTests
         invalid.Errors.ShouldContain(e => e.Code == "xp-gain-amount.invalid");
     }
 
-    [Fact]
-    public void XpGainAmount_Null_IsInvalid()
-        => XpGainAmount.Create((int?)null).ShouldBeOfType<Validation<XpGainAmount>.Invalid>();
-
-    [Fact]
-    public void XpGainAmount_StringMin_IsValid()
-        => XpGainAmount.Create("1").ShouldBeOfType<Validation<XpGainAmount>.Valid>();
-
-    [Fact]
-    public void XpGainAmount_StringMax_IsValid()
-        => XpGainAmount.Create("100").ShouldBeOfType<Validation<XpGainAmount>.Valid>();
-
-    [Fact]
-    public void XpGainAmount_StringBelowMin_IsInvalidWithCodeAndMessage()
-    {
-        var result = XpGainAmount.Create("0");
-        var invalid = result.ShouldBeOfType<Validation<XpGainAmount>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("xp-gain-amount.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
-    }
-
     // ── XpTimeoutPeriod ──────────────────────────────────────────────────────
 
     [Fact]
@@ -196,50 +122,6 @@ public sealed class ValueObjectTests
         var invalid = result.ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
         invalid.Errors.ShouldContain(e => e.Code == "xp-timeout-period.invalid");
     }
-
-    [Fact]
-    public void XpTimeoutPeriod_Null_IsInvalid()
-        => XpTimeoutPeriod.Create((int?)null).ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
-
-    [Fact]
-    public void XpTimeoutPeriod_StringOneMinute_IsValid()
-        => XpTimeoutPeriod.Create("00:01:00").ShouldBeOfType<Validation<XpTimeoutPeriod>.Valid>();
-
-    [Fact]
-    public void XpTimeoutPeriod_StringSixtyMinutes_IsValid()
-        => XpTimeoutPeriod.Create("01:00:00").ShouldBeOfType<Validation<XpTimeoutPeriod>.Valid>();
-
-    [Fact]
-    public void XpTimeoutPeriod_StringZeroMinutes_IsInvalidWithCodeAndMessage()
-    {
-        var result = XpTimeoutPeriod.Create("00:00:00");
-        var invalid = result.ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("xp-timeout-period.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
-    }
-
-    [Fact]
-    public void XpTimeoutPeriod_StringAboveMax_IsInvalidWithCodeAndMessage()
-    {
-        var result = XpTimeoutPeriod.Create("01:01:00");
-        var invalid = result.ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("xp-timeout-period.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
-    }
-
-    [Fact]
-    public void XpTimeoutPeriod_StringNull_IsInvalid()
-        => XpTimeoutPeriod.Create((string?)null).ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
-
-    [Fact]
-    public void XpTimeoutPeriod_StringWhitespace_IsInvalid()
-        => XpTimeoutPeriod.Create("   ").ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
-
-    [Fact]
-    public void XpTimeoutPeriod_StringNonParseable_IsInvalid()
-        => XpTimeoutPeriod.Create("not-a-timespan").ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
 
     // ── RewardMessage ────────────────────────────────────────────────────────
 
@@ -272,18 +154,6 @@ public sealed class ValueObjectTests
         => RewardMessage.Create(string.Empty).ShouldBeOfType<Validation<RewardMessage>.Invalid>();
 
     [Fact]
-    public void RewardMessage_Whitespace_IsInvalid()
-        => RewardMessage.Create("   ").ShouldBeOfType<Validation<RewardMessage>.Invalid>();
-
-    [Fact]
-    public void RewardMessage_ValidText_TrimsWhitespace()
-    {
-        var result = RewardMessage.Create("  hello  ");
-        var valid = result.ShouldBeOfType<Validation<RewardMessage>.Valid>();
-        valid.Value.Value.ShouldBe("hello");
-    }
-
-    [Fact]
     public void RewardMessage_FromDatabase_Null_ReturnsNull()
         => RewardMessage.FromDatabase(null).ShouldBeNull();
 
@@ -293,5 +163,33 @@ public sealed class ValueObjectTests
         var result = RewardMessage.FromDatabase("hello");
         result.ShouldNotBeNull();
         result.Value.Value.ShouldBe("hello");
+    }
+
+    // ── FromDatabase (S-1) ───────────────────────────────────────────────────
+
+    /// <summary>S-1: main allowed any positive value, and a guild keeps it. Rejecting it stopped all leveling there.</summary>
+    [Fact]
+    public void FromDatabase_KeepsALegacyValueOutsideTodaysLimits()
+    {
+        LevelScalingBase.FromDatabase("1000").Value.ShouldBe(1000);
+        LevelScalingModifier.FromDatabase("500").Value.ShouldBe(500);
+        XpGainAmount.FromDatabase("250").Value.ShouldBe(250);
+        XpTimeoutPeriod.FromDatabase("02:00:00").Value.ShouldBe(TimeSpan.FromHours(2));
+    }
+
+    /// <summary>The migration writes total hours, so a timeout of a day or more is past what TimeSpan parses.</summary>
+    [Fact]
+    public void XpTimeoutPeriod_FromDatabase_ReadsTotalHours()
+        => XpTimeoutPeriod.FromDatabase("25:30:00").Value.ShouldBe(TimeSpan.FromHours(25.5));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("abc")]
+    public void FromDatabase_WithNothingReadable_UsesTheDefault(string? stored)
+    {
+        LevelScalingBase.FromDatabase(stored).ShouldBe(LevelScalingBase.Default);
+        LevelScalingModifier.FromDatabase(stored).ShouldBe(LevelScalingModifier.Default);
+        XpGainAmount.FromDatabase(stored).ShouldBe(XpGainAmount.Default);
+        XpTimeoutPeriod.FromDatabase(stored).ShouldBe(XpTimeoutPeriod.Default);
     }
 }

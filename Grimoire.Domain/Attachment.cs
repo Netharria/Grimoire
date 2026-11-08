@@ -14,28 +14,28 @@ public sealed record Attachment
 {
     public required MessageId MessageId { get; init; }
     public Message? Message { get; init; }
-    public required AttachmentFileName FileName { get; init; }
+    /// <summary>The attachment's full signed URL, which the delete log downloads the file from.</summary>
+    public required AttachmentUrl AttachmentUrl { get; init; }
     public required AttachmentId Id { get; init; }
 }
 
-public readonly record struct AttachmentFileName
+/// <summary>
+///     An attachment's full URL, signed by Discord, so the file can be downloaded later. Rows saved before full URLs
+///     were stored hold only the file name.
+/// </summary>
+public readonly record struct AttachmentUrl
 {
-    private AttachmentFileName(string value)
+    private AttachmentUrl(string value)
     {
         Value = value;
     }
 
     public string Value { get; }
 
-    internal static AttachmentFileName FromDatabase(string value) => new(value);
-
-    public static Validation<AttachmentFileName> Create(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Validation<AttachmentFileName>.Fail(new Error("attachment-file-name.empty",
-                "Attachment file name cannot be empty."));
-        return Validation<AttachmentFileName>.Succeed(new AttachmentFileName(value));
-    }
+    /// <summary>
+    ///     Stored rows and Discord's own data are both trusted as they come, so there's nothing to validate.
+    /// </summary>
+    public static AttachmentUrl Create(string value) => new(value);
 
     public override string ToString() => Value;
 }

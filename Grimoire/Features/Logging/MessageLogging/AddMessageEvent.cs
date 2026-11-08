@@ -53,7 +53,7 @@ public sealed partial class AddMessageEvent(
                         Id = new AttachmentId(x.Id),
                         MessageId = new MessageId(args.Message.Id),
                         // The full signed URL: the delete log downloads the file from it and re-uploads it.
-                        FileName = AttachmentFileName.FromDatabase(x.Url!)
+                        AttachmentUrl = AttachmentUrl.Create(x.Url!)
                     })
             ],
             ChannelId = args.GetChannelId(),

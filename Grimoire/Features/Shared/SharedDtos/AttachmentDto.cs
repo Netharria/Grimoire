@@ -10,5 +10,5 @@ namespace Grimoire.Features.Shared.SharedDtos;
 public sealed record AttachmentDto
 {
     public required AttachmentId Id { get; init; }
-    public required AttachmentFileName FileName { get; init; }
+    public required AttachmentUrl AttachmentUrl { get; init; }
 }

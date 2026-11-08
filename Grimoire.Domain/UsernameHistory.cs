@@ -26,17 +26,10 @@ public readonly record struct Username
 
     public string Value { get; }
 
-    internal static Username FromDatabase(string value) => new(value);
-
-    public static Validation<Username> Create(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Validation<Username>.Fail(new Error("username.empty", "Username cannot be empty."));
-        var trimmed = value.Trim();
-        return trimmed.Length > 37
-            ? Validation<Username>.Fail(new Error("username.too-long", "Username cannot exceed 37 characters."))
-            : Validation<Username>.Succeed(new Username(trimmed));
-    }
+    /// <summary>
+    ///     Stored rows and Discord's own data are both trusted as they come, so there's nothing to validate.
+    /// </summary>
+    public static Username Create(string value) => new(value);
 
     [Pure]
     public bool Equals(Username other, StringComparison comparison)

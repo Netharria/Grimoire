@@ -25,10 +25,6 @@ public static class DiscordMemberExtensions
         ///     stored per guild, and every writer stores this one form, so comparing them finds only real changes.
         /// </summary>
         [Pure]
-        public AvatarFileName GetAvatarFileName() => AvatarFileName.FromDatabase(member.DisplayAvatarUrl);
-
-        [Pure]
-        public AvatarFileName? GetAvatarFileName(MediaFormat mediaFormat, ushort imageSize = 1024)
-            => AvatarFileName.CreateIfNotEmpty(member.GetGuildAvatarUrl(mediaFormat, imageSize));
+        public AvatarFileName GetAvatarFileName() => AvatarFileName.Create(member.DisplayAvatarUrl);
     }
 }

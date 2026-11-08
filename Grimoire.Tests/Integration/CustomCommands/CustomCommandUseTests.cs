@@ -145,6 +145,29 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         await this.WaitForUsesAsync(1);
     }
 
+    /// <summary>
+    ///     D-1: main let a blank embed colour through. Stored data is trusted now, so such a row loads, and the embed
+    ///     goes out with no colour, instead of the row throwing for every query that loads it.
+    /// </summary>
+    [Fact]
+    public async Task ALegacyCommandWithABlankColour_StillRuns()
+    {
+        await this.LearnAsync("rules", "Be nice", SlashOption.Boolean("embed", true), SlashOption.String("embed_color", "ff0000"));
+        await using (var dbContext = this._database.CreateDbContext())
+        {
+            var entity = dbContext.Model.FindEntityType(typeof(EmbedCustomCommand))!;
+            var column = entity.FindProperty(nameof(EmbedCustomCommand.EmbedColor))!.GetColumnName();
+            await dbContext.Database.ExecuteSqlRawAsync(
+                $"""UPDATE "{entity.GetSchema() ?? "public"}"."{entity.GetTableName()}" SET "{column}" = '   ' """, Token);
+        }
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!rules");
+
+        var post = await this.WaitForPostAsync(this.Guild.General);
+        post["embeds"]![0]!["description"]!.GetValue<string>().ShouldBe("Be nice");
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     /// <summary>Unknown names, messages from bots, restricted commands and a disabled module post nothing.</summary>
     [Theory]
     [InlineData("unknown")]

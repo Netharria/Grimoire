@@ -34,7 +34,7 @@ public sealed class UpdatedUsernameEvent(
             .Select(member => (Username?)member.Username)
             .FirstOrDefaultAsync();
 
-        var after = Username.FromDatabase(args.UsernameAfter);
+        var after = Username.Create(args.UsernameAfter);
 
         // No row yet means MemberAdded hasn't stored the first one, and there is nothing to compare against.
         if (currentUsername is not { } before || before.Equals(after, StringComparison.CurrentCultureIgnoreCase))

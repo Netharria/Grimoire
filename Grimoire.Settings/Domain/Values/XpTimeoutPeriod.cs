@@ -11,10 +11,8 @@ namespace Grimoire.Settings.Domain.Values;
 
 public readonly record struct XpTimeoutPeriod
 {
-    private const int MaxValueInt = 60;
-    private const int MinValueInt = 1;
-    private static readonly TimeSpan _maxValueTimeSpan = TimeSpan.FromMinutes(MaxValueInt);
-    private static readonly TimeSpan _minValueTimeSpan = TimeSpan.FromMinutes(MinValueInt);
+    private const int MaxMinutes = 60;
+    private const int MinMinutes = 1;
     public static readonly XpTimeoutPeriod Default = new(TimeSpan.FromMinutes(3));
 
     private XpTimeoutPeriod(TimeSpan value)
@@ -24,38 +22,26 @@ public readonly record struct XpTimeoutPeriod
 
     public TimeSpan Value { get; }
 
-    internal static Validation<XpTimeoutPeriod> FromDatabase(string? input)
-        => input is null
-            ? Validation<XpTimeoutPeriod>.Succeed(Default)
-            : Create(input);
+    /// <summary>The stored form, hours:minutes:seconds.</summary>
+    public override string ToString() => Value.ToString("c", CultureInfo.InvariantCulture);
 
-    public static Validation<XpTimeoutPeriod> Create(int? input)
-    {
-        if (input is not (>= MinValueInt and <= MaxValueInt))
-            return Validation<XpTimeoutPeriod>.Fail(
-                new Error("xp-timeout-period.invalid",
-                    "Xp timeout period must be a value between 1 and 60 in minutes."));
-        return Validation<XpTimeoutPeriod>.Succeed(new XpTimeoutPeriod(TimeSpan.FromMinutes(input.Value)));
-    }
+    /// <summary>
+    ///     Stored values are trusted, so a guild keeps its timeout when it's outside today's limits, as main allowed.
+    ///     The migration writes total hours, so a timeout of a day or more reads as "25:00:00", which TimeSpan won't
+    ///     parse. With no value stored, or one that can't be read, the default applies.
+    /// </summary>
+    internal static XpTimeoutPeriod FromDatabase(string? input)
+        => input?.Split(':') is [var hours, var minutes, var seconds]
+           && long.TryParse(hours, NumberStyles.Integer, CultureInfo.InvariantCulture, out var h)
+           && int.TryParse(minutes, NumberStyles.Integer, CultureInfo.InvariantCulture, out var m)
+           && int.TryParse(seconds, NumberStyles.Integer, CultureInfo.InvariantCulture, out var s)
+            ? new(TimeSpan.FromHours(h) + TimeSpan.FromMinutes(m) + TimeSpan.FromSeconds(s))
+            : Default;
 
-    public static Validation<XpTimeoutPeriod> Create(string? inputStr)
-    {
-        if (string.IsNullOrWhiteSpace(inputStr)
-            || !TimeSpan.TryParse(inputStr, CultureInfo.InvariantCulture, out var value)
-            || value < _minValueTimeSpan
-            || value > _maxValueTimeSpan)
-            return Validation<XpTimeoutPeriod>.Fail(
-                new Error("xp-timeout-period.invalid",
-                    "Xp timeout period must be a value between 1 and 60 in minutes."));
-        return Validation<XpTimeoutPeriod>.Succeed(new XpTimeoutPeriod(value));
-    }
-}
-
-public static class XpTimeoutPeriodExtensions
-{
-    extension(Validation<XpTimeoutPeriod> v)
-    {
-        internal Validation<string> ToDatabaseString()
-            => v.Map(x => x.Value.ToString("c", CultureInfo.InvariantCulture));
-    }
+    /// <summary>A new timeout in minutes, which must be within today's limits.</summary>
+    public static Validation<XpTimeoutPeriod> Create(int minutes)
+        => minutes is >= MinMinutes and <= MaxMinutes
+            ? Validation<XpTimeoutPeriod>.Succeed(new XpTimeoutPeriod(TimeSpan.FromMinutes(minutes)))
+            : Validation<XpTimeoutPeriod>.Fail(new Error("xp-timeout-period.invalid",
+                "Xp timeout period must be a value between 1 and 60 in minutes."));
 }

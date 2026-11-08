@@ -31,11 +31,8 @@ public readonly record struct CustomCommandName
 
     public string Value { get; }
 
-    internal static CustomCommandName ParseFromDatabase(string value)
-        => Create(value)
-            .Match(
-                result => result,
-                _ => throw new ArgumentException($"'{value}' is not a valid command name.", nameof(value)));
+    /// <summary>Stored data is trusted. Rechecking it would let one legacy row break every query that loads it.</summary>
+    internal static CustomCommandName FromDatabase(string value) => new(value);
 
     public override string ToString() => Value;
 
@@ -64,11 +61,8 @@ public readonly partial record struct CustomCommandEmbedColor
 
     public string Value { get; }
 
-    internal static CustomCommandEmbedColor ParseFromDatabase(string value)
-        => Create(value)
-            .Match(
-                result => result,
-                _ => throw new ArgumentException($"'{value}' is not a valid embed color.", nameof(value)));
+    /// <summary>Stored data is trusted. Rechecking it would let one legacy row break every query that loads it.</summary>
+    internal static CustomCommandEmbedColor FromDatabase(string value) => new(value);
 
     public override string ToString() => Value;
 
@@ -158,10 +152,11 @@ public readonly record struct CustomCommandContent
 
     public string Value { get; }
 
-    internal static CustomCommandContent ParseFromDatabase(string value)
-        => Create(value).Match(
-            v => v,
-            _ => throw new ArgumentException($"'{value}' is not valid command content.", nameof(value)));
+    /// <summary>
+    ///     Stored data is trusted, and read as stored: rerunning <see cref="Create" /> would unescape it again on every
+    ///     read, and one legacy row that fails it would break every query that loads it.
+    /// </summary>
+    internal static CustomCommandContent FromDatabase(string value) => new(value);
 
     public static Validation<CustomCommandContent> Create(string? value)
     {

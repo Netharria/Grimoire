@@ -24,34 +24,16 @@ public readonly record struct LevelScalingBase
 
     public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
 
-    internal static Validation<LevelScalingBase> FromDatabase(string? input)
-        => input is null
-            ? Validation<LevelScalingBase>.Succeed(Default)
-            : Create(input);
+    /// <summary>
+    ///     Stored values are trusted, so a guild keeps its curve when its value is outside today's limits, as main
+    ///     allowed. With no value stored, or one that can't be read, the default applies.
+    /// </summary>
+    internal static LevelScalingBase FromDatabase(string? input)
+        => int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? new(value) : Default;
 
-    public static Validation<LevelScalingBase> Create(string? inputStr)
-    {
-        if (!int.TryParse(inputStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var input)
-            || input is not (>= MinValue and <= MaxValue))
-            return Validation<LevelScalingBase>.Fail(
-                new Error("level-scaling-base.invalid", "Level scaling base must be a value between 1 and 500."));
-        return Validation<LevelScalingBase>.Succeed(new LevelScalingBase(input));
-    }
-
-    public static Validation<LevelScalingBase> Create(int? input)
-    {
-        if (input is not (>= MinValue and <= MaxValue))
-            return Validation<LevelScalingBase>.Fail(
-                new Error("level-scaling-base.invalid", "Level scaling base must be a value between 1 and 500."));
-        return Validation<LevelScalingBase>.Succeed(new LevelScalingBase(input.Value));
-    }
-}
-
-internal static class LevelingSettingsExtensions
-{
-    extension(Validation<LevelScalingBase> v)
-    {
-        internal Validation<string> ToDatabaseString()
-            => v.Map(x => x.Value.ToString(CultureInfo.InvariantCulture));
-    }
+    /// <summary>A new value, which must be within today's limits.</summary>
+    public static Validation<LevelScalingBase> Create(int input)
+        => input is >= MinValue and <= MaxValue
+            ? Validation<LevelScalingBase>.Succeed(new LevelScalingBase(input))
+            : Validation<LevelScalingBase>.Fail(new Error("level-scaling-base.invalid", "Level scaling base must be a value between 1 and 500."));
 }

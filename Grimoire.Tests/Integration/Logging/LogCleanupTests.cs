@@ -150,7 +150,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
         for (var i = 1; i <= count; i++)
             seed.Avatars.Add(new Avatar
             {
-                UserId = user, GuildId = this.GuildId, FileName = AvatarFileName.Create($"https://cdn/{Guid.NewGuid()}.png").ShouldSucceed(),
+                UserId = user, GuildId = this.GuildId, FileName = AvatarFileName.Create($"https://cdn/{Guid.NewGuid()}.png"),
                 Timestamp = DateTimeOffset.UtcNow.AddDays(-10 + i)
             });
         await seed.SaveChangesAsync(Token);
@@ -172,9 +172,9 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
             for (var i = 1; i <= 5; i++)
             {
                 var at = DateTimeOffset.UtcNow.AddDays(-10 + i);
-                seed.Avatars.Add(new Avatar { UserId = user, GuildId = this.GuildId, FileName = AvatarFileName.Create($"https://cdn/{i}.png").ShouldSucceed(), Timestamp = at });
+                seed.Avatars.Add(new Avatar { UserId = user, GuildId = this.GuildId, FileName = AvatarFileName.Create($"https://cdn/{i}.png"), Timestamp = at });
                 seed.NicknameHistory.Add(new NicknameHistory { UserId = user, GuildId = this.GuildId, Nickname = Nickname.Create($"nick{i}").ShouldSucceed(), Timestamp = at });
-                seed.UsernameHistory.Add(new UsernameHistory { UserId = user, Username = Username.Create($"name{i}").ShouldSucceed(), Timestamp = at });
+                seed.UsernameHistory.Add(new UsernameHistory { UserId = user, Username = Username.Create($"name{i}"), Timestamp = at });
             }
 
             await seed.SaveChangesAsync(Token);

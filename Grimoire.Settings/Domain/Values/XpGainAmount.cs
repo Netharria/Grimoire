@@ -24,35 +24,16 @@ public readonly record struct XpGainAmount
 
     public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
 
+    /// <summary>
+    ///     Stored values are trusted, so a guild keeps its curve when its value is outside today's limits, as main
+    ///     allowed. With no value stored, or one that can't be read, the default applies.
+    /// </summary>
+    internal static XpGainAmount FromDatabase(string? input)
+        => int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? new(value) : Default;
 
-    internal static Validation<XpGainAmount> FromDatabase(string? input)
-        => input is null
-            ? Validation<XpGainAmount>.Succeed(Default)
-            : Create(input);
-
-    public static Validation<XpGainAmount> Create(string? inputStr)
-    {
-        if (!int.TryParse(inputStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var input)
-            || input is not (>= MinValue and <= MaxValue))
-            return Validation<XpGainAmount>.Fail(
-                new Error("xp-gain-amount.invalid", "Xp gain amount must be a value between 1 and 100."));
-        return Validation<XpGainAmount>.Succeed(new XpGainAmount(input));
-    }
-
-    public static Validation<XpGainAmount> Create(int? input)
-    {
-        if (input is not (>= MinValue and <= MaxValue))
-            return Validation<XpGainAmount>.Fail(
-                new Error("xp-gain-amount.invalid", "Xp gain amount must be a value between 1 and 100."));
-        return Validation<XpGainAmount>.Succeed(new XpGainAmount(input.Value));
-    }
-}
-
-public static class XpGainAmountExtensions
-{
-    extension(Validation<XpGainAmount> v)
-    {
-        internal Validation<string> ToDatabaseString()
-            => v.Map(x => x.Value.ToString(CultureInfo.InvariantCulture));
-    }
+    /// <summary>A new value, which must be within today's limits.</summary>
+    public static Validation<XpGainAmount> Create(int input)
+        => input is >= MinValue and <= MaxValue
+            ? Validation<XpGainAmount>.Succeed(new XpGainAmount(input))
+            : Validation<XpGainAmount>.Fail(new Error("xp-gain-amount.invalid", "Xp gain amount must be a value between 1 and 100."));
 }

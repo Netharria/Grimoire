@@ -120,7 +120,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         {
             await using var dbContext = this._database.CreateDbContext();
             return await dbContext.Attachments.Where(attachment => attachment.MessageId == new MessageId(messageId))
-                .Select(attachment => attachment.FileName.Value)
+                .Select(attachment => attachment.AttachmentUrl.Value)
                 .ToListAsync(TestContext.Current.CancellationToken);
         }, urls => urls.Count == 2);
         stored.ShouldAllBe(url => url.StartsWith("https://cdn.discordapp.com/attachments/") && url.Contains("?ex="));
@@ -210,7 +210,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
                     new Attachment
                     {
                         Id = new AttachmentId(1_100_000_000_000_008_031), MessageId = new MessageId(oldMessage),
-                        FileName = AttachmentFileName.FromDatabase("old.png")
+                        AttachmentUrl = AttachmentUrl.Create("old.png")
                     }
                 ]
             });

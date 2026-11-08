@@ -125,6 +125,28 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
                 return i + 1;
     }
 
+    /// <summary>
+    ///     S-1: a value main allowed but today's limits don't, such as a Base of 1000 copied in by the migration,
+    ///     is kept. Rejecting it on read made every lookup fail and stopped leveling for the whole guild.
+    /// </summary>
+    [Fact]
+    public async Task ALegacyValueOutsideTodaysLimits_IsKept()
+    {
+        await using (var dbContext = factory.CreateDbContext())
+        {
+            dbContext.GuildSettings.Add(GuildSettingCustomValue.Create(GuildSettingType.LevelScalingBase, _guildId, _modId,
+                DateTimeOffset.UtcNow, "1000").ShouldSucceed());
+            dbContext.GuildSettings.Add(GuildSettingCustomValue.Create(GuildSettingType.XpTimeoutPeriod, _guildId, _modId,
+                DateTimeOffset.UtcNow, "25:00:00").ShouldSucceed());
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var settings = (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed();
+
+        settings.Base.Value.ShouldBe(1000);
+        settings.XpTimeoutPeriod.Value.ShouldBe(TimeSpan.FromHours(25));
+    }
+
     [Fact]
     public async Task SetTextTime_RoundTrips()
     {
@@ -496,9 +518,5 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     }
 
     private static LevelingSettingEntry DefaultEntry()
-        => new(
-            XpTimeoutPeriod.FromDatabase(null).GetOrElse(() => XpTimeoutPeriod.Default),
-            LevelScalingModifier.FromDatabase(null).GetOrElse(() => LevelScalingModifier.Default),
-            LevelScalingBase.FromDatabase(null).GetOrElse(() => LevelScalingBase.Default),
-            XpGainAmount.FromDatabase(null).GetOrElse(() => XpGainAmount.Default));
+        => new(XpTimeoutPeriod.Default, LevelScalingModifier.Default, LevelScalingBase.Default, XpGainAmount.Default);
 }

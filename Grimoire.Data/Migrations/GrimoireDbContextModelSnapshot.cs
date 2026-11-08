@@ -82,7 +82,7 @@ namespace Grimoire.Migrations
                     b.Property<decimal>("Id")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<string>("FileName")
+                    b.Property<string>("AttachmentUrl")
                         .IsRequired()
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
@@ -273,10 +273,6 @@ namespace Grimoire.Migrations
 
                     b.Property<decimal>("GuildId")
                         .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("ModeratorId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("ModeratorId");
 
                     b.HasKey("MessageId", "Timestamp");
 
@@ -949,6 +945,10 @@ namespace Grimoire.Migrations
             modelBuilder.Entity("Grimoire.Domain.MessageDeletedByModeratorEntry", b =>
                 {
                     b.HasBaseType("Grimoire.Domain.MessageHistoryEntry");
+
+                    b.Property<decimal>("ModeratorId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("ModeratorId");
 
                     b.HasDiscriminator().HasValue("DeletedByModerator");
                 });

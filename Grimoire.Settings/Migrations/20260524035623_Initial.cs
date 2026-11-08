@@ -303,7 +303,8 @@ namespace Grimoire.Settings.Migrations
 
             // ---- GuildSettings: Leveling ----
             // TextTime is a PostgreSQL interval; convert to C# TimeSpan "c" format (HH:MM:SS).
-            // XpTimeoutPeriod is constrained 1–60 minutes so a day component never appears.
+            // Hours are written as a total, so a legacy timeout of a day or more reads as e.g. "25:00:00"; main never
+            // limited it. XpTimeoutPeriod.FromDatabase reads that form.
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN

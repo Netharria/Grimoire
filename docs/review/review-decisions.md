@@ -45,7 +45,7 @@ note says otherwise.
 | 21 | L-10 | **Done** 2026-11-08, uncommitted | The trim runs on the first tick, then daily. The message purge still runs every tick |
 | 21 | X-7, X-8, X-9, X-10 | **Done** 2026-11-08, uncommitted | X-9: accept that levels drop slightly in guilds with `Base × Modifier` ≤ 15. The shortcut is replaced by an exact binary search, not a plain loop, so a huge XP total can't freeze the bot (the reason the shortcut existed). Long View lists are paged, not cut off: `/Rewards View`, `/Ignore View`, `/Mutes View`, `/SpamFilter View` and `/Log Message ViewOverrides` use `ctx.ReplyPagedAsync` |
 | 21 | C-4, C-5, C-8 | **Done** 2026-11-08, uncommitted | C-8: every bullet. An `embed_color` without `embed` is refused. No test for the Revert numbering or the autocomplete cap: the harness can't drive autocomplete |
-| 22 | D-1, S-7, D-6 | Fix all | D-6 via a public `FromDiscord`; drop `InternalsVisibleTo` for `Grimoire`; rename `AttachmentFileName` here (see L-1) |
+| 22 | D-1, S-7, D-6 (and S-1) | **Done** 2026-11-08, uncommitted | S-1 done here: level settings are trusted on read. D-6: one public non-validating `Create(string)` for `Username`, `AvatarFileName`, `InviteCode`, `InviteUrl` and `AttachmentUrl` (owner's call, replacing `FromDatabase` plus `FromDiscord`); `InternalsVisibleTo` for `Grimoire` dropped. `AttachmentFileName` renamed `AttachmentUrl`, with the property and column; migration `RenameAttachmentFileNameToAttachmentUrl` |
 | 23 | D-2, M-7 | Do | |
 | 24 | P-4, P-6 | Do | |
 | 25 | D-3, D-4, D-9, S-9, S-11, I-14, L-13, M-12 | Do | |

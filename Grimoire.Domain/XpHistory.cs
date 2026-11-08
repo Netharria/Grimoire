@@ -64,7 +64,7 @@ public abstract record XpHistoryEntry
     ///     Raw XP value from the database column. Use the typed <c>Xp</c> property on the
     ///     concrete subtype when possible; use this for EF Core aggregate queries across all subtypes.
     /// </summary>
-    internal long RawXp { get; init; }
+    public long RawXp { get; internal init; }
 }
 
 /// <summary>XP earned organically by the user through activity.</summary>
