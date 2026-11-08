@@ -50,8 +50,14 @@ public sealed partial class GuildLogPublisher(
                 if (channel is null)
                     continue;
 
-                var message = await DiscordRetryPolicy.RetryDiscordCall(
-                    async _ => await channel.SendMessageAsync(result.GetMessageBuilder()), cancellationToken);
+                var builder = result.GetMessageBuilder();
+                var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
+                {
+                    // A failed attempt may have read part of a file, so each attempt starts the uploads over.
+                    foreach (var file in builder.Files.Where(file => file.Stream.CanSeek))
+                        file.Stream.Position = 0;
+                    return await channel.SendMessageAsync(builder);
+                }, cancellationToken);
 
                 if (ShouldPurgeMessageAfterInterval(result.GuildLogType))
                     await this.ScheduleMessagePurge(

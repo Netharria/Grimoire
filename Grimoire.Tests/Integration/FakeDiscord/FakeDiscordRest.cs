@@ -249,6 +249,20 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
         return fired.Task;
     }
 
+    /// <summary>The next matching request gets <paramref name="response" />; later ones get the usual answer.</summary>
+    public void FailOnce(HttpMethod method, string pathPattern, HttpResponseMessage response)
+    {
+        (HttpMethod Method, Regex Path, Func<RecordedRequest, HttpResponseMessage> Respond) entry = default;
+        entry = (method, new Regex($"^{pathPattern}$"), _ =>
+        {
+            lock (this._lock)
+                this._overrides.Remove(entry);
+            return response;
+        });
+        lock (this._lock)
+            this._overrides.Insert(0, entry);
+    }
+
     /// <summary>A Discord error response, such as 403 with code 50007 "Cannot send messages to this user".</summary>
     public static HttpResponseMessage Error(HttpStatusCode status, int code, string message)
         => Json(status, new JsonObject { ["message"] = message, ["code"] = code });

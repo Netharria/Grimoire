@@ -24,11 +24,19 @@ public sealed class FakeCdn : HttpMessageHandler
 
     public IReadOnlyCollection<Uri> Downloads => this._downloads;
 
+    private readonly ConcurrentDictionary<string, long> _claimedSizes = new();
+
+    /// <summary>Files whose name ends with <paramref name="fileName" /> claim to be <paramref name="size" /> bytes.</summary>
+    public void ClaimSize(string fileName, long size) => this._claimedSizes[fileName] = size;
+
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         this._downloads.Enqueue(request.RequestUri!);
         var content = new ByteArrayContent(OnePixelPng);
         content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        foreach (var (fileName, size) in this._claimedSizes)
+            if (request.RequestUri!.AbsolutePath.EndsWith(fileName, StringComparison.Ordinal))
+                content.Headers.ContentLength = size;
         return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
     }
 }

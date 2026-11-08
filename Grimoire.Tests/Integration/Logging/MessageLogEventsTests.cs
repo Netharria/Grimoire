@@ -9,6 +9,7 @@ using System.Text.Json.Nodes;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.Tests.Integration.FakeDiscord;
+using Grimoire.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.Tests.Integration.Logging;
@@ -139,6 +140,132 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         this._bot.Cdn.Downloads.ShouldContain(uri => uri.OriginalString == stored.Single(url => url.Contains("cat.png")));
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
+
+    /// <summary>
+    ///     I-6: Discord caps a message's embeds at 6,000 characters together. Each image used to carry a full copy of
+    ///     the text, so four images with about 1,500 characters lost the whole log. Only the first embed has it now.
+    /// </summary>
+    [Fact]
+    public async Task Delete_OfALongMessageWithFourImages_FitsInOnePost()
+    {
+        var text = string.Join(' ', Enumerable.Repeat("words", 330));
+        var messageId = await this.SendLoggedWithAttachmentsAsync(text, "a.png", "b.png", "c.png", "d.png");
+
+        this._bot.DeleteMessage(messageId, this.Channel);
+
+        var embeds = (await this.WaitForDeleteLogPostAsync()).Json!["embeds"]!.AsArray();
+        embeds.Count.ShouldBe(4);
+        embeds.Sum(embed => EmbedLength(embed!)).ShouldBeLessThanOrEqualTo(6000);
+        embeds.Skip(1).ShouldAllBe(embed => embed!["fields"] == null || embed["fields"]!.AsArray().Count == 0);
+        embeds.Select(embed => embed!["url"]!.GetValue<string>()).Distinct().ShouldHaveSingleItem("one gallery");
+    }
+
+    /// <summary>I-6: a file over the upload limit would make Discord refuse the whole post, so it's listed instead.</summary>
+    [Fact]
+    public async Task Delete_WithAnImageTooLargeToUpload_ListsIt_AndStillLogs()
+    {
+        this._bot.Cdn.ClaimSize("huge.png", DiscordImageEmbedService.MaxFileSize + 1);
+        var messageId = await this.SendLoggedWithAttachmentsAsync("look", "small.png", "huge.png");
+
+        this._bot.DeleteMessage(messageId, this.Channel);
+
+        var post = await this.WaitForDeleteLogPostAsync();
+        post.Files.ShouldHaveSingleItem().Key.ShouldBe("attachment0.png");
+        FieldsOf(post).ShouldContain(("Failed to download these images.", "**huge.png**"));
+    }
+
+    /// <summary>
+    ///     I-16: an upper-case extension is still an image, listed once and not also as a non-image. The upload name
+    ///     has one dot, and the signed query string stays out of the names.
+    /// </summary>
+    [Fact]
+    public async Task Delete_WithAnUpperCaseExtension_TreatsItAsAnImage()
+    {
+        var messageId = await this.SendLoggedWithAttachmentsAsync("look", "CAT.PNG", "notes.txt");
+
+        this._bot.DeleteMessage(messageId, this.Channel);
+
+        var post = await this.WaitForDeleteLogPostAsync();
+        post.Files.ShouldHaveSingleItem().Key.ShouldBe("attachment0.png");
+        FieldsOf(post).ShouldContain(("Attachments", "**CAT.PNG**"));
+        FieldsOf(post).ShouldContain(("Non-Image Attachments", "**notes.txt**"));
+    }
+
+    /// <summary>Rows saved before full URLs were stored hold only a file name. It can't be downloaded, but it's listed.</summary>
+    [Fact]
+    public async Task Delete_WithAnAttachmentStoredByNameOnly_StillLogs()
+    {
+        const ulong oldMessage = 1_100_000_000_000_008_030;
+        await using (var seed = this._database.CreateDbContext())
+        {
+            seed.Messages.Add(new Message
+            {
+                Id = new MessageId(oldMessage),
+                UserId = new UserId(this.Guild.User1.Id),
+                GuildId = new GuildId(this.Guild.Id),
+                ChannelId = new ChannelId(this.Channel.Id),
+                CreatedTimestamp = DateTimeOffset.UtcNow.AddDays(-3),
+                Attachments =
+                [
+                    new Attachment
+                    {
+                        Id = new AttachmentId(1_100_000_000_000_008_031), MessageId = new MessageId(oldMessage),
+                        FileName = AttachmentFileName.FromDatabase("old.png")
+                    }
+                ]
+            });
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        this._bot.DeleteMessage(oldMessage, this.Channel);
+
+        FieldsOf(await this.WaitForDeleteLogPostAsync()).ShouldContain(("Failed to download these images.", "**old.png**"));
+    }
+
+    /// <summary>I-7: Discord's 5xx is retried, and the retry must upload the image again, not an emptied stream.</summary>
+    [Fact]
+    public async Task Delete_WithAnImage_WhoseFirstPostFails_UploadsItAgainOnTheRetry()
+    {
+        var messageId = await this.SendLoggedWithAttachmentsAsync("look", "cat.png");
+
+        this._bot.Rest.FailOnce(HttpMethod.Post, $"channels/{this.Guild.ModLog.Id}/messages",
+            FakeDiscordRest.Error(System.Net.HttpStatusCode.InternalServerError, 0, "Internal Server Error"));
+        this._bot.DeleteMessage(messageId, this.Channel);
+
+        var posts = await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this._bot.Rest.Requests
+            .Where(this._bot.IsModLogPost).ToList()), found => found.Count >= 2, TimeSpan.FromSeconds(30));
+        posts[^1].Files.ShouldHaveSingleItem().Value.ShouldNotBeEmpty();
+        posts[^1].Files.Single().Value.ShouldBe(posts[0].Files.Single().Value);
+    }
+
+    private async Task<ulong> SendLoggedWithAttachmentsAsync(string content, params string[] fileNames)
+    {
+        var messageId = this._bot.SendMessage(this.Guild.User1, this.Channel, content, fileNames);
+        (await GrimoireTestBot.EventuallyAsync(async () =>
+        {
+            await using var dbContext = this._database.CreateDbContext();
+            return await dbContext.Attachments.CountAsync(attachment => attachment.MessageId == new MessageId(messageId));
+        }, count => count == fileNames.Length)).ShouldBe(fileNames.Length);
+        return messageId;
+    }
+
+    private Task<RecordedRequest> WaitForDeleteLogPostAsync()
+        => this._bot.Rest.WaitForRequestAsync(request => this._bot.IsModLogPost(request)
+                                                         && request.Json?["embeds"]?[0]?["author"]?["name"]
+                                                             ?.GetValue<string>() == $"Message deleted in #{this.Channel.Name}");
+
+    private static List<(string, string)> FieldsOf(RecordedRequest post)
+        => [.. post.Json!["embeds"]!.AsArray().SelectMany(embed => embed!["fields"]?.AsArray() ?? [])
+            .Select(field => (field!["name"]!.GetValue<string>(), field["value"]!.GetValue<string>()))];
+
+    /// <summary>What Discord counts toward the 6,000: title, description, field names and values, footer and author.</summary>
+    private static int EmbedLength(System.Text.Json.Nodes.JsonNode embed)
+        => (embed["title"]?.GetValue<string>().Length ?? 0)
+           + (embed["description"]?.GetValue<string>().Length ?? 0)
+           + (embed["footer"]?["text"]?.GetValue<string>().Length ?? 0)
+           + (embed["author"]?["name"]?.GetValue<string>().Length ?? 0)
+           + (embed["fields"]?.AsArray().Sum(field => field!["name"]!.GetValue<string>().Length
+                                                      + field["value"]!.GetValue<string>().Length) ?? 0);
 
     /// <summary>I-1: a log post that times out loses that log only; the publisher keeps posting the rest.</summary>
     [Fact]
