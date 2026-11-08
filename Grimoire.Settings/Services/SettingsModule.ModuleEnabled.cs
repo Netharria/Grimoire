@@ -52,7 +52,7 @@ public sealed partial class SettingsModule
         => moduleType == Module.General
             ? Task.FromResult(Result<bool>.Ok(true))
             : ToSettingType(moduleType)
-                .BindAsync(settingType => GetGuildSetting(settingType, guildId, cancellationToken).AsTask())
+                .BindAsync(settingType => GetGuildSetting(settingType, guildId, cancellationToken))
                 .Map(ParseEnabled);
 
 
@@ -77,7 +77,6 @@ public sealed partial class SettingsModule
         ));
 
         Task<Result<CachedSetting>> GetSetting(GuildSettingType t) =>
-            GetGuildSetting(t, guildId, cancellationToken)
-                .AsTask();
+            GetGuildSetting(t, guildId, cancellationToken);
     }
 }

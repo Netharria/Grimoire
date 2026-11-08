@@ -133,8 +133,13 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
         }
     }
 
-    private static Task RemoveMuteAsync(MuteAdded mute, SettingsModule settingsModule, DiscordClient discordClient,
+    /// <summary>Throws on failure, so the mute is retried with a growing delay. NotFound means it's already gone.</summary>
+    private static async Task RemoveMuteAsync(MuteAdded mute, SettingsModule settingsModule, DiscordClient discordClient,
         CancellationToken cancellationToken)
-        => settingsModule.RemoveMute(mute.UserId, mute.GuildId, new ModeratorId(discordClient.CurrentUser.Id),
-            cancellationToken);
+    {
+        if (await settingsModule.RemoveMute(mute.UserId, mute.GuildId, new ModeratorId(discordClient.CurrentUser.Id),
+                    cancellationToken)
+                is not (Result<MuteAdded>.Success or Result<MuteAdded>.NotFound))
+            throw new InvalidOperationException("Could not remove the expired mute.");
+    }
 }

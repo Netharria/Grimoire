@@ -68,22 +68,17 @@ public partial class IgnoreCommandGroup
             })).OfType<XpTrackedItem>()
             .ToFrozenSet();
 
-        await this._settingsModule.AppendIgnoredItemsEvent(
-            guild.GetGuildId(),
-            ignoredItems
-        );
-
-        var message = BuildIgnoreListAsync(ignoredItems)
-                      + " are no longer ignored for xp gain.";
-
-        await ctx.ReplyAsync(GrimoireColor.Green,
-            message);
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.DarkPurple,
-            Description = message
-        });
+        var message = BuildIgnoreListAsync(ignoredItems) + " are no longer ignored for xp gain.";
+        await ctx.ReplyResultAsync(
+            await this._settingsModule.AppendIgnoredItemsEvent(guild.GetGuildId(), ignoredItems),
+            message,
+            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.DarkPurple,
+                Description = message
+            }),
+            GrimoireColor.Green);
     }
 }

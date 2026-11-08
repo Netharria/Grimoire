@@ -9,7 +9,6 @@ using Grimoire.Enums;
 using Grimoire.Features.Moderation.SpamFilter.Commands;
 using Grimoire.Settings.Enums;
 using Grimoire.Tests.Integration.FakeDiscord;
-using Microsoft.EntityFrameworkCore;
 using LevelOption = Grimoire.Features.Leveling.Settings.LevelSettingsCommandGroup.LevelSettingsOptions;
 using MessageLogSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogSetting;
 using MessageOverride = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogOverrideSetting;
@@ -134,28 +133,8 @@ public sealed class SettingSaveFailureTests(GrimoireCoreFactory database) : IAsy
     /// <summary>Makes every settings table that a command writes refuse inserts until <paramref name="action" /> ends.</summary>
     private async Task<T> WhileSettingsCannotBeSavedAsync<T>(Func<Task<T>> action)
     {
-        await using var settingsContext = this._database.CreateSettingsDbContext();
-        var tables = settingsContext.Model.GetEntityTypes()
-            .Where(type => type.ClrType.Name is "GuildSetting" or "MessageLogChannelOverride" or "SpamFilterOverride")
-            .Select(type => $"\"{type.GetSchema()}\".\"{type.GetTableName()}\"")
-            .Distinct()
-            .ToArray();
-        tables.Length.ShouldBe(3);
-
-        foreach (var table in tables)
-            await settingsContext.Database.ExecuteSqlRawAsync(
-                $"""ALTER TABLE {table} ADD CONSTRAINT "TestRefusesSettings" CHECK (false) NOT VALID""",
-                TestContext.Current.CancellationToken);
-        try
-        {
-            return await action();
-        }
-        finally
-        {
-            foreach (var table in tables)
-                await settingsContext.Database.ExecuteSqlRawAsync(
-                    $"""ALTER TABLE {table} DROP CONSTRAINT "TestRefusesSettings" """,
-                    TestContext.Current.CancellationToken);
-        }
+        await using var refusing = await this._database.RefuseSettingsInsertsAsync(
+            "GuildSetting", "MessageLogChannelOverride", "SpamFilterOverride");
+        return await action();
     }
 }

@@ -125,23 +125,9 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
     private static string Field(JsonNode embed, string name)
         => embed["fields"]!.AsArray().Single(field => field!["name"]!.GetValue<string>() == name)!["value"]!.GetValue<string>();
 
-    /// <summary>Renames the settings table that holds <paramref name="entityName" /> until <paramref name="action" /> ends.</summary>
     private async Task<T> WhileUnreadableAsync<T>(string entityName, Func<Task<T>> action)
     {
-        await using var settingsContext = this._database.CreateSettingsDbContext();
-        var entity = settingsContext.Model.GetEntityTypes().Single(type => type.ClrType.Name == entityName);
-        var (schema, table) = (entity.GetSchema(), entity.GetTableName());
-
-        await settingsContext.Database.ExecuteSqlRawAsync(
-            $"""ALTER TABLE "{schema}"."{table}" RENAME TO "{table}_Unreadable" """, TestContext.Current.CancellationToken);
-        try
-        {
-            return await action();
-        }
-        finally
-        {
-            await settingsContext.Database.ExecuteSqlRawAsync(
-                $"""ALTER TABLE "{schema}"."{table}_Unreadable" RENAME TO "{table}" """, TestContext.Current.CancellationToken);
-        }
+        await using var unreadable = await this._database.MakeSettingsTablesUnreadableAsync(entityName);
+        return await action();
     }
 }

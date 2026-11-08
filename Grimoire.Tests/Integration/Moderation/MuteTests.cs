@@ -104,21 +104,9 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     [Fact]
     public async Task Mute_ThatCannotBeRecorded_IsUndone()
     {
-        await using var settingsContext = this._database.CreateSettingsDbContext();
-        var table = settingsContext.Model.FindEntityType(typeof(Mute))!;
-        var mutes = $"\"{table.GetSchema()}\".\"{table.GetTableName()}\"";
-        await settingsContext.Database.ExecuteSqlRawAsync(
-            $"""ALTER TABLE {mutes} ADD CONSTRAINT "TestRefusesMutes" CHECK (false) NOT VALID""", TestContext.Current.CancellationToken);
-        try
-        {
+        await using (await this._database.RefuseSettingsInsertsAsync(nameof(Mute)))
             (await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 2)).Description
                 .ShouldBe("The mute could not be recorded, so it has been undone.");
-        }
-        finally
-        {
-            await settingsContext.Database.ExecuteSqlRawAsync(
-                $"""ALTER TABLE {mutes} DROP CONSTRAINT "TestRefusesMutes" """, TestContext.Current.CancellationToken);
-        }
 
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldNotContain(this._muteRoleId);
         await this.ShouldHaveNoRecordsAsync();

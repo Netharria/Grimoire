@@ -59,7 +59,12 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         if (muteRole is null)
         {
             // There is no role to take off, so clear the record: leaving it would keep the member marked as muted.
-            await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId());
+            if (!await this.RemoveMuteRecordAsync(ctx, member))
+            {
+                await ctx.SendErrorResponseAsync($"Could not clear {member.Mention}'s mute. Please try again.");
+                return;
+            }
+
             await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The role this member was muted with no longer exists and no mute role is set, so I could not remove it from "
                 + $"{member.Mention}. Their mute is cleared; remove any mute role they still have by hand.");
@@ -69,7 +74,12 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         // Take the role off first and only then clear the record. If Discord refuses (for example the bot's role is
         // below the mute role) the error is reported and the mute stays recorded, so it can be retried.
         await member.RevokeRoleAsync(muteRole, $"Unmuted by {ctx.User.Mention}");
-        await this._settingsModule.RemoveMute(member.GetUserId(), guild.GetGuildId(), ctx.GetModeratorId());
+        if (!await this.RemoveMuteRecordAsync(ctx, member))
+        {
+            await ctx.SendErrorResponseAsync($"Took the mute role off {member.Mention}, but couldn't clear their mute. "
+                                             + "It's cleared when it expires; until then a rejoin brings the role back.");
+            return;
+        }
 
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Unmute")
@@ -91,4 +101,9 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
             GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
     }
+
+    /// <summary>NotFound counts as cleared: the mute expired, or someone else cleared it, in the meantime.</summary>
+    private async Task<bool> RemoveMuteRecordAsync(CommandContext ctx, DiscordMember member)
+        => await this._settingsModule.RemoveMute(member.GetUserId(), member.Guild.GetGuildId(), ctx.GetModeratorId())
+            is Result<MuteAdded>.Success or Result<MuteAdded>.NotFound;
 }

@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
@@ -18,13 +19,15 @@ namespace Grimoire.Features.Moderation.Mute.Commands;
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 [RequirePermissions([DiscordPermission.ManageRoles], [])]
-public sealed class MuteUser(
+public sealed partial class MuteUser(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule,
-    GuildLog guildLog)
+    GuildLog guildLog,
+    ILogger<MuteUser> logger)
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
+    private readonly ILogger<MuteUser> _logger = logger;
     private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("Mute")]
@@ -141,33 +144,35 @@ public sealed class MuteUser(
         });
     }
 
+    /// <summary>
+    ///     Saves the sin and then the mute. On false the caller takes the role back off, so any failure, an outage
+    ///     included, must land here and not escape: a role with no mute on record is never lifted.
+    /// </summary>
     private async Task<bool> TryRecordMuteAsync(Sin sin, DiscordMember member, ModeratorId moderatorId,
         DateTimeOffset muteEndTime, RoleId muteId)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         try
         {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
             dbContext.Sins.Add(sin);
             await dbContext.SaveChangesAsync();
-        }
-        catch (DbUpdateException)
-        {
-            return false;
-        }
 
-        try
-        {
             if (await this._settingsModule.AddMute(member.GetUserId(), member.GetGuildId(), moderatorId, sin.Id,
                     muteEndTime, muteId) is Result<MuteAdded>.Success)
                 return true;
+
+            // Take the sin back off, so the member's record doesn't show a mute that never happened.
+            dbContext.Sins.Remove(sin);
+            await dbContext.SaveChangesAsync();
         }
-        catch (DbUpdateException)
+        catch (Exception ex)
         {
-            // Falls through to take the sin back off the member's record.
+            LogRecordFailure(this._logger, ex, member.GetUserId(), member.GetGuildId());
         }
 
-        dbContext.Sins.Remove(sin);
-        await dbContext.SaveChangesAsync();
         return false;
     }
+
+    [LoggerMessage(LogLevel.Error, "Could not record the mute of user {UserId} in guild {GuildId}")]
+    static partial void LogRecordFailure(ILogger logger, Exception ex, UserId userId, GuildId guildId);
 }

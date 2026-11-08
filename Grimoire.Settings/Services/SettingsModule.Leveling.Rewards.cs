@@ -38,25 +38,15 @@ public sealed partial class SettingsModule
                         cancellationToken: ct)),
             new Error("reward.lookup-failed", "Could not retrieve rewards."), cancellationToken);
 
-    public async Task<Result<T>> SetRewardAsync<T>(
+    public Task<Result<T>> SetRewardAsync<T>(
         T reward,
         CancellationToken cancellationToken = default) where T : Reward
-    {
-        try
+        => ExecuteSafelyAsync(async ct =>
         {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
             dbContext.Rewards.Add(reward);
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            var cacheKey = CacheKey.LevelingRewards(reward.GuildId);
-            await this._cache.RemoveAsync(cacheKey, cancellationToken);
+            await dbContext.SaveChangesAsync(ct);
+            await this._cache.RemoveAsync(CacheKey.LevelingRewards(reward.GuildId), ct);
             return Result<T>.Ok(reward);
-        }
-        catch (Exception ex)
-        {
-            LogOperationFailure(this._logger, ex.Message, ex);
-            return Result<T>.Fail(new Error("set-reward.failed", "Could not set reward"));
-        }
-    }
+        }, new Error("set-reward.failed", "Could not set reward"), cancellationToken);
 }

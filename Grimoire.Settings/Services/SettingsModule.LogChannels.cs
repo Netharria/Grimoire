@@ -16,7 +16,6 @@ public sealed partial class SettingsModule
     public Task<Result<ChannelId?>> GetLogChannelSetting(GuildLogType guildLogType, GuildId guildId,
         CancellationToken cancellationToken = default)
         => GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken)
-            .AsTask()
             .Map(ParseChannelId);
 
     public Task<Result<ChannelId?>> SetLogChannelSetting(

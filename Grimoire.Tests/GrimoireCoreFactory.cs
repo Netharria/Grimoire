@@ -73,6 +73,51 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
             .UseNpgsql(this.ConnectionString)
             .Options);
 
+    /// <summary>
+    ///     Makes the settings tables that hold <paramref name="entityNames" /> refuse every insert until the result is
+    ///     disposed. Reads still work. Name each entity by its CLR type, such as <c>GuildSetting</c>.
+    /// </summary>
+    public Task<IAsyncDisposable> RefuseSettingsInsertsAsync(params string[] entityNames)
+        => this.AlterSettingsTablesAsync(entityNames,
+            table => $"""ALTER TABLE {table} ADD CONSTRAINT "TestRefusesInserts" CHECK (false) NOT VALID""",
+            table => $"""ALTER TABLE {table} DROP CONSTRAINT "TestRefusesInserts" """);
+
+    /// <summary>Renames the settings tables that hold <paramref name="entityNames" />, so every query fails, until disposed.</summary>
+    public Task<IAsyncDisposable> MakeSettingsTablesUnreadableAsync(params string[] entityNames)
+        => this.AlterSettingsTablesAsync(entityNames,
+            table => $"""ALTER TABLE {table.Qualified} RENAME TO "{table.Name}_Unreadable" """,
+            table => $"""ALTER TABLE "{table.Schema}"."{table.Name}_Unreadable" RENAME TO "{table.Name}" """);
+
+    private async Task<IAsyncDisposable> AlterSettingsTablesAsync(string[] entityNames,
+        Func<SettingsTable, string> apply, Func<SettingsTable, string> undo)
+    {
+        await using var settingsContext = this.CreateSettingsDbContext();
+        SettingsTable[] tables =
+        [
+            .. entityNames.Select(name => settingsContext.Model.GetEntityTypes().Single(type => type.ClrType.Name == name))
+                .Select(type => new SettingsTable(type.GetSchema()!, type.GetTableName()!))
+        ];
+        foreach (var table in tables)
+            await settingsContext.Database.ExecuteSqlRawAsync(apply(table));
+        return new Undo(this, [.. tables.Select(undo)]);
+    }
+
+    private sealed record SettingsTable(string Schema, string Name)
+    {
+        public string Qualified => $"\"{this.Schema}\".\"{this.Name}\"";
+        public override string ToString() => this.Qualified;
+    }
+
+    private sealed class Undo(GrimoireCoreFactory factory, string[] statements) : IAsyncDisposable
+    {
+        public async ValueTask DisposeAsync()
+        {
+            await using var settingsContext = factory.CreateSettingsDbContext();
+            foreach (var statement in statements)
+                await settingsContext.Database.ExecuteSqlRawAsync(statement);
+        }
+    }
+
     /// <summary>For constructing production classes that take an <see cref="IDbContextFactory{TContext}"/> dependency directly.</summary>
     public IDbContextFactory<GrimoireDbContext> CreateDbContextFactory() => new TestDbContextFactory(this);
 

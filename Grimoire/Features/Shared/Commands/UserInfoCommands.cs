@@ -152,11 +152,11 @@ internal sealed class UserInfoCommands(
             .Select(x => x.RoleId)
             .ToArray();
 
-        var isXpIgnored = await this._settingsModule.IsMemberIgnored(guildId, userId, roleIds)
-            .GetOrElse(() => false);
+        var canGainXp = await this._settingsModule.IsMemberIgnored(guildId, userId, roleIds)
+            .Match(ignored => ignored ? "No" : "Yes", _ => "Unknown");
 
         embed.AddField("Level", membersLevel.ToString(), true)
-            .AddField("Can Gain Xp", isXpIgnored ? "No" : "Yes", true)
+            .AddField("Can Gain Xp", canGainXp, true)
             .AddField("Earned Rewards",
                 earnedRewards.Length == 0
                     ? "None"

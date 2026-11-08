@@ -22,7 +22,6 @@ public sealed partial class SettingsModule
                 GuildSettingType.SinAutoPardonDuration,
                 guildId,
                 cancellationToken)
-            .AsTask()
             .Map(cachedSetting =>
             {
                 var span = cachedSetting switch

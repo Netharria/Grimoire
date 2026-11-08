@@ -29,7 +29,6 @@ public sealed partial class SettingsModule
         GuildId guildId,
         CancellationToken cancellationToken = default)
         => GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken)
-            .AsTask()
             .Map(ParseRoleId);
 
     public Task<Result<GuildId>> DisableMuteRole(
@@ -50,23 +49,24 @@ public sealed partial class SettingsModule
             .ToResult()
             .BindAsync(setting => SetGuildSetting(setting, cancellationToken).Map(_ => muteRoleId));
 
-    public async Task<Result<bool>> IsMemberMuted(
+    public Task<Result<bool>> IsMemberMuted(
         UserId userId,
         GuildId guildId,
         CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        return Result<bool>.Ok(await dbContext.Mutes
-            .AsNoTracking()
-            .OfType<MuteAdded>()
-            .Where(x => x.UserId == userId && x.GuildId == guildId)
-            // ReSharper disable once AccessToDisposedClosure
-            .Where(x => !dbContext.Mutes.Any(y =>
-                y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
-            .AnyAsync(x => x.EndTime > DateTimeOffset.UtcNow, cancellationToken));
-    }
+        => ExecuteSafelyAsync(async ct =>
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+            return Result<bool>.Ok(await dbContext.Mutes
+                .AsNoTracking()
+                .OfType<MuteAdded>()
+                .Where(x => x.UserId == userId && x.GuildId == guildId)
+                // ReSharper disable once AccessToDisposedClosure
+                .Where(x => !dbContext.Mutes.Any(y =>
+                    y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
+                .AnyAsync(x => x.EndTime > DateTimeOffset.UtcNow, ct));
+        }, new Error("mute.lookup-failed", "Could not check whether the member is muted."), cancellationToken);
 
-    public async Task<Result<MuteAdded>> AddMute(
+    public Task<Result<MuteAdded>> AddMute(
         UserId userId,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -74,65 +74,61 @@ public sealed partial class SettingsModule
         DateTimeOffset endTime,
         RoleId? muteRoleId,
         CancellationToken cancellationToken = default)
-    {
-        var setAt = DateTimeOffset.UtcNow;
-        if (MuteAdded.Create(userId, guildId, moderatorId, sinId, setAt, endTime, muteRoleId)
-            is not Validation<MuteAdded>.Valid(var mute))
-            return Result<MuteAdded>.Fail(new Error("mute.invalid", "Mute parameters are invalid."));
-
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        dbContext.Mutes.Add(mute);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return Result<MuteAdded>.Ok(mute);
-    }
+        => MuteAdded.Create(userId, guildId, moderatorId, sinId, DateTimeOffset.UtcNow, endTime, muteRoleId) switch
+        {
+            Validation<MuteAdded>.Valid(var mute) => ExecuteSafelyAsync(async ct =>
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                dbContext.Mutes.Add(mute);
+                await dbContext.SaveChangesAsync(ct);
+                return Result<MuteAdded>.Ok(mute);
+            }, new Error("mute.save-failed", "Could not save the mute."), cancellationToken),
+            _ => Task.FromResult(Result<MuteAdded>.Fail(new Error("mute.invalid", "Mute parameters are invalid.")))
+        };
 
     /// <summary>The member's current mute, expired or not, without changing anything.</summary>
-    public async Task<Result<MuteAdded>> GetActiveMute(
+    public Task<Result<MuteAdded>> GetActiveMute(
         UserId userId,
         GuildId guildId,
         CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var activeMute = await dbContext.Mutes
-            .AsNoTracking()
-            .OfType<MuteAdded>()
-            .Where(x => x.UserId == userId && x.GuildId == guildId)
-            // ReSharper disable once AccessToDisposedClosure
-            .Where(x => !dbContext.Mutes.Any(y =>
-                y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
-            .FirstOrDefaultAsync(cancellationToken);
-        return activeMute is null
-            ? new Result<MuteAdded>.NotFound(new Error("mute.not-found", "No active mute found for this user."))
-            : Result<MuteAdded>.Ok(activeMute);
-    }
+        => ExecuteSafelyAsync(async ct =>
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+            return await FindActiveMuteAsync(dbContext, userId, guildId, ct);
+        }, new Error("mute.lookup-failed", "Could not look up the member's mute."), cancellationToken);
 
-    public async Task<Result<MuteAdded>> RemoveMute(
+    public Task<Result<MuteAdded>> RemoveMute(
         UserId userId,
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var existingMute = await dbContext.Mutes
-            .AsNoTracking()
-            .OfType<MuteAdded>()
-            .Where(x => x.UserId == userId && x.GuildId == guildId)
-            // ReSharper disable once AccessToDisposedClosure
-            .Where(x => !dbContext.Mutes.Any(y =>
-                y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
-            .FirstOrDefaultAsync(cancellationToken);
-        if (existingMute is null)
-            return new Result<MuteAdded>.NotFound(
-                new Error("mute.not-found", "No active mute found for this user."));
+        => ExecuteSafelyAsync(async ct =>
+        {
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+            return await FindActiveMuteAsync(dbContext, userId, guildId, ct)
+                .BindAsync(existingMute => MuteRemoved.Create(userId, guildId, moderatorId, DateTimeOffset.UtcNow)
+                    .ToResult()
+                    .BindAsync(async muteRemoved =>
+                    {
+                        dbContext.Mutes.Add(muteRemoved);
+                        await dbContext.SaveChangesAsync(ct);
+                        return Result<MuteAdded>.Ok(existingMute);
+                    }));
+        }, new Error("mute.remove-failed", "Could not remove the mute."), cancellationToken);
 
-        if (MuteRemoved.Create(userId, guildId, moderatorId, DateTimeOffset.UtcNow)
-            is not Validation<MuteRemoved>.Valid(var muteRemoved))
-            return Result<MuteAdded>.Fail(
-                new Error("mute-removed.invalid", "Unable to create mute removal event."));
-        dbContext.Mutes.Add(muteRemoved);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return Result<MuteAdded>.Ok(existingMute);
-    }
+    private static async Task<Result<MuteAdded>> FindActiveMuteAsync(SettingsDbContext dbContext, UserId userId,
+        GuildId guildId, CancellationToken cancellationToken)
+        => await dbContext.Mutes
+                .AsNoTracking()
+                .OfType<MuteAdded>()
+                .Where(x => x.UserId == userId && x.GuildId == guildId)
+                .Where(x => !dbContext.Mutes.Any(y =>
+                    y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
+                .FirstOrDefaultAsync(cancellationToken) switch
+            {
+                { } mute => Result<MuteAdded>.Ok(mute),
+                null => new Result<MuteAdded>.NotFound(new Error("mute.not-found", "No active mute found for this user."))
+            };
 
     public async IAsyncEnumerable<MuteAdded> GetAllExpiredMutes(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)

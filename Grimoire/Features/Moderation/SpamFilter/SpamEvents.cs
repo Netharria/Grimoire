@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -74,8 +75,11 @@ internal sealed class SpamEvents(
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 
-        await this._settingsModule.AddMute(member.GetUserId(), args.Guild.GetGuildId(),
-            new ModeratorId(args.Guild.CurrentMember.Id), sin.Id, muteEndTime, muteRoleId);
+        // Nothing would ever lift a mute role given without a record, so don't give it.
+        if (await this._settingsModule.AddMute(member.GetUserId(), args.Guild.GetGuildId(),
+                new ModeratorId(args.Guild.CurrentMember.Id), sin.Id, muteEndTime, muteRoleId)
+            is not Result<MuteAdded>.Success)
+            return;
 
         var muteRole = await args.Guild.GetRoleOrDefaultAsync(muteRoleId.Value);
 

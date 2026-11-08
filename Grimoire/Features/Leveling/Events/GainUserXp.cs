@@ -50,12 +50,13 @@ public sealed partial class GainUserXp(
                 .GetOrElse(() => false))
             return;
 
+        // If the ignore list can't be read, award nothing: XP given to an ignored member can't be taken back cleanly.
         if (await this._settingsModule.IsMessageIgnored(
                     member.GetGuildId(),
                     args.GetAuthorUserId(),
                     member.Roles.Select(x => x.GetRoleId()).ToHashSet(),
                     args.GetChannelId())
-                .GetOrElse(() => false))
+                .GetOrElse(() => true))
             return;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();

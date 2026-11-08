@@ -31,14 +31,14 @@ note says otherwise.
 | 11 | I-4, I-13, L-12, X-13 `LogSetAsync` | **Done** 2026-11-07, uncommitted | `ctx.ReplyResultAsync`, plus `ChannelSettingCommand` for the six channel setters. Also merged the double switches in both Override commands (L-12, M-12) |
 | 12 | I-5, X-5 | **Done** 2026-11-07, uncommitted | All nine sites. `/Level` shows "Unavailable" for Next Reward instead of failing, like `/UserInfo` skipping its level fields |
 | 13 | L-3, L-4, L-5, L-6, D-7 | **Done** 2026-11-07, uncommitted | Also the L-12 bullet on the duplicated System Id and Member Id fields (`AddMessageAuthorFields`) |
-| 14 | S-4, M-5 | Fix, changed | A failed ignore lookup counts as **ignored** (no XP during an outage), not as not-ignored; `/Lock` revert half not taken |
+| 14 | S-4, M-5 | **Done** 2026-11-07, uncommitted | A failed ignore lookup counts as **ignored** (no XP during an outage), not as not-ignored; `/Lock` revert half not taken. `GetAllExpiredMutes` and `GetAllMutes` still throw on purpose: they return no `Result`, and an empty list would read as "no mutes" |
 | 15 | I-3, I-15 | Fix both | |
 | 16 | M-3, M-11 | Fix all | Helper plus the `/Publish` and overwrite merges |
 | 17 | X-3, X-4, C-1, C-7 | Fix all | |
 | 18 | S-3 | Fix | |
 | 18 | M-6, KI-53 | Fix together | |
 | 19 | I-6, I-7, I-16 | Fix all | |
-| 20 | L-7, L-8, L-9 | Fix all | |
+| 20 | L-7, L-8, L-9, rest of L-12 | Fix all | L-12 leftovers from rank 11: one helper for the `/Log ... View` lookups, the "latest content" subquery written three times, `InviteService` duplication |
 | 21 | I-8, I-9, I-10, I-11, R-1 | Fix all | R-1 goes with I-11 |
 | 21 | I-12, I-17, M-7, M-8, M-9 | Fix all | M-7 goes with D-2 (rank 23) |
 | 21 | M-10, L-11 | Fix every bullet | |

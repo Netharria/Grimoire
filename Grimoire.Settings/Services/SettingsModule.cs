@@ -28,44 +28,30 @@ public sealed partial class SettingsModule(
     private readonly IDbContextFactory<SettingsDbContext> _dbContextFactory = dbContextFactory;
     private readonly ILogger<SettingsModule> _logger = logger;
 
-    private async ValueTask<Result<CachedSetting>> GetGuildSetting(GuildSettingType key, GuildId guildId,
+    private Task<Result<CachedSetting>> GetGuildSetting(GuildSettingType key, GuildId guildId,
         CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var result = await this._cache.GetOrCreateAsync(
-                CacheKey.GuildSetting(key, guildId),
-                new { key, guildId, this._dbContextFactory },
-                async (state, ct) =>
-                {
-                    await using var dbContext = await state._dbContextFactory.CreateDbContextAsync(ct);
-                    var result = await dbContext.GuildSettings
-                        .AsNoTracking()
-                        .Where(setting => setting.Type == state.key && setting.GuildId == state.guildId)
-                        .OrderByDescending(setting => setting.SetAt)
-                        .FirstOrDefaultAsync(ct);
-                    return ToCachedSetting(result);
-                }, this._cacheEntryOptions,
-                cancellationToken: cancellationToken);
-
-            return result switch
-            {
-                not null => Result<CachedSetting>.Ok(result),
-                _ => new Result<CachedSetting>.NotFound(new Error($"guild-setting.{key}.not-found",
-                    $"Was not able to find an entry for {key} for guild {guildId}"))
-            };
-        }
-        catch (Exception ex)
-        {
-            LogSettingLookupFailure(this._logger, ex.Message, ex);
-            return Result<CachedSetting>.Fail(new Error($"guild-setting.{key}.lookup-failed",
-                $"Failed when retrieving entry for {key} for guild {guildId}"));
-        }
-    }
-
-    [LoggerMessage(LogLevel.Error,
-        "Was not able to retrieve a setting from the database or cache for the following reason : {message}")]
-    private static partial void LogSettingLookupFailure(ILogger logger, string message, Exception? ex);
+        => ExecuteSafelyAsync(async ct =>
+                await this._cache.GetOrCreateAsync(
+                        CacheKey.GuildSetting(key, guildId),
+                        new { key, guildId, this._dbContextFactory },
+                        async (state, innerCt) =>
+                        {
+                            await using var dbContext = await state._dbContextFactory.CreateDbContextAsync(innerCt);
+                            var result = await dbContext.GuildSettings
+                                .AsNoTracking()
+                                .Where(setting => setting.Type == state.key && setting.GuildId == state.guildId)
+                                .OrderByDescending(setting => setting.SetAt)
+                                .FirstOrDefaultAsync(innerCt);
+                            return ToCachedSetting(result);
+                        }, this._cacheEntryOptions,
+                        cancellationToken: ct) switch
+                    {
+                        { } setting => Result<CachedSetting>.Ok(setting),
+                        null => new Result<CachedSetting>.NotFound(new Error($"guild-setting.{key}.not-found",
+                            $"Was not able to find an entry for {key} for guild {guildId}"))
+                    },
+            new Error($"guild-setting.{key}.lookup-failed", $"Failed when retrieving entry for {key} for guild {guildId}"),
+            cancellationToken);
 
     /// <remarks>
     ///     A failure is thrown, not swallowed: an empty result would read as "no custom settings", and the caller
@@ -94,39 +80,26 @@ public sealed partial class SettingsModule(
             _ => new CachedDefaultSetting()
         };
 
-    private async Task<Result<GuildSetting>> SetGuildSetting(GuildSetting newSetting,
+    private Task<Result<GuildSetting>> SetGuildSetting(GuildSetting newSetting,
         CancellationToken cancellationToken = default)
-    {
-        try
+        => ExecuteSafelyAsync(async ct =>
         {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
             var current = await dbContext.GuildSettings
                 .AsNoTracking()
                 .Where(s => s.GuildId == newSetting.GuildId && s.Type == newSetting.Type)
                 .OrderByDescending(s => s.SetAt)
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(ct);
 
             if (IsRedundantWrite(current, newSetting))
                 return new Result<GuildSetting>.NotModified(new Error($"guild-setting.{newSetting.Type}.not-changed",
                     "The setting was already set to that value."));
             dbContext.GuildSettings.Add(newSetting);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await this._cache.RemoveAsync(
-                CacheKey.GuildSetting(newSetting.Type, newSetting.GuildId),
-                cancellationToken);
+            await dbContext.SaveChangesAsync(ct);
+            await this._cache.RemoveAsync(CacheKey.GuildSetting(newSetting.Type, newSetting.GuildId), ct);
             return Result<GuildSetting>.Ok(newSetting);
-        }
-        catch (Exception ex)
-        {
-            LogSettingSaveFailure(this._logger, ex.Message, ex);
-            return Result<GuildSetting>.Fail(new Error($"guild-setting.{newSetting.Type}.conflict",
-                "Was not able to save the setting to the database."));
-        }
-    }
-
-    [LoggerMessage(LogLevel.Error,
-        "Was not able to save a setting to the database or cache for the following reason : {message}")]
-    private static partial void LogSettingSaveFailure(ILogger logger, string message, Exception? ex);
+        }, new Error($"guild-setting.{newSetting.Type}.conflict", "Was not able to save the setting to the database."),
+            cancellationToken);
 
     [LoggerMessage(LogLevel.Error, "Settings module operation failed: {message}")]
     private static partial void LogOperationFailure(ILogger logger, string message, Exception? ex);
@@ -160,7 +133,6 @@ public sealed partial class SettingsModule(
     public Task<Result<ChannelId?>> GetUserCommandChannel(GuildId guildId,
         CancellationToken cancellationToken = default)
         => GetGuildSetting(GuildSettingType.UserCommandChannel, guildId, cancellationToken)
-            .AsTask()
             .Map(ParseChannelId);
 
     public Task<Result<ChannelId?>> SetUserCommandChannelSetting(

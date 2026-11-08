@@ -22,7 +22,6 @@ public sealed partial class SettingsModule
         ChannelId channelId,
         CancellationToken cancellationToken = default)
         => GetAllIgnoredItems(guildId, cancellationToken)
-            .OrElse(() => Result<FrozenSet<XpIgnoredItem>>.Ok(FrozenSet<XpIgnoredItem>.Empty))
             .Map(ignoredItems =>
                 ignoredItems.Any(ignoredItem =>
                     ignoredItem switch
@@ -39,7 +38,6 @@ public sealed partial class SettingsModule
         IReadOnlySet<RoleId> userRoleIds,
         CancellationToken cancellationToken = default)
         => GetAllIgnoredItems(guildId, cancellationToken)
-            .OrElse(() => Result<FrozenSet<XpIgnoredItem>>.Ok(FrozenSet<XpIgnoredItem>.Empty))
             .Map(ignoredItems =>
                 ignoredItems.Any(ignoredItem =>
                     ignoredItem switch
@@ -50,11 +48,11 @@ public sealed partial class SettingsModule
                         _ => throw new UnreachableException()
                     }));
 
-    public async Task<Result<FrozenSet<XpIgnoredItem>>> GetAllIgnoredItems(
+    /// <remarks>A failure is returned, not an empty set, so a caller can't mistake an outage for "nothing ignored".</remarks>
+    public Task<Result<FrozenSet<XpIgnoredItem>>> GetAllIgnoredItems(
         GuildId guildId,
         CancellationToken cancellationToken = default)
-    {
-        var items = await this._cache.GetOrCreateAsync(
+        => ExecuteSafelyAsync(async ct => Result<FrozenSet<XpIgnoredItem>>.Ok(await this._cache.GetOrCreateAsync(
             CacheKey.XpIgnoredItems(guildId),
             guildId,
             async (guildIdState, ct) =>
@@ -72,9 +70,8 @@ public sealed partial class SettingsModule
                     .OfType<XpIgnoredItem>()
                     .ToFrozenSet();
             }, this._cacheEntryOptions,
-            cancellationToken: cancellationToken);
-        return Result<FrozenSet<XpIgnoredItem>>.Ok(items);
-    }
+            cancellationToken: ct)),
+            new Error("xp-ignored-items.lookup-failed", "Could not load the ignored items."), cancellationToken);
 
 
     public Task<Result<IReadOnlySet<XpTrackedItem>>> AppendIgnoredItemsEvent(
@@ -83,15 +80,14 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
         => ValidateNotEmpty(itemsToIgnore)
             .Bind(items => ValidateAllSameGuild(guildId, items))
-            .BindAsync(async validatedItems =>
+            .BindAsync(validatedItems => ExecuteSafelyAsync(async ct =>
             {
-                await using var dbContext =
-                    await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
                 dbContext.XpTrackedItems.AddRange(validatedItems);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                await this._cache.RemoveAsync(CacheKey.XpIgnoredItems(guildId), cancellationToken);
+                await dbContext.SaveChangesAsync(ct);
+                await this._cache.RemoveAsync(CacheKey.XpIgnoredItems(guildId), ct);
                 return Result<IReadOnlySet<XpTrackedItem>>.Ok(validatedItems);
-            });
+            }, new Error("xp-ignored-items.save-failed", "Could not save the ignored items."), cancellationToken));
 
     private static Result<IReadOnlySet<XpTrackedItem>> ValidateNotEmpty(
         IReadOnlySet<XpTrackedItem> items) =>
