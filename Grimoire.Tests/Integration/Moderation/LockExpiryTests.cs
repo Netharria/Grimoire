@@ -142,6 +142,23 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, NothingHappensWindow)).ShouldBeFalse();
     }
 
+    /// <summary>
+    ///     S-3: a thread locked before thread locks had their own table was migrated as a channel lock. Threads have no
+    ///     overwrites, so expiry must not try to revert one, or it would be refused and retried forever.
+    /// </summary>
+    [Fact]
+    public async Task ExpiredChannelLock_OnAThread_IsClosedWithoutTouchingPermissions()
+    {
+        await this.SeedExpiredChannelLockAsync(this.Guild.PublicThread, setOverwrite: false);
+
+        await this._bot.RunBackgroundTickAsync<LockBackgroundTasks>();
+
+        (await this.SingleChannelUnlockAsync()).Reason!.Value.Value.ShouldBe("Channel lock expired.");
+        this._bot.Rest.Requests.ShouldNotContain(request =>
+            request.Path.StartsWith($"channels/{this.Guild.PublicThread.Id}/permissions/", StringComparison.Ordinal));
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     /// <summary>MOD-184: without Manage Roles the revert is refused, an issue is raised, and the lock stays.</summary>
     [Fact]
     public async Task ExpiredLock_ThatCannotBeReverted_ReportsAnIssue_AndStaysLocked()

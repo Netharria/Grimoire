@@ -58,10 +58,48 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Delete
                                                             && request.Path.StartsWith($"channels/{this.Guild.General.Id}/messages/", StringComparison.Ordinal));
         await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Mute");
+        // KI-53: one burst is one mute, however many of its messages were still being handled.
+        await Task.Delay(HandlersSettle, TestContext.Current.CancellationToken);
         await using var dbContext = this._database.CreateDbContext();
-        // A burst can record more than one mute (KI-53), so this only checks who they're all from.
-        (await dbContext.Sins.ToListAsync(TestContext.Current.CancellationToken))
-            .ShouldAllBe(sin => sin.Actor == new ModerationActor.System());
+        (await dbContext.Sins.ToListAsync(TestContext.Current.CancellationToken)).ShouldHaveSingleItem()
+            .Actor.ShouldBe(new ModerationActor.System());
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        (await settingsContext.Mutes.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+    }
+
+    /// <summary>
+    ///     M-6: deleting the spam is the step most likely to fail, as without Manage Messages or when PluralKit got
+    ///     there first. It must not cost the member their DM or the mods their log.
+    /// </summary>
+    [Fact]
+    public async Task Spam_WhoseMessageCannotBeDeleted_IsStillLoggedAndTold()
+    {
+        this._bot.Rest.On(HttpMethod.Delete, @"channels/\d+/messages/\d+",
+            _ => FakeDiscordRest.Error(System.Net.HttpStatusCode.NotFound, 10008, "Unknown Message"));
+
+        await this.SpamAsync(this.Guild.User1, this.Guild.General);
+
+        await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Mute");
+        await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post
+                                                            && request.Path == $"channels/{this.Guild.User1.Id + 1000}/messages");
+    }
+
+    /// <summary>
+    ///     Attachments cost the same however many there are, because Discord shows several images as one gallery. Two
+    ///     quick messages of ten images each used to add up to spam.
+    /// </summary>
+    [Fact]
+    public async Task ImagesSharedTogether_AreNotSpam()
+    {
+        var images = Enumerable.Range(1, 10).Select(i => $"photo{i}.png").ToArray();
+
+        for (var i = 0; i < 2; i++)
+        {
+            this._bot.SendMessage(this.Guild.User1, this.Guild.General, $"holiday pictures {i}", images);
+            await Task.Delay(TimeSpan.FromMilliseconds(30), TestContext.Current.CancellationToken);
+        }
+
+        await this.ShouldNotBeFilteredAsync();
     }
 
     /// <summary>GEN-90: with the AntiSpam module off, the filter leaves everyone alone.</summary>

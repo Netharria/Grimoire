@@ -7,7 +7,7 @@ re-run those after a fix. Severity is a rough guess: **high** = wrong data or wr
 Intentional behaviour is not listed. For example, `/Ban`, `/Unban`, `/Mute`, `/Unmute` and `/Lock` are gated on
 ManageMessages for legacy compatibility (see 02).
 
-Still open after the 2026-10-31 pass: KI-48 (undecided) and KI-53. KI-39 was fixed on 2026-11-01. KI-52 was fixed and KI-54 found on 2026-11-07.
+Still open after the 2026-10-31 pass: KI-48 (undecided). KI-39 was fixed on 2026-11-01. KI-52 and KI-53 were fixed and KI-54 found on 2026-11-07.
 
 ## Area 02 - Moderation actions
 
@@ -74,7 +74,7 @@ Each entry has a skipped test, or a planned one, that fails until the issue is f
 
 | KI-51 | fixed | **Fixed 2026-10-31. `MessageDeletedByModeratorEntry.ModeratorId` was never saved.** The configuration declared a shadow property of the same name on the base type, so the entry's own property read back as 0. It is now mapped on the entry itself. No schema change. | `Grimoire.Data/Configuration/MessageHistoryConfiguration.cs` | `MessageLogEventsTests.DeletedByModeratorEntry_KeepsItsModerator` |
 | KI-52 | fixed | **Fixed 2026-11-07. `AJoin_ShowsTheInviteThatWasUsed` was flaky.** The bot is ready before its startup sync has stored the guild's invites, so a join right after startup found no guild ("Could not find guild.") or no invites ("Unknown Invite"). The test class now waits for the sync, which stores the invites before the history. The same window exists in production: a join in the first moments after startup is logged with no invite, or not at all. | `GuildSyncAndInviteTests` | `GuildSyncAndInviteTests.AJoin_ShowsTheInviteThatWasUsed` (no longer skipped) |
-| KI-53 | med | **One spam burst can record several mutes.** `SpamTrackerModule` never resets a member's points after a mute, so each message still in flight trips the filter again, and each mute doubles the next one's length. This was hidden while KI-31 crashed the filter. `SpamEvents` also still records the mute before granting the role, as `/Mute` did before KI-04. Fix: reset the points when a member is muted. | `SpamTrackerModule.cs`, `SpamEvents.cs` | `SpamFilterTests.Spam_MutesTheSpammer_DeletesTheMessage_AndLogs` tolerates more than one sin |
+| KI-53 | fixed | **Fixed 2026-11-07. One spam burst could record several mutes.** `SpamTrackerModule` never reset a member's points after a verdict, so each message still in flight tripped the filter again, each mute doubling the next. The tracker now gives one verdict per burst, resetting the points under a lock. | `SpamTrackerModule.cs` | `SpamFilterTests.Spam_MutesTheSpammer_DeletesTheMessage_AndLogs` expects exactly one sin and one mute |
 | KI-54 | med | **After a timed-out request, the next post to that channel can fail inside DSharpPlus.** Found while testing I-1 with a fake `HttpClient` timeout. The alert loop survives the timeout, but in about 1 run in 5 the next `DiscordChannel.SendMessageAsync` to the same channel throws `NullReferenceException` from inside DSharpPlus. With no timeout, 10 of 10 runs were clean. Not checked against real Discord, and the cause inside DSharpPlus (possibly rate-limit bucket state) is unknown. If real timeouts do this, the next log or alert to that channel is lost. | DSharpPlus `DiscordChannel.SendMessageAsync`; seen from `AlertService.cs` | `AlertTests.AfterAPostTimesOut_LaterAlertsAreStillProcessed` avoids it by sending a warning; post a second urgent alert there to reproduce |
 
 ## Area 03 - Sins

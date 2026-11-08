@@ -35,8 +35,8 @@ note says otherwise.
 | 15 | I-3, I-15 | **Done** 2026-11-07, uncommitted | A failed lookup logs at Information and the delete is logged as an ordinary message |
 | 16 | M-3, M-11 | **Done** 2026-11-07, uncommitted | `UsernameHistory.GetDisplayNameAsync` used by all six; `/Publish` shares one path; one overwrite method |
 | 17 | X-3, X-4, C-1, C-7 | **Done** 2026-11-07, uncommitted | A use is counted only after the reply was sent, so a refused send doesn't count either |
-| 18 | S-3 | Fix | |
-| 18 | M-6, KI-53 | Fix together | |
+| 18 | S-3 | **Done** 2026-11-07, uncommitted | |
+| 18 | M-6, KI-53 | **Done** 2026-11-07, uncommitted | Recording the mute before granting the role is kept: a role with no record is the worse failure |
 | 19 | I-6, I-7, I-16 | Fix all | |
 | 20 | L-7, L-8, L-9, rest of L-12 | Fix all | L-12 leftovers from rank 11: one helper for the `/Log ... View` lookups, the "latest content" subquery written three times, `InviteService` duplication |
 | 21 | I-8, I-9, I-10, I-11, R-1 | Fix all | R-1 goes with I-11 |

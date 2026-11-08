@@ -66,9 +66,19 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 return;
         }
 
+        // A thread locked before thread locks had their own table was copied in as a channel lock. Threads have no
+        // permission overwrites to revert, and trying would fail on every tick, so just let the lock expire.
+        if (channel!.IsThread)
+        {
+            await RecordChannelUnlockAsync(expiredLock, "Channel lock expired.", settingsModule, discordClient,
+                    cancellationToken)
+                .TapAsync(_ => SendLockExpiredLogAsync(channel, guildLog, cancellationToken));
+            return;
+        }
+
         // DSharpPlus hasn't finished implementing nullable notations
         // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
-        var everyoneRole = channel!.Guild?.EveryoneRole;
+        var everyoneRole = channel.Guild?.EveryoneRole;
         if (everyoneRole is null)
             return;
 

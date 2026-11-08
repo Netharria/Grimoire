@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
@@ -98,35 +99,26 @@ internal sealed class SpamEvents(
             .AddField("Reason", checkSpamResult.Reason);
 
 
-        await args.Message.DeleteAsync();
-
-        var sentMessageToUser = true;
-        try
-        {
-            await member.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithAuthor($"Mute Id {sin.Id}")
-                .WithDescription(
-                    $"You have been muted for {duration.TotalMinutes} minute(s) by {sender.CurrentUser.Mention} for spamming.")
-                .WithColor(GrimoireColor.Red));
-        }
-        catch (Exception)
-        {
-            sentMessageToUser = false;
-        }
-
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
 
-        if (!sentMessageToUser)
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-            {
-                GuildId = args.Guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Color = GrimoireColor.Red,
-                Description =
-                    $"Was not able to send a direct message with the mute details to {member.Mention}"
-            });
+        await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+            .WithAuthor($"Mute Id {sin.Id}")
+            .WithDescription(
+                $"You have been muted for {duration.TotalMinutes} minute(s) by {sender.CurrentUser.Mention} for spamming.")
+            .WithColor(GrimoireColor.Red), "mute");
+
+        // Last, so a refusal can't cost the log or the DM.
+        try
+        {
+            await args.Message.DeleteAsync();
+        }
+        catch (DiscordException)
+        {
+            // Without Manage Messages Discord refuses, and PluralKit may have deleted it already. The member is muted
+            // and everyone told either way.
+        }
     }
 }
