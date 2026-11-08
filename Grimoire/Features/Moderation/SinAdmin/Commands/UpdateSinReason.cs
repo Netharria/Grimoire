@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
+using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 
@@ -33,27 +34,18 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
         var guild = ctx.Guild!;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var sinFound = await dbContext.Sins
+        var sinner = await dbContext.Sins
             .Where(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId())
-            .Select(sin => new
-            {
-                sin.UserId,
-                // ReSharper disable once AccessToDisposedClosure
-                Username = dbContext.UsernameHistory
-                    .Where(h => h.UserId == sin.UserId)
-                    .OrderByDescending(h => h.Timestamp)
-                    .Select(h => (Username?)h.Username)
-                    .FirstOrDefault()
-            })
+            .Select(sin => (UserId?)sin.UserId)
             .FirstOrDefaultAsync();
 
-        if (sinFound is null)
+        if (sinner is not { } userId)
         {
             await ctx.SendErrorResponseAsync("Could not find a sin with that ID.");
             return;
         }
 
-        var userName = sinFound.Username?.Value ?? UserExtensions.Mention(sinFound.UserId);
+        var userName = await dbContext.UsernameHistory.GetDisplayNameAsync(userId);
 
         dbContext.SinReasonHistory.Add(new SinReasonHistory
         {

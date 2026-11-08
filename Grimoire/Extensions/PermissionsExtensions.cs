@@ -33,12 +33,6 @@ public static class PermissionsExtensions
 
         public DiscordPermissions RevertLockPermissions(long previousPermissions)
             => permissions.RevertLockPermissions(new DiscordPermissions(previousPermissions));
-
-        public DiscordPermissions SetVoiceLockPermissions()
-            => permissions + PermissionValues.VoiceLockPermissions;
-
-        public DiscordPermissions RevokeVoiceLockPermissions()
-            => permissions - PermissionValues.VoiceLockPermissions;
     }
 
     // ReSharper disable once MemberCanBePrivate.Global

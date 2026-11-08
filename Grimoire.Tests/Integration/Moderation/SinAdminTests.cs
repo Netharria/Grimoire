@@ -96,9 +96,10 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
     [Fact]
     public async Task Pardon_ForAUserWithNoUsernameHistory_StillPardons()
     {
-        var sin = await this.SeedWarnAsync(new FakeUser(1_100_000_000_000_000_095, "stranger"), withUsername: false);
+        var stranger = new FakeUser(1_100_000_000_000_000_095, "stranger");
+        var sin = await this.SeedWarnAsync(stranger, withUsername: false);
 
-        (await this.PardonAsync(sin.Id, "x")).Description.ShouldNotBe(NotFound);
+        (await this.PardonAsync(sin.Id, "x")).Description.ShouldBe($"**ID:** {sin.Id} **User:** {stranger.Mention}");
     }
 
     /// <summary>SIN-25: there's no "already pardoned" check, so a second pardon adds a second row.</summary>
@@ -206,6 +207,24 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         var logged = await this._bot.WaitForModLogEmbedAsync(e =>
             e["author"]?["name"]?.GetValue<string>()?.EndsWith("has been commanded to forget.", StringComparison.Ordinal) == true);
         Fields(logged).ShouldBe([("User", "user1"), ("Sin Id", sin.Id.ToString()), ("Moderator", this.Guild.Moderator.MemberMention)]);
+    }
+
+    /// <summary>
+    ///     M-3: with no username stored, the user is shown by mention. An empty name made the mod log fail, though it
+    ///     is the only trace the sin ever existed.
+    /// </summary>
+    [Fact]
+    public async Task Forget_ForAUserWithNoUsernameHistory_ShowsTheMention_AndLogsIt()
+    {
+        var stranger = new FakeUser(1_100_000_000_000_000_096, "stranger");
+        var sin = await this.SeedWarnAsync(stranger, withUsername: false);
+
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("forget", this.Guild.Moderator, SlashOption.Integer("sin_id", sin.Id.Value));
+
+        reply.Description.ShouldBe($"**ID:** {sin.Id} **User:** {stranger.Mention}");
+        var logged = await this._bot.WaitForModLogEmbedAsync(e =>
+            e["author"]?["name"]?.GetValue<string>()?.EndsWith("has been commanded to forget.", StringComparison.Ordinal) == true);
+        Fields(logged)[0].ShouldBe(("User", stranger.Mention));
     }
 
     /// <summary>SIN-31.</summary>

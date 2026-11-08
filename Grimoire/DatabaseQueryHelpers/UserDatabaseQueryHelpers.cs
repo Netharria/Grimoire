@@ -42,4 +42,19 @@ public static class UserDatabaseQueryHelpers
         await databaseUsernames.AddRangeAsync(usernamesToAdd, cancellationToken);
         return true;
     }
+
+    /// <summary>
+    ///     The user's latest known username, or their mention when none is stored: users who left before history was
+    ///     kept have none (KI-33), and an empty name can't go in an embed field.
+    /// </summary>
+    public static async Task<string> GetDisplayNameAsync(this DbSet<UsernameHistory> databaseUsernames, UserId userId,
+        CancellationToken cancellationToken = default)
+        => await databaseUsernames
+                .AsNoTracking()
+                .Where(history => history.UserId == userId)
+                .OrderByDescending(history => history.Timestamp)
+                .Select(history => (Username?)history.Username)
+                .FirstOrDefaultAsync(cancellationToken) is { } username
+            ? username.Value
+            : UserExtensions.Mention(userId);
 }

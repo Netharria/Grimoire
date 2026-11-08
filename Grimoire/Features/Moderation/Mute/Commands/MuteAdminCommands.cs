@@ -58,44 +58,24 @@ public sealed partial class MuteAdminCommands(SettingsModule settingsModule, Gui
                     or DiscordChannelType.Category
                     or DiscordChannelType.GuildForum
                     or DiscordChannelType.GuildMedia:
-                    yield return await OverwriteChannelAsync(channel, role);
+                    yield return await OverwriteChannelAsync(channel, role, PermissionValues.LockPermissions);
                     break;
                 case DiscordChannelType.Voice or DiscordChannelType.Stage:
-                    yield return await OverwriteVoiceChannelAsync(channel, role);
+                    yield return await OverwriteChannelAsync(channel, role, PermissionValues.VoiceLockPermissions);
                     break;
             }
     }
 
-    private static async Task<OverwriteChannelResult> OverwriteChannelAsync(DiscordChannel channel, DiscordRole role)
+    /// <summary>Denies <paramref name="mutedPermissions" /> to the role, keeping whatever else its overwrite says.</summary>
+    private static async Task<OverwriteChannelResult> OverwriteChannelAsync(DiscordChannel channel, DiscordRole role,
+        DiscordPermissions mutedPermissions)
     {
-        var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
+        var existing = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
         return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
         {
-            if (permissions is not null)
-                await channel.AddOverwriteAsync(role,
-                    permissions.Allowed.RevokeLockPermissions(),
-                    permissions.Denied.SetLockPermissions());
-            else
-                await channel.AddOverwriteAsync(role,
-                    deny: PermissionValues.LockPermissions);
-            return new OverwriteChannelResult { WasSuccessful = true, Channel = channel };
-        }, new OverwriteChannelResult { WasSuccessful = false, Channel = channel });
-    }
-
-    private static async Task<OverwriteChannelResult> OverwriteVoiceChannelAsync(DiscordChannel channel,
-        DiscordRole role)
-    {
-        var permissions = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
-
-        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-        {
-            if (permissions is not null)
-                await channel.AddOverwriteAsync(role,
-                    permissions.Allowed.RevokeVoiceLockPermissions(),
-                    permissions.Denied.SetVoiceLockPermissions());
-            else
-                await channel.AddOverwriteAsync(role,
-                    deny: PermissionValues.VoiceLockPermissions);
+            await channel.AddOverwriteAsync(role,
+                (existing?.Allowed ?? DiscordPermissions.None) - mutedPermissions,
+                (existing?.Denied ?? DiscordPermissions.None) + mutedPermissions);
             return new OverwriteChannelResult { WasSuccessful = true, Channel = channel };
         }, new OverwriteChannelResult { WasSuccessful = false, Channel = channel });
     }

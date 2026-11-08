@@ -6,8 +6,6 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ArgumentModifiers;
-using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Moderation.PublishSins;
 
@@ -34,11 +32,6 @@ public sealed partial class PublishCommands
             {
                 // ReSharper disable AccessToDisposedClosure
                 x.UserId,
-                Username = dbContext.UsernameHistory
-                    .Where(history => history.UserId == x.UserId)
-                    .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
-                    .Select(history => (Username?)history.Username)
-                    .FirstOrDefault(),
                 LatestPardon = dbContext.Pardons
                     .Where(p => p.SinId == x.Id)
                     .OrderByDescending(p => p.SetAt)
@@ -73,25 +66,7 @@ public sealed partial class PublishCommands
             return;
         }
 
-        var banLogMessage = await SendPublicLogMessage(ctx, result.UserId, result.Username,
-            result.LatestPardon.Reason.Value, result.UnbanMessageId, result.LatestPardon.PardonDate, PublishType.Unban);
-
-        if (banLogMessage is null)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Red,
-                $"Failed to publish unban reason. Verify {ctx.Guild?.CurrentMember.Mention} has access to send messages in the public ban log channel.");
-            return;
-        }
-
-        await SavePublishedMessageAsync(dbContext, sinId, PublishType.Unban, result.UnbanMessageId, banLogMessage.GetMessageId());
-
-        await ctx.ReplyAsync(GrimoireColor.Green, $"Successfully published unban : {sinId}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.Purple,
-            Description = $"{ctx.User.Mention} published unban reason of sin {sinId}"
-        });
+        await this.PublishAsync(ctx, dbContext, sinId, PublishType.Unban, result.UserId, result.LatestPardon.Reason.Value,
+            result.UnbanMessageId, result.LatestPardon.PardonDate);
     }
 }

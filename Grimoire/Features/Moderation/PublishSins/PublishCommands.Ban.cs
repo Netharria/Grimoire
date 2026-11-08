@@ -6,8 +6,6 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.ArgumentModifiers;
-using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Moderation.PublishSins;
 
@@ -15,69 +13,9 @@ public sealed partial class PublishCommands
 {
     [Command("Ban")]
     [Description("Publish a ban reason to the public ban log.")]
-    public async Task PublishBanAsync(
+    public Task PublishBanAsync(
         CommandContext ctx,
         [MinMaxValue(1)] [Parameter("sin_id")] [Description("The id of the sin to be published.")]
         SinId sinId)
-    {
-        await ctx.DeferResponseAsync();
-
-        var guild = ctx.Guild!;
-
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var result = await dbContext.Sins
-            .AsNoTracking()
-            .Where(sin => sin.SinType == SinType.Ban)
-            .Where(sin => sin.Id == sinId)
-            .Where(sin => sin.GuildId == guild.GetGuildId())
-            .Select(sin => new
-            {
-                // ReSharper disable AccessToDisposedClosure
-                sin.UserId,
-                Username = dbContext.UsernameHistory
-                    .Where(history => history.UserId == sin.UserId)
-                    .OrderByDescending(x => x.Timestamp)
-                    .Select(history => (Username?)history.Username)
-                    .FirstOrDefault(),
-                sin.SinOn,
-                Reason = dbContext.SinReasonHistory
-                    .Where(r => r.SinId == sin.Id)
-                    .OrderByDescending(r => r.SetAt)
-                    .Select(r => r.Reason.Value)
-                    .FirstOrDefault() ?? string.Empty,
-                PublishedBanId = sin.PublishMessages
-                    .Where(x => x.PublishType == PublishType.Ban)
-                    .Select(x => (MessageId?)x.MessageId)
-                    .FirstOrDefault()
-                // ReSharper restore AccessToDisposedClosure
-            })
-            .FirstOrDefaultAsync();
-
-        if (result is null)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not find a ban with that Sin Id.");
-            return;
-        }
-
-        var banLogMessage = await SendPublicLogMessage(ctx, result.UserId, result.Username, result.Reason,
-            result.PublishedBanId, result.SinOn, PublishType.Ban);
-
-        if (banLogMessage is null)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Red,
-                $"Failed to publish ban reason. Verify {ctx.Guild?.CurrentMember.Mention} has access to send messages in the public ban log channel.");
-            return;
-        }
-
-        await SavePublishedMessageAsync(dbContext, sinId, PublishType.Ban, result.PublishedBanId, banLogMessage.GetMessageId());
-
-        await ctx.ReplyAsync(GrimoireColor.Green, $"Successfully published ban : {sinId}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.Purple,
-            Description = $"{ctx.User.Mention} published ban reason of sin {sinId}"
-        });
-    }
+        => this.PublishSinAsync(ctx, sinId, SinType.Ban, PublishType.Ban);
 }

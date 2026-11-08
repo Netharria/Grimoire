@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
+using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 
@@ -31,33 +32,18 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
         var guild = ctx.Guild!;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var result = await dbContext.Sins
-            .Where(sin => sin.Id == sinId)
-            .Where(sin => sin.GuildId == guild.GetGuildId())
-            .Select(sin => new
-            {
-                // ReSharper disable AccessToDisposedClosure
-                Sin = sin,
-                UserName = (Username?)dbContext.UsernameHistory
-                    .Where(usernameHistory => usernameHistory.UserId == sin.UserId)
-                    .OrderByDescending(usernameHistory => usernameHistory.Timestamp)
-                    .Select(usernameHistory => usernameHistory.Username)
-                    .FirstOrDefault()
-                // ReSharper restore AccessToDisposedClosure
-            })
-            .FirstOrDefaultAsync();
-
-        if (result is null)
+        var sin = await dbContext.Sins.FirstOrDefaultAsync(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId());
+        if (sin is null)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not find a sin with that ID.");
             return;
         }
 
-
-        dbContext.Sins.Remove(result.Sin);
+        var userName = await dbContext.UsernameHistory.GetDisplayNameAsync(sin.UserId);
+        dbContext.Sins.Remove(sin);
         await dbContext.SaveChangesAsync();
 
-        var message = $"**ID:** {result.Sin.Id} **User:** {result.UserName}";
+        var message = $"**ID:** {sinId} **User:** {userName}";
 
         await ctx.ReplyAsync(GrimoireColor.Green, message, "Forgot");
 
@@ -67,8 +53,8 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
             GuildLogType = GuildLogType.Moderation,
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor($"{guild.CurrentMember.DisplayName} has been commanded to forget.")
-                .AddField("User", result.UserName.ToString() ?? "Unknown", true)
-                .AddField("Sin Id", result.Sin.Id.ToString(), true)
+                .AddField("User", userName, true)
+                .AddField("Sin Id", sinId.ToString(), true)
                 .AddField("Moderator", ctx.User.Mention, true)
                 .WithColor(GrimoireColor.Green)
         });
