@@ -13,10 +13,18 @@ namespace Grimoire.Features.LogCleanup;
 internal sealed class CleanupLogsBackgroundTask(
     IServiceProvider serviceProvider,
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
-    ILogger<CleanupLogsBackgroundTask> logger)
+    ILogger<CleanupLogsBackgroundTask> logger,
+    TimeProvider timeProvider)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromMinutes(1))
 {
+    /// <summary>
+    ///     The history trim scans every member's avatars, nicknames and usernames, and little changes between ticks,
+    ///     so it runs once a day rather than every minute.
+    /// </summary>
+    private static readonly TimeSpan HistoryTrimInterval = TimeSpan.FromDays(1);
+
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
+    private DateTimeOffset? _lastHistoryTrim;
 
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
@@ -47,7 +55,13 @@ internal sealed class CleanupLogsBackgroundTask(
                         await DeleteMessageAsync(channelInfo.DiscordChannel, messageId, token))
             ).ToArrayAsync(cancellationToken);
 
-        await DeleteOldMessageAndUserLogs(dbContext, cancellationToken);
+        await DeleteOldMessagesAsync(dbContext, cancellationToken);
+        if (this._lastHistoryTrim is not { } lastTrim || timeProvider.GetUtcNow() - lastTrim >= HistoryTrimInterval)
+        {
+            await TrimUserHistoryAsync(dbContext, cancellationToken);
+            this._lastHistoryTrim = timeProvider.GetUtcNow();
+        }
+
         await UpdateOldGrimoireLogEntries(dbContext, oldLogMessages, cancellationToken);
     }
 
@@ -102,14 +116,19 @@ internal sealed class CleanupLogsBackgroundTask(
         }
     }
 
-    internal static async Task DeleteOldMessageAndUserLogs(GrimoireDbContext grimoireDbContext,
+    internal static async Task DeleteOldMessagesAsync(GrimoireDbContext grimoireDbContext,
         CancellationToken cancellationToken)
     {
         var oldDate = DateTimeOffset.UtcNow - TimeSpan.FromDays(31);
         await grimoireDbContext.Messages
             .Where(x => x.CreatedTimestamp <= oldDate)
             .ExecuteDeleteAsync(cancellationToken);
+    }
 
+    /// <summary>Keeps the newest three avatars, nicknames and usernames of each member.</summary>
+    private static async Task TrimUserHistoryAsync(GrimoireDbContext grimoireDbContext,
+        CancellationToken cancellationToken)
+    {
         await grimoireDbContext.Avatars
             .Select(x => new { x.GuildId, x.UserId })
             .Distinct()

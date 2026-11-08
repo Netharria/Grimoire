@@ -150,7 +150,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         }
 
         await using (var cleanup = this._database.CreateDbContext())
-            await CleanupLogsBackgroundTask.DeleteOldMessageAndUserLogs(cleanup, cancellationToken);
+            await CleanupLogsBackgroundTask.DeleteOldMessagesAsync(cleanup, cancellationToken);
 
         await using var dbContext = this._database.CreateDbContext();
         (await dbContext.Reactions.Select(reaction => reaction.MessageId).ToListAsync(cancellationToken))

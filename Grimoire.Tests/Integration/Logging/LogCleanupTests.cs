@@ -6,7 +6,10 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.LogCleanup;
+using Grimoire.Tests.Features.Alerts;
 using Grimoire.Tests.Integration.FakeDiscord;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Grimoire.Tests.Integration.Logging;
 
@@ -112,6 +115,51 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
         await using var dbContext = this._database.CreateDbContext();
         (await dbContext.Messages.Where(message => message.GuildId == this.GuildId).Select(message => message.Id).ToListAsync(Token))
             .ShouldBe([new MessageId(2)]);
+    }
+
+    /// <summary>
+    ///     L-10: the trim scans every member's history, so it runs on the first tick and then once a day, not every
+    ///     minute. The message purge still runs every tick.
+    /// </summary>
+    [Fact]
+    public async Task UserHistory_IsTrimmedOnceADay()
+    {
+        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(this._database,
+            configureHost: builder => builder.Services.Replace(ServiceDescriptor.Singleton<TimeProvider>(clock)));
+        var user = new UserId(this.Guild.User1.Id);
+
+        await this.AddAvatarsAsync(user, 5);
+        await this._bot.RunBackgroundTickAsync<CleanupLogsBackgroundTask>();
+        (await this.AvatarCountAsync(user)).ShouldBe(3);
+
+        await this.AddAvatarsAsync(user, 2);
+        clock.Advance(TimeSpan.FromHours(23));
+        await this._bot.RunBackgroundTickAsync<CleanupLogsBackgroundTask>();
+        (await this.AvatarCountAsync(user)).ShouldBe(5, "less than a day since the last trim");
+
+        clock.Advance(TimeSpan.FromHours(1));
+        await this._bot.RunBackgroundTickAsync<CleanupLogsBackgroundTask>();
+        (await this.AvatarCountAsync(user)).ShouldBe(3);
+    }
+
+    private async Task AddAvatarsAsync(UserId user, int count)
+    {
+        await using var seed = this._database.CreateDbContext();
+        for (var i = 1; i <= count; i++)
+            seed.Avatars.Add(new Avatar
+            {
+                UserId = user, GuildId = this.GuildId, FileName = AvatarFileName.Create($"https://cdn/{Guid.NewGuid()}.png").ShouldSucceed(),
+                Timestamp = DateTimeOffset.UtcNow.AddDays(-10 + i)
+            });
+        await seed.SaveChangesAsync(Token);
+    }
+
+    private async Task<int> AvatarCountAsync(UserId user)
+    {
+        await using var dbContext = this._database.CreateDbContext();
+        return await dbContext.Avatars.CountAsync(avatar => avatar.UserId == user, Token);
     }
 
     /// <summary>Only the newest three avatar, nickname and username rows are kept per member.</summary>
