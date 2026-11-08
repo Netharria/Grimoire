@@ -34,18 +34,6 @@ public abstract record Validation<T>
             _ => throw new UnreachableException()
         };
 
-    public Validation<T> Tap(Action<T> action)
-    {
-        if (this is Valid(var v)) action(v);
-        return this;
-    }
-
-    public async Task<Validation<T>> TapAsync(Func<T, Task> action)
-    {
-        if (this is Valid(var v)) await action(v);
-        return this;
-    }
-
     public TOut Match<TOut>(Func<T, TOut> onValid, Func<ImmutableArray<Error>, TOut> onInvalid)
         => this switch
         {
@@ -53,28 +41,6 @@ public abstract record Validation<T>
             Invalid(var e) => onInvalid(e),
             _ => throw new UnreachableException()
         };
-
-    public Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> onValid, Func<ImmutableArray<Error>, TOut> onInvalid)
-        => this switch
-        {
-            Valid(var v) => onValid(v),
-            Invalid(var e) => Task.FromResult(onInvalid(e)),
-            _ => throw new UnreachableException()
-        };
-
-    public Task<Validation<TOut>> MapAsync<TOut>(Func<T, Task<TOut>> mapper)
-        => BindAsync(async v => Validation<TOut>.Succeed(await mapper(v)));
-
-    public Task<Validation<TOut>> BindAsync<TOut>(Func<T, Task<Validation<TOut>>> binder)
-        => this switch
-        {
-            Valid(var v) => binder(v),
-            Invalid(var e) => Task.FromResult<Validation<TOut>>(new Validation<TOut>.Invalid(e)),
-            _ => throw new UnreachableException()
-        };
-
-    public Validation<T> OrElse(Func<Validation<T>> fallback)
-        => this is Valid ? this : fallback();
 
     public T GetOrElse(Func<T> fallback)
         => this is Valid v ? v.Value : fallback();

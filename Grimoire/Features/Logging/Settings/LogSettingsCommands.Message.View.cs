@@ -25,7 +25,6 @@ public partial class LogSettingsCommands
             else
                 await ctx.DeferResponseAsync();
 
-
             var guild = ctx.Guild!;
 
             Task<string> Describe(GuildLogType logType) => DescribeLogChannelAsync(this._settingsModule, guild, logType);
@@ -33,7 +32,6 @@ public partial class LogSettingsCommands
             await ctx.ReplyAsync(
                 title: "Current Logging System Settings",
                 message:
-                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()).GetOrElse(() => false)}\n" +
                 $"**Delete Log:** {await Describe(GuildLogType.MessageDeleted)}\n" +
                 $"**Bulk Delete Log:** {await Describe(GuildLogType.BulkMessageDeleted)}\n" +
                 $"**Edit Log:** {await Describe(GuildLogType.MessageEdited)}\n");

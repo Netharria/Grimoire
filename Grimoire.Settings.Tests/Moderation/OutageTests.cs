@@ -41,10 +41,6 @@ public sealed class OutageTests(SettingsTestsFactory factory) : IAsyncLifetime
         => (await this._down.GetActiveMute(_userId, _guildId, Token)).ShouldBeOfType<Result<MuteAdded>.Invalid>();
 
     [Fact]
-    public async Task IsMemberMuted_Fails()
-        => (await this._down.IsMemberMuted(_userId, _guildId, Token)).ShouldBeOfType<Result<bool>.Invalid>();
-
-    [Fact]
     public async Task GetAllIgnoredItems_Fails()
         => (await this._down.GetAllIgnoredItems(_guildId, Token))
             .ShouldBeOfType<Result<FrozenSet<XpIgnoredItem>>.Invalid>();

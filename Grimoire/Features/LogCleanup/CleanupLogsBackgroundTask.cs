@@ -34,10 +34,10 @@ internal sealed class CleanupLogsBackgroundTask(
         var oldLogMessages = await dbContext.OldLogMessages
             .AsNoTracking()
             .Where(oldLogMessage => oldLogMessage.CreatedAt < oldDate)
-            .GroupBy(oldLogMessage => new { oldLogMessage.ChannelId })
+            .GroupBy(oldLogMessage => oldLogMessage.ChannelId)
             .Select(oldLogMessages => new
             {
-                oldLogMessages.Key.ChannelId, MessageIds = oldLogMessages.Select(x => x.Id).ToArray()
+                ChannelId = oldLogMessages.Key, MessageIds = oldLogMessages.Select(x => x.Id).ToArray()
             }).AsAsyncEnumerable()
             .Select(async (channel, token) =>
             {

@@ -34,12 +34,6 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         var guild = ctx.Guild!;
 
-        if (guild.GetGuildId() != member.Guild.GetGuildId())
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
-            return;
-        }
-
         var activeMute = await this._settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
             .Match(mute => (MuteAdded?)mute, _ => null);
         var configuredRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId())

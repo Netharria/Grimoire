@@ -83,31 +83,6 @@ public sealed class ValidationTests
         called.ShouldBeFalse();
     }
 
-    // ── Tap ──────────────────────────────────────────────────────────────────
-
-    [Fact]
-    public void Tap_OnValid_ExecutesActionWithValue()
-    {
-        var seen = -1;
-        Validation<int>.Succeed(7).Tap(x => seen = x);
-        seen.ShouldBe(7);
-    }
-
-    [Fact]
-    public void Tap_OnInvalid_DoesNotExecuteAction()
-    {
-        var called = false;
-        Validation<int>.Fail(_errorA).Tap(_ => called = true);
-        called.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void Tap_ReturnsSameValidation()
-    {
-        var validation = Validation<int>.Succeed(1);
-        validation.Tap(_ => { }).ShouldBe(validation);
-    }
-
     // ── Match ────────────────────────────────────────────────────────────────
 
     [Fact]
@@ -118,27 +93,7 @@ public sealed class ValidationTests
     public void Match_OnInvalid_CallsOnInvalid()
         => Validation<int>.Fail(_errorA).Match(_ => 1, errors => errors.Length).ShouldBe(1);
 
-    // ── OrElse / GetOrElse ───────────────────────────────────────────────────
-
-    [Fact]
-    public void OrElse_OnValid_ReturnsSelf()
-    {
-        var validation = Validation<int>.Succeed(1);
-        var called = false;
-        validation.OrElse(() =>
-        {
-            called = true;
-            return Validation<int>.Succeed(99);
-        }).ShouldBe(validation);
-        called.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void OrElse_OnInvalid_ReturnsFallback()
-        => Validation<int>.Fail(_errorA)
-            .OrElse(() => Validation<int>.Succeed(99))
-            .ShouldSucceed()
-            .ShouldBe(99);
+    // ── GetOrElse ────────────────────────────────────────────────────────────
 
     [Fact]
     public void GetOrElse_OnValid_ReturnsValue()
@@ -179,38 +134,4 @@ public sealed class ValidationTests
         var invalid = result.ShouldBeOfType<Result<int>.Invalid>();
         invalid.Error.ShouldBe(_errorA);
     }
-
-    // ── Async variants ───────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task TapAsync_OnValid_ExecutesAction()
-    {
-        var seen = -1;
-        await Validation<int>.Succeed(3).TapAsync(x =>
-        {
-            seen = x;
-            return Task.CompletedTask;
-        });
-        seen.ShouldBe(3);
-    }
-
-    [Fact]
-    public async Task MapAsync_OnValid_TransformsValue()
-        => (await Validation<int>.Succeed(4).MapAsync(x => Task.FromResult(x + 1)))
-            .ShouldSucceed().ShouldBe(5);
-
-    [Fact]
-    public async Task BindAsync_OnValid_AppliesBinder()
-        => (await Validation<int>.Succeed(2).BindAsync(x => Task.FromResult(Validation<int>.Succeed(x * 3))))
-            .ShouldSucceed().ShouldBe(6);
-
-    [Fact]
-    public async Task BindAsync_OnInvalid_PropagatesError()
-        => (await Validation<int>.Fail(_errorA).BindAsync(_ => Task.FromResult(Validation<int>.Succeed(99))))
-            .ShouldBeOfType<Validation<int>.Invalid>()
-            .Errors.ShouldContain(_errorA);
-
-    [Fact]
-    public async Task MatchAsync_OnValid_CallsOnValid()
-        => (await Validation<int>.Succeed(5).MatchAsync(v => Task.FromResult(v * 2), _ => 0)).ShouldBe(10);
 }

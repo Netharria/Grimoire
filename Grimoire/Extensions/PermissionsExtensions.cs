@@ -34,16 +34,4 @@ public static class PermissionsExtensions
         public DiscordPermissions RevertLockPermissions(long previousPermissions)
             => permissions.RevertLockPermissions(new DiscordPermissions(previousPermissions));
     }
-
-    // ReSharper disable once MemberCanBePrivate.Global
-
-
-    extension(DiscordOverwrite permissions)
-    {
-        public PreviouslyAllowedPermissions GetPreviouslyAllowedPermissions()
-            => new(long.Parse(permissions.Allowed.ToString()));
-
-        public PreviouslyDeniedPermissions GetPreviouslyDeniedPermissions()
-            => new(long.Parse(permissions.Denied.ToString()));
-    }
 }

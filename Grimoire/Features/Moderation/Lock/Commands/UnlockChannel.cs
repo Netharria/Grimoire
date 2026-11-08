@@ -34,15 +34,10 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         channel ??= ctx.Channel;
         var moderatorId = ctx.GetModeratorId();
 
-        await Validation<DiscordChannel>.Succeed(channel)
-            .ToResult()
-            .BindAsync(discordChannel =>
-                discordChannel switch
-                {
-                    { IsThread: true } => TryUnlockThreadAsync(guild, discordChannel, moderatorId).Map(_ => ctx),
-                    _ => TryUnlockChannelAsync(guild, discordChannel, moderatorId).Map(_ => ctx)
-                })
-            .TapAsync(context => context.ReplyAsync(message: $"{channel.Mention} has been unlocked").AsTask())
+        await (channel.IsThread
+                ? this.TryUnlockThreadAsync(guild, channel, moderatorId).Map(_ => Unit.Value)
+                : this.TryUnlockChannelAsync(guild, channel, moderatorId).Map(_ => Unit.Value))
+            .TapAsync(_ => ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked").AsTask())
             .Match(
                 _ => this._guildLog.SendLogMessageAsync(new GuildLogMessage
                 {
@@ -52,7 +47,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
                     Description = $"{ctx.User.Mention} unlocked {channel.Mention}"
                 }),
                 _ => ctx.ReplyAsync(message: $"{channel.Mention} could not be unlocked"),
-                _ => ctx.ReplyAsync(message: $"{channel.Mention} is not locked.")
+                onNotFound: _ => ctx.ReplyAsync(message: $"{channel.Mention} is not locked.")
             );
     }
 

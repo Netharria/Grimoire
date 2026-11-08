@@ -115,44 +115,48 @@ That is narrower and more specific than a generic operation result.
 
 Use `Result<T>` for domain and application operations that can succeed or fail for reasons broader than simple input invalidity.
 
-Conceptual shape:
+Shape:
 
 ```csharp
 public abstract record Result<T>
 {
     public sealed record Success(T Value) : Result<T>;
 
-    public sealed record Invalid(ImmutableArray<Error> Errors) : Result<T>;
+    public sealed record Invalid(Error Error) : Result<T>;
 
     public sealed record NotFound(Error Error) : Result<T>;
 
-    public sealed record Conflict(Error Error) : Result<T>;
-
-    public sealed record Forbidden(Error Error) : Result<T>;
+    public sealed record NotModified(Error Error) : Result<T>;
 
     public static Result<T> Ok(T value) => new Success(value);
 
-    public static Result<T> Fail(Error error) => new Invalid([error]);
-
-    public static Result<T> Fail(IEnumerable<Error> errors)
-        => new Invalid(errors.ToImmutableArray());
+    public static Result<T> Fail(Error error) => new Invalid(error);
 }
 ```
+
+Each failure carries one `Error`. `Validation<T>.ToResult()` folds several validation errors into one. `Map`, `Bind` and
+`BindAsync` carry a failure across unchanged, keeping its case. `Match` sends every failure to `onFailure` unless the caller
+passes `onNotFound` or `onNotModified` for that case. Callers that treat `NotModified` as success (a setting set to the value
+it already has) pass `onNotModified`.
+
+On a `Task<Result<T>>`, `Match` with handlers that return a `Task` or `ValueTask` awaits the handler as well, so
+`await LoadAsync().Match(...)` finishes only after the reply or log has been sent.
+
+Add a case only when a caller handles it differently from `Invalid`. `Conflict` and `Forbidden` were removed in 2026-11 because
+nothing produced them.
 
 ### Intended use
 
 Use `Result<T>` for:
 
 - domain/application operations
-- aggregate behaviors
-- authorization/policy evaluation
 - service-layer workflows where failure is meaningful and not just input validation
+- settings reads and writes, where `NotModified` means the write changed nothing
 
 Examples:
 
-- a command policy check returning allowed/forbidden
 - a lookup returning found/not found
-- a workflow returning conflict when state already exists
+- a settings write returning not modified when the value is already set
 
 ## 4. Keep `SettingsResult` as a specialized write outcome
 

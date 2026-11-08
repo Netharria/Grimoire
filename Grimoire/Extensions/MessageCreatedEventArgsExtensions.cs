@@ -15,12 +15,6 @@ public static class MessageCreatedEventArgsExtensions
         public UserId GetAuthorUserId() => new(args.Author.Id);
 
         [Pure]
-        public GuildId? GetGuildId() =>
-            // DSharpPlus hasn't finished implementing nullable notations
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            args.Guild is not null ? new GuildId(args.Guild.Id) : null;
-
-        [Pure]
         public MessageId GetMessageId() => new(args.Message.Id);
 
         [Pure]

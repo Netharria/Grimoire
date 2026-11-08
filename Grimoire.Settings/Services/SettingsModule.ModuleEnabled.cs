@@ -13,14 +13,11 @@ namespace Grimoire.Settings.Services;
 public sealed partial class SettingsModule
 {
     private static Result<GuildSettingType> ToSettingType(Module moduleType) =>
-        moduleType switch
-        {
-            Module.General => Result<GuildSettingType>.Fail(
-                new Error("module.general.immutable", "Cannot disable the general module.")),
-            _ when moduleType.ToGuildSettingType() is { } settingType => Result<GuildSettingType>.Ok(settingType),
-            _ => Result<GuildSettingType>.Fail(new Error("module.type.unrecognized",
-                "Was not able to parse the module type."))
-        };
+        // Only General has no setting of its own.
+        moduleType.ToGuildSettingType() is { } settingType
+            ? Result<GuildSettingType>.Ok(settingType)
+            : Result<GuildSettingType>.Fail(
+                new Error("module.general.immutable", "Cannot disable the general module."));
 
     public Task<Result<bool>> SetModuleState(
         Module moduleType,

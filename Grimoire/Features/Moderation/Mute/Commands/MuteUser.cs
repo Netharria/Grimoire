@@ -49,12 +49,6 @@ public sealed partial class MuteUser(
 
         var guild = ctx.Guild!;
 
-        if (guild.GetGuildId() != member.Guild.GetGuildId())
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "The specified user is not in this server.");
-            return;
-        }
-
         if (ctx.User.Id == member.Id)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "You can't mute yourself.");

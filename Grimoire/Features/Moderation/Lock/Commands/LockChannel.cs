@@ -74,8 +74,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
             GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.Purple,
             Description =
-                $"{channel.Mention} has been locked for {durationAmount} {durationType} by {ctx.User.Mention}"
-                + (string.IsNullOrWhiteSpace(reason) ? "" : $" for {reason}")
+                $"{channel.Mention} has been locked for {durationAmount} {durationType} by {ctx.User.Mention}{ModerationDirectMessage.ForReason(reason)}"
         });
     }
 
@@ -85,7 +84,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         DurationType durationType, long durationAmount)
     {
         // The @everyone overwrite should always exist, but a channel without one is treated as having no overrides.
-        var previousSetting = guild.Channels[channel.Id].PermissionOverwrites
+        var previousSetting = channel.PermissionOverwrites
             .FirstOrDefault(x => x.Id == guild.EveryoneRole.Id);
         var previousAllowed = previousSetting?.Allowed ?? DiscordPermissions.None;
         var previousDenied = previousSetting?.Denied ?? DiscordPermissions.None;

@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
@@ -23,7 +24,7 @@ internal sealed partial class ModSettings
         var guild = ctx.Guild!;
 
         var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId())
-            .GetOrElse(() => TimeSpan.FromDays(10950));
+            .GetOrElse(() => SettingsModule.DefaultAutoPardonDuration);
         var banLogChannel = await this._settingsModule.GetLogChannelSetting(GuildLogType.PublicModeration,
             guild.GetGuildId()).GetOrElse(() => null);
         var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Moderation, guild.GetGuildId())

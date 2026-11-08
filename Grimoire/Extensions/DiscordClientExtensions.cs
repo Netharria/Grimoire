@@ -84,9 +84,6 @@ public static class DiscordClientExtensions
             return user?.GetAvatarUrl(MediaFormat.Auto);
         }
 
-        public Task<DiscordUser> GetUserAsync(UserId userId, bool updateCache = false)
-            => client.GetUserAsync(userId.Value, updateCache);
-
         public ModeratorId GetGrimoireModeratorId() => new(client.CurrentUser.Id);
     }
 }

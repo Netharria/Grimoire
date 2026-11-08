@@ -174,7 +174,7 @@ internal sealed class UserInfoCommands(
                 .GetOrElse(() => false))
             return;
         var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guildId)
-            .GetOrElse(() => TimeSpan.FromDays(10950));
+            .GetOrElse(() => SettingsModule.DefaultAutoPardonDuration);
         var response = await dbContext.Sins
             .AsNoTracking()
             .Where(sin => sin.UserId == userId

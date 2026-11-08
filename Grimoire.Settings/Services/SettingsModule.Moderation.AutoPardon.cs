@@ -14,7 +14,8 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    private static TimeSpan GetDefaultAutoPardonDuration() => TimeSpan.FromDays(10950);
+    /// <summary>30 years: in practice, sins are never pardoned automatically unless a guild sets a duration.</summary>
+    public static TimeSpan DefaultAutoPardonDuration { get; } = TimeSpan.FromDays(10950);
 
     public Task<Result<TimeSpan>> GetAutoPardonDuration(GuildId guildId,
         CancellationToken cancellationToken = default) =>
@@ -26,13 +27,13 @@ public sealed partial class SettingsModule
             {
                 var span = cachedSetting switch
                 {
-                    CachedDefaultSetting => GetDefaultAutoPardonDuration(),
+                    CachedDefaultSetting => DefaultAutoPardonDuration,
                     CachedCustomSetting customSetting => TimeSpan.Parse(customSetting.Value,
                         CultureInfo.InvariantCulture),
-                    CachedDisabledSetting => GetDefaultAutoPardonDuration(),
+                    CachedDisabledSetting => DefaultAutoPardonDuration,
                     _ => throw new UnreachableException()
                 };
-                return span != TimeSpan.Zero ? span : GetDefaultAutoPardonDuration();
+                return span != TimeSpan.Zero ? span : DefaultAutoPardonDuration;
             });
 
     public Task<Result<TimeSpan>> SetAutoPardonDuration(
@@ -44,14 +45,4 @@ public sealed partial class SettingsModule
                 moderatorId,
                 DateTimeOffset.UtcNow, autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)), cancellationToken)
             .Map(_ => autoPardonAfter);
-
-    public Task<Result<TimeSpan>> ResetAutoPardonDuration(
-        GuildId guildId,
-        ModeratorId moderatorId,
-        CancellationToken cancellationToken = default)
-        => ApplyGuildSetting(GuildSettingCustomValue.Create(GuildSettingType.SinAutoPardonDuration, guildId,
-                    moderatorId,
-                    DateTimeOffset.UtcNow, GetDefaultAutoPardonDuration().ToString("c", CultureInfo.InvariantCulture)),
-                cancellationToken)
-            .Map(_ => GetDefaultAutoPardonDuration());
 }

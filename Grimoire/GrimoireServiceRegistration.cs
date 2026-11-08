@@ -156,9 +156,6 @@ internal static class GrimoireServiceRegistration
                     PaginationDeletion = PaginationDeletion.DeleteMessage
                 }).AddCommandsExtension((_, extension) =>
                 {
-                    // Experimental commands are registered only in the configured guild.
-                    if (ulong.TryParse(configuration["guildId"], out var guildId)) { }
-
                     //Shared
                     extension.AddCommands<ModuleCommands>();
                     extension.AddCommands<GeneralSettingsCommands>();

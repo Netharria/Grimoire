@@ -25,12 +25,10 @@ public partial class LogSettingsCommands
             List<string> lines = [];
             await foreach (var channelOverride in this._settingsModule.GetAllOverriddenChannels(guild.GetGuildId()))
                 if (await ctx.Client.GetChannelOrDefaultAsync(channelOverride.ChannelId) is { } channel)
-                    lines.Add(channel.Mention + channelOverride.ChannelOption switch
-                    {
-                        MessageLogOverrideOption.AlwaysLog => " - Always Log",
-                        MessageLogOverrideOption.NeverLog => " - Never Log",
-                        _ => " - Inherit/Default"
-                    });
+                    // GetAllOverriddenChannels leaves out Inherit, so every override is one of these two.
+                    lines.Add(channel.Mention + (channelOverride.ChannelOption == MessageLogOverrideOption.AlwaysLog
+                        ? " - Always Log"
+                        : " - Never Log"));
 
             await ctx.ReplyPagedAsync(
                 new DiscordEmbedBuilder().WithColor(GrimoireColor.Purple).WithAuthor("Channel Override Settings"), lines);

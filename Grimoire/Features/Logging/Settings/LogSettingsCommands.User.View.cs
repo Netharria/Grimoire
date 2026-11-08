@@ -32,7 +32,6 @@ public partial class LogSettingsCommands
             await ctx.ReplyAsync(
                 title: "Current Logging System Settings",
                 message:
-                $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.UserLog, guild.GetGuildId()).GetOrElse(() => false)}\n" +
                 $"**Join Log:** {await Describe(GuildLogType.UserJoined)}\n" +
                 $"**Leave Log:** {await Describe(GuildLogType.UserLeft)}\n" +
                 $"**Username Log:** {await Describe(GuildLogType.UsernameUpdated)}\n" +

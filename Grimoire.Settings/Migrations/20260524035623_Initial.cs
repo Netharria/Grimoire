@@ -250,8 +250,8 @@ namespace Grimoire.Settings.Migrations
             // ================================================================
             // DATA MIGRATION
             // Copy existing settings from Grimoire.Data (public schema) tables
-            // into the new Settings schema. Source tables are still live at this
-            // point; the GrimoireDbContext ModelRedesign migration drops them.
+            // into the new Settings schema. The source tables are left in place;
+            // nothing drops them yet (a later release will, once this has run).
             //
             // Sentinel values used where the source table had no equivalent:
             //   SetAt  = DateTimeOffset.MinValue ('0001-01-01T00:00:00Z')

@@ -215,6 +215,5 @@ public enum CommandOutcome
     Success,
     CheckFailed,
     ParseError,
-    BotMissingPermissions,
-    Exception
+    BotMissingPermissions
 }

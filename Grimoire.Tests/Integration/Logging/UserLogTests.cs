@@ -59,7 +59,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         var reply = await this.UserAsync(SlashOption.Subcommand("view"));
 
         reply.IsEphemeral.ShouldBeTrue();
-        reply.Description.ShouldBe("**Module Enabled:** True\n**Join Log:** None\n**Leave Log:** None\n**Username Log:** None\n**Nickname Log:** None\n**Avatar Log:** None\n");
+        reply.Description.ShouldBe("**Join Log:** None\n**Leave Log:** None\n**Username Log:** None\n**Nickname Log:** None\n**Avatar Log:** None\n");
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 

@@ -30,7 +30,7 @@ public sealed partial class SettingsModule(
 
     private Task<Result<CachedSetting>> GetGuildSetting(GuildSettingType key, GuildId guildId,
         CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct =>
+        => ExecuteSafelyAsync(async ct => Result<CachedSetting>.Ok(
                 await this._cache.GetOrCreateAsync(
                         CacheKey.GuildSetting(key, guildId),
                         new { key, guildId, this._dbContextFactory },
@@ -44,12 +44,7 @@ public sealed partial class SettingsModule(
                                 .FirstOrDefaultAsync(innerCt);
                             return ToCachedSetting(result);
                         }, this._cacheEntryOptions,
-                        cancellationToken: ct) switch
-                    {
-                        { } setting => Result<CachedSetting>.Ok(setting),
-                        null => new Result<CachedSetting>.NotFound(new Error($"guild-setting.{key}.not-found",
-                            $"Was not able to find an entry for {key} for guild {guildId}"))
-                    },
+                        cancellationToken: ct)),
             new Error($"guild-setting.{key}.lookup-failed", $"Failed when retrieving entry for {key} for guild {guildId}"),
             cancellationToken);
 

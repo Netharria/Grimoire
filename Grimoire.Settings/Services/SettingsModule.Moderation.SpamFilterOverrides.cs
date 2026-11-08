@@ -48,8 +48,8 @@ public sealed partial class SettingsModule
         try
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()).
-            // Stream rows as they arrive and filter in memory.
+            // EF Core cannot translate a .Where() after GroupBy().Select(g => g.First()), so the latest row per
+            // channel is loaded and filtered in memory.
             overrides = await dbContext.SpamFilterOverrides
                 .AsNoTracking()
                 .Where(x => x.GuildId == guildId)

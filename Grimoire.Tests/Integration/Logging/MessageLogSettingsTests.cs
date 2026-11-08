@@ -50,7 +50,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
 
         reply.IsEphemeral.ShouldBeTrue();
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Current Logging System Settings");
-        reply.Description.ShouldBe("**Module Enabled:** True\n**Delete Log:** None\n**Bulk Delete Log:** None\n**Edit Log:** None\n");
+        reply.Description.ShouldBe("**Delete Log:** None\n**Bulk Delete Log:** None\n**Edit Log:** None\n");
         this._bot.Rest.Unhandled.ShouldBeEmpty();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }

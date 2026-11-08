@@ -54,18 +54,6 @@ public sealed class AutoPardonTests(SettingsTestsFactory factory) : IAsyncLifeti
     }
 
     [Fact]
-    public async Task ResetAutoPardon_WritesDefaultAsCustomValue()
-    {
-        var result = await this._sut.ResetAutoPardonDuration(_guildId, _modId, TestContext.Current.CancellationToken);
-
-        result.ShouldBeOfType<Result<TimeSpan>.Success>();
-
-        var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
-        var duration = await freshSut.GetAutoPardonDuration(_guildId, TestContext.Current.CancellationToken);
-        duration.ShouldSucceed().ShouldBe(TimeSpan.FromDays(10950));
-    }
-
-    [Fact]
     public async Task TwoGuilds_AutoPardon_Independent()
     {
         var guildB = new GuildId(2UL);

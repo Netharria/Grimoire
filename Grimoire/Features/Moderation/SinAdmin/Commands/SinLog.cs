@@ -93,7 +93,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         };
 
         var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId())
-            .GetOrElse(() => TimeSpan.FromDays(10950));
+            .GetOrElse(() => SettingsModule.DefaultAutoPardonDuration);
 
         var result = await queryable
             .Where(x => x.SinOn > DateTimeOffset.UtcNow - autoPardonAfter)

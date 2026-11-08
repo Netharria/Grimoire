@@ -76,15 +76,9 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
             return;
         }
 
-        // DSharpPlus hasn't finished implementing nullable notations
-        // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
-        var everyoneRole = channel.Guild?.EveryoneRole;
-        if (everyoneRole is null)
-            return;
-
         try
         {
-            await ChannelLockReverter.RevertAsync(channel, everyoneRole, expiredLock);
+            await ChannelLockReverter.RevertAsync(channel, channel.Guild.EveryoneRole, expiredLock);
         }
         catch (UnauthorizedException)
         {

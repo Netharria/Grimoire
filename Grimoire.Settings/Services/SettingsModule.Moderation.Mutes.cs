@@ -31,7 +31,8 @@ public sealed partial class SettingsModule
         => GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken)
             .Map(ParseRoleId);
 
-    public Task<Result<GuildId>> DisableMuteRole(
+    /// <summary>No command turns the mute role off; the integration tests use this to reach the unset state.</summary>
+    internal Task<Result<GuildId>> DisableMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
@@ -48,23 +49,6 @@ public sealed partial class SettingsModule
                 muteRoleId.Value.ToString(CultureInfo.InvariantCulture))
             .ToResult()
             .BindAsync(setting => SetGuildSetting(setting, cancellationToken).Map(_ => muteRoleId));
-
-    public Task<Result<bool>> IsMemberMuted(
-        UserId userId,
-        GuildId guildId,
-        CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct =>
-        {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-            return Result<bool>.Ok(await dbContext.Mutes
-                .AsNoTracking()
-                .OfType<MuteAdded>()
-                .Where(x => x.UserId == userId && x.GuildId == guildId)
-                // ReSharper disable once AccessToDisposedClosure
-                .Where(x => !dbContext.Mutes.Any(y =>
-                    y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt))
-                .AnyAsync(x => x.EndTime > DateTimeOffset.UtcNow, ct));
-        }, new Error("mute.lookup-failed", "Could not check whether the member is muted."), cancellationToken);
 
     public Task<Result<MuteAdded>> AddMute(
         UserId userId,
