@@ -33,9 +33,11 @@ public sealed class UpdatedAvatarEvent(
             .AsNoTracking()
             .Where(x => x.UserId == args.Member.GetUserId() && x.GuildId == args.Guild.GetGuildId())
             .OrderByDescending(x => x.Timestamp)
-            .Select(x => x.FileName)
+            .Select(x => (AvatarFileName?)x.FileName)
             .FirstOrDefaultAsync();
-        if (string.Equals(currentAvatar.Value, args.MemberAfter.AvatarUrl, StringComparison.Ordinal))
+        var newAvatar = args.MemberAfter.GetAvatarFileName();
+        // No row yet means MemberAdded hasn't stored the first one, and there is nothing to compare against.
+        if (currentAvatar is not { } oldAvatar || oldAvatar.Equals(newAvatar, StringComparison.Ordinal))
             return;
 
         await dbContext.Avatars.AddAsync(
@@ -43,7 +45,7 @@ public sealed class UpdatedAvatarEvent(
             {
                 GuildId = args.Guild.GetGuildId(),
                 UserId = args.Member.GetUserId(),
-                FileName = args.MemberAfter.GetAvatarFileName(),
+                FileName = newAvatar,
                 Timestamp = DateTimeOffset.UtcNow
             });
         await dbContext.SaveChangesAsync();
@@ -52,7 +54,7 @@ public sealed class UpdatedAvatarEvent(
             .WithAuthor("Avatar Updated")
             .WithDescription($"**User:** {args.Member.Mention}\n\n" +
                              $"Old avatar in thumbnail. New avatar down below")
-            .WithThumbnail(currentAvatar)
+            .WithThumbnail(oldAvatar.Value)
             .WithColor(GrimoireColor.Purple)
             .WithTimestamp(DateTimeOffset.UtcNow);
 
@@ -62,7 +64,7 @@ public sealed class UpdatedAvatarEvent(
             GuildLogType = GuildLogType.AvatarUpdated,
             Message = await this._imageEmbedService
                 .BuildImageEmbedAsync(
-                    [args.MemberAfter.AvatarUrl],
+                    [newAvatar.Value],
                     args.Member.GetUserId(),
                     embed,
                     false)

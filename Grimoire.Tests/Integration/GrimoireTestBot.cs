@@ -307,14 +307,18 @@ public sealed class GrimoireTestBot : IAsyncDisposable
 
     /// <summary>
     ///     A member changes their nickname, username or avatar, and the gateway sends <c>GUILD_MEMBER_UPDATE</c>. Pass
-    ///     only what changes. A nickname of "" clears it.
+    ///     only what changes. A nickname of "" clears it. <paramref name="guildAvatarHash" /> is the avatar set for this
+    ///     server only, which shows here instead of the global one.
     /// </summary>
-    public void UpdateProfile(FakeUser user, string? nickname = null, string? username = null, string? avatarHash = null)
+    public void UpdateProfile(FakeUser user, string? nickname = null, string? username = null, string? avatarHash = null,
+        string? guildAvatarHash = null)
     {
         var member = FakeGuild.MemberJson(this.Guild.GetMember(user));
         member["guild_id"] = FakeUser.Snowflake(this.Guild.Id);
         if (nickname is not null)
             member["nick"] = nickname.Length == 0 ? null : nickname;
+        if (guildAvatarHash is not null)
+            member["avatar"] = guildAvatarHash;
         var userJson = member["user"]!.AsObject();
         if (username is not null)
         {

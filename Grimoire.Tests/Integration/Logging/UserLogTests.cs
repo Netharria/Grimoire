@@ -179,6 +179,53 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Cdn.Downloads.ShouldContain(uri => uri.ToString().Contains("0123456789abcdef0123456789abcdef", StringComparison.Ordinal));
     }
 
+    /// <summary>L-4: Avatars are stored per guild, so an avatar set for this server only is a change too.</summary>
+    [Fact]
+    public async Task GuildAvatarChange_IsRecorded_AndLogged()
+    {
+        await this.PointUserLogsAtModLogAsync();
+        const string guildAvatar = "fedcba9876543210fedcba9876543210";
+
+        this._bot.UpdateProfile(this.Guild.User1, guildAvatarHash: guildAvatar);
+
+        await this.WaitForLogAsync("Avatar Updated");
+        (await this.AvatarsOfAsync(this.Guild.User1))[^1]
+            .ShouldContain($"guilds/{this.Guild.Id}/users/{this.Guild.User1.Id}/avatars/{guildAvatar}");
+    }
+
+    /// <summary>
+    ///     L-6: an update that overtakes the join, as an auto-role bot causes, has nothing to compare against. It
+    ///     must not be logged as a change from nothing.
+    /// </summary>
+    [Fact]
+    public async Task AnUpdateRightAfterAFirstJoin_IsNotLoggedAsAChange()
+    {
+        await this.PointUserLogsAtModLogAsync();
+        this._bot.MemberLeaves(this.Guild.User1);
+        await this.ForgetHistoryAsync(this.Guild.User1);
+
+        this._bot.MemberJoins(this.Guild.User1);
+        await this.WaitForLogAsync("User Joined");
+        this._bot.SetRolesByHand(this.Guild.User1, this.Guild.KickerRoleId);
+
+        (await this.LoggedWithinAsync("Username Updated", NothingHappensWindow)).ShouldBeFalse();
+        await using var dbContext = this._database.CreateDbContext();
+        (await dbContext.UsernameHistory.CountAsync(row => row.UserId == new UserId(this.Guild.User1.Id), TestContext.Current.CancellationToken))
+            .ShouldBe(1);
+    }
+
+    /// <summary>L-6: with no stored avatar yet, there is nothing to say it changed from.</summary>
+    [Fact]
+    public async Task AnAvatarUpdate_WithNoStoredAvatar_IsNotLogged()
+    {
+        await this.PointUserLogsAtModLogAsync();
+        await this.ForgetHistoryAsync(this.Guild.User1);
+
+        this._bot.UpdateProfile(this.Guild.User1, avatarHash: "0123456789abcdef0123456789abcdef");
+
+        (await this.LoggedWithinAsync("Avatar Updated", NothingHappensWindow)).ShouldBeFalse();
+    }
+
     /// <summary>A role change isn't an avatar change.</summary>
     [Fact]
     public async Task RoleChange_IsNotLoggedAsAnAvatarChange()
@@ -231,6 +278,23 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
             Timestamp = DateTimeOffset.UtcNow.AddSeconds(1)
         });
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    private async Task ForgetHistoryAsync(FakeUser user)
+    {
+        await using var dbContext = this._database.CreateDbContext();
+        await dbContext.UsernameHistory.Where(row => row.UserId == new UserId(user.Id))
+            .ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+        await dbContext.Avatars.Where(row => row.UserId == new UserId(user.Id))
+            .ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+    }
+
+    private async Task<List<string>> AvatarsOfAsync(FakeUser user)
+    {
+        await using var dbContext = this._database.CreateDbContext();
+        return [.. (await dbContext.Avatars.Where(row => row.UserId == new UserId(user.Id))
+                .OrderBy(row => row.Timestamp).ToListAsync(TestContext.Current.CancellationToken))
+            .Select(row => row.FileName.Value)];
     }
 
     private Task<JsonNode> WaitForLogAsync(string title)

@@ -56,7 +56,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         var embed = await this.WaitForLogAsync($"Message edited in #{this.Channel.Name}");
         Field(embed, "Channel").ShouldBe(this.Channel.Mention);
         Field(embed, "Message Id").ShouldBe(messageId.ToString());
-        Field(embed, "Author").ShouldBe(this.Guild.User1.MemberMention);
+        Field(embed, "Author").ShouldBe(this.Guild.User1.Mention);
         Field(embed, "Before").ShouldBe("before");
         Field(embed, "After").ShouldBe("after");
         (await this.HistoryOfAsync<MessageEditedEntry>(messageId)).ShouldHaveSingleItem().Content.ToString().ShouldBe("after");
@@ -101,7 +101,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         this._bot.DeleteMessage(messageId, this.Channel);
 
         var embed = await this.WaitForLogAsync($"Message deleted in #{this.Channel.Name}");
-        Field(embed, "Author").ShouldBe(this.Guild.User1.MemberMention);
+        Field(embed, "Author").ShouldBe(this.Guild.User1.Mention);
         Field(embed, "**Content**").ShouldBe("say goodbye");
         embed["fields"]!.AsArray().Select(f => f!["name"]!.GetValue<string>()).ShouldNotContain("Deleted By");
         (await this.HistoryOfAsync<MessageDeletedEntry>(messageId)).ShouldHaveSingleItem();
@@ -280,6 +280,55 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         (await this.HistoryOfAsync<MessageDeletedEntry>(messageId)).ShouldBeEmpty();
     }
 
+    /// <summary>L-3: after a restart the message isn't cached, but the stored author is enough for the mention.</summary>
+    [Fact]
+    public async Task Delete_OfAnUncachedMessage_StillNamesTheAuthor()
+    {
+        const ulong oldMessage = 1_100_000_000_000_008_020;
+        await using (var seed = this._database.CreateDbContext())
+        {
+            seed.Messages.Add(new Message
+            {
+                Id = new MessageId(oldMessage),
+                UserId = new UserId(this.Guild.User1.Id),
+                GuildId = new GuildId(this.Guild.Id),
+                ChannelId = new ChannelId(this.Channel.Id),
+                CreatedTimestamp = DateTimeOffset.UtcNow.AddDays(-3)
+            });
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        this._bot.DeleteMessage(oldMessage, this.Channel);
+
+        Field(await this.WaitForLogAsync($"Message deleted in #{this.Channel.Name}"), "Author").ShouldBe(this.Guild.User1.Mention);
+    }
+
+    /// <summary>
+    ///     L-5: Discord caps a message's embeds at 6,000 characters together, so a long edit goes out as two posts,
+    ///     one with Before and one with After.
+    /// </summary>
+    [Fact]
+    public async Task Edit_ThatIsLong_SendsBeforeAndAfterInSeparatePosts()
+    {
+        var before = string.Join(' ', Enumerable.Repeat("before", 430));
+        var after = string.Join(' ', Enumerable.Repeat("after!", 430));
+        var messageId = await this.SendLoggedAsync(before);
+
+        this._bot.EditMessage(messageId, this.Guild.User1, this.Channel, after);
+
+        var posts = await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this._bot.Rest.Requests
+                .Where(this._bot.IsModLogPost)
+                .Select(request => request.Json!["embeds"]![0]!)
+                .Where(embed => embed["author"]?["name"]?.GetValue<string>() == $"Message edited in #{this.Channel.Name}")
+                .ToList()),
+            found => found.Count >= 2);
+        posts.Count.ShouldBe(2);
+        FieldNames(posts[0]).ShouldContain("Before");
+        FieldNames(posts[0]).ShouldNotContain("After");
+        FieldNames(posts[1]).ShouldContain("After");
+        FieldNames(posts[1]).ShouldNotContain("Before");
+    }
+
     private async Task<ulong> SendLoggedAsync(string content)
     {
         var messageId = this._bot.SendMessage(this.Guild.User1, this.Channel, content);
@@ -305,6 +354,9 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         return await dbContext.MessageHistory.OfType<T>().Where(entry => entry.MessageId == new MessageId(messageId))
             .ToListAsync(TestContext.Current.CancellationToken);
     }
+
+    private static string[] FieldNames(JsonNode embed)
+        => [.. embed["fields"]!.AsArray().Select(field => field!["name"]!.GetValue<string>())];
 
     private static string Field(JsonNode embed, string name)
         => embed["fields"]!.AsArray().Single(field => field!["name"]!.GetValue<string>() == name)!["value"]!.GetValue<string>();

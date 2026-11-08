@@ -90,24 +90,15 @@ public sealed class UpdateMessageEvent(
             .WithColor(GrimoireColor.Yellow)
             .WithThumbnail(avatarUrl);
 
-        if (message.OriginalUserId is not null)
-        {
-            var user = await sender.GetUserOrDefaultAsync(message.OriginalUserId);
-            if (user is not null)
-                embed.AddField("Original Author", user.Mention, true);
-            embed.AddField("System Id",
-                    string.IsNullOrWhiteSpace(message.SystemId?.Value) ? "Private" : message.SystemId.Value.Value, true)
-                .AddField("Member Id",
-                    string.IsNullOrWhiteSpace(message.MemberId?.Value) ? "Private" : message.MemberId.Value.Value, true);
-        }
-        else
-            embed.AddField("Author", args.Author.Mention, true);
+        embed.AddMessageAuthorFields(message.UserId, message.OriginalUserId, message.SystemId, message.MemberId);
 
+        // Discord caps a message's embeds at 6,000 characters together, so a long edit sends Before and After
+        // separately. The copy is taken first, so it carries only one of them.
         List<DiscordEmbedBuilder> embeds = message.Content.ToString()?.Length + args.Message.Content.Length >= 5000
             ?
             [
-                embed.AddMessageTextToFields("Before", message.Content.ToString()),
-                new DiscordEmbedBuilder(embed).AddMessageTextToFields("After", args.Message.Content)
+                new DiscordEmbedBuilder(embed).AddMessageTextToFields("Before", message.Content.ToString()),
+                embed.AddMessageTextToFields("After", args.Message.Content)
             ]
             :
             [

@@ -31,12 +31,13 @@ public sealed class UpdatedUsernameEvent(
             .Where(member => member.UserId == args.MemberAfter.GetUserId())
             .Where(usernameHistory => usernameHistory.Timestamp < DateTime.UtcNow.AddSeconds(-2))
             .OrderByDescending(x => x.Timestamp)
-            .Select(member => member.Username)
+            .Select(member => (Username?)member.Username)
             .FirstOrDefaultAsync();
 
         var after = Username.FromDatabase(args.UsernameAfter);
 
-        if (currentUsername.Equals(after, StringComparison.CurrentCultureIgnoreCase))
+        // No row yet means MemberAdded hasn't stored the first one, and there is nothing to compare against.
+        if (currentUsername is not { } before || before.Equals(after, StringComparison.CurrentCultureIgnoreCase))
             return;
 
         await dbContext.UsernameHistory.AddAsync(
@@ -53,14 +54,8 @@ public sealed class UpdatedUsernameEvent(
             Embed = new DiscordEmbedBuilder()
                 .WithAuthor("Username Updated")
                 .AddField("User", args.MemberAfter.Mention)
-                .AddField("Before",
-                    string.IsNullOrWhiteSpace(currentUsername.Value)
-                        ? "`Unknown`"
-                        : currentUsername.Value, true)
-                .AddField("After",
-                    string.IsNullOrWhiteSpace(args.UsernameAfter)
-                        ? "`Unknown`"
-                        : args.UsernameAfter, true)
+                .AddField("Before", before.Value, true)
+                .AddField("After", after.Value, true)
                 .WithThumbnail(args.MemberAfter.GetAvatarUrl(MediaFormat.Auto))
                 .WithTimestamp(DateTimeOffset.UtcNow)
                 .WithColor(GrimoireColor.Mint)

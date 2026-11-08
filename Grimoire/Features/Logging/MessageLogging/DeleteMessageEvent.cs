@@ -161,20 +161,7 @@ public sealed partial class DeleteMessageEvent(
         if (avatarUrl is not null)
             embed.WithThumbnail(avatarUrl);
 
-        if (response.OriginalUserId is null && args.Message.Author is not null)
-            embed.AddField("Author", args.Message.Author.Mention, true);
-        else if (response.OriginalUserId is not null)
-        {
-            var user = await sender.GetUserOrDefaultAsync(response.OriginalUserId.Value);
-            if (user is not null)
-                embed.AddField("Original Author", user.Mention, true);
-            embed.AddField("System Id",
-                    string.IsNullOrWhiteSpace(response.SystemId?.Value) ? "Private" : response.SystemId.Value.Value,
-                    true)
-                .AddField("Member Id",
-                    string.IsNullOrWhiteSpace(response.MemberId?.Value) ? "Private" : response.MemberId.Value.Value,
-                    true);
-        }
+        embed.AddMessageAuthorFields(response.UserId, response.OriginalUserId, response.SystemId, response.MemberId);
 
         if (auditLogEntry?.UserResponsible is not null)
             embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);

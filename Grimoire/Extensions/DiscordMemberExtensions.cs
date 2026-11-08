@@ -20,8 +20,12 @@ public static class DiscordMemberExtensions
         [Pure]
         public Nickname? GetNickname() => Nickname.CreateIfNotEmpty(member.Nickname);
 
+        /// <summary>
+        ///     The avatar shown in this guild: the guild avatar if the member set one, else the global one. Avatars are
+        ///     stored per guild, and every writer stores this one form, so comparing them finds only real changes.
+        /// </summary>
         [Pure]
-        public AvatarFileName GetAvatarFileName() => AvatarFileName.FromDatabase(member.AvatarUrl);
+        public AvatarFileName GetAvatarFileName() => AvatarFileName.FromDatabase(member.DisplayAvatarUrl);
 
         [Pure]
         public AvatarFileName? GetAvatarFileName(MediaFormat mediaFormat, ushort imageSize = 1024)

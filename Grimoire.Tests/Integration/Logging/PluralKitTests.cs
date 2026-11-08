@@ -90,7 +90,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
         this._bot.DeleteMessage(messageId, this.Channel);
 
         Field(await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == $"Message deleted in #{this.Channel.Name}"),
-            "Author").ShouldBe(this.Guild.User1.MemberMention);
+            "Author").ShouldBe(this.Guild.User1.Mention);
         (await this.LinksAsync()).ShouldBeEmpty();
     }
 
