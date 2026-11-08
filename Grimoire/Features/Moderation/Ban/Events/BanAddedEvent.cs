@@ -65,25 +65,10 @@ public partial class BanAddedEvent(
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForBan(actor, args.Member.GetUserId(), args.Guild.GetGuildId(), now)
-            .Match(
-                s => string.IsNullOrWhiteSpace(reason)
-                    ? s
-                    : s with
-                    {
-                        ReasonHistory =
-                        [
-                            new SinReasonHistory
-                            {
-                                SinId = default,
-                                Reason = ModerationReason.Create(reason)
-                                    .Match(r => r, _ => throw new UnreachableException()),
-                                Actor = actor,
-                                SetAt = now
-                            }
-                        ]
-                    },
-                _ => throw new UnreachableException());
+        // An unusable reason, such as one over 1000 characters from the audit log, is left out, not a lost ban.
+        var sin = Sin.ForBan(actor, args.Member.GetUserId(), args.Guild.GetGuildId(), now,
+                ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null))
+            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
         return sin.Id;

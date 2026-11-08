@@ -34,23 +34,25 @@ public sealed record Sin
     public ICollection<SinReasonHistory> ReasonHistory { get; init; } = [];
 
     public static Validation<Sin> ForWarn(
-        ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt)
-        => Create(SinType.Warn, actor, userId, guildId, occurredAt);
+        ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt, ModerationReason? reason = null)
+        => Create(SinType.Warn, actor, userId, guildId, occurredAt, reason);
 
     public static Validation<Sin> ForMute(
-        ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt)
-        => Create(SinType.Mute, actor, userId, guildId, occurredAt);
+        ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt, ModerationReason? reason = null)
+        => Create(SinType.Mute, actor, userId, guildId, occurredAt, reason);
 
     public static Validation<Sin> ForBan(
-        ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt)
-        => Create(SinType.Ban, actor, userId, guildId, occurredAt);
+        ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt, ModerationReason? reason = null)
+        => Create(SinType.Ban, actor, userId, guildId, occurredAt, reason);
 
     public static Validation<Sin> ForKick(
-        ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt)
-        => Create(SinType.Kick, actor, userId, guildId, occurredAt);
+        ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt, ModerationReason? reason = null)
+        => Create(SinType.Kick, actor, userId, guildId, occurredAt, reason);
 
+    /// <param name="reason">The reason it starts with, if any, recorded as given by <paramref name="actor" />.</param>
     private static Validation<Sin> Create(
-        SinType type, ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt)
+        SinType type, ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt,
+        ModerationReason? reason)
     {
         if (userId.Value == 0)
             return Validation<Sin>.Fail(
@@ -67,7 +69,11 @@ public sealed record Sin
             SinType = type,
             UserId = userId,
             GuildId = guildId,
-            SinOn = occurredAt
+            SinOn = occurredAt,
+            // The sin's id is assigned on save; EF sets the history's from the navigation.
+            ReasonHistory = reason is { } given
+                ? [new SinReasonHistory { SinId = default, Reason = given, Actor = actor, SetAt = occurredAt }]
+                : []
         });
     }
 }

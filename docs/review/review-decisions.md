@@ -40,13 +40,13 @@ note says otherwise.
 | 19 | I-6, I-7, I-16 | **Done** 2026-11-07, uncommitted | Images are buffered at event time, so retries re-upload them (DSharpPlus builders aren't disposable). Only the first embed carries text. 10 MiB per-file cap; a per-message total wasn't checked against real Discord |
 | 20 | L-7, L-8, L-9, rest of L-12 | **Done** 2026-11-07, uncommitted | New `SettingsModule.IsLogChannelSet`; the audit log parser takes the stored author and has no database access now |
 | 21 | I-8, I-9, I-10, I-11, R-1 | **Done** 2026-11-08, uncommitted | R-1 has its own issue, `LogChannelMissing`. The publisher reports without awaiting, so it can't block on its own full queue |
-| 21 | I-12, I-17, M-7, M-8, M-9 | **Done** 2026-11-08 except M-7, uncommitted | M-7 goes with D-2 (rank 23). `/Diagnostics` still doesn't check Manage Messages for thread locks |
+| 21 | I-12, I-17, M-7, M-8, M-9 | **Done** 2026-11-08 (M-7 at rank 23) | M-7 goes with D-2 (rank 23). `/Diagnostics` still doesn't check Manage Messages for thread locks |
 | 21 | M-10, L-11 | **Done** 2026-11-08, uncommitted | Durations capped at 36,500. Log channels need Embed Links (and Attach Files for delete, bulk delete and avatar logs) and must hold messages. No test for the `/SinLog` order or the `InviteService` race, which the harness can't make happen |
 | 21 | L-10 | **Done** 2026-11-08, uncommitted | The trim runs on the first tick, then daily. The message purge still runs every tick |
 | 21 | X-7, X-8, X-9, X-10 | **Done** 2026-11-08, uncommitted | X-9: accept that levels drop slightly in guilds with `Base × Modifier` ≤ 15. The shortcut is replaced by an exact binary search, not a plain loop, so a huge XP total can't freeze the bot (the reason the shortcut existed). Long View lists are paged, not cut off: `/Rewards View`, `/Ignore View`, `/Mutes View`, `/SpamFilter View` and `/Log Message ViewOverrides` use `ctx.ReplyPagedAsync` |
 | 21 | C-4, C-5, C-8 | **Done** 2026-11-08, uncommitted | C-8: every bullet. An `embed_color` without `embed` is refused. No test for the Revert numbering or the autocomplete cap: the harness can't drive autocomplete |
 | 22 | D-1, S-7, D-6 (and S-1) | **Done** 2026-11-08, uncommitted | S-1 done here: level settings are trusted on read. D-6: one public non-validating `Create(string)` for `Username`, `AvatarFileName`, `InviteCode`, `InviteUrl` and `AttachmentUrl` (owner's call, replacing `FromDatabase` plus `FromDiscord`); `InternalsVisibleTo` for `Grimoire` dropped. `AttachmentFileName` renamed `AttachmentUrl`, with the property and column; migration `RenameAttachmentFileNameToAttachmentUrl` |
-| 23 | D-2, M-7 | Do | |
+| 23 | D-2, M-7 | **Done** 2026-11-08, uncommitted | `Sin.ForX` take an optional `ModerationReason?`; new `ModerationReason.CreateIfNotBlank` for optional reasons. Each caller keeps one throw, for ids that can't be zero |
 | 24 | P-4, P-6 | Do | |
 | 25 | D-3, D-4, D-9, S-9, S-11, I-14, L-13, M-12 | Do | |
 | 26 | S-5, S-6, S-10, X-13, I-13, guild ruling | Do | |

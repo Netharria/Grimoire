@@ -53,25 +53,8 @@ internal sealed class KickUser(
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForKick(actor, member.GetUserId(), guild.GetGuildId(), now)
-            .Match(
-                s => string.IsNullOrWhiteSpace(reason)
-                    ? s
-                    : s with
-                    {
-                        ReasonHistory =
-                        [
-                            new SinReasonHistory
-                            {
-                                SinId = default,
-                                Reason = ModerationReason.Create(reason)
-                                    .Match(r => r, _ => throw new UnreachableException()),
-                                Actor = actor,
-                                SetAt = now
-                            }
-                        ]
-                    },
-                _ => throw new UnreachableException());
+        var sin = Sin.ForKick(actor, member.GetUserId(), guild.GetGuildId(), now, ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null))
+            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
 
         // Once they're gone the bot usually can't reach them, so the DM goes first.
         await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()

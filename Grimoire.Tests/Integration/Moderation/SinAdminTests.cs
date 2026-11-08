@@ -280,6 +280,20 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
             SlashOption.Integer("sin_id", sinId.Value), SlashOption.String("reason", reason));
 
     /// <summary>Seeds a warn and, unless told not to, a username newer than the startup sync's.</summary>
+    /// <summary>M-7: a blank reason is refused. It used to reach an UnreachableException.</summary>
+    [Fact]
+    public async Task Reason_WithABlankReason_IsRefused()
+    {
+        var sin = await this.SeedWarnAsync(this.Guild.User1);
+
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("reason", this.Guild.Moderator,
+            SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "   "));
+
+        reply.Description.ShouldBe("The reason can't be empty.");
+        await using var dbContext = this._database.CreateDbContext();
+        (await dbContext.SinReasonHistory.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+    }
+
     private async Task<Sin> SeedWarnAsync(FakeUser user, GuildId? guildId = null, bool withUsername = true)
     {
         var sin = Sin.ForWarn(new ModerationActor.Moderator(new ModeratorId(this.Guild.Admin.Id)), new UserId(user.Id),

@@ -118,4 +118,27 @@ public sealed class SinTests
         sin.PublishMessages.ShouldBeEmpty();
         sin.ReasonHistory.ShouldBeEmpty();
     }
+
+    // ── Reason (D-2) ──────────────────────────────────────────────────────────
+
+    /// <summary>D-2: a sin given a reason starts its history with it, set by the same actor at the same time.</summary>
+    [Fact]
+    public void ForBan_WithAReason_StartsTheHistoryWithIt()
+    {
+        var reason = ModerationReason.Create("spam").ShouldSucceed();
+
+        var history = Sin.ForBan(_moderator, _userId, _guildId, _now, reason).ShouldSucceed().ReasonHistory.ShouldHaveSingleItem();
+
+        (history.Reason, history.Actor, history.SetAt).ShouldBe((reason, (ModerationActor)_moderator, _now));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    public void CreateIfNotBlank_TreatsNothingOrWhitespaceAsNoReason(string? input)
+        => ModerationReason.CreateIfNotBlank(input).ShouldSucceed().ShouldBeNull();
+
+    [Fact]
+    public void CreateIfNotBlank_KeepsARealReason_Trimmed()
+        => ModerationReason.CreateIfNotBlank("  rude  ").ShouldSucceed().ShouldBe(ModerationReason.Create("rude").ShouldSucceed());
 }

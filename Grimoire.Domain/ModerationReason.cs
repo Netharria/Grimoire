@@ -23,6 +23,12 @@ public readonly record struct ModerationReason
             ? Validation<ModerationReason?>.Succeed(null)
             : Create(input).Map(r => (ModerationReason?)r);
 
+    /// <summary>For an optional reason: none given, or only whitespace, means no reason.</summary>
+    public static Validation<ModerationReason?> CreateIfNotBlank(string? input)
+        => string.IsNullOrWhiteSpace(input)
+            ? Validation<ModerationReason?>.Succeed(null)
+            : Create(input).Map(r => (ModerationReason?)r);
+
     public static Validation<ModerationReason> Create(string input)
     {
         var trimmed = input.Trim();

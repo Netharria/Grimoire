@@ -56,23 +56,9 @@ internal sealed class SpamEvents(
         var duration = TimeSpan.FromMinutes(Math.Pow(2, muteCount));
         var muteEndTime = DateTimeOffset.UtcNow.Add(duration);
         var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForMute(new ModerationActor.System(), member.GetUserId(), args.Guild.GetGuildId(), now)
-            .Match(
-                s => s with
-                {
-                    ReasonHistory =
-                    [
-                        new SinReasonHistory
-                        {
-                            SinId = default,
-                            Reason = ModerationReason.Create(checkSpamResult.Reason)
-                                .Match(r => r, _ => throw new UnreachableException()),
-                            Actor = new ModerationActor.System(),
-                            SetAt = now
-                        }
-                    ]
-                },
-                _ => throw new UnreachableException());
+        var sin = Sin.ForMute(new ModerationActor.System(), member.GetUserId(), args.Guild.GetGuildId(), now,
+                ModerationReason.CreateIfNotBlank(checkSpamResult.Reason).Match(r => r, _ => null))
+            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
 

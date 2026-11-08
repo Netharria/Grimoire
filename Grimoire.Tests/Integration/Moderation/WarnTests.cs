@@ -272,4 +272,19 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
     private static string Field(JsonNode embed, string name)
         => embed["fields"]!.AsArray()
             .Single(field => field!["name"]!.GetValue<string>() == name)!["value"]!.GetValue<string>();
+
+    /// <summary>
+    ///     M-7: a blank reason is refused before anything is saved. It used to save the sin, then throw, leaving no
+    ///     reply and no log.
+    /// </summary>
+    [Fact]
+    public async Task Warn_WithABlankReason_IsRefused_AndRecordsNothing()
+    {
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("Warn", this.Guild.Moderator,
+            SlashOption.User("user", this.Guild.User1), SlashOption.String("reason", "   "));
+
+        reply.Description.ShouldBe("The reason can't be empty.");
+        await using var dbContext = this._database.CreateDbContext();
+        (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+    }
 }

@@ -33,6 +33,13 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
 
         var guild = ctx.Guild!;
 
+        // M-7: a blank reason used to reach an UnreachableException.
+        if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var validReason))
+        {
+            await ctx.SendErrorResponseAsync("The reason can't be empty.");
+            return;
+        }
+
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var sinner = await dbContext.Sins
             .Where(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId())
@@ -50,7 +57,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
         dbContext.SinReasonHistory.Add(new SinReasonHistory
         {
             SinId = sinId,
-            Reason = ModerationReason.Create(reason).Match(r => r, _ => throw new UnreachableException()),
+            Reason = validReason,
             Actor = new ModerationActor.Moderator(ctx.GetModeratorId()),
             SetAt = DateTimeOffset.UtcNow
         });

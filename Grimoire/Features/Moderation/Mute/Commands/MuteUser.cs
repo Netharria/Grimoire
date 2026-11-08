@@ -91,25 +91,8 @@ public sealed partial class MuteUser(
 
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForMute(actor, member.GetUserId(), guild.GetGuildId(), now)
-            .Match(
-                s => string.IsNullOrWhiteSpace(reason)
-                    ? s
-                    : s with
-                    {
-                        ReasonHistory =
-                        [
-                            new SinReasonHistory
-                            {
-                                SinId = default,
-                                Reason = ModerationReason.Create(reason)
-                                    .Match(r => r, _ => throw new UnreachableException()),
-                                Actor = actor,
-                                SetAt = now
-                            }
-                        ]
-                    },
-                _ => throw new UnreachableException());
+        var sin = Sin.ForMute(actor, member.GetUserId(), guild.GetGuildId(), now, ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null))
+            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
 
         if (!await this.TryRecordMuteAsync(sin, member, ctx.GetModeratorId(), muteEndTime, muteId))
         {

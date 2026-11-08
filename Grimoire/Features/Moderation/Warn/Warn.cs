@@ -38,28 +38,18 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
             return;
         }
 
+        // M-7: a blank reason used to save the sin and then throw, leaving no reply and no log.
+        if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var validReason))
+        {
+            await ctx.SendErrorResponseAsync("The reason can't be empty.");
+            return;
+        }
+
         await using var dbcontext = await this._dbContextFactory.CreateDbContextAsync();
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForWarn(actor, user.GetUserId(), guild.GetGuildId(), now)
-            .Match(
-                s => string.IsNullOrWhiteSpace(reason)
-                    ? s
-                    : s with
-                    {
-                        ReasonHistory =
-                        [
-                            new SinReasonHistory
-                            {
-                                SinId = default,
-                                Reason = ModerationReason.Create(reason)
-                                    .Match(r => r, _ => throw new UnreachableException()),
-                                Actor = actor,
-                                SetAt = now
-                            }
-                        ]
-                    },
-                _ => throw new UnreachableException());
+        var sin = Sin.ForWarn(actor, user.GetUserId(), guild.GetGuildId(), now, validReason)
+            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
         dbcontext.Sins.Add(sin);
         await dbcontext.SaveChangesAsync();
         var embed = new DiscordEmbedBuilder()
@@ -67,7 +57,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
             .AddField("User", user.Mention, true)
             .AddField("Sin Id", $"**{sin.Id}**", true)
             .AddField("Moderator", ctx.User.Mention, true)
-            .AddField("Reason", reason)
+            .AddField("Reason", validReason.Value)
             .WithColor(GrimoireColor.Yellow)
             .WithTimestamp(DateTimeOffset.UtcNow);
 
@@ -76,7 +66,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         if (await guild.GetMemberOrDefaultAsync(user.GetUserId()) is { } member)
             await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
                 .WithAuthor($"Warning Id {sin.Id}")
-                .WithDescription($"You have been warned by {ctx.User.Mention} for {reason}")
+                .WithDescription($"You have been warned by {ctx.User.Mention} for {validReason}")
                 .WithColor(GrimoireColor.Yellow), "warn");
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
