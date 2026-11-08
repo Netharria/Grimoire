@@ -27,11 +27,9 @@ internal sealed class XpTrackedItemsConfiguration : IEntityTypeConfiguration<XpT
 
         builder.Property(e => e.GuildId)
             .ValueGeneratedNever()
-            .HasConversion(e => e.Value, value => new GuildId(value))
             .IsRequired();
 
-        builder.Property(e => e.SetBy)
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
+        builder.Property(e => e.SetBy);
 
         builder.Ignore("ChannelId");
         builder.Ignore("RoleId");

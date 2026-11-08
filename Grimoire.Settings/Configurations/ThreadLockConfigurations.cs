@@ -34,12 +34,9 @@ internal sealed class ThreadLockConfigurations : IEntityTypeConfiguration<Thread
                 v => v == null ? null : ModerationReason.FromDatabase(v))
             .HasMaxLength(1000);
 
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-        builder.Property(e => e.ChannelId)
-            .HasConversion(e => e.Value, value => new ChannelId(value));
-        builder.Property(e => e.ModeratorId)
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
+        builder.Property(e => e.GuildId);
+        builder.Property(e => e.ChannelId);
+        builder.Property(e => e.ModeratorId);
     }
 
     public void Configure(EntityTypeBuilder<ThreadLocked> builder) => builder.HasIndex(x => x.EndTime);

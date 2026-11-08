@@ -22,18 +22,5 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.Property(e => e.CreatedTimestamp)
             .HasDefaultValueSql("now()");
         builder.HasIndex(x => x.CreatedTimestamp);
-
-        builder.Property(e => e.UserId)
-            .HasConversion(e => e.Value, value => new UserId(value));
-
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-
-        builder.Property(e => e.Id)
-            .HasConversion(e => e.Value, value => new MessageId(value));
-        builder.Property(e => e.ChannelId)
-            .HasConversion(e => e.Value, value => new ChannelId(value));
-        builder.Property(e => e.ReferencedMessageId)
-            .HasConversion(e => e.GetValueOrDefault().Value, value => new MessageId(value));
     }
 }

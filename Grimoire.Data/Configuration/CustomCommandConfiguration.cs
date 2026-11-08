@@ -29,12 +29,6 @@ internal sealed class CustomCommandConfiguration : IEntityTypeConfiguration<Cust
                 value => CustomCommandContent.FromDatabase(value))
             .IsRequired();
 
-        builder.Property(e => e.GuildId)
-            .HasConversion(guildId => guildId.Value, id => new GuildId(id));
-
-        builder.Property(e => e.ModeratorId)
-            .HasConversion(e => e.GetValueOrDefault().Value, value => new ModeratorId(value));
-
         builder.HasIndex(e => new { e.GuildId, e.Name });
 
         builder.HasDiscriminator<string>("CommandType")

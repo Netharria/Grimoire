@@ -47,7 +47,7 @@ note says otherwise.
 | 21 | C-4, C-5, C-8 | **Done** 2026-11-08, uncommitted | C-8: every bullet. An `embed_color` without `embed` is refused. No test for the Revert numbering or the autocomplete cap: the harness can't drive autocomplete |
 | 22 | D-1, S-7, D-6 (and S-1) | **Done** 2026-11-08, uncommitted | S-1 done here: level settings are trusted on read. D-6: one public non-validating `Create(string)` for `Username`, `AvatarFileName`, `InviteCode`, `InviteUrl` and `AttachmentUrl` (owner's call, replacing `FromDatabase` plus `FromDiscord`); `InternalsVisibleTo` for `Grimoire` dropped. `AttachmentFileName` renamed `AttachmentUrl`, with the property and column; migration `RenameAttachmentFileNameToAttachmentUrl` |
 | 23 | D-2, M-7 | **Done** 2026-11-08, uncommitted | `Sin.ForX` take an optional `ModerationReason?`; new `ModerationReason.CreateIfNotBlank` for optional reasons. Each caller keeps one throw, for ids that can't be zero |
-| 24 | P-4, P-6 | Do | |
+| 24 | P-4, P-6 | **Done** 2026-11-08, uncommitted | Both contexts: one `ConfigureStronglyTypedIds` convention (a linked file shared by `Grimoire.Data` and `Grimoire.Settings`); EF reports no model change in either. Get-only settings properties keep a bare `Property(...)` so they stay mapped. One `ModerationActorConverter` |
 | 25 | D-3, D-4, D-9, S-9, S-11, I-14, L-13, M-12 | Do | |
 | 26 | S-5, S-6, S-10, X-13, I-13, guild ruling | Do | |
 | 27 | C-6, C-9, D-5, D-8 | Do | |

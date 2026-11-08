@@ -24,12 +24,9 @@ internal sealed class RewardConfiguration : IEntityTypeConfiguration<Reward>
             .HasValue<RewardRemoved>("Removed")
             .IsComplete();
 
-        builder.Property(e => e.SetBy)
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-        builder.Property(e => e.RoleId)
-            .HasConversion(e => e.Value, value => new RoleId(value));
+        builder.Property(e => e.SetBy);
+        builder.Property(e => e.GuildId);
+        builder.Property(e => e.RoleId);
         builder.HasIndex(x => new { x.GuildId, x.RoleId, x.SetAt })
             .IsDescending(false, false, true);
     }

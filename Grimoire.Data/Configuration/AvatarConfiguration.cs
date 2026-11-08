@@ -20,11 +20,6 @@ internal sealed class AvatarConfiguration : IEntityTypeConfiguration<Avatar>
                 avatarFileName => avatarFileName.ToString(),
                 value => AvatarFileName.Create(value))
             .IsRequired();
-        builder.Property(e => e.UserId)
-            .HasConversion(e => e.Value, value => new UserId(value));
-
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
 
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");

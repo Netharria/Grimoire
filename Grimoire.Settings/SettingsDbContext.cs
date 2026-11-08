@@ -8,6 +8,7 @@
 using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore;
 
+using Grimoire.Data.Conventions;
 namespace Grimoire.Settings;
 
 public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> options) : DbContext(options)
@@ -21,6 +22,9 @@ public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> option
     internal DbSet<Reward> Rewards { get; init; }
     internal DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; }
     internal DbSet<DiagnosticsIgnoredItem> DiagnosticsIgnoredItems { get; init; }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        => configurationBuilder.ConfigureStronglyTypedIds();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

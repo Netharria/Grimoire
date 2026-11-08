@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Data.Conventions;
 using Grimoire.Domain.Obsolete;
 #pragma warning disable CS0618 // Type or member is obsolete
 using Lock = Grimoire.Domain.Obsolete.Lock;
@@ -123,6 +124,9 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
     public DbSet<UsernameHistory> UsernameHistory { get; init; }
 
     public DbSet<XpHistoryEntry> XpHistory { get; init; }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        => configurationBuilder.ConfigureStronglyTypedIds();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(GrimoireDbContext).Assembly)

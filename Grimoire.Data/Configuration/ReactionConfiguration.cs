@@ -16,12 +16,6 @@ internal sealed class ReactionConfiguration : IEntityTypeConfiguration<Reaction>
     {
         builder.HasKey(e => new { e.MessageId, e.UserId, e.Emoji });
 
-        builder.Property(e => e.MessageId)
-            .HasConversion(id => id.Value, value => new MessageId(value));
-        builder.Property(e => e.UserId)
-            .HasConversion(id => id.Value, value => new UserId(value));
-        builder.Property(e => e.GuildId)
-            .HasConversion(id => id.Value, value => new GuildId(value));
         builder.Property(e => e.Emoji)
             .HasConversion(emoji => emoji.ToString(), value => ReactionEmoji.ParseFromDatabase(value))
             .HasMaxLength(ReactionEmoji.MaxLength)

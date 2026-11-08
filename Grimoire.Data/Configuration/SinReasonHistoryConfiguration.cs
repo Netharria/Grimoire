@@ -6,8 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using Grimoire.Data.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Grimoire.Configuration;
 
@@ -32,20 +32,8 @@ internal sealed class SinReasonHistoryConfiguration : IEntityTypeConfiguration<S
             .HasMaxLength(1000)
             .IsRequired();
 
-        builder.Property(e => e.SinId)
-            .HasConversion(e => e.Value, value => new SinId(value));
-
-        var actorConverter = new ValueConverter<ModerationActor, decimal?>(
-            actor => actor as ModerationActor.Moderator != null
-                ? ((ModerationActor.Moderator)actor).Id.Value
-                : null,
-            value => value.HasValue
-                ? new ModerationActor.Moderator(new ModeratorId((ulong)value.Value))
-                : new ModerationActor.System(),
-            convertsNulls: true);
-
         builder.Property(e => e.Actor)
-            .HasConversion(actorConverter)
+            .HasConversion<ModerationActorConverter>()
             .HasColumnName("ModeratorId")
             .HasColumnType("numeric(20,0)")
             .IsRequired(false);

@@ -27,24 +27,17 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>, IEntit
         builder.HasIndex(e => new { e.UserId, e.GuildId, e.SetAt })
             .IsDescending(false, false, true);
 
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-        builder.Property(e => e.UserId)
-            .HasConversion(e => e.Value, value => new UserId(value));
-        builder.Property(e => e.ModeratorId)
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
+        builder.Property(e => e.GuildId);
+        builder.Property(e => e.UserId);
+        builder.Property(e => e.ModeratorId);
     }
 
     public void Configure(EntityTypeBuilder<MuteAdded> builder)
     {
         builder.HasIndex(x => x.EndTime);
 
-        builder.Property(e => e.SinId)
-            .HasConversion(e => e.Value, value => new SinId(value));
+        builder.Property(e => e.SinId);
 
-        builder.Property(e => e.MuteRoleId)
-            .HasConversion(
-                e => e.HasValue ? e.Value.Value : (ulong?)null,
-                value => value.HasValue ? new RoleId(value.Value) : null);
+        builder.Property(e => e.MuteRoleId);
     }
 }

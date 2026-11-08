@@ -30,12 +30,9 @@ internal sealed class GuildSettingConfiguration : IEntityTypeConfiguration<Guild
         builder.HasIndex(x => new { x.GuildId, Key = x.Type, x.SetAt })
             .IsDescending(false, false, true);
 
-        builder.Property(guildSetting => guildSetting.GuildId)
-            .HasConversion(guildSetting => guildSetting.Value,
-                value => new GuildId(value));
+        builder.Property(guildSetting => guildSetting.GuildId);
 
-        builder.Property(e => e.SetBy)
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
+        builder.Property(e => e.SetBy);
 
         builder.Property(e => e.Type)
             .HasConversion<string>()

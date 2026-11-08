@@ -20,13 +20,6 @@ internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<Ni
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
 
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-
-        builder.Property(e => e.UserId)
-            .HasConversion(e => e.Value, value => new UserId(value));
-
-
         builder.Property(e => e.Nickname)
             .HasConversion(e => e.GetValueOrDefault().Value, value => Nickname.FromDatabase(value));
     }

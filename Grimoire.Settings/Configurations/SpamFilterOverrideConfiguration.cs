@@ -22,12 +22,9 @@ internal sealed class SpamFilterOverrideConfiguration : IEntityTypeConfiguration
             .HasConversion<string>()
             .HasMaxLength(16)
             .IsRequired();
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-        builder.Property(e => e.ChannelId)
-            .HasConversion(e => e.Value, value => new ChannelId(value));
-        builder.Property(e => e.SetBy)
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
+        builder.Property(e => e.GuildId);
+        builder.Property(e => e.ChannelId);
+        builder.Property(e => e.SetBy);
 
         builder.HasIndex(x => new { x.ChannelId, x.GuildId, x.SetAt })
             .IsDescending(false, false, true);

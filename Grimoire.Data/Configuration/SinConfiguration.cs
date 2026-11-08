@@ -6,8 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using Grimoire.Data.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Grimoire.Configuration;
 
@@ -35,29 +35,10 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
         builder.HasIndex(sin => new { sin.Id, sin.GuildId })
             .HasDatabaseName("IX_Sin_Id_GuildId");
 
-        // The provider type is decimal? rather than ulong? because EF's own ulong-to-decimal step can't take a null, and
-        // convertsNulls is what lets a null column come back as a System actor.
-        var actorConverter = new ValueConverter<ModerationActor, decimal?>(
-            actor => actor as ModerationActor.Moderator != null
-                ? ((ModerationActor.Moderator)actor).Id.Value
-                : null,
-            value => value.HasValue
-                ? new ModerationActor.Moderator(new ModeratorId((ulong)value.Value))
-                : new ModerationActor.System(),
-            convertsNulls: true);
-
         builder.Property(e => e.Actor)
-            .HasConversion(actorConverter)
+            .HasConversion<ModerationActorConverter>()
             .HasColumnName("ModeratorId")
             .HasColumnType("numeric(20,0)")
             .IsRequired(false);
-
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-
-        builder.Property(e => e.Id)
-            .HasConversion(e => e.Value, value => new SinId(value));
-        builder.Property(e => e.UserId)
-            .HasConversion(e => e.Value, value => new UserId(value));
     }
 }

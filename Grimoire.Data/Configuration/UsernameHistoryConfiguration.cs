@@ -22,10 +22,6 @@ internal sealed class UsernameHistoryConfiguration : IEntityTypeConfiguration<Us
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
 
-
-        builder.Property(e => e.UserId)
-            .HasConversion(e => e.Value, value => new UserId(value));
-
         builder.Property(e => e.Username)
             .HasConversion(e => e.Value, value => Username.Create(value));
     }

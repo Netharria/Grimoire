@@ -15,11 +15,5 @@ public class LeaderboardViewConfiguration : IEntityTypeConfiguration<Leaderboard
     {
         builder.ToView("leaderboard_view")
             .HasNoKey();
-
-        builder.Property(e => e.UserId)
-            .HasConversion(e => e.Value, value => new UserId(value));
-
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
     }
 }

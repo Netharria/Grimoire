@@ -31,12 +31,6 @@ internal sealed class MessageHistoryConfiguration : IEntityTypeConfiguration<Mes
 
         builder.Property(e => e.Timestamp)
             .HasColumnName("TimeStamp");
-
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-
-        builder.Property(e => e.MessageId)
-            .HasConversion(e => e.Value, value => new MessageId(value));
     }
 }
 
@@ -45,6 +39,5 @@ internal sealed class MessageDeletedByModeratorEntryConfiguration : IEntityTypeC
 {
     public void Configure(EntityTypeBuilder<MessageDeletedByModeratorEntry> builder)
         => builder.Property(e => e.ModeratorId)
-            .HasColumnName("ModeratorId")
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
+            .HasColumnName("ModeratorId");
 }

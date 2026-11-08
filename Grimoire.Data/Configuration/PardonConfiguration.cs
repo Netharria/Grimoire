@@ -30,14 +30,5 @@ internal sealed class PardonConfiguration : IEntityTypeConfiguration<Pardon>
             .HasMaxLength(1000)
             .HasConversion(r => r.Value, v => ModerationReason.FromDatabase(v))
             .IsRequired();
-
-        builder.Property(e => e.ModeratorId)
-            .HasConversion(e => e.Value, value => new ModeratorId(value));
-
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-
-        builder.Property(e => e.SinId)
-            .HasConversion(e => e.Value, value => new SinId(value));
     }
 }

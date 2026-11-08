@@ -27,12 +27,6 @@ internal sealed class CustomCommandRoleConfiguration : IEntityTypeConfiguration<
             .HasConversion(name => name.Value, value => CustomCommandName.FromDatabase(value))
             .HasMaxLength(24);
 
-        builder.Property(e => e.RoleId)
-            .HasConversion(e => e.Value, value => new RoleId(value));
-
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-
         builder.HasDiscriminator<string>("RoleType")
             .HasValue<CustomCommandAllowRole>("Allow")
             .HasValue<CustomCommandDenyRole>("Deny")

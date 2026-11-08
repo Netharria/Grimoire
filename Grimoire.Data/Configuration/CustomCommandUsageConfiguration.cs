@@ -21,12 +21,6 @@ internal sealed class CustomCommandUsageConfiguration : IEntityTypeConfiguration
             .HasConversion(name => name.Value, value => CustomCommandName.FromDatabase(value))
             .HasMaxLength(24);
 
-        builder.Property(e => e.GuildId)
-            .HasConversion(e => e.Value, value => new GuildId(value));
-
-        builder.Property(e => e.UserId)
-            .HasConversion(e => e.Value, value => new UserId(value));
-
         builder.HasIndex(e => new { e.GuildId, e.Name, e.UsedAt });
         builder.HasIndex(e => new { e.GuildId, e.Name, e.UserId });
     }
