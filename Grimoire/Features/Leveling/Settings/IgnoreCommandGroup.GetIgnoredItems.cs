@@ -36,6 +36,13 @@ public sealed partial class IgnoreCommandGroup
             return;
         }
 
+        if (ignoredItems.Count == 0)
+        {
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple, title: "Ignored Channels Roles and Users.",
+                message: "This server does not have any ignored channels, roles or users.");
+            return;
+        }
+
         var embed = new DiscordEmbedBuilder()
             .WithTitle("Ignored Channels Roles and Users.")
             .WithTimestamp(DateTime.UtcNow);

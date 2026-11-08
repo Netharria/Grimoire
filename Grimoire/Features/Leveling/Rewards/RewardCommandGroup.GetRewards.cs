@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 
+using System.Text;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
@@ -31,14 +32,42 @@ public sealed partial class RewardCommandGroup
             return;
         }
 
-        var rewardLines = await Task.WhenAll(rewards.Select(async x =>
+        if (rewards.Count == 0)
         {
-            var role = await guild.GetRoleOrDefaultAsync(x.RoleId);
-            return $"Level:{x.RewardLevel} Role:{role?.Mention} {(x.RewardMessage.HasValue ? $"Reward Message: {x.RewardMessage.Value.Value}" : "")}";
-        }));
+            await ctx.ReplyAsync(GrimoireColor.DarkPurple, title: "Rewards", message: "This server does not have any rewards.");
+            return;
+        }
 
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple,
-            title: "Rewards",
-            message: string.Join('\n', rewardLines));
+        await ctx.ReplyAsync(GrimoireColor.DarkPurple, title: "Rewards", message: DescribeRewards(rewards));
     }
+
+    private const int MaxListedMessageLength = 200;
+    private const int MaxDescriptionLength = 4096;
+
+    /// <summary>
+    ///     One line per reward, by level. A reward message can be 4,096 characters by itself, so it's cut short here,
+    ///     and lines stop before the embed's limit. The role is a mention, so a deleted role still shows its id.
+    /// </summary>
+    internal static string DescribeRewards(IEnumerable<RewardEntry> rewards)
+    {
+        var ordered = rewards.OrderBy(reward => reward.RewardLevel).ToArray();
+        var description = new StringBuilder();
+        var shown = 0;
+        foreach (var reward in ordered)
+        {
+            var line = $"Level:{reward.RewardLevel} Role:{RoleExtensions.Mention(reward.RoleId)}"
+                       + (reward.RewardMessage is { } message ? $" Reward Message: {Shorten(message.Value)}" : "") + "\n";
+            if (description.Length + line.Length > MaxDescriptionLength - 40)
+                break;
+            description.Append(line);
+            shown++;
+        }
+
+        if (shown < ordered.Length)
+            description.Append("…and ").Append(ordered.Length - shown).Append(" more rewards.");
+        return description.ToString().TrimEnd('\n');
+    }
+
+    private static string Shorten(string message)
+        => message.Length <= MaxListedMessageLength ? message : string.Concat(message.AsSpan(0, MaxListedMessageLength - 1), "…");
 }

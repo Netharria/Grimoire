@@ -108,7 +108,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Rewards");
         reply.Description.ShouldNotBeNull().Split('\n').ShouldBe(
-            [$"Level:3 Role:<@&{this.Guild.KickerRoleId}> Reward Message: hi", $"Level:5 Role:<@&{this.Guild.BannerRoleId}> "],
+            [$"Level:3 Role:<@&{this.Guild.KickerRoleId}> Reward Message: hi", $"Level:5 Role:<@&{this.Guild.BannerRoleId}>"],
             ignoreOrder: true);
     }
 
@@ -169,22 +169,65 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>
-    ///     I-9: only "not found" means the role is gone. During an outage the reward used to be listed with no role,
-    ///     as if deleted. Now the command fails, and is reported, instead of showing something untrue.
+    ///     I-9: only "not found" means a role is gone. /Level looks up the next reward's role, and during an outage it
+    ///     used to show "None" as if the role were deleted. Now the command fails, and is reported.
     /// </summary>
     [Fact]
-    public async Task View_DuringADiscordOutage_FailsInsteadOfShowingTheRoleAsMissing()
+    public async Task Level_DuringADiscordOutage_FailsInsteadOfShowingTheRewardAsMissing()
     {
         const ulong uncachedRole = 1_100_000_000_000_000_399;
-        (await this.Settings.SetRewardAsync(Grimoire.Settings.Domain.RewardAdded.Create(new RoleId(uncachedRole), this.GuildId, 2,
-            null, new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        await this.AddRewardDirectlyAsync(uncachedRole, 2, null);
         this._bot.Rest.On(HttpMethod.Get, @"guilds/\d+/roles(/\d+)?",
             _ => FakeDiscordRest.Error(System.Net.HttpStatusCode.ServiceUnavailable, 0, "Service Unavailable"));
 
-        var reply = await this.RewardsCommandAsync("view");
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("level", this.Guild.User1);
 
         reply.Description.ShouldNotBeNull().ShouldStartWith("Encountered exception while executing");
     }
+
+    /// <summary>X-10: a deleted role is listed by its id, with no lookup.</summary>
+    [Fact]
+    public async Task View_ListsADeletedRoleByItsId()
+    {
+        const ulong deletedRole = 1_100_000_000_000_000_398;
+        await this.AddRewardDirectlyAsync(deletedRole, 2, null);
+
+        (await this.RewardsCommandAsync("view")).Description.ShouldBe($"Level:2 Role:<@&{deletedRole}>");
+    }
+
+    /// <summary>X-10: an empty list says so, instead of a blank embed.</summary>
+    [Fact]
+    public async Task View_WithNoRewards_SaysSo()
+        => (await this.RewardsCommandAsync("view")).Description.ShouldBe("This server does not have any rewards.");
+
+    /// <summary>X-10: reward messages are cut short in the list. Two of 3,000 characters went over the embed's limit.</summary>
+    [Fact]
+    public async Task View_WithLongRewardMessages_FitsInTheEmbed()
+    {
+        await this.AddRewardDirectlyAsync(this.Guild.KickerRoleId, 2, new string('a', 3000));
+        await this.AddRewardDirectlyAsync(this.Guild.BannerRoleId, 4, new string('b', 3000));
+
+        var description = (await this.RewardsCommandAsync("view")).Description.ShouldNotBeNull();
+
+        description.Length.ShouldBeLessThanOrEqualTo(4096);
+        description.Split('\n').Length.ShouldBe(2);
+    }
+
+    /// <summary>X-7: a role that isn't a reward can't be removed, and nothing is recorded or logged.</summary>
+    [Fact]
+    public async Task Remove_OfARoleThatIsNotAReward_IsRefused()
+    {
+        var reply = await this.RewardsCommandAsync("remove", SlashOption.Role("role", this.Guild.KickerRoleId));
+
+        reply.Description.ShouldNotBeNull().ShouldContain($"Did not find a saved reward for <@&{this.Guild.KickerRoleId}>.");
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        (await settingsContext.Rewards.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+    }
+
+    private async Task AddRewardDirectlyAsync(ulong roleId, int level, string? message)
+        => (await this.Settings.SetRewardAsync(Grimoire.Settings.Domain.RewardAdded.Create(new RoleId(roleId), this.GuildId, level,
+            message is null ? null : Grimoire.Settings.Domain.Values.RewardMessage.Create(message).ShouldSucceed(),
+            new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
 
     private Task<FakeReply> RewardsCommandAsync(string subcommand, params SlashOption[] options)
         => this._bot.RunSlashCommandAndWaitAsync("rewards", this.Guild.Admin, SlashOption.Subcommand(subcommand, options));

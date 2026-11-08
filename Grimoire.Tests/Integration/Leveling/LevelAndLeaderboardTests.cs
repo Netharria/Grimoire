@@ -175,6 +175,20 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
         lines[^1].ShouldStartWith("**20** ");
     }
 
+    /// <summary>X-8: near the bottom, the window shifts up, so fifteen places still show.</summary>
+    [Fact]
+    public async Task Leaderboard_User_NearTheBottom_StillShowsFifteen()
+    {
+        var others = Enumerable.Range(1, 20).Select(i => new FakeUser(1_100_000_000_000_007_000 + (ulong)i, $"u{i}")).ToArray();
+        await this.SeedXpAsync([.. others.Select((user, i) => (user, 1000 - i * 10)), (this.Guild.User1, 1)]);
+
+        var lines = (await this.LeaderboardAsync(LeaderboardOption.User, this.Guild.User1)).Description!.Split('\n');
+
+        lines.Length.ShouldBe(15);
+        lines[0].ShouldStartWith("**7** ");
+        lines[^1].ShouldBe($"**21** {this.Guild.User1.Mention} **XP:** 1");
+    }
+
     [Fact]
     public async Task Leaderboard_Me_WithNoXp_SaysNotFound()
         => (await this.LeaderboardAsync(LeaderboardOption.Me)).Description.ShouldBe("User not found on the leaderboard");

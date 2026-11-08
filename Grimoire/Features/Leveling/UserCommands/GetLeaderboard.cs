@@ -106,17 +106,17 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
             return new Result<Response>.NotFound(
                 new Error("leaderboard.user-not-found", "User not found on the leaderboard"));
 
-        var surroundingUsers = await dbContext.Set<LeaderboardView>()
-            .AsNoTracking()
-            .Where(x => x.GuildId == guildId &&
-                        x.Rank >= userEntry.Rank - 5 &&
-                        x.Rank <= userEntry.Rank + 9)
-            .OrderBy(x => x.Rank)
-            .ToArrayAsync(ct);
-
         var totalCount = await dbContext.Set<LeaderboardView>()
             .Where(x => x.GuildId == guildId)
             .CountAsync(ct);
+
+        // Five above the member and nine below, shifted up near the bottom so fifteen rows still show.
+        var firstRank = Math.Max(1, Math.Min(userEntry.Rank - 5, totalCount - 14));
+        var surroundingUsers = await dbContext.Set<LeaderboardView>()
+            .AsNoTracking()
+            .Where(x => x.GuildId == guildId && x.Rank >= firstRank && x.Rank < firstRank + 15)
+            .OrderBy(x => x.Rank)
+            .ToArrayAsync(ct);
 
         var leaderboardText = string.Join('\n', surroundingUsers.Select(m =>
             $"**{m.Rank}** {UserExtensions.Mention(m.UserId)} **XP:** {m.TotalXp}"));

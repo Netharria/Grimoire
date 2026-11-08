@@ -51,6 +51,80 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
             .Amount.Value.ShouldBe(42);
     }
 
+    /// <summary>
+    ///     X-9: a level is the one whose threshold the XP has reached and whose next threshold it hasn't. A shortcut
+    ///     used to start past the answer for small Base and Modifier, by 24 levels at Base 1 and Modifier 1.
+    /// </summary>
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(10, 1)]
+    [InlineData(15, 1)]
+    [InlineData(15, 50)]
+    public async Task GetLevelFromXp_IsExact_ForSmallBaseAndModifier(int levelBase, int modifier)
+    {
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldSucceed();
+        var settings = (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed();
+
+        foreach (var xp in new long[] { 0, 1, 999, 1_001, 5_000, 25_000, 100_000, 2_000_000 })
+        {
+            var level = settings.GetLevelFromXp(xp);
+            settings.GetXpNeededForLevel(level).ShouldBeLessThanOrEqualTo(xp, $"level {level} at {xp} XP");
+            settings.GetXpNeededForLevel(level, 1).ShouldBeGreaterThan(xp, $"level {level} at {xp} XP");
+        }
+    }
+
+    /// <summary>The search gives the same level as counting up one level at a time, which is the definition.</summary>
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(1, 200)]
+    [InlineData(15, 50)]
+    [InlineData(37, 13)]
+    [InlineData(500, 1)]
+    [InlineData(500, 200)]
+    public async Task GetLevelFromXp_MatchesCountingUp(int levelBase, int modifier)
+    {
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldSucceed();
+        var settings = (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed();
+
+        foreach (var xp in Enumerable.Range(0, 400).Select(i => (long)i * i * 7).Append(2_000_000))
+            settings.GetLevelFromXp(xp).ShouldBe(CountUp(levelBase, modifier, xp), $"at {xp} XP");
+    }
+
+    /// <summary>
+    ///     A huge award, as once froze the old Python bot on every level check, is answered at once. With the
+    ///     smallest settings, counting up would take billions of steps.
+    /// </summary>
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(15, 50)]
+    public async Task GetLevelFromXp_ForAnAbsurdAmount_ReturnsAtOnce(int levelBase, int modifier)
+    {
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldSucceed();
+        var settings = (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed();
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        foreach (var xp in new[] { 1_000_000_000_000L, long.MaxValue / 2, long.MaxValue })
+        {
+            var level = settings.GetLevelFromXp(xp);
+            level.ShouldBeGreaterThan(1);
+            if (level < int.MaxValue)
+                settings.GetXpNeededForLevel(level).ShouldBeLessThanOrEqualTo(xp);
+        }
+
+        watch.Elapsed.ShouldBeLessThan(TimeSpan.FromMilliseconds(100));
+    }
+
+    /// <summary>The definition: count thresholds one at a time. Only for amounts small enough to count.</summary>
+    private static int CountUp(int levelBase, int modifier, long xp)
+    {
+        for (var i = 0; ; i++)
+            if (xp < levelBase + (long)Math.Round(levelBase * (modifier / 100.0) * i) * i)
+                return i + 1;
+    }
+
     [Fact]
     public async Task SetTextTime_RoundTrips()
     {

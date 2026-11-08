@@ -15,25 +15,42 @@ public sealed record LevelingSettingEntry(
     LevelScalingBase Base,
     XpGainAmount Amount)
 {
+    /// <summary>
+    ///     The level for this much XP: one more than the number of thresholds it has reached. The thresholds never
+    ///     go down, so a binary search finds that count in about 70 steps for any XP, however absurd. Counting up one
+    ///     level at a time would take billions of steps for a huge award and freeze the bot; an estimate to skip
+    ///     ahead could land past the answer for small Base and Modifier.
+    /// </summary>
     public int GetLevelFromXp(long xp)
     {
-        var i = 0;
-        if (xp > 1000)
-            // This is to reduce the number of iterations. Minor inaccuracy is acceptable.
-            // ReSharper disable once PossibleLossOfFraction
-            i = (int)Math.Floor(Math.Sqrt((xp - Base.Value) * 100 /
-                                          (Base.Value * Modifier.Value)));
-        while (true)
+        // Find the first step whose threshold is above the XP. Widen the range until it holds one, then halve it.
+        long high = 1;
+        while (!this.IsAbove(high, xp))
         {
-            var xpNeeded = Base.Value + (
-                (long)Math.Round(Base.Value *
-                                 (Modifier.Value / 100.0) * i) * i);
-            if (xp < xpNeeded)
-                return i + 1;
-
-            i += 1;
+            if (high >= int.MaxValue)
+                return int.MaxValue;
+            high *= 2;
         }
+
+        long low = 0;
+        while (low < high)
+        {
+            var middle = low + (high - low) / 2;
+            if (this.IsAbove(middle, xp))
+                high = middle;
+            else
+                low = middle + 1;
+        }
+
+        return (int)Math.Min(low + 1, int.MaxValue);
     }
+
+    /// <summary>
+    ///     Whether the XP threshold at <paramref name="step" /> is above <paramref name="xp" />. Worked out in 128 bits,
+    ///     since at the extremes the threshold doesn't fit in a long.
+    /// </summary>
+    private bool IsAbove(long step, long xp)
+        => Base.Value + (Int128)(long)Math.Round(Base.Value * (Modifier.Value / 100.0) * step) * step > xp;
 
     public long GetXpNeededForLevel(int level, int levelModifier = 0)
     {

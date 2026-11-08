@@ -82,6 +82,10 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     [Fact]
+    public async Task IgnoreView_WithNothingIgnored_SaysSo()
+        => (await this.IgnoreAsync("view")).Description.ShouldBe("This server does not have any ignored channels, roles or users.");
+
+    [Fact]
     public async Task IgnoreView_ListsChannelsRolesAndUsers()
     {
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
