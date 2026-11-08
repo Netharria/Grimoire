@@ -155,6 +155,26 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         (await this.ActiveLockAsync(channel)).ShouldNotBeNull();
     }
 
+    /// <summary>
+    ///     M-8: a thread lock deletes every new message, so without Manage Messages it would be recorded and then fail
+    ///     on every message. It's refused instead.
+    /// </summary>
+    [Fact]
+    public async Task Lock_OfAThread_WithoutManageMessages_IsRefused()
+    {
+        await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+            FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission
+            | FakeGuild.ManageChannelsPermission | FakeGuild.ManageRolesPermission);
+        await this._bot.ConfigureModerationAsync();
+
+        var reply = await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, this.Guild.PublicThread);
+
+        reply.Description.ShouldBe($"{this.Guild.Bot.MemberMention} needs **Manage Messages** in {this.Guild.PublicThread.Mention} to lock it.");
+        (await this.Settings.IsThreadLocked(new ChannelId(this.Guild.PublicThread.Id), new GuildId(this.Guild.Id),
+            TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeFalse();
+    }
+
     /// <summary>MOD-156, MOD-158 and MOD-169: Discord's client enforces these from the registration.</summary>
     [Fact]
     public void LockAndUnlock_AreRegisteredWithTheirLimits()

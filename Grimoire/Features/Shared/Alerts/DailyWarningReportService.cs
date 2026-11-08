@@ -52,7 +52,7 @@ public sealed class DailyWarningReportService(
             // A missing channel is retried next tick and the rows stay open.
             if (await channels.GetAsync(AlertSeverity.Warning) is not { } channel) return;
 
-            await channel.SendMessageAsync(WarningReportFormatter.Build(open));
+            await channel.SendMessageAsync(WarningReportFormatter.BuildMessage(open, today));
             await AlertOccurrenceStore.MarkReportedAsync(db, open.Select(x => x.Id).ToList(), now,
                 cancellationToken);
         }

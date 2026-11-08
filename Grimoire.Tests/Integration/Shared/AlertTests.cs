@@ -165,6 +165,26 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
             .ShouldBe(1, "the report is posted once a day");
     }
 
+    /// <summary>A report with more warnings than the embed can show attaches all of them as a text file, and still closes them.</summary>
+    [Fact]
+    public async Task ALongReport_AttachesTheFullReportAsAFile()
+    {
+        foreach (var i in Enumerable.Range(0, WarningReportFormatter.MaxEntries + 5))
+            this.Alerts.Send(Warning($"kind {i:D2}"));
+        await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        await this._bot.RunBackgroundTickAsync<WarningFlushService>();
+
+        await this._bot.RunBackgroundTickAsync<DailyWarningReportService>();
+
+        var post = await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post
+                                                                      && request.Path == $"channels/{this.Guild.Announcements.Id}/messages");
+        var (name, text) = post.Files.ShouldHaveSingleItem();
+        name.ShouldBe("warning-report-2026-10-25.txt");
+        foreach (var i in Enumerable.Range(0, WarningReportFormatter.MaxEntries + 5))
+            text.ShouldContain($"TestWarning (kind {i:D2})");
+        (await this.OccurrencesAsync()).ShouldAllBe(occurrence => occurrence.ReportedAt == Start);
+    }
+
     [Fact]
     public async Task TheReport_WaitsForItsTimeOfDay()
     {

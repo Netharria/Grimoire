@@ -143,6 +143,25 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>
+    ///     M-9: categories and forums can't hold messages, so the expiry notice goes only to the mod log. Sending it to
+    ///     the channel threw, and raised a warning on every expiry.
+    /// </summary>
+    [Theory]
+    [InlineData("category")]
+    [InlineData("forum")]
+    public async Task ExpiredLock_OnACategoryOrForum_IsAnnouncedInTheModLogOnly(string kind)
+    {
+        var channel = kind == "category" ? this.Guild.Category : this.Guild.Forum;
+        await this.SeedExpiredChannelLockAsync(channel);
+
+        await this._bot.RunBackgroundTickAsync<LockBackgroundTasks>();
+
+        await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>() == $"Lock on {channel.Mention} has expired.");
+        (await this.SingleChannelUnlockAsync()).Reason!.Value.Value.ShouldBe("Channel lock expired.");
+        this._bot.Logs.Events.ShouldNotContain(logEvent => logEvent.Exception is ArgumentException);
+    }
+
+    /// <summary>
     ///     S-3: a thread locked before thread locks had their own table was migrated as a channel lock. Threads have no
     ///     overwrites, so expiry must not try to revert one, or it would be refused and retried forever.
     /// </summary>

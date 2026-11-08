@@ -33,19 +33,12 @@ public static partial class DiscordEmbedBuilderExtensions
                 splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
             }
 
-            if (splitContent.Any(x => x.Length > 1024))
-            {
-                Log.Logger.Warning("Size of element is too large. Trying trim.");
-                splitContent = splitContent.Select(x => x.Trim()).ToList();
-
-                if (splitContent.Any(x => x.Length > 1024))
-                {
-                    Log.Logger.Warning(
-                        "Defaulting to crude embed field splitter because the regex returned a string that was longer than 1024. String lengths {lengths}",
-                        string.Join(' ', splitContent.Select(x => x.Length)));
-                    splitContent = content.Chunk(1024).Select(x => string.Concat(x)).ToList();
-                }
-            }
+            // A match keeps the whitespace it split on, so a full one is 1025 long until that's trimmed off. A chunk
+            // that is only whitespace, as a long run of spaces gives, would make AddField throw and lose the log.
+            splitContent = splitContent
+                .Select(x => x.Length > 1024 ? x.TrimEnd() : x)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
 
             if (splitContent.Count > 0)
                 embedBuilder.AddField(contentType, splitContent[0]);

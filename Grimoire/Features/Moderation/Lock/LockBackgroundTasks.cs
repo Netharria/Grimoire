@@ -165,6 +165,8 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 GuildId = channel.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
             },
             cancellationToken);
-        await channel.SendMessageAsync(embed);
+        // Categories and forums can't hold messages; DSharpPlus refuses with ArgumentException before sending.
+        if (channel.Type is not (DiscordChannelType.Category or DiscordChannelType.GuildForum or DiscordChannelType.GuildMedia))
+            await channel.SendMessageAsync(embed);
     }
 }

@@ -112,7 +112,11 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount) =>
-        ModerationReason.CreateIfNotNull(reason)
+        // A thread lock is enforced by deleting every new message, which takes Manage Messages in the thread.
+        (channel.PermissionsFor(guild.CurrentMember).HasPermission(DiscordPermission.ManageMessages)
+            ? ModerationReason.CreateIfNotNull(reason)
+            : Validation<ModerationReason?>.Fail(new Error("thread-lock.bot-permissions",
+                $"{guild.CurrentMember.Mention} needs **Manage Messages** in {channel.Mention} to lock it.")))
             .Bind(validatedReason =>
                 ThreadLocked.Create(
                     moderatorId,

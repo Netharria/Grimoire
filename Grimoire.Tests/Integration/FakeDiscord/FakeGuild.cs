@@ -449,6 +449,10 @@ public sealed class FakeGuild(ulong idOffset = 0)
             json["user_limit"] = 0;
         }
 
+        // Discord always sends a forum's tag list, and DSharpPlus throws on a forum update without one.
+        if (channel.Type == FakeChannel.ForumType)
+            json["available_tags"] = new JsonArray();
+
         if (channel.IsThread)
         {
             json.Remove("permission_overwrites");

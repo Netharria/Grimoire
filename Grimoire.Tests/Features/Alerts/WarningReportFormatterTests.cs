@@ -49,7 +49,7 @@ public sealed class WarningReportFormatterTests
             .Select(i => Occurrence($"Type{i}", 100 - i))
             .ToList();
 
-        Describe(occurrences).ShouldContain("…and 3 more warning types.");
+        Describe(occurrences).ShouldContain("…and 3 more warning types, in the attached file.");
     }
 
     [Fact]
@@ -70,5 +70,48 @@ public sealed class WarningReportFormatterTests
             .ToList();
 
         Describe(occurrences).Length.ShouldBeLessThanOrEqualTo(4096);
+    }
+
+    /// <summary>
+    ///     I-12: 15 entries with long types and exception names reach about 4,700 characters. DSharpPlus throws above
+    ///     4,096, and the report then fails every minute.
+    /// </summary>
+    [Fact]
+    public void Report_with_long_types_stays_within_the_limit_and_says_how_many_were_left_out()
+    {
+        var occurrences = Enumerable.Range(0, WarningReportFormatter.MaxEntries)
+            .Select(i => Occurrence($"UnhandledException in command handler number {i:D2} of the moderation feature", 100 - i,
+                new string('x', 1000)) with { ExceptionType = "Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException" })
+            .ToList();
+
+        var description = Describe(occurrences);
+
+        description.Length.ShouldBeLessThanOrEqualTo(4096);
+        description.ShouldContain("more warning types, in the attached file.");
+    }
+
+    [Fact]
+    public void A_report_that_fits_has_no_file()
+        => WarningReportFormatter.BuildMessage([Occurrence("A", 3), Occurrence("B", 4)], DateOnly.FromDateTime(_at.UtcDateTime))
+            .Files.ShouldBeEmpty();
+
+    /// <summary>Whatever the embed leaves out is in the attached file, in full: every type, whole samples, every guild.</summary>
+    [Fact]
+    public void A_report_that_does_not_fit_attaches_every_warning_in_full()
+    {
+        var occurrences = Enumerable.Range(0, WarningReportFormatter.MaxEntries + 3)
+            .Select(i => Occurrence($"Type{i:D2}", 100 - i, $"sample {i} " + new string('x', 500)))
+            .ToList();
+
+        var message = WarningReportFormatter.BuildMessage(occurrences, new DateOnly(2026, 11, 8));
+
+        var file = message.Files.ShouldHaveSingleItem();
+        file.FileName.ShouldBe("warning-report-2026-11-08.txt");
+        var text = new StreamReader(file.Stream).ReadToEnd();
+        foreach (var i in Enumerable.Range(0, occurrences.Count))
+            text.ShouldContain($"Type{i:D2}");
+        text.ShouldContain("sample 0 " + new string('x', 500));
+        text.ShouldContain("Guilds: 1");
+        text.IndexOf("Type00", StringComparison.Ordinal).ShouldBeLessThan(text.IndexOf("Type17", StringComparison.Ordinal));
     }
 }
