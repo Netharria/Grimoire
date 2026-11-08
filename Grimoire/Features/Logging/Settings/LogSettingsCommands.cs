@@ -18,6 +18,13 @@ namespace Grimoire.Features.Logging.Settings;
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 public partial class LogSettingsCommands
 {
+    /// <summary>How a View command shows one log's channel: None, its mention, or Deleted Channel.</summary>
+    private static async Task<string> DescribeLogChannelAsync(SettingsModule settingsModule, DiscordGuild guild,
+        GuildLogType logType)
+        => await settingsModule.GetLogChannelSetting(logType, guild.GetGuildId()).GetOrElse(() => null) is not { } channelId
+            ? "None"
+            : (await guild.GetChannelOrDefaultAsync(channelId))?.Mention ?? "Deleted Channel";
+
     [Command("Message")]
     [Description("View or change the Message Log Module Settings.")]
     [RequireModuleEnabled(Module.MessageLog)]

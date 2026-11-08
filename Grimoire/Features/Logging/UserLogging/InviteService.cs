@@ -26,24 +26,14 @@ public sealed class InviteService : IInviteService
     {
         if (!this._guilds.TryGetValue(guildId, out var guild))
             throw new ArgumentException("Could not find guild.");
-        guild.Invites.AddOrUpdate(
-            invite.Code,
-            invite,
-            (_, _) => invite);
+        guild.Invites[invite.Code] = invite;
     }
 
     public void UpdateGuildInvites(GuildInviteDto guildInvites)
-        => this._guilds.AddOrUpdate(
-            guildInvites.GuildId,
-            guildInvites,
-            (_, _) => guildInvites);
+        => this._guilds[guildInvites.GuildId] = guildInvites;
 
     public void UpdateAllInvites(List<GuildInviteDto> guildInvites)
-        => guildInvites.ForEach(guild =>
-            this._guilds.AddOrUpdate(
-                guild.GuildId,
-                guild,
-                (_, _) => guild));
+        => guildInvites.ForEach(this.UpdateGuildInvites);
 
     public Invite? CalculateInviteUsed(GuildInviteDto guildInvites)
     {

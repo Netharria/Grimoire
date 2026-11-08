@@ -18,6 +18,14 @@ public sealed partial class SettingsModule
         => GetGuildSetting(guildLogType.ToGuildSettingType(), guildId, cancellationToken)
             .Map(ParseChannelId);
 
+    /// <summary>
+    ///     Whether this log has a channel, so a caller can skip building a log nobody will see. A failed lookup counts
+    ///     as no: the publisher would make the same lookup and drop the log too.
+    /// </summary>
+    public async Task<bool> IsLogChannelSet(GuildLogType guildLogType, GuildId guildId,
+        CancellationToken cancellationToken = default)
+        => await GetLogChannelSetting(guildLogType, guildId, cancellationToken).GetOrElse(() => null) is not null;
+
     public Task<Result<ChannelId?>> SetLogChannelSetting(
         GuildLogType guildLogType,
         GuildId guildId,

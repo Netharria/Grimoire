@@ -43,10 +43,8 @@ public sealed class UpdateMessageEvent(
             {
                 MessageId = m.Id,
                 m.UserId,
-                // ReSharper disable once AccessToDisposedClosure
-                Content = dbContext.MessageHistory
+                Content = m.MessageHistory
                     .OfType<MessageHistoryContentEntry>()
-                    .Where(h => h.MessageId == m.Id)
                     .OrderByDescending(h => h.Timestamp)
                     .Select(h => (MessageContent?)h.Content)
                     .FirstOrDefault(),

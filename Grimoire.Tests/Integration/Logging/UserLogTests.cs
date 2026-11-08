@@ -179,6 +179,20 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Cdn.Downloads.ShouldContain(uri => uri.ToString().Contains("0123456789abcdef0123456789abcdef", StringComparison.Ordinal));
     }
 
+    /// <summary>L-7: with no avatar log channel, the new avatar is recorded but not downloaded.</summary>
+    [Fact]
+    public async Task AvatarChange_WithTheAvatarLogOff_IsRecorded_ButNotDownloaded()
+    {
+        const string hash = "0123456789abcdef0123456789abcdef";
+
+        this._bot.UpdateProfile(this.Guild.User1, avatarHash: hash);
+
+        (await GrimoireTestBot.EventuallyAsync(() => this.AvatarsOfAsync(this.Guild.User1),
+            avatars => avatars.Any(avatar => avatar.Contains(hash, StringComparison.Ordinal)))).ShouldNotBeEmpty();
+        await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
+        this._bot.Cdn.Downloads.ShouldNotContain(uri => uri.ToString().Contains(hash, StringComparison.Ordinal));
+    }
+
     /// <summary>L-4: Avatars are stored per guild, so an avatar set for this server only is a change too.</summary>
     [Fact]
     public async Task GuildAvatarChange_IsRecorded_AndLogged()

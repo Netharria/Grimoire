@@ -28,38 +28,15 @@ public partial class LogSettingsCommands
 
             var guild = ctx.Guild!;
 
-            var deleteChannelLogId =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.MessageDeleted,
-                    guild.GetGuildId());
-            var bulkDeleteChannelLogId =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.BulkMessageDeleted,
-                    guild.GetGuildId());
-            var editChannelLogId =
-                await this._settingsModule.GetLogChannelSetting(GuildLogType.MessageEdited,
-                    guild.GetGuildId());
+            Task<string> Describe(GuildLogType logType) => DescribeLogChannelAsync(this._settingsModule, guild, logType);
 
-            var deleteChannelLog =
-                deleteChannelLogId.GetOrElse(() => null) is not { } deleteChannel
-                    ? "None"
-                    : (await guild.GetChannelOrDefaultAsync(deleteChannel))?
-                    .Mention ?? "Deleted Channel";
-            var bulkDeleteChannelLog =
-                bulkDeleteChannelLogId.GetOrElse(() => null) is not { } bulkChannel
-                    ? "None"
-                    : (await guild.GetChannelOrDefaultAsync(bulkChannel))?
-                    .Mention ?? "Deleted Channel";
-            var editChannelLog =
-                editChannelLogId.GetOrElse(() => null) is not { } editChannel
-                    ? "None"
-                    : (await guild.GetChannelOrDefaultAsync(editChannel))?
-                    .Mention ?? "Deleted Channel";
             await ctx.ReplyAsync(
                 title: "Current Logging System Settings",
                 message:
                 $"**Module Enabled:** {await this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()).GetOrElse(() => false)}\n" +
-                $"**Delete Log:** {deleteChannelLog}\n" +
-                $"**Bulk Delete Log:** {bulkDeleteChannelLog}\n" +
-                $"**Edit Log:** {editChannelLog}\n");
+                $"**Delete Log:** {await Describe(GuildLogType.MessageDeleted)}\n" +
+                $"**Bulk Delete Log:** {await Describe(GuildLogType.BulkMessageDeleted)}\n" +
+                $"**Edit Log:** {await Describe(GuildLogType.MessageEdited)}\n");
         }
     }
 }

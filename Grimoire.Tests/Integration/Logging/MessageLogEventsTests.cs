@@ -392,6 +392,40 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
             (await this.HistoryOfAsync<MessageDeletedEntry>(id)).ShouldHaveSingleItem();
     }
 
+    /// <summary>L-9: the dump names each author, in message order, as a text file needs. A raw mention means nothing there.</summary>
+    [Fact]
+    public async Task BulkDelete_DumpNamesTheAuthors_InMessageOrder()
+    {
+        var ids = new[] { await this.SendLoggedAsync("one"), await this.SendLoggedAsync("two"), await this.SendLoggedAsync("three") };
+
+        this._bot.BulkDeleteMessages(this.Channel, [.. ids.Reverse()]);
+
+        var post = await this._bot.Rest.WaitForRequestAsync(request => this._bot.IsModLogPost(request)
+                                                                      && request.Json?["embeds"]?[0]?["title"]?.GetValue<string>() == "Bulk Message Delete");
+        var dump = post.Files.ShouldHaveSingleItem().Value;
+        dump.ShouldContain($"Author: user1 ({this.Guild.User1.Id})\nId: {ids[0]}\n");
+        dump.IndexOf("Content: one", StringComparison.Ordinal).ShouldBeLessThan(dump.IndexOf("Content: two", StringComparison.Ordinal));
+        dump.IndexOf("Content: two", StringComparison.Ordinal).ShouldBeLessThan(dump.IndexOf("Content: three", StringComparison.Ordinal));
+        this._bot.Rest.Requests.ShouldNotContain(request => request.Path.StartsWith($"guilds/{this.Guild.Id}/members/", StringComparison.Ordinal)
+                                                            && request.Method == HttpMethod.Get);
+    }
+
+    /// <summary>L-7: with the delete log off, the history is still kept, but nothing is downloaded for a log nobody sees.</summary>
+    [Fact]
+    public async Task Delete_WithTheDeleteLogOff_RecordsIt_ButDownloadsNothing()
+    {
+        (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(GuildLogType.MessageDeleted,
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), null)).ShouldBeSetOrUnchanged();
+        var messageId = await this.SendLoggedWithAttachmentsAsync("look", "cat.png");
+
+        this._bot.DeleteMessage(messageId, this.Channel);
+
+        (await GrimoireTestBot.EventuallyAsync(() => this.HistoryOfAsync<MessageDeletedEntry>(messageId), rows => rows.Count == 1))
+            .ShouldHaveSingleItem();
+        await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
+        this._bot.Cdn.Downloads.ShouldBeEmpty();
+    }
+
     /// <summary>With the message log off, nothing is recorded or posted.</summary>
     [Fact]
     public async Task WithTheMessageLogOff_EditsAndDeletesAreIgnored()

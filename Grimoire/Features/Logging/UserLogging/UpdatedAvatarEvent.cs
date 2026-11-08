@@ -50,6 +50,10 @@ public sealed class UpdatedAvatarEvent(
             });
         await dbContext.SaveChangesAsync();
 
+        // The history is kept either way, but the log downloads the new avatar to re-upload it.
+        if (!await this._settingsModule.IsLogChannelSet(GuildLogType.AvatarUpdated, args.Guild.GetGuildId()))
+            return;
+
         var embed = new DiscordEmbedBuilder()
             .WithAuthor("Avatar Updated")
             .WithDescription($"**User:** {args.Member.Mention}\n\n" +

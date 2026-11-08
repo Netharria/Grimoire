@@ -41,11 +41,39 @@ public sealed partial class DeleteMessageEvent(
                 .GetOrElse(() => false))
             return;
 
+        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+
+        // Everything below needs the stored row, a proxy link included because of its foreign key, so look it up
+        // before calling out. A message that was never logged, or was purged, costs nothing more.
+        var message = await dbContext.Messages
+            .AsNoTracking()
+            .Where(m => m.Id == args.Message.GetMessageId())
+            .Select(m => new Response
+            {
+                UserId = m.UserId,
+                Content = m.MessageHistory
+                    .OfType<MessageHistoryContentEntry>()
+                    .OrderByDescending(h => h.Timestamp)
+                    .Select(h => (MessageContent?)h.Content)
+                    .FirstOrDefault(),
+                ReferencedMessage = m.ReferencedMessageId,
+                Attachments = m.Attachments
+                    .Select(a => new AttachmentDto { Id = a.Id, FileName = a.FileName })
+                    .ToArray(),
+                OriginalUserId = m.ProxiedMessageLink!.OriginalMessage!.UserId,
+                SystemId = m.ProxiedMessageLink.SystemId,
+                MemberId = m.ProxiedMessageLink.MemberId
+            })
+            .FirstOrDefaultAsync();
+
+        // The author check above needs the cached message. Rows saved before the bot stopped saving its own posts
+        // are too old to be cached, so check the stored author too.
+        if (message is null || message.UserId.Value == args.Guild.CurrentMember.Id)
+            return;
+
         var pluralkitMessage =
             await this._pluralKitService.GetProxiedMessageInformation(args.Message.Id,
                 args.Message.CreationTimestamp);
-
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         if (pluralkitMessage is not null
             && ulong.TryParse(pluralkitMessage.Id, out var proxyMessageId)
@@ -84,38 +112,8 @@ public sealed partial class DeleteMessageEvent(
             return;
         }
 
-        var auditLogEntry =
-            await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.GetGuildId(),
-                args.Channel.GetChannelId(),
-                args.Message.GetMessageId());
-
-        var message = await dbContext.Messages
-            .AsNoTracking()
-            .Where(m => m.Id == args.Message.GetMessageId())
-            .Select(m => new Response
-            {
-                UserId = m.UserId,
-                // ReSharper disable once AccessToDisposedClosure
-                Content = dbContext.MessageHistory
-                    .OfType<MessageHistoryContentEntry>()
-                    .Where(h => h.MessageId == m.Id)
-                    .OrderByDescending(h => h.Timestamp)
-                    .Select(h => (MessageContent?)h.Content)
-                    .FirstOrDefault(),
-                ReferencedMessage = m.ReferencedMessageId,
-                Attachments = m.Attachments
-                    .Select(a => new AttachmentDto { Id = a.Id, FileName = a.FileName })
-                    .ToArray(),
-                OriginalUserId = m.ProxiedMessageLink!.OriginalMessage!.UserId,
-                SystemId = m.ProxiedMessageLink.SystemId,
-                MemberId = m.ProxiedMessageLink.MemberId
-            })
-            .FirstOrDefaultAsync();
-
-        // The author check above needs the cached message. Rows saved before the bot stopped saving its own posts
-        // are too old to be cached, so check the stored author too.
-        if (message is null || message.UserId.Value == args.Guild.CurrentMember.Id)
-            return;
+        var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.GetGuildId(),
+            args.Channel.GetChannelId(), message.UserId);
 
         await dbContext.MessageHistory.AddAsync(
             auditLogEntry?.UserResponsible?.Id is { } modId
@@ -133,6 +131,10 @@ public sealed partial class DeleteMessageEvent(
                     Timestamp = DateTimeOffset.UtcNow
                 });
         await dbContext.SaveChangesAsync();
+
+        // The history is kept either way, but building the log means an avatar lookup and downloading every image.
+        if (!await this._settingsModule.IsLogChannelSet(GuildLogType.MessageDeleted, args.Guild.GetGuildId()))
+            return;
 
         await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
         {

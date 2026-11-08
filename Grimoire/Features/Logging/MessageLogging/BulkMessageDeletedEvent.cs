@@ -40,20 +40,23 @@ public sealed class BulkMessageDeletedEvent(
         var messages = await dbContext.Messages
             .AsNoTracking()
             .Where(m => m.GuildId == guildId && messageIds.Contains(m.Id))
+            .OrderBy(m => m.Id)
             .Select(m => new MessageDto
             {
                 MessageId = m.Id,
                 UserId = m.UserId,
-                // ReSharper disable AccessToDisposedClosure
-                Content = dbContext.MessageHistory
+                // ReSharper disable once AccessToDisposedClosure
+                Username = dbContext.UsernameHistory
+                    .Where(h => h.UserId == m.UserId)
+                    .OrderByDescending(h => h.Timestamp)
+                    .Select(h => (Username?)h.Username)
+                    .FirstOrDefault(),
+                Content = m.MessageHistory
                     .OfType<MessageHistoryContentEntry>()
-                    .Where(h => h.MessageId == m.Id)
                     .OrderByDescending(h => h.Timestamp)
                     .Select(h => (MessageContent?)h.Content)
                     .FirstOrDefault(),
-                Attachments = m.Attachments
-                    .Select(a => new AttachmentDto { Id = a.Id, FileName = a.FileName })
-                // ReSharper restore AccessToDisposedClosure
+                Attachments = m.Attachments.Select(a => a.FileName.Value).ToArray()
             })
             .ToArrayAsync();
 
@@ -68,6 +71,9 @@ public sealed class BulkMessageDeletedEvent(
                 }));
         await dbContext.SaveChangesAsync();
 
+        if (!await this._settingsModule.IsLogChannelSet(GuildLogType.BulkMessageDeleted, guildId))
+            return;
+
         var embed = new DiscordEmbedBuilder()
             .WithTitle("Bulk Message Delete")
             .WithDescription($"**Message Count:** {messages.Length}\n" +
@@ -81,42 +87,34 @@ public sealed class BulkMessageDeletedEvent(
             GuildLogType = GuildLogType.BulkMessageDeleted,
             Message = new DiscordMessageBuilder()
                 .AddEmbed(embed)
-                .AddFile($"{DateTime.UtcNow:r}.txt",
-                    await BuildBulkMessageLogFile(messages, args.Guild))
+                .AddFile($"{DateTime.UtcNow:r}.txt", BuildBulkMessageLogFile(messages))
         });
     }
 
-    private static async Task<MemoryStream> BuildBulkMessageLogFile(
-        IEnumerable<MessageDto> messages, DiscordGuild guild)
+    /// <summary>A text dump in message order. The author is named from history, so it needs no lookups.</summary>
+    private static MemoryStream BuildBulkMessageLogFile(IEnumerable<MessageDto> messages)
     {
         var stringBuilder = new StringBuilder();
         foreach (var msg in messages)
         {
-            var author = await guild.GetMemberOrDefaultAsync(msg.UserId);
-            stringBuilder.AppendFormat(
-                    "Author: {0} ({1})\nId: {2}\nContent: {3}\n"
-                    + (msg.Attachments.Any() ? "Attachments: {4}\n" : string.Empty),
-                    author?.Mention ?? "Unknown User",
-                    msg.UserId,
-                    msg.MessageId,
-                    msg.Content,
-                    string.Join("\n", msg.Attachments.Select(x => x.FileName.Value)))
-                .AppendLine();
+            stringBuilder.Append("Author: ").Append(msg.Username?.Value ?? "Unknown User")
+                .Append(" (").Append(msg.UserId).Append(")\n")
+                .Append("Id: ").Append(msg.MessageId).Append('\n')
+                .Append("Content: ").Append(msg.Content).Append('\n');
+            if (msg.Attachments.Length > 0)
+                stringBuilder.Append("Attachments: ").Append(string.Join("\n", msg.Attachments)).Append('\n');
+            stringBuilder.AppendLine();
         }
 
-        var memoryStream = new MemoryStream();
-        var writer = new StreamWriter(memoryStream);
-        await writer.WriteAsync(stringBuilder);
-        await writer.FlushAsync();
-        memoryStream.Position = 0;
-        return memoryStream;
+        return new MemoryStream(Encoding.UTF8.GetBytes(stringBuilder.ToString()));
     }
 
     private sealed record MessageDto
     {
         public required UserId UserId { get; init; }
+        public required Username? Username { get; init; }
         public required MessageId MessageId { get; init; }
         public required MessageContent? Content { get; init; }
-        public required IEnumerable<AttachmentDto> Attachments { get; init; }
+        public required string[] Attachments { get; init; }
     }
 }

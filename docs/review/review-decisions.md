@@ -38,7 +38,7 @@ note says otherwise.
 | 18 | S-3 | **Done** 2026-11-07, uncommitted | |
 | 18 | M-6, KI-53 | **Done** 2026-11-07, uncommitted | Recording the mute before granting the role is kept: a role with no record is the worse failure |
 | 19 | I-6, I-7, I-16 | **Done** 2026-11-07, uncommitted | Images are buffered at event time, so retries re-upload them (DSharpPlus builders aren't disposable). Only the first embed carries text. 10 MiB per-file cap; a per-message total wasn't checked against real Discord |
-| 20 | L-7, L-8, L-9, rest of L-12 | Fix all | L-12 leftovers from rank 11: one helper for the `/Log ... View` lookups, the "latest content" subquery written three times, `InviteService` duplication |
+| 20 | L-7, L-8, L-9, rest of L-12 | **Done** 2026-11-07, uncommitted | New `SettingsModule.IsLogChannelSet`; the audit log parser takes the stored author and has no database access now |
 | 21 | I-8, I-9, I-10, I-11, R-1 | Fix all | R-1 goes with I-11 |
 | 21 | I-12, I-17, M-7, M-8, M-9 | Fix all | M-7 goes with D-2 (rank 23) |
 | 21 | M-10, L-11 | Fix every bullet | |

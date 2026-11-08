@@ -95,6 +95,16 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
         (await this.LinksAsync()).ShouldBeEmpty();
     }
 
+    /// <summary>L-8: a delete of a message that was never logged asks PluralKit nothing.</summary>
+    [Fact]
+    public async Task DeletingAnUnloggedMessage_AsksPluralKitNothing()
+    {
+        this._bot.DeleteMessage(this._bot.NextSnowflake(), this.Channel);
+
+        await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
+        this._pluralKit.Lookups.ShouldBeEmpty();
+    }
+
     /// <summary>
     ///     I-3: the lookup is optional, so a PluralKit failure must not cost the delete log. A refused token, a reply
     ///     that isn't JSON, and one whose shape changed each make it fail differently.

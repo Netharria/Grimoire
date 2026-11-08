@@ -499,7 +499,7 @@ public sealed class GrimoireTestBot : IAsyncDisposable
             ["guild_id"] = FakeUser.Snowflake(this.Guild.Id)
         });
 
-    private ulong NextSnowflake()
+    public ulong NextSnowflake()
     {
         const long discordEpochMilliseconds = 1_420_070_400_000;
         var sinceEpoch = (ulong)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - discordEpochMilliseconds);
