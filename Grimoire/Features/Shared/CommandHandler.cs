@@ -99,12 +99,13 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
                 LogCommandOutcome(sender, args.Context, CommandOutcome.BotMissingPermissions);
                 var issue = GuildIssueCatalog.BotMissingPermissions(
                     new GuildId(args.Context.Guild?.Id ?? 0), args.Context.Command.FullName);
-                // Tell the moderator what went wrong and how to fix it, and record it for the guild and for us.
+                // Record it for the guild and for us, then tell the moderator what went wrong and how to fix it. The
+                // record comes first: the reply throws if the interaction was already answered or deleted.
+                if (args.Context.Guild is not null)
+                    await sender.ServiceProvider.GetRequiredService<GuildIssueReporter>().ReportAsync(issue);
                 await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
                     .WithColor(GrimoireColor.Yellow)
                     .WithDescription($"{issue.Summary}\n**Suggested fix:** {issue.SuggestedFix}"));
-                if (args.Context.Guild is not null)
-                    await sender.ServiceProvider.GetRequiredService<GuildIssueReporter>().ReportAsync(issue);
                 return;
             case ChecksFailedException checksFailedException:
                 LogCommandOutcome(sender, args.Context, CommandOutcome.CheckFailed);
@@ -137,12 +138,13 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
             args.Context.Guild?.Id,
             GetElapsedMilliseconds(args.Context));
 
+        // The alert first: the reply throws if the interaction was already answered or deleted.
+        SendErrorAlert(sender.ServiceProvider, args.Context.Command.FullName, args.Exception, errorHexString,
+            args.Context.Guild is { } guild ? new GuildId(guild.Id) : null);
         await SendOrEditMessageAsync(args, new DiscordEmbedBuilder()
             .WithColor(GrimoireColor.Yellow)
             .WithDescription(
                 $"Encountered exception while executing {args.Context.Command.FullName} [ID {errorHexString}]"));
-        SendErrorAlert(sender.ServiceProvider, args.Context.Command.FullName, args.Exception, errorHexString,
-            args.Context.Guild is { } guild ? new GuildId(guild.Id) : null);
     }
 
     private static async Task SendOrEditMessageAsync(CommandErroredEventArgs args, DiscordEmbedBuilder embed)

@@ -168,6 +168,24 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
             .Description.ShouldBe("This module is disabled in this server.");
     }
 
+    /// <summary>
+    ///     I-9: only "not found" means the role is gone. During an outage the reward used to be listed with no role,
+    ///     as if deleted. Now the command fails, and is reported, instead of showing something untrue.
+    /// </summary>
+    [Fact]
+    public async Task View_DuringADiscordOutage_FailsInsteadOfShowingTheRoleAsMissing()
+    {
+        const ulong uncachedRole = 1_100_000_000_000_000_399;
+        (await this.Settings.SetRewardAsync(Grimoire.Settings.Domain.RewardAdded.Create(new RoleId(uncachedRole), this.GuildId, 2,
+            null, new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        this._bot.Rest.On(HttpMethod.Get, @"guilds/\d+/roles(/\d+)?",
+            _ => FakeDiscordRest.Error(System.Net.HttpStatusCode.ServiceUnavailable, 0, "Service Unavailable"));
+
+        var reply = await this.RewardsCommandAsync("view");
+
+        reply.Description.ShouldNotBeNull().ShouldStartWith("Encountered exception while executing");
+    }
+
     private Task<FakeReply> RewardsCommandAsync(string subcommand, params SlashOption[] options)
         => this._bot.RunSlashCommandAndWaitAsync("rewards", this.Guild.Admin, SlashOption.Subcommand(subcommand, options));
 

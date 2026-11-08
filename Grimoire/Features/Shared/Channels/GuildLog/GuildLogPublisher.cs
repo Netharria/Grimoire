@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
+using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Microsoft.Extensions.Hosting;
@@ -16,6 +18,7 @@ namespace Grimoire.Features.Shared.Channels.GuildLog;
 public sealed partial class GuildLogPublisher(
     GuildLog queue,
     DiscordClient discordClient,
+    GuildIssueReporter issueReporter,
     ILogger<GuildLogPublisher> logger,
     SettingsModule settingsModule,
     IDbContextFactory<GrimoireDbContext> dbContextFactory)
@@ -23,6 +26,7 @@ public sealed partial class GuildLogPublisher(
 {
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly DiscordClient _discordClient = discordClient;
+    private readonly GuildIssueReporter _issueReporter = issueReporter;
     private readonly ILogger<GuildLogPublisher> _logger = logger;
     private readonly GuildLog _queue = queue;
     private readonly SettingsModule _settingsModule = settingsModule;
@@ -45,10 +49,14 @@ public sealed partial class GuildLogPublisher(
                 if (logChannelId.GetOrElse(() => null) is not { } logChannel)
                     continue;
 
-                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannel, cancellationToken);
+                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannel);
 
                 if (channel is null)
+                {
+                    this.Report(GuildIssueCatalog.LogChannelMissing(result.GuildId, result.GuildLogType, logChannel),
+                        cancellationToken);
                     continue;
+                }
 
                 var builder = result.GetMessageBuilder();
                 var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
@@ -71,11 +79,32 @@ public sealed partial class GuildLogPublisher(
             {
                 break;
             }
+            // The log is lost, but the guild hears why. The daily throttle stops this looping when the channel the
+            // bot can't post in is the mod log itself.
+            catch (UnauthorizedException ex)
+            {
+                LogProcessError(this._logger, ex, result.GuildId, result.GuildLogType);
+                if (await this._settingsModule.GetLogChannelSetting(result.GuildLogType, result.GuildId, cancellationToken)
+                        .GetOrElse(() => null) is { } channelId)
+                    this.Report(GuildIssueCatalog.CannotSendInChannel(result.GuildId, channelId), cancellationToken);
+            }
             catch (Exception ex)
             {
                 LogProcessError(this._logger, ex, result.GuildId, result.GuildLogType);
             }
     }
+
+    /// <summary>
+    ///     Reports without waiting: the report is posted through this same queue, and if the queue were full, waiting
+    ///     for room would wait on this loop, the only reader.
+    /// </summary>
+    private void Report(GuildIssue issue, CancellationToken cancellationToken)
+        => _ = this._issueReporter.ReportAsync(issue, cancellationToken).ContinueWith(
+            task => LogReportFailure(this._logger, task.Exception!, issue.GuildId, issue.Code),
+            CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+
+    [LoggerMessage(LogLevel.Error, "Could not report setup problem {Code} for guild {GuildId}")]
+    private static partial void LogReportFailure(ILogger logger, Exception exception, GuildId guildId, string code);
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {

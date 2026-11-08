@@ -8,6 +8,7 @@
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Tests.Features.Alerts;
 using Grimoire.Tests.Integration.FakeDiscord;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -210,6 +211,36 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
         Discriminator = discriminator,
         Message = "it was slow"
     };
+
+    /// <summary>
+    ///     I-8: a command's alert must not depend on its error reply. The reply throws if the response was deleted, and
+    ///     it came first, so the alert never went out.
+    /// </summary>
+    [Fact]
+    public async Task ACommandThatFails_RaisesAnUrgentAlert_EvenWhenTheErrorReplyFails()
+    {
+        await this._bot.SetModuleAsync(Grimoire.Settings.Enums.Module.Moderation, true);
+        foreach (var method in new[] { HttpMethod.Patch, HttpMethod.Post })
+            this._bot.Rest.On(method, @"webhooks/\d+/[^/]+(/messages/@original)?",
+                _ => FakeDiscordRest.Error(System.Net.HttpStatusCode.NotFound, 10015, "Unknown Webhook"));
+        await using var dbContext = this._database.CreateDbContext();
+        var sins = dbContext.Model.FindEntityType(typeof(Sin))!;
+        var (schema, name) = (sins.GetSchema() ?? "public", sins.GetTableName());
+        await dbContext.Database.ExecuteSqlRawAsync($"""ALTER TABLE "{schema}"."{name}" RENAME TO "SinsUnreadable" """,
+            TestContext.Current.CancellationToken);
+        try
+        {
+            this._bot.RunSlashCommand("user_info", this.Guild.Admin, SlashOption.User("user", this.Guild.User1));
+
+            (await this.WaitForPostAsync(this.Guild.General, "UnhandledException"))["content"]!.GetValue<string>()
+                .ShouldStartWith("**[URGENT]** UnhandledException");
+        }
+        finally
+        {
+            await dbContext.Database.ExecuteSqlRawAsync($"""ALTER TABLE "{schema}"."SinsUnreadable" RENAME TO "{name}" """,
+                TestContext.Current.CancellationToken);
+        }
+    }
 
     private async Task<System.Text.Json.Nodes.JsonNode> WaitForPostAsync(FakeChannel channel, string? containing = null)
         => (await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post

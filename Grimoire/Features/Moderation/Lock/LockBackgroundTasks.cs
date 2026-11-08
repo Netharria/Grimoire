@@ -52,7 +52,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
         // Only ask Discord about guilds the bot is in; see MuteBackgroundTasks.
         var botIsInGuild = discordClient.Guilds.ContainsKey(expiredLock.GuildId.Value);
         var channel = botIsInGuild
-            ? await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId, cancellationToken)
+            ? await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId)
             : null;
 
         switch (ExpiredItemTriage.For(botIsInGuild, channel is not null))
@@ -108,7 +108,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
     {
         var botIsInGuild = discordClient.Guilds.ContainsKey(expiredLock.GuildId.Value);
         var channel = botIsInGuild
-            ? await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId, cancellationToken)
+            ? await discordClient.GetChannelOrDefaultAsync(expiredLock.ChannelId)
             : null;
 
         switch (ExpiredItemTriage.For(botIsInGuild, channel is not null))

@@ -38,18 +38,19 @@ public static class DiscordGuildExtensions
                 .FirstOrDefaultAsync(x =>
                     x.CreationTimestamp + TimeSpan.FromMilliseconds(allowedTimeSpan) > DateTime.UtcNow);
 
-        public Task<DiscordRole?> GetRoleOrDefaultAsync(RoleId? roleId, CancellationToken token = default)
+        public Task<DiscordRole?> GetRoleOrDefaultAsync(RoleId? roleId)
             => roleId is { } id
-                ? guild.GetRoleOrDefaultAsync(id, token)
+                ? guild.GetRoleOrDefaultAsync(id)
                 : Task.FromResult<DiscordRole?>(null);
 
-        public async Task<DiscordRole?> GetRoleOrDefaultAsync(RoleId roleId, CancellationToken token = default)
+        /// <summary>Null only when Discord says the role doesn't exist. Any other failure, an outage included, throws.</summary>
+        public async Task<DiscordRole?> GetRoleOrDefaultAsync(RoleId roleId)
         {
             try
             {
                 return await guild.GetRoleAsync(roleId.Value);
             }
-            catch (Exception)
+            catch (NotFoundException)
             {
                 return null;
             }
@@ -60,13 +61,14 @@ public static class DiscordGuildExtensions
                 ? guild.GetChannelOrDefaultAsync(id)
                 : Task.FromResult<DiscordChannel?>(null);
 
+        /// <summary>Null only when Discord says the channel doesn't exist. Any other failure, an outage included, throws.</summary>
         public async Task<DiscordChannel?> GetChannelOrDefaultAsync(ChannelId channelId)
         {
             try
             {
                 return await guild.GetChannelAsync(channelId.Value);
             }
-            catch (Exception)
+            catch (NotFoundException)
             {
                 return null;
             }

@@ -94,6 +94,30 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <summary>
+    ///     I-10: without View Audit Log the bot can't tell who deleted an invite. That's a setup problem for the guild
+    ///     to hear about, not an urgent alert for us. The invite is kept, as if used up.
+    /// </summary>
+    [Fact]
+    public async Task AnInviteDeleted_WithoutViewAuditLog_IsReportedToTheGuild_NotRaisedAsAnError()
+    {
+        await this.StartAsync(guild => guild.BotPermissions = FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission
+                                                                | FakeGuild.EmbedLinksPermission | FakeGuild.ManageGuildPermission);
+        await this._bot.ConfigureModerationAsync();
+
+        this._bot.Gateway.Dispatch("INVITE_DELETE", new System.Text.Json.Nodes.JsonObject
+        {
+            ["channel_id"] = FakeUser.Snowflake(this.Guild.General.Id),
+            ["guild_id"] = FakeUser.Snowflake(this.Guild.Id),
+            ["code"] = "gone"
+        });
+
+        await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()?.Contains("audit log",
+            StringComparison.OrdinalIgnoreCase) == true);
+        this._bot.Logs.Events.ShouldNotContain(logEvent => logEvent.MessageTemplate.Text.StartsWith(
+            "Unhandled exception in event handler", StringComparison.Ordinal));
+    }
+
     /// <summary>Discord leaves out the inviter for some invites; the join log still shows the invite.</summary>
     [Fact]
     public async Task AJoin_WithAnInviteThatHasNoInviter_ShowsItsCreatorAsUnknown()

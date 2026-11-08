@@ -13,14 +13,12 @@ public static class DiscordClientExtensions
 {
     extension(DiscordClient client)
     {
-        public Task<DiscordChannel?> GetChannelOrDefaultAsync(ChannelId? channelId,
-            CancellationToken ct = default)
+        public Task<DiscordChannel?> GetChannelOrDefaultAsync(ChannelId? channelId)
             => channelId is not { } id
                 ? Task.FromResult<DiscordChannel?>(null)
-                : client.GetChannelOrDefaultAsync(id, ct);
+                : client.GetChannelOrDefaultAsync(id);
 
-        public async Task<DiscordChannel?> GetChannelOrDefaultAsync(ChannelId channelId,
-            CancellationToken ct = default)
+        public async Task<DiscordChannel?> GetChannelOrDefaultAsync(ChannelId channelId)
         {
             try
             {

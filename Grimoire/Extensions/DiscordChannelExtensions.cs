@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
+
 namespace Grimoire.Extensions;
 
 public static class DiscordChannelExtensions
@@ -61,13 +63,14 @@ public static class DiscordChannelExtensions
                 ? channel.GetMessageOrDefaultAsync(id)
                 : Task.FromResult<DiscordMessage?>(null);
 
+        /// <summary>Null only when Discord says the message doesn't exist. Any other failure, an outage included, throws.</summary>
         public async Task<DiscordMessage?> GetMessageOrDefaultAsync(MessageId messageId)
         {
             try
             {
                 return await channel.GetMessageAsync(messageId.Value);
             }
-            catch (Exception)
+            catch (NotFoundException)
             {
                 return null;
             }

@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Shared.GuildIssues;
 
@@ -60,6 +61,11 @@ public static class GuildIssueCatalog
         => new(guildId, $"channel.cannot-send:{channelId}",
             $"I could not post in <#{channelId}>.",
             "Give my role **View Channel** and **Send Messages** in that channel, and check its permission overwrites.");
+
+    public static GuildIssue LogChannelMissing(GuildId guildId, GuildLogType logType, ChannelId channelId)
+        => new(guildId, $"log.channel-missing:{logType}",
+            $"The {logType} log is set to <#{channelId}>, which no longer exists, so those logs are lost.",
+            "Set a new channel for it, or turn that log off.");
 
     public static GuildIssue CannotUnlockChannel(GuildId guildId, ChannelId channelId)
         => new(guildId, $"lock.cannot-unlock:{channelId}",

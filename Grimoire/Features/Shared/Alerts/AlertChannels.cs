@@ -22,6 +22,6 @@ public sealed class AlertChannels(DiscordClient client, IConfiguration configura
         _ => throw new ArgumentOutOfRangeException(nameof(severity), severity, null)
     }]);
 
-    public Task<DiscordChannel?> GetAsync(AlertSeverity severity, CancellationToken cancellationToken = default)
-        => client.GetChannelOrDefaultAsync(this.ConfiguredId(severity), cancellationToken);
+    public Task<DiscordChannel?> GetAsync(AlertSeverity severity)
+        => client.GetChannelOrDefaultAsync(this.ConfiguredId(severity));
 }

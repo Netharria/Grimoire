@@ -65,7 +65,7 @@ public sealed partial class AlertService(
             case AlertSeverity.Urgent:
                 if (this._cooldown.TryAcquire(alert.Key) is not { } suppressed)
                     return;
-                if (await channels.GetAsync(AlertSeverity.Urgent, cancellationToken) is { } channel)
+                if (await channels.GetAsync(AlertSeverity.Urgent) is { } channel)
                     await channel.SendMessageAsync(AlertMessageFormatter.FormatUrgent(alert, suppressed));
                 return;
             default:

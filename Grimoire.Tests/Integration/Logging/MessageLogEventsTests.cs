@@ -426,6 +426,42 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         this._bot.Cdn.Downloads.ShouldBeEmpty();
     }
 
+    /// <summary>I-11: a log channel the bot can't post in is reported to the guild, not only logged for us.</summary>
+    [Fact]
+    public async Task ALogChannelTheBotCannotPostIn_IsReportedToTheGuild()
+    {
+        await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+            FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
+        await this._bot.ConfigureModerationAsync();
+        await this._bot.ConfigureMessageLogAsync();
+        await this.PointLogAtAsync(GuildLogType.MessageEdited, this.Guild.Private.Id);
+        var messageId = await this.SendLoggedAsync("before");
+
+        this._bot.EditMessage(messageId, this.Guild.User1, this.Channel, "after");
+
+        await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()?.StartsWith(
+            $"I could not post in {this.Guild.Private.Mention}.", StringComparison.Ordinal) == true);
+    }
+
+    /// <summary>R-1: a log channel that was deleted is reported, so the guild can pick another.</summary>
+    [Fact]
+    public async Task ADeletedLogChannel_IsReportedToTheGuild()
+    {
+        const ulong deletedChannel = 1_100_000_000_000_000_298;
+        await this.PointLogAtAsync(GuildLogType.MessageEdited, deletedChannel);
+        var messageId = await this.SendLoggedAsync("before");
+
+        this._bot.EditMessage(messageId, this.Guild.User1, this.Channel, "after");
+
+        await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()?.StartsWith(
+            $"The MessageEdited log is set to <#{deletedChannel}>, which no longer exists", StringComparison.Ordinal) == true);
+    }
+
+    private async Task PointLogAtAsync(GuildLogType logType, ulong channelId)
+        => (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(logType,
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(channelId))).ShouldBeSetOrUnchanged();
+
     /// <summary>With the message log off, nothing is recorded or posted.</summary>
     [Fact]
     public async Task WithTheMessageLogOff_EditsAndDeletesAreIgnored()

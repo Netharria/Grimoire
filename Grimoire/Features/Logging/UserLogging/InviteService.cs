@@ -68,12 +68,9 @@ public sealed class InviteService : IInviteService
             : inviteUsed with { Uses = inviteUsed.Uses + 1 };
     }
 
+    /// <returns>Whether the invite was tracked. An untracked guild, such as one without Manage Server, tracks none.</returns>
     public bool DeleteInvite(GuildId guildId, InviteCode inviteCode)
-    {
-        return !this._guilds.TryGetValue(guildId, out var guild)
-            ? throw new ArgumentException("Could not find guild.")
-            : guild.Invites.TryRemove(inviteCode, out _);
-    }
+        => this._guilds.TryGetValue(guildId, out var guild) && guild.Invites.TryRemove(inviteCode, out _);
 }
 
 public sealed record GuildInviteDto
