@@ -7,7 +7,6 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
@@ -15,7 +14,6 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 [Command("ModSettings")]
 [Description("Change the settings of the Moderation Module.")]
 [RequireGuild]
-[RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
 internal sealed partial class ModSettings(SettingsModule settingsModule, GuildLog guildLog)
 {

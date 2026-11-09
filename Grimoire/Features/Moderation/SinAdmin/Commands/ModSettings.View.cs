@@ -12,6 +12,7 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed partial class ModSettings
 {
+    // No module check: View reports whether the module is enabled, so it has to run while it is off.
     [Command("View")]
     [Description("View the current moderation settings for this server.")]
     public async Task ViewSettingsAsync(CommandContext ctx)

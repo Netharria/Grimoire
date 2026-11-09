@@ -121,19 +121,22 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
 
     // ── Gates ─────────────────────────────────────────────────────────────────
 
-    [Theory]
-    [InlineData("permission")]
-    [InlineData("module")]
-    public async Task LevelSettings_NeedManageGuildAndTheModule(string missing)
-    {
-        if (missing == "module")
-            await this._bot.SetModuleAsync(Module.Leveling, false);
-
-        (await this._bot.RunSlashCommandAndWaitAsync("level_settings", missing == "module" ? this.Guild.Admin : this.Guild.Moderator,
+    [Fact]
+    public async Task LevelSettings_NeedManageGuild()
+        => (await this._bot.RunSlashCommandAndWaitAsync("level_settings", this.Guild.Moderator,
                 SlashOption.Subcommand("view")))
-            .Description.ShouldBe(missing == "module"
-                ? "This module is disabled in this server."
-                : "You do not have the required permissions to use this command.");
+            .Description.ShouldBe("You do not have the required permissions to use this command.");
+
+    /// <summary>View still runs, so it can say the module is off; changing a setting is refused.</summary>
+    [Fact]
+    public async Task LevelSettings_WithLevelingDisabled_ViewShowsIt_AndChangesAreRefused()
+    {
+        await this._bot.SetModuleAsync(Module.Leveling, false);
+
+        (await this.LevelSettingsAsync("view")).Description.ShouldNotBeNull()
+            .ShouldStartWith("**Module Enabled:** False\n**Text Time:** 3 minutes.\n");
+        (await this.SetAsync(Option.Base, 30)).Description.ShouldBe("This module is disabled in this server.");
+        (await this.LogSetAsync(ChannelOption.Off)).Description.ShouldBe("This module is disabled in this server.");
     }
 
     private Task<FakeReply> LevelSettingsAsync(string subcommand, params SlashOption[] options)

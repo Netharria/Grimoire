@@ -68,11 +68,11 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
         { "mute", Module.Moderation }, { "unmute", Module.Moderation }, { "mutes view", Module.Moderation },
         { "lock", Module.Moderation }, { "unlock", Module.Moderation }, { "publish ban", Module.Moderation },
         { "forget", Module.Moderation }, { "pardon", Module.Moderation }, { "reason", Module.Moderation },
-        { "sin_log", Module.Moderation }, { "mod_settings view", Module.Moderation }, { "diagnostics check", Module.Moderation },
+        { "sin_log", Module.Moderation }, { "mod_settings auto_pardon", Module.Moderation }, { "diagnostics check", Module.Moderation },
         { "level", Module.Leveling }, { "leaderboard", Module.Leveling }, { "award", Module.Leveling },
         { "reclaim", Module.Leveling }, { "rewards add", Module.Leveling }, { "rewards view", Module.Leveling },
         { "ignore add", Module.Leveling }, { "ignore remove", Module.Leveling }, { "ignore view", Module.Leveling },
-        { "rewards remove", Module.Leveling }, { "level_settings view", Module.Leveling },
+        { "rewards remove", Module.Leveling }, { "level_settings set", Module.Leveling },
         { "commands learn", Module.Commands }, { "commands forget", Module.Commands }, { "commands history", Module.Commands },
         { "commands revert", Module.Commands }, { "commands stats", Module.Commands }, { "commands leaderboard", Module.Commands },
         { "command", Module.Commands }, { "log message view", Module.MessageLog }, { "log user view", Module.UserLog }
@@ -119,6 +119,11 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
             "commands forget" or "commands history" or "commands stats"
                 => [SlashOption.Subcommand(command.Split(' ')[1], SlashOption.String("name", "hello"))],
             "commands revert" => [SlashOption.Subcommand("revert", SlashOption.String("name", "hello"), SlashOption.String("version", "1"))],
+            // The two settings Views aren't gated: they report whether their module is on.
+            "mod_settings auto_pardon" => [SlashOption.Subcommand("auto_pardon",
+                SlashOption.Enum("duration_type", Grimoire.Enums.Duration.Days), SlashOption.Integer("duration_amount", 5))],
+            "level_settings set" => [SlashOption.Subcommand("set",
+                SlashOption.Enum("setting", Grimoire.Features.Leveling.Settings.LevelSettingsCommandGroup.LevelSettingsOptions.Base), SlashOption.Integer("value", 30))],
             "log message view" => [SlashOption.Group("message", SlashOption.Subcommand("view"))],
             "log user view" => [SlashOption.Group("user", SlashOption.Subcommand("view"))],
             _ when command.Contains(' ') => [SlashOption.Subcommand(command.Split(' ')[1])],

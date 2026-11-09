@@ -148,14 +148,18 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
             .ShouldBe("You do not have the required permissions to use this command.");
     }
 
-    /// <summary>SIN-60.</summary>
+    /// <summary>SIN-60: View still runs, so it can say the module is off; changing a setting is refused.</summary>
     [Fact]
-    public async Task ModSettings_WithModerationDisabled_IsRefused()
+    public async Task ModSettings_WithModerationDisabled_ViewShowsIt_AndChangesAreRefused()
     {
         await this._bot.SetModuleAsync(Module.Moderation, false);
 
         (await this.ModSettingsAsync(this.Guild.Admin, SlashOption.Subcommand("view"))).Description
-            .ShouldBe("This module is disabled in this server.");
+            .ShouldBe("**Module Enabled:** False\n**Auto Pardon Duration:** 30 years\n**Ban Log:** None\n");
+        (await this.AutoPardonAsync(Duration.Days, 5)).Description.ShouldBe("This module is disabled in this server.");
+        (await this.ModSettingsAsync(this.Guild.Admin,
+                SlashOption.Subcommand("public_ban_log", SlashOption.Enum("option", ChannelOption.CurrentChannel))))
+            .Description.ShouldBe("This module is disabled in this server.");
     }
 
     /// <summary>M-10: the description named minutes and hours, but the choices are days, months and years.</summary>

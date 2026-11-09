@@ -13,8 +13,8 @@ namespace Grimoire.Features.Leveling.Settings;
 
 public sealed partial class LevelSettingsCommandGroup
 {
+    // No module check: View reports whether the module is enabled, so it has to run while it is off.
     [RequireGuild]
-    [RequireModuleEnabled(Module.Leveling)]
     [RequireUserGuildPermissions(DiscordPermission.ManageGuild)]
     [Command("View")]
     [Description("View the current settings for the leveling module.")]

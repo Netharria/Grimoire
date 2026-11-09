@@ -57,7 +57,7 @@ Use one command per gated module. Disable the module with `/Modules Set`, run, r
 | GEN-14 | UserLog disabled | `admin` runs `/Log User View` | Same disabled message | none |
 | GEN-15 | Module re-enabled after GEN-10..14 | Re-run each command | Commands work again immediately (no bot restart) | Settings DB shows enabled |
 | GEN-16 | Test-B: Moderation enabled, Test-A: disabled | Run `/Ban` in Test-B | Works in B, blocked in A (per-guild isolation) | Only Test-A row differs |
-| GEN-17 | Any module disabled | Run `/GeneralSettings View`, `/Modules View`, `/Modules Set`, `/UserInfo`, `/Purge All` | Still work (these are not module gated) | none |
+| GEN-17 | Any module disabled | Run `/GeneralSettings View`, `/Modules View`, `/Modules Set`, `/UserInfo`, `/Purge All`, `/ModSettings View`, `/LevelSettings View` | Still work (these are not module gated) | none |
 
 ---
 

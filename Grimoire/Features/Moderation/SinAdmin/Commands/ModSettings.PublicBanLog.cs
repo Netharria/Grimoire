@@ -12,6 +12,7 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
 internal sealed partial class ModSettings
 {
+    [RequireModuleEnabled(Module.Moderation)]
     [Command("PublicBanLog")]
     [Description("Set the public channel to publish ban and unbans to.")]
     public async Task BanLogAsync(

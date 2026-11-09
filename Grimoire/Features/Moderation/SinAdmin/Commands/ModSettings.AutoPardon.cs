@@ -15,6 +15,7 @@ internal sealed partial class ModSettings
 {
     private const long MaxAutoPardonDays = 36_500;
 
+    [RequireModuleEnabled(Module.Moderation)]
     [Command("AutoPardon")]
     [Description("Updates how long till sins are automatically pardoned.")]
     public async Task AutoPardonAsync(
