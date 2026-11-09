@@ -22,7 +22,7 @@ internal sealed partial class ModSettings
         else
             await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId())
             .GetOrElse(() => SettingsModule.DefaultAutoPardonDuration);

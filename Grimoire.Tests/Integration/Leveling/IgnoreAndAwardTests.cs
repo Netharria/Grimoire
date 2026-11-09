@@ -65,7 +65,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
     {
         await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1));
 
-        await this.IgnoreAsync("remove", SlashOption.MentionableUser("item_0", this.Guild.User1));
+        await this.IgnoreAsync("remove", SlashOption.MentionableUser("items_0", this.Guild.User1));
 
         (await this.Settings.GetAllIgnoredItems(this.GuildId)).ShouldSucceed().ShouldBeEmpty();
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
@@ -77,7 +77,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
     {
         await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1));
 
-        (await this.IgnoreAsync("remove", SlashOption.MentionableUser("item_0", this.Guild.User1))).Description
+        (await this.IgnoreAsync("remove", SlashOption.MentionableUser("items_0", this.Guild.User1))).Description
             .ShouldBe($"<@{this.Guild.User1.Id}> are no longer ignored for xp gain.");
     }
 

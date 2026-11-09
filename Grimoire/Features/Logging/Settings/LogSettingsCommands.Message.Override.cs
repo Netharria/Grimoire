@@ -35,7 +35,7 @@ public partial class LogSettingsCommands
         {
             await ctx.DeferResponseAsync();
             channel ??= ctx.Channel;
-            var guild = ctx.Guild!;
+            var guild = ctx.RequiredGuild;
 
             var (option, message) = overrideSetting switch
             {
@@ -45,7 +45,7 @@ public partial class LogSettingsCommands
                     $"Will now never log messages from {channel.Mention} and its sub channels/threads."),
                 MessageLogOverrideSetting.Inherit => (MessageLogOverrideOption.Inherit,
                     "Override was successfully removed from the channel."),
-                _ => throw new UnreachableException("Invalid message log override option.")
+                _ => throw new InvariantViolationException("Invalid message log override option.")
             };
 
             await ctx.ReplyResultAsync(

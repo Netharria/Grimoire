@@ -36,7 +36,7 @@ public sealed partial class RewardCommandGroup
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await ValidateBotCanGrant(guild, role)
             .Bind(_ => RewardMessage.CreateIfNotNull(message))

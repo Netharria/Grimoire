@@ -25,7 +25,8 @@ internal sealed partial class GeneralSettingsCommands
     {
         await ctx.DeferResponseAsync();
         await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the moderation log",
-            channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.Moderation, ctx.Guild!.GetGuildId(),
-                ctx.GetModeratorId(), channelId));
+            channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.Moderation, ctx.RequiredGuild.GetGuildId(),
+                ctx.GetModeratorId(), channelId),
+            isModerationLog: true);
     }
 }

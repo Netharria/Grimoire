@@ -22,7 +22,7 @@ public sealed partial class RewardCommandGroup
     public async Task ViewAsync(CommandContext ctx)
     {
         await ctx.DeferResponseAsync();
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
             is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })

@@ -19,7 +19,6 @@ namespace Grimoire.Features.Leveling.Events;
 public sealed partial class GainUserXp(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule,
-    DiscordClient client,
     GuildLog guildLog,
     IAlertSender alerts,
     GuildIssueReporter issueReporter,
@@ -28,11 +27,9 @@ public sealed partial class GainUserXp(
     private static readonly Func<GrimoireDbContext, UserId, GuildId, Task<DateTimeOffset?>>
         _getUserXpInfoQuery = EF.CompileAsyncQuery((GrimoireDbContext context, UserId userId, GuildId guildId) =>
             context.XpHistory
-                .AsNoTracking()
                 .Where(xp => xp.UserId == userId && xp.GuildId == guildId)
                 .Max(history => (DateTimeOffset?)history.TimeOut));
 
-    private readonly DiscordClient _client = client;
     private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly GuildLog _guildLog = guildLog;
     private readonly ILogger<GainUserXp> _logger = logger;
@@ -65,7 +62,6 @@ public sealed partial class GainUserXp(
             return;
 
         var currentXp = await dbContext.XpHistory
-            .AsNoTracking()
             .Where(entry => entry.UserId == member.GetUserId() && entry.GuildId == member.GetGuildId())
             .SumAsync(entry => entry.RawXp);
 
@@ -95,14 +91,14 @@ public sealed partial class GainUserXp(
         if (previousLevel < currentLevel)
             await this.SendLevelUpNotificationAsync(member, currentLevel);
 
-        await this.ApplyRewards(member.GetGuildId(), args.GetAuthorUserId(), currentLevel);
+        await this.ApplyRewards(member, currentLevel);
     }
 
     internal static EarnedXp BuildEarnedXp(LevelingSettingEntry settings, UserId userId, GuildId guildId)
         => PositiveXpAmount.Create(settings.Amount.Value)
             .Bind(amount => EarnedXp.Create(amount, userId, guildId,
                 DateTimeOffset.UtcNow + settings.XpTimeoutPeriod.Value))
-            .Match(e => e, _ => throw new UnreachableException());
+            .Match(e => e, _ => throw new InvariantViolationException());
 
     private ValueTask SendLevelUpNotificationAsync(DiscordMember member, int currentLevel)
         => this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
@@ -117,18 +113,10 @@ public sealed partial class GainUserXp(
                 .WithTimestamp(DateTime.UtcNow)
         });
 
-    private async Task ApplyRewards(
-        GuildId guildId,
-        UserId userId,
-        int userLevel,
-        CancellationToken cancellationToken = default)
+    private async Task ApplyRewards(DiscordMember member, int userLevel, CancellationToken cancellationToken = default)
     {
-        var guild = await this._client.GetGuildOrDefaultAsync(guildId);
-        if (guild is null)
-            return;
-        var member = await guild.GetMemberOrDefaultAsync(userId);
-        if (member is null)
-            return;
+        var guild = member.Guild;
+        var guildId = guild.GetGuildId();
 
         // The next XP gain tries again.
         if (await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)

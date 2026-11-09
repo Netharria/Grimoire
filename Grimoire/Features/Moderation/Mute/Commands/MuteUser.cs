@@ -47,7 +47,7 @@ public sealed partial class MuteUser(
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (ctx.User.Id == member.Id)
         {
@@ -86,7 +86,7 @@ public sealed partial class MuteUser(
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
         var sin = Sin.ForMute(actor, member.GetUserId(), guild.GetGuildId(), now, ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null))
-            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
+            .Match(s => s, _ => throw new InvariantViolationException("Discord ids are never zero."));
 
         if (!await this.TryRecordMuteAsync(sin, member, ctx.GetModeratorId(), muteEndTime, muteId))
         {

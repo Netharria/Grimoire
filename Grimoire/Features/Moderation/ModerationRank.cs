@@ -19,11 +19,11 @@ internal static class ModerationRank
     public static async Task<string?> GetRefusalReasonAsync(SettingsModule settingsModule, CommandContext ctx,
         DiscordMember target, string action)
     {
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
         if (target.Id == guild.OwnerId || guild.CurrentMember.Hierarchy <= target.Hierarchy)
             return $"I do not have permissions to {action} that user.";
 
-        var invoker = ctx.Member!;
+        var invoker = ctx.RequiredMember;
         if (invoker.Id == guild.OwnerId || invoker.Id == target.Id)
             return null;
 

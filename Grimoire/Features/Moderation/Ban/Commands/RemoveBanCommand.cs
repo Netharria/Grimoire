@@ -28,7 +28,7 @@ public sealed class RemoveBanCommand(BanHandoff banHandoff)
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         this._banHandoff.ExpectUnban(guild.GetGuildId(), user.GetUserId(), ctx.GetModeratorId());
         try

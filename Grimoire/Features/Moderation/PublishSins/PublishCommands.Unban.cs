@@ -20,7 +20,7 @@ public sealed partial class PublishCommands
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var result = await dbContext.Sins

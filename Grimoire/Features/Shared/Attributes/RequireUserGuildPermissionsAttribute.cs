@@ -25,25 +25,12 @@ internal sealed class RequireUserGuildPermissionsAttribute(DiscordPermission per
 
 internal sealed class RequireUserGuildPermissionsCheck : IContextCheck<RequireUserGuildPermissionsAttribute>
 {
+    // Permissions already counts the owner and Administrator as having every permission.
     public ValueTask<string?> ExecuteCheckAsync(RequireUserGuildPermissionsAttribute attribute, CommandContext context)
-    {
-        if (context.Guild is null)
-            return ValueTask.FromResult<string?>("This command can only be used in a server.");
-
-        var member = context.Member;
-        if (member is null)
-            return ValueTask.FromResult<string?>("This command can only be used in a server.");
-
-        if (member.Id == context.Guild.OwnerId)
-            return ValueTask.FromResult<string?>(null);
-
-        var memberPermissions = member.Permissions;
-
-        if (memberPermissions.HasPermission(DiscordPermission.Administrator))
-            return ValueTask.FromResult<string?>(null);
-
-        return memberPermissions.HasPermission(attribute.Permissions)
-            ? ValueTask.FromResult<string?>(null)
-            : ValueTask.FromResult<string?>("You do not have the required permissions to use this command.");
-    }
+        => ValueTask.FromResult<string?>(context.Member switch
+        {
+            null => "This command can only be used in a server.",
+            { Permissions: var permissions } when permissions.HasPermission(attribute.Permissions) => null,
+            _ => "You do not have the required permissions to use this command."
+        });
 }

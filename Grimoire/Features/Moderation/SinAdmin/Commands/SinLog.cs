@@ -38,8 +38,8 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         [Parameter("user")] [Description("The user to look up the logs for. Leave blank for self.")]
         DiscordUser? user = null)
     {
-        var guild = ctx.Guild!;
-        var member = ctx.Member!;
+        var guild = ctx.RequiredGuild;
+        var member = ctx.RequiredMember;
         var isPrivate = !member.Permissions.HasPermission(DiscordPermission.ManageMessages);
 
         if (ctx is SlashCommandContext slashContext)
@@ -88,7 +88,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
             SinQueryType.Ban => queryable.Where(x => x.SinType == SinType.Ban),
             SinQueryType.Kick => queryable.Where(x => x.SinType == SinType.Kick),
             SinQueryType.All => queryable,
-            SinQueryType.Mod => throw new UnreachableException("Handled above"),
+            SinQueryType.Mod => throw new InvariantViolationException("Handled above"),
             _ => throw new ArgumentOutOfRangeException(nameof(sinQueryType), sinQueryType, null)
         };
 

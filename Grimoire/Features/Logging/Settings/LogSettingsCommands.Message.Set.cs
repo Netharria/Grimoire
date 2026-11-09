@@ -47,10 +47,10 @@ public partial class LogSettingsCommands
                 MessageLogSetting.DeleteLog => GuildLogType.MessageDeleted,
                 MessageLogSetting.BulkDeleteLog => GuildLogType.BulkMessageDeleted,
                 MessageLogSetting.EditLog => GuildLogType.MessageEdited,
-                _ => throw new UnreachableException("Invalid message log setting.")
+                _ => throw new InvariantViolationException("Invalid message log setting.")
             };
             await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, logSetting.ToString(),
-                channelId => this._settingsModule.SetLogChannelSetting(logType, ctx.Guild!.GetGuildId(),
+                channelId => this._settingsModule.SetLogChannelSetting(logType, ctx.RequiredGuild.GetGuildId(),
                     ctx.GetModeratorId(), channelId),
                 logType is GuildLogType.MessageDeleted or GuildLogType.BulkMessageDeleted
                     ? ChannelSettingCommand.LogWithFilesPermissions

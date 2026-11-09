@@ -43,7 +43,7 @@ public sealed class AddBanCommand(BanHandoff banHandoff, GuildLog guildLog, Sett
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (ctx.User.Id == user.Id)
         {

@@ -20,7 +20,7 @@ public partial class LogSettingsCommands
         {
             await ctx.DeferResponseAsync();
 
-            var guild = ctx.Guild!;
+            var guild = ctx.RequiredGuild;
 
             List<string> lines = [];
             await foreach (var channelOverride in this._settingsModule.GetAllOverriddenChannels(guild.GetGuildId()))

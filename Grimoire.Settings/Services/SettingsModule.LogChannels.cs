@@ -5,8 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.Globalization;
-using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Settings.Services;
@@ -32,13 +30,5 @@ public sealed partial class SettingsModule
         ModeratorId moderatorId,
         ChannelId? channelId,
         CancellationToken cancellationToken = default)
-        => (channelId switch
-        {
-            not null => ApplyGuildSetting(GuildSettingCustomValue.Create(guildLogType.ToGuildSettingType(), guildId,
-                    moderatorId,
-                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture)),
-                cancellationToken),
-            _ => ApplyGuildSetting(GuildSettingDisabled.Create(guildLogType.ToGuildSettingType(), guildId, moderatorId,
-                DateTimeOffset.UtcNow), cancellationToken)
-        }).Map(_ => channelId);
+        => SetChannelSetting(guildLogType.ToGuildSettingType(), guildId, moderatorId, channelId, cancellationToken);
 }

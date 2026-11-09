@@ -19,7 +19,7 @@ internal sealed partial class ModuleCommands
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetAllModuleState(guild.GetGuildId())
             is not Result<GuildModuleState>.Success { Value: var guildSettings })

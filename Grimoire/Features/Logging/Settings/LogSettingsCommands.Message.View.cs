@@ -25,7 +25,7 @@ public partial class LogSettingsCommands
             else
                 await ctx.DeferResponseAsync();
 
-            var guild = ctx.Guild!;
+            var guild = ctx.RequiredGuild;
 
             Task<string> Describe(GuildLogType logType) => DescribeLogChannelAsync(this._settingsModule, guild, logType);
 

@@ -29,19 +29,12 @@ public static class DiscordChannelExtensions
             .Where(filter ?? (_ => true))
             .Take(count)
             .ToArrayAsync();
-        switch (messages.Length)
-        {
-            case 1:
-                await messages.First().DeleteAsync(reason);
-                break;
-            case > 1:
-                await foreach (var messageChunk in messages.Chunk(100).ToAsyncEnumerable())
-                    if (messageChunk.Length == 1)
-                        await messageChunk[0].DeleteAsync(reason);
-                    else
-                        await channel.DeleteMessagesAsync(messageChunk, reason);
-                break;
-        }
+        // Bulk delete takes 2 to 100 messages, so a chunk of one is deleted on its own.
+        foreach (var messageChunk in messages.Chunk(100))
+            if (messageChunk.Length == 1)
+                await messageChunk[0].DeleteAsync(reason);
+            else
+                await channel.DeleteMessagesAsync(messageChunk, reason);
 
         return messages.Length;
     }

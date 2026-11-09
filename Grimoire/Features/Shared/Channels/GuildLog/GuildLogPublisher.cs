@@ -122,24 +122,9 @@ public sealed partial class GuildLogPublisher(
         GuildId guildId,
         GuildLogType guildLogType);
 
+    /// <summary>Message log posts quote message content, so they are deleted after a while; the rest are kept.</summary>
     private static bool ShouldPurgeMessageAfterInterval(GuildLogType guildLogType)
-    {
-        return guildLogType switch
-        {
-            GuildLogType.Moderation => false,
-            GuildLogType.Leveling => false,
-            GuildLogType.BulkMessageDeleted => true,
-            GuildLogType.MessageEdited => true,
-            GuildLogType.MessageDeleted => true,
-            GuildLogType.UserJoined => false,
-            GuildLogType.UserLeft => false,
-            GuildLogType.AvatarUpdated => false,
-            GuildLogType.NicknameUpdated => false,
-            GuildLogType.UsernameUpdated => false,
-            GuildLogType.PublicModeration => false,
-            _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
-        };
-    }
+        => guildLogType is GuildLogType.BulkMessageDeleted or GuildLogType.MessageEdited or GuildLogType.MessageDeleted;
 
     private async Task ScheduleMessagePurge(MessageId messageId, ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)

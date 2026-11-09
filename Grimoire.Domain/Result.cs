@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Diagnostics;
 
 namespace Grimoire.Domain;
 
@@ -67,7 +66,7 @@ public abstract record Result<T>
         Invalid(var e) => e,
         NotFound(var e) => e,
         NotModified(var e) => e,
-        _ => throw new UnreachableException()
+        _ => throw new InvariantViolationException()
     };
 
     /// <summary>The same failure case and error as a result of another type. Only called on a failure.</summary>
@@ -76,7 +75,7 @@ public abstract record Result<T>
         Invalid(var e) => new Result<TOut>.Invalid(e),
         NotFound(var e) => new Result<TOut>.NotFound(e),
         NotModified(var e) => new Result<TOut>.NotModified(e),
-        _ => throw new UnreachableException()
+        _ => throw new InvariantViolationException()
     };
 
     public sealed record Success(T Value) : Result<T>;

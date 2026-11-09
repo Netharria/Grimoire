@@ -30,6 +30,6 @@ internal sealed partial class ModSettings
 
         await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the public ban log",
             channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.PublicModeration,
-                ctx.Guild!.GetGuildId(), ctx.GetModeratorId(), channelId));
+                ctx.RequiredGuild.GetGuildId(), ctx.GetModeratorId(), channelId));
     }
 }

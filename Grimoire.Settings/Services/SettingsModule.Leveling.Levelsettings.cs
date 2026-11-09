@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Collections.Frozen;
-using System.Diagnostics;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Domain.Values;
 using Grimoire.Settings.Enums;
@@ -63,11 +62,10 @@ public sealed partial class SettingsModule
         LevelSettings settingToChange,
         int newValue,
         CancellationToken cancellationToken = default)
-        => CreateLevelingSetting(settingToChange, newValue)
-            .Bind(setting =>
-                GuildSettingCustomValue.Create(setting.Item1, guildId, setBy, DateTimeOffset.UtcNow, setting.Item2))
-            .ToResult()
-            .BindAsync(setting => SetGuildSetting(setting, cancellationToken))
+        => ApplyGuildSetting(CreateLevelingSetting(settingToChange, newValue)
+                .Bind(setting =>
+                    GuildSettingCustomValue.Create(setting.Item1, guildId, setBy, DateTimeOffset.UtcNow, setting.Item2)),
+                cancellationToken)
             .TapAsync(async _ => await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken))
             .Map(_ => newValue);
 
@@ -80,6 +78,6 @@ public sealed partial class SettingsModule
                 .Map(x => (GuildSettingType.LevelScalingModifier, x.ToString())),
             LevelSettings.XpTimeoutPeriod => XpTimeoutPeriod.Create(value)
                 .Map(x => (GuildSettingType.XpTimeoutPeriod, x.ToString())),
-            _ => throw new UnreachableException()
+            _ => throw new InvariantViolationException()
         };
 }

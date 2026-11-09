@@ -21,6 +21,9 @@ internal static class ChannelSettingCommand
 
     /// <param name="name">The setting as the reply names it, such as "the moderation log".</param>
     /// <param name="save">Saves the chosen channel, or null for off.</param>
+    /// <param name="isModerationLog">
+    ///     The moderation log itself: turning it off isn't logged, because the entry would go to the log just turned off.
+    /// </param>
     /// <param name="botNeeds">
     ///     What the bot needs in the channel, <see cref="LogPermissions" /> unless given. With none, any channel will do.
     /// </param>
@@ -32,9 +35,10 @@ internal static class ChannelSettingCommand
         string name,
         Func<ChannelId?, Task<Result<ChannelId?>>> save,
         DiscordPermission[]? botNeeds = null,
-        DiscordColor? color = null)
+        DiscordColor? color = null,
+        bool isModerationLog = false)
     {
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
         botNeeds ??= LogPermissions;
 
         var choice = ctx.GetChannelOption(option, channel)
@@ -51,7 +55,7 @@ internal static class ChannelSettingCommand
         await ctx.ReplyResultAsync(
             await save(selected?.GetChannelId()),
             selected is null ? $"Disabled {name}." : $"Updated {name} to {selected.Mention}",
-            () => guildLog.SendLogMessageAsync(new GuildLogMessage
+            selected is null && isModerationLog ? null : () => guildLog.SendLogMessageAsync(new GuildLogMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

@@ -31,9 +31,9 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
-        // M-7: a blank reason used to reach an UnreachableException.
+        // M-7: a blank reason used to reach an InvariantViolationException.
         if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var validReason))
         {
             await ctx.SendErrorResponseAsync("The reason can't be empty.");

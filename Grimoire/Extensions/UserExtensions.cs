@@ -24,6 +24,6 @@ public static class UserExtensions
         {
             ModerationActor.Moderator m => $"<@{m.Id}>",
             ModerationActor.System => "System",
-            _ => throw new UnreachableException()
+            _ => throw new InvariantViolationException()
         };
 }

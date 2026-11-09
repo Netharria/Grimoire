@@ -356,7 +356,7 @@ public sealed class GrimoireTestBot : IAsyncDisposable
         var now = DateTimeOffset.UtcNow;
         var threadLock = ThreadLocked.Create(new ModeratorId(this.Guild.Moderator.Id), null,
             new ChannelId(thread.Id), new GuildId(this.Guild.Id), now, now + duration).ShouldSucceed();
-        (await this.Services.GetRequiredService<SettingsModule>().ApplyThreadLockAction(threadLock)).ShouldSucceed();
+        (await this.Services.GetRequiredService<SettingsModule>().AddThreadLock(threadLock)).ShouldSucceed();
     }
 
     /// <summary>Records an unlock, as <c>/Unlock</c> or the lock background task does when the timer runs out.</summary>
@@ -364,7 +364,7 @@ public sealed class GrimoireTestBot : IAsyncDisposable
     {
         var unlock = ThreadUnlocked.Create(new ModeratorId(this.Guild.Moderator.Id), new ChannelId(thread.Id),
             new GuildId(this.Guild.Id), DateTimeOffset.UtcNow).ShouldSucceed();
-        (await this.Services.GetRequiredService<SettingsModule>().ApplyThreadLockAction(unlock)).ShouldSucceed();
+        (await this.Services.GetRequiredService<SettingsModule>().RemoveThreadLock(unlock)).ShouldSucceed();
     }
 
     public async Task SetModuleAsync(Module module, bool enabled, FakeGuild? guild = null)

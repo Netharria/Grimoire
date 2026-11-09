@@ -41,7 +41,7 @@ public sealed partial class LevelSettingsCommandGroup
             LevelSettingsOptions.Base => LevelSettings.Base,
             LevelSettingsOptions.Modifier => LevelSettings.Modifier,
             LevelSettingsOptions.TextTime => LevelSettings.XpTimeoutPeriod,
-            _ => throw new UnreachableException("Invalid setting.")
+            _ => throw new InvariantViolationException("Invalid setting.")
         };
 
     [RequireGuild]
@@ -58,7 +58,7 @@ public sealed partial class LevelSettingsCommandGroup
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
         await ctx.ReplyResultAsync(
             await this._settingsModule.SetLevelingSettings(guild.GetGuildId(), ctx.GetModeratorId(),
                 ToLevelSettings(levelSettingsOptions), value),
@@ -87,7 +87,7 @@ public sealed partial class LevelSettingsCommandGroup
     {
         await ctx.DeferResponseAsync();
         await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the level log",
-            channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.Leveling, ctx.Guild!.GetGuildId(),
+            channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.Leveling, ctx.RequiredGuild.GetGuildId(),
                 ctx.GetModeratorId(), channelId),
             color: GrimoireColor.DarkPurple);
     }

@@ -37,7 +37,7 @@ public sealed partial class PublishCommands(
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var result = await dbContext.Sins
@@ -74,7 +74,7 @@ public sealed partial class PublishCommands(
     private async Task PublishAsync(CommandContext ctx, GrimoireDbContext dbContext, SinId sinId, PublishType publish,
         UserId userId, string reason, MessageId? publishedMessageId, DateTimeOffset actionDate)
     {
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
         var publicMessage = await this.SendPublicLogMessage(ctx, userId,
             await dbContext.UsernameHistory.GetDisplayNameAsync(userId), reason, publishedMessageId, actionDate, publish);
 
@@ -107,7 +107,7 @@ public sealed partial class PublishCommands(
         DateTimeOffset actionDate,
         PublishType publish)
     {
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
         var banLogChannelId =
             await this._settingsModule.GetLogChannelSetting(GuildLogType.PublicModeration, guild.GetGuildId())
                 .GetOrElse(() => null);

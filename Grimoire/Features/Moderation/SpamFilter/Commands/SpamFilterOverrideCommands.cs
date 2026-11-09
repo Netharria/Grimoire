@@ -30,7 +30,7 @@ internal class SpamFilterOverrideCommands(
         await ctx.DeferResponseAsync();
         channel ??= ctx.Channel;
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
         // guild.Channels holds no threads, and the spam filter honours a thread's override.
         if (channel.GuildId != guild.Id)
         {
@@ -46,7 +46,7 @@ internal class SpamFilterOverrideCommands(
                 $"Will now never filter spam messages from {channel.Mention} and its sub channels/threads."),
             SpamFilterOverrideSetting.Inherit => (SpamFilterOverrideOption.Inherit,
                 $"{channel.Mention} and its sub channels/threads will now follow the parent channel's spam filter setting."),
-            _ => throw new UnreachableException("Invalid spam filter override option.")
+            _ => throw new InvariantViolationException("Invalid spam filter override option.")
         };
 
         await ctx.ReplyResultAsync(
@@ -62,7 +62,7 @@ internal class SpamFilterOverrideCommands(
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         List<string> lines = [];
         await foreach (var spamFilterOverride in this._settingsModule.GetAllSpamFilterOverrideAsync(guild.GetGuildId()))

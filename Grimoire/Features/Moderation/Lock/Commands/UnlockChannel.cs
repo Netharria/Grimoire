@@ -30,7 +30,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
         channel ??= ctx.Channel;
         var moderatorId = ctx.GetModeratorId();
 
@@ -55,7 +55,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         ModeratorId moderatorId)
         => ThreadUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow)
             .ToResult()
-            .BindAsync(lockAction => this._settingsModule.ApplyThreadLockAction(lockAction));
+            .BindAsync(lockAction => this._settingsModule.RemoveThreadLock(lockAction));
 
     /// <summary>
     ///     Reverts the channel's permissions first and only then records the unlock. If Discord refuses, the channel is
@@ -70,6 +70,6 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
                 return await ChannelUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(),
                         DateTimeOffset.UtcNow)
                     .ToResult()
-                    .BindAsync(unlock => this._settingsModule.ApplyChannelLockAction(unlock));
+                    .BindAsync(unlock => this._settingsModule.RemoveChannelLock(unlock));
             });
 }

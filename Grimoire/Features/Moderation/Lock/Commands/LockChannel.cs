@@ -42,7 +42,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         await ctx.DeferResponseAsync();
         channel ??= ctx.Channel;
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         Error? failure;
         if (channel.IsThread)
@@ -105,7 +105,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     previousAllowed.RevokeLockPermissions(),
                     previousDenied.SetLockPermissions()))
             .BindAsync(channelLock =>
-                this._settingsModule.ApplyChannelLockAction(channelLock));
+                this._settingsModule.AddChannelLock(channelLock));
     }
 
     private Task<Result<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,
@@ -127,5 +127,5 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     durationType.GetDateTimeOffset(durationAmount)))
             .ToResult()
             .BindAsync(channelLock =>
-                this._settingsModule.ApplyThreadLockAction(channelLock));
+                this._settingsModule.AddThreadLock(channelLock));
 }

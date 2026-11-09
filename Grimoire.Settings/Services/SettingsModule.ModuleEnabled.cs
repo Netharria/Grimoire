@@ -26,16 +26,12 @@ public sealed partial class SettingsModule
         bool enableModule,
         CancellationToken cancellationToken = default)
         => ToSettingType(moduleType)
-            .BindAsync(async settingType => enableModule switch
-            {
-                true => await GuildSettingCustomValue.Create(settingType, guildId, moderatorId,
-                        DateTimeOffset.UtcNow, bool.TrueString)
-                    .ToResult()
-                    .BindAsync(setting => SetGuildSetting(setting, cancellationToken)),
-                false => await GuildSettingDisabled.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow)
-                    .ToResult()
-                    .BindAsync(setting => SetGuildSetting(setting, cancellationToken))
-            }).Map(_ => enableModule);
+            .BindAsync(settingType => ApplyGuildSetting(enableModule
+                    ? GuildSettingCustomValue.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow,
+                        bool.TrueString)
+                    : GuildSettingDisabled.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow),
+                cancellationToken))
+            .Map(_ => enableModule);
 
     private static bool ParseEnabled(CachedSetting? setting) =>
         setting is CachedCustomSetting { Value: var v }

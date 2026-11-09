@@ -53,10 +53,10 @@ public partial class LogSettingsCommands
                 UserLogSetting.UsernameLog => GuildLogType.UsernameUpdated,
                 UserLogSetting.NicknameLog => GuildLogType.NicknameUpdated,
                 UserLogSetting.AvatarLog => GuildLogType.AvatarUpdated,
-                _ => throw new UnreachableException("Invalid user log setting.")
+                _ => throw new InvariantViolationException("Invalid user log setting.")
             };
             await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, logSetting.ToString(),
-                channelId => this._settingsModule.SetLogChannelSetting(logType, ctx.Guild!.GetGuildId(),
+                channelId => this._settingsModule.SetLogChannelSetting(logType, ctx.RequiredGuild.GetGuildId(),
                     ctx.GetModeratorId(), channelId),
                 logType is GuildLogType.AvatarUpdated
                     ? ChannelSettingCommand.LogWithFilesPermissions

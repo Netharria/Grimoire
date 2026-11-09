@@ -27,13 +27,13 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         string reason = "test",
         PreviouslyAllowedPermissions? allowed = null,
         PreviouslyDeniedPermissions? denied = null)
-        => this._sut.ApplyChannelLockAction(
+        => this._sut.AddChannelLock(
             ChannelLocked.Create(_modId, ModerationReason.FromDatabase(reason),
                 channelId, guildId, DateTimeOffset.UtcNow,
                 allowed ?? _prevAllowed, denied ?? _prevDenied, endTime).ShouldSucceed());
 
     private Task<Result<ChannelLocked>> Unlock(ChannelId channelId, GuildId guildId)
-        => this._sut.ApplyChannelLockAction(
+        => this._sut.RemoveChannelLock(
             ChannelUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow).ShouldSucceed());
 
     [Fact]

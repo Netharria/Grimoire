@@ -24,7 +24,7 @@ public sealed partial class IgnoreCommandGroup
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetAllIgnoredItems(guild.GetGuildId())
             is not Result<FrozenSet<XpIgnoredItem>>.Success { Value: var ignoredItems })

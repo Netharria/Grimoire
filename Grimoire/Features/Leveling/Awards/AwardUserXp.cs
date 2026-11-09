@@ -30,14 +30,14 @@ internal sealed class AwardUserXp(IDbContextFactory<GrimoireDbContext> dbContext
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         var awarded = PositiveXpAmount.Create(xpToAward)
             .Bind(xp => AwardedXp.Create(xp, ctx.GetModeratorId(), user.GetUserId(), guild.GetGuildId(),
                 DateTimeOffset.UtcNow))
-            .Match(a => a, _ => throw new UnreachableException());
+            .Match(a => a, _ => throw new InvariantViolationException());
 
         await dbContext.XpHistory.AddAsync(awarded);
         await dbContext.SaveChangesAsync();

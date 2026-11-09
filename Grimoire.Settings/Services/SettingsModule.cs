@@ -135,17 +135,21 @@ public sealed partial class SettingsModule(
         ModeratorId moderatorId,
         ChannelId? channelId,
         CancellationToken cancellationToken = default)
-        => (channelId switch
-        {
-            not null => ApplyGuildSetting(GuildSettingCustomValue.Create(GuildSettingType.UserCommandChannel, guildId,
-                    moderatorId,
-                    DateTimeOffset.UtcNow, channelId.Value.Value.ToString(CultureInfo.InvariantCulture)),
-                cancellationToken),
-            _ => ApplyGuildSetting(
-                GuildSettingDisabled.Create(GuildSettingType.UserCommandChannel, guildId, moderatorId,
-                    DateTimeOffset.UtcNow),
+        => SetChannelSetting(GuildSettingType.UserCommandChannel, guildId, moderatorId, channelId, cancellationToken);
+
+    /// <summary>Saves a channel setting. A null channel turns the setting off.</summary>
+    private Task<Result<ChannelId?>> SetChannelSetting(
+        GuildSettingType type,
+        GuildId guildId,
+        ModeratorId moderatorId,
+        ChannelId? channelId,
+        CancellationToken cancellationToken)
+        => ApplyGuildSetting(channelId is { } id
+                    ? GuildSettingCustomValue.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow,
+                        id.Value.ToString(CultureInfo.InvariantCulture))
+                    : GuildSettingDisabled.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow),
                 cancellationToken)
-        }).Map(_ => channelId);
+            .Map(_ => channelId);
 
     private Task<Result<GuildSetting>> ApplyGuildSetting(Validation<GuildSetting> validation,
         CancellationToken cancellationToken = default)

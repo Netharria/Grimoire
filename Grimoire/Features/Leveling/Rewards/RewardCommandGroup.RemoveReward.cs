@@ -28,7 +28,7 @@ public sealed partial class RewardCommandGroup
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
             .Bind(rewards => rewards.Any(reward => reward.RoleId == role.GetRoleId())

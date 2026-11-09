@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 
@@ -106,7 +105,7 @@ public sealed record TextCustomCommand : CustomCommand
             {
                 CustomCommandAllowRole allow => allow with { CreatedAt = now },
                 CustomCommandDenyRole deny => deny with { CreatedAt = now },
-                _ => throw new UnreachableException()
+                _ => throw new InvariantViolationException()
             }).ToList()
         });
     }
@@ -137,7 +136,7 @@ public sealed record EmbedCustomCommand : CustomCommand
             {
                 CustomCommandAllowRole allow => allow with { CreatedAt = now },
                 CustomCommandDenyRole deny => deny with { CreatedAt = now },
-                _ => throw new UnreachableException()
+                _ => throw new InvariantViolationException()
             }).ToList()
         });
     }

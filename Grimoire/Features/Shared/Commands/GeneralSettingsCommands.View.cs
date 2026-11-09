@@ -15,7 +15,7 @@ internal sealed partial class GeneralSettingsCommands
         else
             await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         var modLogChannelId =
             await this._settingsModule.GetLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId())

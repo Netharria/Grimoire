@@ -52,11 +52,7 @@ public sealed partial class CustomCommandSettings
         [Parameter("permission_role_10")] DiscordRole? permissionRole10 = null)
     {
         await ctx.DeferResponseAsync();
-        if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
-        {
-            await ctx.SendErrorResponseAsync("This command can only be used in a server.");
-            return;
-        }
+        var guild = ctx.RequiredGuild;
 
         var guildId = guild.GetGuildId();
         var roleIds = CollectRoleIds(permissionRole1, permissionRole2, permissionRole3, permissionRole4,

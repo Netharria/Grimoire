@@ -22,11 +22,7 @@ public sealed partial class LevelSettingsCommandGroup
     {
         await ctx.DeferResponseAsync();
 
-        if (ctx.Guild is not { } guild)
-        {
-            await ctx.ReplyAsync(message: "You need to be in a guild to use this command.");
-            return;
-        }
+        var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetLevelingSettings(guild.GetGuildId())
             is not Result<LevelingSettingEntry>.Success { Value: var response })
@@ -43,7 +39,7 @@ public sealed partial class LevelSettingsCommandGroup
         var levelLogMention =
             levelChannelLog.GetOrElse(() => null) is not { } channel
                 ? "None"
-                : ctx.Guild.Channels.GetValueOrDefault(channel.Value)?.Mention;
+                : guild.Channels.GetValueOrDefault(channel.Value)?.Mention;
         await ctx.ReplyAsync(
             title: "Current Level System Settings",
             message: $"**Module Enabled:** {moduleEnabled}\n" +

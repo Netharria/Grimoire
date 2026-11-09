@@ -29,7 +29,7 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var sin = await dbContext.Sins.FirstOrDefaultAsync(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId());

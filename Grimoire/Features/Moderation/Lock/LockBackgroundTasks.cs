@@ -131,7 +131,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                     DateTimeOffset.UtcNow,
                     moderationReason))
             .ToResult()
-            .BindAsync(channelUnlock => settingsModule.ApplyChannelLockAction(channelUnlock, cancellationToken));
+            .BindAsync(channelUnlock => settingsModule.RemoveChannelLock(channelUnlock, cancellationToken));
 
     private static Task<Result<ThreadLocked>> RecordThreadUnlockAsync(ThreadLocked expiredLock, string reason,
         SettingsModule settingsModule, DiscordClient discordClient, CancellationToken cancellationToken)
@@ -144,7 +144,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                     DateTimeOffset.UtcNow,
                     moderationReason))
             .ToResult()
-            .BindAsync(threadUnlock => settingsModule.ApplyThreadLockAction(threadUnlock, cancellationToken));
+            .BindAsync(threadUnlock => settingsModule.RemoveThreadLock(threadUnlock, cancellationToken));
 
     private static async Task SendLockExpiredLogAsync(
         DiscordChannel channel,

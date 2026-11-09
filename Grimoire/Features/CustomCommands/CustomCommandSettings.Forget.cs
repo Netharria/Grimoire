@@ -30,11 +30,7 @@ public sealed partial class CustomCommandSettings
         CustomCommandName name)
     {
         await ctx.DeferResponseAsync();
-        if (ctx.GetRequiredGuild() is not Validation<DiscordGuild>.Valid { Value: var guild })
-        {
-            await ctx.SendErrorResponseAsync("This command can only be used in a server.");
-            return;
-        }
+        var guild = ctx.RequiredGuild;
 
         await DeleteCommandAsync(guild.GetGuildId(), name)
             .Match(

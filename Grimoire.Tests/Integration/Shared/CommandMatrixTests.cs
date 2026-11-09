@@ -114,7 +114,7 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
             "reclaim" => [user, SlashOption.Enum("option", Grimoire.Features.Leveling.Awards.ReclaimUserXp.XpOption.All)],
             "rewards add" => [SlashOption.Subcommand("add", SlashOption.Role("role", this.Guild.KickerRoleId), SlashOption.Integer("level", 1))],
             "ignore add" => [SlashOption.Subcommand("add", SlashOption.MentionableUser("items_0", this.Guild.User1))],
-            "ignore remove" => [SlashOption.Subcommand("remove", SlashOption.MentionableUser("item_0", this.Guild.User1))],
+            "ignore remove" => [SlashOption.Subcommand("remove", SlashOption.MentionableUser("items_0", this.Guild.User1))],
             "commands learn" => [SlashOption.Subcommand("learn", SlashOption.String("name", "hello"), SlashOption.String("content", "hi"))],
             "commands forget" or "commands history" or "commands stats"
                 => [SlashOption.Subcommand(command.Split(' ')[1], SlashOption.String("name", "hello"))],

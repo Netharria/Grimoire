@@ -54,7 +54,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         await SeedXpAsync(new UserId(3UL), _guildId, 200);
         await RefreshLeaderboardViewAsync();
 
-        var response = await CreateSut().GetTopLeaderboardAsync(_guildId, TestContext.Current.CancellationToken);
+        var response = await CreateSut().GetLeaderboardAsync(_guildId, null, TestContext.Current.CancellationToken);
 
         var value = response.ShouldSucceed();
         value.TotalUserCount.ShouldBe(3);
@@ -72,7 +72,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
             await SeedXpAsync(new UserId((ulong)i), _guildId, i * 10);
         await RefreshLeaderboardViewAsync();
 
-        var response = await CreateSut().GetTopLeaderboardAsync(_guildId, TestContext.Current.CancellationToken);
+        var response = await CreateSut().GetLeaderboardAsync(_guildId, null, TestContext.Current.CancellationToken);
 
         var value = response.ShouldSucceed();
         value.TotalUserCount.ShouldBe(18);
@@ -86,7 +86,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         await SeedXpAsync(new UserId(2UL), _otherGuildId, 999);
         await RefreshLeaderboardViewAsync();
 
-        var response = await CreateSut().GetTopLeaderboardAsync(_guildId, TestContext.Current.CancellationToken);
+        var response = await CreateSut().GetLeaderboardAsync(_guildId, null, TestContext.Current.CancellationToken);
 
         response.ShouldSucceed().TotalUserCount.ShouldBe(1);
     }
@@ -94,7 +94,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
     [Fact]
     public async Task GetTopLeaderboardAsync_NoUsers_ReturnsEmptyTextAndZeroCount()
     {
-        var response = await CreateSut().GetTopLeaderboardAsync(_guildId, TestContext.Current.CancellationToken);
+        var response = await CreateSut().GetLeaderboardAsync(_guildId, null, TestContext.Current.CancellationToken);
 
         var value = response.ShouldSucceed();
         value.TotalUserCount.ShouldBe(0);
@@ -106,7 +106,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
     [Fact]
     public async Task GetUserCenteredLeaderboardAsync_UserNotOnLeaderboard_ReturnsNotFound()
     {
-        var response = await CreateSut().GetUserCenteredLeaderboardAsync(
+        var response = await CreateSut().GetLeaderboardAsync(
             _guildId, new UserId(999UL), TestContext.Current.CancellationToken);
 
         response.ShouldBeOfType<Result<GetLeaderboard.Response>.NotFound>()
@@ -123,7 +123,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
             await SeedXpAsync(new UserId((ulong)i), _guildId, i * 10);
         await RefreshLeaderboardViewAsync();
 
-        var response = await CreateSut().GetUserCenteredLeaderboardAsync(
+        var response = await CreateSut().GetLeaderboardAsync(
             _guildId, new UserId(10UL), TestContext.Current.CancellationToken);
 
         var value = response.ShouldSucceed();
@@ -138,7 +138,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         await SeedXpAsync(new UserId(1UL), _otherGuildId, 100);
         await RefreshLeaderboardViewAsync();
 
-        var response = await CreateSut().GetUserCenteredLeaderboardAsync(
+        var response = await CreateSut().GetLeaderboardAsync(
             _guildId, new UserId(1UL), TestContext.Current.CancellationToken);
 
         response.ShouldBeOfType<Result<GetLeaderboard.Response>.NotFound>();

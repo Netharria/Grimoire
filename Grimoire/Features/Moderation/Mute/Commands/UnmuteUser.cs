@@ -32,7 +32,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         await ctx.DeferResponseAsync();
 
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         var activeMute = await this._settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
             .Match(mute => (MuteAdded?)mute, _ => null);

@@ -34,8 +34,8 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
         [Parameter("user")] [Description("The user to find on the leaderboard.")]
         DiscordUser? user = null)
     {
-        var guild = ctx.Guild!;
-        var member = ctx.Member!;
+        var guild = ctx.RequiredGuild;
+        var member = ctx.RequiredMember;
 
         if (option == LeaderboardOption.User && user is null)
         {
@@ -58,69 +58,42 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
             LeaderboardOption.Top => (UserId?)null,
             LeaderboardOption.Me => ctx.User.GetUserId(),
             LeaderboardOption.User => user!.GetUserId(),
-            _ => throw new UnreachableException()
+            _ => throw new InvariantViolationException()
         };
 
-        var response = targetUserId is null
-            ? await this.GetTopLeaderboardAsync(guild.GetGuildId(), CancellationToken.None)
-            : await this.GetUserCenteredLeaderboardAsync(guild.GetGuildId(), targetUserId.Value,
-                CancellationToken.None);
-
-        await response.Match(
+        await (await this.GetLeaderboardAsync(guild.GetGuildId(), targetUserId, CancellationToken.None)).Match(
             r => ctx.ReplyAsync(GrimoireColor.DarkPurple, title: "LeaderBoard",
                 message: r.LeaderboardText, footer: $"Total Users {r.TotalUserCount}").AsTask(),
             _ => ctx.ReplyAsync(GrimoireColor.Yellow, "User not found on the leaderboard").AsTask());
     }
 
-    internal async Task<Result<Response>> GetTopLeaderboardAsync(GuildId guildId, CancellationToken ct)
+    /// <summary>
+    ///     Fifteen rows of the guild's leaderboard: the top, or, with <paramref name="centredOn" />, five above that
+    ///     member and nine below, shifted up near the bottom so fifteen rows still show.
+    /// </summary>
+    internal async Task<Result<Response>> GetLeaderboardAsync(GuildId guildId, UserId? centredOn, CancellationToken ct)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+        var board = dbContext.LeaderboardView.AsNoTracking().Where(x => x.GuildId == guildId);
+        var totalCount = await board.CountAsync(ct);
 
-        var rankedMembers = await dbContext.LeaderboardView
-            .AsNoTracking()
-            .Where(x => x.GuildId == guildId)
-            .OrderBy(x => x.Rank)
-            .Take(15)
-            .ToArrayAsync(ct);
+        var firstRank = 1L;
+        if (centredOn is { } userId)
+        {
+            if (await board.Where(x => x.UserId == userId).Select(x => (long?)x.Rank).FirstOrDefaultAsync(ct)
+                is not { } rank)
+                return new Result<Response>.NotFound(
+                    new Error("leaderboard.user-not-found", "User not found on the leaderboard"));
+            firstRank = Math.Max(1, Math.Min(rank - 5, totalCount - 14));
+        }
 
-        var totalMemberCount = await dbContext.LeaderboardView
-            .Where(x => x.GuildId == guildId)
-            .CountAsync(ct);
-
-        var leaderboardText = string.Join('\n', rankedMembers.Select(m =>
-            $"**{m.Rank}** {UserExtensions.Mention(m.UserId)} **XP:** {m.TotalXp}"));
-
-        return Result<Response>.Ok(new Response(leaderboardText, totalMemberCount));
-    }
-
-    internal async Task<Result<Response>> GetUserCenteredLeaderboardAsync(
-        GuildId guildId, UserId userId, CancellationToken ct)
-    {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-
-        var userEntry = await dbContext.Set<LeaderboardView>()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.GuildId == guildId && x.UserId == userId, ct);
-
-        if (userEntry is null)
-            return new Result<Response>.NotFound(
-                new Error("leaderboard.user-not-found", "User not found on the leaderboard"));
-
-        var totalCount = await dbContext.Set<LeaderboardView>()
-            .Where(x => x.GuildId == guildId)
-            .CountAsync(ct);
-
-        // Five above the member and nine below, shifted up near the bottom so fifteen rows still show.
-        var firstRank = Math.Max(1, Math.Min(userEntry.Rank - 5, totalCount - 14));
-        var surroundingUsers = await dbContext.Set<LeaderboardView>()
-            .AsNoTracking()
-            .Where(x => x.GuildId == guildId && x.Rank >= firstRank && x.Rank < firstRank + 15)
+        var rows = await board
+            .Where(x => x.Rank >= firstRank && x.Rank < firstRank + 15)
             .OrderBy(x => x.Rank)
             .ToArrayAsync(ct);
 
-        var leaderboardText = string.Join('\n', surroundingUsers.Select(m =>
+        var leaderboardText = string.Join('\n', rows.Select(m =>
             $"**{m.Rank}** {UserExtensions.Mention(m.UserId)} **XP:** {m.TotalXp}"));
-
         return Result<Response>.Ok(new Response(leaderboardText, totalCount));
     }
 

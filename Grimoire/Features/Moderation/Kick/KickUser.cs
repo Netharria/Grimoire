@@ -36,7 +36,7 @@ internal sealed class KickUser(
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (ctx.User.Id == member.Id)
         {
@@ -54,7 +54,7 @@ internal sealed class KickUser(
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
         var sin = Sin.ForKick(actor, member.GetUserId(), guild.GetGuildId(), now, ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null))
-            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
+            .Match(s => s, _ => throw new InvariantViolationException("Discord ids are never zero."));
 
         // Once they're gone the bot usually can't reach them, so the DM goes first.
         await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()

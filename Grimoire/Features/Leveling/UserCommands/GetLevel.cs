@@ -26,19 +26,16 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         [Parameter("user")] [Description("User to get details from. Blank will return your info.")]
         DiscordUser? user = null)
     {
-        if (ctx.Guild is not { } guild || ctx.Member is null)
-        {
-            await ctx.ReplyAsync(GrimoireColor.Yellow, "This command can only be used in a server.");
-            return;
-        }
+        var guild = ctx.RequiredGuild;
+        var caller = ctx.RequiredMember;
 
         var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId());
 
         if (ctx is SlashCommandContext slashContext)
             await slashContext.DeferResponseAsync(
-                !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+                !caller.Permissions.HasPermission(DiscordPermission.ManageMessages)
                 && userCommandChannelId.GetOrElse(() => null) != ctx.GetChannelId());
-        else if (!ctx.Member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+        else if (!caller.Permissions.HasPermission(DiscordPermission.ManageMessages)
                  && userCommandChannelId.GetOrElse(() => null) != ctx.GetChannelId())
             return;
 
@@ -46,7 +43,6 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         var membersXp = await dbContext.XpHistory
-            .AsNoTracking()
             .Where(x => x.UserId == user.GetUserId() && x.GuildId == guild.GetGuildId())
             .SumAsync(x => x.RawXp);
 

@@ -114,25 +114,21 @@ public static partial class CommandContextExtension
                     => Validation<DiscordChannel?>.Succeed(selectedChannel),
                 ChannelOption.SelectChannel => Validation<DiscordChannel?>.Fail(
                     new Error("channel.required", "Select a channel when using the Select Channel option.")),
-                _ => throw new UnreachableException("Invalid ChannelOption value.")
+                _ => throw new InvariantViolationException("Invalid ChannelOption value.")
             };
 
         /// <summary>
-        ///     Returns the <see cref="DiscordGuild" /> for the current context wrapped in a
-        ///     <see cref="Validation{T}" /> so callers are forced to handle the case where the
-        ///     command is invoked outside a guild.
+        ///     The guild the command ran in, for commands under <c>[RequireGuild]</c>. That check has already refused a
+        ///     command outside a guild, so a null guild here is a bug in the command's attributes.
         /// </summary>
-        /// <remarks>
-        ///     Commands decorated with <c>[RequireGuild]</c> will never reach this point with a
-        ///     <c>null</c> guild at runtime, but returning <see cref="Validation{T}" /> makes that
-        ///     contract explicit to the compiler and prevents accidental <c>ctx.Guild!</c> suppression.
-        /// </remarks>
-        [Pure]
-        public Validation<DiscordGuild> GetRequiredGuild()
-            => ctx.Guild is { } guild
-                ? Validation<DiscordGuild>.Succeed(guild)
-                : Validation<DiscordGuild>.Fail(
-                    new Error("guild.required", "This command can only be used in a server."));
+        public DiscordGuild RequiredGuild
+            => ctx.Guild ?? throw new InvariantViolationException(
+                $"{ctx.Command.FullName} ran outside a guild; it needs [RequireGuild].");
+
+        /// <summary>The member who ran the command. The same contract as <see cref="RequiredGuild" />.</summary>
+        public DiscordMember RequiredMember
+            => ctx.Member ?? throw new InvariantViolationException(
+                $"{ctx.Command.FullName} ran outside a guild; it needs [RequireGuild].");
 
         [Pure]
         public ModeratorId GetModeratorId() => new(ctx.User.Id);

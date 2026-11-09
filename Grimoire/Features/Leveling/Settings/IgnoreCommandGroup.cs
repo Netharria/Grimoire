@@ -5,8 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Frozen;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Leveling.Settings;
@@ -25,19 +27,57 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
     private static SnowflakeObject[] CombineItems(DiscordChannel? channel, SnowflakeObject[]? items)
         => [.. channel is null ? [] : new SnowflakeObject[] { channel }, .. items ?? []];
 
-    private static string BuildIgnoreListAsync(
-        IEnumerable<XpTrackedItem> ignoredItems)
+    /// <summary>
+    ///     Records the channel and items as ignored or no longer ignored, then replies and logs. <paramref name="create" />
+    ///     builds the record for one item; <paramref name="outcome" /> finishes the sentence after the mentions.
+    /// </summary>
+    private async Task UpdateIgnoredAsync(CommandContext ctx, DiscordChannel? channel, SnowflakeObject[]? items,
+        Func<SnowflakeObject, GuildId, ModeratorId, DateTimeOffset, Validation<XpTrackedItem>> create, string outcome)
     {
-        return string.Join(' ', ignoredItems
-            .Select(item => item switch
+        await ctx.DeferResponseAsync();
+        var guild = ctx.RequiredGuild;
+
+        var combined = CombineItems(channel, items);
+        if (combined.Length == 0)
+        {
+            await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not parse any ids from the submitted values.");
+            return;
+        }
+
+        var created = combined
+            .Select(item => create(item, guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow))
+            .ToArray();
+        if (created.OfType<Validation<XpTrackedItem>.Invalid>().SelectMany(invalid => invalid.Errors).ToArray()
+            is [_, ..] errors)
+        {
+            await ctx.SendErrorResponseAsync(errors);
+            return;
+        }
+
+        var tracked = created.OfType<Validation<XpTrackedItem>.Valid>().Select(valid => valid.Value).ToFrozenSet();
+        var message = $"{BuildIgnoreList(tracked)} {outcome}";
+        await ctx.ReplyResultAsync(
+            await this._settingsModule.AppendIgnoredItemsEvent(guild.GetGuildId(), tracked),
+            message,
+            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                IgnoredChannel c => $"<#{c.ChannelId.Value}>",
-                IgnoredMember m => $"<@{m.UserId.Value}>",
-                IgnoredRole r => $"<@&{r.RoleId.Value}>",
-                WatchedChannel c => $"<#{c.ChannelId.Value}>",
-                WatchedMember m => $"<@{m.UserId.Value}>",
-                WatchedRole r => $"<@&{r.RoleId.Value}>",
-                _ => ""
-            }));
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.DarkPurple,
+                Description = message
+            }),
+            GrimoireColor.Green);
     }
+
+    private static string BuildIgnoreList(IEnumerable<XpTrackedItem> items)
+        => string.Join(' ', items.Select(item => item switch
+        {
+            IgnoredChannel c => $"<#{c.ChannelId.Value}>",
+            IgnoredMember m => $"<@{m.UserId.Value}>",
+            IgnoredRole r => $"<@&{r.RoleId.Value}>",
+            WatchedChannel c => $"<#{c.ChannelId.Value}>",
+            WatchedMember m => $"<@{m.UserId.Value}>",
+            WatchedRole r => $"<@&{r.RoleId.Value}>",
+            _ => throw new InvariantViolationException($"Unknown ignore item {item.GetType().Name}.")
+        }));
 }

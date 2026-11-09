@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
-using System.Diagnostics;
 
 namespace Grimoire.Domain;
 
@@ -23,7 +22,7 @@ public abstract record Validation<T>
         {
             Valid(var v) => Validation<TOut>.Succeed(mapper(v)),
             Invalid(var e) => new Validation<TOut>.Invalid(e),
-            _ => throw new UnreachableException()
+            _ => throw new InvariantViolationException()
         };
 
     public Validation<TOut> Bind<TOut>(Func<T, Validation<TOut>> binder)
@@ -31,7 +30,7 @@ public abstract record Validation<T>
         {
             Valid(var v) => binder(v),
             Invalid(var e) => new Validation<TOut>.Invalid(e),
-            _ => throw new UnreachableException()
+            _ => throw new InvariantViolationException()
         };
 
     public TOut Match<TOut>(Func<T, TOut> onValid, Func<ImmutableArray<Error>, TOut> onInvalid)
@@ -39,7 +38,7 @@ public abstract record Validation<T>
         {
             Valid(var v) => onValid(v),
             Invalid(var e) => onInvalid(e),
-            _ => throw new UnreachableException()
+            _ => throw new InvariantViolationException()
         };
 
     public T GetOrElse(Func<T> fallback)
@@ -50,7 +49,7 @@ public abstract record Validation<T>
         {
             Valid(var v) => Result<T>.Ok(v),
             Invalid(var errors) => Result<T>.Fail(CombineErrors(errors)),
-            _ => throw new UnreachableException()
+            _ => throw new InvariantViolationException()
         };
 
     private static Error CombineErrors(ImmutableArray<Error> errors)

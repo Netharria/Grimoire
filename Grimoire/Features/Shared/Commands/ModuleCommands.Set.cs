@@ -23,7 +23,7 @@ internal sealed partial class ModuleCommands
             ModuleArguments.MessageLog => Module.MessageLog,
             ModuleArguments.Commands => Module.Commands,
             ModuleArguments.AntiSpam => Module.AntiSpam,
-            _ => throw new UnreachableException("Invalid module argument.")
+            _ => throw new InvariantViolationException("Invalid module argument.")
         };
     }
 
@@ -38,7 +38,7 @@ internal sealed partial class ModuleCommands
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await ctx.ReplyResultAsync(
             await this._settingsModule.SetModuleState(MapToModule(module), guild.GetGuildId(), ctx.GetModeratorId(),

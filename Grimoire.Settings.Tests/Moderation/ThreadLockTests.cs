@@ -20,12 +20,12 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
 
     private Task<Result<ThreadLocked>> Lock(ChannelId channelId, GuildId guildId, DateTimeOffset endTime,
         string reason = "test")
-        => this._sut.ApplyThreadLockAction(
+        => this._sut.AddThreadLock(
             ThreadLocked.Create(_modId, ModerationReason.FromDatabase(reason),
                 channelId, guildId, DateTimeOffset.UtcNow, endTime).ShouldSucceed());
 
     private Task<Result<ThreadLocked>> Unlock(ChannelId channelId, GuildId guildId)
-        => this._sut.ApplyThreadLockAction(
+        => this._sut.RemoveThreadLock(
             ThreadUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow).ShouldSucceed());
 
     [Fact]

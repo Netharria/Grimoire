@@ -25,7 +25,7 @@ internal sealed partial class GeneralSettingsCommands
         await ctx.DeferResponseAsync();
         // Replies there are interaction responses, so the bot needn't be able to send in it.
         await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the User Command Channel",
-            channelId => this._settingsModule.SetUserCommandChannelSetting(ctx.Guild!.GetGuildId(),
+            channelId => this._settingsModule.SetUserCommandChannelSetting(ctx.RequiredGuild.GetGuildId(),
                 ctx.GetModeratorId(), channelId),
             botNeeds: []);
     }

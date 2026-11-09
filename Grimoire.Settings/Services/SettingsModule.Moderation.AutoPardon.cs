@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.Diagnostics;
 using System.Globalization;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
@@ -31,7 +30,7 @@ public sealed partial class SettingsModule
                     CachedCustomSetting customSetting => TimeSpan.Parse(customSetting.Value,
                         CultureInfo.InvariantCulture),
                     CachedDisabledSetting => DefaultAutoPardonDuration,
-                    _ => throw new UnreachableException()
+                    _ => throw new InvariantViolationException()
                 };
                 return span != TimeSpan.Zero ? span : DefaultAutoPardonDuration;
             });

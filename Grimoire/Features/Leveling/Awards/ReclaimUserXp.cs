@@ -42,13 +42,12 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await ValidateOption(option, amount)
-            .BindAsync(_ => this.FetchXpToTakeAsync(user, guild, option, amount))
-            .BindAsync(xpToTake => this.PersistReclaimAsync(ctx, user, guild, xpToTake))
+            .BindAsync(_ => this.ReclaimAsync(user, guild, option, amount))
             .MatchAsync(
-                _ => Task.CompletedTask,
+                xpTaken => this.ReportReclaimAsync(ctx, user, guild, xpTaken),
                 error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
 
@@ -57,59 +56,35 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             ? Result<Unit>.Fail(new Error("reclaim.amount.zero", "Specify an amount greater than 0"))
             : Result<Unit>.Ok(Unit.Value);
 
-    private async Task<Result<long>> FetchXpToTakeAsync(
-        DiscordUser user,
-        DiscordGuild guild,
-        XpOption option,
-        int amount)
+    /// <summary>Takes the XP and returns how much was taken: everything, or the amount, capped at what they have.</summary>
+    private async Task<Result<long>> ReclaimAsync(DiscordUser user, DiscordGuild guild, XpOption option, int amount)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
         var memberXp = await dbContext.XpHistory
-            .AsNoTracking()
             .Where(history => history.UserId == user.GetUserId() && history.GuildId == guild.GetGuildId())
-            .SumAsync(history => (long?)history.RawXp);
+            .SumAsync(history => history.RawXp);
+        var xpToTake = option == XpOption.All ? memberXp : Math.Min(memberXp, amount);
+        if (xpToTake <= 0)
+            return new Result<long>.NotFound(new Error("reclaim.member.no-xp", $"{user.Mention} has no xp to take."));
 
-        if (memberXp is null or 0)
-            return new Result<long>.NotFound(
-                new Error("reclaim.member.no-xp", $"{user.Mention} has no xp to take."));
-
-        var xpToTake = Math.Min(memberXp.Value, option switch
-        {
-            XpOption.All => memberXp.Value,
-            XpOption.Amount => amount,
-            _ => throw new ArgumentOutOfRangeException(nameof(option), "XpOption not implemented in switch statement.")
-        });
-
-        return xpToTake <= 0
-            ? new Result<long>.NotFound(new Error("reclaim.member.no-xp", $"{user.Mention} has no xp to take."))
-            : Result<long>.Ok(xpToTake);
-    }
-
-    private async Task<Result<Unit>> PersistReclaimAsync(
-        CommandContext ctx,
-        DiscordUser user,
-        DiscordGuild guild,
-        long xpToTake)
-    {
         var reclaimedXp = NegativeXpAmount.Create(-xpToTake)
             .Bind(xp => ReclaimedXp.Create(xp, user.GetUserId(), guild.GetGuildId(), DateTimeOffset.UtcNow))
-            .Match(r => r, _ => throw new UnreachableException());
-
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+            .Match(r => r, _ => throw new InvariantViolationException());
         await dbContext.XpHistory.AddAsync(reclaimedXp);
         await dbContext.SaveChangesAsync();
+        return Result<long>.Ok(xpToTake);
+    }
 
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple,
-            $"{xpToTake} xp has been taken from {user.Mention}.");
+    private async Task ReportReclaimAsync(CommandContext ctx, DiscordUser user, DiscordGuild guild, long xpTaken)
+    {
+        await ctx.ReplyAsync(GrimoireColor.DarkPurple, $"{xpTaken} xp has been taken from {user.Mention}.");
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
-            Description = $"{xpToTake} xp has been taken from {user.Mention} by {ctx.User.Mention}.",
+            Description = $"{xpTaken} xp has been taken from {user.Mention} by {ctx.User.Mention}.",
             Color = GrimoireColor.Purple
         });
-
-        return Result<Unit>.Ok(Unit.Value);
     }
 }

@@ -31,7 +31,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
         if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var pardonReason))

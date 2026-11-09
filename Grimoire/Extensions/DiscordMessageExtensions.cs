@@ -16,6 +16,6 @@ public static class DiscordMessageExtensions
 
         [Pure]
         public MessageContent GetMessageContent()
-            => MessageContent.Create(message.Content).Match(c => c, _ => throw new UnreachableException());
+            => MessageContent.Create(message.Content).Match(c => c, _ => throw new InvariantViolationException());
     }
 }

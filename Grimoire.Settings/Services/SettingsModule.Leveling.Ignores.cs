@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Collections.Frozen;
-using System.Diagnostics;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +28,7 @@ public sealed partial class SettingsModule
                         IgnoredChannel channel => channel.ChannelId == channelId,
                         IgnoredMember member => member.UserId == userId,
                         IgnoredRole role => userRoleIds.Contains(role.RoleId),
-                        _ => throw new UnreachableException()
+                        _ => throw new InvariantViolationException()
                     }));
 
     public Task<Result<bool>> IsMemberIgnored(
@@ -45,7 +44,7 @@ public sealed partial class SettingsModule
                         IgnoredChannel => false,
                         IgnoredMember member => member.UserId == userId,
                         IgnoredRole role => userRoleIds.Contains(role.RoleId),
-                        _ => throw new UnreachableException()
+                        _ => throw new InvariantViolationException()
                     }));
 
     /// <remarks>A failure is returned, not an empty set, so a caller can't mistake an outage for "nothing ignored".</remarks>

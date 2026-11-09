@@ -26,12 +26,12 @@ denied, module disabled, bad input, bot-lacks-permission, and target-is-higher-r
 | 01 | `01-general-settings.md` | `/GeneralSettings` (View, ModLogChannel, UserCommands), `/Modules` (View, Set), `/UserInfo`, `/Purge` (All, User), `RequireModuleEnabled` / `RequireUserGuildPermissions` checks | drafted |
 | 02 | `02-moderation-actions.md` | `/Ban`, `/Unban`, `/Kick`, `/Warn`, `/Mute`, `/Unmute`, `/Lock`, `/Unlock`; `/Mutes` (Create, Set, View, Refresh); Ban added/removed events; `UserJoinedWhileMuted`; `MuteBackgroundTasks` and `LockBackgroundTasks` expiry | drafted |
 | 03 | `03-sins.md` | `/SinLog`, `/Pardon`, `/Forget`, `/Reason`, `/ModSettings` (View, PublicBanLog, AutoPardon), `/Publish` (Ban, Unban, Kick); the sin records created by area 02's Ban/Kick/Warn/Mute (viewing, pardoning, reason history) and the `/Unban` attribution gap (`known-issues.md` KI-09) | drafted (automated) |
-| 04 | `04-spamfilter-diagnostics.md` | `/SpamFilter` (Override, View), `SpamEvents`; `/Diagnostics` (Check, Ignore Add/Remove/View); the diagnostics follow-up report posted by `/Mutes Create` and `/Mutes Refresh` (embed contents, `moderation-diagnostics.txt`, ignores; area 02 only checks that it appears) | todo |
-| 05 | `05-logging.md` | `/Log Message` (Set, View, Override, ViewOverrides), `/Log User` (Set, View); add/edit/delete/bulk-delete message events; avatar/nickname/username/join/leave events; `CleanupLogsBackgroundTask` | todo |
-| 06 | `06-leveling.md` | `GainUserXp`, `/Level`, `/Leaderboard`, `/LevelSettings` (View, Set, LogSet), `/Rewards`, `/Ignore`, `/Award`, `/Reclaim`; `LeaderboardRefreshBackgroundTask` | todo |
-| 07 | `07-custom-commands.md` | `/Command`, `/Commands` (Learn, Forget, History, Revert, Stats, Leaderboard); `TextCustomCommandProcessor` (prefix text triggers) | todo |
-| 08 | `08-alerts-health.md` | `AlertService`, warning buffer/flush/daily report, `GuildIssueReporter` + throttle, `GatewayWatchdogService`, `GuildLog`, `GuildAdded`, `InviteEvents`, `MemberAdded`, `UpdateAllGuilds` | todo |
-| 09 | `09-cross-cutting.md` | Startup / migrations, PluralKit (proxied messages in leveling, logging, spam), permission matrix, module-toggle matrix, settings cache invalidation, restart persistence | todo |
+| 04 | `04-spamfilter-diagnostics.md` | `/SpamFilter` (Override, View), `SpamEvents`; `/Diagnostics` (Check, Ignore Add/Remove/View); the diagnostics follow-up report posted by `/Mutes Create` and `/Mutes Refresh` (embed contents, `moderation-diagnostics.txt`, ignores; area 02 only checks that it appears) | drafted |
+| 05 | `05-logging.md` | `/Log Message` (Set, View, Override, ViewOverrides), `/Log User` (Set, View); add/edit/delete/bulk-delete message events; avatar/nickname/username/join/leave events; `CleanupLogsBackgroundTask` | drafted |
+| 06 | `06-leveling.md` | `GainUserXp`, `/Level`, `/Leaderboard`, `/LevelSettings` (View, Set, LogSet), `/Rewards`, `/Ignore`, `/Award`, `/Reclaim`; `LeaderboardRefreshBackgroundTask` | drafted |
+| 07 | `07-custom-commands.md` | `/Command`, `/Commands` (Learn, Forget, History, Revert, Stats, Leaderboard); `TextCustomCommandProcessor` (prefix text triggers) | drafted |
+| 08 | `08-alerts-health.md` | `AlertService`, warning buffer/flush/daily report, `GuildIssueReporter` + throttle, `GatewayWatchdogService`, `GuildLog`, `GuildAdded`, `InviteEvents`, `MemberAdded`, `UpdateAllGuilds` | drafted |
+| 09 | `09-cross-cutting.md` | Startup / migrations, PluralKit (proxied messages in leveling, logging, spam), permission matrix, module-toggle matrix, settings cache invalidation, restart persistence | drafted |
 
 ## Automated integration tests
 
@@ -61,8 +61,7 @@ the tests is a separate pass. Suggested prompt:
 | Project | Covers |
 |---------|--------|
 | `Grimoire.Settings.Tests` | Settings services, guild settings, message log, moderation settings, module state, domain |
-| `Grimoire.Tests` | Alerts, CustomCommands, Gateway, GuildIssues, Leveling (awards, events, user commands), Diagnostics, Mute |
-| `Grimoire.Tests.CustomCommands` | Custom command logic |
+| `Grimoire.Tests` | Unit tests for Alerts, CustomCommands, Gateway, GuildIssues, Leveling (awards, events, user commands), Diagnostics, Mute; fake-Discord integration tests in `Integration/` (see `automation-backlog.md`) |
 | `Grimoire.Domain.Test.Unit` | Domain types / strongly-typed IDs |
 
 Not covered by any automated test (highest manual priority): Ban/Kick/Warn/Lock, sins admin,

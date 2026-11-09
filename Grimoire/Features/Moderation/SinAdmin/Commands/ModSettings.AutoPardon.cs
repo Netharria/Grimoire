@@ -29,7 +29,7 @@ internal sealed partial class ModSettings
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (durationType.GetDays(durationAmount) > MaxAutoPardonDays)
         {

@@ -21,7 +21,7 @@ public partial class MuteAdminCommands
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (MuteRoleProblem(guild, role) is { } problem)
         {

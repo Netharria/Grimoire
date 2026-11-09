@@ -34,7 +34,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
         else
             await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
         var muteRoleId = await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId())
             .GetOrElse(() => null);
         var ignores = await this._settingsModule.GetDiagnosticsIgnores(guild.GetGuildId());
@@ -56,7 +56,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
             params SnowflakeObject[] items)
         {
             await ctx.DeferResponseAsync();
-            var guild = ctx.Guild!;
+            var guild = ctx.RequiredGuild;
             var (ignored, skipped) = ToIgnoredItems(items, guild, ctx.GetModeratorId());
 
             if (ignored.Count == 0)
@@ -79,7 +79,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
             params SnowflakeObject[] items)
         {
             await ctx.DeferResponseAsync();
-            var guild = ctx.Guild!;
+            var guild = ctx.RequiredGuild;
             var (ignored, skipped) = ToIgnoredItems(items, guild, ctx.GetModeratorId());
 
             if (ignored.Count == 0)
@@ -100,7 +100,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
         {
             await ctx.DeferResponseAsync();
 
-            var items = await this._settingsModule.GetDiagnosticsIgnoredItemsAsync(ctx.Guild!.GetGuildId())
+            var items = await this._settingsModule.GetDiagnosticsIgnoredItemsAsync(ctx.RequiredGuild.GetGuildId())
                 .GetOrElse(() => FrozenSet<DiagnosticsIgnoredItem>.Empty);
 
             await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()

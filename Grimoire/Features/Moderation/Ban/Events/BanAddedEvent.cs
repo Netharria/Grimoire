@@ -68,7 +68,7 @@ public partial class BanAddedEvent(
         // An unusable reason, such as one over 1000 characters from the audit log, is left out, not a lost ban.
         var sin = Sin.ForBan(actor, args.Member.GetUserId(), args.Guild.GetGuildId(), now,
                 ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null))
-            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
+            .Match(s => s, _ => throw new InvariantViolationException("Discord ids are never zero."));
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
         return sin.Id;

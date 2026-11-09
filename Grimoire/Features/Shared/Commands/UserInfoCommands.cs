@@ -29,7 +29,7 @@ internal sealed class UserInfoCommands(
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         var (color, displayName, avatarUrl, joinDate, roles) =
             GetUserInfo(user, await guild.GetMemberOrDefaultAsync(user.GetUserId()));
@@ -135,7 +135,6 @@ internal sealed class UserInfoCommands(
             return;
 
         var membersXp = await dbContext.XpHistory
-            .AsNoTracking()
             .Where(x => x.UserId == userId && x.GuildId == guildId)
             .SumAsync(x => x.RawXp);
 

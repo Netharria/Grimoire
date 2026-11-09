@@ -6,7 +6,6 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using System.Collections.Frozen;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Helpers;
@@ -25,31 +24,15 @@ public sealed partial class SettingsModule
                 async (state, innerCt) =>
                 {
                     await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(innerCt);
-                    var results = await dbContext.ChannelLocks
+                    var results = await ActiveChannelLocks(dbContext)
                         .AsNoTracking()
-                        .OfType<ChannelLocked>()
                         .Where(x => x.GuildId == state)
-                        // ReSharper disable once AccessToDisposedClosure
-                        .Where(x => !dbContext.ChannelLocks
-                            .Any(y => y.ChannelId == x.ChannelId &&
-                                      y.GuildId == x.GuildId &&
-                                      y.SetAt > x.SetAt))
                         .Select(x => x.ChannelId)
                         .ToHashSetAsync(innerCt);
                     return results.ToFrozenSet();
                 }, this._cacheEntryOptions, cancellationToken: ct);
             return Result<bool>.Ok(locks.Contains(channelId));
         }, new Error("channel-lock.lookup-failed", "Failed to retrieve channel lock state."), cancellationToken);
-
-    public Task<Result<ChannelLocked>> ApplyChannelLockAction(
-        ChannelLock channelLock,
-        CancellationToken cancellationToken = default)
-        => channelLock switch
-        {
-            ChannelLocked v => AddChannelLock(v, cancellationToken),
-            ChannelUnlocked v => RemoveChannelLock(v, cancellationToken),
-            _ => throw new UnreachableException()
-        };
 
     /// <summary>The lock currently in force on the channel, without changing anything.</summary>
     public Task<Result<ChannelLocked>> GetActiveChannelLockAsync(
@@ -59,15 +42,9 @@ public sealed partial class SettingsModule
         => ExecuteSafelyAsync(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-            var activeLock = await dbContext.ChannelLocks
+            var activeLock = await ActiveChannelLocks(dbContext)
                 .AsNoTracking()
-                .OfType<ChannelLocked>()
                 .Where(x => x.ChannelId == channelId && x.GuildId == guildId)
-                // ReSharper disable once AccessToDisposedClosure
-                .Where(x => !dbContext.ChannelLocks
-                    .Any(y => y.ChannelId == x.ChannelId &&
-                              y.GuildId == x.GuildId &&
-                              y.SetAt > x.SetAt))
                 .FirstOrDefaultAsync(ct);
             return activeLock is null
                 ? new Result<ChannelLocked>.NotFound(
@@ -75,21 +52,15 @@ public sealed partial class SettingsModule
                 : Result<ChannelLocked>.Ok(activeLock);
         }, new Error("channel-lock.lookup-failed", "Failed to retrieve channel lock state."), cancellationToken);
 
-    private Task<Result<ChannelLocked>> AddChannelLock(
+    public Task<Result<ChannelLocked>> AddChannelLock(
         ChannelLocked channelLock,
         CancellationToken cancellationToken = default)
         => ExecuteSafelyAsync(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-            var existingPermissions = await dbContext.ChannelLocks
+            var existingPermissions = await ActiveChannelLocks(dbContext)
                 .AsNoTracking()
-                .OfType<ChannelLocked>()
                 .Where(x => x.ChannelId == channelLock.ChannelId && x.GuildId == channelLock.GuildId)
-                // ReSharper disable once AccessToDisposedClosure
-                .Where(x => !dbContext.ChannelLocks
-                    .Any(y => y.ChannelId == x.ChannelId &&
-                              y.GuildId == x.GuildId &&
-                              y.SetAt > x.SetAt))
                 .Select(x => new { x.PreviouslyAllowed, x.PreviouslyDenied })
                 .FirstOrDefaultAsync(ct);
 
@@ -103,20 +74,14 @@ public sealed partial class SettingsModule
             return Result<ChannelLocked>.Ok(validLock);
         }, new Error("channel-lock.save-failed", "Could not save the channel lock."), cancellationToken);
 
-    private Task<Result<ChannelLocked>> RemoveChannelLock(
+    public Task<Result<ChannelLocked>> RemoveChannelLock(
         ChannelUnlocked lockAction,
         CancellationToken cancellationToken = default)
         => ExecuteSafelyAsync(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-            var existingLock = await dbContext.ChannelLocks
-                .OfType<ChannelLocked>()
+            var existingLock = await ActiveChannelLocks(dbContext)
                 .Where(x => x.ChannelId == lockAction.ChannelId && x.GuildId == lockAction.GuildId)
-                // ReSharper disable once AccessToDisposedClosure
-                .Where(x => !dbContext.ChannelLocks
-                    .Any(y => y.ChannelId == x.ChannelId &&
-                              y.GuildId == x.GuildId &&
-                              y.SetAt > x.SetAt))
                 .FirstOrDefaultAsync(ct);
             if (existingLock is null)
                 return new Result<ChannelLocked>.NotFound(
@@ -135,15 +100,9 @@ public sealed partial class SettingsModule
         try
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            expired = await dbContext.ChannelLocks
+            expired = await ActiveChannelLocks(dbContext)
                 .AsNoTracking()
-                .OfType<ChannelLocked>()
                 .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
-                // ReSharper disable once AccessToDisposedClosure
-                .Where(x => !dbContext.ChannelLocks
-                    .Any(y => y.ChannelId == x.ChannelId &&
-                              y.GuildId == x.GuildId &&
-                              y.SetAt > x.SetAt))
                 .ToListAsync(cancellationToken);
         }
         catch (Exception ex)
@@ -165,15 +124,9 @@ public sealed partial class SettingsModule
                 async (state, innerCt) =>
                 {
                     await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(innerCt);
-                    var results = await dbContext.ThreadLocks
+                    var results = await ActiveThreadLocks(dbContext)
                         .AsNoTracking()
-                        .OfType<ThreadLocked>()
                         .Where(x => x.GuildId == state)
-                        // ReSharper disable once AccessToDisposedClosure
-                        .Where(x => !dbContext.ThreadLocks
-                            .Any(y => y.ChannelId == x.ChannelId &&
-                                      y.GuildId == x.GuildId &&
-                                      y.SetAt > x.SetAt))
                         .Select(x => x.ChannelId)
                         .ToHashSetAsync(innerCt);
                     return results.ToFrozenSet();
@@ -181,17 +134,7 @@ public sealed partial class SettingsModule
             return Result<bool>.Ok(locks.Contains(channelId));
         }, new Error("thread-lock.lookup-failed", "Failed to retrieve thread lock state."), cancellationToken);
 
-    public Task<Result<ThreadLocked>> ApplyThreadLockAction(
-        ThreadLock lockAction,
-        CancellationToken cancellationToken = default)
-        => lockAction switch
-        {
-            ThreadLocked v => AddThreadLock(v, cancellationToken),
-            ThreadUnlocked v => RemoveThreadLock(v, cancellationToken),
-            _ => throw new UnreachableException()
-        };
-
-    private Task<Result<ThreadLocked>> AddThreadLock(
+    public Task<Result<ThreadLocked>> AddThreadLock(
         ThreadLocked threadLock,
         CancellationToken cancellationToken = default)
         => ExecuteSafelyAsync(async ct =>
@@ -203,20 +146,14 @@ public sealed partial class SettingsModule
             return Result<ThreadLocked>.Ok(threadLock);
         }, new Error("thread-lock.save-failed", "Could not save the thread lock."), cancellationToken);
 
-    private Task<Result<ThreadLocked>> RemoveThreadLock(
+    public Task<Result<ThreadLocked>> RemoveThreadLock(
         ThreadUnlocked lockAction,
         CancellationToken cancellationToken = default)
         => ExecuteSafelyAsync(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-            var existingLock = await dbContext.ThreadLocks
-                .OfType<ThreadLocked>()
+            var existingLock = await ActiveThreadLocks(dbContext)
                 .Where(x => x.ChannelId == lockAction.ChannelId && x.GuildId == lockAction.GuildId)
-                // ReSharper disable once AccessToDisposedClosure
-                .Where(x => !dbContext.ThreadLocks
-                    .Any(y => y.ChannelId == x.ChannelId &&
-                              y.GuildId == x.GuildId &&
-                              y.SetAt > x.SetAt))
                 .FirstOrDefaultAsync(ct);
             if (existingLock is null)
                 return new Result<ThreadLocked>.NotFound(
@@ -234,15 +171,9 @@ public sealed partial class SettingsModule
         try
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-            expired = await dbContext.ThreadLocks
+            expired = await ActiveThreadLocks(dbContext)
                 .AsNoTracking()
-                .OfType<ThreadLocked>()
                 .Where(x => x.EndTime <= DateTimeOffset.UtcNow)
-                // ReSharper disable once AccessToDisposedClosure
-                .Where(x => !dbContext.ThreadLocks
-                    .Any(y => y.ChannelId == x.ChannelId &&
-                              y.GuildId == x.GuildId &&
-                              y.SetAt > x.SetAt))
                 .ToListAsync(cancellationToken);
         }
         catch (Exception ex)
@@ -254,4 +185,18 @@ public sealed partial class SettingsModule
         foreach (var item in expired)
             yield return item;
     }
+
+    /// <summary>Locks still in force: a lock with no later event (an unlock or a newer lock) for its channel.</summary>
+    private static IQueryable<ChannelLocked> ActiveChannelLocks(SettingsDbContext dbContext)
+        => dbContext.ChannelLocks
+            .OfType<ChannelLocked>()
+            .Where(x => !dbContext.ChannelLocks
+                .Any(y => y.ChannelId == x.ChannelId && y.GuildId == x.GuildId && y.SetAt > x.SetAt));
+
+    /// <summary>The same as <see cref="ActiveChannelLocks" />, for threads.</summary>
+    private static IQueryable<ThreadLocked> ActiveThreadLocks(SettingsDbContext dbContext)
+        => dbContext.ThreadLocks
+            .OfType<ThreadLocked>()
+            .Where(x => !dbContext.ThreadLocks
+                .Any(y => y.ChannelId == x.ChannelId && y.GuildId == x.GuildId && y.SetAt > x.SetAt));
 }

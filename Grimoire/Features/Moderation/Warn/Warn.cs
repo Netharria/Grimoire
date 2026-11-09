@@ -30,7 +30,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
     {
         await ctx.DeferResponseAsync();
 
-        var guild = ctx.Guild!;
+        var guild = ctx.RequiredGuild;
 
         if (ctx.User == user)
         {
@@ -49,7 +49,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
         var sin = Sin.ForWarn(actor, user.GetUserId(), guild.GetGuildId(), now, validReason)
-            .Match(s => s, _ => throw new UnreachableException("Discord ids are never zero."));
+            .Match(s => s, _ => throw new InvariantViolationException("Discord ids are never zero."));
         dbcontext.Sins.Add(sin);
         await dbcontext.SaveChangesAsync();
         var embed = new DiscordEmbedBuilder()
