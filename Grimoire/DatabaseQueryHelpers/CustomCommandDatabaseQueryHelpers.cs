@@ -7,23 +7,21 @@
 
 namespace Grimoire.DatabaseQueryHelpers;
 
-public abstract record CommandOutputFormat
-{
-    public sealed record Text : CommandOutputFormat;
-
-    public sealed record Embedded(CustomCommandEmbedColor? Color) : CommandOutputFormat;
-}
-
 public static class CustomCommandDatabaseQueryHelpers
 {
+    /// <summary>The current version of each command: the rows with no newer version of the same name.</summary>
+    public static IQueryable<CustomCommand> LatestVersions(this IQueryable<CustomCommand> customCommands)
+        => customCommands.Where(command => !customCommands.Any(y =>
+            y.GuildId == command.GuildId && y.Name == command.Name && y.CreatedAt > command.CreatedAt));
+
+    /// <summary>The current version of one command, with its roles, untracked.</summary>
     public static IQueryable<CustomCommand> GetCustomCommandQuery(
         this IQueryable<CustomCommand> customCommands, GuildId guildId, CustomCommandName commandName)
         => customCommands
+            .LatestVersions()
             .AsNoTracking()
             .Include(command => command.Roles)
-            .Where(command => command.GuildId == guildId && command.Name == commandName)
-            .Where(command => !customCommands.Any(y =>
-                y.GuildId == command.GuildId && y.Name == command.Name && y.CreatedAt > command.CreatedAt));
+            .Where(command => command.GuildId == guildId && command.Name == commandName);
 
     public static async Task RecordCommandUsageAsync(
         this IDbContextFactory<GrimoireDbContext> dbContextFactory,

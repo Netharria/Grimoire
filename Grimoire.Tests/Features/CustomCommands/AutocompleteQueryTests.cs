@@ -46,7 +46,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, [], _moderatorId).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -65,7 +65,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, [], _moderatorId).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -74,7 +74,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
 
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v2Content, [], _moderatorId).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v2Content, [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -92,14 +92,11 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
     public async Task GetCustomCommandQuery_IncludesRoles()
     {
         var roleId = new RoleId(42UL);
-        ICollection<CustomCommandRole> roles =
-        [
-            new CustomCommandAllowRole { RoleId = roleId, Name = _wave, GuildId = _guildId, CreatedAt = default }
-        ];
+        RoleId[] roles = [roleId];
 
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, roles, _moderatorId).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, _v1Content, roles, _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -119,7 +116,7 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, new GuildId(2UL), _v1Content, [], _moderatorId).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, new GuildId(2UL), _v1Content, [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -140,9 +137,9 @@ public sealed class AutocompleteQueryTests(GrimoireCoreFactory factory) : IAsync
 
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, waveContent, [], _moderatorId).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_wave, _guildId, waveContent, [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
-            await db.AddAsync(TextCustomCommand.Create(_greet, _guildId, greetContent, [], _moderatorId).ShouldSucceed(),
+            await db.AddAsync(TextCustomCommand.Create(_greet, _guildId, greetContent, [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }

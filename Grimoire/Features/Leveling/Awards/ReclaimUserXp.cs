@@ -69,7 +69,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             return new Result<long>.NotFound(new Error("reclaim.member.no-xp", $"{user.Mention} has no xp to take."));
 
         var reclaimedXp = NegativeXpAmount.Create(-xpToTake)
-            .Bind(xp => ReclaimedXp.Create(xp, user.GetUserId(), guild.GetGuildId(), DateTimeOffset.UtcNow))
+            .Map(xp => ReclaimedXp.Create(xp, user.GetUserId(), guild.GetGuildId(), DateTimeOffset.UtcNow))
             .Match(r => r, _ => throw new InvariantViolationException());
         await dbContext.XpHistory.AddAsync(reclaimedXp);
         await dbContext.SaveChangesAsync();

@@ -73,12 +73,8 @@ public sealed record EarnedXp : XpHistoryEntry
 {
     public PositiveXpAmount Xp => PositiveXpAmount.FromDatabase(RawXp);
 
-    public static Validation<EarnedXp> Create(
-        PositiveXpAmount xp, UserId userId, GuildId guildId, DateTimeOffset timeOut)
-        => Validation<EarnedXp>.Succeed(new EarnedXp
-        {
-            RawXp = xp.Value, UserId = userId, GuildId = guildId, TimeOut = timeOut
-        });
+    public static EarnedXp Create(PositiveXpAmount xp, UserId userId, GuildId guildId, DateTimeOffset timeOut)
+        => new() { RawXp = xp.Value, UserId = userId, GuildId = guildId, TimeOut = timeOut };
 }
 
 /// <summary>XP awarded to the user by a moderator.</summary>
@@ -111,12 +107,8 @@ public sealed record ReclaimedXp : XpHistoryEntry
 {
     public NegativeXpAmount Xp => NegativeXpAmount.FromDatabase(RawXp);
 
-    public static Validation<ReclaimedXp> Create(
-        NegativeXpAmount xp, UserId userId, GuildId guildId, DateTimeOffset timeOut)
-        => Validation<ReclaimedXp>.Succeed(new ReclaimedXp
-        {
-            RawXp = xp.Value, UserId = userId, GuildId = guildId, TimeOut = timeOut
-        });
+    public static ReclaimedXp Create(NegativeXpAmount xp, UserId userId, GuildId guildId, DateTimeOffset timeOut)
+        => new() { RawXp = xp.Value, UserId = userId, GuildId = guildId, TimeOut = timeOut };
 }
 
 /// <summary>

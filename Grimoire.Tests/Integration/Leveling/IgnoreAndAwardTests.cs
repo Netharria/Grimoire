@@ -225,7 +225,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
     {
         await using var seed = this._database.CreateDbContext();
         seed.XpHistory.Add(EarnedXp.Create(PositiveXpAmount.Create(xp).ShouldSucceed(), new UserId(user.Id), this.GuildId,
-            DateTimeOffset.UtcNow.AddMinutes(-10)).ShouldSucceed());
+            DateTimeOffset.UtcNow.AddMinutes(-10)));
         await seed.SaveChangesAsync(Token);
     }
 

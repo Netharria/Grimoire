@@ -16,24 +16,13 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
 {
     private const int MaxLabelLength = 100;
 
-    public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context) =>
-        await Validation<AutoCompleteContext>.Succeed(context)
-            .Bind(ctx =>
-                ctx switch
-                {
-                    { Guild: not null } => Validation<AutoCompleteContext>.Succeed(ctx),
-                    _ => Validation<AutoCompleteContext>.Fail(new Error(
-                        "command-version-autocomplete.validation.not-in-guild", "This command was not used in a guild"))
-                })
-            .Map(ctx => ctx.Options
-                .FirstOrDefault(o => o.Name.Equals("name", StringComparison.OrdinalIgnoreCase))
-                ?.Value as string)
-            .Bind(CustomCommandName.Create)
-            .ToResult()
-            .BindAsync(async name => await this.GetVersionsAsync(context.Guild!.GetGuildId(), name))
-            .Match(
-                versions => BuildChoices(versions, context.Guild),
-                _ => []);
+    public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
+        => context.Guild is { } guild
+           && context.Options.FirstOrDefault(o => o.Name.Equals("name", StringComparison.OrdinalIgnoreCase))?.Value
+               is string rawName
+           && CustomCommandName.Create(rawName) is Validation<CustomCommandName>.Valid { Value: var name }
+            ? BuildChoices(await this.GetVersionsAsync(guild.GetGuildId(), name), guild)
+            : [];
 
     /// <summary>Numbered from every version, as /Commands History does, though only the newest 25 can be offered.</summary>
     private static IEnumerable<DiscordAutoCompleteChoice> BuildChoices(
@@ -60,20 +49,18 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
             ? member.DisplayName
             : mod.Value.ToString();
 
-    private async ValueTask<Result<(int Total, IReadOnlyList<CommandVersionEntry> Newest)>> GetVersionsAsync(
+    private async Task<(int Total, IReadOnlyList<CommandVersionEntry> Newest)> GetVersionsAsync(
         GuildId guildId, CustomCommandName name)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var total = await dbContext.CustomCommands.CountAsync(x => x.GuildId == guildId && x.Name == name);
-        var versions = await dbContext.CustomCommands
-            .AsNoTracking()
-            .Where(x => x.GuildId == guildId && x.Name == name)
+        var versions = dbContext.CustomCommands.Where(x => x.GuildId == guildId && x.Name == name);
+        var total = await versions.CountAsync();
+        var newest = await versions
             .OrderByDescending(x => x.CreatedAt)
             .Take(25)
-            .Select(x => new { x.CreatedAt, x.ModeratorId })
+            .Select(x => new CommandVersionEntry(x.CreatedAt, x.ModeratorId))
             .ToListAsync();
-        return Result<(int, IReadOnlyList<CommandVersionEntry>)>.Ok(
-            (total, [.. versions.Select(v => new CommandVersionEntry(v.CreatedAt, v.ModeratorId))]));
+        return (total, newest);
     }
 
     private sealed record CommandVersionEntry(DateTimeOffset CreatedAt, ModeratorId? ModeratorId);

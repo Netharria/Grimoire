@@ -260,7 +260,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
         await using var seed = this._database.CreateDbContext();
         foreach (var amount in amounts)
             seed.XpHistory.Add(EarnedXp.Create(PositiveXpAmount.Create(amount).ShouldSucceed(), new UserId(this.Guild.User1.Id),
-                guildId, DateTimeOffset.UtcNow).ShouldSucceed());
+                guildId, DateTimeOffset.UtcNow));
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 

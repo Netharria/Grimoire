@@ -96,7 +96,7 @@ public sealed partial class GainUserXp(
 
     internal static EarnedXp BuildEarnedXp(LevelingSettingEntry settings, UserId userId, GuildId guildId)
         => PositiveXpAmount.Create(settings.Amount.Value)
-            .Bind(amount => EarnedXp.Create(amount, userId, guildId,
+            .Map(amount => EarnedXp.Create(amount, userId, guildId,
                 DateTimeOffset.UtcNow + settings.XpTimeoutPeriod.Value))
             .Match(e => e, _ => throw new InvariantViolationException());
 

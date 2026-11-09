@@ -135,8 +135,30 @@ public sealed class GetCustomCommandTests
     {
         var name = CustomCommandName.Create("cmd").ShouldSucceed();
         var content = CustomCommandContent.Create("hi").ShouldSucceed();
-        var cmd = TextCustomCommand.Create(name, new GuildId(1), content, [], new ModeratorId(1UL)).ShouldSucceed();
+        var cmd = TextCustomCommand.Create(name, new GuildId(1), content, [], new ModeratorId(1UL), DateTimeOffset.UtcNow);
 
         GetCustomCommand.IsUserAuthorized(null, cmd).ShouldBeFalse();
+    }
+
+    /// <summary>Every row of the table in <c>spec-custom-command-role-policy.md</c>.</summary>
+    [Theory]
+    [InlineData(false, false, false, false, true)]
+    [InlineData(true, false, true, false, true)]
+    [InlineData(true, false, false, false, false)]
+    [InlineData(false, true, false, false, true)]
+    [InlineData(false, true, false, true, false)]
+    [InlineData(true, true, true, false, true)]
+    [InlineData(true, true, true, true, false)]
+    [InlineData(true, true, false, false, false)]
+    [InlineData(true, true, false, true, false)]
+    public void IsUserAuthorized_FollowsTheRolePolicy(bool allowConfigured, bool denyConfigured, bool hasAllowRole,
+        bool hasDenyRole, bool expected)
+    {
+        RoleId allow = new(10UL), deny = new(20UL), unrelated = new(30UL);
+        RoleId[] memberRoles = [unrelated, .. hasAllowRole ? [allow] : Array.Empty<RoleId>(),
+            .. hasDenyRole ? [deny] : Array.Empty<RoleId>()];
+
+        GetCustomCommand.IsUserAuthorized(memberRoles, allowConfigured ? [allow] : [], denyConfigured ? [deny] : [])
+            .ShouldBe(expected);
     }
 }

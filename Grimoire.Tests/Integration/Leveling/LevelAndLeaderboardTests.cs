@@ -227,7 +227,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
         await using (var seed = this._database.CreateDbContext())
         {
             seed.XpHistory.AddRange(entries.Select(entry => EarnedXp.Create(PositiveXpAmount.Create(entry.Xp).ShouldSucceed(),
-                new UserId(entry.User.Id), this.GuildId, DateTimeOffset.UtcNow.AddMinutes(-10)).ShouldSucceed()));
+                new UserId(entry.User.Id), this.GuildId, DateTimeOffset.UtcNow.AddMinutes(-10))));
             await seed.SaveChangesAsync(Token);
         }
 

@@ -37,13 +37,8 @@ public static bool IsUserAuthorized(DiscordMember? member, CustomCommand command
     var allowRoles = command.Roles.OfType<CustomCommandAllowRole>().Select(r => r.RoleId).ToHashSet();
     var denyRoles  = command.Roles.OfType<CustomCommandDenyRole>().Select(r => r.RoleId).ToHashSet();
 
-    var hasAllow = allowRoles.Count > 0 && memberRoles.Overlaps(allowRoles);
-    var hasDeny  = denyRoles.Count  > 0 && memberRoles.Overlaps(denyRoles);
-
-    if (allowRoles.Count == 0 && denyRoles.Count == 0) return true;
-    if (allowRoles.Count == 0) return !hasDeny;
-    if (denyRoles.Count  == 0) return hasAllow;
-    return hasAllow && !hasDeny;
+    // No allow roles means everyone is allowed; a deny role always wins.
+    return (allowRoles.Count == 0 || memberRoles.Overlaps(allowRoles)) && !memberRoles.Overlaps(denyRoles);
 }
 ```
 

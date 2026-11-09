@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Data.Common;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Settings.Enums;
@@ -39,56 +38,38 @@ public sealed partial class CustomCommandSettings
 
     private async Task<Result<StatsQueryResult>> QueryStatsAsync(GuildId guildId, CustomCommandName name)
     {
-        try
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            // As /Commands History says: zeros would read as a command nobody uses.
-            if (!await dbContext.CustomCommands.AnyAsync(x => x.GuildId == guildId && x.Name == name))
-                return new Result<StatsQueryResult>.NotFound(
-                    new Error("command.stats.not_found", $"No command named `{name}` exists."));
-            var now = DateTimeOffset.UtcNow;
-            var usage = await FetchUsageStatsAsync(dbContext, guildId, name, now);
-            var topUsers = await FetchTopUsersAsync(dbContext, guildId, name);
-            return Result<StatsQueryResult>.Ok(new StatsQueryResult(usage, topUsers));
-        }
-        catch (DbException ex)
-        {
-            this.ReportDatabaseFailure(ex, "Commands Stats");
-            return Result<StatsQueryResult>.Fail(
-                new Error("command.stats.db_error",
-                    "Could not retrieve stats right now. Please try again."));
-        }
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        // As /Commands History says: zeros would read as a command nobody uses.
+        if (!await dbContext.CustomCommands.AnyAsync(x => x.GuildId == guildId && x.Name == name))
+            return new Result<StatsQueryResult>.NotFound(
+                new Error("command.stats.not_found", $"No command named `{name}` exists."));
+        var now = DateTimeOffset.UtcNow;
+        var usage = await FetchUsageStatsAsync(dbContext, guildId, name, now);
+        var topUsers = await FetchTopUsersAsync(dbContext, guildId, name);
+        return Result<StatsQueryResult>.Ok(new StatsQueryResult(usage, topUsers));
     }
 
-    private static async Task<UsageStats?> FetchUsageStatsAsync(GrimoireDbContext dbContext, GuildId guildId,
+    private static Task<UsageStats?> FetchUsageStatsAsync(GrimoireDbContext dbContext, GuildId guildId,
         CustomCommandName name, DateTimeOffset now)
-    {
-        var raw = await dbContext.CustomCommandUsages
+        => dbContext.CustomCommandUsages
             .Where(x => x.GuildId == guildId && x.Name == name)
             .GroupBy(_ => true)
-            .Select(g => new
-            {
-                Total = g.Count(),
-                LastMonth = g.Count(x => x.UsedAt > now.AddDays(-30)),
-                LastYear = g.Count(x => x.UsedAt > now.AddDays(-365)),
-                LastUsed = g.Max(x => (DateTimeOffset?)x.UsedAt)
-            })
+            .Select(g => new UsageStats(
+                g.Count(),
+                g.Count(x => x.UsedAt > now.AddDays(-30)),
+                g.Count(x => x.UsedAt > now.AddDays(-365)),
+                g.Max(x => (DateTimeOffset?)x.UsedAt)))
             .FirstOrDefaultAsync();
-        return raw is null ? null : new UsageStats(raw.Total, raw.LastMonth, raw.LastYear, raw.LastUsed);
-    }
 
     private static async Task<IReadOnlyList<TopUser>> FetchTopUsersAsync(GrimoireDbContext dbContext, GuildId guildId,
         CustomCommandName name)
-    {
-        var raw = await dbContext.CustomCommandUsages
+        => await dbContext.CustomCommandUsages
             .Where(x => x.GuildId == guildId && x.Name == name)
             .GroupBy(x => x.UserId)
-            .Select(g => new { UserId = g.Key, Count = g.Count() })
-            .OrderByDescending(x => x.Count)
+            .OrderByDescending(g => g.Count())
             .Take(3)
+            .Select(g => new TopUser(g.Key, g.Count()))
             .ToListAsync();
-        return raw.Select(u => new TopUser(u.UserId, u.Count)).ToList();
-    }
 
     private static DiscordEmbed BuildStatsEmbed(CustomCommandName name, UsageStats? usage,
         IReadOnlyList<TopUser> topUsers)

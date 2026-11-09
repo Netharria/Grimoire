@@ -61,15 +61,20 @@ public sealed partial class CustomCommandSettings
 
         await CustomCommandName.Create(name)
             .Bind(validName => ParseEmbedColor(embed, embedColor)
-                .Bind(color => BuildRoles(restrictedUse, roleIds, validName, guildId)
-                    .Bind(roles => CustomCommandContent.Create(content)
-                        .Bind(validContent => embed
-                            ? EmbedCustomCommand.Create(validName, guildId, validContent, color, roles, ctx.GetModeratorId())
-                            : TextCustomCommand.Create(validName, guildId, validContent, roles, ctx.GetModeratorId())))))
+                .Bind(color => AllowRoleIds(restrictedUse, roleIds)
+                    .Bind(allowRoleIds => CustomCommandContent.Create(content)
+                        .Map(CustomCommand (validContent) => embed
+                            ? EmbedCustomCommand.Create(validName, guildId, validContent, color, allowRoleIds,
+                                ctx.GetModeratorId(), DateTimeOffset.UtcNow)
+                            : TextCustomCommand.Create(validName, guildId, validContent, allowRoleIds,
+                                ctx.GetModeratorId(), DateTimeOffset.UtcNow)))))
             .ToResult()
-            .BindAsync(SaveCommandAsync)
             .Match(
-                command => OnLearnSuccessAsync(ctx, guild, command.Name),
+                async command =>
+                {
+                    await this.SaveCommandAsync(command);
+                    await OnLearnSuccessAsync(ctx, guild, command.Name);
+                },
                 error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
 
@@ -86,37 +91,15 @@ public sealed partial class CustomCommandSettings
     private static IReadOnlyList<RoleId> CollectRoleIds(params DiscordRole?[] roles)
         => roles.OfType<DiscordRole>().Select(r => r.GetRoleId()).Distinct().ToList();
 
-    private static Validation<ICollection<CustomCommandRole>> BuildRoles(
-        bool restrictedUse, IReadOnlyList<RoleId> roleIds, CustomCommandName name, GuildId guildId)
+    private static Validation<IReadOnlyList<RoleId>> AllowRoleIds(bool restrictedUse, IReadOnlyList<RoleId> roleIds)
         => restrictedUse switch
         {
-            false => Validation<ICollection<CustomCommandRole>>.Succeed([]),
-            true when roleIds.Count == 0 => Validation<ICollection<CustomCommandRole>>.Fail(new Error(
+            false => Validation<IReadOnlyList<RoleId>>.Succeed([]),
+            true when roleIds.Count == 0 => Validation<IReadOnlyList<RoleId>>.Fail(new Error(
                 "command.learn.restricted-no-roles",
                 "A restricted command must have at least one permission role.")),
-            _ => Validation<ICollection<CustomCommandRole>>.Succeed(
-                roleIds.Select(id => (CustomCommandRole)new CustomCommandAllowRole
-                {
-                    RoleId = id, Name = name, GuildId = guildId, CreatedAt = default
-                }).ToList())
+            _ => Validation<IReadOnlyList<RoleId>>.Succeed(roleIds)
         };
-
-    private async Task<Result<CustomCommand>> SaveCommandAsync(CustomCommand command)
-    {
-        try
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            await dbContext.AddAsync(command);
-            await dbContext.SaveChangesAsync();
-            return Result<CustomCommand>.Ok(command);
-        }
-        catch (DbUpdateException ex)
-        {
-            this.ReportDatabaseFailure(ex, "Commands Learn");
-            return Result<CustomCommand>.Fail(new Error("command.learn.db_error",
-                "Could not save that command right now due to a database error. Please try again."));
-        }
-    }
 
     private async Task OnLearnSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name)
     {

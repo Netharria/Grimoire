@@ -45,20 +45,13 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             return;
         }
 
-        var content = TruncateForDiscord(
-            ApplyMessage(ApplyMention(response.Content.Value, snowflakeObject, guild.Id), message, guild.Id),
-            response is EmbedCustomCommand ? MaxEmbedDescriptionLength : MaxMessageLength);
-        // A command made only of %Message or %Mention renders empty without them, and Discord refuses an empty reply.
-        if (string.IsNullOrWhiteSpace(content))
+        if (RenderContent(response, snowflakeObject, message, guild.Id) is not { } content)
         {
             await ctx.DeleteResponseAsync();
             return;
         }
 
-        await ctx.EditResponseAsync(BuildWebhookResponse(content,
-            response is EmbedCustomCommand embedCmd
-                ? new CommandOutputFormat.Embedded(embedCmd.EmbedColor)
-                : new CommandOutputFormat.Text()));
+        await ctx.EditResponseAsync(BuildResponse(new DiscordWebhookBuilder(), response, content));
         // Counted once the reply is out, so a failed count can't stop the reply.
         await dbContextFactory.RecordCommandUsageAsync(name, guild.GetGuildId(), ctx.User.GetUserId());
     }
@@ -68,7 +61,6 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var response = await dbContext.CustomCommands
-            .AsNoTracking()
             .GetCustomCommandQuery(guildId, name)
             .FirstOrDefaultAsync();
         return response is null || !IsUserAuthorized(member, response)
@@ -97,20 +89,21 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
     }
 
     public static bool IsUserAuthorized(DiscordMember? member, CustomCommand command)
+        => member is not null && IsUserAuthorized(
+            member.Roles.Select(static role => role.GetRoleId()),
+            command.Roles.OfType<CustomCommandAllowRole>().Select(role => role.RoleId),
+            command.Roles.OfType<CustomCommandDenyRole>().Select(role => role.RoleId));
+
+    /// <summary>
+    ///     The policy in <c>spec-custom-command-role-policy.md</c>: no allow roles means everyone is allowed, and a deny
+    ///     role always wins.
+    /// </summary>
+    internal static bool IsUserAuthorized(IEnumerable<RoleId> memberRoleIds, IEnumerable<RoleId> allowRoleIds,
+        IEnumerable<RoleId> denyRoleIds)
     {
-        if (member is null) return false;
-        var memberRoles = member.Roles.Select(static r => r.GetRoleId()).ToHashSet();
-
-        var allowRoles = command.Roles.OfType<CustomCommandAllowRole>().Select(r => r.RoleId).ToHashSet();
-        var denyRoles = command.Roles.OfType<CustomCommandDenyRole>().Select(r => r.RoleId).ToHashSet();
-
-        var hasAllow = allowRoles.Count > 0 && memberRoles.Overlaps(allowRoles);
-        var hasDeny = denyRoles.Count > 0 && memberRoles.Overlaps(denyRoles);
-
-        if (allowRoles.Count == 0 && denyRoles.Count == 0) return true;
-        if (allowRoles.Count == 0) return !hasDeny;
-        if (denyRoles.Count == 0) return hasAllow;
-        return hasAllow && !hasDeny;
+        var memberRoles = memberRoleIds.ToHashSet();
+        var allowRoles = allowRoleIds.ToHashSet();
+        return (allowRoles.Count == 0 || memberRoles.Overlaps(allowRoles)) && !memberRoles.Overlaps(denyRoleIds);
     }
 
     internal static string TruncateForDiscord(string input, int maxLength)
@@ -126,15 +119,24 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         return string.Concat(truncated, ellipsis);
     }
 
-    internal static DiscordWebhookBuilder BuildWebhookResponse(string content, CommandOutputFormat format)
-        => format is CommandOutputFormat.Embedded { Color: var color }
-            ? new DiscordWebhookBuilder().AddEmbed(BuildEmbed(content, color))
-            : new DiscordWebhookBuilder().WithContent(content);
+    /// <summary>
+    ///     The reply text: <c>%Mention</c> and <c>%Message</c> filled in, cut to what Discord allows. Null when that leaves
+    ///     nothing, as a command made only of the two does without them; Discord refuses an empty reply.
+    /// </summary>
+    internal static string? RenderContent(CustomCommand command, SnowflakeObject? mention, string message, ulong guildId)
+    {
+        var content = TruncateForDiscord(
+            ApplyMessage(ApplyMention(command.Content.Value, mention, guildId), message, guildId),
+            command is EmbedCustomCommand ? MaxEmbedDescriptionLength : MaxMessageLength);
+        return string.IsNullOrWhiteSpace(content) ? null : content;
+    }
 
-    internal static DiscordMessageBuilder BuildMessageResponse(string content, CommandOutputFormat format)
-        => format is CommandOutputFormat.Embedded { Color: var color }
-            ? new DiscordMessageBuilder().AddEmbed(BuildEmbed(content, color))
-            : new DiscordMessageBuilder().WithContent(content);
+    /// <summary>Puts the rendered text in the reply: as an embed for an embed command, otherwise as plain text.</summary>
+    internal static TBuilder BuildResponse<TBuilder>(TBuilder builder, CustomCommand command, string content)
+        where TBuilder : BaseDiscordMessageBuilder<TBuilder>
+        => command is EmbedCustomCommand { EmbedColor: var color }
+            ? builder.AddEmbed(BuildEmbed(content, color))
+            : builder.WithContent(content);
 
     private static DiscordEmbedBuilder BuildEmbed(string content, CustomCommandEmbedColor? color)
         => (color is { } c

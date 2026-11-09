@@ -37,12 +37,14 @@ public sealed partial class CustomCommandSettings
 
         await ParseVersion(version)
             .ToResult()
-            .BindAsync(ticks =>
-                FetchVersionAsync(guild.GetGuildId(), name, new DateTimeOffset(ticks, TimeSpan.Zero))
-                    .BindAsync(target => SaveRevertedCommandAsync(target, ctx.GetModeratorId()))
-                    .Map(_ => ticks))
+            .BindAsync(ticks => FetchVersionAsync(guild.GetGuildId(), name, new DateTimeOffset(ticks, TimeSpan.Zero))
+                .Map(target => (Target: target, Ticks: ticks)))
             .Match(
-                ticks => OnRevertSuccessAsync(ctx, guild, name, ticks),
+                async found =>
+                {
+                    await this.SaveCommandAsync(found.Target.AsNewVersion(ctx.GetModeratorId(), DateTimeOffset.UtcNow));
+                    await OnRevertSuccessAsync(ctx, guild, name, found.Ticks);
+                },
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
@@ -64,46 +66,6 @@ public sealed partial class CustomCommandSettings
             ? Result<CustomCommand>.Fail(new Error("command.revert.not_found",
                 $"Version not found for command `{name}`."))
             : Result<CustomCommand>.Ok(target);
-    }
-
-    private Task<Result<CustomCommand>> SaveRevertedCommandAsync(CustomCommand target, ModeratorId moderatorId)
-    {
-        ICollection<CustomCommandRole> roles =
-        [
-            .. target.Roles.OfType<CustomCommandAllowRole>()
-                .Select(r =>
-                    new CustomCommandAllowRole
-                    {
-                        RoleId = r.RoleId, Name = r.Name, GuildId = r.GuildId, CreatedAt = default
-                    }),
-            .. target.Roles.OfType<CustomCommandDenyRole>()
-                .Select(r =>
-                    new CustomCommandDenyRole
-                    {
-                        RoleId = r.RoleId, Name = r.Name, GuildId = r.GuildId, CreatedAt = default
-                    })
-        ];
-        return Validation<CustomCommand>.Succeed(target)
-            .Bind(oldVersion => oldVersion switch
-            {
-                EmbedCustomCommand embedCustomCommand => EmbedCustomCommand.Create(
-                    embedCustomCommand.Name,
-                    embedCustomCommand.GuildId,
-                    embedCustomCommand.Content,
-                    embedCustomCommand.EmbedColor,
-                    roles,
-                    moderatorId),
-                TextCustomCommand textCustomCommand => TextCustomCommand.Create(
-                    textCustomCommand.Name,
-                    textCustomCommand.GuildId,
-                    textCustomCommand.Content,
-                    roles,
-                    moderatorId),
-                _ => Validation<CustomCommand>.Fail(new Error("custom-command-revert.type.unidentifiable",
-                    "Failed to match the type of the target custom command."))
-            })
-            .ToResult()
-            .BindAsync(SaveCommandAsync);
     }
 
     private async Task OnRevertSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name,

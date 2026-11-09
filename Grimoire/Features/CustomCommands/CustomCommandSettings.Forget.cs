@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Data.Common;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
@@ -32,31 +31,21 @@ public sealed partial class CustomCommandSettings
         await ctx.DeferResponseAsync();
         var guild = ctx.RequiredGuild;
 
-        await DeleteCommandAsync(guild.GetGuildId(), name)
-            .Match(
-                alreadyForgotten => OnForgetSuccess(ctx, guild, name, alreadyForgotten),
-                error => ctx.SendErrorResponseAsync(error.Message).AsTask());
+        var alreadyForgotten = await this.DeleteCommandAsync(guild.GetGuildId(), name);
+        await OnForgetSuccess(ctx, guild, name, alreadyForgotten);
     }
 
-    private async Task<Result<bool>> DeleteCommandAsync(GuildId guildId, CustomCommandName name)
+    /// <summary>Deletes every version and the usage history. True when there was nothing to delete.</summary>
+    private async Task<bool> DeleteCommandAsync(GuildId guildId, CustomCommandName name)
     {
-        try
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            await dbContext.CustomCommandUsages
-                .Where(x => x.Name == name && x.GuildId == guildId)
-                .ExecuteDeleteAsync();
-            var deletedCount = await dbContext.CustomCommands
-                .Where(x => x.Name == name && x.GuildId == guildId)
-                .ExecuteDeleteAsync();
-            return Result<bool>.Ok(deletedCount == 0);
-        }
-        catch (DbException ex)
-        {
-            this.ReportDatabaseFailure(ex, "Commands Forget");
-            return Result<bool>.Fail(new Error("command.forget.db_error",
-                "Could not forget that command right now due to a database error. Please try again."));
-        }
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        await dbContext.CustomCommandUsages
+            .Where(x => x.Name == name && x.GuildId == guildId)
+            .ExecuteDeleteAsync();
+        var deletedCount = await dbContext.CustomCommands
+            .Where(x => x.Name == name && x.GuildId == guildId)
+            .ExecuteDeleteAsync();
+        return deletedCount == 0;
     }
 
     private async Task OnForgetSuccess(CommandContext ctx, DiscordGuild guild, CustomCommandName name,

@@ -174,6 +174,9 @@ Build each piece when the first item that needs it comes up.
 | H-09 | **Second guild** (done): `StartAsync(secondGuild: true)` adds `bot.SecondGuild`, a `FakeGuild(idOffset)` with its own guild, channel and role ids and the same users. READY lists both guilds. Helpers act in whichever guild owns the channel they're given, and the fake REST picks the guild from each request's path | A-35 |
 | H-10 | **Fake PluralKit**: replace the primary handler of the named `HttpClient` "Pluralkit" with a fake that serves canned system and message lookups | A-33 |
 | H-11 | **Components**: button and select interactions (`INTERACTION_CREATE` type 3), for pagination such as `/Leaderboard` and `/Commands History` | A-24 |
+| H-12 | **Autocomplete**: `INTERACTION_CREATE` type 4 with a focused option, and a reader for the choices the bot returns (callback type 8) | A-48 |
+| H-13 | **Channel-resolved permissions**: interactions send `member.permissions` and `app_permissions` resolved for the channel (overwrites, then Administrator), not the guild-level values `GrimoireTestBot.cs:539, 572` send now. Check that existing tests still pass, since some may rely on the guild value | A-51 |
+| H-14 | **Guild extras**: a media channel (type 16), a `vanity_url_code` with `GET guilds/{g}/vanity-url`, a `bot.BotLeavesGuild(guild)` helper sending `GUILD_DELETE`, and refusing a grant of the @everyone role (role id equals guild id) the way Discord does | A-42 |
 
 ## Backlog
 
@@ -213,7 +216,7 @@ A-12 is done. Thread locks work by deletion, not permission overwrites, because 
 channel's permissions. The lock check ignores the end time: a lock lasts until an unlock row is written, either by
 `/Unlock` (A-10) or by the lock background task once the timer passes (A-11).
 
-### Phase 3: Sins (area 03; no manual doc yet)
+### Phase 3: Sins (area 03)
 
 `03-sins.md` has section A (SinLog). Add each later item's section to it, written from the source, using the case
 format in `README.md`.
@@ -225,9 +228,9 @@ format in `README.md`.
 | A-16 | `[x]` | `/ModSettings` View, PublicBanLog and AutoPardon. Wrote section C of `03-sins.md`. Tests: `Integration/Moderation/ModSettingsTests.cs`, 14 tests with 1 skipped (KI-35) | `Features/Moderation/SinAdmin/Commands/ModSettings*.cs` | none new | S |
 | A-17 | `[x]` | `/Publish` Ban, Unban and Kick. Wrote section D of `03-sins.md`, completing the area doc. Tests: `Integration/Moderation/PublishTests.cs`, 11 tests with 2 skipped (KI-36, KI-33) | `Features/Moderation/PublishSins/` | the fake keeps the bot's posts, with GET and PATCH for a single message | M |
 
-### Phase 4: Spam filter and diagnostics (area 04; no manual doc yet)
+### Phase 4: Spam filter and diagnostics (area 04)
 
-Area 04's cases live in the test classes' doc comments until someone writes `04-spamfilter-diagnostics.md`.
+Area 04's cases are in `04-spamfilter-diagnostics.md` (drafted 2026-11-08).
 
 | ID | Status | Item | Source | Harness | Size |
 |----|--------|------|--------|---------|------|
@@ -235,9 +238,9 @@ Area 04's cases live in the test classes' doc comments until someone writes `04-
 | A-19 | `[x]` | **Reaction tracking.** `Integration/Logging/ReactionTests.cs`: save, soft delete, revive, remove-emoji, clear-all, unlogged messages, purge with the message, and the message log turned off | `Features/Logging/MessageLogging/ReactionEvents.cs` | none | S |
 | A-20 | `[x]` | `/Diagnostics` Check and Ignore (Add, Remove, View), and the report after `/Mutes Create`. Tests: `Integration/Moderation/DiagnosticsTests.cs`, 8 tests. The analysis is unit tested already. No new bugs | `Features/Moderation/Diagnostics/` | mentionable options, uploaded files | M |
 
-### Phase 5: Logging (area 05; no manual doc yet)
+### Phase 5: Logging (area 05)
 
-Area 05's cases live in the test classes' doc comments until someone writes `05-logging.md`.
+Area 05's cases are in `05-logging.md` (drafted 2026-11-08).
 
 | ID | Status | Item | Source | Harness | Size |
 |----|--------|------|--------|---------|------|
@@ -246,7 +249,7 @@ Area 05's cases live in the test classes' doc comments until someone writes `05-
 | A-23 | `[x]` | `/Log User` Set and View, and join, leave, nickname, username and avatar logging. Tests: `Integration/Logging/UserLogTests.cs`, 16 tests with 1 skipped. **Found KI-40: a first nickname is never logged** | `Features/Logging/UserLogging/`, `Settings/LogSettingsCommands.User*.cs` | `GUILD_MEMBER_UPDATE` profile changes; fake CDN | M |
 | A-24 | `[x]` | `CleanupLogsBackgroundTask`: old-log deletion via REST, retries, and history trimming. Tests: `Integration/Logging/LogCleanupTests.cs`, 6 tests, each proven by mutating the cutoffs, the retry limit, the keep count or the failure handling. No bugs found | `Features/LogCleanup/CleanupLogsBackgroundTask.cs` | none new | M |
 
-### Phase 6: Leveling (area 06; no manual doc yet)
+### Phase 6: Leveling (area 06)
 
 | ID | Status | Item | Source | Harness | Size |
 |----|--------|------|--------|---------|------|
@@ -255,14 +258,14 @@ Area 05's cases live in the test classes' doc comments until someone writes `05-
 | A-27 | `[x]` | `/LevelSettings` View, Set and LogSet. Tests: `Integration/Leveling/LevelSettingsTests.cs`, 14 tests with 1 skipped. Found KI-43 (View prints record dumps). The commands are `level_settings` with `log_set` | `Features/Leveling/Settings/LevelSettingsCommandGroup*.cs` | none new | M |
 | A-28 | `[x]` | `/Rewards` Add, Remove and View, `/Ignore` Add, Remove and View, and `/Award` and `/Reclaim`. Tests: `Integration/Leveling/RewardCommandsTests.cs` (10, 2 skipped) and `IgnoreAndAwardTests.cs` (14, 2 skipped). **Found KI-45: any member can remove rewards**, plus KI-44 (channels can't be ignored) and KI-46 | `Features/Leveling/Rewards/`, `Settings/IgnoreCommandGroup*.cs`, `Awards/` | none new | L |
 
-### Phase 7: Custom commands (area 07; no manual doc yet)
+### Phase 7: Custom commands (area 07)
 
 | ID | Status | Item | Source | Harness | Size |
 |----|--------|------|--------|---------|------|
 | A-29 | `[x]` | `/Commands` Learn, Forget, History, Revert, Stats and Leaderboard. Tests: `Integration/CustomCommands/CustomCommandSettingsTests.cs`, 18 tests with 1 skipped. Found KI-47 (Forget's log). Embed colors are stored upper case | `Features/CustomCommands/CustomCommandSettings*.cs` | none new | L |
 | A-30 | `[x]` | `/Command` and `TextCustomCommandProcessor`. Tests: `Integration/CustomCommands/CustomCommandUseTests.cs`, 13 tests, proven by mutating the role check, the @everyone guard, the argument split and the bot filter. No bugs found; the inverted role check from the earlier review is already fixed | `Features/CustomCommands/GetCustomCommand.cs`, `TextCustomCommandProcessor.cs` | `DELETE .../messages/@original`; `FakeInteraction.IsOriginalResponseDelete` | M |
 
-### Phase 8: Alerts and health (area 08; no manual doc yet)
+### Phase 8: Alerts and health (area 08)
 
 | ID | Status | Item | Source | Harness | Size |
 |----|--------|------|--------|---------|------|
@@ -270,7 +273,7 @@ Area 05's cases live in the test classes' doc comments until someone writes `05-
 | A-32 | `[x]` | `GuildIssueReporter` and its throttle, `GatewayWatchdogService`, and `GatewayEvents`. Tests: `Integration/Shared/GatewayAndIssueTests.cs`, 6 tests with 2 skipped. **Found KI-48: DSharpPlus never reports disconnects or resumes, so outages go unnoticed.** The watchdog works when health is marked down by hand | `Features/Shared/GuildIssues/`, `Features/Shared/Gateway/` | `Gateway.RequestReconnect()`, `CloseFromServer(code)`, `HoldReconnects` | M |
 | A-33 | `[x]` | `GuildAdded`, `UpdateAllGuilds`, `InviteEvents` and `MemberAdded`. Tests: `Integration/Shared/GuildSyncAndInviteTests.cs`, 8 tests with 2 skipped. Found KI-49 (a rejoin logs a false avatar change) and KI-50 (stale invite count). Invite deletion via audit log is not covered | `Features/Shared/Events/`, `Features/Logging/UserLogging/` | `FakeGuild.Invites` and `FakeInvite`; `bot.MemberJoinsWithInvite` | M |
 
-### Phase 9: Cross-cutting (area 09; no manual doc yet)
+### Phase 9: Cross-cutting (area 09)
 
 | ID | Status | Item | Harness | Size |
 |----|--------|------|---------|------|
@@ -279,6 +282,38 @@ Area 05's cases live in the test classes' doc comments until someone writes `05-
 | A-36 | `[x]` | **Matrices**. Tests: `Integration/Shared/CommandMatrixTests.cs`, 64 tests: a snapshot of every command's `default_member_permissions` and a check that the table lists every registered command, plus the module-off refusal for 33 module-gated commands. Proven by disabling the module check. Only `RequirePermissions` user lists register Discord-side permissions (lock, unlock, purge and warn), so every other command is shown to every member and refused bot-side. That's a design choice to review, not a known issue | H-02 | M |
 | A-37 | `[x]` | **Persistence**. Tests: `Integration/Shared/PersistenceTests.cs`, 5 tests. The four cache tests (XP amount, rewards, XP ignores, log override) read, change through a command, then read again, and fail when invalidation is broken. A restart keeps leveling settings, the log channel and rewards. A static scan found an invalidation on every cached write path. No bugs | none | S |
 | A-38 | `[x]` | **Startup and migrations**. Tests: `Integration/Shared/StartupMigrationTests.cs`, 3 tests, each on a fresh database in the shared container: empty, one migration behind on both schemas, and up to date. Proven by skipping the startup migration. On a fresh database EF logs two errors while reading the not-yet-created history table; that's EF's noise, not a bug | `StartAsync(connectionString:)` | S |
+
+### Phase 10: Gaps found by the area docs (2026-11-08)
+
+Areas 04 to 09 got their manual docs on 2026-11-08, after their tests were written, so those tests don't cite case IDs.
+Comparing each doc with its **[auto]** tags, its coverage notes and the IDs cited in test code left about 350
+uncovered cases in areas 04 to 09, plus 19 in areas 01 and 02. These items cover the ones the harness can reach. Each
+starts with the cases that confirm a KI from the 2026-11-08 batch (KI-55 to KI-107). Per session rule 4, those tests
+are written skipped with the KI, unless the KI has been fixed by then.
+
+| ID | Status | Item | Cases | Harness | Size |
+|----|--------|------|-------|---------|------|
+| A-39 | `[ ]` | **Traceability and leftovers.** Add the case IDs from areas 04 to 09 to the doc comments of the existing tests (`SpamFilterTests`, `DiagnosticsTests`, the Logging, Leveling and CustomCommands classes, `AlertTests`, `GatewayAndIssueTests`, `GuildSyncAndInviteTests`, `PluralKitTests`, `CommandMatrixTests`, `PersistenceTests`, `StartupMigrationTests`), so the coverage check can rely on the code alone. Then check whether `CommandMatrixTests` already covers GEN-11 to 13 (GEN-13 is KI-65), and automate the leftovers: GEN-57, 58, 144, 170 to 173; MOD-04, 05, 11, 87, 157 | listed | none | M |
+| A-40 | `[ ]` | **Spam filter events.** KI-55 (SPAM-27, 28, 29), KI-63 (SPAM-05, 06, seeding sins), escalation SPAM-03, 04, scoring SPAM-09 to 11, staff exemption SPAM-13, override inheritance through category and thread SPAM-20 to 24, DM closed SPAM-26, rank SPAM-30, per guild and after restart SPAM-32, 33, leaky channel SPAM-34. KI-107 (XC-83: Moderation off) | SPAM-03 to 34, XC-83 | none (SPAM-14 needs H-13) | M |
+| A-41 | `[ ]` | **`/SpamFilter` Override and View.** KI-60 (SPAM-50, XC-89), KI-61 (SPAM-61); SPAM-43, 45 to 47, 49, 53, 54, 62, 63, 66 | SPAM-43 to 66 | none (SPAM-64 paging needs H-11) | S |
+| A-42 | `[ ]` | **Diagnostics.** KI-56 (DIAG-39: the voice/stage overwrite lacks Send Messages), KI-57 (DIAG-38), KI-58 (DIAG-37), KI-59 (DIAG-36), KI-62 (DIAG-67, 68). Check gates DIAG-02, 05 to 08, 24, 25, 35, 41; Ignore Add, Remove and View DIAG-51 to 70, including the untested gates DIAG-63 and 64; the follow-up after `/Mutes` DIAG-81 to 84 | DIAG-02 to 84 | H-14 (media channel) | M |
+| A-43 | `[ ]` | **Message and user log settings.** KI-65 (LOG-19, 50, XC-73; check the current text), KI-66 (LOG-01, 40), KI-71 (LOG-31, 32); LOG-05, 07, 13, 25, 27 to 30, 42 to 48 | LOG-05 to 50 | none | S |
+| A-44 | `[ ]` | **Message events.** KI-64 (LOG-89), KI-69 (LOG-76), KI-70 (LOG-111), KI-72 (LOG-128, after a restart), KI-104 (XC-45, with FakePluralKit); LOG-60 to 62, 71, 77, 78, 87, 88, 90, 95, 100, 112 to 116, 121, 187, 188 | LOG-60 to 188, XC-45 | none | M |
+| A-45 | `[ ]` | **User log, guild sync and invites.** KI-67 (LOG-142), KI-68 (LOG-166), KI-89 (GLD-07, via `Rest.On` on the invite list), KI-90 (GLD-23), KI-97 (GLD-04), KI-98 (GLD-49), KI-100 (GLD-21); LOG-140, 143, 147 to 151, 162, 163, 167, 173; GLD-03, 05, 20, 22, 42 to 47, 50, 51, 62 to 64 | LOG-140 to 173, GLD-03 to 64 | H-14 (vanity, guild leave) | L |
+| A-46 | `[ ]` | **XP gain and rewards.** KI-73 (LVL-11, 12, 131), KI-75 (LVL-43, 106), KI-76 (LVL-107), KI-79 (LVL-57); LVL-03, 04, 06, 07, 16 to 18, 20, 21, 32 to 36, 38, 44, 56, 66, 71, 73. Leave the race LVL-19 (KI-74) manual: a timing test would be flaky | LVL-03 to 73 | H-14 (@everyone grant) | M |
+| A-47 | `[ ]` | **Leveling commands.** KI-78 (LVL-82), KI-82 (option names, via the registration snapshot); LVL-88 to 97, 102, 108, 118, 123, 126, 129, 133, 134, 141, 143 to 146, 153, 154, 156, 157, and the cache cases LVL-170 to 173 | LVL-82 to 173 | none | M |
+| A-48 | `[ ]` | **Custom commands.** KI-83 (CC-55), KI-84 (CC-119, `Rest.On` returning 400), KI-85 (CC-126, `!` text commands), KI-86 (CC-68, 103), KI-87 (CC-19, 121), KI-88 (CC-11). Review C-2 (CC-09) and C-3 (CC-21, 91, 113) skipped against the review item. CC-04, 10, 12, 15, 16, 18, 20, 23, 25, 32, 34 to 37, 42, 44, 46, 56 to 60, 69, 79, 82, 87, 89, 90, 95 to 99, 114, 120, 122 to 125, 127; autocomplete CC-51, 52, 100 to 104 | CC-04 to 127 | H-12 (autocomplete) | L |
+| A-49 | `[ ]` | **Alerts and the daily report.** KI-91 (ALRT-09), KI-92 (ALRT-08, 27), KI-94 (ALRT-30, by disposing and restarting the bot), KI-95 (ALRT-31), KI-96 (ALRT-46, 51); ALRT-02, 10, 13, 21, 22, 25, 26, 28, 29, 41, 44. KI-93 (ALRT-11) is easier as a unit test in A-53 | ALRT-02 to 51 | none (manual clock exists) | M |
+| A-50 | `[ ]` | **PluralKit beyond the message log, and config.** KI-101 (XC-07, through `configureHost` without the endpoint), KI-106 (XC-28, if it can be shown without a slow migration); XC-32, 37, 39 to 44, 46, 47; SPAM-31, LVL-20, CC-125 | XC-07 to 47 | none | M |
+| A-51 | `[ ]` | **Channel-level permissions, module toggles, cache and restart.** Build H-13 first. KI-102 (XC-61), KI-103 (XC-105); XC-54 to 60 and 62, GEN-143, MOD-64, SPAM-14; module toggles XC-74 to 76, 78, 79, 82, 85, 87, 88, 91; cache XC-97 to 102, 104; restart XC-111, 113, 115 to 118, 120 to 122, 124 | XC-54 to 124 | H-13 | L |
+| A-52 | `[ ]` | **Pagination.** Build H-11, then cover the paged replies: SPAM-64, CC-43, the leaderboard pages, and SIN-13 (KI-30, if still open) | listed | H-11 | M |
+| A-53 | `[ ]` | **Unit tests for pure helpers** that no test names. First check that the integration tests don't already pin them: `AlertMessageFormatter` (KI-93: the closing code fence), `SinIdArgumentConverter`, `CommandNameArgumentConverter`, `Utilities/DiscordRegex`, `ModerationRank`, `MessageLogEmbedExtensions`, `DiscordRetryPolicy` | none | none | S |
+
+**Left manual on purpose**, because the fake can't reproduce them faithfully: checks done in Discord's client (LVL-87,
+109, 142; CC-17), Integrations overrides (XC-52, 53), real config and startup failures (XC-02 to 05), migrations on a
+production copy or with two processes (XC-22 to 27), the real gateway under KI-48 (ALRT-63, 66), timing and load
+(LVL-19, DIAG-89, GEN-146, 148, XC-123), live voice-channel chat (the user-facing half of DIAG-39), and the
+visibility question in DIAG-90.
 
 ## Progress log
 
@@ -325,3 +360,4 @@ Add one line per session: the date, the item, what changed, and what was skipped
 - 2026-10-25: A-37 done. 5 cache and restart tests, no bugs.
 - 2026-10-25: A-38 done. 3 startup and migration tests, no bugs. The numbered backlog is complete.
 - 2026-10-31: Fixed the triaged KIs. Enabled 51 skipped tests; KI-39, KI-48 (2 tests) and KI-52 stay skipped. Added KI-51 to KI-53. Harness: `FakeInteraction.IsFollowup`, ban lookups, and role `colors`.
+- 2026-11-08: Areas 04 to 09 drafted. Compared every area doc with the tests and added phase 10 (A-39 to A-53) and harness items H-12 to H-14 for the gaps.

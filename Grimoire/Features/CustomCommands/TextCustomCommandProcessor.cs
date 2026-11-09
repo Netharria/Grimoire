@@ -92,32 +92,11 @@ public sealed partial class TextCustomCommandProcessor(
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var response = await dbContext.CustomCommands
-            .AsNoTracking()
             .GetCustomCommandQuery(member.GetGuildId(), name)
             .FirstOrDefaultAsync();
         return response is null || !GetCustomCommand.IsUserAuthorized(member, response)
             ? Result<ParsedCommand>.Fail(new Error(NotFoundCode, "Command not found or not authorized", name.Value))
             : Result<ParsedCommand>.Ok(new ParsedCommand(response, member, name, args));
-    }
-
-    private static (string Content, CommandOutputFormat Format) BuildResponse(
-        CustomCommand response,
-        string[] args, SnowflakeObject? snowflake, ulong guildId)
-    {
-        var contentValue = response.Content.Value;
-        // The first word after the name is the mention only if it resolved to one; otherwise it's part of the message.
-        var rawMessage = string.Join(' ', args.Skip(snowflake is not null ? 2 : 1));
-        CommandOutputFormat outputFormat = response is EmbedCustomCommand embed
-            ? new CommandOutputFormat.Embedded(embed.EmbedColor)
-            : new CommandOutputFormat.Text();
-        var content = GetCustomCommand.TruncateForDiscord(
-            GetCustomCommand.ApplyMessage(
-                GetCustomCommand.ApplyMention(contentValue, snowflake, guildId),
-                rawMessage, guildId),
-            outputFormat is CommandOutputFormat.Embedded
-                ? GetCustomCommand.MaxEmbedDescriptionLength
-                : GetCustomCommand.MaxMessageLength);
-        return (content, outputFormat);
     }
 
     /// <returns>Whether the reply was sent.</returns>
@@ -128,13 +107,14 @@ public sealed partial class TextCustomCommandProcessor(
                         && cmd.Args.Length > 1
             ? await ResolveSnowflake(cmd.Args[1], sender, eventArgs.Guild)
             : null;
-        var (content, format) = BuildResponse(cmd.Response, cmd.Args, snowflake, eventArgs.Guild.Id);
-        // A command made only of %Message or %Mention renders empty without them, and Discord refuses an empty message.
-        if (string.IsNullOrWhiteSpace(content))
+        // The first word after the name is the mention only if it resolved to one; otherwise it's part of the message.
+        var message = string.Join(' ', cmd.Args.Skip(snowflake is not null ? 2 : 1));
+        if (GetCustomCommand.RenderContent(cmd.Response, snowflake, message, eventArgs.Guild.Id) is not { } content)
             return false;
         try
         {
-            await eventArgs.Channel.SendMessageAsync(GetCustomCommand.BuildMessageResponse(content, format));
+            await eventArgs.Channel.SendMessageAsync(
+                GetCustomCommand.BuildResponse(new DiscordMessageBuilder(), cmd.Response, content));
             return true;
         }
         catch (UnauthorizedException)

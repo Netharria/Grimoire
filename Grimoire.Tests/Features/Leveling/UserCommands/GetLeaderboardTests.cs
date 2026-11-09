@@ -29,8 +29,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
 
     private async Task SeedXpAsync(UserId userId, GuildId guildId, long xp)
     {
-        var earned = EarnedXp.Create(PositiveXpAmount.Create(xp).ShouldSucceed(), userId, guildId, DateTimeOffset.UtcNow)
-            .ShouldSucceed();
+        var earned = EarnedXp.Create(PositiveXpAmount.Create(xp).ShouldSucceed(), userId, guildId, DateTimeOffset.UtcNow);
 
         await using var db = factory.CreateDbContext();
         await db.XpHistory.AddAsync(earned);
