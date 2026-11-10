@@ -99,7 +99,7 @@ internal static class GrimoireServiceRegistration
                 .AddDiscordClient(
                     token,
                     DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents)
-                .AddDbContextFactory<GrimoireDbContext>(options =>
+                .AddPooledDbContextFactory<GrimoireDbContext>(options =>
                     options.UseNpgsql(connectionString,
                             npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
                         .UseExceptionProcessor())

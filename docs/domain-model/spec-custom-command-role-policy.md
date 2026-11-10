@@ -26,6 +26,19 @@ Key rules:
 - **Both configured** → user must hold an allow role *and* must not hold any deny role.
   Deny roles are an unconditional veto; there is no override.
 
+## How roles are set
+
+`/Commands Learn` makes one list from its `permission_role_*` options (review C-2):
+
+- `restricted_use: true` → the roles are allow roles, and at least one is required.
+- `restricted_use: false` (the default) → the roles are deny roles. With none, everyone may use the command.
+
+A command can't get both lists from `Learn`; the policy above still covers both.
+
+Legacy rows follow `main`'s rule (review P-1): `ModelRedesign` makes a restricted command's roles allow roles and
+an unrestricted command's roles deny roles. A restricted legacy command with no roles was usable by nobody on `main`
+and is usable by everyone after the migration; size it with the query in `branch-review.md` section 2.
+
 ## Implementation
 
 ```csharp

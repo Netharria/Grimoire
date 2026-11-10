@@ -84,6 +84,50 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
             .ShouldBe($"<@{this.Guild.User1.Id}> are no longer ignored for xp gain.");
     }
 
+    /// <summary>Review X-12: adding what's already ignored changes nothing, says so, and isn't logged.</summary>
+    [Fact]
+    public async Task IgnoreAdd_OfAnIgnoredItem_SaysSo_AndSavesNothing()
+    {
+        await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1));
+
+        (await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1))).Description
+            .ShouldBe($"<@{this.Guild.User1.Id}> were already ignored.");
+
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        (await settingsContext.XpTrackedItems.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        await Task.Delay(NothingHappensWindow, TestContext.Current.CancellationToken);
+        this._bot.Rest.Requests.Count(request => this._bot.IsModLogPost(request)
+                                                 && request.Body?.Contains("ignored for xp gain", StringComparison.Ordinal) == true)
+            .ShouldBe(1);
+    }
+
+    /// <summary>Review X-12: with a mix, only the real changes are saved and logged, and the rest are named.</summary>
+    [Fact]
+    public async Task IgnoreAdd_WithSomeAlreadyIgnored_ReportsBoth()
+    {
+        await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1));
+
+        (await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1),
+                SlashOption.MentionableRole("items_1", this.Guild.KickerRoleId))).Description
+            .ShouldBe($"<@&{this.Guild.KickerRoleId}> are now ignored for xp gain.\n<@{this.Guild.User1.Id}> were already ignored.");
+
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"<@&{this.Guild.KickerRoleId}> are now ignored for xp gain.");
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        (await settingsContext.XpTrackedItems.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
+    }
+
+    /// <summary>Review X-12: removing what isn't ignored changes nothing and says so.</summary>
+    [Fact]
+    public async Task IgnoreRemove_OfAnItemNotIgnored_SaysSo_AndSavesNothing()
+    {
+        (await this.IgnoreAsync("remove", SlashOption.MentionableUser("items_0", this.Guild.User1))).Description
+            .ShouldBe($"<@{this.Guild.User1.Id}> were not ignored.");
+
+        await using var settingsContext = this._database.CreateSettingsDbContext();
+        (await settingsContext.XpTrackedItems.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(0);
+    }
+
     /// <remarks>Cases: LVL-128.</remarks>
     [Fact]
     public async Task IgnoreView_WithNothingIgnored_SaysSo()
@@ -197,6 +241,10 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
 
         reply.Description.ShouldBe($"{taken} xp has been taken from {this.Guild.User1.Mention}.");
         (await this.XpOfAsync(this.Guild.User1)).ShouldBe(left);
+        // Review P-2: who took it is kept.
+        await using (var dbContext = this._database.CreateDbContext())
+            (await dbContext.XpHistory.OfType<ReclaimedXp>().SingleAsync(Token)).ModeratorId
+                .ShouldBe(new ModeratorId(this.Guild.Moderator.Id));
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{taken} xp has been taken from {this.Guild.User1.Mention} by {this.Guild.Moderator.MemberMention}.");
     }

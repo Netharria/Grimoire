@@ -197,7 +197,7 @@ public sealed class CustomCommandAutocompleteTests(GrimoireCoreFactory database)
         dbContext.CustomCommands.AddRange(Enumerable.Range(1, count).Select(number => TextCustomCommand.Create(
             CustomCommandName.Create(name).ShouldSucceed(), new GuildId(guild.Id),
             CustomCommandContent.Create(content ?? $"content {number}").ShouldSucceed(),
-            [.. (allowRoleIds ?? []).Select(roleId => new RoleId(roleId))], new ModeratorId(guild.Admin.Id),
+            [.. (allowRoleIds ?? []).Select(roleId => new RoleId(roleId))], [], new ModeratorId(guild.Admin.Id),
             first.AddHours(number - 1))));
         await dbContext.SaveChangesAsync(Token);
     }

@@ -114,7 +114,8 @@ public sealed partial class TextCustomCommandProcessor(
         try
         {
             await eventArgs.Channel.SendMessageAsync(
-                GetCustomCommand.BuildResponse(new DiscordMessageBuilder(), cmd.Response, content));
+                GetCustomCommand.BuildResponse(new DiscordMessageBuilder(), cmd.Response, content, snowflake,
+                    eventArgs.Guild.Id));
             return true;
         }
         catch (UnauthorizedException)

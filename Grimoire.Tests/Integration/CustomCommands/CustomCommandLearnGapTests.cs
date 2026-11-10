@@ -53,7 +53,7 @@ public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : I
     public async Task ARoleGivenTwice_IsSavedOnce()
     {
         await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
-            SlashOption.Role("permission_role_1", this.Guild.KickerRoleId), SlashOption.Role("permission_role_3", this.Guild.KickerRoleId));
+            SlashOption.Role("permission_role_0", this.Guild.KickerRoleId), SlashOption.Role("permission_role_2", this.Guild.KickerRoleId));
 
         (await this.VersionsAsync("secret")).ShouldHaveSingleItem().Roles.ShouldHaveSingleItem()
             .ShouldBeOfType<CustomCommandAllowRole>().RoleId.ShouldBe(new RoleId(this.Guild.KickerRoleId));
@@ -63,10 +63,10 @@ public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : I
     ///     CC-09, as decided in review C-2: roles given without <c>restricted_use</c> become deny roles, so members
     ///     with them can't use the command and everyone else can.
     /// </summary>
-    [Fact(Skip = "Fails: BuildRoles only makes allow roles, so the role is dropped and everyone can use it. review C-2")]
+    [Fact]
     public async Task RolesWithoutRestrictedUse_BecomeDenyRoles()
     {
-        await this.LearnAsync("open", "hi", SlashOption.Role("permission_role_1", this.Guild.ModeratorRoleId));
+        await this.LearnAsync("open", "hi", SlashOption.Role("permission_role_0", this.Guild.ModeratorRoleId));
 
         (await this.VersionsAsync("open")).ShouldHaveSingleItem().Roles.ShouldHaveSingleItem()
             .ShouldBeOfType<CustomCommandDenyRole>().RoleId.ShouldBe(new RoleId(this.Guild.ModeratorRoleId));
@@ -90,7 +90,7 @@ public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : I
     public async Task ANewVersionWithoutRoles_OpensTheCommand()
     {
         await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
-            SlashOption.Role("permission_role_1", this.Guild.ModeratorRoleId));
+            SlashOption.Role("permission_role_0", this.Guild.ModeratorRoleId));
         await this.LearnAsync("secret", "open now");
 
         var versions = await this.VersionsAsync("secret");

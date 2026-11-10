@@ -42,7 +42,7 @@ yellow embed. Owner and Administrator pass the Manage Guild gate. Error and warn
 
 ---
 
-## A. `/Commands Learn name content [embed] [embed_color] [restricted_use] [permission_role_1..10]`
+## A. `/Commands Learn name content [embed] [embed_color] [restricted_use] [permission_role_0..9]`
 
 Gates: `RequireGuild`, `RequireModuleEnabled(Commands)`, Manage Guild, checked by the bot. `name` is a plain string with
 a client-side length of 1 to 24. `content` has a client-side maximum of 2000. `embed_color` is 6 hex digits, with or
@@ -57,9 +57,9 @@ The reply is "Added {name} custom command." and the mod log gets "@user asked @G
 | CC-04 | none | `embed:true embed_color:"#00FF00"` | Same reply **[auto]** `CustomCommandLearnGapTests.AColourWithAHash_IsStoredWithoutIt` | Colour `00FF00` (the `#` is dropped) |
 | CC-05 | none | `embed_color:ff0000` with `embed` false or left out | Red "An embed color only applies to an embed. Set embed to true, or leave out the color." **[auto]** `Learn_WithABadNameOrColour_SaysWhatIsWrong` | No row |
 | CC-06 | none | `embed:true embed_color:not-a-colour` (also `fff`, `gggggg`) | Red "A command embed color must be a 6 character hex color code." **[auto]** same test | No row |
-| CC-07 | none | `name:secret content:shh restricted_use:true permission_role_1:Kicker permission_role_2:Banner` | Same reply. **[auto]** `Learn_Restricted_SavesItsRoles` | Two allow rows in `CustomCommandRoles` for that version |
+| CC-07 | none | `name:secret content:shh restricted_use:true permission_role_0:Kicker permission_role_1:Banner` | Same reply. **[auto]** `Learn_Restricted_SavesItsRoles` | Two allow rows in `CustomCommandRoles` for that version |
 | CC-08 | none | `restricted_use:true` with no roles | Red "A restricted command must have at least one permission role." **[auto]** `Learn_RestrictedWithoutRoles_IsRejected` | No row |
-| CC-09 | none | `permission_role_1:Perm` with `restricted_use` false | **Expected:** the role becomes a deny role (decided in review C-2). **Actual:** "Added ... custom command." and the role is dropped, so everyone can use it **[auto]** `CustomCommandLearnGapTests.RolesWithoutRestrictedUse_BecomeDenyRoles` (skipped, review C-2) | Row with no roles |
+| CC-09 | none | `permission_role_0:Perm` with `restricted_use` false | The role becomes a deny role (review C-2): members with it can't use the command, everyone else can **[auto]** `CustomCommandLearnGapTests.RolesWithoutRestrictedUse_BecomeDenyRoles` | One deny row |
 | CC-10 | none | `restricted_use:true` with the same role in slots 1 and 3 | Same reply **[auto]** `CustomCommandLearnGapTests.ARoleGivenTwice_IsSavedOnce` | One role row (duplicates removed) |
 | CC-11 | `hello` exists | `/Commands Learn name:hello content:"second\nline"` | "Added hello custom command." (it says Added, not Updated). **[auto]** `Learn_AnExistingName_AddsAVersion_ThatHistoryShows` **[auto]** `CustomCommandLearnGapTests.LearningAnExistingName_SaysUpdated` (skipped, KI-88) | A second row; the first is kept. Content holds a real newline |
 | CC-12 | `secret` from CC-07 | Learn `secret` again with no `restricted_use` | Same reply **[auto]** `CustomCommandLearnGapTests.ANewVersionWithoutRoles_OpensTheCommand` | New version has no roles: the command is now open to all. Each version carries its own roles |

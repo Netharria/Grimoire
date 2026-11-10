@@ -227,6 +227,15 @@ public sealed class GrimoireTestBot : IAsyncDisposable
                 this.IsModLogPost(request) && request.Json?["embeds"]?[0] is { } embed && match(embed)))
             .Json!["embeds"]![0]!;
 
+    public bool IsLevelLogPost(RecordedRequest request)
+        => request.Method == HttpMethod.Post && request.Path == $"channels/{this.Guild.LevelLog.Id}/messages";
+
+    /// <summary>Waits for a leveling-log post whose first embed matches, and returns that embed.</summary>
+    public async Task<JsonNode> WaitForLevelLogEmbedAsync(Func<JsonNode, bool> match)
+        => (await this.Rest.WaitForRequestAsync(request =>
+                this.IsLevelLogPost(request) && request.Json?["embeds"]?[0] is { } embed && match(embed)))
+            .Json!["embeds"]![0]!;
+
     /// <summary>Runs a slash command and waits for the reply the invoking member sees.</summary>
     public Task<FakeReply> RunSlashCommandAndWaitAsync(string commandName, FakeUser invoker, params SlashOption[] options)
         => FakeReply.WaitForAsync(this.Rest, this.RunSlashCommand(commandName, invoker, options));

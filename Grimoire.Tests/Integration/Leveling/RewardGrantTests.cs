@@ -58,7 +58,7 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
-            new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+            new ChannelId(this.Guild.LevelLog.Id))).ShouldBeSetOrUnchanged();
     }
 
     // ── Granting ──────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "big jump");
 
-        var log = await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        var log = await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             .StartsWith($"{this.Guild.User1.MemberMention} has earned ", StringComparison.Ordinal) == true);
         log["description"]!.GetValue<string>().ShouldContain($"<@&{this.Guild.KickerRoleId}>");
         log["description"]!.GetValue<string>().ShouldContain($"<@&{this.Guild.BannerRoleId}>");
@@ -129,7 +129,7 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has leveled to level 2.");
         (await this._bot.Rest.ReceivesRequestWithinAsync(this.IsRoleGrant(this.Guild.User1), NothingHappensWindow)).ShouldBeFalse();
         this.EarnedLogPosts().ShouldBeEmpty();
@@ -254,11 +254,11 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
                       && request.Path.StartsWith($"guilds/{this.Guild.Id}/members/{user.Id}/roles/", StringComparison.Ordinal);
 
     private IEnumerable<RecordedRequest> EarnedLogPosts()
-        => this._bot.Rest.Requests.Where(request => this._bot.IsModLogPost(request)
+        => this._bot.Rest.Requests.Where(request => this._bot.IsLevelLogPost(request)
                                                     && request.Body?.Contains("has earned", StringComparison.Ordinal) == true);
 
     private Task WaitForEarnedLogAsync(FakeUser user, ulong roleId)
-        => this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        => this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{user.MemberMention} has earned <@&{roleId}>");
 
     private async Task SetAmountAsync(int amount)

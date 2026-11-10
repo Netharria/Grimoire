@@ -10,6 +10,9 @@ namespace Grimoire.Settings.Domain;
 public abstract record XpTrackedItem
 {
     protected ulong Id { get; init; }
+
+    /// <summary>The channel, member or role this is about. Ids are snowflakes, so they don't collide across kinds.</summary>
+    internal ulong TargetId => this.Id;
     public required GuildId GuildId { get; init; }
     public required ModeratorId SetBy { get; init; }
     public required DateTimeOffset SetAt { get; init; }

@@ -45,7 +45,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
         var guild = ctx.RequiredGuild;
 
         await ValidateOption(option, amount)
-            .BindAsync(_ => this.ReclaimAsync(user, guild, option, amount))
+            .BindAsync(_ => this.ReclaimAsync(user, guild, option, amount, ctx.GetModeratorId()))
             .MatchAsync(
                 xpTaken => this.ReportReclaimAsync(ctx, user, guild, xpTaken),
                 error => ctx.SendErrorResponseAsync(error.Message).AsTask());
@@ -57,7 +57,8 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             : Result<Unit>.Ok(Unit.Value);
 
     /// <summary>Takes the XP and returns how much was taken: everything, or the amount, capped at what they have.</summary>
-    private async Task<Result<long>> ReclaimAsync(DiscordUser user, DiscordGuild guild, XpOption option, int amount)
+    private async Task<Result<long>> ReclaimAsync(DiscordUser user, DiscordGuild guild, XpOption option, int amount,
+        ModeratorId moderatorId)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
 
@@ -69,7 +70,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
             return new Result<long>.NotFound(new Error("reclaim.member.no-xp", $"{user.Mention} has no xp to take."));
 
         var reclaimedXp = NegativeXpAmount.Create(-xpToTake)
-            .Map(xp => ReclaimedXp.Create(xp, user.GetUserId(), guild.GetGuildId(), DateTimeOffset.UtcNow))
+            .Map(xp => ReclaimedXp.Create(xp, moderatorId, user.GetUserId(), guild.GetGuildId(), DateTimeOffset.UtcNow))
             .Match(r => r, _ => throw new InvariantViolationException());
         await dbContext.XpHistory.AddAsync(reclaimedXp);
         await dbContext.SaveChangesAsync();

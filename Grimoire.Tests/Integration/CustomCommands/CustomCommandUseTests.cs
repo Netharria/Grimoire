@@ -54,7 +54,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 
     /// <remarks>Cases: CC-88.</remarks>
     [Fact]
-    public async Task SlashCommand_FillsMentionAndMessage_AndDefusesEveryone()
+    public async Task SlashCommand_FillsMentionAndMessage_AndLeavesEveryoneAsTyped()
     {
         await this.LearnAsync("hug", "%Mention gets a hug: %Message");
 
@@ -62,7 +62,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
             SlashOption.MentionableUser("mention", this.Guild.Moderator), SlashOption.String("message", "hi @everyone"));
 
         reply.Message["content"]!.GetValue<string>()
-            .ShouldMatch($"^<@!?{this.Guild.Moderator.Id}> gets a hug: hi @ everyone$");
+            .ShouldMatch($"^<@!?{this.Guild.Moderator.Id}> gets a hug: hi @everyone$");
         await this.WaitForUsesAsync(1);
     }
 
@@ -87,7 +87,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     public async Task SlashCommand_Restricted_OnlyRunsForItsRoles(bool hasRole)
     {
         await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
-            SlashOption.Role("permission_role_1", this.Guild.ModeratorRoleId));
+            SlashOption.Role("permission_role_0", this.Guild.ModeratorRoleId));
         var invoker = hasRole ? this.Guild.Moderator : this.Guild.User1;
 
         var interaction = this._bot.RunSlashCommand("command", invoker, SlashOption.String("command_name", "secret"));
@@ -187,7 +187,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     public async Task TextTriggers_ThatShouldNotRun_PostNothing(string situation)
     {
         await this.LearnAsync("hello", "Hello there!", situation == "restricted"
-            ? [SlashOption.Boolean("restricted_use", true), SlashOption.Role("permission_role_1", this.Guild.ModeratorRoleId)]
+            ? [SlashOption.Boolean("restricted_use", true), SlashOption.Role("permission_role_0", this.Guild.ModeratorRoleId)]
             : []);
         if (situation == "module off")
             await this._bot.SetModuleAsync(Module.Commands, false);

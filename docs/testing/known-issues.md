@@ -127,7 +127,7 @@ I-18 (stale `CLAUDE.md`, see area 09).
 
 | ID | Sev | Issue | Where | Confirm with |
 |----|-----|-------|-------|--------------|
-| KI-73 | med | **An ignored channel doesn't cover its threads or category.** Only the message's own channel id is compared, and threads pass their own id. `/Ignore Add channel:` accepts categories and forums without a warning, but ignoring them does nothing. | `SettingsModule.Leveling.Ignores.cs:29`, `GainUserXp.cs:57`, `IgnoreCommandGroup.AddIgnore.cs:24-25` | LVL-11, LVL-12, LVL-131 |
+| KI-73 | med | **An ignored channel doesn't cover its category.** (Threads fixed by review X-12, 2026-11-10: the parent channel is checked.) `/Ignore Add channel:` accepts categories and forums without a warning, but ignoring them does nothing. | `SettingsModule.Leveling.Ignores.cs:29`, `GainUserXp.cs:57`, `IgnoreCommandGroup.AddIgnore.cs:24-25` | LVL-11, LVL-12, LVL-131 |
 | KI-74 | low | **(suspected) Two messages at once can both earn XP.** The timeout check and the insert aren't atomic. | `Leveling/Events/GainUserXp.cs:62-90` | LVL-19 |
 | KI-75 | low | **`/Rewards Add` accepts @everyone, and the grant loop only catches `UnauthorizedException`.** Any other Discord error skips the remaining rewards and the "has earned" log, on every XP gain. Confirmed 2026-11-09 against the fake's answer (400, code 50028); Discord's real answer for granting @everyone is undocumented. | `RewardCommandGroup.AddReward.cs:60-71`, `GainUserXp.cs:161-169` | LVL-43, LVL-106, `RewardGrantTests` (skipped) |
 | KI-76 | low | **`/Rewards Add` doesn't check that the bot has Manage Roles.** The problem only shows when someone reaches the reward. | `RewardCommandGroup.AddReward.cs:60-71` | LVL-107 |

@@ -194,13 +194,14 @@ ALTER TABLE "CustomCommandsRole"
     ADD COLUMN "RoleType"  varchar(21)  NOT NULL DEFAULT '';
 
 -- 4. Backfill the new role columns.
---    All legacy roles were allow-type; RoleType = 'Allow' for all existing rows.
+--    A restricted command's roles were its allow list; an unrestricted command's roles were its
+--    deny list (main's IsUserAuthorized, review P-1).
 --    Must run after step 2 (so CustomCommands.CreatedAt is set) and before
 --    CustomCommandName is dropped.
 UPDATE "CustomCommandsRole" AS ccr
 SET "Name"      = ccr."CustomCommandName",
     "CreatedAt" = cc."CreatedAt",
-    "RoleType"  = 'Allow'
+    "RoleType"  = CASE WHEN cc."RestrictedUse" THEN 'Allow' ELSE 'Deny' END
 FROM "CustomCommands" AS cc
 WHERE cc."Name"    = ccr."CustomCommandName"
   AND cc."GuildId" = ccr."GuildId";
@@ -392,10 +393,10 @@ BEGIN
     END IF;
 END $$;
 
--- Null out stale AwarderId values on non-Awarded rows.
+-- Null out stale AwarderId values on rows with no moderator. Reclaimed rows keep who took the XP (review P-2).
 UPDATE "XpHistory"
 SET "AwarderId" = NULL
-WHERE "Type" != 'Awarded' AND "AwarderId" IS NOT NULL;
+WHERE "Type" NOT IN ('Awarded', 'Reclaimed') AND "AwarderId" IS NOT NULL;
 
 -- Delete Created rows (zero-XP user-join records, no longer used).
 DELETE FROM "XpHistory" WHERE "Type" = 'Created';

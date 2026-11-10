@@ -53,11 +53,11 @@ note says otherwise.
 | 27 | C-6, C-9, D-5, D-8 | **Done** 2026-11-08, uncommitted | D-5/D-8: the command factories take the allow-role ids and the time, and return the type; `AsNewVersion` does Revert. C-9: `IsUserAuthorized` has a pure overload, tested on every row of the spec's table (the old branching passes the same nine). The autocomplete providers check the guild themselves, so the last `ctx.Guild!` goes. C-3 has a decision but no rank, so the sanitiser is still there |
 | 28 | P-5, S-8 | **Done** 2026-11-09, uncommitted | Two migrations, one per context, both named `DropRedundantIndexes`: five indexes in the main schema, seven in Settings. `IX_GuildSettings_GuildId_Type_SetAt` stays. `SchemaIndexTests` checks the 12 are gone, and fails on any plain index that repeats the start of its table's primary key. `StartupMigrationTests` assumed the newest row in the shared `__EFMigrationsHistory` belonged to the main context; it now checks for no pending migrations |
 | 29 | P-7 | Later release | Only after Settings' `Initial` has run in production |
-| 30 | P-1, C-2 | Do | Confirmed 2026-11-09. In `ModelRedesign` (it drops `RestrictedUse`, so a later migration can't), `RoleType` becomes `CASE WHEN RestrictedUse THEN 'Allow' ELSE 'Deny' END`; correct the spec. `Learn`'s roles without `restricted_use` become deny roles, so a re-Learn keeps a legacy deny list |
-| 31 | P-2 | Do | Confirmed 2026-11-09. `ReclaimedXp` gets `ModeratorId?` mapped to `AwarderId`; `ModelRedesign` step 7 stops nulling Reclaimed rows. Must be in `ModelRedesign`, before deploy |
-| 32 | M-4 | Do | Confirmed 2026-11-09. `/Lock` and `/Unlock` refuse unless the moderator has Manage Messages in the target channel. Channel-level, no guild-wide gate |
-| 33 | X-6 | Do | Confirmed 2026-11-09. `/Rewards Add` and `Remove` log to `Moderation`, Add's entry names the moderator, and tests give the leveling log its own channel |
-| 34 | C-3 | Do | Confirmed 2026-11-09. Text commands allow pings for only `%Mention`'s resolved user or role; `@everyone`, `@here` and `%Message` never ping; delete the sanitiser |
+| 30 | P-1, C-2 | **Done** 2026-11-09, uncommitted | The `CASE` is in `ModelRedesign` phase 4. The factories take `allowRoleIds` and `denyRoleIds`, and `BuildRoles` makes both; `Learn` splits by `restricted_use`, and the option's description now says roles without it are blocked. 2026-11-10: the ten role options are one variadic `permission_role` (`permission_role_0`..`_9`), as `/Ignore` uses; the old `//todo` was stale. Role policy and migration plan specs corrected. Not decided: a restricted legacy command with no roles (nobody on `main`, everyone now); section 2's second query sizes it |
+| 31 | P-2 | **Done** 2026-11-09, uncommitted | `ReclaimedXp.ModeratorId?` shares the `AwarderId` column; `ReclaimedXp.Create` requires one. Phase 7 nulls only `Type NOT IN (1, 2)`. EF reports no model change. XP history and migration plan specs corrected |
+| 32 | M-4 | **Done** 2026-11-09, uncommitted | One shared `LockTargetPermissions.CheckModerator`, checked before anything changes |
+| 33 | X-6 | **Done** 2026-11-09, uncommitted | `FakeGuild.LevelLog` (`#levellog`) with `WaitForLevelLogEmbedAsync`; the six test classes that set a leveling log use it |
+| 34 | C-3 | **Done** 2026-11-09, uncommitted | Both paths, through `BuildResponse` and `AddMentions` (DSharpPlus 5 has no `WithAllowedMentions`). Only when the content has `%Mention`, and never the `@everyone` role, which still shows as `@ everyone`. DSharpPlus sends the ids as JSON numbers; that Discord accepts them, and pings, joins section 9's real-Discord checks |
 
 ## Items the review said could wait or be left alone
 
@@ -65,12 +65,12 @@ All taken.
 
 | Finding | Decision | Note |
 |---------|----------|------|
-| I-18 | Do | |
+| I-18 | **Done** 2026-11-10, uncommitted | `CLAUDE.md` lists the keys the code reads (`appsettings.json` is committed, there is no example file; `guildId` is read nowhere). The slow-command comment says what it measures |
 | I-19 | Do | The `ctx.Guild!` half is covered by the `RequiredGuild` ruling |
-| P-8 | Do | Unmeasured; check it doesn't break anything that relies on per-context state |
+| P-8 | **Done** 2026-11-10, uncommitted | Both contexts use `AddPooledDbContextFactory`. The only per-context state is the migration command timeout; `PooledContextTests` shows a pooled lease doesn't keep it. Still unmeasured |
 | S-12 | Do | Removing the zero-id checks lets those factories drop `Validation` (ties into D-5) |
 | S-13 | Do | Needs a design first: the review found no simple safe lower bound |
-| X-12 | Do both bullets | Ignoring a channel covers its threads; `/Ignore Add`/`Remove` report no-ops instead of adding rows |
+| X-12 | **Done** 2026-11-10, uncommitted | `IsMessageIgnored` takes the thread's parent channel. `AppendIgnoredItemsEvent` saves only real changes (NotModified when none); the reply names the unchanged items and only changes are logged. KI-73's category half is still open |
 
 ## Test harness
 

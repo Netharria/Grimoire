@@ -53,30 +53,28 @@ public sealed class IgnoreCommandTests(GrimoireCoreFactory database) : IAsyncLif
         remove.ShouldBe(add);
     }
 
-    /// <summary>LVL-123: ignoring someone already ignored gives the same reply and adds a second row.</summary>
+    /// <summary>LVL-123, review X-12: ignoring someone already ignored says so and adds no row.</summary>
     [Fact]
-    public async Task Add_SomeoneAlreadyIgnored_RepliesTheSame_AndAddsARow()
+    public async Task Add_SomeoneAlreadyIgnored_SaysSo_AndAddsNoRow()
     {
-        var expected = $"<@{this.Guild.User1.Id}> are now ignored for xp gain.";
-        (await this.AddAsync(this.Guild.User1)).Description.ShouldBe(expected);
+        (await this.AddAsync(this.Guild.User1)).Description.ShouldBe($"<@{this.Guild.User1.Id}> are now ignored for xp gain.");
 
-        (await this.AddAsync(this.Guild.User1)).Description.ShouldBe(expected);
+        (await this.AddAsync(this.Guild.User1)).Description.ShouldBe($"<@{this.Guild.User1.Id}> were already ignored.");
 
-        (await this.TrackedRowsAsync(this.Guild.User1.Id)).ShouldAllBe(row => row is IgnoredMember);
-        (await this.TrackedRowsAsync(this.Guild.User1.Id)).Count.ShouldBe(2);
+        (await this.TrackedRowsAsync(this.Guild.User1.Id)).ShouldHaveSingleItem().ShouldBeOfType<IgnoredMember>();
         (await this.Settings.GetAllIgnoredItems(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed().ShouldHaveSingleItem();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
-    /// <summary>LVL-126: removing someone who wasn't ignored still replies and records a Watched row.</summary>
+    /// <summary>LVL-126, review X-12: removing someone who wasn't ignored says so and records nothing.</summary>
     [Fact]
-    public async Task Remove_SomeoneNotIgnored_StillReplies_AndRecordsIt()
+    public async Task Remove_SomeoneNotIgnored_SaysSo_AndRecordsNothing()
     {
         var reply = await this._bot.RunSlashCommandAndWaitAsync("ignore", this.Guild.Admin,
             SlashOption.Subcommand("remove", SlashOption.MentionableUser("items_0", this.Guild.Moderator)));
 
-        reply.Description.ShouldBe($"<@{this.Guild.Moderator.Id}> are no longer ignored for xp gain.");
-        (await this.TrackedRowsAsync(this.Guild.Moderator.Id)).ShouldHaveSingleItem().ShouldBeOfType<WatchedMember>();
+        reply.Description.ShouldBe($"<@{this.Guild.Moderator.Id}> were not ignored.");
+        (await this.TrackedRowsAsync(this.Guild.Moderator.Id)).ShouldBeEmpty();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 

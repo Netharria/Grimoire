@@ -14,18 +14,21 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
+    /// <param name="parentChannelId">The channel a thread is in, so ignoring a channel also covers its threads.</param>
     public Task<Result<bool>> IsMessageIgnored(
         GuildId guildId,
         UserId userId,
         IReadOnlySet<RoleId> userRoleIds,
         ChannelId channelId,
+        ChannelId? parentChannelId = null,
         CancellationToken cancellationToken = default)
         => GetAllIgnoredItems(guildId, cancellationToken)
             .Map(ignoredItems =>
                 ignoredItems.Any(ignoredItem =>
                     ignoredItem switch
                     {
-                        IgnoredChannel channel => channel.ChannelId == channelId,
+                        IgnoredChannel channel => channel.ChannelId == channelId
+                                                  || channel.ChannelId == parentChannelId,
                         IgnoredMember member => member.UserId == userId,
                         IgnoredRole role => userRoleIds.Contains(role.RoleId),
                         _ => throw new InvariantViolationException()
@@ -73,12 +76,18 @@ public sealed partial class SettingsModule
             new Error("xp-ignored-items.lookup-failed", "Could not load the ignored items."), cancellationToken);
 
 
+    /// <summary>
+    ///     Saves the items that change something, and returns them: an ignore for something not ignored, or a watch for
+    ///     something that is. NotModified when none do, so nothing is saved and nothing is reported as changed.
+    /// </summary>
     public Task<Result<IReadOnlySet<XpTrackedItem>>> AppendIgnoredItemsEvent(
         GuildId guildId,
         IReadOnlySet<XpTrackedItem> itemsToIgnore,
         CancellationToken cancellationToken = default)
         => ValidateNotEmpty(itemsToIgnore)
             .Bind(items => ValidateAllSameGuild(guildId, items))
+            .BindAsync(async validatedItems => (await this.GetAllIgnoredItems(guildId, cancellationToken))
+                .Bind(ignored => OnlyChanges(validatedItems, ignored)))
             .BindAsync(validatedItems => ExecuteSafelyAsync(async ct =>
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
@@ -87,6 +96,20 @@ public sealed partial class SettingsModule
                 await this._cache.RemoveAsync(CacheKey.XpIgnoredItems(guildId), ct);
                 return Result<IReadOnlySet<XpTrackedItem>>.Ok(validatedItems);
             }, new Error("xp-ignored-items.save-failed", "Could not save the ignored items."), cancellationToken));
+
+    private static Result<IReadOnlySet<XpTrackedItem>> OnlyChanges(
+        IReadOnlySet<XpTrackedItem> items,
+        FrozenSet<XpIgnoredItem> ignored)
+    {
+        var ignoredIds = ignored.Select(item => item.TargetId).ToHashSet();
+        IReadOnlySet<XpTrackedItem> changes = items
+            .Where(item => item is XpIgnoredItem != ignoredIds.Contains(item.TargetId))
+            .ToHashSet();
+        return changes.Count > 0
+            ? Result<IReadOnlySet<XpTrackedItem>>.Ok(changes)
+            : new Result<IReadOnlySet<XpTrackedItem>>.NotModified(
+                new Error("xp-ignored-items.unchanged", "Nothing changed: every item was already in that state."));
+    }
 
     private static Result<IReadOnlySet<XpTrackedItem>> ValidateNotEmpty(
         IReadOnlySet<XpTrackedItem> items) =>

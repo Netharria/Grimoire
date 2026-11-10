@@ -33,7 +33,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, new ModeratorId(this.Guild.Owner.Id),
-            new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+            new ChannelId(this.Guild.LevelLog.Id))).ShouldBeSetOrUnchanged();
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
@@ -48,7 +48,10 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
 
         var reward = (await this.RewardsAsync()).ShouldHaveSingleItem();
         (reward.RoleId, reward.RewardLevel, reward.RewardMessage?.Value).ShouldBe((new RoleId(this.Guild.KickerRoleId), 3, "well done"));
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>() == expected);
+        // Review X-6: reward changes go to the mod log, not the leveling log, and say who made them.
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"{this.Guild.Admin.MemberMention} updated the rewards to include <@&{this.Guild.KickerRoleId}> at level 3.");
+        this._bot.Rest.Requests.ShouldNotContain(request => this._bot.IsLevelLogPost(request));
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
@@ -129,6 +132,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
 
         (await this.RewardsAsync()).ShouldBeEmpty();
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>() == expected);
+        this._bot.Rest.Requests.ShouldNotContain(request => this._bot.IsLevelLogPost(request));
     }
 
     /// <summary>

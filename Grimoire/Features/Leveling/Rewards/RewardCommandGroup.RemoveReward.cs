@@ -50,7 +50,7 @@ public sealed partial class RewardCommandGroup
         await this._guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Leveling,
+            GuildLogType = GuildLogType.Moderation,
             Color = GrimoireColor.DarkPurple,
             Description = responseMessage
         });

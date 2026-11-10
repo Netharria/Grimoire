@@ -48,42 +48,6 @@ public sealed class GetCustomCommandTests
         result.ShouldBe(new string('a', 98) + "…");
     }
 
-    // ── SanitizeUserMessageMentions ───────────────────────────────────────────
-
-    [Fact]
-    public void SanitizeUserMessageMentions_EmptyInput_ReturnsEmpty()
-        => GetCustomCommand.SanitizeUserMessageMentions("", 1).ShouldBeEmpty();
-
-    [Fact]
-    public void SanitizeUserMessageMentions_AtEveryone_Sanitized()
-        => GetCustomCommand.SanitizeUserMessageMentions("@everyone check this", 1)
-            .ShouldBe("@ everyone check this");
-
-    [Fact]
-    public void SanitizeUserMessageMentions_AtHere_Sanitized()
-        => GetCustomCommand.SanitizeUserMessageMentions("hey @here", 1)
-            .ShouldBe("hey @ here");
-
-    [Fact]
-    public void SanitizeUserMessageMentions_AtEveryoneCaseInsensitive_Sanitized()
-        => GetCustomCommand.SanitizeUserMessageMentions("@EVERYONE", 1)
-            .ShouldBe("@ EVERYONE");
-
-    [Fact]
-    public void SanitizeUserMessageMentions_GuildEveryoneRoleMention_ReplacedWithAtEveryone()
-        => GetCustomCommand.SanitizeUserMessageMentions("<@&123>", 123)
-            .ShouldBe("@ everyone");
-
-    [Fact]
-    public void SanitizeUserMessageMentions_OtherRoleMention_Unchanged()
-        => GetCustomCommand.SanitizeUserMessageMentions("<@&456>", 123)
-            .ShouldBe("<@&456>");
-
-    [Fact]
-    public void SanitizeUserMessageMentions_NormalText_Unchanged()
-        => GetCustomCommand.SanitizeUserMessageMentions("hello world", 1)
-            .ShouldBe("hello world");
-
     // ── ApplyMention ─────────────────────────────────────────────────────────
 
     [Fact]
@@ -105,27 +69,27 @@ public sealed class GetCustomCommandTests
 
     [Fact]
     public void ApplyMessage_NoPlaceholder_TextUnchanged()
-        => GetCustomCommand.ApplyMessage("hello world", "ignored", 1)
+        => GetCustomCommand.ApplyMessage("hello world", "ignored")
             .ShouldBe("hello world");
 
     [Fact]
     public void ApplyMessage_WithPlaceholder_ReplacedWithMessage()
-        => GetCustomCommand.ApplyMessage("say: %Message", "world", 1)
+        => GetCustomCommand.ApplyMessage("say: %Message", "world")
             .ShouldBe("say: world");
 
     [Fact]
     public void ApplyMessage_PlaceholderCaseInsensitive_Replaced()
-        => GetCustomCommand.ApplyMessage("say: %message", "world", 1)
+        => GetCustomCommand.ApplyMessage("say: %message", "world")
             .ShouldBe("say: world");
 
     [Fact]
-    public void ApplyMessage_MessageContainsAtEveryone_Sanitized()
-        => GetCustomCommand.ApplyMessage("say: %Message", "@everyone", 1)
-            .ShouldBe("say: @ everyone");
+    public void ApplyMessage_MessageContainsAtEveryone_LeftAsTyped()
+        => GetCustomCommand.ApplyMessage("say: %Message", "@everyone")
+            .ShouldBe("say: @everyone");
 
     [Fact]
     public void ApplyMessage_EmptyMessage_PlaceholderReplaced()
-        => GetCustomCommand.ApplyMessage("say: %Message!", "", 1)
+        => GetCustomCommand.ApplyMessage("say: %Message!", "")
             .ShouldBe("say: !");
 
     // ── IsUserAuthorized ──────────────────────────────────────────────────────
@@ -135,7 +99,7 @@ public sealed class GetCustomCommandTests
     {
         var name = CustomCommandName.Create("cmd").ShouldSucceed();
         var content = CustomCommandContent.Create("hi").ShouldSucceed();
-        var cmd = TextCustomCommand.Create(name, new GuildId(1), content, [], new ModeratorId(1UL), DateTimeOffset.UtcNow);
+        var cmd = TextCustomCommand.Create(name, new GuildId(1), content, [], [], new ModeratorId(1UL), DateTimeOffset.UtcNow);
 
         GetCustomCommand.IsUserAuthorized(null, cmd).ShouldBeFalse();
     }

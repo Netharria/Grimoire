@@ -67,7 +67,7 @@ to the leveling log: author = username, "@user has leveled to level N.", footer 
 | LVL-08 | `user1` ignored (`/Ignore Add items:user1`) | `user1` posts | none | No row. **[auto]** `Messages_ThatShouldNotCount_EarnNothing("ignored member")` |
 | LVL-09 | `mod` role ignored | `mod` posts | none | No row. **[auto]** `("ignored role")` |
 | LVL-10 | `#ignored` ignored | `user1` posts in `#ignored`, then in `#general` | none | No row for `#ignored`; a row for `#general`. **[auto]** `("ignored channel")`, `AnIgnoredChannel_DoesNotAffectOtherChannels` |
-| LVL-11 | `#ignored` ignored; a thread under it | `user1` posts in the thread | none | **Expected:** no row. **Actual:** a row, because only the exact channel id is matched (new, see Code observations 2) **[auto]** `XpGainGapTests.AThreadUnderAnIgnoredChannel_EarnsNothing` (skipped, KI-73) |
+| LVL-11 | `#ignored` ignored; a thread under it | `user1` posts in the thread | none | No row: the thread's parent channel is checked too (review X-12) **[auto]** `XpGainGapTests.AThreadUnderAnIgnoredChannel_EarnsNothing` |
 | LVL-12 | A category ignored with `/Ignore Add channel:<category>` | `user1` posts in a channel in that category | none | **Expected:** no row, or the category refused. **Actual:** a row (new, Code observations 2) |
 | LVL-13 | Leveling disabled | `user1` posts | none | No row. **[auto]** `("module off")` |
 | LVL-14 | `user1` has 10 XP (2 messages) | Third message after the timeout | `#levelup`: "@user1 has leveled to level 2." | Row; level embed. **[auto]** `CrossingALevel_PostsToTheLevelingLog` |
@@ -245,10 +245,10 @@ mod log.
 | LVL-120 | none | `admin` runs `/Ignore Add items_0:user1 items_1:@mod-role` | "@user1 @mod-role are now ignored for xp gain." (any order) | `IgnoredMember` and `IgnoredRole` rows; `#modlog` same text; `user1` earns nothing. **[auto]** `IgnoreAndAwardTests.IgnoreAdd_StopsXp_AndIsLogged` |
 | LVL-121 | none | `/Ignore Add channel:#ignored` | "#ignored are now ignored for xp gain." | `IgnoredChannel` row. **[auto]** `Ignore_AChannel_CanBeAddedAndRemoved`, `Ignore_OffersAChannelOption` |
 | LVL-122 | none | Add with no options | Yellow "Could not parse any ids from the submitted values." | none. **[auto]** `IgnoreAdd_WithNothingSelected_SaysSo` |
-| LVL-123 | `user1` ignored | Add `user1` again | Same reply | A second row; no error. **[auto]** `IgnoreCommandTests.Add_SomeoneAlreadyIgnored_RepliesTheSame_AndAddsARow` |
+| LVL-123 | `user1` ignored | Add `user1` again | "... were already ignored." (review X-12) | No new row; not logged. **[auto]** `IgnoreCommandTests.Add_SomeoneAlreadyIgnored_SaysSo_AndAddsNoRow` |
 | LVL-124 | `user1` ignored | `/Ignore Remove items_0:user1` | "@user1 are no longer ignored for xp gain." | `WatchedMember` row; `user1` earns again. **[auto]** `IgnoreRemove_LetsXpThroughAgain`, `IgnoreRemove_SaysWhatIsNoLongerIgnored` (KI-46, fixed) |
 | LVL-125 | `#ignored` ignored | Remove `channel:#ignored` | "#ignored are no longer ignored for xp gain." | `WatchedChannel` row. **[auto]** `Ignore_AChannel_CanBeAddedAndRemoved` |
-| LVL-126 | `user2` not ignored | Remove `user2` | Same "no longer ignored" reply | A `WatchedMember` row; no error. **[auto]** `IgnoreCommandTests.Remove_SomeoneNotIgnored_StillReplies_AndRecordsIt` |
+| LVL-126 | `user2` not ignored | Remove `user2` | "... were not ignored." (review X-12) | No row; not logged. **[auto]** `IgnoreCommandTests.Remove_SomeoneNotIgnored_SaysSo_AndRecordsNothing` |
 | LVL-127 | One of each ignored | `/Ignore View` | "Ignored Channels Roles and Users.": "**Channels**", "**Roles**", "**Users**" sections with mentions | none. **[auto]** `IgnoreView_ListsChannelsRolesAndUsers` |
 | LVL-128 | Nothing ignored | View | "This server does not have any ignored channels, roles or users." | **[auto]** `IgnoreView_WithNothingIgnored_SaysSo` |
 | LVL-129 | Only users ignored | View | Empty Channels and Roles headings still shown | none. **[auto]** `IgnoreCommandTests.View_WithOnlyUsers_StillShowsTheEmptyHeadings` |

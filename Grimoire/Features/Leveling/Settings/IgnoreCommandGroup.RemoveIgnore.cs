@@ -31,5 +31,5 @@ public partial class IgnoreCommandGroup
             DiscordChannel => WatchedChannel.Create(new ChannelId(item.Id), guildId, setBy, setAt)
                 .Map(XpTrackedItem (x) => x),
             _ => throw new InvariantViolationException($"Unexpected ignore option {item.GetType().Name}.")
-        }, "are no longer ignored for xp gain.");
+        }, "are no longer ignored for xp gain.", "were not ignored.");
 }

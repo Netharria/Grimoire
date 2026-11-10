@@ -48,7 +48,7 @@ public sealed class OutageTests(SettingsTestsFactory factory) : IAsyncLifetime
     /// <summary>A failure, not "not ignored": the caller decides what an unknown answer means.</summary>
     [Fact]
     public async Task IsMessageIgnored_Fails()
-        => (await this._down.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId, Token))
+        => (await this._down.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId, cancellationToken: Token))
             .ShouldBeOfType<Result<bool>.Invalid>();
 
     [Fact]

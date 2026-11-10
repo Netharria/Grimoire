@@ -175,6 +175,37 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
             TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeFalse();
     }
 
+    /// <summary>
+    ///     Review M-4: Discord checks the moderator only where the command is run, so the bot checks the target. A
+    ///     moderator without Manage Messages there can't lock it.
+    /// </summary>
+    [Fact]
+    public async Task Lock_OfAChannelTheModeratorCantManage_IsRefused()
+    {
+        await this.DenyModeratorManageMessagesAsync(this.Guild.ModLog);
+
+        (await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, this.Guild.ModLog)).Description
+            .ShouldBe($"You need **Manage Messages** in {this.Guild.ModLog.Mention} to lock or unlock it.");
+
+        this.EveryoneOverwrite(this.Guild.ModLog).ShouldBeNull();
+        (await this.Settings.GetActiveChannelLockAsync(new ChannelId(this.Guild.ModLog.Id), new GuildId(this.Guild.Id)))
+            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+    }
+
+    /// <summary>Review M-4: nor can they lift another moderator's lock there.</summary>
+    [Fact]
+    public async Task Unlock_OfAChannelTheModeratorCantManage_IsRefused()
+    {
+        await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, this.Guild.ModLog);
+        await this.DenyModeratorManageMessagesAsync(this.Guild.ModLog);
+
+        (await this.UnlockAsync(this.Guild.ModLog)).Description
+            .ShouldBe($"You need **Manage Messages** in {this.Guild.ModLog.Mention} to lock or unlock it.");
+
+        this.EveryoneOverwrite(this.Guild.ModLog).ShouldBe((0UL, TextLock));
+        (await this.ActiveLockAsync(this.Guild.ModLog)).ShouldNotBeNull();
+    }
+
     /// <summary>MOD-156, MOD-158 and MOD-169: Discord's client enforces these from the registration.</summary>
     /// <remarks>Cases: MOD-157 (a zero duration is refused by the registered minimum of 1, since KI-07).</remarks>
     [Fact]
@@ -317,6 +348,14 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     private async Task SetEveryoneOverwriteAsync(FakeChannel channel, ulong allow, ulong deny)
     {
         this.Guild.SetOverwrite(channel.Id, this.Guild.Id, 0, allow, deny);
+        this._bot.Gateway.Dispatch("CHANNEL_UPDATE", this.Guild.ChannelJson(channel));
+        await Task.Delay(TimeSpan.FromMilliseconds(150), TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>Takes Manage Messages from the moderator role in one channel, as for a moderator of other channels.</summary>
+    private async Task DenyModeratorManageMessagesAsync(FakeChannel channel)
+    {
+        this.Guild.SetOverwrite(channel.Id, this.Guild.ModeratorRoleId, 0, 0, FakeGuild.ManageMessagesPermission);
         this._bot.Gateway.Dispatch("CHANNEL_UPDATE", this.Guild.ChannelJson(channel));
         await Task.Delay(TimeSpan.FromMilliseconds(150), TestContext.Current.CancellationToken);
     }

@@ -44,7 +44,7 @@ public sealed class ForgetCommandTests(GrimoireCoreFactory factory) : IAsyncLife
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, _content, [], _moderatorId, DateTimeOffset.UtcNow),
+            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, _content, [], [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -71,7 +71,7 @@ public sealed class ForgetCommandTests(GrimoireCoreFactory factory) : IAsyncLife
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, _content, [], _moderatorId, DateTimeOffset.UtcNow),
+            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, _content, [], [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -81,7 +81,7 @@ public sealed class ForgetCommandTests(GrimoireCoreFactory factory) : IAsyncLife
         await using (var db = factory.CreateDbContext())
         {
             var content2 = CustomCommandContent.Create("updated").ShouldSucceed();
-            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, content2, [], _moderatorId, DateTimeOffset.UtcNow),
+            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, content2, [], [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -99,7 +99,7 @@ public sealed class ForgetCommandTests(GrimoireCoreFactory factory) : IAsyncLife
     {
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, _content, [], _moderatorId, DateTimeOffset.UtcNow),
+            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, _content, [], [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.CustomCommandUsages.AddAsync(
                 new CustomCommandUsage
@@ -128,9 +128,9 @@ public sealed class ForgetCommandTests(GrimoireCoreFactory factory) : IAsyncLife
 
         await using (var db = factory.CreateDbContext())
         {
-            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, _content, [], _moderatorId, DateTimeOffset.UtcNow),
+            await db.AddAsync(TextCustomCommand.Create(_name, _guildId, _content, [], [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
-            await db.AddAsync(TextCustomCommand.Create(otherName, _guildId, _content, [], _moderatorId, DateTimeOffset.UtcNow),
+            await db.AddAsync(TextCustomCommand.Create(otherName, _guildId, _content, [], [], _moderatorId, DateTimeOffset.UtcNow),
                 TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }

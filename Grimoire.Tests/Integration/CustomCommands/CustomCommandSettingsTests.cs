@@ -68,7 +68,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
     public async Task Learn_Restricted_SavesItsRoles()
     {
         await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
-            SlashOption.Role("permission_role_1", this.Guild.KickerRoleId), SlashOption.Role("permission_role_2", this.Guild.BannerRoleId));
+            SlashOption.Role("permission_role_0", this.Guild.KickerRoleId), SlashOption.Role("permission_role_1", this.Guild.BannerRoleId));
 
         (await this.VersionsAsync("secret")).ShouldHaveSingleItem().Roles.OfType<CustomCommandAllowRole>()
             .Select(role => role.RoleId).ShouldBe([new RoleId(this.Guild.KickerRoleId), new RoleId(this.Guild.BannerRoleId)], ignoreOrder: true);
@@ -151,7 +151,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
     public async Task Revert_SavesTheOldVersionAsTheNewest()
     {
         await this.LearnAsync("hello", "first", SlashOption.Boolean("restricted_use", true),
-            SlashOption.Role("permission_role_1", this.Guild.KickerRoleId));
+            SlashOption.Role("permission_role_0", this.Guild.KickerRoleId));
         await this.LearnAsync("hello", "second");
         var first = (await this.VersionsAsync("hello")).MinBy(version => version.CreatedAt)!;
 
@@ -282,6 +282,24 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
             .Single(option => option!["name"]!.GetValue<string>() == "name")!;
 
         (name["min_length"]!.GetValue<int>(), name["max_length"]!.GetValue<int>()).ShouldBe((1, 24));
+    }
+
+    /// <summary>
+    ///     The variadic <c>permission_role</c> registers ten optional role options, <c>permission_role_0</c> to
+    ///     <c>permission_role_9</c>.
+    /// </summary>
+    [Fact]
+    public void Learn_RegistersTenOptionalPermissionRoles()
+    {
+        var roles = this._bot.Rest.RegisteredCommands["commands"]["options"]!.AsArray()
+            .Single(option => option!["name"]!.GetValue<string>() == "learn")!["options"]!.AsArray()
+            .Where(option => option!["name"]!.GetValue<string>().StartsWith("permission_role", StringComparison.Ordinal))
+            .ToList();
+
+        roles.Select(option => option!["name"]!.GetValue<string>())
+            .ShouldBe(Enumerable.Range(0, 10).Select(index => $"permission_role_{index}"));
+        roles.ShouldAllBe(option => option!["type"]!.GetValue<int>() == 8
+                                    && (option["required"] == null || !option["required"]!.GetValue<bool>()));
     }
 
     /// <summary>C-8: forgetting a command that isn't there changes nothing, so the mod log hears nothing.</summary>

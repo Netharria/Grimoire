@@ -164,6 +164,12 @@ public sealed class FakeGuild(ulong idOffset = 0)
     public FakeChannel Stage { get; } = new(1_100_000_000_000_000_207 + idOffset, "stage", FakeChannel.StageType);
     public FakeChannel Announcements { get; } = new(1_100_000_000_000_000_208 + idOffset, "news", FakeChannel.AnnouncementType);
 
+    /// <summary>
+    ///     The leveling log's channel, kept apart from <see cref="ModLog" /> so a test can tell which log a message went
+    ///     to (review X-6).
+    /// </summary>
+    public FakeChannel LevelLog { get; } = new(1_100_000_000_000_000_210 + idOffset, "levellog");
+
     /// <summary>A media channel (type 16). Only in the guild when <see cref="HasMediaChannel" /> is set.</summary>
     public FakeChannel Media { get; } = new(1_100_000_000_000_000_209 + idOffset, "media", FakeChannel.MediaType);
 
@@ -227,7 +233,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
     }
 
     public IReadOnlyList<FakeChannel> Channels
-        => [.. new[] { this.General, this.ModLog, this.Forum, this.Private, this.Category, this.Voice, this.Stage, this.Announcements }
+        => [.. new[] { this.General, this.ModLog, this.LevelLog, this.Forum, this.Private, this.Category, this.Voice, this.Stage, this.Announcements }
             .Concat(this.HasMediaChannel ? [this.Media] : [])
             .Where(channel => !this._deletedChannels.Contains(channel.Id))];
 

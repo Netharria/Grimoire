@@ -46,3 +46,12 @@ internal sealed class AwardedXpConfiguration : IEntityTypeConfiguration<AwardedX
             .HasColumnName("AwarderId");
     }
 }
+
+[ExcludeFromCodeCoverage]
+internal sealed class ReclaimedXpConfiguration : IEntityTypeConfiguration<ReclaimedXp>
+{
+    // Shares AwarderId with AwardedXp: main stored the moderator of a reclaim there, and those rows keep it.
+    public void Configure(EntityTypeBuilder<ReclaimedXp> builder)
+        => builder.Property(x => x.ModeratorId)
+            .HasColumnName("AwarderId");
+}

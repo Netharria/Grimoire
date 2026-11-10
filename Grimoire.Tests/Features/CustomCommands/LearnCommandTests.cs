@@ -25,7 +25,7 @@ public sealed class LearnCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
     [Fact]
     public async Task LearnTextCommand_Saved_CanBeRetrieved()
     {
-        var cmd = TextCustomCommand.Create(_name, _guildId, _content, [], _moderatorId, DateTimeOffset.UtcNow);
+        var cmd = TextCustomCommand.Create(_name, _guildId, _content, [], [], _moderatorId, DateTimeOffset.UtcNow);
 
         await using (var db = factory.CreateDbContext())
         {
@@ -45,7 +45,7 @@ public sealed class LearnCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
     public async Task LearnEmbedCommand_WithColor_Saved_CanBeRetrieved()
     {
         var color = CustomCommandEmbedColor.Create("FF5500").ShouldSucceed();
-        var cmd = EmbedCustomCommand.Create(_name, _guildId, _content, color, [], _moderatorId, DateTimeOffset.UtcNow);
+        var cmd = EmbedCustomCommand.Create(_name, _guildId, _content, color, [], [], _moderatorId, DateTimeOffset.UtcNow);
 
         await using (var db = factory.CreateDbContext())
         {
@@ -66,7 +66,7 @@ public sealed class LearnCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
     [Fact]
     public async Task LearnEmbedCommand_WithoutColor_Saved_EmbedColorIsNull()
     {
-        var cmd = EmbedCustomCommand.Create(_name, _guildId, _content, null, [], _moderatorId, DateTimeOffset.UtcNow);
+        var cmd = EmbedCustomCommand.Create(_name, _guildId, _content, null, [], [], _moderatorId, DateTimeOffset.UtcNow);
 
         await using (var db = factory.CreateDbContext())
         {
@@ -86,7 +86,7 @@ public sealed class LearnCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
     {
         var roleId = new RoleId(42UL);
         RoleId[] roles = [roleId];
-        var cmd = TextCustomCommand.Create(_name, _guildId, _content, roles, _moderatorId, DateTimeOffset.UtcNow);
+        var cmd = TextCustomCommand.Create(_name, _guildId, _content, roles, [], _moderatorId, DateTimeOffset.UtcNow);
 
         await using (var db = factory.CreateDbContext())
         {
@@ -106,7 +106,7 @@ public sealed class LearnCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
     [Fact]
     public async Task LearnCommandTwice_BothVersionsPersisted()
     {
-        var cmd1 = TextCustomCommand.Create(_name, _guildId, _content, [], _moderatorId, DateTimeOffset.UtcNow);
+        var cmd1 = TextCustomCommand.Create(_name, _guildId, _content, [], [], _moderatorId, DateTimeOffset.UtcNow);
 
         await using (var db = factory.CreateDbContext())
         {
@@ -117,7 +117,7 @@ public sealed class LearnCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
         await Task.Delay(10, TestContext.Current.CancellationToken); // ensure distinct CreatedAt
 
         var content2 = CustomCommandContent.Create("Updated content").ShouldSucceed();
-        var cmd2 = TextCustomCommand.Create(_name, _guildId, content2, [], _moderatorId, DateTimeOffset.UtcNow);
+        var cmd2 = TextCustomCommand.Create(_name, _guildId, content2, [], [], _moderatorId, DateTimeOffset.UtcNow);
 
         await using (var db = factory.CreateDbContext())
         {
@@ -135,7 +135,7 @@ public sealed class LearnCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
     public async Task LearnCommand_ModeratorId_Persisted()
     {
         var modId = new ModeratorId(99UL);
-        var cmd = TextCustomCommand.Create(_name, _guildId, _content, [], modId, DateTimeOffset.UtcNow);
+        var cmd = TextCustomCommand.Create(_name, _guildId, _content, [], [], modId, DateTimeOffset.UtcNow);
 
         await using (var db = factory.CreateDbContext())
         {

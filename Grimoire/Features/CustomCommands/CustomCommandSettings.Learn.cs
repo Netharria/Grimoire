@@ -15,7 +15,6 @@ namespace Grimoire.Features.CustomCommands;
 
 public sealed partial class CustomCommandSettings
 {
-    //todo: fix this when variadic arguments are fixed
     [UsedImplicitly]
     [RequireGuild]
     [RequireModuleEnabled(Module.Commands)]
@@ -38,35 +37,28 @@ public sealed partial class CustomCommandSettings
         [Parameter("embed_color")]
         [Description("Hexadecimal color of the embed, such as ff0000. Only used when embed is true.")]
         string? embedColor = null,
-        [Parameter("restricted_use")] [Description("Restrict this command to specific roles.")]
+        [Parameter("restricted_use")]
+        [Description("Only the permission roles may use this command. Otherwise, the permission roles may not use it.")]
         bool restrictedUse = false,
-        [Parameter("permission_role_1")] DiscordRole? permissionRole1 = null,
-        [Parameter("permission_role_2")] DiscordRole? permissionRole2 = null,
-        [Parameter("permission_role_3")] DiscordRole? permissionRole3 = null,
-        [Parameter("permission_role_4")] DiscordRole? permissionRole4 = null,
-        [Parameter("permission_role_5")] DiscordRole? permissionRole5 = null,
-        [Parameter("permission_role_6")] DiscordRole? permissionRole6 = null,
-        [Parameter("permission_role_7")] DiscordRole? permissionRole7 = null,
-        [Parameter("permission_role_8")] DiscordRole? permissionRole8 = null,
-        [Parameter("permission_role_9")] DiscordRole? permissionRole9 = null,
-        [Parameter("permission_role_10")] DiscordRole? permissionRole10 = null)
+        [VariadicArgument(10)]
+        [Parameter("permission_role")]
+        [Description("A role the command is limited to, or blocked for without restricted_use.")]
+        DiscordRole[]? permissionRoles = null)
     {
         await ctx.DeferResponseAsync();
         var guild = ctx.RequiredGuild;
 
         var guildId = guild.GetGuildId();
-        var roleIds = CollectRoleIds(permissionRole1, permissionRole2, permissionRole3, permissionRole4,
-            permissionRole5,
-            permissionRole6, permissionRole7, permissionRole8, permissionRole9, permissionRole10);
+        var roleIds = CollectRoleIds(permissionRoles ?? []);
 
         await CustomCommandName.Create(name)
             .Bind(validName => ParseEmbedColor(embed, embedColor)
-                .Bind(color => AllowRoleIds(restrictedUse, roleIds)
-                    .Bind(allowRoleIds => CustomCommandContent.Create(content)
+                .Bind(color => SplitRoleIds(restrictedUse, roleIds)
+                    .Bind(roles => CustomCommandContent.Create(content)
                         .Map(CustomCommand (validContent) => embed
-                            ? EmbedCustomCommand.Create(validName, guildId, validContent, color, allowRoleIds,
-                                ctx.GetModeratorId(), DateTimeOffset.UtcNow)
-                            : TextCustomCommand.Create(validName, guildId, validContent, allowRoleIds,
+                            ? EmbedCustomCommand.Create(validName, guildId, validContent, color, roles.Allow,
+                                roles.Deny, ctx.GetModeratorId(), DateTimeOffset.UtcNow)
+                            : TextCustomCommand.Create(validName, guildId, validContent, roles.Allow, roles.Deny,
                                 ctx.GetModeratorId(), DateTimeOffset.UtcNow)))))
             .ToResult()
             .Match(
@@ -88,17 +80,22 @@ public sealed partial class CustomCommandSettings
             _ => CustomCommandEmbedColor.Create(embedColor).Map(color => (CustomCommandEmbedColor?)color)
         };
 
-    private static IReadOnlyList<RoleId> CollectRoleIds(params DiscordRole?[] roles)
-        => roles.OfType<DiscordRole>().Select(r => r.GetRoleId()).Distinct().ToList();
+    private static IReadOnlyList<RoleId> CollectRoleIds(IEnumerable<DiscordRole> roles)
+        => roles.Select(r => r.GetRoleId()).Distinct().ToList();
 
-    private static Validation<IReadOnlyList<RoleId>> AllowRoleIds(bool restrictedUse, IReadOnlyList<RoleId> roleIds)
+    /// <summary>
+    ///     A restricted command may be used only by its roles, so it needs one. Roles on an unrestricted command are the
+    ///     ones that may not use it, as on <c>main</c>.
+    /// </summary>
+    private static Validation<(IReadOnlyList<RoleId> Allow, IReadOnlyList<RoleId> Deny)> SplitRoleIds(
+        bool restrictedUse, IReadOnlyList<RoleId> roleIds)
         => restrictedUse switch
         {
-            false => Validation<IReadOnlyList<RoleId>>.Succeed([]),
-            true when roleIds.Count == 0 => Validation<IReadOnlyList<RoleId>>.Fail(new Error(
+            true when roleIds.Count == 0 => Validation<(IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>.Fail(new Error(
                 "command.learn.restricted-no-roles",
                 "A restricted command must have at least one permission role.")),
-            _ => Validation<IReadOnlyList<RoleId>>.Succeed(roleIds)
+            true => Validation<(IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>.Succeed((roleIds, [])),
+            false => Validation<(IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>.Succeed(([], roleIds))
         };
 
     private async Task OnLearnSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name)

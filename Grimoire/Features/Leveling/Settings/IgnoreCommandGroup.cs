@@ -28,11 +28,13 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
         => [.. channel is null ? [] : new SnowflakeObject[] { channel }, .. items ?? []];
 
     /// <summary>
-    ///     Records the channel and items as ignored or no longer ignored, then replies and logs. <paramref name="create" />
-    ///     builds the record for one item; <paramref name="outcome" /> finishes the sentence after the mentions.
+    ///     Records the channel and items as ignored or no longer ignored, then replies and logs what changed.
+    ///     <paramref name="create" /> builds the record for one item; <paramref name="outcome" /> finishes the sentence
+    ///     after the changed mentions, and <paramref name="unchangedOutcome" /> the one after those already in that state.
     /// </summary>
     private async Task UpdateIgnoredAsync(CommandContext ctx, DiscordChannel? channel, SnowflakeObject[]? items,
-        Func<SnowflakeObject, GuildId, ModeratorId, DateTimeOffset, Validation<XpTrackedItem>> create, string outcome)
+        Func<SnowflakeObject, GuildId, ModeratorId, DateTimeOffset, Validation<XpTrackedItem>> create, string outcome,
+        string unchangedOutcome)
     {
         await ctx.DeferResponseAsync();
         var guild = ctx.RequiredGuild;
@@ -55,18 +57,25 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
         }
 
         var tracked = created.OfType<Validation<XpTrackedItem>.Valid>().Select(valid => valid.Value).ToFrozenSet();
-        var message = $"{BuildIgnoreList(tracked)} {outcome}";
-        await ctx.ReplyResultAsync(
-            await this._settingsModule.AppendIgnoredItemsEvent(guild.GetGuildId(), tracked),
-            message,
-            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await (await this._settingsModule.AppendIgnoredItemsEvent(guild.GetGuildId(), tracked)).Match(
+            async changed =>
             {
-                GuildId = guild.GetGuildId(),
-                GuildLogType = GuildLogType.Moderation,
-                Color = GrimoireColor.DarkPurple,
-                Description = message
-            }),
-            GrimoireColor.Green);
+                var message = $"{BuildIgnoreList(changed)} {outcome}";
+                var unchanged = tracked.Except(changed).ToArray();
+                await ctx.ReplyAsync(GrimoireColor.Green, unchanged.Length == 0
+                    ? message
+                    : $"{message}\n{BuildIgnoreList(unchanged)} {unchangedOutcome}");
+                await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                {
+                    GuildId = guild.GetGuildId(),
+                    GuildLogType = GuildLogType.Moderation,
+                    Color = GrimoireColor.DarkPurple,
+                    Description = message
+                });
+            },
+            error => ctx.SendErrorResponseAsync(error.Message).AsTask(),
+            onNotModified: _ => ctx.ReplyAsync(GrimoireColor.Yellow,
+                $"{BuildIgnoreList(tracked)} {unchangedOutcome}").AsTask());
     }
 
     private static string BuildIgnoreList(IEnumerable<XpTrackedItem> items)

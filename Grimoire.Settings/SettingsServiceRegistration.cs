@@ -20,7 +20,7 @@ public static partial class SettingsServiceRegistration
         this IServiceCollection services,
         string connectionString)
     {
-        services.AddDbContextFactory<SettingsDbContext>(options =>
+        services.AddPooledDbContextFactory<SettingsDbContext>(options =>
             options.UseNpgsql(connectionString,
                     npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
                 .UseExceptionProcessor());

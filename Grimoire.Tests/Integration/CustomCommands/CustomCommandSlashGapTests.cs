@@ -101,7 +101,7 @@ public sealed class CustomCommandSlashGapTests(GrimoireCoreFactory database) : I
     }
 
     /// <summary>CC-88, as decided in review C-3: the member given as the mention is pinged, and nobody else.</summary>
-    [Fact(Skip = "Fails: no allowed_mentions are set, so DSharpPlus sends parse: [] and the mentioned member isn't pinged. review C-3")]
+    [Fact]
     public async Task TheMentionedMember_IsPinged()
     {
         await this.LearnAsync("hug", "%Mention gets a hug: %Message");
@@ -110,7 +110,8 @@ public sealed class CustomCommandSlashGapTests(GrimoireCoreFactory database) : I
             SlashOption.String("message", $"and {this.Guild.Admin.Mention}"));
 
         var allowed = reply.Message["allowed_mentions"]!;
-        allowed["users"]!.AsArray().Select(user => user!.GetValue<string>()).ShouldBe([FakeUser.Snowflake(this.Guild.Moderator.Id)]);
+        // DSharpPlus writes these ids as JSON numbers, not strings.
+        allowed["users"]!.AsArray().Select(user => user!.ToString()).ShouldBe([FakeUser.Snowflake(this.Guild.Moderator.Id)]);
         (allowed["parse"]?.AsArray() ?? []).ShouldBeEmpty();
         await this.WaitForUsesAsync(1);
     }
@@ -119,7 +120,7 @@ public sealed class CustomCommandSlashGapTests(GrimoireCoreFactory database) : I
     ///     CC-91, as decided in review C-3: the message is left as typed, since the sanitiser goes, and a role or
     ///     <c>@here</c> in it pings nobody.
     /// </summary>
-    [Fact(Skip = "Fails: the sanitiser still rewrites @here to \"@ here\". review C-3")]
+    [Fact]
     public async Task MentionsInTheMessage_AreLeftAsTyped_AndPingNobody()
     {
         await this.LearnAsync("hug", "%Mention gets a hug: %Message");

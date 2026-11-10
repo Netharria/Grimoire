@@ -51,7 +51,8 @@ public sealed partial class GainUserXp(
                     member.GetGuildId(),
                     args.GetAuthorUserId(),
                     member.Roles.Select(x => x.GetRoleId()).ToHashSet(),
-                    args.GetChannelId())
+                    args.GetChannelId(),
+                    args.Channel is { IsThread: true, ParentId: { } parentId } ? new ChannelId(parentId) : null)
                 .GetOrElse(() => true))
             return;
 

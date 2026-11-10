@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Text.RegularExpressions;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
@@ -14,7 +13,7 @@ using JetBrains.Annotations;
 
 namespace Grimoire.Features.CustomCommands;
 
-public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
+public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbContextFactory)
 {
     internal const int MaxMessageLength = 2000;
     internal const int MaxEmbedDescriptionLength = 4096;
@@ -51,7 +50,8 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             return;
         }
 
-        await ctx.EditResponseAsync(BuildResponse(new DiscordWebhookBuilder(), response, content));
+        await ctx.EditResponseAsync(BuildResponse(new DiscordWebhookBuilder(), response, content, snowflakeObject,
+            guild.Id));
         // Counted once the reply is out, so a failed count can't stop the reply.
         await dbContextFactory.RecordCommandUsageAsync(name, guild.GetGuildId(), ctx.User.GetUserId());
     }
@@ -66,26 +66,6 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
         return response is null || !IsUserAuthorized(member, response)
             ? Result<CustomCommand>.Fail(new Error("command.not_found", "Command not found or not authorized."))
             : Result<CustomCommand>.Ok(response);
-    }
-
-    internal static string SanitizeUserMessageMentions(string input, ulong guildId)
-    {
-        if (string.IsNullOrEmpty(input))
-            return string.Empty;
-
-        // Neutralize raw @everyone / @here while preserving readable text.
-        var sanitized = EveryoneHereRegex().Replace(input, static match =>
-            string.Concat("@ ", match.Value.AsSpan(1)));
-
-        // Neutralize only the @everyone role mention form: <@&guildId>.
-        // Keep all other role mentions intact.
-        return RoleMentionRegex().Replace(sanitized, match =>
-        {
-            var roleIdText = match.Groups[1].Value;
-            return ulong.TryParse(roleIdText, out var roleId) && roleId == guildId
-                ? "@ everyone"
-                : match.Value;
-        });
     }
 
     public static bool IsUserAuthorized(DiscordMember? member, CustomCommand command)
@@ -126,17 +106,36 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
     internal static string? RenderContent(CustomCommand command, SnowflakeObject? mention, string message, ulong guildId)
     {
         var content = TruncateForDiscord(
-            ApplyMessage(ApplyMention(command.Content.Value, mention, guildId), message, guildId),
+            ApplyMessage(ApplyMention(command.Content.Value, mention, guildId), message),
             command is EmbedCustomCommand ? MaxEmbedDescriptionLength : MaxMessageLength);
         return string.IsNullOrWhiteSpace(content) ? null : content;
     }
 
-    /// <summary>Puts the rendered text in the reply: as an embed for an embed command, otherwise as plain text.</summary>
-    internal static TBuilder BuildResponse<TBuilder>(TBuilder builder, CustomCommand command, string content)
+    /// <summary>
+    ///     Puts the rendered text in the reply: as an embed for an embed command, otherwise as plain text. Only
+    ///     <c>%Mention</c>'s user or role may be pinged.
+    /// </summary>
+    internal static TBuilder BuildResponse<TBuilder>(TBuilder builder, CustomCommand command, string content,
+        SnowflakeObject? mention, ulong guildId)
         where TBuilder : BaseDiscordMessageBuilder<TBuilder>
-        => command is EmbedCustomCommand { EmbedColor: var color }
-            ? builder.AddEmbed(BuildEmbed(content, color))
-            : builder.WithContent(content);
+        => (command is EmbedCustomCommand { EmbedColor: var color }
+                ? builder.AddEmbed(BuildEmbed(content, color))
+                : builder.WithContent(content))
+            .AddMentions(AllowedMentions(command, mention, guildId));
+
+    /// <summary>
+    ///     The one ping a reply may make: <c>%Mention</c>'s user or role. <c>@everyone</c>, <c>@here</c> and anything
+    ///     typed into <c>%Message</c> are shown but never ping.
+    /// </summary>
+    private static IEnumerable<IMention> AllowedMentions(CustomCommand command, SnowflakeObject? mention, ulong guildId)
+        => !command.Content.Value.Contains("%Mention", StringComparison.OrdinalIgnoreCase)
+            ? []
+            : mention switch
+            {
+                DiscordUser user => [new UserMention(user.Id)],
+                DiscordRole role when role.Id != guildId => [new RoleMention(role.Id)],
+                _ => []
+            };
 
     private static DiscordEmbedBuilder BuildEmbed(string content, CustomCommandEmbedColor? color)
         => (color is { } c
@@ -153,13 +152,6 @@ public sealed partial class GetCustomCommand(IDbContextFactory<GrimoireDbContext
             _ => string.Empty
         }, StringComparison.OrdinalIgnoreCase);
 
-    internal static string ApplyMessage(string text, string message, ulong guildId)
-        => text.Replace("%Message", SanitizeUserMessageMentions(message, guildId),
-            StringComparison.OrdinalIgnoreCase);
-
-    [GeneratedRegex(@"@(everyone|here)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex EveryoneHereRegex();
-
-    [GeneratedRegex("<@&(\\d+)>", RegexOptions.CultureInvariant)]
-    private static partial Regex RoleMentionRegex();
+    internal static string ApplyMessage(string text, string message)
+        => text.Replace("%Message", message, StringComparison.OrdinalIgnoreCase);
 }

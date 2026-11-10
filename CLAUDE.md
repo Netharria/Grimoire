@@ -63,7 +63,8 @@ Inside `Grimoire/`, features are organized into modules under subfolders:
 
 ## Configuration
 
-`Grimoire/appsettings.json` (copy from `appsettings.example.json`). Key fields:
+`Grimoire/appsettings.json` is committed with placeholder values; put real secrets in environment variables or user
+secrets rather than in that file. Keys the code reads:
 
 ```json
 {
@@ -71,12 +72,22 @@ Inside `Grimoire/`, features are organized into modules under subfolders:
   "ConnectionStrings": {
     "Grimoire": "<PostgreSQL connection string>"
   },
-  "channelId": "<error log channel ID, optional>",
-  "guildId": "<guild for experimental commands, optional>",
+  "ConnectionProperties": {
+    "Hostname": "...", "Port": "...", "DbName": "...", "Username": "...", "Password": "..."
+  },
+  "validImageExtensions": "<comma-separated, required: the image embed service throws without it>",
+  "channelId": "<urgent alert channel ID, optional>",
+  "warningChannelId": "<warning alert channel ID, optional>",
+  "warningReportTimeUtc": "<time of the daily warning report, optional>",
   "pluralkitToken": "<optional>",
-  "pluralkitEndpoint": "<optional>"
+  "pluralkitUserAgent": "<optional; PluralKit lookups are off unless this and the token are set>",
+  "pluralkitApiEndpoint": "<optional>"
 }
 ```
+
+`ConnectionProperties` is used only when `ConnectionStrings:Grimoire` is empty, and builds a connection string with
+SSL required. Serilog is configured from the `Serilog` section. `guildId` may still appear in older settings files, but
+nothing reads it.
 
 Environment variables use `__` as separator (e.g., `ConnectionStrings__Grimoire`).
 

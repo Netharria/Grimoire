@@ -154,7 +154,7 @@ public sealed class TextTriggerTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>CC-113, as decided in review C-3: a role given as the mention fills %Mention and is pinged.</summary>
-    [Fact(Skip = "Fails: no allowed_mentions are set, so DSharpPlus sends parse: [] and %Mention's role isn't pinged. review C-3")]
+    [Fact]
     public async Task ARoleMention_FillsMention_AndPingsThatRole()
     {
         await this.LearnAsync("hug", "%Mention gets a hug: %Message");
@@ -163,7 +163,8 @@ public sealed class TextTriggerTests(GrimoireCoreFactory database) : IAsyncLifet
 
         var post = await this.WaitForPostAsync();
         post["content"]!.GetValue<string>().ShouldBe($"<@&{this.Guild.ModeratorRoleId}> gets a hug: hi");
-        post["allowed_mentions"]!["roles"]!.AsArray().Select(role => role!.GetValue<string>())
+        // DSharpPlus writes these ids as JSON numbers, not strings.
+        post["allowed_mentions"]!["roles"]!.AsArray().Select(role => role!.ToString())
             .ShouldBe([FakeUser.Snowflake(this.Guild.ModeratorRoleId)]);
         await this.WaitForUsesAsync(1);
     }
@@ -172,7 +173,7 @@ public sealed class TextTriggerTests(GrimoireCoreFactory database) : IAsyncLifet
     ///     CC-113, as decided in review C-3: <c>@everyone</c> typed as the message is left as typed, since the sanitiser
     ///     goes, and pings nobody because allowed mentions never include it.
     /// </summary>
-    [Fact(Skip = "Fails: the sanitiser still rewrites @everyone to \"@ everyone\". review C-3")]
+    [Fact]
     public async Task EveryoneInTheMessage_IsLeftAsTyped_AndPingsNobody()
     {
         await this.LearnAsync("hug", "%Mention gets a hug: %Message");

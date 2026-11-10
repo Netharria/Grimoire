@@ -150,12 +150,13 @@ namespace Grimoire.Migrations
                     "CommandType" = CASE WHEN "IsEmbedded" THEN 'Embed' ELSE 'Text' END;
                 """);
 
-            // Backfill CustomCommandsRole; all legacy roles were allow-type.
+            // Backfill CustomCommandsRole. A restricted command's roles were the only ones allowed to use it; an
+            // unrestricted command's roles were the ones denied it (main's GetCustomCommand.IsUserAuthorized).
             migrationBuilder.Sql("""
                 UPDATE "CustomCommandsRole" AS ccr
                 SET "Name"      = ccr."CustomCommandName",
                     "CreatedAt" = cc."CreatedAt",
-                    "RoleType"  = 'Allow'
+                    "RoleType"  = CASE WHEN cc."RestrictedUse" THEN 'Allow' ELSE 'Deny' END
                 FROM "CustomCommands" AS cc
                 WHERE cc."Name"    = ccr."CustomCommandName"
                   AND cc."GuildId" = ccr."GuildId";
@@ -356,11 +357,12 @@ namespace Grimoire.Migrations
                 END $$;
                 """);
 
-            // Null out stale AwarderId values on non-Awarded rows.
+            // Null out stale AwarderId values on rows that have no moderator. Reclaimed rows keep theirs: main's
+            // ReclaimUserXp stored who took the XP there, and ReclaimedXp.ModeratorId reads it back.
             migrationBuilder.Sql("""
                 UPDATE "XpHistory"
                 SET "AwarderId" = NULL
-                WHERE "Type" != 1 AND "AwarderId" IS NOT NULL;
+                WHERE "Type" NOT IN (1, 2) AND "AwarderId" IS NOT NULL;
                 """);
 
             // Delete Created rows (zero-XP user-join records, no longer used).

@@ -174,14 +174,14 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
     {
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
-            new ChannelId(this.Guild.ModLog.Id), Token)).ShouldBeSetOrUnchanged();
+            new ChannelId(this.Guild.LevelLog.Id), Token)).ShouldBeSetOrUnchanged();
         (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, 15, Token)).ShouldSucceed();
         (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(this.Guild.KickerRoleId), this.GuildId, 2, null,
             this.Owner, DateTimeOffset.UtcNow).ShouldSucceed(), Token)).ShouldSucceed();
 
         await this.ProxyAsync("level me");
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Pk.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
         this.Guild.GetMember(this.Pk).RoleIds.ShouldContain(this.Guild.KickerRoleId);
         await Task.Delay(TimeSpan.FromMilliseconds(500), Token);

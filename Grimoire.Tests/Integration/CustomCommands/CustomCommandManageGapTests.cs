@@ -44,7 +44,7 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
     public async Task Forget_ARestrictedCommand_RemovesItsRoles()
     {
         await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
-            SlashOption.Role("permission_role_1", this.Guild.KickerRoleId));
+            SlashOption.Role("permission_role_0", this.Guild.KickerRoleId));
 
         (await this.CommandsAsync("forget", SlashOption.String("name", "secret"))).Description.ShouldBe("Removed command secret");
 
@@ -94,7 +94,7 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
         await using (var seed = this._database.CreateDbContext())
         {
             seed.CustomCommands.Add(TextCustomCommand.Create(CustomCommandName.Create("old").ShouldSucceed(), this.GuildId,
-                CustomCommandContent.Create("legacy").ShouldSucceed(), [], new ModeratorId(this.Guild.Admin.Id),
+                CustomCommandContent.Create("legacy").ShouldSucceed(), [], [], new ModeratorId(this.Guild.Admin.Id),
                 DateTimeOffset.UtcNow.AddDays(-1)) with { ModeratorId = null });
             await seed.SaveChangesAsync(Token);
         }
@@ -208,7 +208,7 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
     public async Task Stats_OfARestrictedCommand_AreHiddenFromMembersWhoCannotRunIt()
     {
         await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
-            SlashOption.Role("permission_role_1", this.Guild.ModeratorRoleId));
+            SlashOption.Role("permission_role_0", this.Guild.ModeratorRoleId));
 
         var reply = await this._bot.RunSlashCommandAndWaitAsync("commands", this.Guild.User1,
             SlashOption.Subcommand("stats", SlashOption.String("name", "secret")));

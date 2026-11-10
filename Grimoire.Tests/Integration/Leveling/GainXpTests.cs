@@ -49,7 +49,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
-            new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+            new ChannelId(this.Guild.LevelLog.Id))).ShouldBeSetOrUnchanged();
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
@@ -138,7 +138,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
 
-        var embed = await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        var embed = await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has leveled to level 2.");
         embed["footer"]!["text"]!.GetValue<string>().ShouldBe(this.Guild.User1.Id.ToString());
     }
@@ -163,7 +163,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldContain(this.Guild.KickerRoleId);
         var dm = await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post
@@ -198,7 +198,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.AddRewardAsync(this.Guild.KickerRoleId, 5, null);
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.EndsWith("has leveled to level 2.", StringComparison.Ordinal) == true);
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()?.EndsWith("has leveled to level 2.", StringComparison.Ordinal) == true);
 
         (await this.LoggedWithinAsync("has earned", NothingHappensWindow)).ShouldBeFalse();
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldNotContain(this.Guild.KickerRoleId);
@@ -255,7 +255,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         notice["author"]!["name"]!.GetValue<string>().ShouldBe("Setup problem");
         notice["description"]!.GetValue<string>().ShouldStartWith(
             $"These level rewards were removed because their roles were deleted:\n**Level 50:** role `{doomed}`\n**Suggested fix:** ");
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
 
         (await this.Settings.GetLevelingRewardsAsync(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed()
@@ -307,7 +307,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldBe([booster, this.Guild.KickerRoleId], ignoreOrder: true);
         this._bot.Logs.Errors.ShouldBeEmpty();
@@ -324,7 +324,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.Contains(
             $"I could not give the level reward roles <@&{this.Guild.HigherRoleId}>.", StringComparison.Ordinal) == true);
@@ -378,7 +378,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         }, earned => earned.Count >= count, window);
 
     private Task<bool> LoggedWithinAsync(string text, TimeSpan window)
-        => this._bot.Rest.ReceivesRequestWithinAsync(request => this._bot.IsModLogPost(request)
+        => this._bot.Rest.ReceivesRequestWithinAsync(request => this._bot.IsLevelLogPost(request)
                                                                && request.Json?["embeds"]?[0]?["description"]?.ToString()
                                                                    .Contains(text, StringComparison.Ordinal) == true, window);
 }

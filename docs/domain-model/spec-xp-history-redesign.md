@@ -149,7 +149,9 @@ The existing table stays unchanged (TPH, same columns). Update the EF configurat
    concrete type mappings.
 2. Use the existing `Type` column as the discriminator with the same string values it already holds.
 3. Add value converters for `PositiveXpAmount` and `NegativeXpAmount` ↔ `long`.
-4. Map `AwarderId` as nullable on the base or per-type; it is only populated for `AwardedXp`.
+4. Map `AwardedXp.AwarderId` and `ReclaimedXp.ModeratorId` to the `AwarderId` column. `main`'s `/Reclaim` stored
+   the moderator there, so Reclaimed rows keep it (review P-2). `ReclaimedXp.ModeratorId` is nullable because older
+   rows may lack one; other types store NULL.
 
 ```csharp
 modelBuilder.Entity<XpHistoryEntry>()
@@ -179,10 +181,13 @@ modelBuilder.Entity<MigratedXp>()
     .HasConversion(v => v.Value, v => PositiveXpAmount.FromDatabase(v))
     .HasColumnName("Xp");
 
-// AwarderId is only populated for AwardedXp; all other types store NULL
+// AwarderId holds the moderator of an Awarded or Reclaimed row; the other types store NULL
 modelBuilder.Entity<AwardedXp>()
     .Property(x => x.AwarderId)
-    .HasConversion(v => v.Value, v => new ModeratorId(v))
+    .HasColumnName("AwarderId");
+
+modelBuilder.Entity<ReclaimedXp>()
+    .Property(x => x.ModeratorId)
     .HasColumnName("AwarderId");
 ```
 
@@ -211,12 +216,14 @@ BEGIN
 END $$;
 ```
 
-### Step 2 — Null out stale AwarderId on non-Awarded rows
+### Step 2 — Null out stale AwarderId on rows that have no moderator
+
+Reclaimed rows keep theirs: it is who took the XP, and nothing else records it (review P-2).
 
 ```sql
 UPDATE "XpHistory"
 SET "AwarderId" = NULL
-WHERE "Type" != 'Awarded' AND "AwarderId" IS NOT NULL;
+WHERE "Type" NOT IN ('Awarded', 'Reclaimed') AND "AwarderId" IS NOT NULL;
 ```
 
 ### Step 3 — Delete Created rows

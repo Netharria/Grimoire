@@ -41,7 +41,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
-            new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+            new ChannelId(this.Guild.LevelLog.Id))).ShouldBeSetOrUnchanged();
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
@@ -61,7 +61,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "now reward me");
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldContain(this.Guild.KickerRoleId);
     }
@@ -233,7 +233,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
     }
 
     private Task<bool> LoggedWithinAsync(string text, TimeSpan window)
-        => this._bot.Rest.ReceivesRequestWithinAsync(request => this._bot.IsModLogPost(request)
+        => this._bot.Rest.ReceivesRequestWithinAsync(request => this._bot.IsLevelLogPost(request)
                                                                && request.Json?["embeds"]?[0]?["description"]?.ToString()
                                                                    .Contains(text, StringComparison.Ordinal) == true, window);
 

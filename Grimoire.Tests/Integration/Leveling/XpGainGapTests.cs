@@ -52,7 +52,7 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
-            new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+            new ChannelId(this.Guild.LevelLog.Id))).ShouldBeSetOrUnchanged();
     }
 
     // ── Timeouts ──────────────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "big jump");
 
-        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+        await this._bot.WaitForLevelLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has leveled to level 5.");
         await Task.Delay(NothingHappensWindow, Token);
         this.LevelUpPosts().Count().ShouldBe(1);
@@ -204,8 +204,8 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
 
     // ── Ignored channels (KI-73) ──────────────────────────────────────────────
 
-    /// <summary>LVL-11: a thread under an ignored channel should be ignored too.</summary>
-    [Fact(Skip = "Fails: only the message's own channel id is compared, so a thread under an ignored channel earns XP. KI-73")]
+    /// <summary>LVL-11, review X-12: a thread under an ignored channel is ignored too.</summary>
+    [Fact]
     public async Task AThreadUnderAnIgnoredChannel_EarnsNothing()
     {
         await this.IgnoreChannelAsync(this.Guild.General);
@@ -267,7 +267,7 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
         });
 
     private IEnumerable<RecordedRequest> LevelUpPosts()
-        => this._bot.Rest.Requests.Where(request => this._bot.IsModLogPost(request)
+        => this._bot.Rest.Requests.Where(request => this._bot.IsLevelLogPost(request)
                                                     && request.Body?.Contains("has leveled", StringComparison.Ordinal) == true);
 
     private async Task SetAmountAsync(int amount)

@@ -107,8 +107,12 @@ public sealed record ReclaimedXp : XpHistoryEntry
 {
     public NegativeXpAmount Xp => NegativeXpAmount.FromDatabase(RawXp);
 
-    public static ReclaimedXp Create(NegativeXpAmount xp, UserId userId, GuildId guildId, DateTimeOffset timeOut)
-        => new() { RawXp = xp.Value, UserId = userId, GuildId = guildId, TimeOut = timeOut };
+    /// <summary>Who took the XP. Older rows may not have recorded one, so it's optional when read back.</summary>
+    public ModeratorId? ModeratorId { get; init; }
+
+    public static ReclaimedXp Create(
+        NegativeXpAmount xp, ModeratorId moderatorId, UserId userId, GuildId guildId, DateTimeOffset timeOut)
+        => new() { RawXp = xp.Value, ModeratorId = moderatorId, UserId = userId, GuildId = guildId, TimeOut = timeOut };
 }
 
 /// <summary>

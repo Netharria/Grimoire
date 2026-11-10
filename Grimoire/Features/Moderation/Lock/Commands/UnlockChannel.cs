@@ -34,6 +34,12 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         channel ??= ctx.Channel;
         var moderatorId = ctx.GetModeratorId();
 
+        if (LockTargetPermissions.CheckModerator(ctx.RequiredMember, channel) is Result<Unit>.Invalid denied)
+        {
+            await ctx.SendErrorResponseAsync(denied.Error.Message);
+            return;
+        }
+
         await (channel.IsThread
                 ? this.TryUnlockThreadAsync(guild, channel, moderatorId).Map(_ => Unit.Value)
                 : this.TryUnlockChannelAsync(guild, channel, moderatorId).Map(_ => Unit.Value))

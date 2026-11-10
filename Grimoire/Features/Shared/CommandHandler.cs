@@ -198,7 +198,8 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
         return createdAt is { } value ? (long)(DateTimeOffset.UtcNow - value).TotalMilliseconds : -1;
     }
 
-    // Discord requires an initial interaction response within 3 seconds.
+    // Times the whole command, deferred or not, so this flags slow work, not missed acknowledgements. Discord's
+    // 3-second limit applies only until the first response, which most commands send at once by deferring.
     private const long SlowCommandThresholdMs = 2000;
 
     [LoggerMessage(LogLevel.Information,

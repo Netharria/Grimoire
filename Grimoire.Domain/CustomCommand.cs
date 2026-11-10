@@ -33,12 +33,19 @@ public abstract record CustomCommand
             Roles = [.. this.Roles.Select(role => role with { CreatedAt = createdAt, CustomCommand = null })]
         };
 
-    /// <summary>The roles a new command may be used by. An empty list means everyone may use it.</summary>
-    protected static List<CustomCommandRole> AllowRoles(IEnumerable<RoleId> roleIds, CustomCommandName name,
-        GuildId guildId, DateTimeOffset createdAt)
+    /// <summary>
+    ///     The roles of a new command: only allow roles may use it (none means everyone), and deny roles never may. See
+    ///     <c>spec-custom-command-role-policy.md</c>.
+    /// </summary>
+    protected static List<CustomCommandRole> BuildRoles(IEnumerable<RoleId> allowRoleIds,
+        IEnumerable<RoleId> denyRoleIds, CustomCommandName name, GuildId guildId, DateTimeOffset createdAt)
         =>
         [
-            .. roleIds.Select(CustomCommandRole (roleId) => new CustomCommandAllowRole
+            .. allowRoleIds.Select(CustomCommandRole (roleId) => new CustomCommandAllowRole
+            {
+                RoleId = roleId, Name = name, GuildId = guildId, CreatedAt = createdAt
+            }),
+            .. denyRoleIds.Select(CustomCommandRole (roleId) => new CustomCommandDenyRole
             {
                 RoleId = roleId, Name = name, GuildId = guildId, CreatedAt = createdAt
             })
@@ -115,6 +122,7 @@ public sealed record TextCustomCommand : CustomCommand
         GuildId guildId,
         CustomCommandContent content,
         IEnumerable<RoleId> allowRoleIds,
+        IEnumerable<RoleId> denyRoleIds,
         ModeratorId moderatorId,
         DateTimeOffset createdAt)
         => new()
@@ -124,7 +132,7 @@ public sealed record TextCustomCommand : CustomCommand
             CreatedAt = createdAt,
             Content = content,
             ModeratorId = moderatorId,
-            Roles = AllowRoles(allowRoleIds, name, guildId, createdAt)
+            Roles = BuildRoles(allowRoleIds, denyRoleIds, name, guildId, createdAt)
         };
 }
 
@@ -138,6 +146,7 @@ public sealed record EmbedCustomCommand : CustomCommand
         CustomCommandContent content,
         CustomCommandEmbedColor? embedColor,
         IEnumerable<RoleId> allowRoleIds,
+        IEnumerable<RoleId> denyRoleIds,
         ModeratorId moderatorId,
         DateTimeOffset createdAt)
         => new()
@@ -148,7 +157,7 @@ public sealed record EmbedCustomCommand : CustomCommand
             Content = content,
             EmbedColor = embedColor,
             ModeratorId = moderatorId,
-            Roles = AllowRoles(allowRoleIds, name, guildId, createdAt)
+            Roles = BuildRoles(allowRoleIds, denyRoleIds, name, guildId, createdAt)
         };
 }
 

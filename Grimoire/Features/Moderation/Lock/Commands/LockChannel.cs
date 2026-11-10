@@ -44,6 +44,12 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
 
         var guild = ctx.RequiredGuild;
 
+        if (LockTargetPermissions.CheckModerator(ctx.RequiredMember, channel) is Result<Unit>.Invalid denied)
+        {
+            await ctx.SendErrorResponseAsync(denied.Error.Message);
+            return;
+        }
+
         Error? failure;
         if (channel.IsThread)
             failure = (await ThreadLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount))
