@@ -58,16 +58,15 @@ public sealed partial class SettingsModule
         => ExecuteSafelyAsync(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-            var existingPermissions = await ActiveChannelLocks(dbContext)
-                .AsNoTracking()
+            var existingLock = await ActiveChannelLocks(dbContext)
                 .Where(x => x.ChannelId == channelLock.ChannelId && x.GuildId == channelLock.GuildId)
-                .Select(x => new { x.PreviouslyAllowed, x.PreviouslyDenied })
                 .FirstOrDefaultAsync(ct);
 
-            var finalAllowed = existingPermissions?.PreviouslyAllowed ?? channelLock.PreviouslyAllowed;
-            var finalDenied = existingPermissions?.PreviouslyDenied ?? channelLock.PreviouslyDenied;
-
-            var validLock = channelLock.WithPermissions(finalAllowed, finalDenied);
+            // A lock on a locked channel replaces it, keeping the permissions from before the first lock.
+            var validLock = existingLock is null
+                ? channelLock
+                : channelLock.WithPermissions(existingLock.PreviouslyAllowed, existingLock.PreviouslyDenied);
+            existingLock?.Close(validLock.SetAt);
             dbContext.ChannelLocks.Add(validLock);
             await dbContext.SaveChangesAsync(ct);
             await this._cache.RemoveAsync(CacheKey.ChannelLocks(validLock.GuildId), ct);
@@ -87,6 +86,7 @@ public sealed partial class SettingsModule
                 return new Result<ChannelLocked>.NotFound(
                     new Error("channel-lock.not-found", "The channel is not currently locked."));
 
+            existingLock.Close(lockAction.SetAt);
             dbContext.ChannelLocks.Add(lockAction);
             await dbContext.SaveChangesAsync(ct);
             await this._cache.RemoveAsync(CacheKey.ChannelLocks(lockAction.GuildId), ct);
@@ -140,6 +140,10 @@ public sealed partial class SettingsModule
         => ExecuteSafelyAsync(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+            // A lock on a locked thread replaces it.
+            (await ActiveThreadLocks(dbContext)
+                .Where(x => x.ChannelId == threadLock.ChannelId && x.GuildId == threadLock.GuildId)
+                .FirstOrDefaultAsync(ct))?.Close(threadLock.SetAt);
             dbContext.ThreadLocks.Add(threadLock);
             await dbContext.SaveChangesAsync(ct);
             await this._cache.RemoveAsync(CacheKey.ThreadLocks(threadLock.GuildId), ct);
@@ -158,6 +162,7 @@ public sealed partial class SettingsModule
             if (existingLock is null)
                 return new Result<ThreadLocked>.NotFound(
                     new Error("thread-lock.not-found", "The thread is not currently locked."));
+            existingLock.Close(lockAction.SetAt);
             dbContext.ThreadLocks.Add(lockAction);
             await dbContext.SaveChangesAsync(ct);
             await this._cache.RemoveAsync(CacheKey.ThreadLocks(lockAction.GuildId), ct);
@@ -186,17 +191,14 @@ public sealed partial class SettingsModule
             yield return item;
     }
 
-    /// <summary>Locks still in force: a lock with no later event (an unlock or a newer lock) for its channel.</summary>
+    /// <summary>
+    ///     Locks still in force: the newest event for the channel is a lock. Every later event closes the lock it
+    ///     follows, so these are the locks not yet closed.
+    /// </summary>
     private static IQueryable<ChannelLocked> ActiveChannelLocks(SettingsDbContext dbContext)
-        => dbContext.ChannelLocks
-            .OfType<ChannelLocked>()
-            .Where(x => !dbContext.ChannelLocks
-                .Any(y => y.ChannelId == x.ChannelId && y.GuildId == x.GuildId && y.SetAt > x.SetAt));
+        => dbContext.ChannelLocks.OfType<ChannelLocked>().Where(x => x.ClosedAt == null);
 
     /// <summary>The same as <see cref="ActiveChannelLocks" />, for threads.</summary>
     private static IQueryable<ThreadLocked> ActiveThreadLocks(SettingsDbContext dbContext)
-        => dbContext.ThreadLocks
-            .OfType<ThreadLocked>()
-            .Where(x => !dbContext.ThreadLocks
-                .Any(y => y.ChannelId == x.ChannelId && y.GuildId == x.GuildId && y.SetAt > x.SetAt));
+        => dbContext.ThreadLocks.OfType<ThreadLocked>().Where(x => x.ClosedAt == null);
 }

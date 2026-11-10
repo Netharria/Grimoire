@@ -65,6 +65,10 @@ public sealed partial class SettingsModule
             Validation<MuteAdded>.Valid(var mute) => ExecuteSafelyAsync(async ct =>
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                // A mute of a muted member replaces the one in force.
+                (await ActiveMutes(dbContext)
+                    .Where(x => x.UserId == userId && x.GuildId == guildId)
+                    .FirstOrDefaultAsync(ct))?.Close(mute.SetAt);
                 dbContext.Mutes.Add(mute);
                 await dbContext.SaveChangesAsync(ct);
                 return Result<MuteAdded>.Ok(mute);
@@ -94,7 +98,9 @@ public sealed partial class SettingsModule
             return await FindActiveMuteAsync(dbContext, userId, guildId, ct)
                 .BindAsync(async existingMute =>
                 {
-                    dbContext.Mutes.Add(MuteRemoved.Create(userId, guildId, moderatorId, DateTimeOffset.UtcNow));
+                    var removal = MuteRemoved.Create(userId, guildId, moderatorId, DateTimeOffset.UtcNow);
+                    existingMute.Close(removal.SetAt);
+                    dbContext.Mutes.Add(removal);
                     await dbContext.SaveChangesAsync(ct);
                     return Result<MuteAdded>.Ok(existingMute);
                 });
@@ -102,8 +108,8 @@ public sealed partial class SettingsModule
 
     private static async Task<Result<MuteAdded>> FindActiveMuteAsync(SettingsDbContext dbContext, UserId userId,
         GuildId guildId, CancellationToken cancellationToken)
+        // Tracked, so RemoveMute can close it in the same save.
         => await ActiveMutes(dbContext)
-                .AsNoTracking()
                 .Where(x => x.UserId == userId && x.GuildId == guildId)
                 .FirstOrDefaultAsync(cancellationToken) switch
             {
@@ -141,10 +147,10 @@ public sealed partial class SettingsModule
             yield return mute;
     }
 
-    /// <summary>Mutes still in force: a mute with no later event (an unmute or a newer mute) for its member.</summary>
+    /// <summary>
+    ///     Mutes still in force: the newest event for the member is a mute. Every later event closes the mute it
+    ///     follows, so these are the mutes not yet closed.
+    /// </summary>
     private static IQueryable<MuteAdded> ActiveMutes(SettingsDbContext dbContext)
-        => dbContext.Mutes
-            .OfType<MuteAdded>()
-            .Where(x => !dbContext.Mutes
-                .Any(y => y.UserId == x.UserId && y.GuildId == x.GuildId && y.SetAt > x.SetAt));
+        => dbContext.Mutes.OfType<MuteAdded>().Where(x => x.ClosedAt == null);
 }

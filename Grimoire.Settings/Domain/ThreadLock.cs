@@ -30,6 +30,15 @@ public sealed record ThreadLocked : ThreadLock
 
     public DateTimeOffset EndTime { get; }
 
+    /// <summary>
+    ///     When this lock stopped being in force: the time of the next event for the same thread, an end or a newer
+    ///     lock. Null while it is in force. Only the settings module sets it, in the same save as that event, so the
+    ///     expiry polls can read open rows without searching the whole history (review S-13).
+    /// </summary>
+    public DateTimeOffset? ClosedAt { get; private set; }
+
+    internal void Close(DateTimeOffset closedAt) => this.ClosedAt = closedAt;
+
     public static Validation<ThreadLocked> Create(
         ModeratorId moderatorId,
         ModerationReason? reason,

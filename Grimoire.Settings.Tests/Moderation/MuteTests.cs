@@ -34,6 +34,27 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         count.ShouldBe(1);
     }
 
+    /// <summary>Review S-13: a mute of a muted member closes the old mute, and an unmute closes the new one.</summary>
+    [Fact]
+    public async Task AddMuteThenRemoveMute_CloseEachMuteInTurn()
+    {
+        var token = TestContext.Current.CancellationToken;
+        (await this._sut.AddMute(_userId, _guildId, _modId, _sinId, DateTimeOffset.UtcNow.AddHours(1), null,
+            token)).ShouldSucceed();
+        var second = (await this._sut.AddMute(_userId, _guildId, _modId, new SinId(_sinId.Value + 1),
+            DateTimeOffset.UtcNow.AddHours(2), null, token)).ShouldSucceed();
+        (await this._sut.GetActiveMute(_userId, _guildId, token)).ShouldSucceed().SetAt
+            .ShouldBe(second.SetAt, TimeSpan.FromMilliseconds(1));
+
+        (await this._sut.RemoveMute(_userId, _guildId, _modId, token)).ShouldSucceed();
+
+        await using var db = factory.CreateDbContext();
+        var mutes = await db.Mutes.OfType<MuteAdded>().OrderBy(x => x.SetAt).ToListAsync(token);
+        mutes[0].ClosedAt.ShouldNotBeNull().ShouldBe(second.SetAt, TimeSpan.FromMilliseconds(1));
+        mutes[1].ClosedAt.ShouldNotBeNull();
+        (await this._sut.GetActiveMute(_userId, _guildId, token)).ShouldBeOfType<Result<MuteAdded>.NotFound>();
+    }
+
     [Fact]
     public async Task AddMute_ExistingMember_AppendsRow()
     {

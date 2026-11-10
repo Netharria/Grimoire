@@ -403,18 +403,21 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         var t1 = DateTimeOffset.UtcNow.AddHours(-3);
         var t2 = DateTimeOffset.UtcNow.AddHours(-1);
 
-        await using var db = factory.CreateDbContext();
-        db.ChannelLocks.Add(ChannelLocked.Create(
+        var token = TestContext.Current.CancellationToken;
+        (await this._sut.AddChannelLock(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("old-expired"), _channelId, _guildId, t1,
-            _prevAllowed, _prevDenied, t1.AddHours(1)).ShouldSucceed());
-        db.ChannelLocks.Add(ChannelLocked.Create(
+            _prevAllowed, _prevDenied, t1.AddHours(1)).ShouldSucceed(), token)).ShouldSucceed();
+        (await this._sut.AddChannelLock(ChannelLocked.Create(
             _modId, ModerationReason.FromDatabase("newer-active"), _channelId, _guildId, t2,
-            _prevAllowed, _prevDenied, t2.AddHours(4)).ShouldSucceed());
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            _prevAllowed, _prevDenied, t2.AddHours(4)).ShouldSucceed(), token)).ShouldSucceed();
 
-        var expired = await this._sut.GetAllExpiredChannelLocks(TestContext.Current.CancellationToken)
-            .ToListAsync(TestContext.Current.CancellationToken);
+        var expired = await this._sut.GetAllExpiredChannelLocks(token).ToListAsync(token);
 
         expired.ShouldBeEmpty();
+        // Review S-13: the newer lock closed the older one in the same save.
+        await using var db = factory.CreateDbContext();
+        var closedAt = await db.ChannelLocks.OfType<ChannelLocked>().OrderBy(x => x.SetAt).Select(x => x.ClosedAt).ToListAsync(token);
+        closedAt[0].ShouldNotBeNull().ShouldBe(t2, TimeSpan.FromMilliseconds(1));
+        closedAt[1].ShouldBeNull();
     }
 }

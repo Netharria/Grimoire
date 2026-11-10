@@ -445,7 +445,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task<MuteAdded> ActiveMuteAsync(FakeUser user)
         => await GrimoireTestBot.EventuallyAsync(
-            async () => (await this.Settings.GetActiveMute(new UserId(user.Id), this.GuildId)).Match(mute => mute, _ => null),
+            async () => (await this.Settings.GetActiveMute(new UserId(user.Id), this.GuildId)).Match(mute => mute, _ => null!),
             mute => mute is not null) ?? throw new ShouldAssertException($"{user.Username} has no active mute");
 
     /// <summary>Ends the mute as the expiry task would: the mute is recorded as removed and the role comes off.</summary>

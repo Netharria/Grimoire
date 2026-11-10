@@ -290,6 +290,9 @@ namespace Grimoire.Settings.Migrations
                 {
                     b.HasBaseType("Grimoire.Settings.Domain.ChannelLock");
 
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -299,7 +302,8 @@ namespace Grimoire.Settings.Migrations
                     b.Property<long>("PreviouslyDenied")
                         .HasColumnType("bigint");
 
-                    b.HasIndex("EndTime");
+                    b.HasIndex("EndTime")
+                        .HasFilter("\"EventType\" = 'Locked' AND \"ClosedAt\" IS NULL");
 
                     b.HasDiscriminator().HasValue("Locked");
                 });
@@ -370,6 +374,9 @@ namespace Grimoire.Settings.Migrations
                 {
                     b.HasBaseType("Grimoire.Settings.Domain.Mute");
 
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -379,7 +386,8 @@ namespace Grimoire.Settings.Migrations
                     b.Property<long>("SinId")
                         .HasColumnType("bigint");
 
-                    b.HasIndex("EndTime");
+                    b.HasIndex("EndTime")
+                        .HasFilter("\"EventType\" = 'Added' AND \"ClosedAt\" IS NULL");
 
                     b.HasDiscriminator().HasValue("Added");
                 });
@@ -416,10 +424,14 @@ namespace Grimoire.Settings.Migrations
                 {
                     b.HasBaseType("Grimoire.Settings.Domain.ThreadLock");
 
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasIndex("EndTime");
+                    b.HasIndex("EndTime")
+                        .HasFilter("\"EventType\" = 'Locked' AND \"ClosedAt\" IS NULL");
 
                     b.HasDiscriminator().HasValue("Locked");
                 });

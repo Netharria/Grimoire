@@ -5,7 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Globalization;
 using Grimoire.Settings;
+using Grimoire.Settings.Domain;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
@@ -72,6 +74,52 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
         (await settingsAfter.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
         bot.Logs.Events.ShouldContain(e => e.RenderMessage(null).StartsWith(SettingsMigrationLog, StringComparison.Ordinal));
         bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>
+    ///     Review S-13: <c>AddClosedAtToLocksAndMutes</c> closes every lock and mute that a later event for the same
+    ///     channel or member ended or replaced, at that event's time, and leaves the ones still in force open.
+    /// </summary>
+    [Fact]
+    public async Task AddClosedAt_ClosesEverythingALaterEventEnded_AndLeavesTheRestOpen()
+    {
+        var token = TestContext.Current.CancellationToken;
+        await using (var settings = this.SettingsContext())
+        {
+            var migrations = settings.Database.GetMigrations().ToList();
+            var target = migrations.Single(name => name.EndsWith("_AddClosedAtToLocksAndMutes", StringComparison.Ordinal));
+            await settings.GetService<IMigrator>().MigrateAsync(migrations[migrations.IndexOf(target) - 1],
+                cancellationToken: token);
+            // Channel 1: locked, unlocked, locked again (open). Channel 2: locked, replaced by a newer lock (open).
+            // Member 5: muted then unmuted. Member 6: muted (open). Guild 2 has its own lock on channel 1 (open).
+            await settings.Database.ExecuteSqlRawAsync("""
+                INSERT INTO "Settings"."ChannelLocks" ("ChannelId", "GuildId", "SetAt", "EventType", "ModeratorId", "EndTime", "PreviouslyAllowed", "PreviouslyDenied") VALUES
+                    (1, 1, '2026-01-01T00:00:00Z', 'Locked',   9, '2026-01-01T01:00:00Z', 0, 0),
+                    (1, 1, '2026-01-01T00:30:00Z', 'Unlocked', 9, NULL, NULL, NULL),
+                    (1, 1, '2026-01-02T00:00:00Z', 'Locked',   9, '2026-01-02T01:00:00Z', 0, 0),
+                    (2, 1, '2026-01-01T00:00:00Z', 'Locked',   9, '2026-01-01T01:00:00Z', 0, 0),
+                    (2, 1, '2026-01-01T00:10:00Z', 'Locked',   9, '2026-01-01T02:00:00Z', 0, 0),
+                    (1, 2, '2026-01-01T00:00:00Z', 'Locked',   9, '2026-01-01T01:00:00Z', 0, 0);
+                INSERT INTO "Settings"."ThreadLocks" ("ChannelId", "GuildId", "SetAt", "EventType", "ModeratorId", "EndTime") VALUES
+                    (3, 1, '2026-01-01T00:00:00Z', 'Locked',   9, '2026-01-01T01:00:00Z'),
+                    (3, 1, '2026-01-01T00:20:00Z', 'Unlocked', 9, NULL);
+                INSERT INTO "Settings"."Mutes" ("UserId", "GuildId", "SetAt", "EventType", "ModeratorId", "EndTime", "SinId") VALUES
+                    (5, 1, '2026-01-01T00:00:00Z', 'Added',   9, '2026-01-01T01:00:00Z', 1),
+                    (5, 1, '2026-01-01T00:40:00Z', 'Removed', 9, NULL, NULL),
+                    (6, 1, '2026-01-01T00:00:00Z', 'Added',   9, '2026-01-01T01:00:00Z', 2);
+                """, token);
+            await settings.GetService<IMigrator>().MigrateAsync(target, cancellationToken: token);
+        }
+
+        await using var after = this.SettingsContext();
+        static DateTimeOffset At(string time) => DateTimeOffset.Parse($"2026-01-{time}Z", CultureInfo.InvariantCulture);
+        (await after.ChannelLocks.OfType<ChannelLocked>().OrderBy(x => x.GuildId).ThenBy(x => x.ChannelId).ThenBy(x => x.SetAt)
+                .Select(x => x.ClosedAt).ToListAsync(token))
+            .ShouldBe([At("01T00:30:00"), null, At("01T00:10:00"), null, null]);
+        (await after.ThreadLocks.OfType<ThreadLocked>().Select(x => x.ClosedAt).SingleAsync(token))
+            .ShouldBe(At("01T00:20:00"));
+        (await after.Mutes.OfType<MuteAdded>().OrderBy(x => x.UserId).Select(x => x.ClosedAt).ToListAsync(token))
+            .ShouldBe([At("01T00:40:00"), null]);
     }
 
     /// <summary>An up-to-date database starts without migrating.</summary>

@@ -31,7 +31,8 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>, IEntit
 
     public void Configure(EntityTypeBuilder<MuteAdded> builder)
     {
-        builder.HasIndex(x => x.EndTime);
+        // Only open MuteAdded rows, so the expiry poll's cost follows what is in force, not the history (review S-13).
+        builder.HasIndex(x => x.EndTime).HasFilter("\"EventType\" = 'Added' AND \"ClosedAt\" IS NULL");
 
         builder.Property(e => e.SinId);
 

@@ -126,7 +126,7 @@ public sealed class ResultTests
     [Fact]
     public void Match_OnFailure_PassesTheError()
         => new Result<int>.NotFound(_errorB)
-            .Match(_ => null, error => error)
+            .Match(_ => null!, error => error)
             .ShouldBe(_errorB);
 
     // ── GetOrElse ────────────────────────────────────────────────────────────

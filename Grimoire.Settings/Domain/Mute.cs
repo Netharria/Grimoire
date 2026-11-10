@@ -39,6 +39,15 @@ public sealed record MuteAdded : Mute
     /// </summary>
     public RoleId? MuteRoleId { get; }
 
+    /// <summary>
+    ///     When this mute stopped being in force: the time of the next event for the same member, an end or a newer
+    ///     mute. Null while it is in force. Only the settings module sets it, in the same save as that event, so the
+    ///     expiry polls can read open rows without searching the whole history (review S-13).
+    /// </summary>
+    public DateTimeOffset? ClosedAt { get; private set; }
+
+    internal void Close(DateTimeOffset closedAt) => this.ClosedAt = closedAt;
+
     public static Validation<MuteAdded> Create(
         UserId userId,
         GuildId guildId,

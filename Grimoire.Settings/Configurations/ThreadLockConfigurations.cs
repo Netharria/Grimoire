@@ -36,5 +36,7 @@ internal sealed class ThreadLockConfigurations : IEntityTypeConfiguration<Thread
         builder.Property(e => e.ModeratorId);
     }
 
-    public void Configure(EntityTypeBuilder<ThreadLocked> builder) => builder.HasIndex(x => x.EndTime);
+    // Only open locks, so the expiry poll's cost follows what is in force, not the history (review S-13).
+    public void Configure(EntityTypeBuilder<ThreadLocked> builder)
+        => builder.HasIndex(x => x.EndTime).HasFilter("\"EventType\" = 'Locked' AND \"ClosedAt\" IS NULL");
 }

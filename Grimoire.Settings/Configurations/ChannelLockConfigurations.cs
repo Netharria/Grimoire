@@ -38,7 +38,8 @@ internal sealed class ChannelLockConfigurations : IEntityTypeConfiguration<Chann
 
     public void Configure(EntityTypeBuilder<ChannelLocked> builder)
     {
-        builder.HasIndex(x => x.EndTime);
+        // Only open ChannelLocked rows, so the expiry poll's cost follows what is in force, not the history (review S-13).
+        builder.HasIndex(x => x.EndTime).HasFilter("\"EventType\" = 'Locked' AND \"ClosedAt\" IS NULL");
 
         builder.Property(e => e.PreviouslyAllowed)
             .HasConversion(e => e.Permissions, value => new PreviouslyAllowedPermissions(value));
