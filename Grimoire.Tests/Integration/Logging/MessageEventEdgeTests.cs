@@ -25,7 +25,6 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
     private static readonly GuildLogType[] MessageLogTypes =
         [GuildLogType.MessageEdited, GuildLogType.MessageDeleted, GuildLogType.BulkMessageDeleted];
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -34,8 +33,8 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this.ConfigureAsync();
     }
 
@@ -60,7 +59,7 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
 
         var messageId = await this.SendLoggedAsync("hello");
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var saved = await dbContext.Messages.AsNoTracking().SingleAsync(message => message.Id == new MessageId(messageId),
             TestContext.Current.CancellationToken);
         saved.UserId.ShouldBe(new UserId(this.Guild.User1.Id));
@@ -78,7 +77,7 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
 
         var urls = await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Attachments.Where(attachment => attachment.MessageId == new MessageId(messageId))
                 .Select(attachment => attachment.AttachmentUrl.Value).ToListAsync();
         }, found => found.Count == 2);
@@ -96,7 +95,7 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
 
         var reply = await this.SendReplyAsync("answer", original);
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Messages.AsNoTracking().SingleAsync(message => message.Id == new MessageId(reply),
             TestContext.Current.CancellationToken)).ReferencedMessageId.ShouldBe(new MessageId(original));
     }
@@ -186,7 +185,7 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
     public async Task ADeleteLogTheBotCannotPostIn_IsReported()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this.ConfigureAsync();
         await this.PointLogAtAsync(GuildLogType.MessageDeleted, this.Guild.Private.Id);
@@ -316,7 +315,7 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
         this._bot.AddReaction(this.Guild.Moderator, this.Channel, messageId, new FakeEmoji.Standard("🎉"));
         (await this.WaitForReactionsAsync(messageId, rows => rows.Count == 2)).Count.ShouldBe(2);
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
 
         this._bot.RemoveAllReactions(this.Channel, messageId);
 
@@ -366,7 +365,7 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
 
         await Task.Delay(NothingHappensWindow, TestContext.Current.CancellationToken);
         this._bot.Rest.Requests.Count(this._bot.IsModLogPost).ShouldBe(postsBefore);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.MessageHistory.AnyAsync(entry => entry.MessageId == new MessageId(logPost), TestContext.Current.CancellationToken))
             .ShouldBeFalse();
     }
@@ -428,7 +427,7 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
     private async Task WaitUntilSavedAsync(ulong messageId)
         => (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
         }, saved => saved)).ShouldBeTrue();
 
@@ -458,14 +457,14 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
 
     private async Task<List<T>> HistoryOfAsync<T>(ulong messageId) where T : MessageHistoryEntry
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.MessageHistory.OfType<T>().Where(entry => entry.MessageId == new MessageId(messageId))
             .ToListAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task<List<ulong>> QueuedForPurgeAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return [.. (await dbContext.OldLogMessages.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken))
             .Select(row => row.Id.Value)];
     }
@@ -473,7 +472,7 @@ public sealed class MessageEventEdgeTests(GrimoireCoreFactory database) : IAsync
     private Task<List<Reaction>> WaitForReactionsAsync(ulong messageId, Func<List<Reaction>, bool> isDone)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Reactions.AsNoTracking()
                 .Where(reaction => reaction.MessageId == new MessageId(messageId))
                 .ToListAsync();

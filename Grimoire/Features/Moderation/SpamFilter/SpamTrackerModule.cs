@@ -24,9 +24,7 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
     private const double MentionMultiplier = 2.5;
     private const double DuplicateMessageMultiplier = 10.0;
 
-    private readonly HybridCache _memoryCache = memoryCache;
 
-    private readonly SettingsModule _settingsModule = settingsModule;
 
 
     private readonly HybridCacheEntryOptions _spamTrackerCacheEntryOptions =
@@ -48,7 +46,7 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
         while (currentChannel is not null)
         {
             var spamFilterOverrideOption =
-                await this._settingsModule.GetSpamFilterOverrideAsync(
+                await settingsModule.GetSpamFilterOverrideAsync(
                     currentChannel.Guild.GetGuildId(),
                     currentChannel.GetChannelId(),
                     cancellationToken).GetOrElse(() => SpamFilterOverrideOption.Inherit);
@@ -61,7 +59,7 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
             currentChannel = currentChannel.Parent;
         }
 
-        var spamTracker = await this._memoryCache.GetOrCreateAsync(
+        var spamTracker = await memoryCache.GetOrCreateAsync(
             GetSpamUserCacheKey(member.Guild.GetGuildId(), member.Id),
             _ => ValueTask.FromResult(new SpamTracker()), this._spamTrackerCacheEntryOptions,
             cancellationToken: cancellationToken);

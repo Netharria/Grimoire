@@ -18,7 +18,6 @@ namespace Grimoire.Tests.Integration.CustomCommands;
 [Collection("Test collection")]
 public sealed class CustomCommandSlashGapTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -26,8 +25,8 @@ public sealed class CustomCommandSlashGapTests(GrimoireCoreFactory database) : I
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Commands, true);
     }
@@ -217,7 +216,7 @@ public sealed class CustomCommandSlashGapTests(GrimoireCoreFactory database) : I
 
     private async Task<List<(ulong, string)>> UsesAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return [.. (await dbContext.CustomCommandUsages.ToListAsync(Token)).Select(use => (use.UserId.Value, use.Name.Value))];
     }
 }

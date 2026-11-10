@@ -18,7 +18,6 @@ namespace Grimoire.Tests.Integration.CustomCommands;
 [Collection("Test collection")]
 public sealed class CustomCommandAutocompleteTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -26,8 +25,8 @@ public sealed class CustomCommandAutocompleteTests(GrimoireCoreFactory database)
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Commands, true);
     }
@@ -67,7 +66,7 @@ public sealed class CustomCommandAutocompleteTests(GrimoireCoreFactory database)
             SlashOption.String("name", "hello"), SlashOption.String("version", oldest.Value)));
 
         reply.Description.ShouldStartWith("Reverted `hello` to version from <t:");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.CustomCommands.AsNoTracking().OrderByDescending(command => command.CreatedAt).FirstAsync(Token))
             .Content.Value.ShouldBe("content 1");
     }
@@ -193,7 +192,7 @@ public sealed class CustomCommandAutocompleteTests(GrimoireCoreFactory database)
     private async Task SeedVersionsAsync(FakeGuild guild, string name, int count, DateTimeOffset first,
         string? content = null, ulong[]? allowRoleIds = null)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         dbContext.CustomCommands.AddRange(Enumerable.Range(1, count).Select(number => TextCustomCommand.Create(
             CustomCommandName.Create(name).ShouldSucceed(), new GuildId(guild.Id),
             CustomCommandContent.Create(content ?? $"content {number}").ShouldSucceed(),

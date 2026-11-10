@@ -34,7 +34,6 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     private const ulong TextLock = SendMessages | SendMessagesInThreads | SendTtsMessages | AddReactions;
     private const ulong VoiceLock = Connect | Speak;
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -43,8 +42,8 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -165,7 +164,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
         var now = DateTimeOffset.UtcNow;
         var mute = MuteAdded.Create(new UserId(userId), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId(1),
             now.AddMinutes(-10), expired ? now.AddMinutes(-1) : now.AddMinutes(10), null).ShouldSucceed();
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         settingsContext.Mutes.Add(mute);
         await settingsContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
@@ -209,7 +208,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     public async Task WhenTheBotLacksManageRoles_IsRefused(string subcommand)
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this._bot.ConfigureModerationAsync();
         var roleId = this._bot.Rest.CreateRole("Muted");
@@ -263,7 +262,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     public async Task Create_ListsChannelsItCouldNotSet()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission
             | FakeGuild.ManageRolesPermission);
         await this._bot.ConfigureModerationAsync();

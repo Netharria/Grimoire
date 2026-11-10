@@ -24,8 +24,6 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
         Amount
     }
 
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
 
     [RequireGuild]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
@@ -60,7 +58,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
     private async Task<Result<long>> ReclaimAsync(DiscordUser user, DiscordGuild guild, XpOption option, int amount,
         ModeratorId moderatorId)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var memberXp = await dbContext.XpHistory
             .Where(history => history.UserId == user.GetUserId() && history.GuildId == guild.GetGuildId())
@@ -80,7 +78,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
     private async Task ReportReclaimAsync(CommandContext ctx, DiscordUser user, DiscordGuild guild, long xpTaken)
     {
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, $"{xpTaken} xp has been taken from {user.Mention}.");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

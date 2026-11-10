@@ -19,10 +19,6 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 [RequirePermissions([DiscordPermission.BanMembers], [])]
 public sealed class AddBanCommand(BanHandoff banHandoff, GuildLog guildLog, SettingsModule settingsModule)
 {
-    private readonly BanHandoff _banHandoff = banHandoff;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("Ban")]
     [Description("Bans a user from the server.")]
     public async Task BanAsync(
@@ -53,19 +49,19 @@ public sealed class AddBanCommand(BanHandoff banHandoff, GuildLog guildLog, Sett
 
         var member = await guild.GetMemberOrDefaultAsync(user.GetUserId());
         if (member is not null
-            && await ModerationRank.GetRefusalReasonAsync(this._settingsModule, ctx, member, "ban") is { } refusal)
+            && await ModerationRank.GetRefusalReasonAsync(settingsModule, ctx, member, "ban") is { } refusal)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, refusal);
             return;
         }
 
         if (member is not null)
-            await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+            await guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
                 .WithAuthor("Banned")
                 .WithDescription($"You have been banned from {guild.Name}{ModerationDirectMessage.ForReason(reason)}")
                 .WithColor(GrimoireColor.Red), "ban");
 
-        var pending = this._banHandoff.ExpectBan(guild.GetGuildId(), user.GetUserId(), ctx.GetModeratorId(), reason);
+        var pending = banHandoff.ExpectBan(guild.GetGuildId(), user.GetUserId(), ctx.GetModeratorId(), reason);
         try
         {
             await guild.BanMemberAsync(
@@ -75,7 +71,7 @@ public sealed class AddBanCommand(BanHandoff banHandoff, GuildLog guildLog, Sett
         }
         catch (Exception)
         {
-            this._banHandoff.CancelBan(guild.GetGuildId(), user.GetUserId());
+            banHandoff.CancelBan(guild.GetGuildId(), user.GetUserId());
             throw;
         }
 

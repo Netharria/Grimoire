@@ -29,7 +29,6 @@ public sealed class FakeGatewayTransport(FakeGuild guild, FakeGuild? secondGuild
     private const int ResumeOpCode = 6;
     private const int DispatchOpCode = 0;
 
-    private readonly FakeGuild _guild = guild;
     private readonly ConcurrentQueue<JsonObject> _sentByBot = new();
     private Channel<TransportFrame> _inbound = Channel.CreateUnbounded<TransportFrame>();
     private int _sequence;
@@ -76,11 +75,11 @@ public sealed class FakeGatewayTransport(FakeGuild guild, FakeGuild? secondGuild
         switch (sent["op"]?.GetValue<int>())
         {
             case IdentifyOpCode:
-                var ready = this._guild.ReadyPayload();
+                var ready = guild.ReadyPayload();
                 if (secondGuild is not null)
                     ready["guilds"]!.AsArray().Add(new JsonObject { ["id"] = secondGuild.Id.ToString(), ["unavailable"] = true });
                 this.Dispatch("READY", ready);
-                this.Dispatch("GUILD_CREATE", this._guild.GuildCreatePayload());
+                this.Dispatch("GUILD_CREATE", guild.GuildCreatePayload());
                 if (secondGuild is not null)
                     this.Dispatch("GUILD_CREATE", secondGuild.GuildCreatePayload());
                 break;

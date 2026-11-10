@@ -29,10 +29,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
     [Description("Checks whether mutes and locks will work in this server's channels.")]
     public async Task CheckAsync(CommandContext ctx)
     {
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(true);
-        else
-            await ctx.DeferResponseAsync();
+        await ctx.DeferPrivateAsync();
 
         var guild = ctx.RequiredGuild;
         var muteRoleId = await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId())

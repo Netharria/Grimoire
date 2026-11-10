@@ -14,9 +14,6 @@ namespace Grimoire.Features.Leveling.Awards;
 
 internal sealed class AwardUserXp(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-
     [RequireGuild]
     [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
     [RequireModuleEnabled(Module.Leveling)]
@@ -32,7 +29,7 @@ internal sealed class AwardUserXp(IDbContextFactory<GrimoireDbContext> dbContext
 
         var guild = ctx.RequiredGuild;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var awarded = PositiveXpAmount.Create(xpToAward)
             .Bind(xp => AwardedXp.Create(xp, ctx.GetModeratorId(), user.GetUserId(), guild.GetGuildId(),
@@ -43,7 +40,7 @@ internal sealed class AwardUserXp(IDbContextFactory<GrimoireDbContext> dbContext
         await dbContext.SaveChangesAsync();
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, $"{user.Mention} has been awarded {xpToAward} xp.");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

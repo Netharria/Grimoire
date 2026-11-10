@@ -22,7 +22,6 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild A => this._bot.Guild;
@@ -32,8 +31,8 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         await this._bot.ConfigureModerationAsync();
         await this._bot.ConfigureModerationAsync(this.B);
     }
@@ -44,7 +43,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task BothGuildsMembers_AreSyncedAtStartup()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.NicknameHistory.Where(row => row.UserId == new UserId(this.A.User1.Id)).Select(row => row.GuildId).ToListAsync(Token))
             .ShouldBe([new GuildId(this.A.Id), new GuildId(this.B.Id)], ignoreOrder: true);
     }
@@ -70,7 +69,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Put && request.Path == $"guilds/{this.B.Id}/bans/{this.B.User1.Id}");
         this._bot.Rest.Requests.ShouldNotContain(request => request.Path.StartsWith($"guilds/{this.A.Id}/bans", StringComparison.Ordinal));
-        await using (var dbContext = this._database.CreateDbContext())
+        await using (var dbContext = database.CreateDbContext())
             (await dbContext.Sins.Select(sin => sin.GuildId).ToListAsync(Token)).ShouldBe([new GuildId(this.B.Id)]);
         await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post && request.Path == $"channels/{this.B.ModLog.Id}/messages");
         (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, NothingHappensWindow)).ShouldBeFalse("A's mod log stays quiet");
@@ -119,7 +118,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
         this._bot.SendMessage(this.A.User1, this.A.General, "hello");
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.XpHistory.CountAsync(Token);
         }, count => count == 1)).ShouldBe(1);
 
@@ -152,7 +151,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
         // The use is recorded after the post. Waiting keeps it from landing after the next test's reset.
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.CustomCommandUsages.CountAsync(TestContext.Current.CancellationToken);
         }, count => count == 1)).ShouldBe(1);
     }
@@ -191,7 +190,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
                                                            && request.Path.StartsWith($"channels/{this.A.General.Id}/permissions/", StringComparison.Ordinal));
         (await this._bot.Rest.ReceivesRequestWithinAsync(request => request.Path.StartsWith($"channels/{this.B.General.Id}/permissions/", StringComparison.Ordinal),
             NothingHappensWindow)).ShouldBeFalse();
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.ChannelLocks.Select(lockRow => lockRow.GuildId).ToListAsync(Token)).ShouldBe([new GuildId(this.A.Id)]);
     }
 }

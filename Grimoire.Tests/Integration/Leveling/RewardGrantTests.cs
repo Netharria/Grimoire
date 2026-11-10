@@ -32,7 +32,6 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
     private const ulong PermissionsWithoutManageRoles = FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission
                                                                                         | FakeGuild.EmbedLinksPermission;
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -43,7 +42,7 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync();
     }
 
@@ -54,7 +53,7 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
     {
         if (this._bot is not null)
             await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureGuild);
+        this._bot = await GrimoireTestBot.StartAsync(database, configureGuild);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
@@ -271,7 +270,7 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
     /// <summary>Moves the member's timeouts back, as if <paramref name="by" /> had passed. The timeout is part of the key.</summary>
     private async Task BackdateTimeoutsAsync(FakeUser user, TimeSpan by)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         await dbContext.Database.ExecuteSqlAsync(
             $"""UPDATE "XpHistory" SET "TimeOut" = "TimeOut" - {by} WHERE "UserId" = {(decimal)user.Id} AND "GuildId" = {(decimal)this.Guild.Id}""",
             Token);

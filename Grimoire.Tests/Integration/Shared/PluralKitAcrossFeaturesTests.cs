@@ -28,7 +28,6 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private readonly FakePluralKit _pluralKit = new();
     private readonly FakeUser _webhook = new(1_100_000_000_000_006_001, "Alice", IsBot: true);
     private GrimoireTestBot _bot = null!;
@@ -43,7 +42,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync(new Dictionary<string, string?> { ["pluralkitToken"] = "fake-token" });
     }
 
@@ -53,7 +52,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
     {
         if (this._bot is not null)
             await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureHost: builder =>
+        this._bot = await GrimoireTestBot.StartAsync(database, configureHost: builder =>
         {
             builder.Configuration.AddInMemoryCollection(configuration);
             builder.Services.AddHttpClient("Pluralkit").ConfigurePrimaryHttpMessageHandler(() => this._pluralKit);
@@ -84,7 +83,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
         this._bot.DeleteMessage(messageId, this.Channel);
 
         (await this.DeleteLoggedWithinAsync(TimeSpan.FromSeconds(5))).ShouldBeTrue();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.MessageHistory.OfType<MessageDeletedEntry>().AnyAsync(Token)).ShouldBeTrue();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
@@ -143,7 +142,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
         this._bot.DeleteMessage(original, this.Channel);
 
         (await this.DeleteLoggedWithinAsync(NothingHappensWindow)).ShouldBeFalse();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Messages.AnyAsync(Token)).ShouldBeFalse();
         this._pluralKit.Lookups.ShouldBeEmpty();
     }
@@ -217,7 +216,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
                                                             && request.Path.EndsWith($"/members/{this.Pk.Id}/roles/{muteRoleId}", StringComparison.Ordinal));
         await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Mute");
         await Task.Delay(NothingHappensWindow, Token);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.ToListAsync(Token)).ShouldHaveSingleItem().UserId.ShouldBe(new UserId(this.Pk.Id));
         this._bot.Rest.Requests.Where(request => request.Method == HttpMethod.Delete)
             .Select(request => request.Path)
@@ -246,7 +245,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
             await this._bot.Rest.WaitForRequestAsync(this.IsPostInChannel);
         await Task.Delay(NothingHappensWindow, Token);
         this._bot.Rest.Requests.Count(this.IsPostInChannel).ShouldBe(expectedPosts);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.CustomCommandUsages.ToListAsync(Token)).Select(use => use.UserId.Value)
             .ShouldBe(Enumerable.Repeat(this.Pk.Id, expectedPosts));
     }
@@ -349,7 +348,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
     {
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId), Token);
         }, saved => saved)).ShouldBeTrue();
         return messageId;
@@ -357,14 +356,14 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
 
     private async Task<int> LinkCountAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.ProxiedMessages.CountAsync(Token);
     }
 
     private Task<List<EarnedXp>> WaitForXpAsync(FakeUser user, int count, TimeSpan? window = null)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.XpHistory.OfType<EarnedXp>()
                 .Where(xp => xp.UserId == new UserId(user.Id))
                 .ToListAsync(Token);

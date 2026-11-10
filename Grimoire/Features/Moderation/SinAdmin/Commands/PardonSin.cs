@@ -18,9 +18,6 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-
     [Command("Pardon")]
     [Description("Pardon a user's sin. This leaves the sin in the logs but marks it as pardoned.")]
     public async Task PardonAsync(CommandContext ctx,
@@ -33,7 +30,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         var guild = ctx.RequiredGuild;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var pardonReason))
         {
             await ctx.SendErrorResponseAsync("The reason can't be empty.");
@@ -67,7 +64,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         await ctx.ReplyAsync(GrimoireColor.Green, message, "Pardoned");
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

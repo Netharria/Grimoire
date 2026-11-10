@@ -19,7 +19,6 @@ namespace Grimoire.Tests.Integration.Leveling;
 [Collection("Test collection")]
 public sealed class RewardCommandGapTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -28,8 +27,8 @@ public sealed class RewardCommandGapTests(GrimoireCoreFactory database) : IAsync
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
     }

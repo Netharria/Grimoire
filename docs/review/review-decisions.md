@@ -66,7 +66,7 @@ All taken.
 | Finding | Decision | Note |
 |---------|----------|------|
 | I-18 | **Done** 2026-11-10, uncommitted | `CLAUDE.md` lists the keys the code reads (`appsettings.json` is committed, there is no example file; `guildId` is read nowhere). The slow-command comment says what it measures |
-| I-19 | Do | The `ctx.Guild!` half is covered by the `RequiredGuild` ruling |
+| I-19 | **Done** 2026-11-10, uncommitted | `ctx.Guild!` by the `RequiredGuild` ruling. `ctx.DeferPrivateAsync()` replaces nine copies of the private defer, and `ctx.TryDeferAsync(isPrivate)` the three that choose (`/Level`, `/Leaderboard`, `/SinLog`). 184 copy-fields removed. Kept, where a parameter can't replace them: 39 in production, in types split across files (a primary-constructor parameter is visible only in its own part) or whose `[LoggerMessage]` methods take a `logger` parameter |
 | P-8 | **Done** 2026-11-10, uncommitted | Both contexts use `AddPooledDbContextFactory`. The only per-context state is the migration command timeout; `PooledContextTests` shows a pooled lease doesn't keep it. Still unmeasured |
 | S-12 | Do | Removing the zero-id checks lets those factories drop `Validation` (ties into D-5) |
 | S-13 | Do | Needs a design first: the review found no simple safe lower bound |

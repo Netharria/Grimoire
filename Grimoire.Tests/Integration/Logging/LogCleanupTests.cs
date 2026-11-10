@@ -21,7 +21,6 @@ namespace Grimoire.Tests.Integration.Logging;
 [Collection("Test collection")]
 public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -30,8 +29,8 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
@@ -109,7 +108,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task SavedMessages_OlderThan31Days_AreDeleted()
     {
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.Messages.AddRange(this.Message(1, 32), this.Message(2, 30));
             await seed.SaveChangesAsync(Token);
@@ -117,7 +116,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         await this._bot.RunBackgroundTickAsync<CleanupLogsBackgroundTask>();
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Messages.Where(message => message.GuildId == this.GuildId).Select(message => message.Id).ToListAsync(Token))
             .ShouldBe([new MessageId(2)]);
     }
@@ -132,7 +131,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     {
         var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database,
+        this._bot = await GrimoireTestBot.StartAsync(database,
             configureHost: builder => builder.Services.Replace(ServiceDescriptor.Singleton<TimeProvider>(clock)));
         var user = new UserId(this.Guild.User1.Id);
 
@@ -152,7 +151,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task AddAvatarsAsync(UserId user, int count)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         for (var i = 1; i <= count; i++)
             seed.Avatars.Add(new Avatar
             {
@@ -164,7 +163,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task<int> AvatarCountAsync(UserId user)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.Avatars.CountAsync(avatar => avatar.UserId == user, Token);
     }
 
@@ -174,7 +173,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     public async Task UserHistory_IsTrimmedToTheNewestThree()
     {
         var user = new UserId(this.Guild.User1.Id);
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             for (var i = 1; i <= 5; i++)
             {
@@ -190,7 +189,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.RunBackgroundTickAsync<CleanupLogsBackgroundTask>();
 
         // The startup sync's rows are the newest, so two of the five seeded rows survive.
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Avatars.Where(a => a.UserId == user).OrderBy(a => a.Timestamp).Select(a => a.FileName).ToListAsync(Token))
             .Select(name => name.Value).Take(2).ShouldBe(["https://cdn/4.png", "https://cdn/5.png"]);
         (await dbContext.Avatars.Where(a => a.UserId == user).CountAsync(Token)).ShouldBe(3);
@@ -210,7 +209,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task TrackLogPostsAsync(params (ulong Id, int AgeInDays)[] posts)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.OldLogMessages.AddRange(posts.Select(post => new OldLogMessage
         {
             Id = new MessageId(post.Id),
@@ -223,7 +222,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task<List<OldLogMessage>> TrackedPostsAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.OldLogMessages.AsNoTracking().ToListAsync(Token);
     }
 

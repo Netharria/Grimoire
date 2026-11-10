@@ -21,7 +21,6 @@ namespace Grimoire.Tests.Integration.Leveling;
 [Collection("Test collection")]
 public sealed class IgnoreCommandTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -31,8 +30,8 @@ public sealed class IgnoreCommandTests(GrimoireCoreFactory database) : IAsyncLif
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
     }
@@ -118,7 +117,7 @@ public sealed class IgnoreCommandTests(GrimoireCoreFactory database) : IAsyncLif
 
     private async Task<List<XpTrackedItem>> TrackedRowsAsync(ulong id)
     {
-        await using var settings = this._database.CreateSettingsDbContext();
+        await using var settings = database.CreateSettingsDbContext();
         return (await settings.XpTrackedItems.AsNoTracking().Where(item => item.GuildId == this.GuildId).ToListAsync(Token))
             .Where(item => item switch
             {

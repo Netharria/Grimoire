@@ -30,7 +30,6 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
     private const string ModuleDisabledError = "This module is disabled in this server.";
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -41,8 +40,8 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -115,7 +114,7 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
     [Fact]
     public async Task ShorteningAutoPardon_HidesOlderSinsInTheNextSinLog()
     {
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.Sins.Add(Sin.ForWarn(new ModerationActor.Moderator(new ModeratorId(this.Guild.Moderator.Id)),
                 new UserId(this.Guild.User1.Id), this.GuildId, DateTimeOffset.UtcNow.AddDays(-3)).ShouldSucceed());
@@ -157,7 +156,7 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
 
         (await this.LevelAsync()).Description.ShouldNotBe(ModuleDisabledError, "the cache still says Leveling is on");
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
         (await this.LevelAsync()).Description.ShouldBe(ModuleDisabledError);
     }
 
@@ -180,7 +179,7 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
 
     private async Task DisableLevelingInTheDatabaseAsync()
     {
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         settingsContext.GuildSettings.Add(GuildSettingDisabled.Create(Module.Leveling.ToGuildSettingType()!.Value, this.GuildId,
             this.Owner, DateTimeOffset.UtcNow).ShouldSucceed());
         await settingsContext.SaveChangesAsync(Token);
@@ -207,7 +206,7 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
         var messageId = this._bot.SendMessage(this.Guild.User1, this.Guild.General, "logged then deleted");
         await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId), Token);
         }, saved => saved);
         this._bot.DeleteMessage(messageId, this.Guild.General);

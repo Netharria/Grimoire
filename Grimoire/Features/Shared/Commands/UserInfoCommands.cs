@@ -18,9 +18,6 @@ internal sealed class UserInfoCommands(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("UserInfo")]
     [Description("Get information about a user.")]
     public async Task GetUserInfo(CommandContext ctx,
@@ -41,7 +38,7 @@ internal sealed class UserInfoCommands(
             .AddField("Joined On", joinDate, true)
             .WithThumbnail(avatarUrl);
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         await GetAndAddUsernames(dbContext, user.GetUserId(), guild.GetGuildId(), embed);
 
@@ -91,7 +88,7 @@ internal sealed class UserInfoCommands(
         GuildId guildId,
         DiscordEmbedBuilder embed)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, guildId)
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, guildId)
                 .GetOrElse(() => false))
             return;
         var usernames = await dbContext.UsernameHistory
@@ -130,7 +127,7 @@ internal sealed class UserInfoCommands(
         GuildId guildId,
         IReadOnlySet<RoleId> roleIds)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, guildId)
+        if (!await settingsModule.IsModuleEnabled(Module.Leveling, guildId)
                 .GetOrElse(() => false))
             return;
 
@@ -139,9 +136,9 @@ internal sealed class UserInfoCommands(
             .SumAsync(x => x.RawXp);
 
         // The rest of the profile is still worth showing, so a failed lookup only leaves out the level fields.
-        if (await this._settingsModule.GetLevelingSettings(guildId)
+        if (await settingsModule.GetLevelingSettings(guildId)
                 is not Result<LevelingSettingEntry>.Success { Value: var levelSettings }
-            || await this._settingsModule.GetLevelingRewardsAsync(guildId)
+            || await settingsModule.GetLevelingRewardsAsync(guildId)
                 is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })
             return;
 
@@ -151,7 +148,7 @@ internal sealed class UserInfoCommands(
             .Select(x => x.RoleId)
             .ToArray();
 
-        var canGainXp = await this._settingsModule.IsMemberIgnored(guildId, userId, roleIds)
+        var canGainXp = await settingsModule.IsMemberIgnored(guildId, userId, roleIds)
             .Match(ignored => ignored ? "No" : "Yes", _ => "Unknown");
 
         embed.AddField("Level", membersLevel.ToString(), true)
@@ -169,10 +166,10 @@ internal sealed class UserInfoCommands(
         UserId userId,
         DiscordEmbedBuilder embed)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId)
+        if (!await settingsModule.IsModuleEnabled(Module.Moderation, guildId)
                 .GetOrElse(() => false))
             return;
-        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guildId)
+        var autoPardonAfter = await settingsModule.GetAutoPardonDuration(guildId)
             .GetOrElse(() => SettingsModule.DefaultAutoPardonDuration);
         var response = await dbContext.Sins
             .AsNoTracking()

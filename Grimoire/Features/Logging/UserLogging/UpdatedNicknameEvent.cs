@@ -16,15 +16,11 @@ public sealed class UpdatedNicknameEvent(
     SettingsModule settingsModule,
     GuildLog guildLog) : IEventHandler<GuildMemberUpdatedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var latest = await dbContext.NicknameHistory
             .AsNoTracking()
             .Where(x => x.GuildId == args.Guild.GetGuildId() && x.UserId == args.Member.GetUserId())
@@ -52,7 +48,7 @@ public sealed class UpdatedNicknameEvent(
             });
         await dbContext.SaveChangesAsync();
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(),
             GuildLogType = GuildLogType.NicknameUpdated,

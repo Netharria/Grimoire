@@ -26,7 +26,6 @@ public sealed class MessageLogSettingsGapTests(GrimoireCoreFactory database) : I
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -35,8 +34,8 @@ public sealed class MessageLogSettingsGapTests(GrimoireCoreFactory database) : I
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         await this._bot.ConfigureModerationAsync();
         await this._bot.ConfigureMessageLogAsync();
     }
@@ -261,14 +260,14 @@ public sealed class MessageLogSettingsGapTests(GrimoireCoreFactory database) : I
 
     private async Task<List<MessageLogChannelOverride>> OverrideRowsAsync()
     {
-        await using var dbContext = this._database.CreateSettingsDbContext();
+        await using var dbContext = database.CreateSettingsDbContext();
         return await dbContext.MessageLogChannelOverrides.Where(row => row.GuildId == this.GuildId)
             .ToListAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task<bool> MessageSavedAsync(ulong messageId)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
     }
 
@@ -277,7 +276,7 @@ public sealed class MessageLogSettingsGapTests(GrimoireCoreFactory database) : I
 
     private async Task<List<T>> HistoryOfAsync<T>(ulong messageId) where T : MessageHistoryEntry
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.MessageHistory.OfType<T>().Where(entry => entry.MessageId == new MessageId(messageId))
             .ToListAsync(TestContext.Current.CancellationToken);
     }

@@ -15,6 +15,29 @@ public static partial class CommandContextExtension
 {
     extension(CommandContext ctx)
     {
+        /// <summary>
+        ///     Defers a reply only the invoker sees. A text command can't reply privately, so it defers as usual.
+        /// </summary>
+        public ValueTask DeferPrivateAsync()
+            => ctx is SlashCommandContext slashContext
+                ? slashContext.DeferResponseAsync(true)
+                : ctx.DeferResponseAsync();
+
+        /// <summary>
+        ///     Defers the reply, privately when <paramref name="isPrivate" />. False when that can't be done: a text
+        ///     command has no private reply, so it should get none.
+        /// </summary>
+        public async ValueTask<bool> TryDeferAsync(bool isPrivate)
+        {
+            if (ctx is SlashCommandContext slashContext)
+                await slashContext.DeferResponseAsync(isPrivate);
+            else if (isPrivate)
+                return false;
+            else
+                await ctx.DeferResponseAsync();
+            return true;
+        }
+
         public ValueTask ReplyAsync(DiscordColor? color = null,
             string message = "",
             string title = "",

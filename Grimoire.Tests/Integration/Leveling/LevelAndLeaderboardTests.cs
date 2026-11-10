@@ -25,7 +25,6 @@ namespace Grimoire.Tests.Integration.Leveling;
 [Collection("Test collection")]
 public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -35,16 +34,16 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.RefreshLeaderboardAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.SetModuleAsync(Module.Leveling, true);
     }
 
     public async ValueTask DisposeAsync()
     {
         await this._bot.DisposeAsync();
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.RefreshLeaderboardAsync();
     }
 
@@ -240,7 +239,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
 
     private async Task SeedXpAsync(bool refresh, params (FakeUser User, int Xp)[] entries)
     {
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.XpHistory.AddRange(entries.Select(entry => EarnedXp.Create(PositiveXpAmount.Create(entry.Xp).ShouldSucceed(),
                 new UserId(entry.User.Id), this.GuildId, DateTimeOffset.UtcNow.AddMinutes(-10))));
@@ -253,7 +252,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
 
     private async Task RefreshLeaderboardAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         await dbContext.Database.ExecuteSqlRawAsync("REFRESH MATERIALIZED VIEW leaderboard_view", Token);
     }
 

@@ -26,7 +26,6 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private readonly ManualTimeProvider _clock = new(new DateTimeOffset(2026, 10, 25, 10, 0, 0, TimeSpan.Zero));
     private GrimoireTestBot _bot = null!;
 
@@ -36,8 +35,8 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureHost: builder =>
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, configureHost: builder =>
         {
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -74,7 +73,7 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.EndsWith(
             "\nThis happened 2 more time(s) since it was last shown.", StringComparison.Ordinal) == true);
         await this._bot.RunBackgroundTickAsync<WarningFlushService>();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.AlertOccurrences.SingleAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(4);
     }
 
@@ -119,7 +118,7 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
 
         (await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this.Health.DisconnectedFor()), downtime => downtime is null)).ShouldBeNull();
         await this._bot.RunBackgroundTickAsync<WarningFlushService>();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var occurrence = await dbContext.AlertOccurrences.SingleAsync(TestContext.Current.CancellationToken);
         occurrence.AlertType.ShouldStartWith("GatewayResumed");
         occurrence.SampleMessage.ShouldBe("Gateway session resumed after 40s.");

@@ -16,16 +16,12 @@ public sealed class UpdatedUsernameEvent(
     SettingsModule settingsModule,
     GuildLog guildLog) : IEventHandler<GuildMemberUpdatedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var currentUsername = await dbContext.UsernameHistory
             .AsNoTracking()
             .Where(member => member.UserId == args.MemberAfter.GetUserId())
@@ -47,7 +43,7 @@ public sealed class UpdatedUsernameEvent(
             });
         await dbContext.SaveChangesAsync();
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(),
             GuildLogType = GuildLogType.UsernameUpdated,

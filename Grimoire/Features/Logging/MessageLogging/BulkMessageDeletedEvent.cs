@@ -18,24 +18,20 @@ public sealed class BulkMessageDeletedEvent(
     GuildLog guildLog)
     : IEventHandler<MessagesBulkDeletedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, MessagesBulkDeletedEventArgs args)
     {
         // DSharpPlus hasn't finished implementing nullable notations
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null) return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
+        if (!await settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
                 .GetOrElse(() => false))
             return;
 
         var messageIds = args.Messages.Select(x => x.GetMessageId()).ToHashSet();
         var guildId = args.Guild.GetGuildId();
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var messages = await dbContext.Messages
             .AsNoTracking()
@@ -71,7 +67,7 @@ public sealed class BulkMessageDeletedEvent(
                 }));
         await dbContext.SaveChangesAsync();
 
-        if (!await this._settingsModule.IsLogChannelSet(GuildLogType.BulkMessageDeleted, guildId))
+        if (!await settingsModule.IsLogChannelSet(GuildLogType.BulkMessageDeleted, guildId))
             return;
 
         var embed = new DiscordEmbedBuilder()
@@ -81,7 +77,7 @@ public sealed class BulkMessageDeletedEvent(
                              "Full message dump attached.")
             .WithColor(GrimoireColor.Red);
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
         {
             GuildId = guildId,
             GuildLogType = GuildLogType.BulkMessageDeleted,

@@ -49,14 +49,13 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
     /// <summary>A bot without Administrator, Manage Roles or Manage Channels.</summary>
     private const ulong PlainBot = FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission;
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
     private ulong _muteRoleId;
 
     private FakeGuild Guild => this._bot.Guild;
     private SettingsModule Settings => this._bot.Services.GetRequiredService<SettingsModule>();
 
-    public async ValueTask InitializeAsync() => await this._database.ResetDatabase();
+    public async ValueTask InitializeAsync() => await database.ResetDatabase();
 
     public async ValueTask DisposeAsync()
     {
@@ -336,7 +335,7 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
         Func<FakeGuild, FakeChannel[]>? unmuted = null, bool configureMuteRole = true, int muteRolePosition = 1,
         bool secondGuild = false)
     {
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild =>
+        this._bot = await GrimoireTestBot.StartAsync(database, guild =>
         {
             guild.EveryonePermissions = EveryoneCanSpeak;
             configureGuild?.Invoke(guild);

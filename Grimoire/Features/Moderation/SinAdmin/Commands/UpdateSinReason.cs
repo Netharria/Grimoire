@@ -18,9 +18,6 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-
     [Command("Reason")]
     [Description("Update the reason for a user's sin.")]
     public async Task ReasonAsync(CommandContext ctx,
@@ -40,7 +37,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
             return;
         }
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var sinner = await dbContext.Sins
             .Where(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId())
             .Select(sin => (UserId?)sin.UserId)
@@ -71,7 +68,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(GrimoireColor.Green));
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

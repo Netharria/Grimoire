@@ -23,13 +23,12 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => await this._database.ResetDatabase();
+    public async ValueTask InitializeAsync() => await database.ResetDatabase();
 
     public async ValueTask DisposeAsync()
     {
@@ -39,7 +38,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
 
     private async Task StartAsync(Action<FakeGuild>? configureGuild = null)
     {
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureGuild);
+        this._bot = await GrimoireTestBot.StartAsync(database, configureGuild);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.UserLog, true);
         var settings = this._bot.Services.GetRequiredService<SettingsModule>();
@@ -243,7 +242,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     {
         await this.StartAsync();
         this._bot.MemberLeaves(this.Guild.User1);
-        await using (var dbContext = this._database.CreateDbContext())
+        await using (var dbContext = database.CreateDbContext())
             await dbContext.UsernameHistory.Where(row => row.UserId == new UserId(this.Guild.User1.Id)).ExecuteDeleteAsync(Token);
 
         this._bot.MemberJoins(this.Guild.User1);
@@ -259,7 +258,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
 
     private async Task<(List<UsernameHistory> Usernames, List<NicknameHistory> Nicknames, List<Avatar> Avatars)> HistoryAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return (await dbContext.UsernameHistory.AsNoTracking().ToListAsync(Token),
             await dbContext.NicknameHistory.AsNoTracking().ToListAsync(Token),
             await dbContext.Avatars.AsNoTracking().ToListAsync(Token));

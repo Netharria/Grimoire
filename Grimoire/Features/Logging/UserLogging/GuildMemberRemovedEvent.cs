@@ -14,12 +14,9 @@ namespace Grimoire.Features.Logging.UserLogging;
 public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule settingsModule)
     : IEventHandler<GuildMemberRemovedEventArgs>
 {
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberRemovedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
         var roles = args.Member.Roles.Where(x => x.Id != args.Guild.Id).Select(x => x.Mention).ToArray();
@@ -34,7 +31,7 @@ public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule se
             .WithTimestamp(DateTimeOffset.UtcNow)
             // About 45 roles pass a field's 1,024 characters, so they're split across fields.
             .AddMessageTextToFields($"Roles[{roles.Length}]", roles.Length > 0 ? string.Join(' ', roles) : "None");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.UserLeft, Embed = embed
         });

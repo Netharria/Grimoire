@@ -23,7 +23,6 @@ public sealed class MessageDeleteAttributionTests(GrimoireCoreFactory database) 
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -31,8 +30,8 @@ public sealed class MessageDeleteAttributionTests(GrimoireCoreFactory database) 
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this.ConfigureAsync();
     }
 
@@ -110,7 +109,7 @@ public sealed class MessageDeleteAttributionTests(GrimoireCoreFactory database) 
     public async Task WithoutViewAuditLog_TheDeleteIsLoggedUnattributed_AndReported()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this.ConfigureAsync();
         var messageId = await this.SendLoggedAsync("rule breaking");
@@ -140,7 +139,7 @@ public sealed class MessageDeleteAttributionTests(GrimoireCoreFactory database) 
         var messageId = this._bot.SendMessage(this.Guild.User1, this.Channel, content);
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
         }, saved => saved)).ShouldBeTrue();
         return messageId;
@@ -163,7 +162,7 @@ public sealed class MessageDeleteAttributionTests(GrimoireCoreFactory database) 
 
     private async Task<List<T>> HistoryOfAsync<T>(ulong messageId) where T : MessageHistoryEntry
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.MessageHistory.OfType<T>().Where(entry => entry.MessageId == new MessageId(messageId))
             .ToListAsync(TestContext.Current.CancellationToken);
     }

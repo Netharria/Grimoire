@@ -26,7 +26,6 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private readonly FakePluralKit _pluralKit = new();
     private readonly FakeUser _webhook = new(1_100_000_000_000_006_001, "Alice", IsBot: true);
     private GrimoireTestBot _bot = null!;
@@ -36,8 +35,8 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureHost: builder =>
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, configureHost: builder =>
         {
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["pluralkitToken"] = "fake-token" });
             builder.Services.AddHttpClient("Pluralkit").ConfigurePrimaryHttpMessageHandler(() => this._pluralKit);
@@ -172,7 +171,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     public async Task WithoutPluralKitConfigured_TheWarningIsLoggedOnce()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.ConfigureMessageLogAsync();
         (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(GuildLogType.MessageDeleted,
@@ -203,7 +202,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
         var messageId = this._bot.SendMessage(author, this.Channel, content);
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
         }, saved => saved)).ShouldBeTrue();
         return messageId;
@@ -211,7 +210,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
 
     private async Task<List<(ulong, ulong, string, string)>> LinksAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return [.. (await dbContext.ProxiedMessages.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken))
             .Select(link => (link.ProxyMessageId.Value, link.OriginalMessageId.Value, link.SystemId.Value, link.MemberId.Value))];
     }

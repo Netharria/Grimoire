@@ -27,7 +27,6 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     private static readonly GuildLogType[] UserLogTypes =
         [GuildLogType.UserJoined, GuildLogType.UserLeft, GuildLogType.UsernameUpdated, GuildLogType.NicknameUpdated, GuildLogType.AvatarUpdated];
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -36,8 +35,8 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.UserLog, true);
     }
@@ -141,7 +140,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         var embed = await this.WaitForLogAsync("Nickname Updated");
         Field(embed, "Before").ShouldBe("first");
         Field(embed, "After").ShouldBe("second");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.NicknameHistory.Where(h => h.UserId == new UserId(this.Guild.User1.Id))
                 .ToListAsync(TestContext.Current.CancellationToken))
             .ShouldContain(h => h.Nickname.HasValue && h.Nickname.Value.Value == "second");
@@ -235,7 +234,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.SetRolesByHand(this.Guild.User1, this.Guild.KickerRoleId);
 
         (await this.LoggedWithinAsync("Username Updated", NothingHappensWindow)).ShouldBeFalse();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.UsernameHistory.CountAsync(row => row.UserId == new UserId(this.Guild.User1.Id), TestContext.Current.CancellationToken))
             .ShouldBe(1);
     }
@@ -318,7 +317,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     /// </summary>
     private async Task SeedNicknameAsync(FakeUser user, string nickname)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.NicknameHistory.Add(new NicknameHistory
         {
             UserId = new UserId(user.Id),
@@ -331,7 +330,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     private async Task ForgetHistoryAsync(FakeUser user)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         await dbContext.UsernameHistory.Where(row => row.UserId == new UserId(user.Id))
             .ExecuteDeleteAsync(TestContext.Current.CancellationToken);
         await dbContext.Avatars.Where(row => row.UserId == new UserId(user.Id))
@@ -340,7 +339,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     private async Task<List<string>> AvatarsOfAsync(FakeUser user)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return [.. (await dbContext.Avatars.Where(row => row.UserId == new UserId(user.Id))
                 .OrderBy(row => row.Timestamp).ToListAsync(TestContext.Current.CancellationToken))
             .Select(row => row.FileName.Value)];

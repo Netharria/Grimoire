@@ -14,8 +14,6 @@ public sealed class LockedThreadEvents(SettingsModule settingsModule)
     : IEventHandler<MessageCreatedEventArgs>
         , IEventHandler<MessageReactionAddedEventArgs>
 {
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
         // DSharpPlus hasn't finished implementing nullable notations
@@ -47,6 +45,6 @@ public sealed class LockedThreadEvents(SettingsModule settingsModule)
     }
 
     private async Task<bool> IsEnforcedAsync(ChannelId channelId, GuildId guildId)
-        => await this._settingsModule.IsModuleEnabled(Module.Moderation, guildId).GetOrElse(() => false)
-           && await this._settingsModule.IsThreadLocked(channelId, guildId).GetOrElse(() => false);
+        => await settingsModule.IsModuleEnabled(Module.Moderation, guildId).GetOrElse(() => false)
+           && await settingsModule.IsThreadLocked(channelId, guildId).GetOrElse(() => false);
 }

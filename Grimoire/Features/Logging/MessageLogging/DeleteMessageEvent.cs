@@ -24,24 +24,18 @@ public sealed partial class DeleteMessageEvent(
     GuildLog guildLog,
     ILogger<DeleteMessageEvent> logger) : IEventHandler<MessageDeletedEventArgs>
 {
-    private readonly IDiscordImageEmbedService _attachmentUploadService = attachmentUploadService;
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
     private readonly ILogger<DeleteMessageEvent> _logger = logger;
-    private readonly IDiscordAuditLogParserService _logParserService = logParserService;
-    private readonly IPluralkitService _pluralKitService = pluralKitService;
-    private readonly SettingsModule _settingsModule = settingsModule;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageDeletedEventArgs args)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Guild is null
             || args.Message.Author?.Id == args.Guild.CurrentMember.Id
-            || !await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
+            || !await settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
                 .GetOrElse(() => false))
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         // Everything below needs the stored row, a proxy link included because of its foreign key, so look it up
         // before calling out. A message that was never logged, or was purged, costs nothing more.
@@ -72,7 +66,7 @@ public sealed partial class DeleteMessageEvent(
             return;
 
         var pluralkitMessage =
-            await this._pluralKitService.GetProxiedMessageInformation(args.Message.Id,
+            await pluralKitService.GetProxiedMessageInformation(args.Message.Id,
                 args.Message.CreationTimestamp);
 
         if (pluralkitMessage is not null
@@ -112,7 +106,7 @@ public sealed partial class DeleteMessageEvent(
             return;
         }
 
-        var auditLogEntry = await this._logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.GetGuildId(),
+        var auditLogEntry = await logParserService.ParseAuditLogForDeletedMessageAsync(args.Guild.GetGuildId(),
             args.Channel.GetChannelId(), message.UserId);
 
         await dbContext.MessageHistory.AddAsync(
@@ -133,10 +127,10 @@ public sealed partial class DeleteMessageEvent(
         await dbContext.SaveChangesAsync();
 
         // The history is kept either way, but building the log means an avatar lookup and downloading every image.
-        if (!await this._settingsModule.IsLogChannelSet(GuildLogType.MessageDeleted, args.Guild.GetGuildId()))
+        if (!await settingsModule.IsLogChannelSet(GuildLogType.MessageDeleted, args.Guild.GetGuildId()))
             return;
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
         {
             GuildId = args.Guild.GetGuildId(),
             GuildLogType = GuildLogType.MessageDeleted,
@@ -174,7 +168,7 @@ public sealed partial class DeleteMessageEvent(
 
         embed.AddMessageTextToFields("**Content**", response.Content?.ToString() ?? string.Empty, false);
 
-        return await this._attachmentUploadService.BuildImageEmbedAsync(
+        return await attachmentUploadService.BuildImageEmbedAsync(
             response.Attachments.Select(x => x.AttachmentUrl.Value).ToArray(),
             response.UserId,
             embed);

@@ -19,7 +19,6 @@ namespace Grimoire.Tests.Integration.Leveling;
 [Collection("Test collection")]
 public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -28,8 +27,8 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, new ModeratorId(this.Guild.Owner.Id),
@@ -243,7 +242,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         var reply = await this.RewardsCommandAsync("remove", SlashOption.Role("role", this.Guild.KickerRoleId));
 
         reply.Description.ShouldNotBeNull().ShouldContain($"Did not find a saved reward for <@&{this.Guild.KickerRoleId}>.");
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Rewards.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 

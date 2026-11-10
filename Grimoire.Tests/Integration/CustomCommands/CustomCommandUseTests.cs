@@ -20,7 +20,6 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -28,8 +27,8 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Commands, true);
     }
@@ -162,7 +161,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     public async Task ALegacyCommandWithABlankColour_StillRuns()
     {
         await this.LearnAsync("rules", "Be nice", SlashOption.Boolean("embed", true), SlashOption.String("embed_color", "ff0000"));
-        await using (var dbContext = this._database.CreateDbContext())
+        await using (var dbContext = database.CreateDbContext())
         {
             var entity = dbContext.Model.FindEntityType(typeof(EmbedCustomCommand))!;
             var column = entity.FindProperty(nameof(EmbedCustomCommand.EmbedColor))!.GetColumnName();
@@ -206,7 +205,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     public async Task TextTrigger_WhereTheBotCannotPost_IsReported()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this.LearnAsync("hello", "Hello there!");
 
@@ -255,7 +254,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     public async Task TextTrigger_WhereTheBotCannotPost_RecordsNoUse()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this.LearnAsync("hello", "Hello there!");
 
@@ -283,7 +282,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 
     private async Task<List<(ulong, string)>> UsesAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return [.. (await dbContext.CustomCommandUsages.ToListAsync(Token)).Select(use => (use.UserId.Value, use.Name.Value))];
     }
 }

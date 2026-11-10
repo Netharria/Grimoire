@@ -24,7 +24,6 @@ namespace Grimoire.Tests.Integration.Shared;
 [Collection("Test collection")]
 public sealed class GeneralLeftoverTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -33,7 +32,7 @@ public sealed class GeneralLeftoverTests(GrimoireCoreFactory database) : IAsyncL
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync();
     }
 
@@ -41,7 +40,7 @@ public sealed class GeneralLeftoverTests(GrimoireCoreFactory database) : IAsyncL
 
     private async Task StartAsync()
     {
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -106,7 +105,7 @@ public sealed class GeneralLeftoverTests(GrimoireCoreFactory database) : IAsyncL
         (await this.ModulesViewAsync()).ShouldContain("**Leveling Enabled:** True");
 
         var settingType = Module.Leveling.ToGuildSettingType()!.Value;
-        await using (var dbContext = this._database.CreateSettingsDbContext())
+        await using (var dbContext = database.CreateSettingsDbContext())
             (await dbContext.GuildSettings.OfType<GuildSettingCustomValue>()
                 .Where(setting => setting.GuildId == new GuildId(this.Guild.Id) && setting.Type == settingType)
                 .ExecuteUpdateAsync(update => update.SetProperty(setting => setting.Value, "False"), Token)).ShouldBe(1);
@@ -148,7 +147,7 @@ public sealed class GeneralLeftoverTests(GrimoireCoreFactory database) : IAsyncL
         (await FakeReply.WaitForAsync(this._bot.Rest, disable)).Description.ShouldBe("Disabled Leveling");
 
         var settingType = Module.Leveling.ToGuildSettingType()!.Value;
-        await using var dbContext = this._database.CreateSettingsDbContext();
+        await using var dbContext = database.CreateSettingsDbContext();
         var newest = await dbContext.GuildSettings
             .Where(setting => setting.GuildId == new GuildId(this.Guild.Id) && setting.Type == settingType)
             .OrderByDescending(setting => setting.SetAt)

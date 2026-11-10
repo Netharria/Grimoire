@@ -21,7 +21,6 @@ namespace Grimoire.Tests.Integration.Logging;
 [Collection("Test collection")]
 public sealed class UserLogSettingsTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -30,8 +29,8 @@ public sealed class UserLogSettingsTests(GrimoireCoreFactory database) : IAsyncL
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this.ConfigureAsync();
     }
 
@@ -47,7 +46,7 @@ public sealed class UserLogSettingsTests(GrimoireCoreFactory database) : IAsyncL
     private async Task RestartWithoutAttachFilesAsync()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this.ConfigureAsync();
     }

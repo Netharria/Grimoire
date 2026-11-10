@@ -13,10 +13,7 @@ public partial class MuteAdminCommands
     [Description("View the current configured mute role and any active mutes.")]
     public async Task ViewMutesAsync(CommandContext ctx)
     {
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(true);
-        else
-            await ctx.DeferResponseAsync();
+        await ctx.DeferPrivateAsync();
 
         var guild = ctx.RequiredGuild;
 

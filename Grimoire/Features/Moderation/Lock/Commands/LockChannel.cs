@@ -19,9 +19,6 @@ namespace Grimoire.Features.Moderation.Lock.Commands;
 [RequirePermissions([DiscordPermission.ManageChannels, DiscordPermission.ManageRoles], [DiscordPermission.ManageMessages])]
 public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("Lock")]
     [Description("Locks a channel for a specified amount of time.")]
     public async Task LockChannelAsync(
@@ -74,7 +71,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         await ctx.ReplyAsync(
             message: $"{channel.Mention} has been locked for {durationAmount} {durationType}");
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,
@@ -111,7 +108,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     previousAllowed.RevokeLockPermissions(),
                     previousDenied.SetLockPermissions()))
             .BindAsync(channelLock =>
-                this._settingsModule.AddChannelLock(channelLock));
+                settingsModule.AddChannelLock(channelLock));
     }
 
     private Task<Result<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,
@@ -133,5 +130,5 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     durationType.GetDateTimeOffset(durationAmount)))
             .ToResult()
             .BindAsync(channelLock =>
-                this._settingsModule.AddThreadLock(channelLock));
+                settingsModule.AddThreadLock(channelLock));
 }

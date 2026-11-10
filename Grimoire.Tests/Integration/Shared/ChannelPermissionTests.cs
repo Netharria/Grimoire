@@ -29,15 +29,14 @@ public sealed class ChannelPermissionTests(GrimoireCoreFactory database) : IAsyn
     private const string BotPermissionError = "The bot did not have the needed permissions to execute this command.";
     private const int MemberOverwrite = 1;
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild =>
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, guild =>
             guild.SetOverwrite(guild.General.Id, guild.User1.Id, MemberOverwrite, FakeGuild.ManageMessagesPermission, 0));
         await this._bot.ConfigureModerationAsync();
     }
@@ -65,7 +64,7 @@ public sealed class ChannelPermissionTests(GrimoireCoreFactory database) : IAsyn
         var reply = await this.WarnAsync(this.Guild.General);
 
         reply.Embed?["author"]?["name"]?.GetValue<string>().ShouldBe("Warn", reply.Message.ToJsonString());
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.SingleAsync(TestContext.Current.CancellationToken)).SinType.ShouldBe(SinType.Warn);
         this._bot.Rest.Unhandled.ShouldBeEmpty();
         this._bot.Logs.Errors.ShouldBeEmpty();
@@ -151,7 +150,7 @@ public sealed class ChannelPermissionTests(GrimoireCoreFactory database) : IAsyn
 
         reply.Description.ShouldBe(PermissionError);
         reply.IsEphemeral.ShouldBeTrue();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -191,7 +190,7 @@ public sealed class ChannelPermissionTests(GrimoireCoreFactory database) : IAsyn
     public async Task BotPermissionDeniedInTheChannel_IsRefusedThere_ButNotElsewhere()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild =>
+        this._bot = await GrimoireTestBot.StartAsync(database, guild =>
         {
             guild.BotPermissions = FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission
                                    | FakeGuild.EmbedLinksPermission | FakeGuild.ManageMessagesPermission;
@@ -213,7 +212,7 @@ public sealed class ChannelPermissionTests(GrimoireCoreFactory database) : IAsyn
                 SlashOption.Enum("duration_type", DurationType.Minutes), SlashOption.Integer("duration_amount", 5)))
             .Description.ShouldBe($"{this.Guild.General.Mention} has been locked for 5 Minutes");
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission
             | FakeGuild.ManageChannelsPermission | FakeGuild.ManageMessagesPermission);
         await this._bot.ConfigureModerationAsync();
@@ -250,7 +249,7 @@ public sealed class ChannelPermissionTests(GrimoireCoreFactory database) : IAsyn
         var reply = await this.WarnAsync(this.Guild.Announcements);
 
         reply.Embed?["author"]?["name"]?.GetValue<string>().ShouldBe("Warn", reply.Message.ToJsonString());
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.SingleAsync(TestContext.Current.CancellationToken)).UserId
             .ShouldBe(new UserId(this.Guild.Moderator.Id));
     }
@@ -283,7 +282,7 @@ public sealed class ChannelPermissionTests(GrimoireCoreFactory database) : IAsyn
                                                             && request.Path == $"guilds/{this.Guild.Id}/members/{this.Guild.User1.Id}/roles/{muteRoleId}");
         await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Sins.CountAsync(sin => sin.SinType == SinType.Mute, TestContext.Current.CancellationToken);
         }, count => count > 0);
     }

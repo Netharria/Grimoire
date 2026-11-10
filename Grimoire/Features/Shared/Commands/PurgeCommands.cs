@@ -18,8 +18,6 @@ namespace Grimoire.Features.Shared.Commands;
 [Description("Delete several recent messages at once.")]
 internal sealed class PurgeCommands(GuildLog guildLog)
 {
-    private readonly GuildLog _guildLog = guildLog;
-
     [UsedImplicitly]
     [Command("All")]
     [Description("Deletes all messages in the channel.")]
@@ -27,10 +25,7 @@ internal sealed class PurgeCommands(GuildLog guildLog)
         [MinMaxValue(1, 1000)] [Parameter("count")] [Description("The number of messages to delete.")]
         int count)
     {
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(true);
-        else
-            await ctx.DeferResponseAsync();
+        await ctx.DeferPrivateAsync();
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync(count, $"{ctx.User.Username} purged these messages.");
         await ctx.ReplyAsync(GrimoireColor.Green,
@@ -47,10 +42,7 @@ internal sealed class PurgeCommands(GuildLog guildLog)
         [MinMaxValue(1, 1000)] [Parameter("count")] [Description("The number of matching messages to delete.")]
         int count)
     {
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(true);
-        else
-            await ctx.DeferResponseAsync();
+        await ctx.DeferPrivateAsync();
         var messagesDeleted = await ctx.Channel
             .PurgeMessagesAsync(count, $"{ctx.User.Mention} purged the messages of {user.Mention}.",
                 messages => messages.Author is not null && messages.Author == user);
@@ -64,7 +56,7 @@ internal sealed class PurgeCommands(GuildLog guildLog)
         if (messagesDeleted == 0 || ctx.Guild is not { } guild)
             return;
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

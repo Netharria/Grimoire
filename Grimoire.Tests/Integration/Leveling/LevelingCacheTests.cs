@@ -21,7 +21,6 @@ public sealed class LevelingCacheTests(GrimoireCoreFactory database) : IAsyncLif
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -30,7 +29,7 @@ public sealed class LevelingCacheTests(GrimoireCoreFactory database) : IAsyncLif
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync();
     }
 
@@ -40,7 +39,7 @@ public sealed class LevelingCacheTests(GrimoireCoreFactory database) : IAsyncLif
     {
         if (this._bot is not null)
             await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
     }
@@ -55,7 +54,7 @@ public sealed class LevelingCacheTests(GrimoireCoreFactory database) : IAsyncLif
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "warm the cache");
         (await this.EarnedAsync(this.Guild.User1, 1)).ShouldHaveSingleItem().Xp.Value.ShouldBe(5);
 
-        await using (var settings = this._database.CreateSettingsDbContext())
+        await using (var settings = database.CreateSettingsDbContext())
         {
             settings.GuildSettings.Add(GuildSettingCustomValue.Create(GuildSettingType.XpGainAmount, this.GuildId,
                 new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow, "40").ShouldSucceed());
@@ -128,7 +127,7 @@ public sealed class LevelingCacheTests(GrimoireCoreFactory database) : IAsyncLif
     private Task<List<EarnedXp>> EarnedAsync(FakeUser user, int count, TimeSpan? window = null)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.XpHistory.OfType<EarnedXp>()
                 .Where(xp => xp.UserId == new UserId(user.Id) && xp.GuildId == this.GuildId).ToListAsync(Token);
         }, earned => earned.Count >= count, window);

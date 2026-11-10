@@ -27,7 +27,6 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
     private const string ModuleDisabledError = "This module is disabled in this server.";
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -36,8 +35,8 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -192,7 +191,7 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
     [Fact]
     public async Task Add_WhenTheListCannotBeSaved_SaysSoPrivately()
     {
-        await using (await this._database.RefuseSettingsInsertsAsync(nameof(DiagnosticsIgnoredItem)))
+        await using (await database.RefuseSettingsInsertsAsync(nameof(DiagnosticsIgnoredItem)))
         {
             var reply = await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1));
 
@@ -209,7 +208,7 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
     public async Task View_InAnotherGuild_ShowsThatGuildsList()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true);
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         await this._bot.ConfigureModerationAsync();
         var second = this._bot.SecondGuild!;
         await this._bot.ConfigureModerationAsync(second);
@@ -228,7 +227,7 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
 
     private async Task<FrozenSet<DiagnosticsIgnoredItem>> StoredAsync()
     {
-        await using var context = this._database.CreateSettingsDbContext();
+        await using var context = database.CreateSettingsDbContext();
         return (await context.DiagnosticsIgnoredItems.AsNoTracking().ToListAsync()).ToFrozenSet();
     }
 

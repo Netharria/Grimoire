@@ -19,7 +19,6 @@ namespace Grimoire.Tests.Integration.CustomCommands;
 [Collection("Test collection")]
 public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -27,8 +26,8 @@ public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : I
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Commands, true);
     }
@@ -113,7 +112,7 @@ public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : I
 
         reply.Description.ShouldBe(error);
         reply.IsEphemeral.ShouldBeTrue();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.CustomCommands.AnyAsync(Token)).ShouldBeFalse();
     }
 
@@ -175,7 +174,7 @@ public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : I
 
     private async Task<List<CustomCommand>> VersionsAsync(string name)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var commandName = CustomCommandName.Create(name).ShouldSucceed();
         return await dbContext.CustomCommands.AsNoTracking().Include(command => command.Roles)
             .Where(command => command.GuildId == new GuildId(this.Guild.Id) && command.Name == commandName).ToListAsync(Token);
@@ -183,7 +182,7 @@ public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : I
 
     private async Task<int> UseCountAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.CustomCommandUsages.CountAsync(Token);
     }
 }

@@ -23,15 +23,14 @@ public sealed class ModuleCommandsTests(GrimoireCoreFactory database) : IAsyncLi
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -160,7 +159,7 @@ public sealed class ModuleCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     private async Task<(bool Enabled, ulong SetBy)> StoredStateAsync(ModuleArgument module)
     {
         var settingType = Enum.Parse<Module>(module.ToString()).ToGuildSettingType()!.Value;
-        await using var dbContext = this._database.CreateSettingsDbContext();
+        await using var dbContext = database.CreateSettingsDbContext();
         var latest = await dbContext.GuildSettings
             .Where(setting => setting.GuildId == new GuildId(this.Guild.Id) && setting.Type == settingType)
             .OrderByDescending(setting => setting.SetAt)
@@ -174,7 +173,7 @@ public sealed class ModuleCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     private async Task<bool> MessageSavedWithinAsync(ulong messageId, TimeSpan window)
         => await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
         }, saved => saved, window);
 }

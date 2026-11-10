@@ -25,7 +25,6 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -36,7 +35,7 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync();
     }
 
@@ -44,7 +43,7 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
 
     private async Task StartAsync()
     {
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -65,7 +64,7 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
 
         // Restart without ConfigureModerationAsync, which would turn Moderation back on.
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
 
         (await this.ModulesViewAsync()).Description.ShouldBe(before);
         before.ShouldBe("**Leveling Enabled:** True\n**User Log Enabled:** False\n**Message Log Enabled:** False\n" +
@@ -92,7 +91,7 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
         var muteRoleId = this._bot.Rest.CreateRole("Muted");
         (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
         var now = DateTimeOffset.UtcNow;
-        await using (var settingsContext = this._database.CreateSettingsDbContext())
+        await using (var settingsContext = database.CreateSettingsDbContext())
         {
             settingsContext.Mutes.Add(MuteAdded.Create(new UserId(this.Guild.User1.Id), this.GuildId,
                 new ModeratorId(this.Guild.Moderator.Id), new SinId(1), now.AddMinutes(-1), now.AddMinutes(30),
@@ -176,7 +175,7 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
     private Task<int> EarnedCountAsync(FakeUser user, Func<int, bool> isDone, TimeSpan? window = null)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.XpHistory.OfType<EarnedXp>().CountAsync(xp => xp.UserId == new UserId(user.Id), Token);
         }, isDone, window);
 

@@ -21,7 +21,6 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
     private const string NotFound = "Could not find a sin with that ID.";
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -29,8 +28,8 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -48,7 +47,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Pardoned");
         reply.Description.ShouldBe($"**ID:** {sin.Id} **User:** user1");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var pardon = await dbContext.Pardons.SingleAsync(TestContext.Current.CancellationToken);
         pardon.SinId.ShouldBe(sin.Id);
         pardon.ModeratorId.ShouldBe(new ModeratorId(this.Guild.Moderator.Id));
@@ -72,7 +71,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         var sin = await this.SeedWarnAsync(this.Guild.User1);
 
         (await this.PardonAsync(sin.Id, "   ")).Description.ShouldBe("The reason can't be empty.");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Pardons.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
@@ -88,7 +87,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
             : new SinId(999_999);
 
         (await this.PardonAsync(id, "x")).Description.ShouldBe(NotFound);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Pardons.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -111,7 +110,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.PardonAsync(sin.Id, "first");
         await this.PardonAsync(sin.Id, "second");
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Pardons.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
@@ -125,7 +124,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
             SlashOption.Integer("sin_id", sinId), SlashOption.String("reason", "x"));
 
         reply.Embed!["author"]?["name"]?.GetValue<string>().ShouldNotBe("Pardoned");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Pardons.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -151,7 +150,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         reply.Description.ShouldBe(missing == "module"
             ? "This module is disabled in this server."
             : "You do not have the required permissions to use this command.");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         (await dbContext.Pardons.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
@@ -200,7 +199,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Forgot");
         reply.Description.ShouldBe($"**ID:** {sin.Id} **User:** user1");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         (await dbContext.Pardons.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         (await dbContext.SinReasonHistory.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
@@ -246,7 +245,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Reason Updated");
         Fields(reply.Embed!).ShouldBe([("Id", sin.Id.ToString()), ("User", "user1"), ("Reason", "updated")]);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var history = await dbContext.SinReasonHistory.SingleAsync(TestContext.Current.CancellationToken);
         history.Reason.Value.ShouldBe("updated");
         history.Actor.ShouldBe(new ModerationActor.Moderator(new ModeratorId(this.Guild.Moderator.Id)));
@@ -290,7 +289,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
             SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "   "));
 
         reply.Description.ShouldBe("The reason can't be empty.");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.SinReasonHistory.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -298,7 +297,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
     {
         var sin = Sin.ForWarn(new ModerationActor.Moderator(new ModeratorId(this.Guild.Admin.Id)), new UserId(user.Id),
             guildId ?? this.GuildId, DateTimeOffset.UtcNow.AddMinutes(-10)).ShouldSucceed();
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.Sins.Add(sin);
         if (withUsername)
             seed.UsernameHistory.Add(new UsernameHistory

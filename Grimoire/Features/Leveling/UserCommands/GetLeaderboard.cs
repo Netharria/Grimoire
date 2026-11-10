@@ -45,12 +45,8 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
 
         var userCommandChannel = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId());
 
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(
-                !member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                && userCommandChannel.GetOrElse(() => null) != ctx.GetChannelId());
-        else if (!member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                 && userCommandChannel.GetOrElse(() => null) != ctx.GetChannelId())
+        if (!await ctx.TryDeferAsync(!member.Permissions.HasPermission(DiscordPermission.ManageMessages)
+                                     && userCommandChannel.GetOrElse(() => null) != ctx.GetChannelId()))
             return;
 
         var targetUserId = option switch

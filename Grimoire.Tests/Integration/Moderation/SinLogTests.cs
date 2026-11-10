@@ -20,7 +20,6 @@ namespace Grimoire.Tests.Integration.Moderation;
 [Collection("Test collection")]
 public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -28,8 +27,8 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -124,7 +123,7 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     {
         var sin = await this.SeedSinAsync(SinType.Warn, this.Guild.User1, this.Guild.Moderator);
         var pardonedAt = DateTimeOffset.UtcNow.AddMinutes(-5);
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.Pardons.Add(new Pardon
             {
@@ -256,7 +255,7 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
                 })
             ]
         };
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.Sins.Add(sin);
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
         return sin;

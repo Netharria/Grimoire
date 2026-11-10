@@ -28,7 +28,6 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
     private static readonly DateTimeOffset Start = new(2026, 10, 25, 10, 0, 0, TimeSpan.Zero);
 
-    private readonly GrimoireCoreFactory _database = database;
     private readonly ManualTimeProvider _clock = new(Start);
     private GrimoireTestBot _bot = null!;
 
@@ -37,7 +36,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync(urgentChannel: true, warningChannel: true);
     }
 
@@ -47,7 +46,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
     {
         if (this._bot is not null)
             await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureHost: builder =>
+        this._bot = await GrimoireTestBot.StartAsync(database, configureHost: builder =>
         {
             var guild = new FakeGuild();
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
@@ -253,7 +252,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
         foreach (var method in new[] { HttpMethod.Patch, HttpMethod.Post })
             this._bot.Rest.On(method, @"webhooks/\d+/[^/]+(/messages/@original)?",
                 _ => FakeDiscordRest.Error(System.Net.HttpStatusCode.NotFound, 10015, "Unknown Webhook"));
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var sins = dbContext.Model.FindEntityType(typeof(Sin))!;
         var (schema, name) = (sins.GetSchema() ?? "public", sins.GetTableName());
         await dbContext.Database.ExecuteSqlRawAsync($"""ALTER TABLE "{schema}"."{name}" RENAME TO "SinsUnreadable" """,
@@ -287,7 +286,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     private async Task<List<AlertOccurrence>> OccurrencesAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.AlertOccurrences.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
     }
 }

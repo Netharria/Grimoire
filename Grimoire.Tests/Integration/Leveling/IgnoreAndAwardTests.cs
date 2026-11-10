@@ -23,7 +23,6 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -33,8 +32,8 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
     }
@@ -93,7 +92,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         (await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1))).Description
             .ShouldBe($"<@{this.Guild.User1.Id}> were already ignored.");
 
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.XpTrackedItems.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         await Task.Delay(NothingHappensWindow, TestContext.Current.CancellationToken);
         this._bot.Rest.Requests.Count(request => this._bot.IsModLogPost(request)
@@ -113,7 +112,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
 
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"<@&{this.Guild.KickerRoleId}> are now ignored for xp gain.");
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.XpTrackedItems.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
@@ -124,7 +123,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         (await this.IgnoreAsync("remove", SlashOption.MentionableUser("items_0", this.Guild.User1))).Description
             .ShouldBe($"<@{this.Guild.User1.Id}> were not ignored.");
 
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.XpTrackedItems.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(0);
     }
 
@@ -221,7 +220,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
 
         reply.Description.ShouldBe($"{this.Guild.User1.MemberMention} has been awarded 50 xp.");
         (await this.XpOfAsync(this.Guild.User1)).ShouldBe(50);
-        await using (var dbContext = this._database.CreateDbContext())
+        await using (var dbContext = database.CreateDbContext())
             (await dbContext.XpHistory.OfType<AwardedXp>().SingleAsync(Token)).AwarderId.ShouldBe(new ModeratorId(this.Guild.Moderator.Id));
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has been awarded 50 xp by {this.Guild.Moderator.MemberMention}.");
@@ -242,7 +241,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         reply.Description.ShouldBe($"{taken} xp has been taken from {this.Guild.User1.Mention}.");
         (await this.XpOfAsync(this.Guild.User1)).ShouldBe(left);
         // Review P-2: who took it is kept.
-        await using (var dbContext = this._database.CreateDbContext())
+        await using (var dbContext = database.CreateDbContext())
             (await dbContext.XpHistory.OfType<ReclaimedXp>().SingleAsync(Token)).ModeratorId
                 .ShouldBe(new ModeratorId(this.Guild.Moderator.Id));
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
@@ -286,7 +285,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
 
     private async Task SeedXpAsync(FakeUser user, int xp)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.XpHistory.Add(EarnedXp.Create(PositiveXpAmount.Create(xp).ShouldSucceed(), new UserId(user.Id), this.GuildId,
             DateTimeOffset.UtcNow.AddMinutes(-10)));
         await seed.SaveChangesAsync(Token);
@@ -296,7 +295,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
     {
         var entries = await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.XpHistory.Where(xp => xp.UserId == new UserId(user.Id)).ToListAsync(Token);
         }, found => found.Count >= expectAtLeast, window);
         return entries.Sum(entry => entry switch

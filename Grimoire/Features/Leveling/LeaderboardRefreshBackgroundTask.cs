@@ -15,11 +15,9 @@ internal sealed class LeaderboardRefreshBackgroundTask(
     ILogger<LeaderboardRefreshBackgroundTask> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromMinutes(15))
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         await dbContext.Database.ExecuteSqlRawAsync(
             "REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_view",
             cancellationToken);

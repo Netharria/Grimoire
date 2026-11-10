@@ -20,7 +20,6 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -29,8 +28,8 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Commands, true);
     }
@@ -48,7 +47,7 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
 
         (await this.CommandsAsync("forget", SlashOption.String("name", "secret"))).Description.ShouldBe("Removed command secret");
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.CustomCommands.CountAsync(Token)).ShouldBe(0);
         (await dbContext.Set<CustomCommandRole>().CountAsync(Token)).ShouldBe(0);
         this._bot.Logs.Errors.ShouldBeEmpty();
@@ -91,7 +90,7 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
     [Fact]
     public async Task History_OfALegacyVersionWithoutAModerator_LeavesOutBy()
     {
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.CustomCommands.Add(TextCustomCommand.Create(CustomCommandName.Create("old").ShouldSucceed(), this.GuildId,
                 CustomCommandContent.Create("legacy").ShouldSucceed(), [], [], new ModeratorId(this.Guild.Admin.Id),
@@ -246,7 +245,7 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
 
     private async Task<List<CustomCommand>> VersionsAsync(string name)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var commandName = CustomCommandName.Create(name).ShouldSucceed();
         return await dbContext.CustomCommands.AsNoTracking().Include(command => command.Roles)
             .Where(command => command.GuildId == this.GuildId && command.Name == commandName).ToListAsync(Token);
@@ -254,7 +253,7 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
 
     private async Task<int> UseCountAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.CustomCommandUsages.CountAsync(Token);
     }
 }

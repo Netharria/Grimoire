@@ -32,14 +32,13 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
     private const int Yellow = 0xFFBA08;
     private const int Red = 0xA30000;
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
     private SettingsModule Settings => this._bot.Services.GetRequiredService<SettingsModule>();
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => await this._database.ResetDatabase();
+    public async ValueTask InitializeAsync() => await database.ResetDatabase();
 
     public async ValueTask DisposeAsync()
     {
@@ -49,7 +48,7 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
 
     private async Task StartAsync(Action<FakeGuild>? configureGuild = null, bool secondGuild = false)
     {
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureGuild, secondGuild: secondGuild);
+        this._bot = await GrimoireTestBot.StartAsync(database, configureGuild, secondGuild: secondGuild);
         await this.ConfigureUserLogAsync(this.Guild);
         if (this._bot.SecondGuild is { } second)
             await this.ConfigureUserLogAsync(second);
@@ -301,7 +300,7 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
 
         await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()?.StartsWith(
             $"I could not post in {this.Guild.General.Mention}.", StringComparison.Ordinal) == true);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Avatars.Where(row => row.UserId == new UserId(this.Guild.User1.Id)).ToListAsync(Token))
             .ShouldContain(row => row.FileName.Value.Contains(hash));
     }
@@ -324,7 +323,7 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
     /// </summary>
     private async Task SeedNicknameAsync(FakeUser user, string nickname)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         await seed.NicknameHistory.Where(row => row.UserId == new UserId(user.Id) && row.GuildId == new GuildId(this.Guild.Id))
             .ExecuteDeleteAsync(Token);
         seed.NicknameHistory.Add(new NicknameHistory
@@ -339,13 +338,13 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
 
     private async Task<int> NicknameRowsAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.NicknameHistory.CountAsync(Token);
     }
 
     private async Task<NicknameHistory?> NewestNicknameAsync(FakeUser user)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.NicknameHistory.AsNoTracking()
             .Where(row => row.UserId == new UserId(user.Id) && row.GuildId == new GuildId(this.Guild.Id))
             .OrderByDescending(row => row.Timestamp).FirstOrDefaultAsync(Token);
@@ -353,7 +352,7 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
 
     private async Task<List<string>> UsernamesOfAsync(FakeUser user)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return [.. (await dbContext.UsernameHistory.AsNoTracking().Where(row => row.UserId == new UserId(user.Id))
                 .OrderBy(row => row.Timestamp).ToListAsync(Token))
             .Select(row => row.Username.Value)];

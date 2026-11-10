@@ -17,9 +17,7 @@ public sealed partial class AddMessageEvent(
     SettingsModule settingsModule,
     ILogger<AddMessageEvent> logger) : IEventHandler<MessageCreatedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly ILogger<AddMessageEvent> _logger = logger;
-    private readonly SettingsModule _settingsModule = settingsModule;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
@@ -31,13 +29,13 @@ public sealed partial class AddMessageEvent(
             || args.Message.MessageType is not DiscordMessageType.Default and not DiscordMessageType.Reply)
             return;
 
-        if (!await this._settingsModule.ShouldLogMessage(
+        if (!await settingsModule.ShouldLogMessage(
                 args.GetChannelId(),
                 args.Guild.GetGuildId(),
                 args.Channel.BuildChannelTree().ToDictionary()).GetOrElse(() => false))
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var message = new Message
         {

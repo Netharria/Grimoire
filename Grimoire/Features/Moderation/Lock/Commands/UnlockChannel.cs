@@ -18,9 +18,6 @@ namespace Grimoire.Features.Moderation.Lock.Commands;
 [RequirePermissions([DiscordPermission.ManageChannels], [DiscordPermission.ManageMessages])]
 public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("Unlock")]
     [Description("Unlocks a channel.")]
     public async Task UnlockChannelAsync(
@@ -45,7 +42,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
                 : this.TryUnlockChannelAsync(guild, channel, moderatorId).Map(_ => Unit.Value))
             .TapAsync(_ => ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked").AsTask())
             .Match(
-                _ => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                _ => guildLog.SendLogMessageAsync(new GuildLogMessage
                 {
                     GuildId = guild.GetGuildId(),
                     GuildLogType = GuildLogType.Moderation,
@@ -61,7 +58,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
         ModeratorId moderatorId)
         => ThreadUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow)
             .ToResult()
-            .BindAsync(lockAction => this._settingsModule.RemoveThreadLock(lockAction));
+            .BindAsync(lockAction => settingsModule.RemoveThreadLock(lockAction));
 
     /// <summary>
     ///     Reverts the channel's permissions first and only then records the unlock. If Discord refuses, the channel is
@@ -69,13 +66,13 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
     /// </summary>
     private async Task<Result<ChannelLocked>> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel,
         ModeratorId moderatorId)
-        => await (await this._settingsModule.GetActiveChannelLockAsync(channel.GetChannelId(), guild.GetGuildId()))
+        => await (await settingsModule.GetActiveChannelLockAsync(channel.GetChannelId(), guild.GetGuildId()))
             .BindAsync(async activeLock =>
             {
                 await ChannelLockReverter.RevertAsync(channel, guild.EveryoneRole, activeLock);
                 return await ChannelUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(),
                         DateTimeOffset.UtcNow)
                     .ToResult()
-                    .BindAsync(unlock => this._settingsModule.RemoveChannelLock(unlock));
+                    .BindAsync(unlock => settingsModule.RemoveChannelLock(unlock));
             });
 }

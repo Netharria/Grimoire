@@ -19,9 +19,6 @@ namespace Grimoire.Features.Moderation.Mute.Commands;
 [RequirePermissions([DiscordPermission.ManageRoles], [])]
 internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLog)
 {
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("Unmute")]
     [Description("Unmutes a user.")]
     public async Task UnmuteUserAsync(
@@ -34,9 +31,9 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         var guild = ctx.RequiredGuild;
 
-        var activeMute = await this._settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
+        var activeMute = await settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
             .Match(mute => (MuteAdded?)mute, _ => null);
-        var configuredRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId())
+        var configuredRoleId = await settingsModule.GetEffectiveMuteRole(guild.GetGuildId())
             .GetOrElse(() => null);
         var muteRole = MuteRoleResolver.Resolve(activeMute?.MuteRoleId, configuredRoleId,
                 id => guild.Roles.ContainsKey(id.Value)) is { } muteRoleId
@@ -86,12 +83,12 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
         await ctx.ReplyAsync(embed: embed);
 
-        await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+        await guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
             .WithAuthor("Unmuted")
             .WithDescription($"You have been unmuted by {ctx.User.Mention}")
             .WithColor(GrimoireColor.Green), "unmute");
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
@@ -99,6 +96,6 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
 
     /// <summary>NotFound counts as cleared: the mute expired, or someone else cleared it, in the meantime.</summary>
     private async Task<bool> RemoveMuteRecordAsync(CommandContext ctx, DiscordMember member)
-        => await this._settingsModule.RemoveMute(member.GetUserId(), member.Guild.GetGuildId(), ctx.GetModeratorId())
+        => await settingsModule.RemoveMute(member.GetUserId(), member.Guild.GetGuildId(), ctx.GetModeratorId())
             is Result<MuteAdded>.Success or Result<MuteAdded>.NotFound;
 }

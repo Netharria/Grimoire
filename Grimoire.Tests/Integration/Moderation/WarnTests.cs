@@ -20,13 +20,12 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
     private static readonly TimeSpan NothingElseWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -51,7 +50,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
         Field(embed, "Moderator").ShouldBe(this.Guild.Moderator.MemberMention);
         Field(embed, "Reason").ShouldBe("be nice");
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var sin = await dbContext.Sins
             .Include(s => s.ReasonHistory)
             .SingleAsync(TestContext.Current.CancellationToken);
@@ -77,7 +76,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
         reply.Description.ShouldBe("You cannot warn yourself.");
         reply.IsEphemeral.ShouldBeTrue();
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -178,7 +177,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Warn");
         await this._bot.WaitForModLogEmbedAsync(embed => embed["author"]?["name"]?.GetValue<string>() == "Warn");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.SingleAsync(TestContext.Current.CancellationToken)).UserId.ShouldBe(new UserId(stranger.Id));
         this._bot.Rest.Requests.Count(request => request.Path == "users/@me/channels").ShouldBe(0);
     }
@@ -209,7 +208,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
             SlashOption.User("user", target), SlashOption.String("reason", "x"));
 
         reply.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Warn");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var sin = await dbContext.Sins.SingleAsync(TestContext.Current.CancellationToken);
         sin.UserId.ShouldBe(new UserId(target.Id));
         sin.Actor.ShouldBe(new ModerationActor.Moderator(new ModeratorId(moderator.Id)));
@@ -225,7 +224,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
             SlashOption.User("user", this.Guild.User1), SlashOption.String("reason", "x"));
 
         reply.Description.ShouldBe("This module is disabled in this server.");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -240,7 +239,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         Field(reply.Embed!, "Reason").ShouldBe(reason);
         reply.Message["content"]?.GetValue<string>().ShouldBeNullOrEmpty();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.Include(sin => sin.ReasonHistory).SingleAsync(TestContext.Current.CancellationToken))
             .ReasonHistory.ShouldHaveSingleItem().Reason.Value.ShouldBe(reason);
     }
@@ -284,7 +283,7 @@ public sealed class WarnTests(GrimoireCoreFactory database) : IAsyncLifetime
             SlashOption.User("user", this.Guild.User1), SlashOption.String("reason", "   "));
 
         reply.Description.ShouldBe("The reason can't be empty.");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 }

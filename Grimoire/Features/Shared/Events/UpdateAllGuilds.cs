@@ -14,14 +14,11 @@ internal sealed class UpdateAllGuilds(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     IInviteService inviteService) : IEventHandler<GuildDownloadCompletedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly IInviteService _inviteService = inviteService;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildDownloadCompletedEventArgs eventArgs)
     {
         await sender.UpdateStatusAsync(new DiscordActivity($"{sender.Guilds.Count} servers.",
             DiscordActivityType.Watching));
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var guildInvites = new List<GuildInviteDto>();
 
@@ -46,7 +43,7 @@ internal sealed class UpdateAllGuilds(
                               || avatarsUpdated;
         }
 
-        this._inviteService.UpdateAllInvites(guildInvites);
+        inviteService.UpdateAllInvites(guildInvites);
 
         if (changesDetected)
             await dbContext.SaveChangesAsync();

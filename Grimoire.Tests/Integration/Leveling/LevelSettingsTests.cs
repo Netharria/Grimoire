@@ -18,7 +18,6 @@ namespace Grimoire.Tests.Integration.Leveling;
 [Collection("Test collection")]
 public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -27,8 +26,8 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
     }
@@ -117,7 +116,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
     public async Task LogSet_WhereTheBotCannotSend_IsRefused()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
 
         (await this.LogSetAsync(ChannelOption.SelectChannel, this.Guild.Private)).Description

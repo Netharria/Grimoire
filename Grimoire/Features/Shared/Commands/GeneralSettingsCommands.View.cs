@@ -10,10 +10,7 @@ internal sealed partial class GeneralSettingsCommands
     [Description("View the current general settings for this server.")]
     public async Task ViewAsync(CommandContext ctx)
     {
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(true);
-        else
-            await ctx.DeferResponseAsync();
+        await ctx.DeferPrivateAsync();
 
         var guild = ctx.RequiredGuild;
 

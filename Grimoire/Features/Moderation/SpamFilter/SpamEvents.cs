@@ -20,22 +20,17 @@ internal sealed class SpamEvents(
     GuildLog guildLog)
     : IEventHandler<MessageCreatedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-    private readonly SpamTrackerModule _spamModule = spamModule;
-
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (args.Author.IsBot || args.Guild is null)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.AntiSpam, args.Guild.GetGuildId())
+        if (!await settingsModule.IsModuleEnabled(Module.AntiSpam, args.Guild.GetGuildId())
                 .GetOrElse(() => false))
             return;
 
-        var checkSpamResult = await this._spamModule.CheckSpam(args.Message);
+        var checkSpamResult = await spamModule.CheckSpam(args.Message);
 
         if (!checkSpamResult.IsSpam)
             return;
@@ -43,12 +38,12 @@ internal sealed class SpamEvents(
         if (args.Author is not DiscordMember member)
             return;
 
-        var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(args.Guild.GetGuildId())
+        var muteRoleId = await settingsModule.GetEffectiveMuteRole(args.Guild.GetGuildId())
             .GetOrElse(() => null);
         if (muteRoleId is null)
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var muteCount = await dbContext.Sins
             .Where(member1 => member1.UserId == member.GetUserId() && member1.GuildId == args.Guild.GetGuildId())
             .Where(x => x.SinType == SinType.Mute)
@@ -63,7 +58,7 @@ internal sealed class SpamEvents(
         await dbContext.SaveChangesAsync();
 
         // Nothing would ever lift a mute role given without a record, so don't give it.
-        if (await this._settingsModule.AddMute(member.GetUserId(), args.Guild.GetGuildId(),
+        if (await settingsModule.AddMute(member.GetUserId(), args.Guild.GetGuildId(),
                 new ModeratorId(args.Guild.CurrentMember.Id), sin.Id, muteEndTime, muteRoleId)
             is not Result<MuteAdded>.Success)
             return;
@@ -85,12 +80,12 @@ internal sealed class SpamEvents(
             .AddField("Reason", checkSpamResult.Reason);
 
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
 
-        await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+        await guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
             .WithAuthor($"Mute Id {sin.Id}")
             .WithDescription(
                 $"You have been muted for {duration.TotalMinutes} minute(s) by {sender.CurrentUser.Mention} for spamming.")

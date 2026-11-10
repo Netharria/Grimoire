@@ -19,7 +19,6 @@ public sealed class PurgeCommandsTests(GrimoireCoreFactory database) : IAsyncLif
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -27,8 +26,8 @@ public sealed class PurgeCommandsTests(GrimoireCoreFactory database) : IAsyncLif
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
@@ -121,7 +120,7 @@ public sealed class PurgeCommandsTests(GrimoireCoreFactory database) : IAsyncLif
     public async Task All_WhenTheBotLacksManageMessages_IsRefused()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         this.SeedRecent(3, this.Guild.User1);
 

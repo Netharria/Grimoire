@@ -16,9 +16,6 @@ namespace Grimoire.Features.Leveling.UserCommands;
 [RequireModuleEnabled(Module.Leveling)]
 public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("Level")]
     [Description("Gets the leveling details for the user.")]
     public async Task LevelAsync(
@@ -29,24 +26,20 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         var guild = ctx.RequiredGuild;
         var caller = ctx.RequiredMember;
 
-        var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId());
+        var userCommandChannelId = await settingsModule.GetUserCommandChannel(guild.GetGuildId());
 
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(
-                !caller.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                && userCommandChannelId.GetOrElse(() => null) != ctx.GetChannelId());
-        else if (!caller.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                 && userCommandChannelId.GetOrElse(() => null) != ctx.GetChannelId())
+        if (!await ctx.TryDeferAsync(!caller.Permissions.HasPermission(DiscordPermission.ManageMessages)
+                                     && userCommandChannelId.GetOrElse(() => null) != ctx.GetChannelId()))
             return;
 
         user ??= ctx.User;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var membersXp = await dbContext.XpHistory
             .Where(x => x.UserId == user.GetUserId() && x.GuildId == guild.GetGuildId())
             .SumAsync(x => x.RawXp);
 
-        if (await this._settingsModule.GetLevelingSettings(guild.GetGuildId())
+        if (await settingsModule.GetLevelingSettings(guild.GetGuildId())
                 is not Result<LevelingSettingEntry>.Success { Value: var levelingSettings })
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not load leveling settings. Please try again later.");
@@ -58,7 +51,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         var nextLevelXp = levelingSettings.GetXpNeededForLevel(currentLevel, 1);
 
         // The level is what the member asked for, so a failed rewards lookup only loses the next reward.
-        var rewards = await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId());
+        var rewards = await settingsModule.GetLevelingRewardsAsync(guild.GetGuildId());
         var nextReward = rewards.GetOrElse(() => new HashSet<RewardEntry>())
             .OrderBy(reward => reward.RewardLevel)
             .FirstOrDefault(reward => reward.RewardLevel > currentLevel);

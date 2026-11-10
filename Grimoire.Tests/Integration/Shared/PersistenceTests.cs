@@ -24,7 +24,6 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -32,7 +31,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync();
     }
 
@@ -40,7 +39,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
 
     private async Task StartAsync()
     {
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -130,7 +129,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
     private async Task<long> XpAsync(FakeUser user, TimeSpan? window = null)
         => await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return (await dbContext.XpHistory.OfType<EarnedXp>().Where(xp => xp.UserId == new UserId(user.Id)).ToListAsync(Token))
                 .Sum(xp => xp.Xp.Value);
         }, xp => xp > 0, window);
@@ -138,7 +137,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
     private Task<bool> SavedAsync(ulong messageId, TimeSpan window)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId), Token);
         }, saved => saved, window);
 

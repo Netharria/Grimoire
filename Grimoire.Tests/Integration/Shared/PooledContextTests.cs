@@ -17,13 +17,12 @@ namespace Grimoire.Tests.Integration.Shared;
 [Collection("Test collection")]
 public sealed class PooledContextTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();

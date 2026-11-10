@@ -23,15 +23,14 @@ public sealed class ThreadLockTests(GrimoireCoreFactory database) : IAsyncLifeti
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
     private static readonly FakeEmoji ThumbsUp = new FakeEmoji.Standard("👍");
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 

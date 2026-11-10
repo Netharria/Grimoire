@@ -26,15 +26,14 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
     private const string PermissionError = "You do not have the required permissions to use this command.";
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -137,7 +136,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         Field((await this.BanAsync(this.Guild.Admin, this.Guild.User1)).Embed!, "Sin Id").ShouldBe("Not recorded yet");
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         (await this.ModLogEmbedCountAsync(IsBannedEmbed)).ShouldBe(1);
     }
@@ -219,7 +218,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
     public async Task WhenTheBotLacksBanMembers_IsRefused(string command)
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this._bot.ConfigureModerationAsync();
 
@@ -252,7 +251,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         await this.BanAsync(this.Guild.Admin, this.Guild.User1);
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -316,7 +315,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
     public async Task ClientBan_WithoutViewAuditLog_ReportsAnIssue_AndRecordsItAsSystem()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this._bot.ConfigureModerationAsync();
 
@@ -345,7 +344,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         embeds.Count.ShouldBe(2);
         Field(embeds[1], "Mod").ShouldBe($"<@{this.Guild.Moderator.Id}>");
         Field(embeds[1], "Reason").ShouldBe("second");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
@@ -359,7 +358,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.UnbanFromClient(this.Guild.Moderator, this.Guild.User1);
 
         (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, NothingHappensWindow)).ShouldBeFalse();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -393,7 +392,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.SeedBanSinsAsync(DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(-1));
         this._bot.Rest.RememberUser(this.Guild.User1);
         this._bot.Rest.MarkBanned(this.Guild.User1.Id);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var newest = await dbContext.Sins.OrderByDescending(sin => sin.SinOn).FirstAsync(TestContext.Current.CancellationToken);
 
         this._bot.UnbanFromClient(this.Guild.Moderator, this.Guild.User1);
@@ -477,20 +476,20 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     private async Task<Sin> SingleSinAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.Sins.Include(sin => sin.ReasonHistory).SingleAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task ShouldHaveNoSinsOrBansAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         this._bot.Rest.Banned.ShouldBeEmpty();
     }
 
     private async Task SeedBanSinsAsync(params DateTimeOffset[] times)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         var actor = new ModerationActor.Moderator(new ModeratorId(this.Guild.Admin.Id));
         foreach (var at in times)
             seed.Sins.Add(Sin.ForBan(actor, new UserId(this.Guild.User1.Id), new GuildId(this.Guild.Id), at).ShouldSucceed());

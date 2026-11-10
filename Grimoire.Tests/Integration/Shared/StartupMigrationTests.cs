@@ -23,10 +23,9 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
     private const string MigrationLog = "Applied pending migrations";
     private const string SettingsMigrationLog = "Applied pending settings migrations";
 
-    private readonly GrimoireCoreFactory _database = database;
     private readonly string _name = $"startup_{Guid.NewGuid():N}";
 
-    private string ConnectionString => new NpgsqlConnectionStringBuilder(this._database.ConnectionString) { Database = this._name }.ToString();
+    private string ConnectionString => new NpgsqlConnectionStringBuilder(database.ConnectionString) { Database = this._name }.ToString();
 
     public async ValueTask InitializeAsync() => await this.ExecuteOnServerAsync($"CREATE DATABASE {this._name}");
 
@@ -40,7 +39,7 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
     [Fact]
     public async Task OnAnEmptyDatabase_AllMigrationsAreApplied_AndTheBotWorks()
     {
-        await using var bot = await GrimoireTestBot.StartAsync(this._database, connectionString: this.ConnectionString);
+        await using var bot = await GrimoireTestBot.StartAsync(database, connectionString: this.ConnectionString);
 
         await using var main = this.MainContext();
         (await main.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
@@ -64,7 +63,7 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
             await settings.GetService<IMigrator>().MigrateAsync(settings.Database.GetMigrations().SkipLast(1).Last(),
                 cancellationToken: TestContext.Current.CancellationToken);
 
-        await using var bot = await GrimoireTestBot.StartAsync(this._database, connectionString: this.ConnectionString);
+        await using var bot = await GrimoireTestBot.StartAsync(database, connectionString: this.ConnectionString);
 
         // Both contexts share __EFMigrationsHistory, so the newest applied row can belong to either one.
         await using var mainAfter = this.MainContext();
@@ -80,11 +79,11 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
     [Fact]
     public async Task OnAnUpToDateDatabase_NothingIsMigrated()
     {
-        await using (var first = await GrimoireTestBot.StartAsync(this._database, connectionString: this.ConnectionString))
+        await using (var first = await GrimoireTestBot.StartAsync(database, connectionString: this.ConnectionString))
         {
         }
 
-        await using var bot = await GrimoireTestBot.StartAsync(this._database, connectionString: this.ConnectionString);
+        await using var bot = await GrimoireTestBot.StartAsync(database, connectionString: this.ConnectionString);
 
         bot.Logs.Events.ShouldNotContain(e => e.RenderMessage(null).StartsWith("Applied pending", StringComparison.Ordinal));
     }
@@ -97,7 +96,7 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
 
     private async Task ExecuteOnServerAsync(string sql)
     {
-        await using var connection = new NpgsqlConnection(this._database.ConnectionString);
+        await using var connection = new NpgsqlConnection(database.ConnectionString);
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand(sql, connection);
         await command.ExecuteNonQueryAsync();

@@ -17,8 +17,6 @@ namespace Grimoire.Features.Moderation.Ban.Commands;
 [RequirePermissions([DiscordPermission.BanMembers], [])]
 public sealed class RemoveBanCommand(BanHandoff banHandoff)
 {
-    private readonly BanHandoff _banHandoff = banHandoff;
-
     [Command("Unban")]
     [Description("Unbans a user from the server.")]
     public async Task UnbanAsync(
@@ -30,7 +28,7 @@ public sealed class RemoveBanCommand(BanHandoff banHandoff)
 
         var guild = ctx.RequiredGuild;
 
-        this._banHandoff.ExpectUnban(guild.GetGuildId(), user.GetUserId(), ctx.GetModeratorId());
+        banHandoff.ExpectUnban(guild.GetGuildId(), user.GetUserId(), ctx.GetModeratorId());
         try
         {
             await guild.UnbanMemberAsync(user.Id);
@@ -42,7 +40,7 @@ public sealed class RemoveBanCommand(BanHandoff banHandoff)
         }
         catch (Exception ex) when (ex is NotFoundException or ServerErrorException)
         {
-            this._banHandoff.CancelUnban(guild.GetGuildId(), user.GetUserId());
+            banHandoff.CancelUnban(guild.GetGuildId(), user.GetUserId());
             var errorMessage = ex is NotFoundException
                 ? "user is not banned."
                 : "error when communicating with discord. Try again before asking for help.";

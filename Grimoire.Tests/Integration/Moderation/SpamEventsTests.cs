@@ -28,7 +28,6 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
     private static readonly TimeSpan HandlersSettle = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan BetweenMessages = TimeSpan.FromMilliseconds(50);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
     private ulong _muteRoleId;
 
@@ -39,7 +38,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartBotAsync();
     }
 
@@ -67,7 +66,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
             await this.LiftMuteAsync(this.Guild.User1);
         }
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(sin => sin.SinType == SinType.Mute, TestContext.Current.CancellationToken)).ShouldBe(3);
         this._bot.Rest.Unhandled.ShouldBeEmpty();
         this._bot.Logs.Errors.ShouldBeEmpty();
@@ -89,7 +88,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
     public async Task APardonedSpamMute_StillDoublesTheNext()
     {
         var sin = await this.SeedMuteSinAsync(new ModerationActor.System(), DateTimeOffset.UtcNow.AddMinutes(-30));
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.Pardons.Add(new Pardon
             {
@@ -131,9 +130,9 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this.SpamAsync(this.Guild.User1, this.Guild.Announcements);
         await this.WaitForSpamMuteLogAsync(2);
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.OfType<MuteAdded>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
@@ -198,7 +197,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         await this.WaitForSpamMuteLogAsync(1);
         this.Guild.GetMember(member).RoleIds.ShouldContain(this._muteRoleId);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.SingleAsync(TestContext.Current.CancellationToken)).UserId.ShouldBe(new UserId(member.Id));
     }
 
@@ -287,9 +286,9 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         await Task.Delay(HandlersSettle, TestContext.Current.CancellationToken);
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldNotContain(this._muteRoleId);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse(situation);
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse(situation);
     }
 
@@ -303,7 +302,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
     public async Task Points_AreKeptPerGuild()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true);
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         await this.ConfigureSpamFilterAsync(this.Guild);
         var second = this._bot.SecondGuild!;
         await this.ConfigureSpamFilterAsync(second);
@@ -352,7 +351,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task StartBotAsync(Action<FakeGuild>? configureGuild = null)
     {
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureGuild);
+        this._bot = await GrimoireTestBot.StartAsync(database, configureGuild);
         await this.ConfigureSpamFilterAsync(this.Guild);
     }
 
@@ -433,7 +432,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
         await Task.Delay(HandlersSettle, TestContext.Current.CancellationToken);
         this._bot.Rest.Requests.Where(request => request.Method == HttpMethod.Delete && request.Path.Contains("/messages/", StringComparison.Ordinal))
             .ShouldHaveSingleItem();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
@@ -461,7 +460,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
     private async Task<Sin> SeedMuteSinAsync(ModerationActor actor, DateTimeOffset at)
     {
         var sin = Sin.ForMute(actor, new UserId(this.Guild.User1.Id), this.GuildId, at).ShouldSucceed();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         return sin;
@@ -470,7 +469,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
     private async Task ShouldNotBeFilteredAsync()
     {
         await Task.Delay(HandlersSettle, TestContext.Current.CancellationToken);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         this._bot.Rest.Requests.ShouldNotContain(request => request.Method == HttpMethod.Put && request.Path.Contains("/roles/", StringComparison.Ordinal));
         this._bot.Logs.Errors.ShouldBeEmpty();

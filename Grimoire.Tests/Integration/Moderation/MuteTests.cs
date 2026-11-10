@@ -29,7 +29,6 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
     private const string PermissionError = "You do not have the required permissions to use this command.";
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
     private ulong _muteRoleId;
 
@@ -39,8 +38,8 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         this._muteRoleId = await this.ConfigureMuteRoleAsync("Muted");
     }
@@ -104,7 +103,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     [Fact]
     public async Task Mute_ThatCannotBeRecorded_IsUndone()
     {
-        await using (await this._database.RefuseSettingsInsertsAsync(nameof(Mute)))
+        await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
             (await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 2)).Description
                 .ShouldBe("The mute could not be recorded, so it has been undone.");
 
@@ -173,9 +172,9 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 2);
         await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Days, 1);
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.OfType<MuteAdded>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
         (await this.Settings.GetActiveMute(new UserId(this.Guild.User1.Id), this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed()
             .EndTime.ShouldBeGreaterThan(DateTimeOffset.UtcNow.AddHours(23));
@@ -199,7 +198,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
             DurationType.Minutes, 2);
 
         (reply.Description == PermissionError).ShouldBe(!allowed);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBe(allowed);
     }
 
@@ -226,7 +225,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         if (missing == "bot")
         {
             await this._bot.DisposeAsync();
-            this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+            this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
                 FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
             await this._bot.ConfigureModerationAsync();
         }
@@ -332,7 +331,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         (await GrimoireTestBot.EventuallyAsync(() => this.DmsTo(this.Guild.User1), dms => dms.Count >= 2))[^1]["description"]!
             .GetValue<string>().ShouldBe($"You have been unmuted by {this.Guild.Moderator.MemberMention}");
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.OfType<MuteRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         (await settingsContext.Mutes.OfType<MuteAdded>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Unmute");
@@ -396,7 +395,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         this._bot.Rest.Requests.Single(this.IsRoleChange(HttpMethod.Delete, this.Guild.User1)).Path
             .ShouldEndWith($"/roles/{configured}");
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.OfType<MuteRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
@@ -413,7 +412,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         var reply = await this.UnmuteAsync(this.Guild.Moderator, this.Guild.User1);
 
         reply.Description.ShouldNotBeNull().ShouldStartWith("The role this member was muted with no longer exists");
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.OfType<MuteRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         this._bot.Rest.Requests.Count(this._bot.IsModLogPost).ShouldBe(modLogPostsBefore);
@@ -431,7 +430,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.UnmuteAsync(this.Guild.Moderator, this.Guild.User1)).Description
             .ShouldBe($"{issue.Summary}\n**Suggested fix:** {issue.SuggestedFix}");
 
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.OfType<MuteRemoved>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -481,15 +480,15 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     private async Task<Sin> SingleSinAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.Sins.Include(sin => sin.ReasonHistory).SingleAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task ShouldHaveNoRecordsAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 

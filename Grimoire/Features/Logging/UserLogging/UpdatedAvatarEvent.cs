@@ -18,17 +18,12 @@ public sealed class UpdatedAvatarEvent(
     GuildLog guildLog)
     : IEventHandler<GuildMemberUpdatedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly IDiscordImageEmbedService _imageEmbedService = imageEmbedService;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var currentAvatar = await dbContext.Avatars
             .AsNoTracking()
             .Where(x => x.UserId == args.Member.GetUserId() && x.GuildId == args.Guild.GetGuildId())
@@ -51,7 +46,7 @@ public sealed class UpdatedAvatarEvent(
         await dbContext.SaveChangesAsync();
 
         // The history is kept either way, but the log downloads the new avatar to re-upload it.
-        if (!await this._settingsModule.IsLogChannelSet(GuildLogType.AvatarUpdated, args.Guild.GetGuildId()))
+        if (!await settingsModule.IsLogChannelSet(GuildLogType.AvatarUpdated, args.Guild.GetGuildId()))
             return;
 
         var embed = new DiscordEmbedBuilder()
@@ -62,11 +57,11 @@ public sealed class UpdatedAvatarEvent(
             .WithColor(GrimoireColor.Purple)
             .WithTimestamp(DateTimeOffset.UtcNow);
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
         {
             GuildId = args.Guild.GetGuildId(),
             GuildLogType = GuildLogType.AvatarUpdated,
-            Message = await this._imageEmbedService
+            Message = await imageEmbedService
                 .BuildImageEmbedAsync(
                     [newAvatar.Value],
                     args.Member.GetUserId(),

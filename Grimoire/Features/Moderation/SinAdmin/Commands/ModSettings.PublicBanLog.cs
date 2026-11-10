@@ -23,10 +23,7 @@ internal sealed partial class ModSettings
         [Parameter("channel")] [Description("The channel to send the logs to.")]
         DiscordChannel? channel = null)
     {
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(true);
-        else
-            await ctx.DeferResponseAsync();
+        await ctx.DeferPrivateAsync();
 
         await ChannelSettingCommand.SetAsync(ctx, this._guildLog, option, channel, "the public ban log",
             channelId => this._settingsModule.SetLogChannelSetting(GuildLogType.PublicModeration,

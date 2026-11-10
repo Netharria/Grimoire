@@ -26,7 +26,6 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -36,7 +35,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync();
     }
 
@@ -45,7 +44,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     {
         if (this._bot is not null)
             await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureGuild);
+        this._bot = await GrimoireTestBot.StartAsync(database, configureGuild);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
@@ -260,7 +259,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         (await this.Settings.GetLevelingRewardsAsync(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed()
             .Select(reward => reward.RoleId).ShouldBe([new RoleId(this.Guild.KickerRoleId)]);
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Rewards.OfType<RewardRemoved>().SingleAsync(TestContext.Current.CancellationToken))
             .SetBy.ShouldBe(new ModeratorId(this.Guild.Bot.Id));
     }
@@ -284,7 +283,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         this._bot.Rest.Requests.Where(this._bot.IsModLogPost)
             .Count(request => request.Body?.Contains("level rewards were removed", StringComparison.Ordinal) == true).ShouldBe(1);
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Rewards.OfType<RewardRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
@@ -371,7 +370,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     private Task<List<EarnedXp>> WaitForEarnedAsync(FakeUser user, int count, TimeSpan? window = null)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.XpHistory.OfType<EarnedXp>()
                 .Where(xp => xp.UserId == new UserId(user.Id) && xp.GuildId == this.GuildId)
                 .ToListAsync(TestContext.Current.CancellationToken);

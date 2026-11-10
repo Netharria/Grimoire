@@ -15,14 +15,11 @@ internal sealed class GuildAdded(
     IInviteService inviteService)
     : IEventHandler<GuildCreatedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly IInviteService _inviteService = inviteService;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildCreatedEventArgs eventArgs)
     {
         await sender.UpdateStatusAsync(new DiscordActivity($"{sender.Guilds.Count} servers.",
             DiscordActivityType.Watching));
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var usernamesUpdated =
             await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(eventArgs.Guild);
@@ -33,7 +30,7 @@ internal sealed class GuildAdded(
         var avatarsUpdated =
             await dbContext.Avatars.AddMissingAvatarsHistoryAsync(eventArgs.Guild);
 
-        this._inviteService.UpdateGuildInvites(await eventArgs.Guild.GetGuildInvitesAsync()
+        inviteService.UpdateGuildInvites(await eventArgs.Guild.GetGuildInvitesAsync()
                                                ?? new GuildInviteDto { GuildId = eventArgs.Guild.GetGuildId() });
 
         if (usernamesUpdated || nicknamesUpdated || avatarsUpdated)

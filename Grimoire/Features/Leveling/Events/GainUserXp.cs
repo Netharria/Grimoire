@@ -30,10 +30,7 @@ public sealed partial class GainUserXp(
                 .Where(xp => xp.UserId == userId && xp.GuildId == guildId)
                 .Max(history => (DateTimeOffset?)history.TimeOut));
 
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
     private readonly ILogger<GainUserXp> _logger = logger;
-    private readonly SettingsModule _settingsModule = settingsModule;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs args)
     {
@@ -42,12 +39,12 @@ public sealed partial class GainUserXp(
             || member.IsBot)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.Leveling, member.GetGuildId())
+        if (!await settingsModule.IsModuleEnabled(Module.Leveling, member.GetGuildId())
                 .GetOrElse(() => false))
             return;
 
         // If the ignore list can't be read, award nothing: XP given to an ignored member can't be taken back cleanly.
-        if (await this._settingsModule.IsMessageIgnored(
+        if (await settingsModule.IsMessageIgnored(
                     member.GetGuildId(),
                     args.GetAuthorUserId(),
                     member.Roles.Select(x => x.GetRoleId()).ToHashSet(),
@@ -56,7 +53,7 @@ public sealed partial class GainUserXp(
                 .GetOrElse(() => true))
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var timeOut = await _getUserXpInfoQuery(dbContext, member.GetUserId(), member.GetGuildId());
 
         if (timeOut is not null && timeOut > DateTimeOffset.UtcNow)
@@ -66,7 +63,7 @@ public sealed partial class GainUserXp(
             .Where(entry => entry.UserId == member.GetUserId() && entry.GuildId == member.GetGuildId())
             .SumAsync(entry => entry.RawXp);
 
-        var settingsResult = await this._settingsModule.GetLevelingSettings(member.GetGuildId());
+        var settingsResult = await settingsModule.GetLevelingSettings(member.GetGuildId());
         if (settingsResult is not Result<LevelingSettingEntry>.Success { Value: var levelingSettings })
         {
             // Without settings XP silently stops for the guild, so make it visible.
@@ -102,7 +99,7 @@ public sealed partial class GainUserXp(
             .Match(e => e, _ => throw new InvariantViolationException());
 
     private ValueTask SendLevelUpNotificationAsync(DiscordMember member, int currentLevel)
-        => this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        => guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = member.GetGuildId(),
             GuildLogType = GuildLogType.Leveling,
@@ -120,7 +117,7 @@ public sealed partial class GainUserXp(
         var guildId = guild.GetGuildId();
 
         // The next XP gain tries again.
-        if (await this._settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)
+        if (await settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)
             is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })
             return;
 
@@ -168,7 +165,7 @@ public sealed partial class GainUserXp(
             .Where(reward => reward.RewardMessage.HasValue)
             .Select(reward => this.SendRewardMessageAsync(guild, member, reward)));
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Leveling,
@@ -192,7 +189,7 @@ public sealed partial class GainUserXp(
             if (await RewardRemoved.Create(reward.RoleId, guild.GetGuildId(), new ModeratorId(guild.CurrentMember.Id),
                         DateTimeOffset.UtcNow)
                     .ToResult()
-                    .BindAsync(removal => this._settingsModule.SetRewardAsync(removal, cancellationToken)) is Result<RewardRemoved>.Success)
+                    .BindAsync(removal => settingsModule.SetRewardAsync(removal, cancellationToken)) is Result<RewardRemoved>.Success)
                 removed.Add(reward);
 
         if (removed.Count > 0)

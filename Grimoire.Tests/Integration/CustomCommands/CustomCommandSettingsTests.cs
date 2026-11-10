@@ -18,7 +18,6 @@ namespace Grimoire.Tests.Integration.CustomCommands;
 [Collection("Test collection")]
 public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -27,8 +26,8 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Commands, true);
     }
@@ -121,7 +120,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         (await this.CommandsAsync("forget", SlashOption.String("name", "hello"))).Description.ShouldBe("Removed command hello");
 
         (await this.VersionsAsync("hello")).ShouldBeEmpty();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.CustomCommandUsages.CountAsync(Token)).ShouldBe(0);
     }
 
@@ -268,7 +267,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         ]);
 
         reply.Description.ShouldBe(error);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.CustomCommands.AnyAsync(Token)).ShouldBeFalse();
     }
 
@@ -352,7 +351,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
 
     private async Task<List<CustomCommand>> VersionsAsync(string name)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var commandName = CustomCommandName.Create(name).ShouldSucceed();
         return await dbContext.CustomCommands.AsNoTracking().Include(command => command.Roles)
             .Where(command => command.GuildId == this.GuildId && command.Name == commandName).ToListAsync(Token);
@@ -360,7 +359,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
 
     private async Task SeedUsageAsync(string name, params (FakeUser User, int DaysAgo)[] uses)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.CustomCommandUsages.AddRange(uses.Select(use => new CustomCommandUsage
         {
             Name = CustomCommandName.Create(name).ShouldSucceed(),

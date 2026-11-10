@@ -20,10 +20,7 @@ public partial class LogSettingsCommands
         [Description("View the current settings for the Message Log Module.")]
         public async Task ViewAsync(CommandContext ctx)
         {
-            if (ctx is SlashCommandContext slashContext)
-                await slashContext.DeferResponseAsync(true);
-            else
-                await ctx.DeferResponseAsync();
+            await ctx.DeferPrivateAsync();
 
             var guild = ctx.RequiredGuild;
 

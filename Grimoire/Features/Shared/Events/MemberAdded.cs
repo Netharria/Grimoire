@@ -10,11 +10,9 @@ namespace Grimoire.Features.Shared.Events;
 internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : IEventHandler<GuildMemberAddedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs eventArgs)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var userId = eventArgs.Member.GetUserId();
         var guildId = eventArgs.Guild.GetGuildId();

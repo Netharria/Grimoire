@@ -24,7 +24,6 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -33,8 +32,8 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.ConfigureMessageLogAsync();
     }
@@ -101,7 +100,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     public async Task Set_WhereTheBotCannotSend_IsRefused()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this._bot.ConfigureMessageLogAsync();
 
@@ -191,7 +190,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     public async Task Set_WhereTheBotCannotAttachFiles_IsRefusedForTheDeleteLog_ButNotTheEditLog()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this._bot.ConfigureMessageLogAsync();
 
@@ -240,7 +239,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     private Task<bool> MessageSavedWithinAsync(ulong messageId, TimeSpan window)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
         }, saved => saved, window);
 }

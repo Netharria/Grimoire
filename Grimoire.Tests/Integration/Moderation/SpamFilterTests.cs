@@ -25,7 +25,6 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
 {
     private static readonly TimeSpan HandlersSettle = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
     private ulong _muteRoleId;
 
@@ -35,8 +34,8 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.AntiSpam, true);
         this._muteRoleId = this._bot.Rest.CreateRole("Muted");
@@ -61,10 +60,10 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Mute");
         // KI-53: one burst is one mute, however many of its messages were still being handled.
         await Task.Delay(HandlersSettle, TestContext.Current.CancellationToken);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.ToListAsync(TestContext.Current.CancellationToken)).ShouldHaveSingleItem()
             .Actor.ShouldBe(new ModerationActor.System());
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
@@ -242,7 +241,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     private async Task ShouldNotBeFilteredAsync()
     {
         await Task.Delay(HandlersSettle, TestContext.Current.CancellationToken);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         this._bot.Rest.Requests.Count(request => request.Method == HttpMethod.Put && request.Path.Contains("/roles/", StringComparison.Ordinal))
             .ShouldBe(0);

@@ -24,7 +24,6 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
     private const string SelectChannelError = "Select a channel when using the Select Channel option.";
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -33,8 +32,8 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
@@ -141,7 +140,7 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
     public async Task ModLogChannel_WhereTheBotCannotSend_IsRefused_AndChangesNothing()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
 
         var reply = await this.ModLogChannelAsync(ChannelOption.SelectChannel, this.Guild.Private);
@@ -234,7 +233,7 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
     public async Task UserCommands_AcceptsAChannelTheBotCannotSendIn()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
 
         (await this.UserCommandsAsync(ChannelOption.SelectChannel, this.Guild.Private)).Description

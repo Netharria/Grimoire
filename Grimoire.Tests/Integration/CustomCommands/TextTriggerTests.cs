@@ -21,7 +21,6 @@ public sealed class TextTriggerTests(GrimoireCoreFactory database) : IAsyncLifet
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -29,8 +28,8 @@ public sealed class TextTriggerTests(GrimoireCoreFactory database) : IAsyncLifet
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Commands, true);
     }
@@ -291,7 +290,7 @@ public sealed class TextTriggerTests(GrimoireCoreFactory database) : IAsyncLifet
 
     private async Task<List<(ulong, string)>> UsesAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return [.. (await dbContext.CustomCommandUsages.ToListAsync(Token)).Select(use => (use.UserId.Value, use.Name.Value))];
     }
 }

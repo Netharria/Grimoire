@@ -25,7 +25,6 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -36,8 +35,8 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
@@ -115,7 +114,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
         foreach (var member in new[] { this.Guild.Moderator, this.Guild.Admin, this.Guild.Higher })
             (await this.AwardAsync(member, 7)).Description.ShouldBe($"{member.MemberMention} has been awarded 7 xp.");
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.XpHistory.OfType<AwardedXp>().ToListAsync(Token)).Select(xp => xp.UserId.Value)
             .ShouldBe([this.Guild.Moderator.Id, this.Guild.Admin.Id, this.Guild.Higher.Id], ignoreOrder: true);
     }
@@ -181,7 +180,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
         (await this.ReclaimAsync(this.Guild.User1, XpOption.All)).Description
             .ShouldBe($"40 xp has been taken from {this.Guild.User1.Mention}.");
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.XpHistory.OfType<ReclaimedXp>().SingleAsync(Token)).Xp.Value.ShouldBe(-40);
         (await this.XpOfAsync(this.Guild.User1)).ShouldBe(0);
     }
@@ -219,7 +218,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
 
     private async Task SeedXpAsync(FakeUser user, int xp)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.XpHistory.Add(EarnedXp.Create(PositiveXpAmount.Create(xp).ShouldSucceed(), new UserId(user.Id), this.GuildId,
             DateTimeOffset.UtcNow.AddMinutes(-10)));
         await seed.SaveChangesAsync(Token);
@@ -227,7 +226,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
 
     private async Task<long> XpOfAsync(FakeUser user)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.XpHistory.Where(xp => xp.UserId == new UserId(user.Id) && xp.GuildId == this.GuildId)
             .SumAsync(xp => xp.RawXp, Token);
     }

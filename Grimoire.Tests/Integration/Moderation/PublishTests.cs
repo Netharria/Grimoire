@@ -18,7 +18,6 @@ namespace Grimoire.Tests.Integration.Moderation;
 [Collection("Test collection")]
 public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -28,8 +27,8 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this.ConfigureAsync(this.BanLog);
     }
 
@@ -55,7 +54,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
         embed["title"]!.GetValue<string>().ShouldBe("Ban");
         embed["description"]!.GetValue<string>().ShouldBe(
             $"**Date:** <t:{sin.SinOn.ToUnixTimeSeconds()}:f>\n**User:** user1 ({this.Guild.User1.Id})\n**Reason:** spam");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var published = await dbContext.PublishedMessages.SingleAsync(TestContext.Current.CancellationToken);
         published.PublishType.ShouldBe(PublishType.Ban);
         published.MessageId.Value.ToString().ShouldBe(post["id"]!.ToString());
@@ -78,7 +77,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         this._bot.Rest.PostsIn(this.BanLog).ShouldHaveSingleItem()["embeds"]![0]!["description"]!.GetValue<string>()
             .ShouldEndWith("**Reason:** spam and scams");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.PublishedMessages.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
@@ -121,7 +120,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
     public async Task PublishBan_ToAChannelTheBotCantSendIn_ShowsTheMissingPermissionsHelp()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this.ConfigureAsync(this.Guild.Private);
         var sin = await this.SeedSinAsync(SinType.Ban, "spam");
@@ -141,7 +140,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         await this._bot.RunSlashCommandAndWaitAsync("pardon", this.Guild.Moderator,
             SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "appealed"));
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var pardon = await dbContext.Pardons.SingleAsync(TestContext.Current.CancellationToken);
 
         (await this.PublishAsync("unban", sin.Id)).Description.ShouldBe($"Successfully published unban : {sin.Id}");
@@ -160,7 +159,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.PublishAsync("kick", sin.Id)).Description.ShouldBe($"Successfully published kick : {sin.Id}");
 
         this._bot.Rest.PostsIn(this.BanLog).ShouldHaveSingleItem()["embeds"]![0]!["title"]!.GetValue<string>().ShouldBe("Kick");
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.PublishedMessages.SingleAsync(TestContext.Current.CancellationToken)).PublishType.ShouldBe(PublishType.Kick);
     }
 
@@ -211,7 +210,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
         {
             ReasonHistory = [new SinReasonHistory { SinId = default, Reason = ModerationReason.Create(reason).ShouldSucceed(), Actor = actor, SetAt = at }]
         };
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.Sins.Add(sin);
         if (withUsername)
             seed.UsernameHistory.Add(new UsernameHistory

@@ -17,10 +17,6 @@ public sealed class UpdateMessageEvent(
     SettingsModule settingsModule,
     GuildLog guildLog) : IEventHandler<MessageUpdatedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, MessageUpdatedEventArgs args)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
@@ -30,11 +26,11 @@ public sealed class UpdateMessageEvent(
         if (args.Message.Author?.Id == args.Guild.CurrentMember.Id)
             return;
 
-        if (!await this._settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
+        if (!await settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
                 .GetOrElse(() => false))
             return;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         var message = await dbContext.Messages
             .AsNoTracking()
@@ -105,7 +101,7 @@ public sealed class UpdateMessageEvent(
             ];
 
         foreach (var embedToSend in embeds)
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+            await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
             {
                 GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.MessageEdited, Embed = embedToSend
             });

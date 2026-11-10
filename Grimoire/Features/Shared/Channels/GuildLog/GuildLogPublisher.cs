@@ -24,24 +24,19 @@ public sealed partial class GuildLogPublisher(
     IDbContextFactory<GrimoireDbContext> dbContextFactory)
     : BackgroundService
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly DiscordClient _discordClient = discordClient;
-    private readonly GuildIssueReporter _issueReporter = issueReporter;
     private readonly ILogger<GuildLogPublisher> _logger = logger;
-    private readonly GuildLog _queue = queue;
-    private readonly SettingsModule _settingsModule = settingsModule;
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await foreach (var result in this._queue.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var result in queue.Reader.ReadAllAsync(cancellationToken))
             try
             {
-                if (!await this._settingsModule.IsModuleEnabled(result.GuildLogType.GetLogTypeModule(), result.GuildId,
+                if (!await settingsModule.IsModuleEnabled(result.GuildLogType.GetLogTypeModule(), result.GuildId,
                             cancellationToken)
                         .GetOrElse(() => false))
                     continue;
 
-                var logChannelId = await this._settingsModule.GetLogChannelSetting(
+                var logChannelId = await settingsModule.GetLogChannelSetting(
                     result.GuildLogType,
                     result.GuildId,
                     cancellationToken);
@@ -49,7 +44,7 @@ public sealed partial class GuildLogPublisher(
                 if (logChannelId.GetOrElse(() => null) is not { } logChannel)
                     continue;
 
-                var channel = await this._discordClient.GetChannelOrDefaultAsync(logChannel);
+                var channel = await discordClient.GetChannelOrDefaultAsync(logChannel);
 
                 if (channel is null)
                 {
@@ -84,7 +79,7 @@ public sealed partial class GuildLogPublisher(
             catch (UnauthorizedException ex)
             {
                 LogProcessError(this._logger, ex, result.GuildId, result.GuildLogType);
-                if (await this._settingsModule.GetLogChannelSetting(result.GuildLogType, result.GuildId, cancellationToken)
+                if (await settingsModule.GetLogChannelSetting(result.GuildLogType, result.GuildId, cancellationToken)
                         .GetOrElse(() => null) is { } channelId)
                     this.Report(GuildIssueCatalog.CannotSendInChannel(result.GuildId, channelId), cancellationToken);
             }
@@ -99,7 +94,7 @@ public sealed partial class GuildLogPublisher(
     ///     for room would wait on this loop, the only reader.
     /// </summary>
     private void Report(GuildIssue issue, CancellationToken cancellationToken)
-        => _ = this._issueReporter.ReportAsync(issue, cancellationToken).ContinueWith(
+        => _ = issueReporter.ReportAsync(issue, cancellationToken).ContinueWith(
             task => LogReportFailure(this._logger, task.Exception!, issue.GuildId, issue.Code),
             CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
 
@@ -108,7 +103,7 @@ public sealed partial class GuildLogPublisher(
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        this._queue.Complete();
+        queue.Complete();
         await base.StopAsync(cancellationToken);
     }
 
@@ -129,7 +124,7 @@ public sealed partial class GuildLogPublisher(
     private async Task ScheduleMessagePurge(MessageId messageId, ChannelId channelId, GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         var logMessage = new OldLogMessage
         {
             ChannelId = channelId,

@@ -21,15 +21,14 @@ public sealed class CommandChecksTests(GrimoireCoreFactory database) : IAsyncLif
     private const string PermissionError = "You do not have the required permissions to use this command.";
     private const string ModuleDisabledError = "This module is disabled in this server.";
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();

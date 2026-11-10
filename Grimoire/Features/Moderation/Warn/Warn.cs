@@ -17,9 +17,6 @@ namespace Grimoire.Features.Moderation.Warn;
 [RequirePermissions([], [DiscordPermission.ManageMessages])]
 internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-
     [Command("Warn")]
     [Description("Issue a warning to the user.")]
     public async Task WarnAsync(CommandContext ctx,
@@ -45,7 +42,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
             return;
         }
 
-        await using var dbcontext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbcontext = await dbContextFactory.CreateDbContextAsync();
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
         var sin = Sin.ForWarn(actor, user.GetUserId(), guild.GetGuildId(), now, validReason)
@@ -64,12 +61,12 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         await ctx.ReplyAsync(embed: embed);
 
         if (await guild.GetMemberOrDefaultAsync(user.GetUserId()) is { } member)
-            await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+            await guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
                 .WithAuthor($"Warning Id {sin.Id}")
                 .WithDescription($"You have been warned by {ctx.User.Mention} for {validReason}")
                 .WithColor(GrimoireColor.Yellow), "warn");
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });

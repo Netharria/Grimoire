@@ -26,9 +26,6 @@ public enum SinQueryType
 [RequireModuleEnabled(Module.Moderation)]
 internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFactory, SettingsModule settingsModule)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("SinLog")]
     [Description("Looks up the sin logs for the provided user.")]
     public async Task SinLogAsync(
@@ -39,17 +36,10 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         DiscordUser? user = null)
     {
         var guild = ctx.RequiredGuild;
-        var member = ctx.RequiredMember;
-        var isPrivate = !member.Permissions.HasPermission(DiscordPermission.ManageMessages);
-
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(isPrivate);
-        else if (isPrivate)
+        var isPrivate = !ctx.RequiredMember.Permissions.HasPermission(DiscordPermission.ManageMessages);
+        if (!await ctx.TryDeferAsync(isPrivate))
             return;
-        else
-            await ctx.DeferResponseAsync();
         user ??= ctx.User;
-
 
         if (isPrivate && ctx.User != user)
         {
@@ -57,7 +47,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
             return;
         }
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         if (sinQueryType == SinQueryType.Mod)
         {
             var moderatorActor = new ModerationActor.Moderator(new ModeratorId(user.Id));
@@ -92,7 +82,7 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
             _ => throw new ArgumentOutOfRangeException(nameof(sinQueryType), sinQueryType, null)
         };
 
-        var autoPardonAfter = await this._settingsModule.GetAutoPardonDuration(guild.GetGuildId())
+        var autoPardonAfter = await settingsModule.GetAutoPardonDuration(guild.GetGuildId())
             .GetOrElse(() => SettingsModule.DefaultAutoPardonDuration);
 
         var result = await queryable

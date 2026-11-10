@@ -33,7 +33,6 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     private const ulong EmbedLinks = 1UL << 14;
     private const ulong TextLock = SendMessages | SendMessagesInThreads | SendTtsMessages | AddReactions;
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -41,8 +40,8 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -115,7 +114,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         (await this.UnlockAsync(this.Guild.General)).Description.ShouldBe($"{this.Guild.General.Mention} has been unlocked");
 
         this.EveryoneOverwrite(this.Guild.General).ShouldBe((SendMessages, AddReactions | EmbedLinks));
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()
             == $"{this.Guild.Moderator.MemberMention} unlocked {this.Guild.General.Mention}");
@@ -163,7 +162,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     public async Task Lock_OfAThread_WithoutManageMessages_IsRefused()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission
             | FakeGuild.ManageChannelsPermission | FakeGuild.ManageRolesPermission);
         await this._bot.ConfigureModerationAsync();
@@ -326,7 +325,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     private async Task RestartBotWithAsync(ulong extraBotPermissions)
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission | extraBotPermissions);
         await this._bot.ConfigureModerationAsync();
     }

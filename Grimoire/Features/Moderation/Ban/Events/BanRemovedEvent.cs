@@ -19,20 +19,15 @@ public class BanRemovedEvent(
     GuildLog guildLog,
     BanHandoff banHandoff) : IEventHandler<GuildBanRemovedEventArgs>
 {
-    private readonly BanHandoff _banHandoff = banHandoff;
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildBanRemovedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())
+        if (!await settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())
                 .GetOrElse(() => false))
             return;
 
-        var unbannedByBot = this._banHandoff.TakeUnban(args.Guild.GetGuildId(), args.Member.GetUserId());
+        var unbannedByBot = banHandoff.TakeUnban(args.Guild.GetGuildId(), args.Member.GetUserId());
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var lastBan = await dbContext.Sins
             .AsNoTracking()
             .Where(m => m.UserId == args.Member.GetUserId() && m.GuildId == args.Guild.GetGuildId())
@@ -55,7 +50,7 @@ public class BanRemovedEvent(
         if ((unbannedByBot ?? await FindWhoUnbannedAsync(args)) is { } unbannedBy)
             embed.AddField("Unbanned by", UserExtensions.Mention(unbannedBy), true);
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });

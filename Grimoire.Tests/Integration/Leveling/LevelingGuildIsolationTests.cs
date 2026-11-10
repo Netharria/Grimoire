@@ -18,7 +18,6 @@ namespace Grimoire.Tests.Integration.Leveling;
 [Collection("Test collection")]
 public sealed class LevelingGuildIsolationTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild A => this._bot.Guild;
@@ -27,8 +26,8 @@ public sealed class LevelingGuildIsolationTests(GrimoireCoreFactory database) : 
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         await this._bot.ConfigureModerationAsync();
         await this._bot.ConfigureModerationAsync(this.B);
         await this._bot.SetModuleAsync(Module.Leveling, true);
@@ -67,7 +66,7 @@ public sealed class LevelingGuildIsolationTests(GrimoireCoreFactory database) : 
     [Fact]
     public async Task ReclaimAllInA_OnlyCountsAsXp()
     {
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.XpHistory.Add(EarnedXp.Create(PositiveXpAmount.Create(20).ShouldSucceed(), new UserId(this.A.User1.Id),
                 new GuildId(this.A.Id), DateTimeOffset.UtcNow.AddMinutes(-10)));
@@ -80,7 +79,7 @@ public sealed class LevelingGuildIsolationTests(GrimoireCoreFactory database) : 
                 SlashOption.User("user", this.A.User1), SlashOption.Enum("option", XpOption.All)))
             .Description.ShouldBe($"20 xp has been taken from {this.A.User1.Mention}.");
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.XpHistory.Where(xp => xp.GuildId == new GuildId(this.A.Id)).SumAsync(xp => xp.RawXp, Token)).ShouldBe(0);
         (await dbContext.XpHistory.Where(xp => xp.GuildId == new GuildId(this.B.Id)).SumAsync(xp => xp.RawXp, Token)).ShouldBe(50);
     }
@@ -88,7 +87,7 @@ public sealed class LevelingGuildIsolationTests(GrimoireCoreFactory database) : 
     private Task<int> EarnedRowsAsync(FakeGuild guild, Func<int, bool> isDone, TimeSpan? window = null)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.XpHistory.OfType<EarnedXp>()
                 .CountAsync(xp => xp.GuildId == new GuildId(guild.Id) && xp.UserId == new UserId(this.A.User1.Id), Token);
         }, isDone, window);

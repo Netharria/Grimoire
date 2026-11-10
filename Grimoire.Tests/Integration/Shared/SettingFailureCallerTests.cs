@@ -24,7 +24,6 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
     private ulong _muteRoleId;
 
@@ -35,8 +34,8 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         foreach (var module in new[] { Module.Leveling, Module.AntiSpam })
             await this._bot.SetModuleAsync(module, true);
@@ -56,7 +55,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task SpamFilter_WhenTheMuteCannotBeRecorded_GivesNoMuteRole()
     {
-        await using (await this._database.RefuseSettingsInsertsAsync(nameof(Mute)))
+        await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
         {
             for (var i = 0; i < 6; i++)
             {
@@ -78,7 +77,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
         this._bot.SetRolesByHand(this.Guild.User1, this._muteRoleId);
 
         FakeReply reply;
-        await using (await this._database.RefuseSettingsInsertsAsync(nameof(Mute)))
+        await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
             reply = await this._bot.RunSlashCommandAndWaitAsync("unmute", this.Guild.Moderator,
                 SlashOption.User("user", this.Guild.User1));
 
@@ -92,7 +91,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
     public async Task IgnoreAdd_WhenItCannotBeSaved_SaysSoPrivately_AndLogsNothing()
     {
         FakeReply reply;
-        await using (await this._database.RefuseSettingsInsertsAsync(nameof(XpTrackedItem)))
+        await using (await database.RefuseSettingsInsertsAsync(nameof(XpTrackedItem)))
             reply = await this._bot.RunSlashCommandAndWaitAsync("ignore", this.Guild.Admin,
                 SlashOption.Subcommand("add", SlashOption.MentionableUser("items_0", this.Guild.User1)));
 
@@ -105,7 +104,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
     public async Task UserInfo_WhenTheIgnoreListCannotBeRead_SaysItDoesNotKnow()
     {
         FakeReply reply;
-        await using (await this._database.MakeSettingsTablesUnreadableAsync(nameof(XpTrackedItem)))
+        await using (await database.MakeSettingsTablesUnreadableAsync(nameof(XpTrackedItem)))
             reply = await this._bot.RunSlashCommandAndWaitAsync("user_info", this.Guild.Admin,
                 SlashOption.User("user", this.Guild.User1));
 
@@ -116,7 +115,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task GainingXp_WhenTheIgnoreListCannotBeRead_AwardsNothing_AndDoesNotCrash()
     {
-        await using (await this._database.MakeSettingsTablesUnreadableAsync(nameof(XpTrackedItem)))
+        await using (await database.MakeSettingsTablesUnreadableAsync(nameof(XpTrackedItem)))
         {
             this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
             await this._bot.Logs.WaitForAsync(logEvent => logEvent.RenderMessage().StartsWith(
@@ -124,7 +123,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
             await Task.Delay(TimeSpan.FromMilliseconds(500), Token);
         }
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.XpHistory.AnyAsync(Token)).ShouldBeFalse();
         this._bot.Logs.Events.ShouldNotContain(logEvent => logEvent.MessageTemplate.Text.StartsWith(
             "Unhandled exception in event handler", StringComparison.Ordinal));

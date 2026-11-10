@@ -24,7 +24,6 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -32,8 +31,8 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.ConfigureMessageLogAsync();
         var settings = this._bot.Services.GetRequiredService<SettingsModule>();
@@ -123,7 +122,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         var messageId = this._bot.SendMessage(this.Guild.User1, this.Channel, "look", "cat.png", "notes.txt");
         var stored = await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Attachments.Where(attachment => attachment.MessageId == new MessageId(messageId))
                 .Select(attachment => attachment.AttachmentUrl.Value)
                 .ToListAsync(TestContext.Current.CancellationToken);
@@ -205,7 +204,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     public async Task Delete_WithAnAttachmentStoredByNameOnly_StillLogs()
     {
         const ulong oldMessage = 1_100_000_000_000_008_030;
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.Messages.Add(new Message
             {
@@ -253,7 +252,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         var messageId = this._bot.SendMessage(this.Guild.User1, this.Channel, content, fileNames);
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Attachments.CountAsync(attachment => attachment.MessageId == new MessageId(messageId));
         }, count => count == fileNames.Length)).ShouldBe(fileNames.Length);
         return messageId;
@@ -303,7 +302,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         await this.SendLoggedAsync("a member's message");
         await Task.Delay(NothingHappensWindow, TestContext.Current.CancellationToken);
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(botPost), TestContext.Current.CancellationToken))
             .ShouldBeFalse();
     }
@@ -317,7 +316,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     public async Task Delete_OfAnUncachedPostByTheBot_IsIgnored()
     {
         const ulong botPost = 1_100_000_000_000_008_010;
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.Messages.Add(new Message
             {
@@ -361,7 +360,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     {
         var messageId = await this.SendLoggedAsync("rule breaking");
         var moderator = new ModeratorId(this.Guild.Moderator.Id);
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.MessageHistory.Add(new MessageDeletedByModeratorEntry
             {
@@ -450,7 +449,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     public async Task ALogChannelTheBotCannotPostIn_IsReportedToTheGuild()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this._bot.ConfigureModerationAsync();
         await this._bot.ConfigureMessageLogAsync();
@@ -487,7 +486,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     [Fact]
     public async Task AMessageThatCannotBeSaved_IsRaisedAsAnError()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var messages = dbContext.Model.FindEntityType(typeof(Message))!;
         var table = $"\"{messages.GetSchema() ?? "public"}\".\"{messages.GetTableName()}\"";
         await dbContext.Database.ExecuteSqlRawAsync($"""ALTER TABLE {table} ADD CONSTRAINT "TestRefusesMessages" CHECK (false) NOT VALID""",
@@ -528,7 +527,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     public async Task Delete_OfAnUncachedMessage_StillNamesTheAuthor()
     {
         const ulong oldMessage = 1_100_000_000_000_008_020;
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.Messages.Add(new Message
             {
@@ -578,7 +577,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         var messageId = this._bot.SendMessage(this.Guild.User1, this.Channel, content);
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
         }, saved => saved)).ShouldBeTrue();
         return messageId;
@@ -594,7 +593,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
 
     private async Task<List<T>> HistoryOfAsync<T>(ulong messageId) where T : MessageHistoryEntry
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.MessageHistory.OfType<T>().Where(entry => entry.MessageId == new MessageId(messageId))
             .ToListAsync(TestContext.Current.CancellationToken);
     }

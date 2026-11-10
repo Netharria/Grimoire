@@ -26,7 +26,6 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     /// <summary>The User Log section makes the command throw (KI-23), so most tests leave that module off.</summary>
     private static readonly Module[] WorkingSectionModules = [Module.Leveling, Module.Moderation];
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -35,8 +34,8 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         foreach (var module in WorkingSectionModules)
             await this._bot.SetModuleAsync(module, true);
     }
@@ -70,7 +69,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
         await this._bot.SetModuleAsync(Module.UserLog, true);
         var userId = new UserId(this.Guild.User1.Id);
         var start = DateTimeOffset.UtcNow.AddMinutes(1);
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             foreach (var (name, minutes) in new[] { ("first", 1), ("second", 2), ("third", 3), ("fourth", 4) })
             {
@@ -257,7 +256,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
 
     private async Task SeedXpAsync(GuildId guildId, params long[] amounts)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         foreach (var amount in amounts)
             seed.XpHistory.Add(EarnedXp.Create(PositiveXpAmount.Create(amount).ShouldSucceed(), new UserId(this.Guild.User1.Id),
                 guildId, DateTimeOffset.UtcNow));
@@ -270,7 +269,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
 
     private async Task SeedSinsAsync(params (SinType Type, DateTimeOffset At)[] sins)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         var actor = new ModerationActor.Moderator(new ModeratorId(this.Guild.Moderator.Id));
         var userId = new UserId(this.Guild.User1.Id);
         foreach (var (type, at) in sins)

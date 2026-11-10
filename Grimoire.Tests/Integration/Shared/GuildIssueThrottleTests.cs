@@ -27,7 +27,6 @@ public sealed class GuildIssueThrottleTests(GrimoireCoreFactory database) : IAsy
 {
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private readonly ManualTimeProvider _clock = new(new DateTimeOffset(2026, 10, 25, 10, 0, 0, TimeSpan.Zero));
     private GrimoireTestBot _bot = null!;
 
@@ -37,8 +36,8 @@ public sealed class GuildIssueThrottleTests(GrimoireCoreFactory database) : IAsy
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true, configureHost: builder =>
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true, configureHost: builder =>
             builder.Services.Replace(ServiceDescriptor.Singleton<TimeProvider>(this._clock)));
     }
 
@@ -145,7 +144,7 @@ public sealed class GuildIssueThrottleTests(GrimoireCoreFactory database) : IAsy
         => (await GrimoireTestBot.EventuallyAsync(async () =>
         {
             await this._bot.RunBackgroundTickAsync<WarningFlushService>();
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.AlertOccurrences.AsNoTracking()
                 .Where(row => row.AlertType == alertType)
                 .ToListAsync(TestContext.Current.CancellationToken);

@@ -22,10 +22,6 @@ internal sealed class KickUser(
     GuildLog guildLog,
     SettingsModule settingsModule)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("Kick")]
     [Description("Kick a member from the server.")]
     public async Task KickAsync(CommandContext ctx,
@@ -44,20 +40,20 @@ internal sealed class KickUser(
             return;
         }
 
-        if (await ModerationRank.GetRefusalReasonAsync(this._settingsModule, ctx, member, "kick") is { } refusal)
+        if (await ModerationRank.GetRefusalReasonAsync(settingsModule, ctx, member, "kick") is { } refusal)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, refusal);
             return;
         }
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
         var sin = Sin.ForKick(actor, member.GetUserId(), guild.GetGuildId(), now, ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null))
             .Match(s => s, _ => throw new InvariantViolationException("Discord ids are never zero."));
 
         // Once they're gone the bot usually can't reach them, so the DM goes first.
-        await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+        await guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
             .WithAuthor("Kicked")
             .WithDescription($"You have been kicked from {guild.Name}{ModerationDirectMessage.ForReason(reason)}")
             .WithColor(GrimoireColor.Yellow), "kick");
@@ -81,7 +77,7 @@ internal sealed class KickUser(
 
         await ctx.ReplyAsync(embed: embed);
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });

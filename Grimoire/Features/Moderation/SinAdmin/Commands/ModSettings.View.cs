@@ -17,10 +17,7 @@ internal sealed partial class ModSettings
     [Description("View the current moderation settings for this server.")]
     public async Task ViewSettingsAsync(CommandContext ctx)
     {
-        if (ctx is SlashCommandContext slashContext)
-            await slashContext.DeferResponseAsync(true);
-        else
-            await ctx.DeferResponseAsync();
+        await ctx.DeferPrivateAsync();
 
         var guild = ctx.RequiredGuild;
 

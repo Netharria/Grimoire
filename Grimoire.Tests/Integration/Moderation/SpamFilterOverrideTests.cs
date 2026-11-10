@@ -21,15 +21,14 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
 {
     private static readonly TimeSpan NoModLogWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.AntiSpam, true);
     }
@@ -142,7 +141,7 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
     public async Task Override_OfAChannelTheBotCannotSee_IsAccepted()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database,
+        this._bot = await GrimoireTestBot.StartAsync(database,
             guild => guild.BotPermissions = FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
 
         (await this.OverrideAsync(SpamFilterOverrideSetting.Never, this.Guild.Private)).Description
@@ -217,7 +216,7 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
     public async Task View_InAnotherGuild_DoesNotListThisGuildsOverrides()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, secondGuild: true);
+        this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         var second = this._bot.SecondGuild!;
         await this.OverrideAsync(SpamFilterOverrideSetting.Never, this.Guild.General);
         await this._bot.RunSlashCommandAndWaitAsync(second.General, "spam_filter", second.Admin,
@@ -243,7 +242,7 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
 
     private async Task<List<SpamFilterOverride>> RowsAsync()
     {
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         return await settingsContext.SpamFilterOverrides.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
     }
 }

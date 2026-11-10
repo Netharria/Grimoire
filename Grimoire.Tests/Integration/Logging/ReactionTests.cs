@@ -17,7 +17,6 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
     private static readonly FakeEmoji ThumbsUp = new FakeEmoji.Standard("👍");
     private static readonly FakeEmoji Party = new FakeEmoji.Custom(1_100_000_000_000_000_301, "party", true);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -25,8 +24,8 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureMessageLogAsync();
     }
 
@@ -146,7 +145,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
     public async Task PurgingOldMessages_DeletesTheirReactions_RemovedOrNot()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await using (var seed = this._database.CreateDbContext())
+        await using (var seed = database.CreateDbContext())
         {
             seed.Messages.AddRange(this.Message(1, DateTimeOffset.UtcNow.AddDays(-40)), this.Message(2, DateTimeOffset.UtcNow));
             seed.Reactions.AddRange(
@@ -156,10 +155,10 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
             await seed.SaveChangesAsync(cancellationToken);
         }
 
-        await using (var cleanup = this._database.CreateDbContext())
+        await using (var cleanup = database.CreateDbContext())
             await CleanupLogsBackgroundTask.DeleteOldMessagesAsync(cleanup, cancellationToken);
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Reactions.Select(reaction => reaction.MessageId).ToListAsync(cancellationToken))
             .ShouldBe([new MessageId(2)]);
     }
@@ -169,7 +168,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         var messageId = this._bot.SendMessage(this.Guild.Moderator, this.Channel, "react to this");
         var logged = await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
         }, isLogged => isLogged);
         logged.ShouldBeTrue("the message log should save the message before anyone reacts to it");
@@ -180,7 +179,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         TimeSpan? timeout = null)
         => GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Reactions.AsNoTracking()
                 .Where(reaction => reaction.MessageId == new MessageId(messageId))
                 .ToListAsync();

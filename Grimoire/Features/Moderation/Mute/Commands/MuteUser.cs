@@ -25,10 +25,7 @@ public sealed partial class MuteUser(
     GuildLog guildLog,
     ILogger<MuteUser> logger)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
     private readonly ILogger<MuteUser> _logger = logger;
-    private readonly SettingsModule _settingsModule = settingsModule;
 
     [Command("Mute")]
     [Description("Mutes a user for a specified amount of time.")]
@@ -55,13 +52,13 @@ public sealed partial class MuteUser(
             return;
         }
 
-        if (await ModerationRank.GetRefusalReasonAsync(this._settingsModule, ctx, member, "mute") is { } refusal)
+        if (await ModerationRank.GetRefusalReasonAsync(settingsModule, ctx, member, "mute") is { } refusal)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, refusal);
             return;
         }
 
-        var muteRoleId = await this._settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
+        var muteRoleId = await settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
 
         if (muteRoleId.GetOrElse(() => null) is not { } muteId)
         {
@@ -110,13 +107,13 @@ public sealed partial class MuteUser(
 
         await ctx.ReplyAsync(embed: embed);
 
-        await this._guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
+        await guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()
             .WithAuthor($"Mute Id {sin.Id}")
             .WithDescription(
                 $"You have been muted for {durationAmount} {durationType} by {ctx.User.Mention}{ModerationDirectMessage.ForReason(reason)}")
             .WithColor(GrimoireColor.Red), "mute");
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = embed
         });
@@ -131,11 +128,11 @@ public sealed partial class MuteUser(
     {
         try
         {
-            await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             dbContext.Sins.Add(sin);
             await dbContext.SaveChangesAsync();
 
-            if (await this._settingsModule.AddMute(member.GetUserId(), member.GetGuildId(), moderatorId, sin.Id,
+            if (await settingsModule.AddMute(member.GetUserId(), member.GetGuildId(), moderatorId, sin.Id,
                     muteEndTime, muteId) is Result<MuteAdded>.Success)
                 return true;
 

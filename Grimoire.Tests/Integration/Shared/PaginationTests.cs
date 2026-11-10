@@ -33,7 +33,6 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
     private static readonly string[] PaginationButtons = ["leftskip", "left", "stop", "right", "rightskip"];
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -43,8 +42,8 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.Leveling, true);
     }
@@ -153,7 +152,7 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
     public async Task MutesView_EphemeralList_PagesForTheInvoker()
     {
         var muted = Enumerable.Range(0, 200).Select(i => 1_100_000_000_000_010_000 + (ulong)i).ToArray();
-        await using (var settingsContext = this._database.CreateSettingsDbContext())
+        await using (var settingsContext = database.CreateSettingsDbContext())
         {
             var now = DateTimeOffset.UtcNow;
             foreach (var userId in muted)

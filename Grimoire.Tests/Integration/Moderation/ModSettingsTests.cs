@@ -17,7 +17,6 @@ namespace Grimoire.Tests.Integration.Moderation;
 [Collection("Test collection")]
 public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -26,8 +25,8 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -112,7 +111,7 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
     public async Task PublicBanLog_WhereTheBotCannotSend_IsRefused()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild => guild.BotPermissions =
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
             FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
         await this._bot.ConfigureModerationAsync();
 

@@ -27,7 +27,6 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     private const ulong TextLock = SendMessages | (1UL << 38) | (1UL << 12) | (1UL << 6);
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -36,8 +35,8 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
     }
 
@@ -96,7 +95,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         (await this._bot.Rest.ReceivesRequestWithinAsync(request =>
                 request.Json?["embeds"]?[0]?["description"]?.ToString().EndsWith("has expired.", StringComparison.Ordinal) == true,
             NothingHappensWindow)).ShouldBeFalse();
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
@@ -111,7 +110,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.RunBackgroundTickAsync<LockBackgroundTasks>();
 
         this.Guild.OverwriteOf(this.Guild.General.Id, this.Guild.Id).ShouldBe((0UL, TextLock));
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -184,7 +183,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     public async Task ExpiredLock_ThatCannotBeReverted_ReportsAnIssue_AndStaysLocked()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, guild =>
+        this._bot = await GrimoireTestBot.StartAsync(database, guild =>
         {
             guild.BotPermissions = FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission
                                    | FakeGuild.EmbedLinksPermission | FakeGuild.ManageChannelsPermission;
@@ -198,7 +197,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.WaitForModLogEmbedAsync(embed =>
             embed["description"]?.GetValue<string>()?.Contains(this.Guild.General.Mention, StringComparison.Ordinal) == true);
         this.Guild.OverwriteOf(this.Guild.General.Id, this.Guild.Id).ShouldBe((0UL, TextLock));
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -225,7 +224,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.RunBackgroundTickAsync<LockBackgroundTasks>();
 
         this._bot.Rest.Requests.Count.ShouldBe(requestsBefore);
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
@@ -236,7 +235,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
             SlashOption.Enum("duration_type", DurationType.Minutes), SlashOption.Integer("duration_amount", 1));
         var past = DateTimeOffset.UtcNow.AddSeconds(-1);
         var token = TestContext.Current.CancellationToken;
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         await settingsContext.ChannelLocks.OfType<ChannelLocked>().Where(locked => locked.ChannelId == new ChannelId(channel.Id))
             .ExecuteUpdateAsync(update => update.SetProperty(locked => locked.EndTime, past), token);
         await settingsContext.ThreadLocks.OfType<ThreadLocked>().Where(locked => locked.ChannelId == new ChannelId(channel.Id))
@@ -255,7 +254,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         var channelLock = ChannelLocked.Create(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(channel.Id),
             guildId ?? this.GuildId, now.AddMinutes(-10), new PreviouslyAllowedPermissions((long)previouslyAllowed),
             new PreviouslyDeniedPermissions(0), now.AddMinutes(-1)).ShouldSucceed();
-        await using (var settingsContext = this._database.CreateSettingsDbContext())
+        await using (var settingsContext = database.CreateSettingsDbContext())
         {
             settingsContext.ChannelLocks.Add(channelLock);
             await settingsContext.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -271,7 +270,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     private async Task SeedExpiredThreadLockAsync(FakeChannel thread)
     {
         var now = DateTimeOffset.UtcNow;
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         settingsContext.ThreadLocks.Add(ThreadLocked.Create(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(thread.Id),
             this.GuildId, now.AddMinutes(-10), now.AddMinutes(-1)).ShouldSucceed());
         await settingsContext.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -279,13 +278,13 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task<ChannelUnlocked> SingleChannelUnlockAsync()
     {
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         return await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().SingleAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task<ThreadUnlocked> SingleThreadUnlockAsync()
     {
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         return await settingsContext.ThreadLocks.OfType<ThreadUnlocked>().SingleAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -33,7 +33,6 @@ public sealed class AlertGapTests(GrimoireCoreFactory database) : IAsyncLifetime
     /// <summary>A channel id that no guild has, standing in for a deleted channel.</summary>
     private const ulong DeletedChannelId = 1_100_000_000_000_000_299;
 
-    private readonly GrimoireCoreFactory _database = database;
     private readonly ManualTimeProvider _clock = new(Start);
     private GrimoireTestBot _bot = null!;
 
@@ -42,7 +41,7 @@ public sealed class AlertGapTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
+        await database.ResetDatabase();
         await this.StartAsync();
     }
 
@@ -53,7 +52,7 @@ public sealed class AlertGapTests(GrimoireCoreFactory database) : IAsyncLifetime
     {
         if (this._bot is not null)
             await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureHost: builder =>
+        this._bot = await GrimoireTestBot.StartAsync(database, configureHost: builder =>
         {
             var guild = new FakeGuild();
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
@@ -72,7 +71,7 @@ public sealed class AlertGapTests(GrimoireCoreFactory database) : IAsyncLifetime
     public async Task ACommandThatFails_RaisesAnUrgentAlert_WithTheCommandAndGuild()
     {
         await this._bot.SetModuleAsync(Grimoire.Settings.Enums.Module.Moderation, true);
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         var sins = dbContext.Model.FindEntityType(typeof(Sin))!;
         var (schema, name) = (sins.GetSchema() ?? "public", sins.GetTableName());
         await dbContext.Database.ExecuteSqlRawAsync($"""ALTER TABLE "{schema}"."{name}" RENAME TO "SinsUnreadable" """,
@@ -267,7 +266,7 @@ public sealed class AlertGapTests(GrimoireCoreFactory database) : IAsyncLifetime
     public async Task WithoutAWarningChannel_TheDayIsStillMarkedDone()
     {
         await this._bot.DisposeAsync();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureHost: builder =>
+        this._bot = await GrimoireTestBot.StartAsync(database, configureHost: builder =>
         {
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -420,7 +419,7 @@ public sealed class AlertGapTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     private async Task SeedOccurrenceAsync(string discriminator, DateTimeOffset lastSeen)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         dbContext.AlertOccurrences.Add(new AlertOccurrence
         {
             AlertKey = $"seeded:{discriminator}",
@@ -449,7 +448,7 @@ public sealed class AlertGapTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     private async Task<List<AlertOccurrence>> OccurrencesAsync()
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.AlertOccurrences.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
     }
 }

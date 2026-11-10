@@ -25,14 +25,12 @@ public sealed class DiscordAuditLogParserService(
     GuildIssueReporter issueReporter) : IDiscordAuditLogParserService
 {
     private static readonly HybridCacheEntryOptions _entryOptions = new() { Expiration = TimeSpan.FromMinutes(10) };
-    private readonly HybridCache _cache = cache;
-    private readonly DiscordClient _discordClient = discordClient;
 
     public async Task<DiscordAuditLogMessageEntry?> ParseAuditLogForDeletedMessageAsync(GuildId guildId,
         ChannelId channelId,
         UserId authorId)
     {
-        if (!this._discordClient.Guilds.TryGetValue(guildId.Value, out var guild))
+        if (!discordClient.Guilds.TryGetValue(guildId.Value, out var guild))
             return null;
         if (!guild.CurrentMember.Permissions.HasPermission(DiscordPermission.ViewAuditLog))
         {
@@ -67,7 +65,7 @@ public sealed class DiscordAuditLogParserService(
 
         var key = GetDeleteAuditCacheKey(deleteEntry.Id);
 
-        var cachedMessageCount = await this._cache.GetOrCreateAsync(
+        var cachedMessageCount = await cache.GetOrCreateAsync(
             key,
             static _ => ValueTask.FromResult(0),
             _entryOptions);
@@ -75,7 +73,7 @@ public sealed class DiscordAuditLogParserService(
         if (deleteEntry.MessageCount <= cachedMessageCount)
             return null;
 
-        await this._cache.SetAsync(key, deleteEntry.MessageCount, _entryOptions);
+        await cache.SetAsync(key, deleteEntry.MessageCount, _entryOptions);
         return deleteEntry;
     }
 

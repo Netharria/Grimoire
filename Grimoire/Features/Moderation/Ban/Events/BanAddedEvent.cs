@@ -24,19 +24,15 @@ public partial class BanAddedEvent(
     ILogger<BanAddedEvent> logger)
     : IEventHandler<GuildBanAddedEventArgs>
 {
-    private readonly BanHandoff _banHandoff = banHandoff;
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
     private readonly ILogger<BanAddedEvent> _logger = logger;
-    private readonly SettingsModule _settingsModule = settingsModule;
 
     public async Task HandleEventAsync(DiscordClient sender, GuildBanAddedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())
+        if (!await settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())
                 .GetOrElse(() => false))
             return;
 
-        var pending = this._banHandoff.TakeBan(args.Guild.GetGuildId(), args.Member.GetUserId());
+        var pending = banHandoff.TakeBan(args.Guild.GetGuildId(), args.Member.GetUserId());
         var (actor, reason) = pending is not null
             ? (new ModerationActor.Moderator(pending.Moderator), pending.Reason)
             : await this.FindWhoBannedAsync(args);
@@ -55,7 +51,7 @@ public partial class BanAddedEvent(
 
         builder.AddField("Reason", !string.IsNullOrWhiteSpace(reason) ? reason : "None", true);
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.Moderation, Embed = builder
         });
@@ -63,7 +59,7 @@ public partial class BanAddedEvent(
 
     private async Task<SinId> RecordSinAsync(GuildBanAddedEventArgs args, ModerationActor actor, string reason)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var now = DateTimeOffset.UtcNow;
         // An unusable reason, such as one over 1000 characters from the audit log, is left out, not a lost ban.
         var sin = Sin.ForBan(actor, args.Member.GetUserId(), args.Guild.GetGuildId(), now,

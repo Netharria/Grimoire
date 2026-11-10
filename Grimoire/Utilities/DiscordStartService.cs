@@ -17,24 +17,21 @@ internal sealed partial class DiscordStartService(
     IDbContextFactory<SettingsDbContext> settingsDbContextFactory,
     ILogger<DiscordStartService> logger) : IHostedService
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly DiscordClient _discordClient = discordClient;
     private readonly ILogger<DiscordStartService> _logger = logger;
-    private readonly IDbContextFactory<SettingsDbContext> _settingsDbContextFactory = settingsDbContextFactory;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await ApplyDatabaseMigrations(cancellationToken);
         //connect client
-        await this._discordClient.ConnectAsync();
+        await discordClient.ConnectAsync();
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
-        => this._discordClient.DisconnectAsync();
+        => discordClient.DisconnectAsync();
 
     private async Task ApplyDatabaseMigrations(CancellationToken cancellationToken)
     {
-        await using var context = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var context = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
         if (pendingMigrations.Any())
         {
@@ -47,7 +44,7 @@ internal sealed partial class DiscordStartService(
             LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
         }
 
-        await SettingsServiceRegistration.MigrateSettingsDb(this._settingsDbContextFactory, this._logger,
+        await SettingsServiceRegistration.MigrateSettingsDb(settingsDbContextFactory, this._logger,
             cancellationToken);
     }
 

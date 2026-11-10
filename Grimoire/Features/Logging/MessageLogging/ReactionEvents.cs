@@ -27,10 +27,7 @@ public sealed partial class ReactionEvents(
         IEventHandler<MessageReactionRemovedEmojiEventArgs>,
         IEventHandler<MessageReactionsClearedEventArgs>
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private readonly ILogger<ReactionEvents> _logger = logger;
-    private readonly SettingsModule _settingsModule = settingsModule;
-    private readonly TimeProvider _timeProvider = timeProvider;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageReactionAddedEventArgs args)
     {
@@ -45,7 +42,7 @@ public sealed partial class ReactionEvents(
             UserId = args.User.GetUserId(),
             GuildId = args.Guild.GetGuildId(),
             Emoji = emoji,
-            ReactedAt = this._timeProvider.GetUtcNow()
+            ReactedAt = timeProvider.GetUtcNow()
         });
     }
 
@@ -85,7 +82,7 @@ public sealed partial class ReactionEvents(
     }
 
     private Task<bool> IsMessageLogEnabledAsync(DiscordGuild guild)
-        => this._settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()).GetOrElse(() => false);
+        => settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()).GetOrElse(() => false);
 
     private ReactionEmoji? ToReactionEmoji(DiscordEmoji emoji)
         => emoji.ToReactionEmoji().Match<ReactionEmoji?>(
@@ -102,7 +99,7 @@ public sealed partial class ReactionEvents(
     /// </summary>
     private async Task SaveReactionAsync(Reaction reaction)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
         if (await ReviveAsync(dbContext, reaction) > 0
             || !await dbContext.Messages.AnyAsync(message => message.Id == reaction.MessageId))
@@ -131,8 +128,8 @@ public sealed partial class ReactionEvents(
 
     private async Task SoftDeleteAsync(Func<IQueryable<Reaction>, IQueryable<Reaction>> select)
     {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
-        var removedAt = this._timeProvider.GetUtcNow();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var removedAt = timeProvider.GetUtcNow();
         await select(dbContext.Reactions)
             .Where(reaction => reaction.RemovedAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(reaction => reaction.RemovedAt, removedAt));

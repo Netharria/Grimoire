@@ -23,13 +23,12 @@ internal sealed class CleanupLogsBackgroundTask(
     /// </summary>
     private static readonly TimeSpan HistoryTrimInterval = TimeSpan.FromDays(1);
 
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
     private DateTimeOffset? _lastHistoryTrim;
 
     protected override async Task RunTask(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var discordClient = serviceProvider.GetRequiredService<DiscordClient>();
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         var oldDate = DateTime.UtcNow - TimeSpan.FromDays(30);
         var oldLogMessages = await dbContext.OldLogMessages
             .AsNoTracking()

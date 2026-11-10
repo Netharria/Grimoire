@@ -27,7 +27,6 @@ public sealed class SettingSaveFailureTests(GrimoireCoreFactory database) : IAsy
     private const string SettingSaveFailed = "Was not able to save the setting to the database.";
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -50,8 +49,8 @@ public sealed class SettingSaveFailureTests(GrimoireCoreFactory database) : IAsy
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         foreach (var module in new[] { Module.Leveling, Module.MessageLog, Module.UserLog, Module.AntiSpam })
             await this._bot.SetModuleAsync(module, true);
@@ -134,7 +133,7 @@ public sealed class SettingSaveFailureTests(GrimoireCoreFactory database) : IAsy
     /// <summary>Makes every settings table that a command writes refuse inserts until <paramref name="action" /> ends.</summary>
     private async Task<T> WhileSettingsCannotBeSavedAsync<T>(Func<Task<T>> action)
     {
-        await using var refusing = await this._database.RefuseSettingsInsertsAsync(
+        await using var refusing = await database.RefuseSettingsInsertsAsync(
             "GuildSetting", "MessageLogChannelOverride", "SpamFilterOverride");
         return await action();
     }

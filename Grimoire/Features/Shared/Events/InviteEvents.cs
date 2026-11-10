@@ -20,12 +20,11 @@ public sealed partial class InviteEvents(
     : IEventHandler<InviteCreatedEventArgs>,
         IEventHandler<InviteDeletedEventArgs>
 {
-    private readonly IInviteService _inviteService = inviteService;
     private readonly ILogger _logger = logger;
 
     public Task HandleEventAsync(DiscordClient sender, InviteCreatedEventArgs args)
     {
-        this._inviteService.UpdateInvite(args.Guild.GetGuildId(), args.Invite.ToInvite());
+        inviteService.UpdateInvite(args.Guild.GetGuildId(), args.Invite.ToInvite());
         return Task.CompletedTask;
     }
 
@@ -37,7 +36,7 @@ public sealed partial class InviteEvents(
     {
         if (args.Invite.ExpiresAt < DateTime.UtcNow)
         {
-            this._inviteService.DeleteInvite(args.Guild.GetGuildId(), args.Invite.GetInviteCode());
+            inviteService.DeleteInvite(args.Guild.GetGuildId(), args.Invite.GetInviteCode());
             return;
         }
 
@@ -61,7 +60,7 @@ public sealed partial class InviteEvents(
         }
 
         if (deletedInviteEntry.Target.Code == args.Invite.Code)
-            this._inviteService.DeleteInvite(args.Guild.GetGuildId(), args.Invite.GetInviteCode());
+            inviteService.DeleteInvite(args.Guild.GetGuildId(), args.Invite.GetInviteCode());
     }
 
     [LoggerMessage(LogLevel.Warning, "Was not able to retrieve audit log entry for deleted invite.")]

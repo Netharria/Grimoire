@@ -35,7 +35,6 @@ public sealed class SchemaIndexTests(GrimoireCoreFactory database)
           AND ARRAY(SELECT unnest((x.indkey::int2[])[0:m.k - 1])) = ARRAY(SELECT unnest(c.conkey[1:m.k]))
         """;
 
-    private readonly GrimoireCoreFactory _database = database;
 
     [Fact]
     public async Task NoIndexRepeatsThePrimaryKey()
@@ -61,7 +60,7 @@ public sealed class SchemaIndexTests(GrimoireCoreFactory database)
 
     private async Task<List<string>> QueryNamesAsync(string sql, params NpgsqlParameter[] parameters)
     {
-        await using var connection = new NpgsqlConnection(this._database.ConnectionString);
+        await using var connection = new NpgsqlConnection(database.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddRange(parameters);

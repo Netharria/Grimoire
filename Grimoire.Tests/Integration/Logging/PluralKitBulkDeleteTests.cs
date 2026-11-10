@@ -20,7 +20,6 @@ namespace Grimoire.Tests.Integration.Logging;
 [Collection("Test collection")]
 public sealed class PluralKitBulkDeleteTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private readonly FakePluralKit _pluralKit = new();
     private readonly FakeUser _webhook = new(1_100_000_000_000_006_101, "Alice", IsBot: true);
     private GrimoireTestBot _bot = null!;
@@ -30,8 +29,8 @@ public sealed class PluralKitBulkDeleteTests(GrimoireCoreFactory database) : IAs
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database, configureHost: builder =>
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database, configureHost: builder =>
         {
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["pluralkitToken"] = "fake-token" });
             builder.Services.AddHttpClient("Pluralkit").ConfigurePrimaryHttpMessageHandler(() => this._pluralKit);
@@ -72,7 +71,7 @@ public sealed class PluralKitBulkDeleteTests(GrimoireCoreFactory database) : IAs
         this._bot.DeleteMessage(original, this.Channel);
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.ProxiedMessages.AnyAsync(link => link.ProxyMessageId == new MessageId(proxy));
         }, linked => linked)).ShouldBeTrue("the proxy should be linked to its original");
         // The PluralKit rate limiter allows two lookups a second and refuses the rest.
@@ -85,7 +84,7 @@ public sealed class PluralKitBulkDeleteTests(GrimoireCoreFactory database) : IAs
         var messageId = this._bot.SendMessage(author, this.Channel, content);
         (await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId));
         }, saved => saved)).ShouldBeTrue();
         return messageId;

@@ -28,7 +28,6 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
     private const ulong TextLock = (1UL << 11) | (1UL << 38) | (1UL << 12) | (1UL << 6);
     private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
 
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -39,8 +38,8 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
@@ -125,7 +124,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
         (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, NothingHappensWindow)).ShouldBeFalse();
         await this._bot.SetModuleAsync(Module.MessageLog, true);
         (await this.MessageSavedAsync(messageId)).ShouldBeTrue();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.MessageHistory.OfType<MessageDeletedEntry>()
             .AnyAsync(entry => entry.MessageId == new MessageId(messageId), Token)).ShouldBeFalse();
     }
@@ -143,7 +142,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
         this._bot.UnbanFromClient(this.Guild.Admin, this.Guild.User1);
 
         (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, NothingHappensWindow)).ShouldBeFalse();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(Token)).ShouldBeFalse();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
@@ -168,7 +167,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
             == $"Mute on {this.Guild.User1.MemberMention} has expired.");
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"Lock on {this.Guild.General.Mention} has expired.");
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.OfType<MuteRemoved>().CountAsync(Token)).ShouldBe(1);
         (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().CountAsync(Token)).ShouldBe(1);
     }
@@ -189,7 +188,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
         (await this._bot.Rest.ReceivesRequestWithinAsync(request => request.Method == HttpMethod.Post
                 && request.Path == $"channels/{this.Guild.General.Id}/messages", NothingHappensWindow))
             .ShouldBeFalse();
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.CustomCommandUsages.AnyAsync(Token)).ShouldBeFalse();
     }
 
@@ -215,7 +214,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
         reply.Description.ShouldBe(
             "**Leveling Enabled:** False\n**User Log Enabled:** False\n**Message Log Enabled:** False\n" +
             "**Moderation Enabled:** False\n**Commands Enabled:** False\n**Anti Spam Enabled:** False\n");
-        await using var settingsContext = this._database.CreateSettingsDbContext();
+        await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.GuildSettings.AnyAsync(setting => setting.GuildId == this.GuildId, Token)).ShouldBeFalse();
     }
 
@@ -226,20 +225,20 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
     private async Task<long> XpOfAsync(FakeUser user, TimeSpan? window = null)
         => await GrimoireTestBot.EventuallyAsync(async () =>
         {
-            await using var dbContext = this._database.CreateDbContext();
+            await using var dbContext = database.CreateDbContext();
             return (await dbContext.XpHistory.OfType<EarnedXp>().Where(xp => xp.UserId == new UserId(user.Id)).ToListAsync(Token))
                 .Sum(xp => xp.Xp.Value);
         }, xp => xp > 0, window);
 
     private async Task<bool> MessageSavedAsync(ulong messageId)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return await dbContext.Messages.AnyAsync(message => message.Id == new MessageId(messageId), Token);
     }
 
     private async Task SeedNicknameAsync(FakeUser user, string nickname)
     {
-        await using var seed = this._database.CreateDbContext();
+        await using var seed = database.CreateDbContext();
         seed.NicknameHistory.Add(new NicknameHistory
         {
             UserId = new UserId(user.Id),
@@ -252,7 +251,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
 
     private async Task<List<string>> NicknamesOfAsync(FakeUser user)
     {
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         return [.. (await dbContext.NicknameHistory.Where(row => row.UserId == new UserId(user.Id)).ToListAsync(Token))
             .Select(row => row.Nickname?.Value).OfType<string>()];
     }
@@ -262,7 +261,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
         var now = DateTimeOffset.UtcNow;
         var mute = MuteAdded.Create(new UserId(user.Id), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId(1),
             now.AddMinutes(-10), now.AddMinutes(-1), new RoleId(roleId)).ShouldSucceed();
-        await using (var settingsContext = this._database.CreateSettingsDbContext())
+        await using (var settingsContext = database.CreateSettingsDbContext())
         {
             settingsContext.Mutes.Add(mute);
             await settingsContext.SaveChangesAsync(Token);
@@ -278,7 +277,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
         var channelLock = ChannelLocked.Create(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(channel.Id),
             this.GuildId, now.AddMinutes(-10), new PreviouslyAllowedPermissions(0), new PreviouslyDeniedPermissions(0),
             now.AddMinutes(-1)).ShouldSucceed();
-        await using (var settingsContext = this._database.CreateSettingsDbContext())
+        await using (var settingsContext = database.CreateSettingsDbContext())
         {
             settingsContext.ChannelLocks.Add(channelLock);
             await settingsContext.SaveChangesAsync(Token);

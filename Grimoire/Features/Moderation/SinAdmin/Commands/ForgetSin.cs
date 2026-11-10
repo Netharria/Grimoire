@@ -18,9 +18,6 @@ namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
 internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFactory, GuildLog guildLog)
 {
-    private readonly IDbContextFactory<GrimoireDbContext> _dbContextFactory = dbContextFactory;
-    private readonly GuildLog _guildLog = guildLog;
-
     [Command("Forget")]
     [Description("Forget a user's sin. This will permanently remove the sin from the bots memory.")]
     public async Task ForgetAsync(CommandContext ctx,
@@ -31,7 +28,7 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         var guild = ctx.RequiredGuild;
 
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var sin = await dbContext.Sins.FirstOrDefaultAsync(sin => sin.Id == sinId && sin.GuildId == guild.GetGuildId());
         if (sin is null)
         {
@@ -47,7 +44,7 @@ internal sealed class ForgetSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         await ctx.ReplyAsync(GrimoireColor.Green, message, "Forgot");
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

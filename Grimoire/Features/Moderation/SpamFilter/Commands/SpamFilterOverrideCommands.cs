@@ -14,8 +14,6 @@ namespace Grimoire.Features.Moderation.SpamFilter.Commands;
 internal class SpamFilterOverrideCommands(
     SettingsModule settingsModule)
 {
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     [Command("Override")]
     [Description("Overrides the default spam filter settings. Use this to control which channels are filtered.")]
     [RequireUserGuildPermissions(DiscordPermission.ManageChannels)]
@@ -50,7 +48,7 @@ internal class SpamFilterOverrideCommands(
         };
 
         await ctx.ReplyResultAsync(
-            await this._settingsModule.SetSpamFilterOverrideAsync(channel.GetChannelId(), guild.GetGuildId(),
+            await settingsModule.SetSpamFilterOverrideAsync(channel.GetChannelId(), guild.GetGuildId(),
                 ctx.GetModeratorId(), option),
             message);
     }
@@ -65,7 +63,7 @@ internal class SpamFilterOverrideCommands(
         var guild = ctx.RequiredGuild;
 
         List<string> lines = [];
-        await foreach (var spamFilterOverride in this._settingsModule.GetAllSpamFilterOverrideAsync(guild.GetGuildId()))
+        await foreach (var spamFilterOverride in settingsModule.GetAllSpamFilterOverrideAsync(guild.GetGuildId()))
             if (await guild.GetChannelOrDefaultAsync(spamFilterOverride.ChannelId) is { } channel)
                 lines.Add(channel.Mention + spamFilterOverride.ChannelOption switch
                 {

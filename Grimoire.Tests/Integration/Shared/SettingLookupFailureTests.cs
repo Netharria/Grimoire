@@ -22,7 +22,6 @@ namespace Grimoire.Tests.Integration.Shared;
 [Collection("Test collection")]
 public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private readonly GrimoireCoreFactory _database = database;
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -31,8 +30,8 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
 
     public async ValueTask InitializeAsync()
     {
-        await this._database.ResetDatabase();
-        this._bot = await GrimoireTestBot.StartAsync(this._database);
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.SetModuleAsync(Module.Leveling, true);
         await this._bot.SetModuleAsync(Module.Moderation, true);
         foreach (var module in new[] { Module.Leveling, Module.Moderation, Module.UserLog })
@@ -107,7 +106,7 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
         });
         await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
 
-        await using var dbContext = this._database.CreateDbContext();
+        await using var dbContext = database.CreateDbContext();
         (await dbContext.XpHistory.CountAsync(xp => xp.UserId == new UserId(this.Guild.User1.Id), TestContext.Current.CancellationToken))
             .ShouldBe(1);
         this.ShouldNotHaveCrashed();
@@ -127,7 +126,7 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
 
     private async Task<T> WhileUnreadableAsync<T>(string entityName, Func<Task<T>> action)
     {
-        await using var unreadable = await this._database.MakeSettingsTablesUnreadableAsync(entityName);
+        await using var unreadable = await database.MakeSettingsTablesUnreadableAsync(entityName);
         return await action();
     }
 }

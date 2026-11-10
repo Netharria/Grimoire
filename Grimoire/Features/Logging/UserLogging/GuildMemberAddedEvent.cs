@@ -17,17 +17,13 @@ internal sealed class GuildMemberAddedEvent(
     IInviteService inviteService)
     : IEventHandler<GuildMemberAddedEventArgs>
 {
-    private readonly GuildLog _guildLog = guildLog;
-    private readonly IInviteService _inviteService = inviteService;
-    private readonly SettingsModule _settingsModule = settingsModule;
-
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
-        if (!await this._settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
             return;
         // Without Manage Server the invites can't be listed, so the join is logged with no invite.
         var invites = await args.Guild.GetGuildInvitesAsync();
-        var inviteUsed = invites is null ? null : this._inviteService.CalculateInviteUsed(invites);
+        var inviteUsed = invites is null ? null : inviteService.CalculateInviteUsed(invites);
         string? inviteUsedText;
         if (inviteUsed is not null)
             inviteUsedText =
@@ -51,7 +47,7 @@ internal sealed class GuildMemberAddedEvent(
 
         if (args.Member.CreationTimestamp > DateTimeOffset.UtcNow.AddDays(-7))
             embed.AddField("New Account", $"Created {Formatter.Timestamp(args.Member.CreationTimestamp)}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
+        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
         {
             GuildId = args.Guild.GetGuildId(), GuildLogType = GuildLogType.UserJoined, Embed = embed
         });
