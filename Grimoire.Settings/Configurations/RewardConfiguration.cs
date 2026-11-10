@@ -27,8 +27,6 @@ internal sealed class RewardConfiguration : IEntityTypeConfiguration<Reward>
         builder.Property(e => e.SetBy);
         builder.Property(e => e.GuildId);
         builder.Property(e => e.RoleId);
-        builder.HasIndex(x => new { x.GuildId, x.RoleId, x.SetAt })
-            .IsDescending(false, false, true);
     }
 }
 

@@ -24,9 +24,6 @@ internal sealed class MuteConfiguration : IEntityTypeConfiguration<Mute>, IEntit
             .HasValue<MuteRemoved>("Removed")
             .IsComplete();
 
-        builder.HasIndex(e => new { e.UserId, e.GuildId, e.SetAt })
-            .IsDescending(false, false, true);
-
         builder.Property(e => e.GuildId);
         builder.Property(e => e.UserId);
         builder.Property(e => e.ModeratorId);

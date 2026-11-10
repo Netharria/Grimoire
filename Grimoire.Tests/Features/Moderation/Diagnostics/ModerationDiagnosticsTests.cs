@@ -30,14 +30,17 @@ public sealed class ModerationDiagnosticsTests
             .Where(f => f.Kind is ChannelFindingKind.MuteRoleNotDenied or ChannelFindingKind.RoleCanSpeakWhenMuted)
             .ShouldBeEmpty();
 
+    /// <remarks>Cases: DIAG-26.</remarks>
     [Fact]
     public void Channel_without_a_mute_role_overwrite_is_reported_once()
         => Of(Analyze(Guild([Channel()])), ChannelFindingKind.MuteRoleNotDenied).ShouldHaveSingleItem();
 
+    /// <remarks>Cases: DIAG-27.</remarks>
     [Fact]
     public void Channel_where_everyone_cannot_speak_needs_no_mute_overwrite()
         => Analyze(Guild([Channel()], roles: Roles(DiscordPermissions.None))).ChannelFindings.ShouldBeEmpty();
 
+    /// <remarks>Cases: DIAG-28.</remarks>
     [Fact]
     public void Role_with_an_allow_overwrite_is_reported_as_speaking_while_muted()
     {
@@ -47,6 +50,7 @@ public sealed class ModerationDiagnosticsTests
             .SubjectIds.ShouldBe([MemberRole]);
     }
 
+    /// <remarks>Cases: DIAG-65.</remarks>
     [Fact]
     public void Ignored_roles_are_not_reported_and_are_listed()
     {
@@ -58,6 +62,7 @@ public sealed class ModerationDiagnosticsTests
         result.IgnoredRoles.Select(r => r.Id).ShouldBe([ModeratorRole]);
     }
 
+    /// <remarks>Cases: DIAG-32.</remarks>
     [Fact]
     public void Administrator_roles_are_not_reported_and_are_listed_separately()
     {
@@ -77,6 +82,7 @@ public sealed class ModerationDiagnosticsTests
         result.IgnoredRoles.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: DIAG-31.</remarks>
     [Fact]
     public void Member_overwrite_that_allows_speaking_is_reported()
     {
@@ -85,6 +91,7 @@ public sealed class ModerationDiagnosticsTests
         Of(result, ChannelFindingKind.MemberCanSpeakWhenMuted).ShouldHaveSingleItem().SubjectIds.ShouldBe([999UL]);
     }
 
+    /// <remarks>Cases: DIAG-66.</remarks>
     [Fact]
     public void Ignored_members_are_not_reported_and_are_listed()
     {
@@ -102,6 +109,7 @@ public sealed class ModerationDiagnosticsTests
         => AnalyzeIgnoringMembers(Guild([Channel(overwrites: [MuteDeny, Member(999, Speak)])]), 999).ChannelFindings
             .ShouldBeEmpty();
 
+    /// <remarks>Cases: DIAG-33.</remarks>
     [Fact]
     public void Voice_channels_are_checked_with_voice_permissions()
     {
@@ -111,6 +119,7 @@ public sealed class ModerationDiagnosticsTests
         Of(Analyze(Guild([Channel(ChannelKind.Voice)])), ChannelFindingKind.MuteRoleNotDenied).ShouldHaveSingleItem();
     }
 
+    /// <remarks>Cases: DIAG-20.</remarks>
     [Fact]
     public void Without_a_mute_role_no_channel_mute_findings_are_produced()
     {
@@ -122,12 +131,14 @@ public sealed class ModerationDiagnosticsTests
 
     // ---- locks ----
 
+    /// <remarks>Cases: DIAG-29.</remarks>
     [Fact]
     public void Lock_is_fine_when_only_role_level_permissions_allow_speaking()
         => Analyze(Guild([Channel(overwrites: MuteDeny)])).ChannelFindings
             .Where(f => f.Kind is ChannelFindingKind.RoleCanSpeakWhenLocked or ChannelFindingKind.MemberCanSpeakWhenLocked)
             .ShouldBeEmpty();
 
+    /// <remarks>Cases: DIAG-28.</remarks>
     [Fact]
     public void Role_with_an_allow_overwrite_keeps_speaking_in_a_locked_channel()
     {
@@ -142,16 +153,19 @@ public sealed class ModerationDiagnosticsTests
         => Of(Analyze(Guild([Channel(overwrites: [MuteDeny, Role(ModeratorRole, allow: Speak)])]), ModeratorRole),
             ChannelFindingKind.RoleCanSpeakWhenLocked).ShouldBeEmpty();
 
+    /// <remarks>Cases: DIAG-30.</remarks>
     [Fact]
     public void Existing_everyone_allow_is_replaced_by_the_lock()
         => Of(Analyze(Guild([Channel(overwrites: [MuteDeny, Role(TestGuild, allow: Speak)])])),
             ChannelFindingKind.RoleCanSpeakWhenLocked).ShouldBeEmpty();
 
+    /// <remarks>Cases: DIAG-34.</remarks>
     [Fact]
     public void Bot_without_manage_channels_in_a_channel_cannot_lock_it()
         => Of(Analyze(Guild([Channel(botCanManage: false, overwrites: MuteDeny)])), ChannelFindingKind.BotCannotLock)
             .ShouldHaveSingleItem();
 
+    /// <remarks>Cases: DIAG-33.</remarks>
     [Fact]
     public void Voice_channels_are_not_lock_checked()
         => Analyze(Guild([Channel(ChannelKind.Voice, false, Role(MuteRole, deny: VoiceSpeak))])).ChannelFindings
@@ -159,16 +173,19 @@ public sealed class ModerationDiagnosticsTests
 
     // ---- guild level ----
 
+    /// <remarks>Cases: DIAG-23.</remarks>
     [Fact]
     public void Bot_without_manage_roles_is_reported()
         => Analyze(Guild([], botPermissions: DiscordPermissions.None)).GuildFindings
             .ShouldContain(f => f.Kind == GuildFindingKind.BotMissingManageRoles);
 
+    /// <remarks>Cases: DIAG-22.</remarks>
     [Fact]
     public void Mute_role_at_or_above_the_bots_top_role_is_reported()
         => Analyze(Guild([], muteRolePosition: 10, botTop: 10)).GuildFindings
             .ShouldContain(f => f.Kind == GuildFindingKind.MuteRoleAboveBot);
 
+    /// <remarks>Cases: DIAG-21.</remarks>
     [Fact]
     public void Configured_mute_role_that_no_longer_exists_is_reported()
         => Analyze(Guild([], muteRole: 555)).GuildFindings

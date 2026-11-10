@@ -22,9 +22,6 @@ internal sealed class XpTrackedItemsConfiguration : IEntityTypeConfiguration<XpT
             .ValueGeneratedNever()
             .IsRequired();
 
-        builder.HasIndex(nameof(XpTrackedItem.GuildId), "Id", nameof(XpTrackedItem.SetAt))
-            .IsDescending(false, false, true);
-
         builder.Property(e => e.GuildId)
             .ValueGeneratedNever()
             .IsRequired();

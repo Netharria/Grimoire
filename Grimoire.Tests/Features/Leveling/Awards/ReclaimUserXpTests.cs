@@ -11,6 +11,7 @@ namespace Grimoire.Tests.Features.Leveling.Awards;
 
 public sealed class ReclaimUserXpValidateOptionTests
 {
+    /// <remarks>Cases: LVL-151.</remarks>
     [Fact]
     public void AmountOption_ZeroAmount_Fails()
         => ReclaimUserXp.ValidateOption(ReclaimUserXp.XpOption.Amount, 0)
@@ -27,6 +28,7 @@ public sealed class ReclaimUserXpValidateOptionTests
         => ReclaimUserXp.ValidateOption(ReclaimUserXp.XpOption.All, 0)
             .ShouldBeOfType<Result<Unit>.Success>();
 
+    /// <remarks>Cases: LVL-150.</remarks>
     [Fact]
     public void AllOption_NonZeroAmount_StillSucceeds_AmountIsIgnored()
         => ReclaimUserXp.ValidateOption(ReclaimUserXp.XpOption.All, 5)

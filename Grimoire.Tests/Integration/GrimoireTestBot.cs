@@ -272,6 +272,14 @@ public sealed class GrimoireTestBot : IAsyncDisposable
         this.Gateway.Dispatch(channel.IsThread ? "THREAD_DELETE" : "CHANNEL_DELETE", json);
     }
 
+    /// <summary>
+    ///     The bot is kicked from a guild, or the guild is deleted, and the gateway sends <c>GUILD_DELETE</c> without
+    ///     <c>unavailable</c>, which is how Discord tells a removal from an outage. Sending <c>GUILD_CREATE</c> again
+    ///     afterwards adds the bot back.
+    /// </summary>
+    public void BotLeavesGuild(FakeGuild guild)
+        => this.Gateway.Dispatch("GUILD_DELETE", new JsonObject { ["id"] = FakeUser.Snowflake(guild.Id) });
+
     /// <summary>The member leaves the guild, and the gateway tells the bot.</summary>
     public void MemberLeaves(FakeUser user)
     {
@@ -395,6 +403,19 @@ public sealed class GrimoireTestBot : IAsyncDisposable
                     ["proxy_url"] = AttachmentUrl(channel, attachment.id, attachment.fileName)
                 })
         ]);
+        this.Gateway.Dispatch("MESSAGE_CREATE", message);
+        return messageId;
+    }
+
+    /// <summary>
+    ///     Sends a <c>MESSAGE_CREATE</c> whose <c>mentions</c> array lists <paramref name="mentioned" />, as Discord
+    ///     resolves user mentions for the bot. DSharpPlus reads user mentions from that array, not from the content.
+    /// </summary>
+    public ulong SendMessageMentioning(FakeUser author, FakeChannel channel, string content, params FakeUser[] mentioned)
+    {
+        var messageId = this.NextSnowflake();
+        var message = this.MessageJson(messageId, author, channel, content, edited: false);
+        message["mentions"] = new JsonArray([.. mentioned.Select(user => (JsonNode)user.ToJson())]);
         this.Gateway.Dispatch("MESSAGE_CREATE", message);
         return messageId;
     }
@@ -536,7 +557,8 @@ public sealed class GrimoireTestBot : IAsyncDisposable
         var interaction = new FakeInteraction(1_400_000_000_000_000_000UL + (ulong)number, $"fake-interaction-token-{number}");
         var member = guild.GetMember(invoker);
         var memberJson = FakeGuild.MemberJson(member);
-        memberJson["permissions"] = guild.GuildPermissionsOf(invoker).ToString(CultureInfo.InvariantCulture);
+        // Discord resolves both permission fields for the channel the command was run in (H-13).
+        memberJson["permissions"] = guild.ChannelPermissionsOf(invoker, channel).ToString(CultureInfo.InvariantCulture);
 
         var resolvedUsers = new JsonObject();
         var resolvedMembers = new JsonObject();
@@ -558,6 +580,7 @@ public sealed class GrimoireTestBot : IAsyncDisposable
         foreach (var resolvedChannel in options.SelectMany(option => option.ResolvedChannels()).Distinct())
             resolvedChannels[FakeUser.Snowflake(resolvedChannel.Id)] = guild.ChannelJson(resolvedChannel);
 
+        this.Rest.RememberInteractionChannel(interaction.Token, channel.Id);
         this.Gateway.Dispatch("INTERACTION_CREATE", new JsonObject
         {
             ["id"] = FakeUser.Snowflake(interaction.Id),
@@ -569,7 +592,7 @@ public sealed class GrimoireTestBot : IAsyncDisposable
             ["channel_id"] = FakeUser.Snowflake(channel.Id),
             ["channel"] = guild.ChannelJson(channel),
             ["member"] = memberJson,
-            ["app_permissions"] = guild.BotPermissions.ToString(CultureInfo.InvariantCulture),
+            ["app_permissions"] = guild.ChannelPermissionsOf(guild.Bot, channel).ToString(CultureInfo.InvariantCulture),
             ["locale"] = "en-US",
             ["guild_locale"] = "en-US",
             ["entitlements"] = new JsonArray(),
@@ -590,6 +613,75 @@ public sealed class GrimoireTestBot : IAsyncDisposable
                     ["roles"] = resolvedRoles
                 }
             }
+        });
+
+        return interaction;
+    }
+
+    /// <summary>
+    ///     H-11: the original response the member now sees for <paramref name="interaction" />, with its components, or
+    ///     null before the bot answered or after the message was deleted.
+    /// </summary>
+    public JsonObject? ResponseMessageOf(FakeInteraction interaction) => this.Rest.OriginalResponseOf(interaction.Token);
+
+    /// <summary>The <c>custom_id</c> of every button and select on a message, in the order Discord shows them.</summary>
+    public static IReadOnlyList<string> ComponentIds(JsonNode message)
+        => [.. (message["components"]?.AsArray() ?? [])
+            .SelectMany(row => row?["components"]?.AsArray() ?? [])
+            .Select(component => component?["custom_id"]?.GetValue<string>())
+            .OfType<string>()];
+
+    /// <summary>H-11: <paramref name="user" /> clicks the button <paramref name="customId" /> on a bot message.</summary>
+    public FakeInteraction ClickButton(FakeUser user, JsonObject message, string customId)
+        => this.UseComponent(user, message, customId, ButtonComponentType, null);
+
+    /// <summary>H-11: <paramref name="user" /> picks <paramref name="values" /> in the string select <paramref name="customId" />.</summary>
+    public FakeInteraction ChooseInSelect(FakeUser user, JsonObject message, string customId, params string[] values)
+        => this.UseComponent(user, message, customId, StringSelectComponentType, values);
+
+    private const int ButtonComponentType = 2;
+    private const int StringSelectComponentType = 3;
+    private const int MessageComponentInteractionType = 3;
+
+    /// <summary>Sends <c>INTERACTION_CREATE</c> type 3, as Discord does when a member uses a component on a message.</summary>
+    private FakeInteraction UseComponent(FakeUser user, JsonObject message, string customId, int componentType,
+        string[]? values)
+    {
+        var channelId = ulong.Parse(message["channel_id"]!.ToString(), CultureInfo.InvariantCulture);
+        var channel = this.Guild.Channels.Concat(this.Guild.Threads)
+                          .Concat(this.SecondGuild is { } second ? second.Channels.Concat(second.Threads) : [])
+                          .FirstOrDefault(c => c.Id == channelId)
+                      ?? this.Guild.General;
+        var guild = this.GuildOf(channel);
+        var number = Interlocked.Increment(ref this._interactionCount);
+        var interaction = new FakeInteraction(1_400_000_000_000_000_000UL + (ulong)number, $"fake-interaction-token-{number}");
+        this.Rest.RememberComponentTarget(interaction.Token, ulong.Parse(message["id"]!.ToString(), CultureInfo.InvariantCulture),
+            channel.Id);
+        var memberJson = FakeGuild.MemberJson(guild.GetMember(user));
+        memberJson["permissions"] = guild.GuildPermissionsOf(user).ToString(CultureInfo.InvariantCulture);
+        var data = new JsonObject { ["custom_id"] = customId, ["component_type"] = componentType };
+        if (values is not null)
+            data["values"] = new JsonArray([.. values.Select(value => (JsonNode)value)]);
+
+        this.Gateway.Dispatch("INTERACTION_CREATE", new JsonObject
+        {
+            ["id"] = FakeUser.Snowflake(interaction.Id),
+            ["application_id"] = FakeUser.Snowflake(guild.ApplicationId),
+            ["type"] = MessageComponentInteractionType,
+            ["token"] = interaction.Token,
+            ["version"] = 1,
+            ["guild_id"] = FakeUser.Snowflake(guild.Id),
+            ["channel_id"] = FakeUser.Snowflake(channel.Id),
+            ["channel"] = guild.ChannelJson(channel),
+            ["member"] = memberJson,
+            ["app_permissions"] = guild.BotPermissions.ToString(CultureInfo.InvariantCulture),
+            ["locale"] = "en-US",
+            ["guild_locale"] = "en-US",
+            ["entitlements"] = new JsonArray(),
+            ["authorizing_integration_owners"] = new JsonObject { ["0"] = FakeUser.Snowflake(guild.Id) },
+            ["context"] = 0,
+            ["message"] = message.DeepClone(),
+            ["data"] = data
         });
 
         return interaction;

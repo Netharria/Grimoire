@@ -37,6 +37,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
 
     // ── View ──────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-80.</remarks>
     [Fact]
     public async Task View_ShowsTheModuleTimeoutAndLogChannel()
     {
@@ -48,6 +49,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LVL-80.</remarks>
     [Fact]
     public async Task View_ShowsTheNumbersPlainly()
         => (await this.LevelSettingsAsync("view")).Description.ShouldNotBeNull()
@@ -55,6 +57,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
 
     // ── Set ───────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-83 (TextTime, 10), LVL-84.</remarks>
     [Theory]
     [InlineData(Option.TextTime, 10)]
     [InlineData(Option.Base, 30)]
@@ -64,7 +67,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
     {
         (await this.SetAsync(option, value)).Description.ShouldBe($"Updated {option} level setting to {value}");
 
-        var settings = (await this.Settings.GetLevelingSettings(this.GuildId)).ShouldSucceed();
+        var settings = (await this.Settings.GetLevelingSettings(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
         (option switch
         {
             Option.TextTime => (int)settings.XpTimeoutPeriod.Value.TotalMinutes,
@@ -76,6 +79,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
             == $"{this.Guild.Admin.MemberMention} updated {option} level setting to {value}");
     }
 
+    /// <remarks>Cases: LVL-85, LVL-86.</remarks>
     [Theory]
     [InlineData(Option.TextTime, 61, "Xp timeout period must be a value between 1 and 60 in minutes.")]
     [InlineData(Option.Base, 501, "Level scaling base must be a value between 1 and 500.")]
@@ -85,13 +89,14 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
     {
         (await this.SetAsync(option, value)).Description.ShouldBe(error);
 
-        var settings = (await this.Settings.GetLevelingSettings(this.GuildId)).ShouldSucceed();
+        var settings = (await this.Settings.GetLevelingSettings(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
         (settings.Base.Value, settings.Modifier.Value, settings.Amount.Value, settings.XpTimeoutPeriod.Value.TotalMinutes)
             .ShouldBe((15, 50, 5, 3d));
     }
 
     // ── LogSet ────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-81, LVL-91.</remarks>
     [Fact]
     public async Task LogSet_StoresTheChannel_ViewShowsIt_AndOffClearsIt()
     {
@@ -107,6 +112,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
         (await this.LogChannelAsync()).ShouldBeNull();
     }
 
+    /// <remarks>Cases: LVL-95.</remarks>
     [Fact]
     public async Task LogSet_WhereTheBotCannotSend_IsRefused()
     {
@@ -121,6 +127,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
 
     // ── Gates ─────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-98 (View only).</remarks>
     [Fact]
     public async Task LevelSettings_NeedManageGuild()
         => (await this._bot.RunSlashCommandAndWaitAsync("level_settings", this.Guild.Moderator,
@@ -128,6 +135,7 @@ public sealed class LevelSettingsTests(GrimoireCoreFactory database) : IAsyncLif
             .Description.ShouldBe("You do not have the required permissions to use this command.");
 
     /// <summary>View still runs, so it can say the module is off; changing a setting is refused.</summary>
+    /// <remarks>Cases: LVL-99, XC-72.</remarks>
     [Fact]
     public async Task LevelSettings_WithLevelingDisabled_ViewShowsIt_AndChangesAreRefused()
     {

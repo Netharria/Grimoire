@@ -7,6 +7,7 @@
 
 namespace Grimoire.Settings.Tests.Moderation;
 
+/// <remarks>Cases: XC-103 (the ignore list's cache).</remarks>
 [Collection("Settings collection")]
 public sealed class DiagnosticsIgnoresTests(SettingsTestsFactory factory) : IAsyncLifetime
 {

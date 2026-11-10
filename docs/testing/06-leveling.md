@@ -59,25 +59,25 @@ to the leveling log: author = username, "@user has leveled to level N.", footer 
 |----|--------------|--------|-------------------------|-------------------|
 | LVL-01 | Defaults; `user1` has no XP | `user1` posts in `#general` | none | One Earned row, `Xp` 5, `TimeOut` about now + 3 min. **[auto]** `GainXpTests.AMessage_EarnsXp_WithATimeout` |
 | LVL-02 | LVL-01 just done | `user1` posts again within 3 min | none | No new row. **[auto]** `ASecondMessage_DuringTheTimeout_EarnsNothing` |
-| LVL-03 | LVL-02 done | Wait past the timeout, post again | none | Second Earned row |
-| LVL-04 | `TextTime` set to 1 | Post, wait 1 min, post | none | Two rows, one minute apart |
+| LVL-03 | LVL-02 done | Wait past the timeout, post again | none | Second Earned row. **[auto]** `XpGainGapTests.AMessage_AfterTheTimeoutHasPassed_EarnsAgain` |
+| LVL-04 | `TextTime` set to 1 | Post, wait 1 min, post | none | Two rows, one minute apart. **[auto]** `XpGainGapTests.AOneMinuteTimeout_LetsTheMemberEarnAgainAfterAMinute` (the minute is simulated by backdating the row) |
 | LVL-05 | none | A bot posts; a webhook posts | none | No rows. **[auto]** `Messages_ThatShouldNotCount_EarnNothing("bot")` |
-| LVL-06 | none | `user1` replies to a message | none | Earned row (Reply counts) |
-| LVL-07 | none | Pin a message (system message), or `user1` runs a slash command | none | No row for the system or command message |
+| LVL-06 | none | `user1` replies to a message | none | Earned row (Reply counts) **[auto]** `XpGainGapTests.AReply_EarnsXp` |
+| LVL-07 | none | Pin a message (system message), or `user1` runs a slash command | none | No row for the system or command message. **[auto]** `XpGainGapTests.ASystemMessageOrASlashCommand_EarnsNothing` |
 | LVL-08 | `user1` ignored (`/Ignore Add items:user1`) | `user1` posts | none | No row. **[auto]** `Messages_ThatShouldNotCount_EarnNothing("ignored member")` |
 | LVL-09 | `mod` role ignored | `mod` posts | none | No row. **[auto]** `("ignored role")` |
 | LVL-10 | `#ignored` ignored | `user1` posts in `#ignored`, then in `#general` | none | No row for `#ignored`; a row for `#general`. **[auto]** `("ignored channel")`, `AnIgnoredChannel_DoesNotAffectOtherChannels` |
-| LVL-11 | `#ignored` ignored; a thread under it | `user1` posts in the thread | none | **Expected:** no row. **Actual:** a row, because only the exact channel id is matched (new, see Code observations 2) |
+| LVL-11 | `#ignored` ignored; a thread under it | `user1` posts in the thread | none | **Expected:** no row. **Actual:** a row, because only the exact channel id is matched (new, see Code observations 2) **[auto]** `XpGainGapTests.AThreadUnderAnIgnoredChannel_EarnsNothing` (skipped, KI-73) |
 | LVL-12 | A category ignored with `/Ignore Add channel:<category>` | `user1` posts in a channel in that category | none | **Expected:** no row, or the category refused. **Actual:** a row (new, Code observations 2) |
 | LVL-13 | Leveling disabled | `user1` posts | none | No row. **[auto]** `("module off")` |
 | LVL-14 | `user1` has 10 XP (2 messages) | Third message after the timeout | `#levelup`: "@user1 has leveled to level 2." | Row; level embed. **[auto]** `CrossingALevel_PostsToTheLevelingLog` |
 | LVL-15 | `user1` at 15 XP | Fourth message | none | Row; no level embed. **[auto]** `StayingOnALevel_PostsNothing` |
-| LVL-16 | `Amount` 100; `user1` has 0 XP | One message | One embed: "has leveled to level 5." (no embeds for 2 to 4) | Row of 100 |
-| LVL-17 | Leveling log off (`LogSet option:Off`) | Cross a level | No level embed anywhere | Row saved |
-| LVL-18 | `user1` and `user2` both earning | Both post | Each earns separately | Two rows, per user |
+| LVL-16 | `Amount` 100; `user1` has 0 XP | One message | One embed: "has leveled to level 5." (no embeds for 2 to 4) | Row of 100. **[auto]** `XpGainGapTests.JumpingSeveralLevels_PostsOneLevelUp_ForTheNewLevel` |
+| LVL-17 | Leveling log off (`LogSet option:Off`) | Cross a level | No level embed anywhere | Row saved. **[auto]** `XpGainGapTests.WithTheLevelingLogOff_ALevelUpIsPostedNowhere_ButTheXpIsSaved` |
+| LVL-18 | `user1` and `user2` both earning | Both post | Each earns separately | Two rows, per user. **[auto]** `XpGainGapTests.TwoMembers_EachEarnTheirOwnXp` |
 | LVL-19 | `user1` posts two messages at the same instant (paste fast, or two clients) | Two messages within ~100 ms | none | **Expected:** one row. **Actual (suspected):** possibly two rows, because the timeout check and the insert are not atomic (new, Code observations 1) |
-| LVL-20 | `pk` with PluralKit | `pk` posts a proxied message | none | One row, from the original message; none from the webhook (more in area 09) |
-| LVL-21 | XP in Test-A only | `user1` posts in Test-B | none | Test-B row is separate; Test-A total unchanged |
+| LVL-20 | `pk` with PluralKit | `pk` posts a proxied message | none | One row, from the original message; none from the webhook (more in area 09). **[auto]** `PluralKitAcrossFeaturesTests.ProxiedMessages_EarnXpOnlyForTheMember_OncePerTimeout` Webhook half also in `XpGainGapTests.AWebhookCopyOfAMessage_EarnsNothing_TheOriginalEarnsOnce`. |
+| LVL-21 | XP in Test-A only | `user1` posts in Test-B | none | Test-B row is separate; Test-A total unchanged. **[auto]** `XpGainGapTests.XpInOneGuild_IsSeparateFromAnother` |
 
 Automated in `Grimoire.Tests/Integration/Leveling/GainXpTests.cs`; `BuildEarnedXp` in
 `Grimoire.Tests/Features/Leveling/Events/GainUserXpTests.cs`.
@@ -99,19 +99,19 @@ bot, and reported once: "These level rewards were removed because their roles we
 |----|--------------|--------|-------------------------|-------------------|
 | LVL-30 | Reward `@L2` at level 2 with message "Well done\nfriend"; `user1` at 10 XP | Third message | `user1` gets `@L2`; DM with "Well done" and "friend" on two lines; `#levelup` level embed and "@user1 has earned @L2" | Audit log "Level reward". **[auto]** `GainXpTests.ReachingARewardLevel_GrantsTheRole_DmsTheMessage_AndLogsIt`, `ARewardMessageWithBackslashes_IsSentAsWritten_ExceptForLineBreaks` |
 | LVL-31 | Reward at level 5; `user1` at level 2 | Post | No role | none. **[auto]** `ARewardForAHigherLevel_IsNotGrantedYet` |
-| LVL-32 | Rewards at 2 and 3; `Amount` 100 | One message from 0 XP | Both roles; one "has earned @L2 @L3" log | none |
-| LVL-33 | Reward with no message | Reach it | Role granted, no DM | Log line only |
-| LVL-34 | `user1` has DMs closed | Reach a reward with a message | Role granted, no DM | Info log "Failure to send reward message"; no alert |
-| LVL-35 | `user1` already holds the reward role | Post | Nothing new; no log | none |
-| LVL-36 | `user1` at level 3 had `@L2` removed by hand | Post after the timeout | `@L2` is granted again | Log line |
+| LVL-32 | Rewards at 2 and 3; `Amount` 100 | One message from 0 XP | Both roles; one "has earned @L2 @L3" log | none. **[auto]** `RewardGrantTests.TwoRewardsReachedAtOnce_AreBothGranted_AndLoggedInOneLine` |
+| LVL-33 | Reward with no message | Reach it | Role granted, no DM | Log line only. **[auto]** `RewardGrantTests.ARewardWithoutAMessage_IsGranted_WithoutADm` |
+| LVL-34 | `user1` has DMs closed | Reach a reward with a message | Role granted, no DM | Info log "Failure to send reward message"; no alert. **[auto]** `RewardGrantTests.ARewardForAMemberWithClosedDms_IsStillGranted_AndOnlyLoggedAsInformation` |
+| LVL-35 | `user1` already holds the reward role | Post | Nothing new; no log | none. **[auto]** `RewardGrantTests.ARewardTheMemberAlreadyHolds_IsNotGrantedOrLoggedAgain` |
+| LVL-36 | `user1` at level 3 had `@L2` removed by hand | Post after the timeout | `@L2` is granted again | Log line. **[auto]** `RewardGrantTests.ARewardRoleRemovedByHand_IsGrantedAgain_OnTheNextGain` |
 | LVL-37 | Reward role moved above the bot after it was added | Reach it | No role; `#modlog` guild issue "I could not give the level reward roles @role." | No "has earned" log. **[auto]** `ARewardRoleTheBotCannotGrant_IsReported`, `ARewardRoleTheBotCannotGrant_IsNotLoggedAsEarned` (KI-41, fixed) |
-| LVL-38 | Bot role loses Manage Roles | Reach a reward | Same guild issue as LVL-37 | none |
+| LVL-38 | Bot role loses Manage Roles | Reach a reward | Same guild issue as LVL-37 | none. **[auto]** `RewardGrantTests.ARewardWhileTheBotLacksManageRoles_IsReported` |
 | LVL-39 | Rewards at 2 (grantable) and 3 (above the bot) | Reach level 3 | `@L2` granted and logged; issue names only `@L3` | **[auto]** `ARewardTheBotCannotGrant_DoesNotBlockTheOthers` |
 | LVL-40 | `user1` is a Server Booster (managed role) | Reach a reward | Role granted; booster role kept | **[auto]** `AMemberWithAManagedRole_StillEarnsTheReward` |
 | LVL-41 | Rewards at 2 and 3; delete the level 2 role in Discord | `user1` posts | Level 3 role granted; `#modlog` issue "These level rewards were removed because their roles were deleted:" "**Level 2:** role `id`" | `RewardRemoved` row by the bot. **[auto]** `ARewardForADeletedRole_IsRemoved_TheModeratorsAreTold_AndTheOthersAreGranted` |
 | LVL-42 | LVL-41 done | Post again | No second issue | No second row. **[auto]** `ARewardForADeletedRole_IsOnlyRemovedOnce`, `ASecondRemovalOnTheSameDay_IsStillShown` |
-| LVL-43 | `@everyone` added as a reward (see LVL-106) | Reach it | **Expected:** refused at Add. **Actual (suspected):** Discord refuses the grant with an error the loop doesn't catch, so the handler throws on every gain and later rewards in the loop are skipped (new, Code observations 3) | Check console for an unhandled exception |
-| LVL-44 | Reward reached through `/Award` only | Award enough XP | No role yet; the role comes on the member's next earned message | none |
+| LVL-43 | `@everyone` added as a reward (see LVL-106) | Reach it | **Expected:** refused at Add. **Actual (suspected):** Discord refuses the grant with an error the loop doesn't catch, so the handler throws on every gain and later rewards in the loop are skipped (new, Code observations 3) | Check console for an unhandled exception. **[auto]** `RewardGrantTests.AnEveryoneReward_DoesNotStopTheOtherRewards` (skipped, KI-75; confirmed against the fake's 400) |
+| LVL-44 | Reward reached through `/Award` only | Award enough XP | No role yet; the role comes on the member's next earned message | none. **[auto]** `RewardGrantTests.ARewardReachedThroughAward_IsGrantedOnTheNextEarnedMessage` Also `AwardReclaimTests.Award_GrantsTheRewardOnlyOnTheNextEarnedMessage`. |
 
 Automated in `Grimoire.Tests/Integration/Leveling/GainXpTests.cs`.
 
@@ -131,8 +131,8 @@ or from the user if they left.
 | LVL-53 | Rewards at 3 and 5; `user1` at level 2 | `/Level` | Next Reward "@L3\n at level 3" | **[auto]** `Level_ShowsTheNextRewardAndItsLevel`, `Level_ShowsTheNearestReward` (KI-42, fixed) |
 | LVL-54 | No user command channel | `user1` runs `/Level` in `#general`; `mod` does the same | `user1`'s reply is ephemeral; `mod`'s is public | **[auto]** `Level_IsEphemeral_UnlessAModeratorOrInTheUserCommandChannel` |
 | LVL-55 | User command channel `#general` | `user1` runs `/Level` there | Public | **[auto]** as LVL-54 |
-| LVL-56 | A user who left, with XP | `/Level user:<them>` | Their XP; username, user avatar, banner color or blurple | none |
-| LVL-57 | The nearest reward's role was deleted, a later reward exists, and no XP gain has cleaned it up | `/Level` | **Expected:** the later reward. **Actual:** "None" until the next XP gain removes the old reward (new, Code observations 7) | none |
+| LVL-56 | A user who left, with XP | `/Level user:<them>` | Their XP; username, user avatar, banner color or blurple | none. **[auto]** `LevelAndLeaderboardGapTests.Level_ForAUserWhoLeft_ShowsTheirXp_WithTheirUserProfile` |
+| LVL-57 | The nearest reward's role was deleted, a later reward exists, and no XP gain has cleaned it up | `/Level` | **Expected:** the later reward. **Actual:** "None" until the next XP gain removes the old reward (new, Code observations 7) | none. **[auto]** `LevelAndLeaderboardGapTests.Level_WhenTheNearestRewardsRoleWasDeleted_ShowsTheNextReward` (skipped, KI-79) |
 | LVL-58 | Discord REST failing for role lookups | `/Level` with a next reward | The command fails and is reported, not "None" | **[auto]** `RewardCommandsTests.Level_DuringADiscordOutage_FailsInsteadOfShowingTheRewardAsMissing` |
 | LVL-59 | Leveling disabled | `/Level` | "This module is disabled in this server." | **[auto]** `LevelingCommands_NeedTheModule("level")` |
 
@@ -155,12 +155,12 @@ Ties get distinct ranks in no set order. The refresh task runs
 | LVL-63 | `user2` ranked 29th of 30 | `option:User user:user2` | Ranks 16 to 30 | **[auto]** `Leaderboard_User_NearTheBottom_StillShowsFifteen` |
 | LVL-64 | `user1` has no XP | `option:Me` | Yellow "User not found on the leaderboard" | **[auto]** `Leaderboard_Me_WithNoXp_SaysNotFound` |
 | LVL-65 | none | `option:User` with no user | Yellow "You must specify a user when selecting the 'User' option." It is public even where the reply would be ephemeral, since it is sent before the defer (Code observations 10) | **[auto]** `Leaderboard_UserOptionWithoutAUser_IsRejected` |
-| LVL-66 | none | `option:Top user:user2` | The top list; `user` is ignored | none |
+| LVL-66 | none | `option:Top user:user2` | The top list; `user` is ignored | none. **[auto]** `LevelAndLeaderboardGapTests.Leaderboard_Top_WithAUser_IgnoresTheUser` |
 | LVL-67 | No XP rows in the guild | Top | Empty "LeaderBoard" embed, "Total Users 0" | **[auto]** `GetTopLeaderboardAsync_NoUsers_ReturnsEmptyTextAndZeroCount` |
 | LVL-68 | XP in Test-A and Test-B | Top in Test-A | Test-A users only | **[auto]** `GetTopLeaderboardAsync_OnlyCountsUsersInRequestedGuild`, `GetUserCenteredLeaderboardAsync_OtherGuildUser_ReturnsNotFound` |
 | LVL-69 | View refreshed; `user2` then earns or is awarded XP | Top straight away | Old totals; `user2` missing if new | **[auto]** `Leaderboard_PicksUpNewXp_AfterTheRefreshTask` |
 | LVL-70 | LVL-69 done | Wait for the refresh tick (up to 15 min after startup, then every 15 min), or run the SQL | New totals | Debug log of the task run. **[auto]** as LVL-69 |
-| LVL-71 | `user1` reclaimed to 0; view refreshed | Top | `user1` still listed with XP 0 | none |
+| LVL-71 | `user1` reclaimed to 0; view refreshed | Top | `user1` still listed with XP 0 | none. **[auto]** `LevelAndLeaderboardGapTests.Leaderboard_KeepsAMemberReclaimedToZero` |
 | LVL-72 | Bot restarted | Check when the first refresh runs | About 15 min after startup; the random start delay doesn't move it (Code observations 8) | Startup log "Starting Background task LeaderboardRefreshBackgroundTask with delay ..." |
 | LVL-73 | DB down during a tick | Stop the DB container through a tick | Nothing in Discord | Error log; `#alerts` warning "LeaderboardRefreshBackgroundTask failed 1 time(s) in a row"; urgent after 3 |
 | LVL-74 | Leveling disabled | `/Leaderboard option:Top` | "This module is disabled in this server." | **[auto]** `LevelingCommands_NeedTheModule("leaderboard")` |
@@ -180,22 +180,22 @@ mod log, not the leveling log.
 |----|--------------|--------|-------------------------|-------------------|
 | LVL-80 | Fresh guild | `admin` runs `/LevelSettings View` | "Current Level System Settings": "**Module Enabled:** True", "**Text Time:** 3 minutes.", "**Base:** 15", "**Modifier:** 50", "**Reward Amount:** 5", "**Log-Channel:** None" | none. **[auto]** `LevelSettingsTests.View_ShowsTheModuleTimeoutAndLogChannel`, `View_ShowsTheNumbersPlainly` (KI-43, fixed) |
 | LVL-81 | Log set to `#levelup` | View | "**Log-Channel:** #levelup" | **[auto]** `LogSet_StoresTheChannel_ViewShowsIt_AndOffClearsIt` |
-| LVL-82 | Log set to a channel that was then deleted | View | **Expected:** the id, or a note it's gone. **Actual:** "**Log-Channel:** " is blank (new, Code observations 6) | none |
+| LVL-82 | Log set to a channel that was then deleted | View | **Expected:** the id, or a note it's gone. **Actual:** "**Log-Channel:** " is blank (new, Code observations 6) | none. **[auto]** `LevelSettingsGapTests.View_WithADeletedLogChannel_ShowsItsIdOrSaysItIsGone` (skipped, KI-78) |
 | LVL-83 | none | `/LevelSettings Set setting:TextTime value:10` | "Updated TextTime level setting to 10" | Setting row; `#modlog` "@admin updated TextTime level setting to 10". **[auto]** `Set_StoresTheValue_AndLogsIt(TextTime, 10)` |
 | LVL-84 | none | Set Base 30, Modifier 75, Amount 12 | "Updated Base level setting to 30" and so on | Rows; `#modlog` lines; View shows the new values. **[auto]** `Set_StoresTheValue_AndLogsIt` |
 | LVL-85 | none | TextTime 61 | Red ephemeral "Xp timeout period must be a value between 1 and 60 in minutes." | No change. **[auto]** `Set_OutOfRange_IsRejected_AndNothingChanges` |
 | LVL-86 | none | Base 501, Modifier 201, Amount 101 | "Level scaling base must be a value between 1 and 500.", "Level scaling modifier must be a value between 1 and 200.", "Xp gain amount must be a value between 1 and 100." | No change. **[auto]** as LVL-85 |
 | LVL-87 | none | `value:0` | Discord's client refuses it (min 1) | none |
-| LVL-88 | Amount 5 | Set Amount 5 again | Normal reply | `#modlog` line again |
-| LVL-89 | TextTime 10 | `user1` posts twice 5 min apart | Only the first earns | One row; `TimeOut` now + 10 min |
-| LVL-90 | Base 30 | `/Level` for a member at 20 XP | Level 1, Progress 20/30 | none |
+| LVL-88 | Amount 5 | Set Amount 5 again | Normal reply | `#modlog` line again. **[auto]** `LevelSettingsGapTests.Set_TheSameValueAgain_StillRepliesAndLogs` |
+| LVL-89 | TextTime 10 | `user1` posts twice 5 min apart | Only the first earns | One row; `TimeOut` now + 10 min. **[auto]** `LevelSettingsGapTests.Set_TextTime_GivesThatTimeout` |
+| LVL-90 | Base 30 | `/Level` for a member at 20 XP | Level 1, Progress 20/30 | none. **[auto]** `LevelSettingsGapTests.Set_Base_ChangesTheLevelCurve` |
 | LVL-91 | none | `/LevelSettings LogSet option:Select Channel channel:#levelup` | "Updated the level log to #levelup" | Setting; `#modlog` "@admin updated the level log to #levelup." **[auto]** `LogSet_StoresTheChannel_ViewShowsIt_AndOffClearsIt` |
-| LVL-92 | none | `option:Current Channel` in `#levelup` | Same as LVL-91 | Same |
-| LVL-93 | Log set | `option:Off` | "Disabled the level log." | Cleared; `#modlog` "@admin disabled the level log." |
-| LVL-94 | none | `option:Select Channel` with no channel | Red ephemeral "Select a channel when using the Select Channel option." | No change |
+| LVL-92 | none | `option:Current Channel` in `#levelup` | Same as LVL-91 | Same. **[auto]** `LevelSettingsGapTests.LogSet_CurrentChannel_UsesTheChannelItRanIn` |
+| LVL-93 | Log set | `option:Off` | "Disabled the level log." | Cleared; `#modlog` "@admin disabled the level log." **[auto]** `LevelSettingsGapTests.LogSet_Off_IsLogged` |
+| LVL-94 | none | `option:Select Channel` with no channel | Red ephemeral "Select a channel when using the Select Channel option." | No change. **[auto]** `LevelSettingsGapTests.LogSet_SelectChannel_WithoutAChannel_IsRefused` |
 | LVL-95 | Bot can't send in `#private` | Select `#private` | Red ephemeral "@Grimoire doesn't have permission to send messages in that channel." | No change. **[auto]** `LogSet_WhereTheBotCannotSend_IsRefused` |
-| LVL-96 | Bot can send but lacks Embed Links in a channel | Select it | "@Grimoire also needs **Embed Links** in that channel to post these logs." | No change |
-| LVL-97 | none | Select a category or forum | "#x can't hold messages. Pick a text channel." | No change |
+| LVL-96 | Bot can send but lacks Embed Links in a channel | Select it | "@Grimoire also needs **Embed Links** in that channel to post these logs." | No change. **[auto]** `LevelSettingsGapTests.LogSet_WhereTheBotCannotEmbedLinks_IsRefused` |
+| LVL-97 | none | Select a category or forum | "#x can't hold messages. Pick a text channel." | No change. **[auto]** `LevelSettingsGapTests.LogSet_ACategoryOrForum_IsRefused` |
 | LVL-98 | none | `mod` (no Manage Guild) runs View, Set, LogSet | "You do not have the required permissions to use this command." | none. **[auto]** `LevelSettings_NeedManageGuild` |
 | LVL-99 | Leveling disabled | View, then Set and LogSet | View shows "**Module Enabled:** False"; Set and LogSet say "This module is disabled in this server." | **[auto]** `LevelSettings_WithLevelingDisabled_ViewShowsIt_AndChangesAreRefused` |
 
@@ -213,23 +213,23 @@ rewards for the server:" (Code observations 9).
 |----|--------------|--------|-------------------------|-------------------|
 | LVL-100 | none | `admin` runs `/Rewards Add role:@L2 level:2 message:"Well done"` | "Successfully updated the rewards to include @L2 at level 2." | `RewardAdded` row; same text in `#levelup`. **[auto]** `RewardCommandsTests.Add_StoresTheReward_AndLogsIt` |
 | LVL-101 | LVL-100 done | Add `@L2` at level 4 with no message | "... at level 4." | New row; View shows one entry for `@L2`, no message. **[auto]** `Add_ForARoleThatIsAlreadyAReward_UpdatesIt` |
-| LVL-102 | none | Add `level:0` | Accepted | Granted on any member's next earned message |
+| LVL-102 | none | Add `level:0` | Accepted | Granted on any member's next earned message. **[auto]** `RewardCommandGapTests.Add_AtLevelZero_IsGrantedOnTheNextEarnedMessage` |
 | LVL-103 | none | Add the `higher` role | "Was not able to update the rewards for the server:\nGrimoire will not be able to apply this reward role because the role has the same or a higher rank than it does." | No row. **[auto]** `Add_ARoleAboveTheBot_IsRefused` |
 | LVL-104 | none | Add the bot's own role | Same as LVL-103 | **[auto]** `Add_ARoleLevelWithTheBot_IsRefused` |
 | LVL-105 | none | Add a managed role (Server Booster, a bot's role) | "...:\nThat role is managed by an integration, such as a bot or Server Booster, so it can't be given out." | No row. **[auto]** `Add_AManagedRole_IsRefused` |
-| LVL-106 | none | Add `@everyone` | **Expected:** refused. **Actual:** accepted (new, Code observations 3; see LVL-43) | Row |
-| LVL-107 | Bot role lacks Manage Roles | Add `@L2` | **Expected:** a warning that the bot can't grant roles. **Actual:** accepted; the problem shows only at grant time (LVL-38) (new, Code observations 4) | Row |
-| LVL-108 | none | `message:"   "` | "...:\nReward message must be 1–4096 non-whitespace characters." | No row |
+| LVL-106 | none | Add `@everyone` | **Expected:** refused. **Actual:** accepted (new, Code observations 3; see LVL-43) | Row. **[auto]** `RewardGrantTests.AddingEveryoneAsAReward_IsRefused` (skipped, KI-75) |
+| LVL-107 | Bot role lacks Manage Roles | Add `@L2` | **Expected:** a warning that the bot can't grant roles. **Actual:** accepted; the problem shows only at grant time (LVL-38) (new, Code observations 4) | Row. **[auto]** `RewardGrantTests.AddingARewardWhileTheBotLacksManageRoles_Warns` (skipped, KI-76) |
+| LVL-108 | none | `message:"   "` | "...:\nReward message must be 1–4096 non-whitespace characters." | No row. **[auto]** `RewardCommandGapTests.Add_WithABlankMessage_IsRefused` |
 | LVL-109 | none | Negative level | Discord's client refuses it | none |
 | LVL-110 | Rewards `@L2` and `@L4` | `/Rewards View` | "Rewards": "Level:2 Role:@L2 Reward Message: Well done", "Level:4 Role:@L4", ordered by level | **[auto]** `View_ListsEveryReward` |
 | LVL-111 | No rewards | View | "Rewards" / "This server does not have any rewards." | **[auto]** `View_WithNoRewards_SaysSo` |
 | LVL-112 | A reward whose role was deleted, not yet cleaned up | View | Shown as a mention of the id | **[auto]** `View_ListsADeletedRoleByItsId` |
-| LVL-113 | Several rewards with 4096-character messages | View | Paged with buttons; each message whole | **[auto]** `View_WithLongRewardMessages_IsPaged_WithEachMessageWhole` |
+| LVL-113 | Several rewards with 4096-character messages | View | Paged with buttons; each message whole | **[auto]** `View_WithLongRewardMessages_IsPaged_WithEachMessageWhole`, `PaginationTests.RewardsView_SecondPage_ShowsTheNextRewardWhole` |
 | LVL-114 | `@L2` is a reward | `/Rewards Remove role:@L2` | "@admin removed @L2 reward" | `RewardRemoved` row; same text in `#levelup`; members keep the role. **[auto]** `Remove_DeletesTheReward_AndLogsIt` |
 | LVL-115 | `@L3` is not a reward | Remove `@L3` | "...:\nDid not find a saved reward for @L3." | No row. **[auto]** `Remove_OfARoleThatIsNotAReward_IsRefused` |
 | LVL-116 | none | `mod` runs Add, Remove, View | "You do not have the required permissions to use this command." | none. **[auto]** `Add_ByAMemberWithoutManageGuild_IsRefused`, `Remove_ByAMemberWithoutManageGuild_IsRefused` |
 | LVL-117 | Leveling disabled | Add, Remove, View | "This module is disabled in this server." | **[auto]** `Rewards_NeedTheModule`, `Remove_NeedsTheModule` |
-| LVL-118 | Rewards in Test-B | View in Test-A | Test-A only | none |
+| LVL-118 | Rewards in Test-B | View in Test-A | Test-A only | none. **[auto]** `LevelingGuildIsolationTests.RewardsInB_DoNotShowInA` |
 
 Automated in `Grimoire.Tests/Integration/Leveling/RewardCommandsTests.cs`.
 
@@ -245,18 +245,18 @@ mod log.
 | LVL-120 | none | `admin` runs `/Ignore Add items_0:user1 items_1:@mod-role` | "@user1 @mod-role are now ignored for xp gain." (any order) | `IgnoredMember` and `IgnoredRole` rows; `#modlog` same text; `user1` earns nothing. **[auto]** `IgnoreAndAwardTests.IgnoreAdd_StopsXp_AndIsLogged` |
 | LVL-121 | none | `/Ignore Add channel:#ignored` | "#ignored are now ignored for xp gain." | `IgnoredChannel` row. **[auto]** `Ignore_AChannel_CanBeAddedAndRemoved`, `Ignore_OffersAChannelOption` |
 | LVL-122 | none | Add with no options | Yellow "Could not parse any ids from the submitted values." | none. **[auto]** `IgnoreAdd_WithNothingSelected_SaysSo` |
-| LVL-123 | `user1` ignored | Add `user1` again | Same reply | A second row; no error |
+| LVL-123 | `user1` ignored | Add `user1` again | Same reply | A second row; no error. **[auto]** `IgnoreCommandTests.Add_SomeoneAlreadyIgnored_RepliesTheSame_AndAddsARow` |
 | LVL-124 | `user1` ignored | `/Ignore Remove items_0:user1` | "@user1 are no longer ignored for xp gain." | `WatchedMember` row; `user1` earns again. **[auto]** `IgnoreRemove_LetsXpThroughAgain`, `IgnoreRemove_SaysWhatIsNoLongerIgnored` (KI-46, fixed) |
 | LVL-125 | `#ignored` ignored | Remove `channel:#ignored` | "#ignored are no longer ignored for xp gain." | `WatchedChannel` row. **[auto]** `Ignore_AChannel_CanBeAddedAndRemoved` |
-| LVL-126 | `user2` not ignored | Remove `user2` | Same "no longer ignored" reply | A `WatchedMember` row; no error |
+| LVL-126 | `user2` not ignored | Remove `user2` | Same "no longer ignored" reply | A `WatchedMember` row; no error. **[auto]** `IgnoreCommandTests.Remove_SomeoneNotIgnored_StillReplies_AndRecordsIt` |
 | LVL-127 | One of each ignored | `/Ignore View` | "Ignored Channels Roles and Users.": "**Channels**", "**Roles**", "**Users**" sections with mentions | none. **[auto]** `IgnoreView_ListsChannelsRolesAndUsers` |
 | LVL-128 | Nothing ignored | View | "This server does not have any ignored channels, roles or users." | **[auto]** `IgnoreView_WithNothingIgnored_SaysSo` |
-| LVL-129 | Only users ignored | View | Empty Channels and Roles headings still shown | none |
-| LVL-130 | Hundreds of ignored items | View | Paged | **[auto]** `IgnoreView_WithHundredsOfItems_IsSplitAcrossPages` |
-| LVL-131 | none | Add a category or voice channel | Accepted. A category has no effect on its channels (LVL-12) | `IgnoredChannel` row |
+| LVL-129 | Only users ignored | View | Empty Channels and Roles headings still shown | none. **[auto]** `IgnoreCommandTests.View_WithOnlyUsers_StillShowsTheEmptyHeadings` |
+| LVL-130 | Hundreds of ignored items | View | Paged | **[auto]** `IgnoreView_WithHundredsOfItems_IsSplitAcrossPages`, `PaginationTests.IgnoreView_TheInvokerPagesForwardBackAndToEitherEnd`, `Stop_KeepsThePage_AndDisablesTheButtons`, `AShortList_HasNoButtons` |
+| LVL-131 | none | Add a category or voice channel | Accepted. A category has no effect on its channels (LVL-12) | `IgnoredChannel` row. **[auto]** `XpGainGapTests.IgnoringACategory_IsRefusedOrWarned` (skipped, KI-73) |
 | LVL-132 | none | `mod` runs Add, Remove, View | "You do not have the required permissions to use this command." | **[auto]** `IgnoreAdd_ByAMemberWithoutManageGuild_IsRefused` (Add only) |
-| LVL-133 | Leveling disabled | Add, Remove, View | "This module is disabled in this server." | none |
-| LVL-134 | `user1` ignored in Test-A | `user1` posts in Test-B | Earns in Test-B | Test-B row |
+| LVL-133 | Leveling disabled | Add, Remove, View | "This module is disabled in this server." | none. **[auto]** `IgnoreCommandTests.WithLevelingDisabled_IsRefused` |
+| LVL-134 | `user1` ignored in Test-A | `user1` posts in Test-B | Earns in Test-B | Test-B row. **[auto]** `LevelingGuildIsolationTests.AMemberIgnoredInA_StillEarnsInB` |
 
 Automated in `Grimoire.Tests/Integration/Leveling/IgnoreAndAwardTests.cs`.
 
@@ -272,23 +272,23 @@ Both log to the mod log.
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
 | LVL-140 | none | `mod` runs `/Award user:user1 xp:50` | "@user1 has been awarded 50 xp." | Awarded row, `AwarderId` = `mod`; `#modlog` "@user1 has been awarded 50 xp by @mod." **[auto]** `IgnoreAndAwardTests.Award_AddsXp_AndIsLogged` |
-| LVL-141 | `user1` at 10 XP | Award 100 | Reply; no level embed, no reward role | Row. Next earned message posts the level embed and grants rewards (LVL-44) |
+| LVL-141 | `user1` at 10 XP | Award 100 | Reply; no level embed, no reward role | Row. Next earned message posts the level embed and grants rewards (LVL-44). **[auto]** `AwardReclaimTests.Award_GrantsTheRewardOnlyOnTheNextEarnedMessage`; the level-up is never posted: `Award_LevelUpIsAnnouncedOnTheNextEarnedMessage` (skipped, KI-109) |
 | LVL-142 | none | `xp:0` or negative | Discord's client refuses it (min 1) | none |
-| LVL-143 | none | Award `2147483647` twice | Both accepted | Total 4294967294; `/Level` still answers |
-| LVL-144 | none | `mod` awards themselves; `mod` awards `admin` and `higher` | All accepted | Rows (no rank check, by design so far) |
-| LVL-145 | A user who left | `/Award user:<them>` | Argument error; nothing saved | none |
-| LVL-146 | `user1` ignored | Award `user1` | Accepted; ignores only stop earning | Row |
+| LVL-143 | none | Award `2147483647` twice | Both accepted | Total 4294967294; `/Level` still answers. **[auto]** `AwardReclaimTests.Award_TheMaximumTwice_AddsUp_AndLevelStillAnswers` |
+| LVL-144 | none | `mod` awards themselves; `mod` awards `admin` and `higher` | All accepted | Rows (no rank check, by design so far). **[auto]** `AwardReclaimTests.Award_HasNoRankCheck` |
+| LVL-145 | A user who left | `/Award user:<them>` | Argument error; nothing saved | none. **[auto]** `AwardReclaimTests.Award_ToAUserWhoLeft_IsRefused_AndNothingIsSaved` ("Failed to parse user.") |
+| LVL-146 | `user1` ignored | Award `user1` | Accepted; ignores only stop earning | Row. **[auto]** `AwardReclaimTests.Award_ToAnIgnoredMember_IsAccepted` |
 | LVL-147 | `user1` has 50 XP | `/Reclaim user:user1 option:Take a specific amount. amount:20` | "20 xp has been taken from @user1." | Reclaimed row −20; total 30; `#modlog` "20 xp has been taken from @user1 by @mod." **[auto]** `Reclaim_TakesXp_NeverMoreThanTheyHave(Amount, 20, 20, 30)` |
 | LVL-148 | `user1` has 50 XP | `amount:80` | "50 xp has been taken from @user1." | Total 0. **[auto]** `(Amount, 80, 50, 0)` |
 | LVL-149 | `user1` has 50 XP | `option:Take all their xp.` | "50 xp has been taken from @user1." | Total 0. **[auto]** `(All, 0, 50, 0)` |
 | LVL-150 | none | `option:All amount:10` | All XP taken; `amount` ignored | **[auto]** `ReclaimUserXpTests.AllOption_NonZeroAmount_StillSucceeds_AmountIsIgnored` |
 | LVL-151 | `user1` has 50 XP | `option:Amount` with no amount, or 0 | Red ephemeral "Specify an amount greater than 0" | No row. **[auto]** `Reclaim_AnAmountOfZero_IsRejected`, `ReclaimUserXpTests.AmountOption_ZeroAmount_Fails` |
 | LVL-152 | `user1` has no XP, or 0 after a reclaim | Reclaim All | Red ephemeral "@user1 has no xp to take." | No row. **[auto]** `Reclaim_FromAMemberWithNoXp_SaysSo` |
-| LVL-153 | `user1` at level 3 with `@L2` and `@L3` | Reclaim All | Reply; roles kept | `/Level` shows level 1 |
-| LVL-154 | A user who left, with XP | `/Reclaim user:<them> option:All` | Works | Row |
+| LVL-153 | `user1` at level 3 with `@L2` and `@L3` | Reclaim All | Reply; roles kept | `/Level` shows level 1. **[auto]** `AwardReclaimTests.ReclaimAll_KeepsTheRewardRoles_AndTheLevelDropsToOne` |
+| LVL-154 | A user who left, with XP | `/Reclaim user:<them> option:All` | Works | Row. **[auto]** `AwardReclaimTests.Reclaim_FromAUserWhoLeft_Works` |
 | LVL-155 | none | `user1` (no Manage Messages) runs either | "You do not have the required permissions to use this command." | none. **[auto]** `AwardAndReclaim_NeedManageMessages` |
-| LVL-156 | Leveling disabled | Run either | "This module is disabled in this server." | none |
-| LVL-157 | XP in Test-B | Reclaim All in Test-A | Only Test-A XP counted | none |
+| LVL-156 | Leveling disabled | Run either | "This module is disabled in this server." | none. **[auto]** `AwardReclaimTests.WithLevelingDisabled_IsRefused` |
+| LVL-157 | XP in Test-B | Reclaim All in Test-A | Only Test-A XP counted | none. **[auto]** `LevelingGuildIsolationTests.ReclaimAllInA_OnlyCountsAsXp` |
 
 Automated in `Grimoire.Tests/Integration/Leveling/IgnoreAndAwardTests.cs` and
 `Grimoire.Tests/Features/Leveling/Awards/ReclaimUserXpTests.cs`.
@@ -297,10 +297,10 @@ Automated in `Grimoire.Tests/Integration/Leveling/IgnoreAndAwardTests.cs` and
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| LVL-170 | Settings changed by SQL | Post a message | Old settings until restart (cache) | none |
-| LVL-171 | `/LevelSettings Set` | Post straight after | New settings apply at once (cache cleared on save) | none |
-| LVL-172 | `/Rewards Add` then `/Ignore Add` | XP gain straight after | Both apply at once | none |
-| LVL-173 | Leveling disabled, then enabled | Post | Earns again; the timeout from before still applies | none |
+| LVL-170 | Settings changed by SQL | Post a message | Old settings until restart (cache) | none. **[auto]** `LevelingCacheTests.ASettingChangedInTheDatabase_IsOnlySeenAfterARestart` |
+| LVL-171 | `/LevelSettings Set` | Post straight after | New settings apply at once (cache cleared on save) | none. **[auto]** `LevelingCacheTests.ASettingSetByCommand_AppliesToTheNextMessage` |
+| LVL-172 | `/Rewards Add` then `/Ignore Add` | XP gain straight after | Both apply at once | none. **[auto]** `LevelingCacheTests.ARewardAndAnIgnoreAddedByCommand_BothApplyAtOnce` |
+| LVL-173 | Leveling disabled, then enabled | Post | Earns again; the timeout from before still applies | none. **[auto]** `LevelingCacheTests.TurningTheModuleOffAndOn_KeepsTheTimeout_AndOthersEarnAgain` |
 | LVL-174 | Run the area with `#levelup` and `#modlog` both unset | Every case above | Commands still reply; nothing is posted | No errors in the console |
 
 ## Code observations

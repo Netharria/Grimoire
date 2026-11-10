@@ -41,6 +41,7 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
     /// <summary>Check replies privately with a summary embed and the full report as a text file.</summary>
+    /// <remarks>Cases: DIAG-01.</remarks>
     [Fact]
     public async Task Check_RepliesPrivately_WithTheReportAttached()
     {
@@ -56,6 +57,7 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>The report that follows /Mutes Create carries the same file.</summary>
+    /// <remarks>Cases: DIAG-80.</remarks>
     [Fact]
     public async Task MutesCreate_FollowsUpWithTheReport()
     {
@@ -70,6 +72,7 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>Add stores roles and members, confirms them, and logs it.</summary>
+    /// <remarks>Cases: DIAG-50.</remarks>
     [Fact]
     public async Task IgnoreAdd_StoresRolesAndMembers_AndLogs()
     {
@@ -85,6 +88,7 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>@everyone can't be ignored, and with nothing else given there's nothing to do.</summary>
+    /// <remarks>Cases: DIAG-52.</remarks>
     [Fact]
     public async Task IgnoreAdd_OfOnlyEveryone_Warns()
     {
@@ -94,6 +98,7 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>Adding what's already ignored, or removing what isn't, says so.</summary>
+    /// <remarks>Cases: DIAG-54, DIAG-59.</remarks>
     [Fact]
     public async Task IgnoreAddAgain_AndRemoveOfSomethingNotIgnored_Explain()
     {
@@ -106,6 +111,7 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>Remove takes items off the list, and View shows what's left.</summary>
+    /// <remarks>Cases: DIAG-58, DIAG-61.</remarks>
     [Fact]
     public async Task IgnoreRemove_TakesThemOff_AndViewShowsTheList()
     {
@@ -124,6 +130,7 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>Every subcommand needs Manage Guild and the Moderation module.</summary>
+    /// <remarks>Cases: DIAG-03 (permission), DIAG-04 (module).</remarks>
     [Theory]
     [InlineData("permission")]
     [InlineData("module")]

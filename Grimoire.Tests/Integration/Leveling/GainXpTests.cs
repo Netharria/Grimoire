@@ -57,6 +57,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     // ── Earning XP ────────────────────────────────────────────────────────────
 
     /// <summary>A message earns the configured amount, with a timeout that ends one timeout period later.</summary>
+    /// <remarks>Cases: LVL-01.</remarks>
     [Fact]
     public async Task AMessage_EarnsXp_WithATimeout()
     {
@@ -68,6 +69,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LVL-02.</remarks>
     [Fact]
     public async Task ASecondMessage_DuringTheTimeout_EarnsNothing()
     {
@@ -80,6 +82,10 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>Messages from bots, from ignored members, roles and channels, and with the module off, earn nothing.</summary>
+    /// <remarks>
+    ///     Cases: LVL-05 (bot), LVL-08 (ignored member), LVL-09 (ignored role), LVL-10 (ignored channel), LVL-13
+    ///     (module off).
+    /// </remarks>
     [Theory]
     [InlineData("bot")]
     [InlineData("ignored member")]
@@ -98,7 +104,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
             _ => null
         };
         if (ignored is not null)
-            (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored })).ShouldSucceed();
+            (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored }, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
         if (situation == "module off")
             await this._bot.SetModuleAsync(Module.Leveling, false);
 
@@ -108,13 +114,14 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>An ignored channel doesn't stop XP in other channels.</summary>
+    /// <remarks>Cases: LVL-10.</remarks>
     [Fact]
     public async Task AnIgnoredChannel_DoesNotAffectOtherChannels()
     {
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
         {
             IgnoredChannel.Create(new ChannelId(this.Guild.ModLog.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow).ShouldSucceed()
-        })).ShouldSucceed();
+        }, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
 
@@ -123,6 +130,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     // ── Levels and rewards ────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-14.</remarks>
     [Fact]
     public async Task CrossingALevel_PostsToTheLevelingLog()
     {
@@ -135,6 +143,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         embed["footer"]!["text"]!.GetValue<string>().ShouldBe(this.Guild.User1.Id.ToString());
     }
 
+    /// <remarks>Cases: LVL-15.</remarks>
     [Fact]
     public async Task StayingOnALevel_PostsNothing()
     {
@@ -145,6 +154,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>Reaching a reward's level grants the role, DMs the reward message, and logs it.</summary>
+    /// <remarks>Cases: LVL-30.</remarks>
     [Fact]
     public async Task ReachingARewardLevel_GrantsTheRole_DmsTheMessage_AndLogsIt()
     {
@@ -165,6 +175,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     ///     X-4: only "\n" is turned into a line break. Any other backslash is kept: Regex.Unescape threw on \o/ and
     ///     lost the DM, and it stripped Markdown escapes.
     /// </summary>
+    /// <remarks>Cases: LVL-30.</remarks>
     [Fact]
     public async Task ARewardMessageWithBackslashes_IsSentAsWritten_ExceptForLineBreaks()
     {
@@ -179,6 +190,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>A reward for a higher level isn't granted yet.</summary>
+    /// <remarks>Cases: LVL-31.</remarks>
     [Fact]
     public async Task ARewardForAHigherLevel_IsNotGrantedYet()
     {
@@ -193,6 +205,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>A reward role above the bot's top role is reported as a setup problem.</summary>
+    /// <remarks>Cases: LVL-37.</remarks>
     [Fact]
     public async Task ARewardRoleTheBotCannotGrant_IsReported()
     {
@@ -207,6 +220,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>When the role couldn't be granted, the log shouldn't say the member earned it.</summary>
+    /// <remarks>Cases: LVL-37.</remarks>
     [Fact]
     public async Task ARewardRoleTheBotCannotGrant_IsNotLoggedAsEarned()
     {
@@ -224,6 +238,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     ///     setup problem. That happens even when nobody has reached its level yet, and the other rewards are still
     ///     granted.
     /// </summary>
+    /// <remarks>Cases: LVL-41.</remarks>
     [Fact]
     public async Task ARewardForADeletedRole_IsRemoved_TheModeratorsAreTold_AndTheOthersAreGranted()
     {
@@ -243,7 +258,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"{this.Guild.User1.MemberMention} has earned <@&{this.Guild.KickerRoleId}>");
 
-        (await this.Settings.GetLevelingRewardsAsync(this.GuildId)).ShouldSucceed()
+        (await this.Settings.GetLevelingRewardsAsync(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed()
             .Select(reward => reward.RoleId).ShouldBe([new RoleId(this.Guild.KickerRoleId)]);
         await using var settingsContext = this._database.CreateSettingsDbContext();
         (await settingsContext.Rewards.OfType<RewardRemoved>().SingleAsync(TestContext.Current.CancellationToken))
@@ -251,6 +266,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>X-2: once removed, the reward for a deleted role isn't removed or reported again.</summary>
+    /// <remarks>Cases: LVL-42.</remarks>
     [Fact]
     public async Task ARewardForADeletedRole_IsOnlyRemovedOnce()
     {
@@ -276,6 +292,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     ///     X-1: a member with a managed role, such as Server Booster, still gets their reward. Granting the whole role
     ///     list would include the managed role, which DSharpPlus refuses.
     /// </summary>
+    /// <remarks>Cases: LVL-40.</remarks>
     [Fact]
     public async Task AMemberWithAManagedRole_StillEarnsTheReward()
     {
@@ -297,6 +314,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>X-1: a reward role the bot can't grant is reported, and the other rewards are still granted.</summary>
+    /// <remarks>Cases: LVL-39.</remarks>
     [Fact]
     public async Task ARewardTheBotCannotGrant_DoesNotBlockTheOthers()
     {
@@ -317,6 +335,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     ///     X-2: setup problems are shown once a day per problem, but a removal is a different problem from the last one,
     ///     so a second removal on the same day is still shown.
     /// </summary>
+    /// <remarks>Cases: LVL-42.</remarks>
     [Fact]
     public async Task ASecondRemovalOnTheSameDay_IsStillShown()
     {

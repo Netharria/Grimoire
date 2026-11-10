@@ -46,6 +46,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
 
     // ── Cache invalidation ────────────────────────────────────────────────────
 
+    /// <remarks>Cases: XC-92.</remarks>
     [Fact]
     public async Task ChangingTheXpAmount_AppliesToTheNextMessage()
     {
@@ -59,6 +60,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
         (await this.XpAsync(this.Guild.Moderator)).ShouldBe(12);
     }
 
+    /// <remarks>Cases: XC-93.</remarks>
     [Fact]
     public async Task AddingAReward_ShowsInTheNextLevelCheck()
     {
@@ -70,6 +72,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
         Field(await this.LevelEmbedAsync(), "Next Reward").ShouldStartWith($"<@&{this.Guild.KickerRoleId}>");
     }
 
+    /// <remarks>Cases: XC-94.</remarks>
     [Fact]
     public async Task IgnoringAMember_AppliesToTheirNextMessage()
     {
@@ -83,6 +86,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
         (await this.XpAsync(this.Guild.Moderator, NothingHappensWindow)).ShouldBe(0);
     }
 
+    /// <remarks>Cases: XC-95.</remarks>
     [Fact]
     public async Task ANeverOverride_AppliesToTheNextMessage()
     {
@@ -98,6 +102,7 @@ public sealed class PersistenceTests(GrimoireCoreFactory database) : IAsyncLifet
     // ── Restart ───────────────────────────────────────────────────────────────
 
     /// <summary>Settings made through commands are still there after the bot restarts on the same database.</summary>
+    /// <remarks>Cases: XC-110.</remarks>
     [Fact]
     public async Task Settings_SurviveARestart()
     {

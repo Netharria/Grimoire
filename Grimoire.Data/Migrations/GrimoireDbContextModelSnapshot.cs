@@ -204,8 +204,6 @@ namespace Grimoire.Migrations
 
                     b.HasIndex("GuildId", "Name", "UsedAt");
 
-                    b.HasIndex("GuildId", "Name", "UserId");
-
                     b.ToTable("CustomCommandUsages");
                 });
 
@@ -713,9 +711,6 @@ namespace Grimoire.Migrations
 
                     b.HasKey("SinId", "SetAt");
 
-                    b.HasIndex("SinId", "SetAt")
-                        .IsDescending(false, true);
-
                     b.ToTable("Pardons");
                 });
 
@@ -818,9 +813,6 @@ namespace Grimoire.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Id", "GuildId")
-                        .HasDatabaseName("IX_Sin_Id_GuildId");
-
                     b.HasIndex("Actor", "GuildId", "SinType")
                         .HasDatabaseName("IX_Sin_ModeratorId_GuildId_SinType");
 
@@ -848,9 +840,6 @@ namespace Grimoire.Migrations
                         .HasColumnType("character varying(1000)");
 
                     b.HasKey("SinId", "SetAt");
-
-                    b.HasIndex("SinId", "SetAt")
-                        .IsDescending(false, true);
 
                     b.ToTable("SinReasonHistory");
                 });
@@ -896,9 +885,6 @@ namespace Grimoire.Migrations
                         .HasColumnType("character varying(21)");
 
                     b.HasKey("UserId", "GuildId", "TimeOut");
-
-                    b.HasIndex("GuildId", "RawXp")
-                        .HasDatabaseName("IX_XpHistory_GuildId_Xp");
 
                     b.HasIndex("UserId", "GuildId", "RawXp")
                         .HasDatabaseName("IX_XpHistory_UserId_GuildId_Xp");

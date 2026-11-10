@@ -39,6 +39,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     // ── Old log posts ─────────────────────────────────────────────────────────
 
     /// <summary>A log post older than 30 days is deleted from Discord and forgotten. A newer one is left alone.</summary>
+    /// <remarks>Cases: LOG-180.</remarks>
     [Fact]
     public async Task OldLogPosts_AreDeletedFromDiscord_NewOnesAreKept()
     {
@@ -53,6 +54,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>A post that's already gone counts as a failed try, and it's forgotten on the third.</summary>
+    /// <remarks>Cases: LOG-181.</remarks>
     [Fact]
     public async Task APostThatCannotBeDeleted_IsRetried_ThenForgottenOnTheThirdTry()
     {
@@ -71,6 +73,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>A post in a channel that no longer exists is retried the same way.</summary>
+    /// <remarks>Cases: LOG-182.</remarks>
     [Fact]
     public async Task APostInADeletedChannel_CountsAsAFailedTry()
     {
@@ -85,6 +88,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>A Discord error on delete counts as a failed try, and doesn't stop the other posts being deleted.</summary>
+    /// <remarks>Cases: LOG-183.</remarks>
     [Fact]
     public async Task ADiscordError_OnOnePost_DoesNotStopTheOthers()
     {
@@ -101,6 +105,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     // ── Saved messages and history ────────────────────────────────────────────
 
+    /// <remarks>Cases: LOG-184.</remarks>
     [Fact]
     public async Task SavedMessages_OlderThan31Days_AreDeleted()
     {
@@ -121,6 +126,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     ///     L-10: the trim scans every member's history, so it runs on the first tick and then once a day, not every
     ///     minute. The message purge still runs every tick.
     /// </summary>
+    /// <remarks>Cases: LOG-186.</remarks>
     [Fact]
     public async Task UserHistory_IsTrimmedOnceADay()
     {
@@ -163,6 +169,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>Only the newest three avatar, nickname and username rows are kept per member.</summary>
+    /// <remarks>Cases: LOG-185.</remarks>
     [Fact]
     public async Task UserHistory_IsTrimmedToTheNewestThree()
     {

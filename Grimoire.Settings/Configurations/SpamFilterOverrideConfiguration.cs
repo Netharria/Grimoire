@@ -26,8 +26,6 @@ internal sealed class SpamFilterOverrideConfiguration : IEntityTypeConfiguration
         builder.Property(e => e.ChannelId);
         builder.Property(e => e.SetBy);
 
-        builder.HasIndex(x => new { x.ChannelId, x.GuildId, x.SetAt })
-            .IsDescending(false, false, true);
         builder.HasIndex(x => x.GuildId);
     }
 }

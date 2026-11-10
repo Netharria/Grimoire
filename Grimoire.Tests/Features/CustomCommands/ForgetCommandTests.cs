@@ -120,6 +120,7 @@ public sealed class ForgetCommandTests(GrimoireCoreFactory factory) : IAsyncLife
             .ShouldBe(0);
     }
 
+    /// <remarks>Cases: CC-33.</remarks>
     [Fact]
     public async Task ForgetCommand_DoesNotAffectOtherCommands()
     {

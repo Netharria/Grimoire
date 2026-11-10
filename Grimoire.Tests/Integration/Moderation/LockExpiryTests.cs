@@ -44,6 +44,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
     /// <summary>MOD-178 and MOD-189: an expired lock is reverted, announced in the channel and mod log, and closed.</summary>
+    /// <remarks>Cases: XC-114 (a seeded lock stands in for one made before a restart).</remarks>
     [Fact]
     public async Task ExpiredChannelLock_IsReverted_Announced_AndClosed()
     {

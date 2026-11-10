@@ -46,6 +46,7 @@ public sealed record FakeChannel(ulong Id, string Name, int Type = FakeChannel.T
     public const int PublicThreadType = 11;
     public const int PrivateThreadType = 12;
     public const int ForumType = 15;
+    public const int MediaType = 16;
 
     public string Mention => $"<#{this.Id}>";
     public bool IsThread => this.Type is PublicThreadType or PrivateThreadType;
@@ -107,6 +108,13 @@ public sealed class FakeGuild(ulong idOffset = 0)
     public ulong Id { get; } = 1_100_000_000_000_000_001 + idOffset;
     public string Name { get; } = "Grimoire Test Guild";
 
+    /// <summary>
+    ///     The guild's vanity invite code, such as <c>grimoire</c> for discord.gg/grimoire, or null for none. Sent as
+    ///     <c>vanity_url_code</c> in <c>GUILD_CREATE</c> and answered by <c>GET guilds/{id}/vanity-url</c>. Set it
+    ///     before the bot starts.
+    /// </summary>
+    public string? VanityUrlCode { get; set; }
+
     /// <summary>Discord gives a bot's application the same id as its user.</summary>
     public ulong ApplicationId => this.Bot.Id;
 
@@ -156,6 +164,21 @@ public sealed class FakeGuild(ulong idOffset = 0)
     public FakeChannel Stage { get; } = new(1_100_000_000_000_000_207 + idOffset, "stage", FakeChannel.StageType);
     public FakeChannel Announcements { get; } = new(1_100_000_000_000_000_208 + idOffset, "news", FakeChannel.AnnouncementType);
 
+    /// <summary>A media channel (type 16). Only in the guild when <see cref="HasMediaChannel" /> is set.</summary>
+    public FakeChannel Media { get; } = new(1_100_000_000_000_000_209 + idOffset, "media", FakeChannel.MediaType);
+
+    /// <summary>
+    ///     Adds <see cref="Media" /> to the guild. Set it before <c>GrimoireTestBot.StartAsync</c> sends
+    ///     <c>GUILD_CREATE</c>. It is off by default so commands that walk every channel see the usual set.
+    /// </summary>
+    public bool HasMediaChannel { get; set; }
+
+    /// <summary>
+    ///     The @everyone role's guild permissions. The default is none, so no member can speak anywhere unless a role
+    ///     or overwrite allows it. Set this before <c>GrimoireTestBot.StartAsync</c> sends <c>GUILD_CREATE</c>.
+    /// </summary>
+    public ulong EveryonePermissions { get; set; }
+
     // #private starts with an overwrite denying the bot's role View Channel and Send Messages.
     private readonly Dictionary<ulong, Dictionary<ulong, (int Type, ulong Allow, ulong Deny)>> _overwrites = new()
     {
@@ -185,9 +208,27 @@ public sealed class FakeGuild(ulong idOffset = 0)
         new(1_100_000_000_000_000_213 + idOffset, "forum-post", FakeChannel.PublicThreadType, 1_100_000_000_000_000_203 + idOffset);
 
     private readonly HashSet<ulong> _deletedChannels = [];
+    private readonly Dictionary<ulong, ulong> _parents = [];
+
+    /// <summary>
+    ///     Moves a channel under <paramref name="parent" />, such as <see cref="Category" />, in every payload from now
+    ///     on. Call it from <c>configureGuild</c>, before <c>GrimoireTestBot.StartAsync</c> sends <c>GUILD_CREATE</c>.
+    /// </summary>
+    public void SetParent(FakeChannel channel, FakeChannel parent)
+    {
+        lock (this._parents)
+            this._parents[channel.Id] = parent.Id;
+    }
+
+    private ulong? ParentIdOf(FakeChannel channel)
+    {
+        lock (this._parents)
+            return this._parents.TryGetValue(channel.Id, out var parentId) ? parentId : channel.ParentId;
+    }
 
     public IReadOnlyList<FakeChannel> Channels
         => [.. new[] { this.General, this.ModLog, this.Forum, this.Private, this.Category, this.Voice, this.Stage, this.Announcements }
+            .Concat(this.HasMediaChannel ? [this.Media] : [])
             .Where(channel => !this._deletedChannels.Contains(channel.Id))];
 
     /// <summary>Removes a channel or thread. Use <c>GrimoireTestBot.DeleteChannel</c> so the bot hears about it.</summary>
@@ -283,7 +324,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
 
     private IEnumerable<(ulong Id, string Name, int Position, ulong Permissions)> FixedRoles() =>
     [
-        (this.Id, "@everyone", 0, 0),
+        (this.Id, "@everyone", 0, this.EveryonePermissions),
         (this.BotRoleId, "Grimoire", BotRolePosition, this.BotPermissions),
         (this.HigherRoleId, "Higher", HigherRolePosition, 0),
         (this.BannerRoleId, "Banner", 1, BanMembersPermission),
@@ -342,6 +383,44 @@ public sealed class FakeGuild(ulong idOffset = 0)
     public ulong GuildPermissionsOf(FakeUser user) => user.Id == this.Owner.Id
         ? AdministratorPermission
         : this.GetMember(user).RoleIds.Aggregate(0UL, (permissions, roleId) => permissions | this.RolePermissions(roleId));
+
+    /// <summary>Every permission bit Discord defines, which is what it reports for the owner and Administrator.</summary>
+    public const ulong AllPermissions = (1UL << 51) - 1;
+
+    /// <summary>
+    ///     Permissions resolved for one channel, as Discord sends them on an interaction's <c>member.permissions</c>
+    ///     and <c>app_permissions</c>. The owner and Administrator get every permission. Otherwise the guild
+    ///     permissions are changed by the channel's overwrites in Discord's order: @everyone, then all the member's
+    ///     roles together (deny, then allow), then the member's own overwrite. A thread uses its parent's overwrites.
+    /// </summary>
+    public ulong ChannelPermissionsOf(FakeUser user, FakeChannel channel)
+    {
+        var permissions = this.GuildPermissionsOf(user) | this.RolePermissions(this.Id);
+        if ((permissions & AdministratorPermission) != 0)
+            return AllPermissions;
+
+        var overwriteChannelId = channel.IsThread && channel.ParentId is { } parentId ? parentId : channel.Id;
+        Dictionary<ulong, (int Type, ulong Allow, ulong Deny)> overwrites;
+        lock (this._overwrites)
+            overwrites = new Dictionary<ulong, (int Type, ulong Allow, ulong Deny)>(
+                this._overwrites.GetValueOrDefault(overwriteChannelId) ?? []);
+
+        if (overwrites.TryGetValue(this.Id, out var everyone))
+            permissions = (permissions & ~everyone.Deny) | everyone.Allow;
+
+        var roleOverwrites = this.GetMember(user).RoleIds
+            .Where(roleId => roleId != this.Id && overwrites.ContainsKey(roleId))
+            .Select(roleId => overwrites[roleId])
+            .ToList();
+        var roleDeny = roleOverwrites.Aggregate(0UL, (deny, overwrite) => deny | overwrite.Deny);
+        var roleAllow = roleOverwrites.Aggregate(0UL, (allow, overwrite) => allow | overwrite.Allow);
+        permissions = (permissions & ~roleDeny) | roleAllow;
+
+        if (overwrites.TryGetValue(user.Id, out var own) && own.Type == 1)
+            permissions = (permissions & ~own.Deny) | own.Allow;
+
+        return permissions;
+    }
 
     private ulong RolePermissions(ulong roleId)
         => roleId == this.BotRoleId ? this.BotPermissions
@@ -410,7 +489,8 @@ public sealed class FakeGuild(ulong idOffset = 0)
         ["nsfw_level"] = 0,
         ["system_channel_flags"] = 0,
         ["preferred_locale"] = "en-US",
-        ["features"] = new JsonArray(),
+        ["features"] = this.VanityUrlCode is null ? new JsonArray() : new JsonArray("VANITY_URL"),
+        ["vanity_url_code"] = this.VanityUrlCode,
         ["joined_at"] = "2024-01-01T00:00:00.000000+00:00",
         ["large"] = false,
         ["unavailable"] = false,
@@ -437,7 +517,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
             ["name"] = channel.Name,
             ["position"] = position,
             ["permission_overwrites"] = this.OverwritesJson(channel.Id),
-            ["parent_id"] = channel.ParentId is { } parentId ? FakeUser.Snowflake(parentId) : null,
+            ["parent_id"] = this.ParentIdOf(channel) is { } parentId ? FakeUser.Snowflake(parentId) : null,
             ["topic"] = null,
             ["nsfw"] = false,
             ["rate_limit_per_user"] = 0,
@@ -450,7 +530,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
         }
 
         // Discord always sends a forum's tag list, and DSharpPlus throws on a forum update without one.
-        if (channel.Type == FakeChannel.ForumType)
+        if (channel.Type is FakeChannel.ForumType or FakeChannel.MediaType)
             json["available_tags"] = new JsonArray();
 
         if (channel.IsThread)

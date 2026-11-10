@@ -38,6 +38,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 
     // ── /Command ──────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: CC-85.</remarks>
     [Fact]
     public async Task SlashCommand_RepliesWithTheContent_AndRecordsTheUse()
     {
@@ -51,6 +52,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: CC-88.</remarks>
     [Fact]
     public async Task SlashCommand_FillsMentionAndMessage_AndDefusesEveryone()
     {
@@ -64,6 +66,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         await this.WaitForUsesAsync(1);
     }
 
+    /// <remarks>Cases: CC-86.</remarks>
     [Fact]
     public async Task SlashCommand_AnEmbedCommand_RepliesWithAnEmbed()
     {
@@ -77,6 +80,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>A restricted command works for a member with one of its roles, and silently does nothing otherwise.</summary>
+    /// <remarks>Cases: CC-92.</remarks>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -100,6 +104,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         }
     }
 
+    /// <remarks>Cases: CC-93.</remarks>
     [Fact]
     public async Task SlashCommand_ThatDoesNotExist_DeletesTheResponse()
     {
@@ -110,6 +115,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
 
     // ── !name text triggers ───────────────────────────────────────────────────
 
+    /// <remarks>Cases: CC-110.</remarks>
     [Fact]
     public async Task TextTrigger_PostsTheContent_AndRecordsTheUse()
     {
@@ -121,6 +127,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         (await GrimoireTestBot.EventuallyAsync(this.UsesAsync, uses => uses.Count == 1)).ShouldBe([(this.Guild.User1.Id, "hello")]);
     }
 
+    /// <remarks>Cases: CC-111.</remarks>
     [Fact]
     public async Task TextTrigger_FillsMentionFromTheFirstWord_AndMessageFromTheRest()
     {
@@ -134,6 +141,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>C-8: when the first word isn't a mention, it's part of the message, not dropped.</summary>
+    /// <remarks>Cases: CC-112.</remarks>
     [Fact]
     public async Task TextTrigger_WithoutAMention_KeepsTheWholeMessage()
     {
@@ -149,6 +157,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     ///     D-1: main let a blank embed colour through. Stored data is trusted now, so such a row loads, and the embed
     ///     goes out with no colour, instead of the row throwing for every query that loads it.
     /// </summary>
+    /// <remarks>Cases: CC-115.</remarks>
     [Fact]
     public async Task ALegacyCommandWithABlankColour_StillRuns()
     {
@@ -169,6 +178,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>Unknown names, messages from bots, restricted commands and a disabled module post nothing.</summary>
+    /// <remarks>Cases: CC-116.</remarks>
     [Theory]
     [InlineData("unknown")]
     [InlineData("bot")]
@@ -191,6 +201,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         (await this.UsesAsync()).ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: CC-117.</remarks>
     [Fact]
     public async Task TextTrigger_WhereTheBotCannotPost_IsReported()
     {
@@ -210,6 +221,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     ///     C-1: a command made only of %Message renders empty when called without one. Discord refuses an empty
     ///     message, and that error raised an urgent alert on every use. C-7: nothing was sent, so no use counts.
     /// </summary>
+    /// <remarks>Cases: CC-118.</remarks>
     [Fact]
     public async Task TextTrigger_ThatRendersEmpty_PostsNothing_AndRecordsNoUse()
     {
@@ -224,6 +236,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: CC-94.</remarks>
     [Fact]
     public async Task SlashCommand_ThatRendersEmpty_DeletesTheResponse_AndRecordsNoUse()
     {
@@ -237,6 +250,7 @@ public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>C-7: a reply the bot isn't allowed to post isn't a use.</summary>
+    /// <remarks>Cases: CC-117.</remarks>
     [Fact]
     public async Task TextTrigger_WhereTheBotCannotPost_RecordsNoUse()
     {

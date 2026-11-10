@@ -48,9 +48,6 @@ namespace Grimoire.Settings.Migrations
 
                     b.HasKey("ChannelId", "GuildId", "SetAt");
 
-                    b.HasIndex("ChannelId", "GuildId", "SetAt")
-                        .IsDescending(false, false, true);
-
                     b.ToTable("ChannelLocks", "Settings");
 
                     b.HasDiscriminator<string>("EventType").IsComplete(true).HasValue("ChannelLock");
@@ -144,9 +141,6 @@ namespace Grimoire.Settings.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.HasIndex("ChannelId", "GuildId", "SetAt")
-                        .IsDescending(false, false, true);
-
                     b.ToTable("MessageLogChannelOverrides", "Settings");
                 });
 
@@ -170,9 +164,6 @@ namespace Grimoire.Settings.Migrations
                         .HasColumnType("numeric(20,0)");
 
                     b.HasKey("UserId", "GuildId", "SetAt");
-
-                    b.HasIndex("UserId", "GuildId", "SetAt")
-                        .IsDescending(false, false, true);
 
                     b.ToTable("Mutes", "Settings");
 
@@ -201,9 +192,6 @@ namespace Grimoire.Settings.Migrations
                         .HasColumnType("numeric(20,0)");
 
                     b.HasKey("GuildId", "RoleId", "SetAt");
-
-                    b.HasIndex("GuildId", "RoleId", "SetAt")
-                        .IsDescending(false, false, true);
 
                     b.ToTable("Rewards", "Settings");
 
@@ -235,9 +223,6 @@ namespace Grimoire.Settings.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.HasIndex("ChannelId", "GuildId", "SetAt")
-                        .IsDescending(false, false, true);
-
                     b.ToTable("SpamFilterOverrides", "Settings");
                 });
 
@@ -266,9 +251,6 @@ namespace Grimoire.Settings.Migrations
 
                     b.HasKey("ChannelId", "GuildId", "SetAt");
 
-                    b.HasIndex("ChannelId", "GuildId", "SetAt")
-                        .IsDescending(false, false, true);
-
                     b.ToTable("ThreadLocks", "Settings");
 
                     b.HasDiscriminator<string>("EventType").IsComplete(true).HasValue("ThreadLock");
@@ -296,9 +278,6 @@ namespace Grimoire.Settings.Migrations
                         .HasColumnType("character varying(21)");
 
                     b.HasKey("GuildId", "Id", "SetAt");
-
-                    b.HasIndex("GuildId", "Id", "SetAt")
-                        .IsDescending(false, false, true);
 
                     b.ToTable("XpTrackedItems", "Settings");
 

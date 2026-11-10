@@ -47,6 +47,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     // ── Edits ─────────────────────────────────────────────────────────────────
 
     /// <summary>An edit is recorded and logged with the content before and after.</summary>
+    /// <remarks>Cases: LOG-70.</remarks>
     [Fact]
     public async Task Edit_IsRecorded_AndLoggedWithBeforeAndAfter()
     {
@@ -65,6 +66,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>An edit of an unlogged message, and the bot's own edits, are ignored.</summary>
+    /// <remarks>Cases: LOG-73 (unlogged), LOG-74 (bot).</remarks>
     [Theory]
     [InlineData("unlogged")]
     [InlineData("bot")]
@@ -80,6 +82,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>An edit that only changes letter case isn't logged.</summary>
+    /// <remarks>Cases: LOG-72.</remarks>
     [Fact]
     public async Task Edit_ThatOnlyChangesCase_IsIgnored()
     {
@@ -94,6 +97,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     // ── Deletes ───────────────────────────────────────────────────────────────
 
     /// <summary>A delete is recorded and logged with the author and the last known content.</summary>
+    /// <remarks>Cases: LOG-85.</remarks>
     [Fact]
     public async Task Delete_IsRecorded_AndLoggedWithTheContent()
     {
@@ -112,6 +116,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     ///     L-1: attachments are stored by their full signed URL, so a deleted image is downloaded from it and re-uploaded with
     ///     the log, and other files are listed by name.
     /// </summary>
+    /// <remarks>Cases: LOG-91.</remarks>
     [Fact]
     public async Task Delete_WithAttachments_ReuploadsTheImage_AndListsTheOtherFiles()
     {
@@ -145,6 +150,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     ///     I-6: Discord caps a message's embeds at 6,000 characters together. Each image used to carry a full copy of
     ///     the text, so four images with about 1,500 characters lost the whole log. Only the first embed has it now.
     /// </summary>
+    /// <remarks>Cases: LOG-93.</remarks>
     [Fact]
     public async Task Delete_OfALongMessageWithFourImages_FitsInOnePost()
     {
@@ -161,6 +167,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>I-6: a file over the upload limit would make Discord refuse the whole post, so it's listed instead.</summary>
+    /// <remarks>Cases: LOG-92.</remarks>
     [Fact]
     public async Task Delete_WithAnImageTooLargeToUpload_ListsIt_AndStillLogs()
     {
@@ -178,6 +185,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     ///     I-16: an upper-case extension is still an image, listed once and not also as a non-image. The upload name
     ///     has one dot, and the signed query string stays out of the names.
     /// </summary>
+    /// <remarks>Cases: LOG-91.</remarks>
     [Fact]
     public async Task Delete_WithAnUpperCaseExtension_TreatsItAsAnImage()
     {
@@ -192,6 +200,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>Rows saved before full URLs were stored hold only a file name. It can't be downloaded, but it's listed.</summary>
+    /// <remarks>Cases: LOG-91.</remarks>
     [Fact]
     public async Task Delete_WithAnAttachmentStoredByNameOnly_StillLogs()
     {
@@ -223,6 +232,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>I-7: Discord's 5xx is retried, and the retry must upload the image again, not an emptied stream.</summary>
+    /// <remarks>Cases: LOG-91.</remarks>
     [Fact]
     public async Task Delete_WithAnImage_WhoseFirstPostFails_UploadsItAgainOnTheRetry()
     {
@@ -285,6 +295,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>L-2: the bot's own posts aren't saved, so purging its old log posts logs nothing.</summary>
+    /// <remarks>Cases: LOG-63 (bot).</remarks>
     [Fact]
     public async Task TheBotsOwnMessages_AreNotSaved()
     {
@@ -301,6 +312,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     ///     L-2: a post by the bot saved before it stopped saving them, and too old to be cached, is still recognised
     ///     by its stored author. Otherwise each purged log post would be logged as deleted.
     /// </summary>
+    /// <remarks>Cases: LOG-97.</remarks>
     [Fact]
     public async Task Delete_OfAnUncachedPostByTheBot_IsIgnored()
     {
@@ -326,6 +338,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>KI-39: when the audit log shows a moderator deleted it, that's recorded and shown.</summary>
+    /// <remarks>Cases: LOG-86.</remarks>
     [Fact]
     public async Task Delete_ByAModerator_IsAttributed()
     {
@@ -342,6 +355,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>KI-51: the moderator id used to be mapped to a shadow property, so it was never saved.</summary>
+    /// <remarks>Cases: LOG-86.</remarks>
     [Fact]
     public async Task DeletedByModeratorEntry_KeepsItsModerator()
     {
@@ -363,6 +377,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>Deleting a message the log never saved posts nothing.</summary>
+    /// <remarks>Cases: LOG-96.</remarks>
     [Fact]
     public async Task Delete_OfAnUnloggedMessage_IsIgnored()
     {
@@ -374,6 +389,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     // ── Bulk deletes ──────────────────────────────────────────────────────────
 
     /// <summary>A bulk delete is recorded and logged once, with every message in an attached dump.</summary>
+    /// <remarks>Cases: LOG-110.</remarks>
     [Fact]
     public async Task BulkDelete_IsRecorded_AndLoggedWithADump()
     {
@@ -393,6 +409,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>L-9: the dump names each author, in message order, as a text file needs. A raw mention means nothing there.</summary>
+    /// <remarks>Cases: LOG-110.</remarks>
     [Fact]
     public async Task BulkDelete_DumpNamesTheAuthors_InMessageOrder()
     {
@@ -411,11 +428,12 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>L-7: with the delete log off, the history is still kept, but nothing is downloaded for a log nobody sees.</summary>
+    /// <remarks>Cases: LOG-94.</remarks>
     [Fact]
     public async Task Delete_WithTheDeleteLogOff_RecordsIt_ButDownloadsNothing()
     {
         (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(GuildLogType.MessageDeleted,
-            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), null)).ShouldBeSetOrUnchanged();
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), null, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSetOrUnchanged();
         var messageId = await this.SendLoggedWithAttachmentsAsync("look", "cat.png");
 
         this._bot.DeleteMessage(messageId, this.Channel);
@@ -427,6 +445,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>I-11: a log channel the bot can't post in is reported to the guild, not only logged for us.</summary>
+    /// <remarks>Cases: LOG-79, ALRT-49.</remarks>
     [Fact]
     public async Task ALogChannelTheBotCannotPostIn_IsReportedToTheGuild()
     {
@@ -445,6 +464,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>R-1: a log channel that was deleted is reported, so the guild can pick another.</summary>
+    /// <remarks>Cases: LOG-80, ALRT-48.</remarks>
     [Fact]
     public async Task ADeletedLogChannel_IsReportedToTheGuild()
     {
@@ -463,6 +483,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
             new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(channelId))).ShouldBeSetOrUnchanged();
 
     /// <summary>L-11: a failed save loses the message from the log, so it's raised, not only written to the log file.</summary>
+    /// <remarks>Cases: LOG-65.</remarks>
     [Fact]
     public async Task AMessageThatCannotBeSaved_IsRaisedAsAnError()
     {
@@ -486,6 +507,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>With the message log off, nothing is recorded or posted.</summary>
+    /// <remarks>Cases: LOG-101.</remarks>
     [Fact]
     public async Task WithTheMessageLogOff_EditsAndDeletesAreIgnored()
     {
@@ -501,6 +523,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>L-3: after a restart the message isn't cached, but the stored author is enough for the mention.</summary>
+    /// <remarks>Cases: LOG-98, XC-119.</remarks>
     [Fact]
     public async Task Delete_OfAnUncachedMessage_StillNamesTheAuthor()
     {
@@ -527,6 +550,7 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
     ///     L-5: Discord caps a message's embeds at 6,000 characters together, so a long edit goes out as two posts,
     ///     one with Before and one with After.
     /// </summary>
+    /// <remarks>Cases: LOG-75.</remarks>
     [Fact]
     public async Task Edit_ThatIsLong_SendsBeforeAndAfterInSeparatePosts()
     {

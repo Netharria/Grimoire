@@ -22,6 +22,5 @@ internal sealed class CustomCommandUsageConfiguration : IEntityTypeConfiguration
             .HasMaxLength(24);
 
         builder.HasIndex(e => new { e.GuildId, e.Name, e.UsedAt });
-        builder.HasIndex(e => new { e.GuildId, e.Name, e.UserId });
     }
 }

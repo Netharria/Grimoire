@@ -62,6 +62,7 @@ public sealed class LearnCommandTests(GrimoireCoreFactory factory) : IAsyncLifet
         embed.EmbedColor!.Value.Value.ShouldBe("FF5500");
     }
 
+    /// <remarks>Cases: CC-03.</remarks>
     [Fact]
     public async Task LearnEmbedCommand_WithoutColor_Saved_EmbedColorIsNull()
     {

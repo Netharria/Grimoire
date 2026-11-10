@@ -32,6 +32,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
+    /// <remarks>Cases: LOG-120.</remarks>
     [Fact]
     public async Task ReactingToALoggedMessage_SavesTheReaction()
     {
@@ -53,6 +54,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LOG-122.</remarks>
     [Fact]
     public async Task RemovingAReaction_SoftDeletesIt_AndReactingAgainRevivesIt()
     {
@@ -72,6 +74,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         revived.ReactedAt.ShouldBeGreaterThan(removed.ReactedAt);
     }
 
+    /// <remarks>Cases: LOG-123.</remarks>
     [Fact]
     public async Task RemovingAnEmojiForEveryone_SoftDeletesOnlyThatEmoji()
     {
@@ -90,6 +93,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         reactions.Single(reaction => !reaction.IsRemoved).Emoji.ToString().ShouldBe("<a:party:1100000000000000301>");
     }
 
+    /// <remarks>Cases: LOG-124.</remarks>
     [Fact]
     public async Task ClearingAllReactions_SoftDeletesEveryReactionOnTheMessage()
     {
@@ -105,6 +109,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         reactions.ShouldAllBe(reaction => reaction.IsRemoved);
     }
 
+    /// <remarks>Cases: LOG-125.</remarks>
     [Fact]
     public async Task ReactingToAMessageTheLogNeverSaved_SavesNothing()
     {
@@ -119,6 +124,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>With the message log off, reactions on a logged message are neither saved nor marked removed.</summary>
+    /// <remarks>Cases: LOG-126, XC-77.</remarks>
     [Fact]
     public async Task WithTheMessageLogOff_ReactionsAreIgnored()
     {
@@ -135,6 +141,7 @@ public sealed class ReactionTests(GrimoireCoreFactory database) : IAsyncLifetime
         reactions.ShouldHaveSingleItem().IsRemoved.ShouldBeFalse();
     }
 
+    /// <remarks>Cases: LOG-127.</remarks>
     [Fact]
     public async Task PurgingOldMessages_DeletesTheirReactions_RemovedOrNot()
     {

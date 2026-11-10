@@ -65,6 +65,7 @@ public sealed class DiagnosticsReportFormatterTests
         text.ShouldContain("Fix:");
     }
 
+    /// <remarks>Cases: DIAG-40.</remarks>
     [Fact]
     public void Embed_summarizes_channel_counts_and_stays_within_the_description_limit()
     {

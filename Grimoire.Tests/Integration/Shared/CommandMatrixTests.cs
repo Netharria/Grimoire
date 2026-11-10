@@ -51,12 +51,14 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
         { "warn", ManageMessages }
     };
 
+    /// <remarks>Cases: XC-50 and the section D registration table.</remarks>
     [Theory]
     [MemberData(nameof(Registrations))]
     public void EachCommand_IsRegisteredForTheExpectedMembers(string command, string? permissions)
         => this._bot.Rest.RegisteredCommands[command]["default_member_permissions"]?.ToString().ShouldBe(permissions);
 
     /// <summary>No command is registered that the table above doesn't know about.</summary>
+    /// <remarks>Cases: XC-50 and the section D registration table.</remarks>
     [Fact]
     public void EveryRegisteredCommand_IsInTheTable()
         => this._bot.Rest.RegisteredCommands.Keys.Order().ShouldBe(
@@ -81,6 +83,7 @@ public sealed class CommandMatrixTests(GrimoireCoreFactory database) : IAsyncLif
     /// <summary>
     ///     Each module-gated command refuses when its module is off, even for an administrator.
     /// </summary>
+    /// <remarks>Cases: XC-70, GEN-11 (level), GEN-12 (commands stats), GEN-13 (log message view).</remarks>
     [Theory]
     [MemberData(nameof(ModuleGated))]
     public async Task EachModuleGatedCommand_RefusesWithItsModuleOff(string command, Module module)

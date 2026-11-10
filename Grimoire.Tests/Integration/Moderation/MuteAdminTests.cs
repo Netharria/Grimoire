@@ -227,6 +227,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     // ── Create ────────────────────────────────────────────────────────────────
 
     /// <summary>MOD-79 and MOD-80: the role, the setting, the overwrites on each channel type, the log and diagnostics.</summary>
+    /// <remarks>Cases: DIAG-80.</remarks>
     [Fact]
     public async Task Create_MakesTheRole_SavesIt_DeniesEachChannel_AndFollowsUpWithDiagnostics()
     {

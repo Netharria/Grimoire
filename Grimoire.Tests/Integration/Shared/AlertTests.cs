@@ -62,6 +62,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     // ── Urgent ────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: ALRT-01.</remarks>
     [Fact]
     public async Task AnUrgentAlert_IsPostedAtOnce()
     {
@@ -77,6 +78,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
     ///     which goes to the buffer without a request, because the next post to the same channel can fail inside
     ///     DSharpPlus after a timeout (KI-54).
     /// </summary>
+    /// <remarks>Cases: ALRT-12.</remarks>
     [Fact]
     public async Task AfterAPostTimesOut_LaterAlertsAreStillProcessed()
     {
@@ -96,6 +98,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>The same problem posts once per cooldown, and the next post says how many repeats it held back.</summary>
+    /// <remarks>Cases: ALRT-03, ALRT-04 (the cooldown).</remarks>
     [Fact]
     public async Task RepeatsOfTheSameProblem_AreHeldBack_ThenCounted()
     {
@@ -113,6 +116,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
             .ShouldStartWith($"**[URGENT]** TestAlert `disc` (guild {this.Guild.Id}) — repeated 2 more times since the last alert");
     }
 
+    /// <remarks>Cases: ALRT-05.</remarks>
     [Fact]
     public async Task DifferentProblems_AreNotHeldBackByEachOther()
     {
@@ -124,6 +128,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.WaitForPostAsync(this.Guild.General, "second");
     }
 
+    /// <remarks>Cases: ALRT-06.</remarks>
     [Fact]
     public async Task WithoutAnUrgentChannel_NothingIsPosted()
     {
@@ -138,6 +143,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
     // ── Warnings and the daily report ─────────────────────────────────────────
 
     /// <summary>Warnings aren't posted. They're flushed to the database, and the daily report posts them once.</summary>
+    /// <remarks>Cases: ALRT-20, ALRT-21, ALRT-22, ALRT-23.</remarks>
     [Fact]
     public async Task Warnings_AreFlushed_ThenReportedOnceADay()
     {
@@ -166,6 +172,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>A report with more warnings than the embed can show attaches all of them as a text file, and still closes them.</summary>
+    /// <remarks>Cases: ALRT-25.</remarks>
     [Fact]
     public async Task ALongReport_AttachesTheFullReportAsAFile()
     {
@@ -185,6 +192,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.OccurrencesAsync()).ShouldAllBe(occurrence => occurrence.ReportedAt == Start);
     }
 
+    /// <remarks>Cases: ALRT-24.</remarks>
     [Fact]
     public async Task TheReport_WaitsForItsTimeOfDay()
     {
@@ -201,6 +209,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
         await this.WaitForPostAsync(this.Guild.Announcements);
     }
 
+    /// <remarks>Cases: ALRT-26.</remarks>
     [Fact]
     public async Task WithoutAWarningChannel_NoReportIsPosted_AndWarningsStayOpen()
     {
@@ -236,6 +245,7 @@ public sealed class AlertTests(GrimoireCoreFactory database) : IAsyncLifetime
     ///     I-8: a command's alert must not depend on its error reply. The reply throws if the response was deleted, and
     ///     it came first, so the alert never went out.
     /// </summary>
+    /// <remarks>Cases: ALRT-02.</remarks>
     [Fact]
     public async Task ACommandThatFails_RaisesAnUrgentAlert_EvenWhenTheErrorReplyFails()
     {

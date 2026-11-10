@@ -35,6 +35,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     ///     S-2: a failed lookup is reported as a failure and isn't cached. Caching the defaults would give the guild
     ///     the wrong XP amount, timeout and level curve for a day.
     /// </summary>
+    /// <remarks>Cases: XC-106.</remarks>
     [Fact]
     public async Task ALookupDuringAnOutage_Fails_AndIsNotCached()
     {

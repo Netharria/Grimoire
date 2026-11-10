@@ -59,6 +59,7 @@ public sealed class SettingSaveFailureTests(GrimoireCoreFactory database) : IAsy
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
+    /// <remarks>Cases: SPAM-51 (spam_filter override).</remarks>
     [Theory]
     [MemberData(nameof(Commands))]
     public async Task ASettingThatCannotBeSaved_IsReportedPrivately_AndNotLogged(string command, string error)

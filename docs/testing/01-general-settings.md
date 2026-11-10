@@ -51,9 +51,9 @@ Use one command per gated module. Disable the module with `/Modules Set`, run, r
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
 | GEN-10 | Moderation disabled | `admin` runs `/Ban` (any valid target) | Error "This module is disabled in this server."; nobody banned | no Sins row |
-| GEN-11 | Leveling disabled | `user1` runs `/Level` | Same disabled message | none |
-| GEN-12 | Commands disabled | `admin` runs `/Commands Stats` | Same disabled message | none |
-| GEN-13 | MessageLog disabled | `admin` runs `/Log Message View` | Same disabled message | none |
+| GEN-11 | Leveling disabled | `user1` runs `/Level` **[auto]** `CommandChecksTests.CommandInADisabledModule_GetsTheModuleDisabledError("leveling")`, `CommandMatrixTests.EachModuleGatedCommand_RefusesWithItsModuleOff` | Same disabled message | none |
+| GEN-12 | Commands disabled | `admin` runs `/Commands Stats` **[auto]** `CommandChecksTests.CommandInADisabledModule_GetsTheModuleDisabledError("commands")`, `CommandMatrixTests.EachModuleGatedCommand_RefusesWithItsModuleOff` | Same disabled message | none |
+| GEN-13 | MessageLog disabled | `admin` runs `/Log Message View` **[auto]** `CommandChecksTests.CommandInADisabledModule_GetsTheModuleDisabledError("message log")`, `CommandMatrixTests.EachModuleGatedCommand_RefusesWithItsModuleOff` (pins the gate KI-65 asks about) | Same disabled message | none |
 | GEN-14 | UserLog disabled | `admin` runs `/Log User View` | Same disabled message | none |
 | GEN-15 | Module re-enabled after GEN-10..14 | Re-run each command | Commands work again immediately (no bot restart) | Settings DB shows enabled |
 | GEN-16 | Test-B: Moderation enabled, Test-A: disabled | Run `/Ban` in Test-B | Works in B, blocked in A (per-guild isolation) | Only Test-A row differs |
@@ -99,8 +99,8 @@ Use one command per gated module. Disable the module with `/Modules Set`, run, r
 | GEN-54 | none | `option:Select Channel` without `channel` | Same validation error as GEN-37 | Unchanged |
 | GEN-55 | Mod log not set | Change the setting | Reply works; no mod log message; no error | Updated |
 | GEN-56 | Leveling enabled, user cmd channel = `#general` | `user1` runs `/Level` in `#general`, then in `#spam` | `#general`: public reply. `#spam`: ephemeral reply (only `user1` sees it) | none |
-| GEN-57 | Same as GEN-56 | `mod` (ManageMessages) runs `/Level` in `#spam` | Public reply (ManageMessages bypasses the channel restriction) | none |
-| GEN-58 | User cmd channel = Off | `user1` runs `/Level` anywhere | Ephemeral everywhere | none |
+| GEN-57 | Same as GEN-56 | `mod` (ManageMessages) runs `/Level` in `#spam` **[auto]** `GeneralLeftoverTests.Level_ByAModerator_OutsideTheUserCommandChannel_IsPublic` | Public reply (ManageMessages bypasses the channel restriction) | none |
+| GEN-58 | User cmd channel = Off | `user1` runs `/Level` anywhere **[auto]** `LevelAndLeaderboardTests.Level_IsEphemeral_UnlessAModeratorOrInTheUserCommandChannel("member", false, true)` | Ephemeral everywhere | none |
 | GEN-59 | Same as GEN-56 | Repeat with `/Leaderboard` | Same public/ephemeral split | none |
 | GEN-60 | `mod` | Run any UserCommands variant | Permission error | Unchanged |
 
@@ -198,8 +198,8 @@ Prepare `#spam`: helper to post N messages as `user1` and `user2` alternating; k
 | GEN-140 | Remove bot's Manage Messages in `#spam` | Run purge | Nothing deleted; user sees a permission error or Discord error. Record exact behaviour and whether the interaction hangs on "thinking". | Console error |
 | GEN-141 | Bot has no access to `#private` | Run purge there as `admin` | Error, no hang | Console error |
 | GEN-142 | `user1` (no ManageMessages) | Run `/Purge All count:5` | Permission error; no messages deleted | none |
-| GEN-143 | `user1` given ManageMessages only in `#spam` via channel override | Run in `#spam`, then `#general` | Works in `#spam`; check `#general` (user has no ManageMessages there): denied if permissions are resolved per-channel, allowed if resolved guild-wide. Record. | none |
-| GEN-144 | Pinned message present | Purge including it | Record whether pinned messages are deleted (no pin exclusion in code) | none |
+| GEN-143 | `user1` given ManageMessages only in `#spam` via channel override | Run in `#spam`, then `#general` | Works in `#spam`; check `#general` (user has no ManageMessages there): denied if permissions are resolved per-channel, allowed if resolved guild-wide. Record. | none. **[auto]** `ChannelPermissionTests.PurgeAll_WithManageMessagesOnlyInTheChannel_Runs`, `ChannelPermissionTests.OutsideTheChannel_DiscordHidesTheCommand_AndTheBotDoesNotCheckAgain` (bot side allows it in `#general`; Discord's per-channel registration hides it) |
+| GEN-144 | Pinned message present | Purge including it **[auto]** `GeneralLeftoverTests.PurgeAll_DeletesPinnedMessagesToo` (pinned messages are deleted) | Record whether pinned messages are deleted (no pin exclusion in code) | none |
 | GEN-145 | Thread/forum post channel | Purge inside a thread | Works or graceful error | none |
 | GEN-146 | Messages currently arriving (spam another account while purging) | Run purge | Deleted set is a snapshot from when the command started; no crash | none |
 | GEN-147 | Message Log enabled | Purge 10 messages | Message log (`#messagelog`) records the bulk delete (cross-check in area 05); Purge itself posts nothing to the mod log (**no purge audit in the mod log**) | Message log rows for deleted messages |
@@ -214,7 +214,7 @@ Prepare `#spam`: helper to post N messages as `user1` and `user2` alternating; k
 | GEN-152 | `user1` has no messages in channel | Run | "Purged 0 messages" | none |
 | GEN-153 | Target is a user who left the server but has messages | Run with that user | Deletes their messages (author compared by user identity) | none |
 | GEN-154 | Target is a bot (Grimoire's own replies) | Run with the bot | Bot messages deleted; ephemeral replies unaffected | none |
-| GEN-155 | Message by a PluralKit proxied webhook | Purge the underlying account (`pk`) | Proxied webhook messages are **not** matched (different author). Record. | none |
+| GEN-155 | Message by a PluralKit proxied webhook | Purge the underlying account (`pk`) | Proxied webhook messages are **not** matched (different author). Record. | none. **[auto]** `PluralKitAcrossFeaturesTests.PurgeUser_OnTheMember_LeavesTheProxies` |
 | GEN-156 | `user1` | Run `/Purge User` | Permission error | none |
 | GEN-157 | 1 matching message | `count:1` | Single-delete path, "Purged 1 message" | none |
 | GEN-158 | Matching messages older than 14 days mixed in | Run | Only recent ones removed; note that scanning stops at the 14-day boundary | none |
@@ -225,10 +225,10 @@ Prepare `#spam`: helper to post N messages as `user1` and `user2` alternating; k
 
 | ID | Precondition | Action | Expected | Expected DB / log |
 |----|--------------|--------|----------|-------------------|
-| GEN-170 | Change a setting in Test-A | Restart the bot | Value persists (`/GeneralSettings View`, `/Modules View`) | Settings DB |
-| GEN-171 | Edit a setting directly in SQL | Do not restart, run View | Stale value (cache), then correct after restart (documents the cache behaviour from `00-environment.md`) | Settings DB |
-| GEN-172 | Bot removed from Test-B then re-added | Run `/Modules View` in Test-B | Defaults or previous state; no exception (also see area 08 `GuildAdded`) | Settings DB |
-| GEN-173 | Two admins run `/Modules Set` on the same module at the same moment | Both complete | Final state equals the later write; no error | Settings DB single row |
+| GEN-170 | Change a setting in Test-A | Restart the bot **[auto]** `GeneralLeftoverTests.GeneralSettingsAndModules_SurviveARestart` | Value persists (`/GeneralSettings View`, `/Modules View`) | Settings DB |
+| GEN-171 | Edit a setting directly in SQL | Do not restart, run View **[auto]** `GeneralLeftoverTests.AModuleStateEditedInTheDatabase_IsStaleUntilARestart` | Stale value (cache), then correct after restart (documents the cache behaviour from `00-environment.md`) | Settings DB |
+| GEN-172 | Bot removed from Test-B then re-added | Run `/Modules View` in Test-B **[auto]** `GeneralLeftoverTests.AfterTheBotLeavesAndRejoins_ModulesViewStillWorks` (the previous state is kept) | Defaults or previous state; no exception (also see area 08 `GuildAdded`) | Settings DB |
+| GEN-173 | Two admins run `/Modules Set` on the same module at the same moment | Both complete **[auto]** `GeneralLeftoverTests.TwoModuleSetsAtOnce_BothComplete_AndTheNewestWriteWins` (each write adds a row; the newest wins) | Final state equals the later write; no error | Settings DB single row |
 
 ---
 

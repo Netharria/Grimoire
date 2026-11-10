@@ -45,6 +45,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
 
     // ── GetTopLeaderboardAsync ───────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-60.</remarks>
     [Fact]
     public async Task GetTopLeaderboardAsync_RanksUsersByXpDescending()
     {
@@ -64,6 +65,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         lines[2].ShouldContain("<@1>");
     }
 
+    /// <remarks>Cases: LVL-61.</remarks>
     [Fact]
     public async Task GetTopLeaderboardAsync_MoreThanFifteenUsers_ReturnsOnlyTopFifteen_ButFullTotalCount()
     {
@@ -78,6 +80,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         value.LeaderboardText.Split('\n').Length.ShouldBe(15);
     }
 
+    /// <remarks>Cases: LVL-68.</remarks>
     [Fact]
     public async Task GetTopLeaderboardAsync_OnlyCountsUsersInRequestedGuild()
     {
@@ -90,6 +93,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         response.ShouldSucceed().TotalUserCount.ShouldBe(1);
     }
 
+    /// <remarks>Cases: LVL-67.</remarks>
     [Fact]
     public async Task GetTopLeaderboardAsync_NoUsers_ReturnsEmptyTextAndZeroCount()
     {
@@ -131,6 +135,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         value.LeaderboardText.Split('\n').Length.ShouldBe(15);
     }
 
+    /// <remarks>Cases: LVL-68.</remarks>
     [Fact]
     public async Task GetUserCenteredLeaderboardAsync_OtherGuildUser_ReturnsNotFound()
     {

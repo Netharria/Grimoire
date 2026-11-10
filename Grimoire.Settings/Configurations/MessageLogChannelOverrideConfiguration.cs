@@ -24,9 +24,6 @@ internal sealed class MessageLogChannelOverrideConfiguration : IEntityTypeConfig
             .IsRequired();
         builder.Property(e => e.SetBy);
 
-        builder.HasIndex(x => new { x.ChannelId, x.GuildId, x.SetAt })
-            .IsDescending(false, false, true);
-
         builder.HasIndex(x => x.GuildId);
         builder.Property(e => e.GuildId);
         builder.Property(e => e.ChannelId);

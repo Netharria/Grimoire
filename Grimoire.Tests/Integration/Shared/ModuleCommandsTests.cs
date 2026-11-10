@@ -92,6 +92,7 @@ public sealed class ModuleCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>GEN-83: the settings cache is invalidated on write, so View shows the change at once.</summary>
+    /// <remarks>Cases: XC-90.</remarks>
     [Theory]
     [MemberData(nameof(EveryModule))]
     public async Task View_RightAfterSet_ShowsTheNewState(string moduleName)
@@ -136,6 +137,7 @@ public sealed class ModuleCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>GEN-88 for the message log; the leveling and user-log halves are in A-25 and A-23.</summary>
+    /// <remarks>Cases: LOG-64, XC-77.</remarks>
     [Fact]
     public async Task DisabledMessageLog_SavesNoMessages_AndEnablingItStartsSaving()
     {

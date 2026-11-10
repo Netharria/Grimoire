@@ -18,9 +18,6 @@ internal sealed class SinReasonHistoryConfiguration : IEntityTypeConfiguration<S
     {
         builder.HasKey(e => new { e.SinId, e.SetAt });
 
-        builder.HasIndex(e => new { e.SinId, e.SetAt })
-            .IsDescending(false, true);
-
         builder.HasOne(e => e.Sin)
             .WithMany(e => e.ReasonHistory)
             .HasForeignKey(e => e.SinId)

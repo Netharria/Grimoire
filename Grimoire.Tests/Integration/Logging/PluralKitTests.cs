@@ -51,6 +51,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
     /// <summary>When PluralKit deletes the original it proxied, that's linked, not logged as a delete.</summary>
+    /// <remarks>Cases: XC-30, LOG-99.</remarks>
     [Fact]
     public async Task TheOriginalBeingReplacedByAProxy_IsLinked_NotLogged()
     {
@@ -66,6 +67,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     }
 
     /// <summary>Deleting the proxy afterwards is logged against the member who wrote it.</summary>
+    /// <remarks>Cases: XC-31, LOG-99.</remarks>
     [Fact]
     public async Task DeletingTheProxy_IsLoggedWithTheOriginalAuthorAndSystem()
     {
@@ -83,6 +85,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     }
 
     /// <summary>A message PluralKit doesn't know is deleted and logged as usual.</summary>
+    /// <remarks>Cases: XC-33.</remarks>
     [Fact]
     public async Task AMessagePluralKitDoesNotKnow_IsLoggedAsUsual()
     {
@@ -96,12 +99,13 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     }
 
     /// <summary>L-11: editing a proxy shows the member behind it, as the delete log does, not the webhook.</summary>
+    /// <remarks>Cases: XC-34, LOG-81.</remarks>
     [Fact]
     public async Task EditingAProxy_ShowsTheOriginalAuthorsAvatar()
     {
         const string hash = "abcdef0123456789abcdef0123456789";
         (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(GuildLogType.MessageEdited,
-            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(this.Guild.ModLog.Id), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSetOrUnchanged();
         var (original, proxy) = await this.ProxyAsync("hello");
         this._bot.DeleteMessage(original, this.Channel);
         await GrimoireTestBot.EventuallyAsync(this.LinksAsync, links => links.Count > 0);
@@ -115,6 +119,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     }
 
     /// <summary>L-8: a delete of a message that was never logged asks PluralKit nothing.</summary>
+    /// <remarks>Cases: XC-38, LOG-96.</remarks>
     [Fact]
     public async Task DeletingAnUnloggedMessage_AsksPluralKitNothing()
     {
@@ -128,6 +133,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     ///     I-3: the lookup is optional, so a PluralKit failure must not cost the delete log. A refused token, a reply
     ///     that isn't JSON, and one whose shape changed each make it fail differently.
     /// </summary>
+    /// <remarks>Cases: XC-35.</remarks>
     [Theory]
     [InlineData(HttpStatusCode.Forbidden, "")]
     [InlineData(HttpStatusCode.OK, "<html>Service unavailable</html>")]
@@ -144,6 +150,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     }
 
     /// <summary>I-3: the rate limiter allows two lookups a second with no queue, so a burst of deletes is refused by it.</summary>
+    /// <remarks>Cases: XC-36.</remarks>
     [Fact]
     public async Task ABurstOfDeletes_IsAllLogged()
     {
@@ -160,6 +167,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
     }
 
     /// <summary>I-15: without PluralKit configured, the bot says so once, not on every delete.</summary>
+    /// <remarks>Cases: XC-06.</remarks>
     [Fact]
     public async Task WithoutPluralKitConfigured_TheWarningIsLoggedOnce()
     {
@@ -168,7 +176,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
         await this._bot.ConfigureModerationAsync();
         await this._bot.ConfigureMessageLogAsync();
         (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(GuildLogType.MessageDeleted,
-            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(this.Guild.ModLog.Id))).ShouldBeSetOrUnchanged();
+            new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new ChannelId(this.Guild.ModLog.Id), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSetOrUnchanged();
 
         foreach (var content in new[] { "first", "second", "third" })
         {

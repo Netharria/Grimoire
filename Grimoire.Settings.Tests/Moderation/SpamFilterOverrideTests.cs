@@ -85,6 +85,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         count.ShouldBe(1);
     }
 
+    /// <remarks>Cases: XC-96.</remarks>
     [Fact]
     public async Task NewValue_InsertsRow_CacheUpdated()
     {

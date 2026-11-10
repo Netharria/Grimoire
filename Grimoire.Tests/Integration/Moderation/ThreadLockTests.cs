@@ -112,6 +112,7 @@ public sealed class ThreadLockTests(GrimoireCoreFactory database) : IAsyncLifeti
     ///     MOD-163 and MOD-167: an unlock row lifts the lock, and the newest row wins when a thread is locked again.
     ///     <c>/Unlock</c> writes that row, and so does the lock background task when the timer runs out.
     /// </summary>
+    /// <remarks>Cases: XC-99.</remarks>
     [Fact]
     public async Task UnlockingLiftsTheLock_AndLockingAgainRestoresIt()
     {
@@ -128,6 +129,7 @@ public sealed class ThreadLockTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>MOD-168.</summary>
+    /// <remarks>Cases: XC-81.</remarks>
     [Fact]
     public async Task WithModerationDisabled_MessagesInALockedThreadStay()
     {

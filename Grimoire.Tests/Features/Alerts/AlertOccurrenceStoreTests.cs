@@ -130,6 +130,7 @@ public sealed class AlertOccurrenceStoreTests(GrimoireCoreFactory factory) : IAs
         after.Single(x => x.AlertKey == "b").ReportedAt.ShouldBeNull();
     }
 
+    /// <remarks>Cases: ALRT-33.</remarks>
     [Fact]
     public async Task DeleteOlderThan_removes_rows_last_seen_before_the_cutoff()
     {

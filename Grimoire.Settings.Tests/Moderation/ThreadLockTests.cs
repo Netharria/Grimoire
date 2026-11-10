@@ -123,6 +123,7 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         expired.Single().ChannelId.ShouldBe(_channelId);
     }
 
+    /// <remarks>Cases: XC-99.</remarks>
     [Fact]
     public async Task CacheInvalidatedAfterAddAndRemove()
     {

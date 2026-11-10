@@ -205,6 +205,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
             .ShouldSucceed().ShouldBeFalse();
     }
 
+    /// <remarks>Cases: XC-90.</remarks>
     [Fact]
     public async Task CacheInvalidatedAfterStateChange()
     {

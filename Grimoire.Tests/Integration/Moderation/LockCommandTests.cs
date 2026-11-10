@@ -176,6 +176,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>MOD-156, MOD-158 and MOD-169: Discord's client enforces these from the registration.</summary>
+    /// <remarks>Cases: MOD-157 (a zero duration is refused by the registered minimum of 1, since KI-07).</remarks>
     [Fact]
     public void LockAndUnlock_AreRegisteredWithTheirLimits()
     {
@@ -222,6 +223,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     ///     MOD-173 and MOD-174: Discord refuses the overwrite without Manage Roles or channel access, and the error
     ///     handler explains it.
     /// </summary>
+    /// <remarks>Cases: ALRT-43 (the "Discord refused" reply).</remarks>
     [Fact]
     public async Task Lock_ThatDiscordRefuses_ShowsTheMissingPermissionsHelp()
     {

@@ -53,6 +53,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     // ── /Log User ─────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LOG-47.</remarks>
     [Fact]
     public async Task View_OnAFreshGuild_ShowsNoLogChannels()
     {
@@ -63,6 +64,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LOG-40, LOG-41.</remarks>
     [Theory]
     [InlineData(UserLogSetting.JoinLog, GuildLogType.UserJoined)]
     [InlineData(UserLogSetting.LeaveLog, GuildLogType.UserLeft)]
@@ -79,6 +81,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.LogChannelAsync(logType)).ShouldBeNull();
     }
 
+    /// <remarks>Cases: LOG-49 (permission), LOG-50 (module), View only.</remarks>
     [Theory]
     [InlineData("permission")]
     [InlineData("module")]
@@ -96,6 +99,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
 
     // ── Events ────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LOG-142.</remarks>
     [Fact]
     public async Task Join_IsLogged_WithTheInviteUnknown()
     {
@@ -111,6 +115,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LOG-145.</remarks>
     [Fact]
     public async Task Leave_IsLogged_WithTheMembersRoles()
     {
@@ -124,6 +129,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>A change from one nickname to another is recorded and logged.</summary>
+    /// <remarks>Cases: LOG-160.</remarks>
     [Fact]
     public async Task NicknameChange_IsRecorded_AndLogged()
     {
@@ -142,6 +148,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>A member's first nickname should be logged too.</summary>
+    /// <remarks>Cases: LOG-161.</remarks>
     [Fact]
     public async Task FirstNickname_IsRecorded_AndLogged()
     {
@@ -152,6 +159,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         Field(await this.WaitForLogAsync("Nickname Updated"), "After").ShouldBe("newnick");
     }
 
+    /// <remarks>Cases: LOG-165.</remarks>
     [Fact]
     public async Task UsernameChange_IsRecorded_AndLogged()
     {
@@ -166,6 +174,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         Field(embed, "After").ShouldBe("renamed");
     }
 
+    /// <remarks>Cases: LOG-168.</remarks>
     [Fact]
     public async Task AvatarChange_IsRecorded_AndLoggedWithTheNewImage()
     {
@@ -180,6 +189,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>L-7: with no avatar log channel, the new avatar is recorded but not downloaded.</summary>
+    /// <remarks>Cases: LOG-170.</remarks>
     [Fact]
     public async Task AvatarChange_WithTheAvatarLogOff_IsRecorded_ButNotDownloaded()
     {
@@ -194,6 +204,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>L-4: Avatars are stored per guild, so an avatar set for this server only is a change too.</summary>
+    /// <remarks>Cases: LOG-169.</remarks>
     [Fact]
     public async Task GuildAvatarChange_IsRecorded_AndLogged()
     {
@@ -211,6 +222,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     ///     L-6: an update that overtakes the join, as an auto-role bot causes, has nothing to compare against. It
     ///     must not be logged as a change from nothing.
     /// </summary>
+    /// <remarks>Cases: LOG-172.</remarks>
     [Fact]
     public async Task AnUpdateRightAfterAFirstJoin_IsNotLoggedAsAChange()
     {
@@ -229,6 +241,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>L-6: with no stored avatar yet, there is nothing to say it changed from.</summary>
+    /// <remarks>Cases: LOG-171.</remarks>
     [Fact]
     public async Task AnAvatarUpdate_WithNoStoredAvatar_IsNotLogged()
     {
@@ -241,6 +254,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>L-11: about 45 roles pass a field's 1,024 characters. They're split across fields, not lost with the log.</summary>
+    /// <remarks>Cases: LOG-146.</remarks>
     [Fact]
     public async Task Leave_OfAMemberWithManyRoles_IsStillLogged()
     {
@@ -260,6 +274,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>A role change isn't an avatar change.</summary>
+    /// <remarks>Cases: LOG-164.</remarks>
     [Fact]
     public async Task RoleChange_IsNotLoggedAsAnAvatarChange()
     {
@@ -270,6 +285,7 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.LoggedWithinAsync("Avatar Updated", NothingHappensWindow)).ShouldBeFalse();
     }
 
+    /// <remarks>Cases: LOG-150, LOG-174.</remarks>
     [Fact]
     public async Task WithTheUserLogOff_NothingIsLogged()
     {

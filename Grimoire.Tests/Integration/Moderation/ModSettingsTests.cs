@@ -149,6 +149,7 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
     }
 
     /// <summary>SIN-60: View still runs, so it can say the module is off; changing a setting is refused.</summary>
+    /// <remarks>Cases: XC-71.</remarks>
     [Fact]
     public async Task ModSettings_WithModerationDisabled_ViewShowsIt_AndChangesAreRefused()
     {

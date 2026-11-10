@@ -38,6 +38,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
+    /// <remarks>Cases: LVL-100.</remarks>
     [Fact]
     public async Task Add_StoresTheReward_AndLogsIt()
     {
@@ -51,6 +52,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LVL-101.</remarks>
     [Fact]
     public async Task Add_ForARoleThatIsAlreadyAReward_UpdatesIt()
     {
@@ -62,6 +64,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         (reward.RewardLevel, reward.RewardMessage).ShouldBe((7, null));
     }
 
+    /// <remarks>Cases: LVL-103.</remarks>
     [Fact]
     public async Task Add_ARoleAboveTheBot_IsRefused()
     {
@@ -73,6 +76,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>X-11: Discord needs the bot's top role strictly above the role, so a role level with it is refused.</summary>
+    /// <remarks>Cases: LVL-104.</remarks>
     [Fact]
     public async Task Add_ARoleLevelWithTheBot_IsRefused()
     {
@@ -86,6 +90,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>X-11: a managed role, such as Server Booster, can't be granted by anyone, so it can't be a reward.</summary>
+    /// <remarks>Cases: LVL-105.</remarks>
     [Fact]
     public async Task Add_AManagedRole_IsRefused()
     {
@@ -98,6 +103,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         (await this.RewardsAsync()).ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LVL-110.</remarks>
     [Fact]
     public async Task View_ListsEveryReward()
     {
@@ -112,6 +118,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
             ignoreOrder: true);
     }
 
+    /// <remarks>Cases: LVL-114.</remarks>
     [Fact]
     public async Task Remove_DeletesTheReward_AndLogsIt()
     {
@@ -128,12 +135,14 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     ///     <c>/Rewards</c> is registered for everyone, so each subcommand must check Manage Guild itself. Add and View
     ///     do.
     /// </summary>
+    /// <remarks>Cases: LVL-116.</remarks>
     [Fact]
     public async Task Add_ByAMemberWithoutManageGuild_IsRefused()
         => (await this._bot.RunSlashCommandAndWaitAsync("rewards", this.Guild.Moderator, SlashOption.Subcommand("add",
                 SlashOption.Role("role", this.Guild.KickerRoleId), SlashOption.Integer("level", 3))))
             .Description.ShouldBe("You do not have the required permissions to use this command.");
 
+    /// <remarks>Cases: LVL-116.</remarks>
     [Fact]
     public async Task Remove_ByAMemberWithoutManageGuild_IsRefused()
     {
@@ -145,6 +154,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         (await this.RewardsAsync()).ShouldHaveSingleItem();
     }
 
+    /// <remarks>Cases: LVL-117.</remarks>
     [Theory]
     [InlineData("add")]
     [InlineData("view")]
@@ -158,6 +168,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
             .Description.ShouldBe("This module is disabled in this server.");
     }
 
+    /// <remarks>Cases: LVL-117.</remarks>
     [Fact]
     public async Task Remove_NeedsTheModule()
     {
@@ -172,6 +183,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     ///     I-9: only "not found" means a role is gone. /Level looks up the next reward's role, and during an outage it
     ///     used to show "None" as if the role were deleted. Now the command fails, and is reported.
     /// </summary>
+    /// <remarks>Cases: LVL-58.</remarks>
     [Fact]
     public async Task Level_DuringADiscordOutage_FailsInsteadOfShowingTheRewardAsMissing()
     {
@@ -186,6 +198,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>X-10: a deleted role is listed by its id, with no lookup.</summary>
+    /// <remarks>Cases: LVL-112.</remarks>
     [Fact]
     public async Task View_ListsADeletedRoleByItsId()
     {
@@ -196,6 +209,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>X-10: an empty list says so, instead of a blank embed.</summary>
+    /// <remarks>Cases: LVL-111.</remarks>
     [Fact]
     public async Task View_WithNoRewards_SaysSo()
         => (await this.RewardsCommandAsync("view")).Description.ShouldBe("This server does not have any rewards.");
@@ -204,6 +218,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     ///     X-10: two 3,000-character messages don't fit one embed, so the list is paged, and each message is shown
     ///     whole. It used to fail outright.
     /// </summary>
+    /// <remarks>Cases: LVL-113.</remarks>
     [Fact]
     public async Task View_WithLongRewardMessages_IsPaged_WithEachMessageWhole()
     {
@@ -217,6 +232,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>X-7: a role that isn't a reward can't be removed, and nothing is recorded or logged.</summary>
+    /// <remarks>Cases: LVL-115.</remarks>
     [Fact]
     public async Task Remove_OfARoleThatIsNotAReward_IsRefused()
     {

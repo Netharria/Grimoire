@@ -50,6 +50,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
 
     // ── /Level ────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-50.</remarks>
     [Fact]
     public async Task Level_WithNoXp_ShowsLevelOne()
     {
@@ -63,6 +64,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LVL-51.</remarks>
     [Fact]
     public async Task Level_ShowsTheMembersXpAndProgress()
     {
@@ -75,6 +77,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
         Field(embed, "Progress").ShouldBe("5/8");
     }
 
+    /// <remarks>Cases: LVL-52.</remarks>
     [Fact]
     public async Task Level_ForAnotherUser_ShowsTheirXp()
     {
@@ -90,6 +93,10 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     ///     The reply is ephemeral for members without Manage Messages outside the user command channel, and public for
     ///     moderators or in that channel.
     /// </summary>
+    /// <remarks>
+    ///     Cases: LVL-54 and GEN-58 (member, no channel), GEN-57 (moderator), LVL-55 and GEN-56 (member, in the
+    ///     channel).
+    /// </remarks>
     [Theory]
     [InlineData("member", false, true)]
     [InlineData("moderator", false, false)]
@@ -98,7 +105,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     {
         if (inCommandChannel)
             (await this.Settings.SetUserCommandChannelSetting(this.GuildId, new ModeratorId(this.Guild.Owner.Id),
-                new ChannelId(this.Guild.General.Id))).ShouldBeSetOrUnchanged();
+                new ChannelId(this.Guild.General.Id), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSetOrUnchanged();
 
         var reply = await this._bot.RunSlashCommandAndWaitAsync(this.Guild.General, "level",
             who == "moderator" ? this.Guild.Moderator : this.Guild.User1);
@@ -107,6 +114,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>The next reward shows its role and the level it's given at.</summary>
+    /// <remarks>Cases: LVL-53.</remarks>
     [Fact]
     public async Task Level_ShowsTheNextRewardAndItsLevel()
     {
@@ -118,6 +126,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>With several rewards ahead, the nearest one is shown.</summary>
+    /// <remarks>Cases: LVL-53.</remarks>
     [Fact]
     public async Task Level_ShowsTheNearestReward()
     {
@@ -130,6 +139,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
         Field(embed, "Next Reward").ShouldStartWith($"<@&{this.Guild.KickerRoleId}>");
     }
 
+    /// <remarks>Cases: LVL-59 (level), LVL-74 (leaderboard).</remarks>
     [Theory]
     [InlineData("level")]
     [InlineData("leaderboard")]
@@ -145,6 +155,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
 
     // ── /Leaderboard ──────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-60.</remarks>
     [Fact]
     public async Task Leaderboard_Top_RanksMembersByXp()
     {
@@ -161,6 +172,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>The user view shows five places above the member and nine below.</summary>
+    /// <remarks>Cases: LVL-62.</remarks>
     [Fact]
     public async Task Leaderboard_User_ShowsTheMembersNeighbourhood()
     {
@@ -176,6 +188,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>X-8: near the bottom, the window shifts up, so fifteen places still show.</summary>
+    /// <remarks>Cases: LVL-63.</remarks>
     [Fact]
     public async Task Leaderboard_User_NearTheBottom_StillShowsFifteen()
     {
@@ -189,16 +202,19 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
         lines[^1].ShouldBe($"**21** {this.Guild.User1.Mention} **XP:** 1");
     }
 
+    /// <remarks>Cases: LVL-64.</remarks>
     [Fact]
     public async Task Leaderboard_Me_WithNoXp_SaysNotFound()
         => (await this.LeaderboardAsync(LeaderboardOption.Me)).Description.ShouldBe("User not found on the leaderboard");
 
+    /// <remarks>Cases: LVL-65.</remarks>
     [Fact]
     public async Task Leaderboard_UserOptionWithoutAUser_IsRejected()
         => (await this.LeaderboardAsync(LeaderboardOption.User)).Description
             .ShouldBe("You must specify a user when selecting the 'User' option.");
 
     /// <summary>New XP shows on the leaderboard only after the refresh task runs.</summary>
+    /// <remarks>Cases: LVL-69, LVL-70.</remarks>
     [Fact]
     public async Task Leaderboard_PicksUpNewXp_AfterTheRefreshTask()
     {

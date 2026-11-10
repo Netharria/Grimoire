@@ -72,6 +72,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         result.ShouldBeTrue();
     }
 
+    /// <remarks>Cases: LOG-24.</remarks>
     [Fact]
     public async Task Inherit_ParentNeverLog_ReturnsFalse()
     {
@@ -96,6 +97,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         result.ShouldBeTrue();
     }
 
+    /// <remarks>Cases: LOG-24.</remarks>
     [Fact]
     public async Task DeepHierarchy_Inherit_Inherit_AlwaysLog()
     {
@@ -112,6 +114,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         result.ShouldBeTrue();
     }
 
+    /// <remarks>Cases: LOG-26.</remarks>
     [Fact]
     public async Task RedundantWrite_ReturnsNotModified_NoNewRow()
     {
@@ -170,6 +173,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         overrides.ShouldNotContain(x => x.ChannelId == inheritChannel);
     }
 
+    /// <remarks>Cases: LOG-26.</remarks>
     [Fact]
     public async Task SetChannelLogOverride_NotModified_HasCorrectErrorCode()
     {
@@ -212,6 +216,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         result.ShouldBeTrue();
     }
 
+    /// <remarks>Cases: LOG-33.</remarks>
     [Fact]
     public async Task GetAllOverriddenChannels_ExcludesOtherGuild()
     {

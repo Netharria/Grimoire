@@ -364,6 +364,7 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
                 "PUT" => Json(new JsonArray([.. request.Json!.AsArray().Select(c => (JsonNode)this.RegisterCommand(c!.AsObject()))])),
                 _ => null
             },
+            _ when GuildVanityUrl().IsMatch(request.Path) && get => this.VanityUrl(),
             _ when GuildInvites().IsMatch(request.Path) && get && !this._guild.BotHas(FakeGuild.ManageGuildPermission)
                 => Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions"),
             _ when GuildInvites().IsMatch(request.Path) && get
@@ -396,13 +397,11 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
                     : Error(HttpStatusCode.NotFound, 10011, "Unknown Role"),
             _ when ChannelPermission().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Put
                 => this.SetOverwrite(ulong.Parse(match.Groups[1].Value), ulong.Parse(match.Groups[2].Value), request),
-            _ when InteractionCallback().IsMatch(request.Path) && post => new HttpResponseMessage(HttpStatusCode.NoContent),
-            _ when OriginalResponse().IsMatch(request.Path) && request.Method == HttpMethod.Delete
-                => new HttpResponseMessage(HttpStatusCode.NoContent),
-            _ when OriginalResponse().IsMatch(request.Path) && request.Method == HttpMethod.Patch
-                => Json(this.MessageJson(this._guild.General.Id, request)),
-            _ when FollowupMessage().IsMatch(request.Path) && post
-                => Json(this.MessageJson(this._guild.General.Id, request)),
+            _ when InteractionCallback().IsMatch(request.Path) && post => this.InteractionCallbackResponse(request),
+            _ when WebhookMessagePath().IsMatch(request.Path)
+                   && (get || request.Method == HttpMethod.Patch || request.Method == HttpMethod.Delete)
+                => this.WebhookMessageResponse(request),
+            _ when FollowupMessage().IsMatch(request.Path) && post => this.FollowupResponse(request),
             _ when Message().Match(request.Path) is { Success: true } match && request.Method == HttpMethod.Delete
                 => this.DeleteFromHistory(ulong.Parse(match.Groups[1].Value), [ulong.Parse(match.Groups[2].Value)]),
             _ when BulkDelete().Match(request.Path) is { Success: true } match && post
@@ -498,8 +497,8 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     }
 
     /// <summary>
-    ///     Granting or revoking a role needs Manage Roles and a role below the bot's top role. Discord announces the
-    ///     member's new roles with <c>GUILD_MEMBER_UPDATE</c>.
+    ///     Granting or revoking a role needs Manage Roles and a role below the bot's top role, and @everyone can't be
+    ///     granted. Discord announces the member's new roles with <c>GUILD_MEMBER_UPDATE</c>.
     /// </summary>
     private HttpResponseMessage ChangeMemberRole(ulong userId, ulong roleId, bool grant)
     {
@@ -510,6 +509,10 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
             return Error(HttpStatusCode.NotFound, 10011, "Unknown Role");
         if (!this._guild.BotCanManageRole(roleId) || this._guild.IsManaged(roleId))
             return Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+        // Every member holds @everyone (its id is the guild id), so Discord refuses to grant it. The exact answer
+        // isn't documented; this is a plausible one, a 400 that is neither Forbidden nor NotFound.
+        if (grant && roleId == this._guild.Id)
+            return Error(HttpStatusCode.BadRequest, 50028, "Invalid Role");
 
         if (grant)
             this._guild.GrantRole(user, roleId);
@@ -579,6 +582,45 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
                 return [.. this._kicked];
         }
     }
+
+    /// <summary>
+    ///     <c>GET guilds/{id}/vanity-url</c>, which needs Manage Server. A guild without a vanity URL answers with a
+    ///     null code, as on Discord.
+    /// </summary>
+    private HttpResponseMessage VanityUrl()
+        => this._guild.BotHas(FakeGuild.ManageGuildPermission)
+            ? Json(new JsonObject { ["code"] = this._guild.VanityUrlCode, ["uses"] = 0 })
+            : Error(HttpStatusCode.Forbidden, 50013, "Missing Permissions");
+
+    /// <summary>
+    ///     An InviteDelete (42) audit entry for <paramref name="code" />, with the code in its changes as Discord
+    ///     writes it, so the bot can tell which invite was revoked.
+    /// </summary>
+    public void AddInviteDeleteAuditLogEntry(FakeUser responsible, string code)
+    {
+        lock (this._lock)
+        {
+            this._knownUsers[responsible.Id] = responsible;
+            this._auditLog.Add(new JsonObject
+            {
+                ["id"] = FakeUser.Snowflake(SnowflakeAt(DateTimeOffset.UtcNow, this._auditLog.Count)),
+                ["user_id"] = FakeUser.Snowflake(responsible.Id),
+                ["target_id"] = null,
+                ["action_type"] = InviteDeleteAuditAction,
+                ["reason"] = null,
+                ["changes"] = new JsonArray(
+                    new JsonObject { ["key"] = "code", ["old_value"] = code },
+                    new JsonObject { ["key"] = "channel_id", ["old_value"] = FakeUser.Snowflake(this._guild.General.Id) },
+                    new JsonObject { ["key"] = "uses", ["old_value"] = 0 },
+                    new JsonObject { ["key"] = "max_uses", ["old_value"] = 0 },
+                    new JsonObject { ["key"] = "max_age", ["old_value"] = 0 },
+                    new JsonObject { ["key"] = "temporary", ["old_value"] = false }),
+                ["options"] = null
+            });
+        }
+    }
+
+    public const int InviteDeleteAuditAction = 42;
 
     private HttpResponseMessage AuditLogPage(RecordedRequest request)
     {
@@ -654,6 +696,13 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     {
         lock (this._lock)
             return [.. this.HistoryOf(channel.Id).Keys];
+    }
+
+    /// <summary>Marks a seeded message as pinned, as Discord reports it when the history is read.</summary>
+    public void PinInHistory(FakeChannel channel, ulong messageId)
+    {
+        lock (this._lock)
+            this.HistoryOf(channel.Id)[messageId]["pinned"] = true;
     }
 
     private SortedDictionary<ulong, JsonObject> HistoryOf(ulong channelId)
@@ -759,9 +808,10 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
         return 1_300_000_000_000_000_000 + hash % 100_000_000_000_000_000;
     }
 
-    private JsonObject MessageJson(ulong channelId, RecordedRequest request)
+    private JsonObject MessageJson(ulong channelId, RecordedRequest request) => this.MessageJson(channelId, request.Json as JsonObject);
+
+    private JsonObject MessageJson(ulong channelId, JsonObject? body)
     {
-        var body = request.Json as JsonObject;
         return new JsonObject
         {
             ["id"] = FakeUser.Snowflake(this.NextId()),
@@ -769,7 +819,7 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
             ["author"] = this._guild.Bot.ToJson(),
             ["content"] = body?["content"]?.DeepClone() ?? "",
             ["embeds"] = body?["embeds"]?.DeepClone() ?? new JsonArray(),
-            ["components"] = new JsonArray(),
+            ["components"] = body?["components"]?.DeepClone() ?? new JsonArray(),
             ["attachments"] = new JsonArray(),
             ["mentions"] = new JsonArray(),
             ["mention_roles"] = new JsonArray(),
@@ -862,11 +912,11 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     [GeneratedRegex(@"^guilds/\d+/invites$")]
     private static partial Regex GuildInvites();
 
+    [GeneratedRegex(@"^guilds/\d+/vanity-url$")]
+    private static partial Regex GuildVanityUrl();
+
     [GeneratedRegex(@"^interactions/\d+/[^/]+/callback$")]
     private static partial Regex InteractionCallback();
-
-    [GeneratedRegex(@"^webhooks/\d+/[^/]+/messages/@original$")]
-    private static partial Regex OriginalResponse();
 
     [GeneratedRegex(@"^webhooks/\d+/[^/]+$")]
     private static partial Regex FollowupMessage();

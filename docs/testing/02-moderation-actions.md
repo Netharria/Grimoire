@@ -57,14 +57,14 @@ durations and allow about 10 s after expiry before asserting.
 | MOD-01 | `user2` in guild, has DMs open | `admin` runs `/Ban user:user2 reason:"spam"` | `user2` receives DM "You have been banned from Test-A for spam" with author "Ban ID n". Public embed "Banned" with User, Sin Id, Moderator, Reason. `user2` appears in Server Settings > Bans with audit-log reason "spam" | `Sins`: one row, type Ban, actor = admin. `SinReasonHistory`: one row "spam". `#modlog` gets a "Banned" embed **once** (from `BanAddedEvent`, which reuses the command's sin because it is under 30 s old) with Mod field = admin |
 | MOD-02 | Re-invite and unban `user2` first (MOD-33) | `/Ban user:user2` with no reason | Embed Reason "None"; DM has no "for ..." text | `Sins` row, **no** `SinReasonHistory` row. Mod-log Reason "None" |
 | MOD-03 | `user2` has sent messages in `#general` in the last hour | `/Ban user:user2 delete_messages:true` (delete_days omitted) | Banned; `user2`'s messages from the last 7 days are removed from all channels | Sin row |
-| MOD-04 | as MOD-03 | `/Ban ... delete_messages:true delete_days:1`; seed one message older than 1 day if possible | Only the last day removed | Sin row |
-| MOD-05 | as MOD-03 | `/Ban ... delete_messages:false delete_days:7` | **No** messages removed (delete_days ignored while the flag is false) | Sin row |
+| MOD-04 | as MOD-03 | `/Ban ... delete_messages:true delete_days:1`; seed one message older than 1 day if possible **[auto]** `BanTests.Ban_AsksDiscordToDeleteTheRightDaysOfMessages` (the window sent to Discord) | Only the last day removed | Sin row |
+| MOD-05 | as MOD-03 | `/Ban ... delete_messages:false delete_days:7` **[auto]** `BanTests.Ban_AsksDiscordToDeleteTheRightDaysOfMessages` (the window sent to Discord) | **No** messages removed (delete_days ignored while the flag is false) | Sin row |
 | MOD-06 | as MOD-03 | `/Ban ... delete_messages:true delete_days:0` | Banned; no messages removed | Sin row |
 | MOD-07 | none | `/Ban ... delete_days:8` and `-1` | Discord client rejects (0-7 range) | none |
 | MOD-08 | none | `/Ban ... reason:` with 1001 characters | Discord client rejects (max 1000) | none |
 | MOD-09 | Ban a user who is **not** in the guild (pick from the user picker, e.g. a user who left) | `/Ban user:<non-member>` | Banned, no DM attempted, embed shown | Sin row; mod-log entry |
 | MOD-10 | User already banned | `/Ban` the same user again | Discord treats it as success; embed shown | A **second** Sin row (no duplicate check). Mod-log entry: the 30 s window applies, so `BanAddedEvent` may not fire at all for an already-banned user (no gateway event). Record which happens |
-| MOD-11 | `user2` has DMs closed / has blocked the bot | `/Ban user:user2` | Ban still succeeds and the embed is shown | Debug log "Was not able to send a direct message" only when the failure is **not** `UnauthorizedException` (403 is swallowed silently) |
+| MOD-11 | `user2` has DMs closed / has blocked the bot | `/Ban user:user2` **[auto]** `ModerationLeftoverTests.Ban_OfAMemberWithClosedDms_StillBans_AndTellsTheModLog`. Now any failed DM is posted to the mod log as a red line, not only a debug log | Ban still succeeds and the embed is shown | Debug log "Was not able to send a direct message" only when the failure is **not** `UnauthorizedException` (403 is swallowed silently) |
 
 ### A2. Permission and target checks
 
@@ -148,7 +148,7 @@ durations and allow about 10 s after expiry before asserting.
 | MOD-61 | none | `/Warn` with a 1001-character reason | Client rejects | none |
 | MOD-62 | none | `/Warn` with reason omitted | Client requires it | none |
 | MOD-63 | none | `user1` (no perms) runs `/Warn` | Permission error | No Sin |
-| MOD-64 | `user1` has ManageMessages only | `/Warn user:user2 reason:"x"` | Allowed | Sin row |
+| MOD-64 | `user1` has ManageMessages only | `/Warn user:user2 reason:"x"` | Allowed | Sin row. **[auto]** `ChannelPermissionTests.Warn_ByAMemberWithOnlyManageMessages_IsAllowed` |
 | MOD-65 | `owner` (no role) and `admin` | Each warns `user1` | Allowed (`RequirePermissions` honours owner/Administrator) | Sin row each |
 | MOD-66 | none | `mod` warns `admin`, `higher`, and the bot | Allowed: warn has no hierarchy or bot checks. Confirm intent | Sin rows |
 | MOD-67 | Moderation disabled | `/Warn` | "This module is disabled in this server." | No Sin |
@@ -182,7 +182,7 @@ Run these first: `/Mute` cases depend on a configured role. Start with no mute r
 | MOD-84 | No mute role set | `/Mutes Refresh` | Yellow "No mute role is configured." | none |
 | MOD-85 | Configured role deleted in Discord | `/Mutes Refresh` | Yellow "Could not find configured mute role." | none |
 | MOD-86 | Valid role, new channel added since | `/Mutes Refresh` | "Refreshing permissions for @Muted role." then "Successfully refreshed...", then diagnostics follow-up. The new channel now has the deny overwrite | none |
-| MOD-87 | A role higher than `@Muted` grants Send Messages in a channel (so the mute would not hold) | `/Mutes Refresh` | Diagnostics follow-up embed and attached `moderation-diagnostics.txt` flag that channel (details are covered in area 04) | none |
+| MOD-87 | A role higher than `@Muted` grants Send Messages in a channel (so the mute would not hold) | `/Mutes Refresh` **[auto]** `ModerationLeftoverTests.MutesRefresh_FollowUp_FlagsAChannelWhereARoleCanStillSpeak` | Diagnostics follow-up embed and attached `moderation-diagnostics.txt` flag that channel (details are covered in area 04) | none |
 | MOD-88 | Bot lacks ManageRoles / ManageChannels | `/Mutes Create` | Permission check message, no role created (Create requires bot ManageRoles) | Setting unchanged |
 | MOD-89 | Test-B | Run `/Mutes View` in Test-B | Shows Test-B's own setting (isolation) | none |
 
@@ -269,7 +269,7 @@ Use 1-minute mutes. Console at Debug for `Grimoire.Features.Moderation.Mute`.
 | MOD-140 | Two users muted with expiries within the same tick | Wait | Both handled independently. A failure on one (MOD-134) does not block the other | one `MuteRemoved` each; failed one absent |
 | MOD-141 | `/Mutes View` while a mute has expired but the task has not yet run | View | The member is still listed (expired mutes are not filtered) | none |
 | MOD-142 | Muted user leaves | `/Mutes View` | Leaver is **not** listed even though the mute is active | none |
-| MOD-143 | 30+ muted members | `/Mutes View` | The list is paged: every muted member is listed, with Page N of M in the footer and buttons for the invoker | none |
+| MOD-143 | 30+ muted members | `/Mutes View` | The list is paged: every muted member is listed, with Page N of M in the footer and buttons for the invoker | none. **[auto]** `PaginationTests.MutesView_EphemeralList_PagesForTheInvoker`, `Buttons_WorkForTheInvokerOnly` |
 
 ---
 
@@ -294,7 +294,7 @@ Use `#locktest` unless stated. Verify the lock by having `user1` try to send a m
 | MOD-154 | none | `/Lock ... channel:` a **category** | Category overwrite applies; channels that sync with the category become locked; channels with their own `@everyone` overwrite do not. Note which | `ChannelLocks` row for the category |
 | MOD-155 | none | `/Lock ... channel:` a **forum** channel | Lock recorded; verify whether users can still create posts (lock permissions are SendMessages / SendThreadMessages / TTS / AddReactions, not Create Posts). Record | row |
 | MOD-156 | none | `/Lock` with a voice channel | Client offers only text, thread, category and forum channel types; voice cannot be selected | none |
-| MOD-157 | none | `/Lock ... duration_amount:0` | Accepted; the channel is locked, then unlocked on the next tick. Check the "expired" messages (MOD-178) | row with `EndTime` about now |
+| MOD-157 | none | `/Lock ... duration_amount:0` **[auto]** `LockCommandTests.LockAndUnlock_AreRegisteredWithTheirLimits`. Since KI-07 the minimum is 1, so Discord refuses 0 | Accepted; the channel is locked, then unlocked on the next tick. Check the "expired" messages (MOD-178) | row with `EndTime` about now |
 | MOD-158 | none | `/Lock` with `duration_amount:-1` | Client rejects | none |
 
 ### I2. Thread locks

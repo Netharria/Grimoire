@@ -43,6 +43,7 @@ public sealed class GuildIssueThrottleTests
         throttle.TryAcquire(_guild, "code").ShouldBe(2);
     }
 
+    /// <remarks>Cases: ALRT-44.</remarks>
     [Fact]
     public void Guilds_and_codes_are_throttled_independently()
     {

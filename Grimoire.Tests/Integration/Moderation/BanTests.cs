@@ -84,6 +84,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
     }
 
     /// <summary>MOD-03 to MOD-06: the message-deletion window sent to Discord.</summary>
+    /// <remarks>Cases: MOD-03 (true, none), MOD-04 (true, 1), MOD-05 (false, 7), MOD-06 (true, 0).</remarks>
     [Theory]
     [InlineData(true, null, 7)]
     [InlineData(true, 1, 1)]

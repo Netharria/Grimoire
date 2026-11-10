@@ -49,6 +49,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     // ── Expiry ────────────────────────────────────────────────────────────────
 
     /// <summary>MOD-124: the role comes off, the member and mod log are told, and the bot records the removal.</summary>
+    /// <remarks>Cases: XC-112 (a seeded mute stands in for one made before a restart).</remarks>
     [Fact]
     public async Task ExpiredMute_RemovesTheRole_TellsEveryone_AndRecordsIt()
     {
@@ -251,6 +252,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>MOD-129, MOD-131 and MOD-133: no role after the mute ended, after an unmute, or with moderation off.</summary>
+    /// <remarks>Cases: XC-80 (moderation off).</remarks>
     [Theory]
     [InlineData("expired")]
     [InlineData("unmuted")]

@@ -36,6 +36,7 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
         await this.ExecuteOnServerAsync($"DROP DATABASE IF EXISTS {this._name} WITH (FORCE)");
     }
 
+    /// <remarks>Cases: XC-20.</remarks>
     [Fact]
     public async Task OnAnEmptyDatabase_AllMigrationsAreApplied_AndTheBotWorks()
     {
@@ -52,6 +53,7 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>A database one migration behind on each schema is brought up to date.</summary>
+    /// <remarks>Cases: XC-21.</remarks>
     [Fact]
     public async Task OnADatabaseOneMigrationBehind_TheLastMigrationIsApplied()
     {
@@ -64,9 +66,9 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
 
         await using var bot = await GrimoireTestBot.StartAsync(this._database, connectionString: this.ConnectionString);
 
+        // Both contexts share __EFMigrationsHistory, so the newest applied row can belong to either one.
         await using var mainAfter = this.MainContext();
-        (await mainAfter.Database.GetAppliedMigrationsAsync(TestContext.Current.CancellationToken)).Last()
-            .ShouldBe(mainAfter.Database.GetMigrations().Last());
+        (await mainAfter.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
         await using var settingsAfter = this.SettingsContext();
         (await settingsAfter.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
         bot.Logs.Events.ShouldContain(e => e.RenderMessage(null).StartsWith(SettingsMigrationLog, StringComparison.Ordinal));
@@ -74,6 +76,7 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
     }
 
     /// <summary>An up-to-date database starts without migrating.</summary>
+    /// <remarks>Cases: XC-01.</remarks>
     [Fact]
     public async Task OnAnUpToDateDatabase_NothingIsMigrated()
     {

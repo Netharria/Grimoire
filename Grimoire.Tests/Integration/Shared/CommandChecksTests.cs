@@ -86,6 +86,9 @@ public sealed class CommandChecksTests(GrimoireCoreFactory database) : IAsyncLif
             .ShouldBeEmpty();
 
     /// <summary>GEN-10 to GEN-14: one command per gated module, run by an admin so only the module check fails.</summary>
+    /// <remarks>
+    ///     Cases: GEN-10 (moderation), GEN-11 (leveling), GEN-12 (commands), GEN-13 (message log), GEN-14 (user log).
+    /// </remarks>
     [Theory]
     [InlineData("moderation")]
     [InlineData("leveling")]
@@ -111,6 +114,7 @@ public sealed class CommandChecksTests(GrimoireCoreFactory database) : IAsyncLif
     }
 
     /// <summary>GEN-10 and GEN-15: enabling a module takes effect straight away, with no restart.</summary>
+    /// <remarks>Cases: XC-90.</remarks>
     [Fact]
     public async Task EnablingAModule_UnblocksItsCommandsImmediately()
     {
@@ -126,6 +130,7 @@ public sealed class CommandChecksTests(GrimoireCoreFactory database) : IAsyncLif
     }
 
     /// <summary>GEN-17 and GEN-86: <c>/Modules</c> is not module gated, so it can't lock a guild out.</summary>
+    /// <remarks>Cases: XC-86.</remarks>
     [Fact]
     public async Task ModulesCommands_WorkWithEveryModuleDisabled()
     {

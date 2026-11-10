@@ -53,14 +53,15 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
     // ── Guild issues ──────────────────────────────────────────────────────────
 
     /// <summary>An issue posts to the mod log once a day; repeats are counted in the next post and every time in the warnings.</summary>
+    /// <remarks>Cases: ALRT-40, ALRT-41, ALRT-42.</remarks>
     [Fact]
     public async Task AnIssue_PostsOncePerDay_AndCountsRepeats()
     {
         var issue = GuildIssueCatalog.CannotReadAuditLog(new GuildId(this.Guild.Id));
 
-        await this.Reporter.ReportAsync(issue);
-        await this.Reporter.ReportAsync(issue);
-        await this.Reporter.ReportAsync(issue);
+        await this.Reporter.ReportAsync(issue, cancellationToken: TestContext.Current.CancellationToken);
+        await this.Reporter.ReportAsync(issue, cancellationToken: TestContext.Current.CancellationToken);
+        await this.Reporter.ReportAsync(issue, cancellationToken: TestContext.Current.CancellationToken);
 
         var first = await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.StartsWith(issue.Summary, StringComparison.Ordinal) == true);
         first["author"]!["name"]!.GetValue<string>().ShouldBe("Setup problem");
@@ -68,7 +69,7 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
         (await this.ModLogPostsWithinAsync(issue.Summary, NothingHappensWindow)).ShouldBe(1);
 
         this._clock.Advance(TimeSpan.FromDays(1) + TimeSpan.FromMinutes(1));
-        await this.Reporter.ReportAsync(issue);
+        await this.Reporter.ReportAsync(issue, cancellationToken: TestContext.Current.CancellationToken);
 
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.EndsWith(
             "\nThis happened 2 more time(s) since it was last shown.", StringComparison.Ordinal) == true);
@@ -77,13 +78,14 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
         (await dbContext.AlertOccurrences.SingleAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(4);
     }
 
+    /// <remarks>Cases: ALRT-43.</remarks>
     [Fact]
     public async Task DifferentIssues_AreThrottledSeparately()
     {
         var guildId = new GuildId(this.Guild.Id);
 
-        await this.Reporter.ReportAsync(GuildIssueCatalog.CannotReadAuditLog(guildId));
-        await this.Reporter.ReportAsync(GuildIssueCatalog.MuteRoleMissing(guildId));
+        await this.Reporter.ReportAsync(GuildIssueCatalog.CannotReadAuditLog(guildId), cancellationToken: TestContext.Current.CancellationToken);
+        await this.Reporter.ReportAsync(GuildIssueCatalog.MuteRoleMissing(guildId), cancellationToken: TestContext.Current.CancellationToken);
 
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.StartsWith("I cannot read the audit log", StringComparison.Ordinal) == true);
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.StartsWith("A mute expired", StringComparison.Ordinal) == true);
@@ -92,6 +94,7 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
     // ── Gateway ───────────────────────────────────────────────────────────────
 
     /// <summary>When Discord asks for a reconnect, the bot resumes its session and keeps handling commands.</summary>
+    /// <remarks>Cases: ALRT-66.</remarks>
     [Fact]
     public async Task AReconnectRequest_IsResumed_AndCommandsStillWork()
     {
@@ -104,6 +107,7 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
     }
 
     /// <summary>A resume after known downtime is recorded as a warning.</summary>
+    /// <remarks>Cases: ALRT-63.</remarks>
     [Fact(Skip = "Fails: DSharpPlus 5.0.0-nightly-02611's resume loop consumes the RESUMED payload without forwarding " +
                  "it, so SessionResumed never fires after a resume. KI-48")]
     public async Task AResumeAfterDowntime_IsRecordedAsAWarning()
@@ -122,6 +126,7 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
     }
 
     /// <summary>The watchdog posts an urgent alert once the gateway has been down for two minutes, and not before.</summary>
+    /// <remarks>Cases: ALRT-61 (the watchdog part).</remarks>
     [Fact]
     public async Task TheWatchdog_AlertsAfterTwoMinutesDown()
     {
@@ -138,6 +143,7 @@ public sealed class GatewayAndIssueTests(GrimoireCoreFactory database) : IAsyncL
     }
 
     /// <summary>When Discord drops the connection, the bot should know it's down so the watchdog can alert.</summary>
+    /// <remarks>Cases: ALRT-61 (the detection).</remarks>
     [Fact(Skip = "Fails: DSharpPlus 5.0.0-nightly-02611 never dispatches SocketClosed or Zombied, so GatewayEvents " +
                  "never marks the gateway down and the watchdog can't alert. KI-48")]
     public async Task ADroppedConnection_IsNoticed()

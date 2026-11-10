@@ -84,6 +84,7 @@ public sealed class HistoryCommandTests(GrimoireCoreFactory factory) : IAsyncLif
         versions[2].Content.Value.ShouldBe("v1");
     }
 
+    /// <remarks>Cases: CC-45.</remarks>
     [Fact]
     public async Task History_SameNameDifferentGuild_GuildIsolated()
     {

@@ -43,6 +43,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
 
     // ── View and Set ──────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LOG-15.</remarks>
     [Fact]
     public async Task View_OnAFreshGuild_ShowsNoLogChannels_Ephemerally()
     {
@@ -56,6 +57,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>Each log can be pointed at a channel, which is stored, logged and shown by View.</summary>
+    /// <remarks>Cases: LOG-01 (DeleteLog), LOG-02 (BulkDeleteLog, EditLog), LOG-16.</remarks>
     [Theory]
     [InlineData(LogSetting.DeleteLog, GuildLogType.MessageDeleted, "Delete Log")]
     [InlineData(LogSetting.BulkDeleteLog, GuildLogType.BulkMessageDeleted, "Bulk Delete Log")]
@@ -72,6 +74,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
             .ShouldContain($"**{label}:** {this.Guild.General.Mention}");
     }
 
+    /// <remarks>Cases: LOG-04.</remarks>
     [Fact]
     public async Task Set_Off_ClearsTheChannel()
     {
@@ -82,6 +85,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
         (await this.LogChannelAsync(GuildLogType.MessageEdited)).ShouldBeNull();
     }
 
+    /// <remarks>Cases: LOG-03.</remarks>
     [Fact]
     public async Task Set_CurrentChannel_UsesTheChannelTheCommandRanIn()
     {
@@ -92,6 +96,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
         (await this.LogChannelAsync(GuildLogType.MessageDeleted)).ShouldBe(this.Guild.ModLog.Id);
     }
 
+    /// <remarks>Cases: LOG-09.</remarks>
     [Fact]
     public async Task Set_WhereTheBotCannotSend_IsRefused()
     {
@@ -105,11 +110,13 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
         (await this.LogChannelAsync(GuildLogType.MessageDeleted)).ShouldBeNull();
     }
 
+    /// <remarks>Cases: LOG-06.</remarks>
     [Fact]
     public async Task Set_SelectChannelWithoutAChannel_IsRejected()
         => (await this.SetAsync(LogSetting.DeleteLog, ChannelOption.SelectChannel)).Description
             .ShouldBe("Select a channel when using the Select Channel option.");
 
+    /// <remarks>Cases: LOG-17.</remarks>
     [Fact]
     public async Task View_WithADeletedChannel_SaysSo()
     {
@@ -124,6 +131,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     // ── Overrides ─────────────────────────────────────────────────────────────
 
     /// <summary>Never stops a channel being logged, ViewOverrides lists it, and Inherit puts logging back.</summary>
+    /// <remarks>Cases: LOG-20, LOG-21, LOG-22.</remarks>
     [Fact]
     public async Task NeverOverride_StopsLogging_AndInheritRestoresIt()
     {
@@ -141,6 +149,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>A thread's Always override wins over its parent's Never.</summary>
+    /// <remarks>Cases: LOG-23.</remarks>
     [Fact]
     public async Task AlwaysOverrideOnAThread_WinsOverItsParent()
     {
@@ -154,6 +163,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
             .ShouldBeTrue();
     }
 
+    /// <remarks>Cases: LOG-20.</remarks>
     [Fact]
     public async Task Override_IsLoggedToTheModLog()
     {
@@ -166,6 +176,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>L-11: a category or forum can't hold messages, so it can't be a log channel.</summary>
+    /// <remarks>Cases: LOG-08.</remarks>
     [Fact]
     public async Task Set_ToAForum_IsRefused()
     {
@@ -175,6 +186,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>L-11: the delete log re-uploads images, so the bot needs Attach Files there, and Embed Links for every log.</summary>
+    /// <remarks>Cases: LOG-10.</remarks>
     [Fact]
     public async Task Set_WhereTheBotCannotAttachFiles_IsRefusedForTheDeleteLog_ButNotTheEditLog()
     {
@@ -192,6 +204,7 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
 
     // ── Gates ─────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: LOG-11 and LOG-18 (permission), LOG-12 and LOG-19 (module), View only.</remarks>
     [Theory]
     [InlineData("permission")]
     [InlineData("module")]

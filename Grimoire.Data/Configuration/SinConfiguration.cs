@@ -31,10 +31,6 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
         builder.HasIndex(sin => new { sin.Actor, sin.GuildId, sin.SinType })
             .HasDatabaseName("IX_Sin_ModeratorId_GuildId_SinType");
 
-        // For single sin lookups: Filter by Id + GuildId
-        builder.HasIndex(sin => new { sin.Id, sin.GuildId })
-            .HasDatabaseName("IX_Sin_Id_GuildId");
-
         builder.Property(e => e.Actor)
             .HasConversion<ModerationActorConverter>()
             .HasColumnName("ModeratorId")

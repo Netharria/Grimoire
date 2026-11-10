@@ -108,6 +108,7 @@ public sealed class LeaderboardCommandTests(GrimoireCoreFactory factory) : IAsyn
         rankings[1].Count.ShouldBe(4);
     }
 
+    /// <remarks>Cases: CC-81.</remarks>
     [Fact]
     public async Task Overall_OtherGuildUsages_NotIncluded()
     {

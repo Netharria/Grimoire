@@ -25,9 +25,6 @@ internal sealed class ChannelLockConfigurations : IEntityTypeConfiguration<Chann
             .HasValue<ChannelUnlocked>("Unlocked")
             .IsComplete();
 
-        builder.HasIndex(e => new { e.ChannelId, e.GuildId, e.SetAt })
-            .IsDescending(false, false, true);
-
         builder.Property(e => e.Reason)
             .HasConversion(
                 r => r == null ? null : r.Value.Value,

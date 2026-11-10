@@ -31,10 +31,6 @@ internal sealed class XpHistoryConfiguration : IEntityTypeConfiguration<XpHistor
 
         builder.Property(x => x.TimeOut).IsRequired();
 
-        // For leaderboard queries: GroupBy UserId after filtering GuildId, then Sum(RawXp) and OrderBy
-        builder.HasIndex(x => new { x.GuildId, x.RawXp })
-            .HasDatabaseName("IX_XpHistory_GuildId_Xp");
-
         // For user-specific queries: Filter by UserId + GuildId, then aggregate RawXp
         builder.HasIndex(x => new { x.UserId, x.GuildId, x.RawXp })
             .HasDatabaseName("IX_XpHistory_UserId_GuildId_Xp");

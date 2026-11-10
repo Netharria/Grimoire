@@ -55,6 +55,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
 
     // ── Startup sync ──────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: GLD-01.</remarks>
     [Fact]
     public async Task Startup_StoresEveryMembersUsernameNicknameAndAvatar()
     {
@@ -72,6 +73,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     ///     I-2: without Manage Server the bot can't list invites. That must not stop the startup sync, or the join
     ///     log, which then shows no invite. The bot doesn't ask for invites it can't list.
     /// </summary>
+    /// <remarks>Cases: GLD-05, GLD-46.</remarks>
     [Fact]
     public async Task WithoutManageServer_StartupStillSyncs_AndJoinsAreLoggedWithNoInvite()
     {
@@ -98,6 +100,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     ///     I-10: without View Audit Log the bot can't tell who deleted an invite. That's a setup problem for the guild
     ///     to hear about, not an urgent alert for us. The invite is kept, as if used up.
     /// </summary>
+    /// <remarks>Cases: GLD-48, ALRT-40 (the invite trigger).</remarks>
     [Fact]
     public async Task AnInviteDeleted_WithoutViewAuditLog_IsReportedToTheGuild_NotRaisedAsAnError()
     {
@@ -119,6 +122,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>Discord leaves out the inviter for some invites; the join log still shows the invite.</summary>
+    /// <remarks>Cases: GLD-44.</remarks>
     [Fact]
     public async Task AJoin_WithAnInviteThatHasNoInviter_ShowsItsCreatorAsUnknown()
     {
@@ -134,6 +138,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>Restarting on the same data adds no rows.</summary>
+    /// <remarks>Cases: GLD-02, XC-11.</remarks>
     [Fact]
     public async Task Restarting_DoesNotDuplicateHistory()
     {
@@ -150,6 +155,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
 
     // ── Invites ───────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: GLD-40.</remarks>
     [Fact]
     public async Task AJoin_ShowsTheInviteThatWasUsed()
     {
@@ -164,6 +170,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>A single-use invite disappears when it's used; the bot works out it was that one.</summary>
+    /// <remarks>Cases: GLD-41, LOG-141.</remarks>
     [Fact]
     public async Task AJoin_WithASingleUseInvite_ShowsIt()
     {
@@ -178,6 +185,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
         inviteUsed.ShouldEndWith("\n**Created By:** admin");
     }
 
+    /// <remarks>Cases: GLD-41, LOG-141.</remarks>
     [Fact]
     public async Task AJoin_WithASingleUseInvite_CountsTheUse()
     {
@@ -191,6 +199,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>Two joins in a row are each matched to their own invite.</summary>
+    /// <remarks>Cases: GLD-43.</remarks>
     [Fact]
     public async Task ConsecutiveJoins_AreMatchedToTheirOwnInvites()
     {
@@ -211,6 +220,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     // ── MemberAdded ───────────────────────────────────────────────────────────
 
     /// <summary>A rejoining member's next profile event shouldn't read as an avatar change.</summary>
+    /// <remarks>Cases: GLD-61, LOG-172.</remarks>
     [Fact]
     public async Task ARejoin_DoesNotCauseAFalseAvatarChange()
     {
@@ -227,6 +237,7 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>A member the bot has never seen gets history rows when they join.</summary>
+    /// <remarks>Cases: GLD-60.</remarks>
     [Fact]
     public async Task ANewMember_GetsHistoryWhenTheyJoin()
     {

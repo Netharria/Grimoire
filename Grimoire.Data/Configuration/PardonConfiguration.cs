@@ -17,9 +17,6 @@ internal sealed class PardonConfiguration : IEntityTypeConfiguration<Pardon>
     {
         builder.HasKey(e => new { e.SinId, e.SetAt });
 
-        builder.HasIndex(e => new { e.SinId, e.SetAt })
-            .IsDescending(false, true);
-
         builder.HasOne(e => e.Sin)
             .WithMany(e => e.Pardons)
             .HasForeignKey(e => e.SinId)

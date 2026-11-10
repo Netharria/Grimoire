@@ -37,6 +37,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
 
     // ── Learn ─────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: CC-01.</remarks>
     [Fact]
     public async Task Learn_SavesATextCommand_AndLogsIt()
     {
@@ -52,6 +53,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: CC-02.</remarks>
     [Fact]
     public async Task Learn_WithEmbedAndColor_SavesAnEmbedCommand()
     {
@@ -61,6 +63,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
             .EmbedColor!.Value.Value.ShouldBe("FF00AA");
     }
 
+    /// <remarks>Cases: CC-07.</remarks>
     [Fact]
     public async Task Learn_Restricted_SavesItsRoles()
     {
@@ -71,6 +74,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
             .Select(role => role.RoleId).ShouldBe([new RoleId(this.Guild.KickerRoleId), new RoleId(this.Guild.BannerRoleId)], ignoreOrder: true);
     }
 
+    /// <remarks>Cases: CC-08.</remarks>
     [Fact]
     public async Task Learn_RestrictedWithoutRoles_IsRejected()
     {
@@ -80,6 +84,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         (await this.VersionsAsync("secret")).ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: CC-11, CC-40.</remarks>
     [Fact]
     public async Task Learn_AnExistingName_AddsAVersion_ThatHistoryShows()
     {
@@ -97,6 +102,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         lines[3].ShouldBe("> first");
     }
 
+    /// <remarks>Cases: CC-41.</remarks>
     [Fact]
     public async Task History_OfAnUnknownCommand_SaysSo()
         => (await this.CommandsAsync("history", SlashOption.String("name", "nope"))).Description
@@ -104,6 +110,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
 
     // ── Forget ────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: CC-30.</remarks>
     [Fact]
     public async Task Forget_DeletesEveryVersionAndItsUsage()
     {
@@ -118,11 +125,13 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         (await dbContext.CustomCommandUsages.CountAsync(Token)).ShouldBe(0);
     }
 
+    /// <remarks>Cases: CC-31.</remarks>
     [Fact]
     public async Task Forget_AnUnknownCommand_SaysItWasAlreadyForgotten()
         => (await this.CommandsAsync("forget", SlashOption.String("name", "nope"))).Description
             .ShouldBe("Command `nope` was already forgotten.");
 
+    /// <remarks>Cases: CC-30.</remarks>
     [Fact]
     public async Task Forget_IsLoggedWithTheBotsMention()
     {
@@ -137,6 +146,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
     // ── Revert ────────────────────────────────────────────────────────────────
 
     /// <summary>Reverting saves the old content, and its roles, as a new current version.</summary>
+    /// <remarks>Cases: CC-50.</remarks>
     [Fact]
     public async Task Revert_SavesTheOldVersionAsTheNewest()
     {
@@ -156,6 +166,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         newest.Roles.OfType<CustomCommandAllowRole>().ShouldHaveSingleItem().RoleId.ShouldBe(new RoleId(this.Guild.KickerRoleId));
     }
 
+    /// <remarks>Cases: CC-53, CC-54.</remarks>
     [Theory]
     [InlineData("abc", "Invalid version selected. Use the autocomplete to pick a version.")]
     [InlineData("12345", "Version not found for command `hello`.")]
@@ -170,6 +181,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
 
     // ── Stats and Leaderboard ─────────────────────────────────────────────────
 
+    /// <remarks>Cases: CC-65.</remarks>
     [Fact]
     public async Task Stats_CountsUsesByPeriod_AndListsTopUsers()
     {
@@ -185,6 +197,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         Field(embed, "Top Users").ShouldBe($"**1.** {this.Guild.User1.Mention} — 3 uses\n**2.** {this.Guild.Moderator.Mention} — 1 uses");
     }
 
+    /// <remarks>Cases: CC-66.</remarks>
     [Fact]
     public async Task Stats_ForAnUnusedCommand_ShowsZeros()
     {
@@ -197,6 +210,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         Field(embed, "Top Users").ShouldBe("No usage data yet.");
     }
 
+    /// <remarks>Cases: CC-75, CC-76.</remarks>
     [Fact]
     public async Task Leaderboard_RanksCommands_OrUsersOfOneCommand()
     {
@@ -215,12 +229,14 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         forA.Embed!["footer"]!["text"]!.GetValue<string>().ShouldBe("3 total uses");
     }
 
+    /// <remarks>Cases: CC-77.</remarks>
     [Fact]
     public async Task Leaderboard_WithNoUsage_SaysSo()
         => (await this.CommandsAsync("leaderboard")).Description.ShouldBe("No commands have been used yet.");
 
     // ── Gates ─────────────────────────────────────────────────────────────────
 
+    /// <remarks>Cases: CC-22, CC-24.</remarks>
     [Theory]
     [InlineData("permission")]
     [InlineData("module")]
@@ -238,6 +254,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
     }
 
     /// <summary>C-4: Learn says what's wrong with a name or colour, instead of "Failed to parse name."</summary>
+    /// <remarks>Cases: CC-05, CC-06, CC-13.</remarks>
     [Theory]
     [InlineData("two words", null, false, "A command name cannot contain spaces.")]
     [InlineData("hello", "not-a-colour", true, "A command embed color must be a 6 character hex color code.")]
@@ -256,6 +273,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
     }
 
     /// <summary>C-4: with the name a plain string again, Discord's client enforces its length.</summary>
+    /// <remarks>Cases: CC-14.</remarks>
     [Fact]
     public void Learn_RegistersTheNameLength()
     {
@@ -267,6 +285,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
     }
 
     /// <summary>C-8: forgetting a command that isn't there changes nothing, so the mod log hears nothing.</summary>
+    /// <remarks>Cases: CC-31.</remarks>
     [Fact]
     public async Task Forget_AnUnknownCommand_LogsNothing()
     {
@@ -278,18 +297,21 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
     }
 
     /// <summary>C-8: stats for a name that was never created say so, as History does, instead of showing zeros.</summary>
+    /// <remarks>Cases: CC-67.</remarks>
     [Fact]
     public async Task Stats_ForAnUnknownCommand_SaysSo()
         => (await this.CommandsAsync("stats", SlashOption.String("name", "nope"))).Description
             .ShouldBe("No command named `nope` exists.");
 
     /// <summary>C-8: a name that was never created isn't "not used yet".</summary>
+    /// <remarks>Cases: CC-78.</remarks>
     [Fact]
     public async Task Leaderboard_ForAnUnknownCommand_SaysItDoesNotExist()
         => (await this.CommandsAsync("leaderboard", SlashOption.String("name", "nope"))).Description
             .ShouldBe("No command named `nope` exists.");
 
     /// <summary>C-8: the footers count everything, not only the fifteen rows shown.</summary>
+    /// <remarks>Cases: CC-80.</remarks>
     [Fact]
     public async Task Leaderboard_Footers_CountPastTheFifteenShown()
     {

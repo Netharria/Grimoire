@@ -48,6 +48,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     // ── The filter ────────────────────────────────────────────────────────────
 
     /// <summary>A spammer is muted for a minute, their message removed, and everyone told.</summary>
+    /// <remarks>Cases: SPAM-01, SPAM-02.</remarks>
     [Fact]
     public async Task Spam_MutesTheSpammer_DeletesTheMessage_AndLogs()
     {
@@ -71,6 +72,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     ///     M-6: deleting the spam is the step most likely to fail, as without Manage Messages or when PluralKit got
     ///     there first. It must not cost the member their DM or the mods their log.
     /// </summary>
+    /// <remarks>Cases: SPAM-25.</remarks>
     [Fact]
     public async Task Spam_WhoseMessageCannotBeDeleted_IsStillLoggedAndTold()
     {
@@ -88,6 +90,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     ///     Attachments cost the same however many there are, because Discord shows several images as one gallery. Two
     ///     quick messages of ten images each used to add up to spam.
     /// </summary>
+    /// <remarks>Cases: SPAM-08.</remarks>
     [Fact]
     public async Task ImagesSharedTogether_AreNotSpam()
     {
@@ -103,6 +106,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>GEN-90: with the AntiSpam module off, the filter leaves everyone alone.</summary>
+    /// <remarks>Cases: SPAM-15, XC-84.</remarks>
     [Fact]
     public async Task Spam_WithAntiSpamDisabled_IsIgnored()
     {
@@ -114,6 +118,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>A few ordinary messages stay under the threshold.</summary>
+    /// <remarks>Cases: SPAM-07.</remarks>
     [Fact]
     public async Task OrdinaryMessages_AreNotFiltered()
     {
@@ -124,6 +129,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>Members with Manage Channels, and the owner, are never filtered.</summary>
+    /// <remarks>Cases: SPAM-12.</remarks>
     [Theory]
     [InlineData("admin")]
     [InlineData("owner")]
@@ -135,6 +141,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>A Never override on a channel, or on a thread's parent, turns the filter off there.</summary>
+    /// <remarks>Cases: SPAM-18 (channel), SPAM-19 (parent), XC-96.</remarks>
     [Theory]
     [InlineData("channel")]
     [InlineData("parent")]
@@ -149,6 +156,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>With Moderation off, or no mute role, there's nothing to mute with, so nothing happens.</summary>
+    /// <remarks>Cases: SPAM-16 (moderation off), SPAM-17 (no mute role).</remarks>
     [Theory]
     [InlineData("moderation off")]
     [InlineData("no mute role")]
@@ -167,6 +175,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     // ── /SpamFilter ───────────────────────────────────────────────────────────
 
     /// <summary>Always and Never are stored and confirmed, and View lists them.</summary>
+    /// <remarks>Cases: SPAM-40, SPAM-41, SPAM-60.</remarks>
     [Fact]
     public async Task Override_StoresTheSetting_AndViewListsIt()
     {
@@ -184,6 +193,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>Inherit clears an override, and should say so.</summary>
+    /// <remarks>Cases: SPAM-42.</remarks>
     [Fact]
     public async Task Override_Inherit_ClearsTheOverrideAndSaysSo()
     {
@@ -195,11 +205,13 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>M-10: a thread can be overridden too. The filter honours it, and the reply promises it.</summary>
+    /// <remarks>Cases: SPAM-44.</remarks>
     [Fact]
     public async Task Override_OfAThread_IsAccepted()
         => (await this.OverrideAsync(SpamFilterOverrideSetting.Never, this.Guild.PublicThread)).Description
             .ShouldBe($"Will now never filter spam messages from {this.Guild.PublicThread.Mention} and its sub channels/threads.");
 
+    /// <remarks>Cases: SPAM-48 (override), SPAM-65 (view), XC-63.</remarks>
     [Theory]
     [InlineData("override")]
     [InlineData("view")]

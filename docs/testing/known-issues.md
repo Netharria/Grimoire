@@ -7,7 +7,7 @@ re-run those after a fix. Severity is a rough guess: **high** = wrong data or wr
 Intentional behaviour is not listed. For example, `/Ban`, `/Unban`, `/Mute`, `/Unmute` and `/Lock` are gated on
 ManageMessages for legacy compatibility (see 02).
 
-Still open after the 2026-10-31 pass: KI-48 (undecided). KI-39 was fixed on 2026-11-01. KI-52 and KI-53 were fixed and KI-54 found on 2026-11-07. KI-55 to KI-107 were found on 2026-11-08 while drafting areas 04 to 09 (see the last section).
+Still open after the 2026-10-31 pass: KI-48 (undecided). KI-39 was fixed on 2026-11-01. KI-52 and KI-53 were fixed and KI-54 found on 2026-11-07. KI-55 to KI-107 were found on 2026-11-08 while drafting areas 04 to 09, and KI-108 to KI-114 on 2026-11-09 by the phase 10 tests (see the last two sections).
 
 ## Area 02 - Moderation actions
 
@@ -121,7 +121,7 @@ I-18 (stale `CLAUDE.md`, see area 09).
 | KI-69 | low | **An edit that removes all the text is not logged.** | `MessageLogging/UpdateMessageEvent.cs:28` | LOG-76 |
 | KI-70 | low | **Bulk delete "Message Count" counts only saved messages**, and no moderator is named. The dump's file name has commas and colons. | `MessageLogging/BulkMessageDeletedEvent.cs:79, 90` | LOG-111 |
 | KI-71 | low | **`/Log Message ViewOverrides` with nothing to show is a blank embed.** Overrides on deleted channels are hidden and their rows are never removed. | `LogSettingsCommands.Message.ViewOverrides.cs:27, 33` | LOG-31, LOG-32 |
-| KI-72 | low | **(unconfirmed) Clearing all reactions on an uncached message may be skipped**, because the guild is found through the cached channel. The rows stay active. | `MessageLogging/ReactionEvents.cs:80` | LOG-128 |
+| KI-72 | not reproduced | **Not reproduced 2026-11-09. Clearing all reactions on an uncached message may be skipped**, because the guild is found through the cached channel. After a restart the clear still soft-deletes the rows: the channel arrives in GUILD_CREATE, so it is always cached. Close it unless it shows up on a live guild. | `MessageLogging/ReactionEvents.cs:80` | LOG-128, `MessageEventEdgeTests` (passes) |
 
 ### Area 06 - Leveling
 
@@ -129,22 +129,22 @@ I-18 (stale `CLAUDE.md`, see area 09).
 |----|-----|-------|-------|--------------|
 | KI-73 | med | **An ignored channel doesn't cover its threads or category.** Only the message's own channel id is compared, and threads pass their own id. `/Ignore Add channel:` accepts categories and forums without a warning, but ignoring them does nothing. | `SettingsModule.Leveling.Ignores.cs:29`, `GainUserXp.cs:57`, `IgnoreCommandGroup.AddIgnore.cs:24-25` | LVL-11, LVL-12, LVL-131 |
 | KI-74 | low | **(suspected) Two messages at once can both earn XP.** The timeout check and the insert aren't atomic. | `Leveling/Events/GainUserXp.cs:62-90` | LVL-19 |
-| KI-75 | low | **(suspected) `/Rewards Add` accepts @everyone, and the grant loop only catches `UnauthorizedException`.** Any other Discord error skips the remaining rewards and the "has earned" log, on every XP gain. | `RewardCommandGroup.AddReward.cs:60-71`, `GainUserXp.cs:161-169` | LVL-43, LVL-106 |
+| KI-75 | low | **`/Rewards Add` accepts @everyone, and the grant loop only catches `UnauthorizedException`.** Any other Discord error skips the remaining rewards and the "has earned" log, on every XP gain. Confirmed 2026-11-09 against the fake's answer (400, code 50028); Discord's real answer for granting @everyone is undocumented. | `RewardCommandGroup.AddReward.cs:60-71`, `GainUserXp.cs:161-169` | LVL-43, LVL-106, `RewardGrantTests` (skipped) |
 | KI-76 | low | **`/Rewards Add` doesn't check that the bot has Manage Roles.** The problem only shows when someone reaches the reward. | `RewardCommandGroup.AddReward.cs:60-71` | LVL-107 |
 | KI-77 | low | **`/Reclaim` doesn't record who reclaimed.** `ReclaimedXp` has no moderator, unlike Award's `AwarderId`. | `Awards/ReclaimUserXp.cs:96`, `Grimoire.Domain/XpHistory.cs` | none (DB check) |
 | KI-78 | low | **`/LevelSettings View` shows a blank Log-Channel when the channel was deleted.** A failed lookup shows "None", which looks like "off". | `LevelSettingsCommandGroup.GetLevelSettings.cs:44-46` | LVL-82 |
 | KI-79 | low | **`/Level` Next Reward shows "None" when the nearest reward's role was deleted**, even if later rewards exist. | `UserCommands/GetLevel.cs:66-90` | LVL-57 |
 | KI-80 | low | **`/Rewards` errors are public**, not ephemeral (see KI-21). | `RewardCommandGroup.AddReward.cs:73-76` | none |
 | KI-81 | low | **`/Leaderboard option:User` with no user warns before the defer**, so the warning is always public. | `UserCommands/GetLeaderboard.cs:40-44` | LVL-65 |
-| KI-82 | low | **`/Ignore Remove`'s option is `item`, `/Ignore Add`'s is `items`.** They show as `item_0` and `items_0`. | `IgnoreCommandGroup.RemoveIgnore.cs:27` | none |
+| KI-82 | fixed | **Already fixed when checked on 2026-11-09. `/Ignore Remove`'s option was `item`, `/Ignore Add`'s `items`.** Both now register `items_0` to `items_23`. The class comment in `IgnoreAndAwardTests` still says `item_N`. | `IgnoreCommandGroup.RemoveIgnore.cs:27` | `IgnoreCommandTests` (passes) |
 
 ### Area 07 - Custom commands
 
 | ID | Sev | Issue | Where | Confirm with |
 |----|-----|-------|-------|--------------|
 | KI-83 | low | **`/Commands Revert` crashes on an out-of-range version.** A hand-typed negative or very large version throws in `new DateTimeOffset(ticks)`, giving the generic error and an alert instead of "Version not found". | `CustomCommandSettings.Revert.cs:45, 116` | CC-55 |
-| KI-84 | low | **(unconfirmed) Embed commands without Embed Links.** Only `UnauthorizedException` is caught. If Discord refuses the empty message with a 400, every use raises an event-handler alert. | `TextCustomCommandProcessor.cs:135-147` | CC-119 |
-| KI-85 | low | **(unconfirmed) DSharpPlus's `!` text processor overlaps the text trigger.** `/Commands Stats` and Leaderboard take `CommandContext`, so they look runnable as `!commands ...`. A custom command named like a text-runnable command could get two replies. | `GrimoireServiceRegistration.cs:207-210` | CC-126 |
+| KI-84 | low | **Embed commands without Embed Links.** Only `UnauthorizedException` is caught. Discord refuses the empty message with a 400 (code 50006), and every use raises an event-handler alert. Confirmed 2026-11-09 against the fake. | `TextCustomCommandProcessor.cs:135-147` | CC-119 |
+| KI-85 | low | **DSharpPlus's `!` text processor overlaps the text trigger.** `/Commands Stats` and Leaderboard take `CommandContext`, so they run as `!commands ...`. Confirmed 2026-11-09: with a custom command named `leaderboard`, `!leaderboard` also runs the leveling `/Leaderboard` as a text command, which replies with a parse error, and `!commands stats hello` runs `/Commands Stats`. | `GrimoireServiceRegistration.cs:207-210` | CC-126 |
 | KI-86 | low | **Restricted commands are shown to members who can't run them**, in the autocomplete and in Stats and Leaderboard. | `GetCustomCommandOptions.cs:46-50`, `CustomCommandSettings.Stats.cs`, `.Leaderboard.cs` | CC-68, CC-103 |
 | KI-87 | low | **(decide) Names are case-sensitive, but autocomplete isn't.** `!Hello` doesn't run `hello`. | `DatabaseQueryHelpers/CustomCommandDatabaseQueryHelpers.cs:24` | CC-19, CC-121 |
 | KI-88 | low | **Learn says "Added" when it updates an existing command.** | `CustomCommandSettings.Learn.cs:127` | CC-11 |
@@ -161,7 +161,7 @@ I-18 (stale `CLAUDE.md`, see area 09).
 | KI-94 | low | **Buffered warnings are lost on shutdown.** Nothing flushes the buffer, so up to 30 s of warnings are lost on each restart. | `WarningFlushService.cs:15`, `AlertService.StopAsync` | ALRT-30 |
 | KI-95 | low | **A restart after the day's report can post a second one.** The reported date is kept in memory. A small race between `GetOpenAsync` (`:49`) and `MarkReportedAsync` (`:56`) can also mark counts reported without showing them. | `DailyWarningReportService.cs:26, 49-56` | ALRT-31 |
 | KI-96 | low | **The issue throttle is used up when the post goes nowhere** (mod log unset or failing), so the problem stays hidden for a day. | `GuildIssues/GuildIssueReporter.cs:39` | ALRT-47, 50, 51 |
-| KI-97 | low | **(suspected) Startup sync adds duplicate username rows** for a member in two guilds. The lookup uses `AsNoTracking`, so it misses rows added earlier in the same unsaved context. | `UpdateAllGuilds.cs:30-47`, `UserDatabaseQueryHelpers.cs:17-29` | GLD-04 |
+| KI-97 | low | **Startup sync adds duplicate username rows** for a member in two guilds. The lookup uses `AsNoTracking`, so it misses rows added earlier in the same unsaved context. Confirmed 2026-11-09. | `UpdateAllGuilds.cs:30-47`, `UserDatabaseQueryHelpers.cs:17-29` | GLD-04 |
 | KI-98 | low | **An invite kept after an unconfirmed delete can be blamed for a later join** through a single-use invite. | `InviteEvents.cs:44-64`, `InviteService.cs:58-68` | GLD-49 |
 | KI-99 | low | **The random start delay in background services staggers nothing.** The `PeriodicTimer` starts counting when the service is built, so the first tick still comes one period after startup. The leaderboard first refreshes about 15 minutes after a restart. | `GenericBackgroundService.cs:26, 39-43` | LVL-72 |
 | KI-100 | low | **The "Watching N servers." status isn't updated when the bot leaves a guild.** There is no `GuildDeleted` handler. Cosmetic. | `GuildAdded.cs:23`, `UpdateAllGuilds.cs:22` | GLD-21 |
@@ -171,9 +171,24 @@ I-18 (stale `CLAUDE.md`, see area 09).
 | ID | Sev | Issue | Where | Confirm with |
 |----|-----|-------|-------|--------------|
 | KI-101 | med | **A missing `pluralkitApiEndpoint` breaks the delete log.** PluralKit counts as configured without the endpoint. Creating the client then throws outside the `try`, so every delete of a logged message under a minute old is lost. | `PluralKit/PluralkitService.cs:37-38, 52`, `GrimoireServiceRegistration.cs:247` | XC-07 |
-| KI-102 | low | **`/Unlock` doesn't require Manage Roles for the bot**, unlike `/Lock`. The gate passes and Discord refuses the revert. | `Lock/Commands/UnlockChannel.cs:18` | XC-61 |
+| KI-102 | low | **`/Unlock` doesn't require Manage Roles for the bot**, unlike `/Lock`. The gate passes and Discord refuses the revert. The help text it shows then asks for Manage Channels, the wrong permission. | `Lock/Commands/UnlockChannel.cs:18` | XC-61 |
 | KI-103 | low | **A "not modified" write never clears a stale cache.** Only reachable after a direct SQL edit. | `SettingsModule.cs:89`, `SettingsModule.MessageLog.ChannelOverrides.cs:82`, `SettingsModule.Moderation.SpamFilterOverrides.cs:83` | XC-105 |
 | KI-104 | low | **The bulk delete log shows proxied messages under the webhook id**, not the member behind the proxy. | `BulkMessageDeletedEvent.cs:41-60` | XC-45 |
 | KI-105 | low | **A settings DB outage reads as "This module is disabled in this server."** | `Attributes/RequireModuleEnabledAttribute.cs:27-29` | XC-106 |
 | KI-106 | low | **The warning flush and daily report services start before migrations finish.** Failures are caught. | `GrimoireServiceRegistration.cs:224-226` | XC-28 |
 | KI-107 | low | **(decide) With Moderation off and AntiSpam on, spam is detected but nothing happens.** There is no mute role, so `SpamEvents` returns before deleting the message. Either document that AntiSpam needs Moderation, or still delete the spam. | `SettingsModule.Moderation.Mutes.cs:22-24`, `SpamEvents.cs` | XC-83 |
+
+## Found by the phase 10 tests (2026-11-09)
+
+Found while automating backlog items A-39 to A-53. Each has a skipped test that fails for the stated reason when
+unskipped. The same pass confirmed KI-75, 84, 85 and 97, found KI-82 already fixed, and could not reproduce KI-72.
+
+| ID | Sev | Issue | Where | Confirm with |
+|----|-----|-------|-------|--------------|
+| KI-108 | low | **Expired invites cost an audit-log lookup and are kept.** `INVITE_DELETE` carries only the code, channel and guild, so `ExpiresAt` is always null and the expiry branch never runs. Each expiry logs "Was not able to retrieve audit log entry", and without View Audit Log it is reported as a setup problem. Check whether Discord sends `INVITE_DELETE` on expiry at all. | `Shared/Events/InviteEvents.cs:38` | GLD-50, `GuildSyncGapTests` (skipped) |
+| KI-109 | low | **A level reached through `/Award` is never announced.** `GainUserXp` compares the level before and after each message's own XP; the award already moved the member up, so no message crosses a level. Rewards are still granted on the next message. | `Leveling/Events/GainUserXp.cs` | LVL-141, `AwardReclaimTests.Award_LevelUpIsAnnouncedOnTheNextEarnedMessage` (skipped) |
+| KI-110 | low | **A full alert queue drops alerts without logging.** With `BoundedChannelFullMode.DropWrite`, `TryWrite` returns true even when it drops, so "Dropped alert ... queue ... is full" never fires for queue overflow (only for the warning buffer's 200-key limit). | `Alerts/AlertService.cs:25-36` | ALRT-13, `AlertGapTests.AFullQueue_LogsEachDroppedAlert` (skipped) |
+| KI-111 | low | **Quick PluralKit bursts are logged as deletes.** The PluralKit rate limiter allows 2 lookups a second with no queue. Of five proxied messages in a second, three lookups are refused: those originals are logged as deleted by the member, and their proxies get no link. | `GrimoireServiceRegistration.cs:72-80`, `DeleteMessageEvent` | XC-37, `PluralKitAcrossFeaturesTests.FiveQuickProxies_AreAllLinked_AndNoneLoggedAsDeleted` (skipped) |
+| KI-112 | low | **A locked thread doesn't stop PluralKit proxies.** `LockedThreadEvents` returns early for authors that aren't members, so the webhook's proxy stays and a locked member can still post through PluralKit. | `Lock/LockedThreadEvents.cs:27` | XC-46, `PluralKitAcrossFeaturesTests.InALockedThread_TheProxyIsDeletedToo` (skipped) |
+| KI-113 | med | **`/Commands History` shows only its last page.** `SendHistoryPagesAsync` calls `ctx.ReplyAsync` for every page, and after the defer each call edits the original response. With 30 versions only v5 to v1 stay visible. Same pattern as KI-30, which was fixed only in `/SinLog`. | `CustomCommands/CustomCommandSettings.History.cs` (`SendHistoryPagesAsync`) | CC-43, `PaginationTests.CommandsHistory_ThirtyLongVersions_ShowsEveryPage` (skipped) |
+| KI-114 | low | **`%Mention` misses the nickname mention form.** `DiscordRegex` matches `<@id>` but not `<@!id>`, so `!hug <@!id>` leaves `%Mention` empty and keeps the raw mention in `%Message`. | `Utilities/DiscordRegex.cs:14`, used by `TextCustomCommandProcessor.ResolveSnowflake` | `DiscordRegexTests.A_nickname_mention_gives_its_id` (skipped) |

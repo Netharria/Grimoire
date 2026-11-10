@@ -238,6 +238,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
             .ShouldBeTrue();
     }
 
+    /// <remarks>Cases: XC-107.</remarks>
     [Fact]
     public async Task CacheKey_TwoGuilds_NoCacheInterference()
     {

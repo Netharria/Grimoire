@@ -40,6 +40,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
+    /// <remarks>Cases: XC-09.</remarks>
     [Fact]
     public async Task BothGuildsMembers_AreSyncedAtStartup()
     {
@@ -49,6 +50,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     }
 
     /// <summary>A module turned on in A stays off in B.</summary>
+    /// <remarks>Cases: XC-107.</remarks>
     [Fact]
     public async Task ModuleSettings_AreSeparate()
     {
@@ -78,7 +80,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task AMuteInB_OnlyAffectsB()
     {
-        (await this.Settings.SetMuteRole(new GuildId(this.B.Id), new ModeratorId(this.B.Owner.Id), new RoleId(this.B.KickerRoleId))).ShouldSucceed();
+        (await this.Settings.SetMuteRole(new GuildId(this.B.Id), new ModeratorId(this.B.Owner.Id), new RoleId(this.B.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
         await this._bot.RunSlashCommandAndWaitAsync(this.B.General, "mute", this.B.Moderator, SlashOption.User("user", this.B.User1),
             SlashOption.Enum("duration_type", DurationType.Hours), SlashOption.Integer("duration_amount", 1));
@@ -159,7 +161,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task AMuteInB_DoesNotUseAsMuteRole()
     {
-        (await this.Settings.SetMuteRole(new GuildId(this.A.Id), new ModeratorId(this.A.Owner.Id), new RoleId(this.A.KickerRoleId))).ShouldSucceed();
+        (await this.Settings.SetMuteRole(new GuildId(this.A.Id), new ModeratorId(this.A.Owner.Id), new RoleId(this.A.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
         (await this._bot.RunSlashCommandAndWaitAsync(this.B.General, "mute", this.B.Moderator, SlashOption.User("user", this.B.User1),
                 SlashOption.Enum("duration_type", DurationType.Hours), SlashOption.Integer("duration_amount", 1)))
@@ -170,7 +172,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task MutesViewInB_ShowsBsOwnSetting()
     {
-        (await this.Settings.SetMuteRole(new GuildId(this.A.Id), new ModeratorId(this.A.Owner.Id), new RoleId(this.A.KickerRoleId))).ShouldSucceed();
+        (await this.Settings.SetMuteRole(new GuildId(this.A.Id), new ModeratorId(this.A.Owner.Id), new RoleId(this.A.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
         var reply = await this._bot.RunSlashCommandAndWaitAsync(this.B.General, "mutes", this.B.Admin, SlashOption.Subcommand("view"));
 

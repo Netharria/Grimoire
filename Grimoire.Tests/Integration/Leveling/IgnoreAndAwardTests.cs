@@ -44,6 +44,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
     // ── /Ignore ───────────────────────────────────────────────────────────────
 
     /// <summary>Ignoring a member stops their XP, and it's stored and logged.</summary>
+    /// <remarks>Cases: LVL-120.</remarks>
     [Fact]
     public async Task IgnoreAdd_StopsXp_AndIsLogged()
     {
@@ -53,13 +54,14 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
             SlashOption.MentionableRole("items_1", this.Guild.KickerRoleId))).Description.ShouldBe(expected);
 
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>() == expected);
-        var ignored = (await this.Settings.GetAllIgnoredItems(this.GuildId)).ShouldSucceed();
+        var ignored = (await this.Settings.GetAllIgnoredItems(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
         ignored.OfType<IgnoredMember>().ShouldHaveSingleItem().UserId.ShouldBe(new UserId(this.Guild.User1.Id));
         ignored.OfType<IgnoredRole>().ShouldHaveSingleItem().RoleId.ShouldBe(new RoleId(this.Guild.KickerRoleId));
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
         (await this.XpOfAsync(this.Guild.User1, expectAtLeast: 1, NothingHappensWindow)).ShouldBe(0);
     }
 
+    /// <remarks>Cases: LVL-124.</remarks>
     [Fact]
     public async Task IgnoreRemove_LetsXpThroughAgain()
     {
@@ -67,11 +69,12 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
 
         await this.IgnoreAsync("remove", SlashOption.MentionableUser("items_0", this.Guild.User1));
 
-        (await this.Settings.GetAllIgnoredItems(this.GuildId)).ShouldSucceed().ShouldBeEmpty();
+        (await this.Settings.GetAllIgnoredItems(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeEmpty();
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
         (await this.XpOfAsync(this.Guild.User1, expectAtLeast: 1)).ShouldBeGreaterThan(0);
     }
 
+    /// <remarks>Cases: LVL-124.</remarks>
     [Fact]
     public async Task IgnoreRemove_SaysWhatIsNoLongerIgnored()
     {
@@ -81,10 +84,12 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
             .ShouldBe($"<@{this.Guild.User1.Id}> are no longer ignored for xp gain.");
     }
 
+    /// <remarks>Cases: LVL-128.</remarks>
     [Fact]
     public async Task IgnoreView_WithNothingIgnored_SaysSo()
         => (await this.IgnoreAsync("view")).Description.ShouldBe("This server does not have any ignored channels, roles or users.");
 
+    /// <remarks>Cases: LVL-127.</remarks>
     [Fact]
     public async Task IgnoreView_ListsChannelsRolesAndUsers()
     {
@@ -93,7 +98,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
             IgnoredChannel.Create(new ChannelId(this.Guild.General.Id), this.GuildId, new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed(),
             IgnoredRole.Create(new RoleId(this.Guild.KickerRoleId), this.GuildId, new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed(),
             IgnoredMember.Create(new UserId(this.Guild.User1.Id), this.GuildId, new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed()
-        })).ShouldSucceed();
+        }, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
         var reply = await this.IgnoreAsync("view");
 
@@ -104,13 +109,14 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>X-3: one item per line, so the paginator can split a long list across pages.</summary>
+    /// <remarks>Cases: LVL-130.</remarks>
     [Fact]
     public async Task IgnoreView_WithHundredsOfItems_IsSplitAcrossPages()
     {
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, Enumerable.Range(0, 300)
             .Select(i => (XpTrackedItem)IgnoredMember.Create(new UserId(1_100_000_000_000_100_000 + (ulong)i), this.GuildId,
                 new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())
-            .ToHashSet())).ShouldSucceed();
+            .ToHashSet(), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
         var reply = await this.IgnoreAsync("view");
 
@@ -120,6 +126,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
     }
 
     /// <summary>Discord's mentionable options only offer users and roles, so channels get their own optional option.</summary>
+    /// <remarks>Cases: LVL-121.</remarks>
     [Theory]
     [InlineData("add")]
     [InlineData("remove")]
@@ -133,23 +140,26 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         options.ShouldAllBe(option => option!["required"] == null || !option["required"]!.GetValue<bool>());
     }
 
+    /// <remarks>Cases: LVL-121, LVL-125.</remarks>
     [Fact]
     public async Task Ignore_AChannel_CanBeAddedAndRemoved()
     {
         (await this.IgnoreAsync("add", SlashOption.Channel("channel", this.Guild.General))).Description
             .ShouldBe($"{this.Guild.General.Mention} are now ignored for xp gain.");
-        (await this.Settings.GetAllIgnoredItems(this.GuildId)).ShouldSucceed().ShouldHaveSingleItem()
+        (await this.Settings.GetAllIgnoredItems(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed().ShouldHaveSingleItem()
             .ShouldBeOfType<IgnoredChannel>();
 
         (await this.IgnoreAsync("remove", SlashOption.Channel("channel", this.Guild.General))).Description
             .ShouldBe($"{this.Guild.General.Mention} are no longer ignored for xp gain.");
-        (await this.Settings.GetAllIgnoredItems(this.GuildId)).ShouldSucceed().ShouldBeEmpty();
+        (await this.Settings.GetAllIgnoredItems(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LVL-122.</remarks>
     [Fact]
     public async Task IgnoreAdd_WithNothingSelected_SaysSo()
         => (await this.IgnoreAsync("add")).Description.ShouldBe("Could not parse any ids from the submitted values.");
 
+    /// <remarks>Cases: LVL-132 (Add only).</remarks>
     [Fact]
     public async Task IgnoreAdd_ByAMemberWithoutManageGuild_IsRefused()
         => (await this._bot.RunSlashCommandAndWaitAsync("ignore", this.Guild.Moderator,
@@ -158,6 +168,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
 
     // ── /Award and /Reclaim ───────────────────────────────────────────────────
 
+    /// <remarks>Cases: LVL-140.</remarks>
     [Fact]
     public async Task Award_AddsXp_AndIsLogged()
     {
@@ -173,6 +184,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <remarks>Cases: LVL-147 (Amount, 20), LVL-148 (Amount, 80), LVL-149 (All).</remarks>
     [Theory]
     [InlineData(XpOption.Amount, 20, 20, 30)]
     [InlineData(XpOption.Amount, 80, 50, 0)]
@@ -189,10 +201,12 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
             == $"{taken} xp has been taken from {this.Guild.User1.Mention} by {this.Guild.Moderator.MemberMention}.");
     }
 
+    /// <remarks>Cases: LVL-152.</remarks>
     [Fact]
     public async Task Reclaim_FromAMemberWithNoXp_SaysSo()
         => (await this.ReclaimAsync(XpOption.All, 0)).Description.ShouldBe($"{this.Guild.User1.Mention} has no xp to take.");
 
+    /// <remarks>Cases: LVL-151.</remarks>
     [Fact]
     public async Task Reclaim_AnAmountOfZero_IsRejected()
     {
@@ -202,6 +216,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         (await this.XpOfAsync(this.Guild.User1)).ShouldBe(50);
     }
 
+    /// <remarks>Cases: LVL-155.</remarks>
     [Theory]
     [InlineData("award")]
     [InlineData("reclaim")]
