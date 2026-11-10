@@ -53,6 +53,11 @@ note says otherwise.
 | 27 | C-6, C-9, D-5, D-8 | **Done** 2026-11-08, uncommitted | D-5/D-8: the command factories take the allow-role ids and the time, and return the type; `AsNewVersion` does Revert. C-9: `IsUserAuthorized` has a pure overload, tested on every row of the spec's table (the old branching passes the same nine). The autocomplete providers check the guild themselves, so the last `ctx.Guild!` goes. C-3 has a decision but no rank, so the sanitiser is still there |
 | 28 | P-5, S-8 | **Done** 2026-11-09, uncommitted | Two migrations, one per context, both named `DropRedundantIndexes`: five indexes in the main schema, seven in Settings. `IX_GuildSettings_GuildId_Type_SetAt` stays. `SchemaIndexTests` checks the 12 are gone, and fails on any plain index that repeats the start of its table's primary key. `StartupMigrationTests` assumed the newest row in the shared `__EFMigrationsHistory` belonged to the main context; it now checks for no pending migrations |
 | 29 | P-7 | Later release | Only after Settings' `Initial` has run in production |
+| 30 | P-1, C-2 | Do | Confirmed 2026-11-09. In `ModelRedesign` (it drops `RestrictedUse`, so a later migration can't), `RoleType` becomes `CASE WHEN RestrictedUse THEN 'Allow' ELSE 'Deny' END`; correct the spec. `Learn`'s roles without `restricted_use` become deny roles, so a re-Learn keeps a legacy deny list |
+| 31 | P-2 | Do | Confirmed 2026-11-09. `ReclaimedXp` gets `ModeratorId?` mapped to `AwarderId`; `ModelRedesign` step 7 stops nulling Reclaimed rows. Must be in `ModelRedesign`, before deploy |
+| 32 | M-4 | Do | Confirmed 2026-11-09. `/Lock` and `/Unlock` refuse unless the moderator has Manage Messages in the target channel. Channel-level, no guild-wide gate |
+| 33 | X-6 | Do | Confirmed 2026-11-09. `/Rewards Add` and `Remove` log to `Moderation`, Add's entry names the moderator, and tests give the leveling log its own channel |
+| 34 | C-3 | Do | Confirmed 2026-11-09. Text commands allow pings for only `%Mention`'s resolved user or role; `@everyone`, `@here` and `%Message` never ping; delete the sanitiser |
 
 ## Items the review said could wait or be left alone
 
