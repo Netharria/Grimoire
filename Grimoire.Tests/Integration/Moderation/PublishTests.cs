@@ -206,7 +206,7 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
             SinType.Ban => Sin.ForBan(actor, userId, this.GuildId, at),
             SinType.Kick => Sin.ForKick(actor, userId, this.GuildId, at),
             _ => Sin.ForWarn(actor, userId, this.GuildId, at)
-        }).ShouldSucceed() with
+        }) with
         {
             ReasonHistory = [new SinReasonHistory { SinId = default, Reason = ModerationReason.Create(reason).ShouldSucceed(), Actor = actor, SetAt = at }]
         };

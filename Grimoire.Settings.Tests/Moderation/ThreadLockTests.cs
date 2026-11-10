@@ -26,7 +26,7 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
 
     private Task<Result<ThreadLocked>> Unlock(ChannelId channelId, GuildId guildId)
         => this._sut.RemoveThreadLock(
-            ThreadUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow).ShouldSucceed());
+            ThreadUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow));
 
     [Fact]
     public async Task NoLock_IsThreadLocked_ReturnsFalse()

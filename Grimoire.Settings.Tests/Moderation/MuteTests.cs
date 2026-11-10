@@ -285,7 +285,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         db.Mutes.Add(((Validation<MuteAdded>.Valid)MuteAdded.Create(
             _userId, _guildId, _modId, _sinId,
             t1, t1.AddHours(4))).Value);
-        db.Mutes.Add(((Validation<MuteRemoved>.Valid)MuteRemoved.Create(_userId, guildB, _modId, t2)).Value);
+        db.Mutes.Add(MuteRemoved.Create(_userId, guildB, _modId, t2));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         (await this._sut.GetActiveMute(_userId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
@@ -326,7 +326,7 @@ public sealed class MuteTests(SettingsTestsFactory factory) : IAsyncLifetime
         db.Mutes.Add(((Validation<MuteAdded>.Valid)MuteAdded.Create(
             _userId, _guildId, _modId, _sinId,
             t1, t1.AddHours(1))).Value);
-        db.Mutes.Add(((Validation<MuteRemoved>.Valid)MuteRemoved.Create(_userId, guildB, _modId, t2)).Value);
+        db.Mutes.Add(MuteRemoved.Create(_userId, guildB, _modId, t2));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var expired = await this._sut.GetAllExpiredMutes(TestContext.Current.CancellationToken)

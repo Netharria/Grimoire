@@ -33,37 +33,27 @@ public sealed record Sin
     public ICollection<PublishedMessage> PublishMessages { get; init; } = [];
     public ICollection<SinReasonHistory> ReasonHistory { get; init; } = [];
 
-    public static Validation<Sin> ForWarn(
+    public static Sin ForWarn(
         ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt, ModerationReason? reason = null)
         => Create(SinType.Warn, actor, userId, guildId, occurredAt, reason);
 
-    public static Validation<Sin> ForMute(
+    public static Sin ForMute(
         ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt, ModerationReason? reason = null)
         => Create(SinType.Mute, actor, userId, guildId, occurredAt, reason);
 
-    public static Validation<Sin> ForBan(
+    public static Sin ForBan(
         ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt, ModerationReason? reason = null)
         => Create(SinType.Ban, actor, userId, guildId, occurredAt, reason);
 
-    public static Validation<Sin> ForKick(
+    public static Sin ForKick(
         ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt, ModerationReason? reason = null)
         => Create(SinType.Kick, actor, userId, guildId, occurredAt, reason);
 
     /// <param name="reason">The reason it starts with, if any, recorded as given by <paramref name="actor" />.</param>
-    private static Validation<Sin> Create(
+    private static Sin Create(
         SinType type, ModerationActor actor, UserId userId, GuildId guildId, DateTimeOffset occurredAt,
         ModerationReason? reason)
-    {
-        if (userId.Value == 0)
-            return Validation<Sin>.Fail(
-                new Error("sin.user-id.invalid", "UserId must be specified."));
-        if (guildId.Value == 0)
-            return Validation<Sin>.Fail(
-                new Error("sin.guild-id.invalid", "GuildId must be specified."));
-        if (actor is ModerationActor.Moderator m && m.Id.Value == 0)
-            return Validation<Sin>.Fail(
-                new Error("sin.moderator-id.invalid", "ModeratorId must be specified."));
-        return Validation<Sin>.Succeed(new Sin
+        => new Sin
         {
             Actor = actor,
             SinType = type,
@@ -74,6 +64,5 @@ public sealed record Sin
             ReasonHistory = reason is { } given
                 ? [new SinReasonHistory { SinId = default, Reason = given, Actor = actor, SetAt = occurredAt }]
                 : []
-        });
-    }
+        };
 }

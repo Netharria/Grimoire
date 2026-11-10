@@ -147,7 +147,8 @@ public sealed partial class SettingsModule(
         => ApplyGuildSetting(channelId is { } id
                     ? GuildSettingCustomValue.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow,
                         id.Value.ToString(CultureInfo.InvariantCulture))
-                    : GuildSettingDisabled.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow),
+                    : Validation<GuildSetting>.Succeed(
+                        GuildSettingDisabled.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow)),
                 cancellationToken)
             .Map(_ => channelId);
 

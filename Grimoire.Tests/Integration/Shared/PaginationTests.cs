@@ -281,7 +281,7 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
         var ids = Enumerable.Range(0, count).Select(i => 1_100_000_000_000_100_000 + (ulong)i).ToArray();
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, ids
             .Select(id => (XpTrackedItem)IgnoredMember.Create(new UserId(id), this.GuildId,
-                new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())
+                new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow))
             .ToHashSet())).ShouldSucceed();
         return ids;
     }

@@ -136,7 +136,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
         Field(await this.UserInfoAsync(this.Guild.User1), "Can Gain Xp").ShouldBe("Yes");
 
         var ignored = IgnoredMember.Create(new UserId(this.Guild.User1.Id), this.GuildId, new ModeratorId(this.Guild.Owner.Id),
-            DateTimeOffset.UtcNow).ShouldSucceed();
+            DateTimeOffset.UtcNow);
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored }, TestContext.Current.CancellationToken)).ShouldSucceed();
 
         Field(await this.UserInfoAsync(this.Guild.User1), "Can Gain Xp").ShouldBe("No");
@@ -147,7 +147,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     public async Task CanGainXp_IsNoForAMemberWithAnIgnoredRole()
     {
         var ignored = IgnoredRole.Create(new RoleId(this.Guild.ModeratorRoleId), this.GuildId, new ModeratorId(this.Guild.Owner.Id),
-            DateTimeOffset.UtcNow).ShouldSucceed();
+            DateTimeOffset.UtcNow);
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored }, TestContext.Current.CancellationToken)).ShouldSucceed();
 
         Field(await this.UserInfoAsync(this.Guild.Moderator), "Can Gain Xp").ShouldBe("No");
@@ -279,7 +279,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
                 SinType.Mute => Sin.ForMute(actor, userId, this.GuildId, at),
                 SinType.Ban => Sin.ForBan(actor, userId, this.GuildId, at),
                 _ => Sin.ForKick(actor, userId, this.GuildId, at)
-            }).ShouldSucceed());
+            }));
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 }

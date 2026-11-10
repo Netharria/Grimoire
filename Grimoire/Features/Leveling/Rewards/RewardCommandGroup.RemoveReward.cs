@@ -34,9 +34,8 @@ public sealed partial class RewardCommandGroup
             .Bind(rewards => rewards.Any(reward => reward.RoleId == role.GetRoleId())
                 ? Result<Unit>.Ok(Unit.Value)
                 : new Result<Unit>.NotFound(new Error("reward.not-found", $"Did not find a saved reward for {role.Mention}.")))
-            .BindAsync(_ => RewardRemoved.Create(role.GetRoleId(), guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow)
-                .ToResult()
-                .BindAsync(reward => this._settingsModule.SetRewardAsync(reward)))
+            .BindAsync(_ => this._settingsModule.SetRewardAsync(RewardRemoved.Create(role.GetRoleId(),
+                guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow)))
             .Match(
                 _ => OnRemoveSuccess(ctx, role, guild),
                 error => OnFail(ctx, error));

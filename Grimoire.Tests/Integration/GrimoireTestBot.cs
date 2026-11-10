@@ -380,7 +380,7 @@ public sealed class GrimoireTestBot : IAsyncDisposable
     public async Task UnlockThreadAsync(FakeChannel thread)
     {
         var unlock = ThreadUnlocked.Create(new ModeratorId(this.Guild.Moderator.Id), new ChannelId(thread.Id),
-            new GuildId(this.Guild.Id), DateTimeOffset.UtcNow).ShouldSucceed();
+            new GuildId(this.Guild.Id), DateTimeOffset.UtcNow);
         (await this.Services.GetRequiredService<SettingsModule>().RemoveThreadLock(unlock)).ShouldSucceed();
     }
 

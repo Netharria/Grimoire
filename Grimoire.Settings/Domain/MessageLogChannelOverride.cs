@@ -36,23 +36,11 @@ public sealed record MessageLogChannelOverride
     public ModeratorId SetBy { get; }
     public DateTimeOffset SetAt { get; }
 
-    public static Validation<MessageLogChannelOverride> Create(
+    public static MessageLogChannelOverride Create(
         MessageLogOverrideOption channelOption,
         ChannelId channelId,
         GuildId guildId,
         ModeratorId setBy,
         DateTimeOffset setAt)
-    {
-        if (channelId.Value == 0)
-            return Validation<MessageLogChannelOverride>.Fail(
-                new Error("message-log-override.channel-id.invalid", "ChannelId must be specified."));
-        if (guildId.Value == 0)
-            return Validation<MessageLogChannelOverride>.Fail(
-                new Error("message-log-override.guild-id.invalid", "GuildId must be specified."));
-        if (setBy.Value == 0)
-            return Validation<MessageLogChannelOverride>.Fail(
-                new Error("message-log-override.set-by.invalid", "ModeratorId must be specified."));
-        return Validation<MessageLogChannelOverride>.Succeed(
-            new MessageLogChannelOverride(channelOption, channelId, guildId, setBy, setAt));
-    }
+        => new MessageLogChannelOverride(channelOption, channelId, guildId, setBy, setAt);
 }

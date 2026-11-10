@@ -139,7 +139,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
     {
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
         {
-            IgnoredMember.Create(new UserId(this.Guild.User1.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow).ShouldSucceed()
+            IgnoredMember.Create(new UserId(this.Guild.User1.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow)
         }, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
         (await this.AwardAsync(this.Guild.User1, 30)).Description

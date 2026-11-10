@@ -243,7 +243,7 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
             SinType.Mute => Sin.ForMute(actor, userId, this.GuildId, sinOn),
             SinType.Ban => Sin.ForBan(actor, userId, this.GuildId, sinOn),
             _ => Sin.ForKick(actor, userId, this.GuildId, sinOn)
-        }).ShouldSucceed();
+        });
         sin = sin with
         {
             ReasonHistory =

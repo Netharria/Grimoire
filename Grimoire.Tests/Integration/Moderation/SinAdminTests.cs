@@ -296,7 +296,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
     private async Task<Sin> SeedWarnAsync(FakeUser user, GuildId? guildId = null, bool withUsername = true)
     {
         var sin = Sin.ForWarn(new ModerationActor.Moderator(new ModeratorId(this.Guild.Admin.Id)), new UserId(user.Id),
-            guildId ?? this.GuildId, DateTimeOffset.UtcNow.AddMinutes(-10)).ShouldSucceed();
+            guildId ?? this.GuildId, DateTimeOffset.UtcNow.AddMinutes(-10));
         await using var seed = database.CreateDbContext();
         seed.Sins.Add(sin);
         if (withUsername)

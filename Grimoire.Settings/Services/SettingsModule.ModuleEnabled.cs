@@ -29,7 +29,8 @@ public sealed partial class SettingsModule
             .BindAsync(settingType => ApplyGuildSetting(enableModule
                     ? GuildSettingCustomValue.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow,
                         bool.TrueString)
-                    : GuildSettingDisabled.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow),
+                    : Validation<GuildSetting>.Succeed(
+                        GuildSettingDisabled.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow)),
                 cancellationToken))
             .Map(_ => enableModule);
 

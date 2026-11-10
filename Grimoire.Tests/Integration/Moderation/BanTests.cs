@@ -492,7 +492,7 @@ public sealed class BanTests(GrimoireCoreFactory database) : IAsyncLifetime
         await using var seed = database.CreateDbContext();
         var actor = new ModerationActor.Moderator(new ModeratorId(this.Guild.Admin.Id));
         foreach (var at in times)
-            seed.Sins.Add(Sin.ForBan(actor, new UserId(this.Guild.User1.Id), new GuildId(this.Guild.Id), at).ShouldSucceed());
+            seed.Sins.Add(Sin.ForBan(actor, new UserId(this.Guild.User1.Id), new GuildId(this.Guild.Id), at));
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 

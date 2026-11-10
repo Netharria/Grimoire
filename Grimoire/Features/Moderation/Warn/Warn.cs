@@ -45,8 +45,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         await using var dbcontext = await dbContextFactory.CreateDbContextAsync();
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForWarn(actor, user.GetUserId(), guild.GetGuildId(), now, validReason)
-            .Match(s => s, _ => throw new InvariantViolationException("Discord ids are never zero."));
+        var sin = Sin.ForWarn(actor, user.GetUserId(), guild.GetGuildId(), now, validReason);
         dbcontext.Sins.Add(sin);
         await dbcontext.SaveChangesAsync();
         var embed = new DiscordEmbedBuilder()

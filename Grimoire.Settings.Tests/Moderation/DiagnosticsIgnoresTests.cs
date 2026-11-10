@@ -20,10 +20,10 @@ public sealed class DiagnosticsIgnoresTests(SettingsTestsFactory factory) : IAsy
 
     private static DiagnosticsIgnoredItem Role(ulong id, GuildId? guild = null)
         => DiagnosticsIgnoredRole.Create(new RoleId(id), guild ?? _guildId, _modId, DateTimeOffset.UtcNow)
-            .ShouldSucceed();
+            ;
 
     private static DiagnosticsIgnoredItem Member(ulong id)
-        => DiagnosticsIgnoredMember.Create(new UserId(id), _guildId, _modId, DateTimeOffset.UtcNow).ShouldSucceed();
+        => DiagnosticsIgnoredMember.Create(new UserId(id), _guildId, _modId, DateTimeOffset.UtcNow);
 
     private Task<Result<IReadOnlyList<DiagnosticsIgnoredItem>>> Add(params DiagnosticsIgnoredItem[] items)
         => this._sut.AddDiagnosticsIgnoredItemsAsync(_guildId, items, TestContext.Current.CancellationToken);
@@ -102,12 +102,4 @@ public sealed class DiagnosticsIgnoresTests(SettingsTestsFactory factory) : IAsy
                 TestContext.Current.CancellationToken))
             .ShouldBeOfType<Result<IReadOnlyList<DiagnosticsIgnoredItem>>.NotFound>();
 
-    [Fact]
-    public void Invalid_ids_are_rejected_by_the_domain_types()
-    {
-        DiagnosticsIgnoredRole.Create(new RoleId(0), _guildId, _modId, DateTimeOffset.UtcNow)
-            .ShouldBeOfType<Validation<DiagnosticsIgnoredRole>.Invalid>();
-        DiagnosticsIgnoredMember.Create(new UserId(1), new GuildId(0), _modId, DateTimeOffset.UtcNow)
-            .ShouldBeOfType<Validation<DiagnosticsIgnoredMember>.Invalid>();
-    }
 }

@@ -36,23 +36,11 @@ public sealed record SpamFilterOverride
     public ModeratorId SetBy { get; }
     public DateTimeOffset SetAt { get; }
 
-    public static Validation<SpamFilterOverride> Create(
+    public static SpamFilterOverride Create(
         SpamFilterOverrideOption channelOption,
         ChannelId channelId,
         GuildId guildId,
         ModeratorId setBy,
         DateTimeOffset setAt)
-    {
-        if (channelId.Value == 0)
-            return Validation<SpamFilterOverride>.Fail(
-                new Error("spam-filter-override.channel-id.invalid", "ChannelId must be specified."));
-        if (guildId.Value == 0)
-            return Validation<SpamFilterOverride>.Fail(
-                new Error("spam-filter-override.guild-id.invalid", "GuildId must be specified."));
-        if (setBy.Value == 0)
-            return Validation<SpamFilterOverride>.Fail(
-                new Error("spam-filter-override.set-by.invalid", "ModeratorId must be specified."));
-        return Validation<SpamFilterOverride>.Succeed(
-            new SpamFilterOverride(channelOption, channelId, guildId, setBy, setAt));
-    }
+        => new SpamFilterOverride(channelOption, channelId, guildId, setBy, setAt);
 }

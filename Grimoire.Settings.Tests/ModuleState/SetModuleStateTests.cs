@@ -153,7 +153,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         db.GuildSettings.Add(
             GuildSettingDisabled.Create(
                     GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
-                .ShouldSucceed());
+                );
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId, TestContext.Current.CancellationToken))
@@ -171,7 +171,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         db.GuildSettings.Add(
             GuildSettingDisabled.Create(
                     GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
-                .ShouldSucceed());
+                );
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false,
@@ -226,7 +226,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
             db.GuildSettings.Add(
                 GuildSettingDisabled.Create(
                         GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
-                    .ShouldSucceed());
+                    );
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 

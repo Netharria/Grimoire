@@ -100,26 +100,6 @@ public sealed class DomainInvariantTests
             .ShouldBeOfType<Validation<MuteAdded>.Invalid>();
 
     [Fact]
-    public void MuteAdded_UserIdZero_IsInvalidWithCodeAndMessage()
-    {
-        var result = MuteAdded.Create(new UserId(0UL), _guildId, _modId, _sinId, _past, _future);
-        var invalid = result.ShouldBeOfType<Validation<MuteAdded>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("mute.user-id.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
-    }
-
-    [Fact]
-    public void MuteAdded_ModeratorIdZero_IsInvalidWithCodeAndMessage()
-    {
-        var result = MuteAdded.Create(_userId, _guildId, new ModeratorId(0UL), _sinId, _past, _future);
-        var invalid = result.ShouldBeOfType<Validation<MuteAdded>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("mute.moderator-id.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
-    }
-
-    [Fact]
     public void MuteAdded_SelfMute_IsInvalidWithCodeAndMessage()
     {
         var selfId = new UserId(999UL);
@@ -194,26 +174,6 @@ public sealed class DomainInvariantTests
     public void RewardAdded_ZeroLevel_IsValid()
         => RewardAdded.Create(_roleId, _guildId, 0, null, _modId, _now)
             .ShouldBeOfType<Validation<RewardAdded>.Valid>();
-
-    [Fact]
-    public void RewardAdded_ZeroRoleId_IsInvalidWithCodeAndMessage()
-    {
-        var result = RewardAdded.Create(new RoleId(0UL), _guildId, 5, null, _modId, _now);
-        var invalid = result.ShouldBeOfType<Validation<RewardAdded>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("reward.role-id.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
-    }
-
-    [Fact]
-    public void RewardAdded_ZeroModeratorId_IsInvalidWithCodeAndMessage()
-    {
-        var result = RewardAdded.Create(_roleId, _guildId, 5, null, new ModeratorId(0UL), _now);
-        var invalid = result.ShouldBeOfType<Validation<RewardAdded>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("reward.moderator-id.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
-    }
 
     [Fact]
     public void RewardAdded_WithMessage_IsValid()

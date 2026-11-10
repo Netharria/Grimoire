@@ -84,21 +84,16 @@ public sealed record AwardedXp : XpHistoryEntry
     public PositiveXpAmount Xp => PositiveXpAmount.FromDatabase(RawXp);
     public required ModeratorId AwarderId { get; init; }
 
-    public static Validation<AwardedXp> Create(
+    public static AwardedXp Create(
         PositiveXpAmount xp, ModeratorId awarderId, UserId userId, GuildId guildId, DateTimeOffset timeOut)
-    {
-        if (awarderId.Value == 0)
-            return Validation<AwardedXp>.Fail(
-                new Error("awarded-xp.awarder-id.invalid", "AwarderId must be specified."));
-        return Validation<AwardedXp>.Succeed(new AwardedXp
+        => new AwardedXp
         {
             RawXp = xp.Value,
             AwarderId = awarderId,
             UserId = userId,
             GuildId = guildId,
             TimeOut = timeOut
-        });
-    }
+        };
 }
 
 /// <summary>XP reclaimed from the user by a moderator. Xp value is negative.</summary>

@@ -459,7 +459,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task<Sin> SeedMuteSinAsync(ModerationActor actor, DateTimeOffset at)
     {
-        var sin = Sin.ForMute(actor, new UserId(this.Guild.User1.Id), this.GuildId, at).ShouldSucceed();
+        var sin = Sin.ForMute(actor, new UserId(this.Guild.User1.Id), this.GuildId, at);
         await using var dbContext = database.CreateDbContext();
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);

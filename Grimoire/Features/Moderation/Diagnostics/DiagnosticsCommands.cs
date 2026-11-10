@@ -124,18 +124,10 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
                 switch (item)
                 {
                     case DiscordRole role when role.Id != guild.Id:
-                        if (DiagnosticsIgnoredRole.Create(new RoleId(role.Id), guild.GetGuildId(), moderator, now)
-                            is Validation<DiagnosticsIgnoredRole>.Valid { Value: var ignoredRole })
-                            ignored.Add(ignoredRole);
-                        else
-                            skipped.Add(item);
+                        ignored.Add(DiagnosticsIgnoredRole.Create(new RoleId(role.Id), guild.GetGuildId(), moderator, now));
                         break;
                     case DiscordUser user:
-                        if (DiagnosticsIgnoredMember.Create(new UserId(user.Id), guild.GetGuildId(), moderator, now)
-                            is Validation<DiagnosticsIgnoredMember>.Valid { Value: var ignoredMember })
-                            ignored.Add(ignoredMember);
-                        else
-                            skipped.Add(item);
+                        ignored.Add(DiagnosticsIgnoredMember.Create(new UserId(user.Id), guild.GetGuildId(), moderator, now));
                         break;
                     default:
                         skipped.Add(item);

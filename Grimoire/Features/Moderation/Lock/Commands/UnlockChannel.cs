@@ -56,9 +56,8 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
 
     private Task<Result<ThreadLocked>> TryUnlockThreadAsync(DiscordGuild guild, DiscordChannel channel,
         ModeratorId moderatorId)
-        => ThreadUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow)
-            .ToResult()
-            .BindAsync(lockAction => settingsModule.RemoveThreadLock(lockAction));
+        => settingsModule.RemoveThreadLock(
+            ThreadUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow));
 
     /// <summary>
     ///     Reverts the channel's permissions first and only then records the unlock. If Discord refuses, the channel is
@@ -70,9 +69,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
             .BindAsync(async activeLock =>
             {
                 await ChannelLockReverter.RevertAsync(channel, guild.EveryoneRole, activeLock);
-                return await ChannelUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(),
-                        DateTimeOffset.UtcNow)
-                    .ToResult()
-                    .BindAsync(unlock => settingsModule.RemoveChannelLock(unlock));
+                return await settingsModule.RemoveChannelLock(ChannelUnlocked.Create(moderatorId,
+                    channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow));
             });
 }

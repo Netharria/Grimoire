@@ -26,10 +26,9 @@ public partial class IgnoreCommandGroup
         SnowflakeObject[]? items = null)
         => this.UpdateIgnoredAsync(ctx, channel, items, (item, guildId, setBy, setAt) => item switch
         {
-            DiscordUser => WatchedMember.Create(new UserId(item.Id), guildId, setBy, setAt).Map(XpTrackedItem (x) => x),
-            DiscordRole => WatchedRole.Create(new RoleId(item.Id), guildId, setBy, setAt).Map(XpTrackedItem (x) => x),
-            DiscordChannel => WatchedChannel.Create(new ChannelId(item.Id), guildId, setBy, setAt)
-                .Map(XpTrackedItem (x) => x),
+            DiscordUser => WatchedMember.Create(new UserId(item.Id), guildId, setBy, setAt),
+            DiscordRole => WatchedRole.Create(new RoleId(item.Id), guildId, setBy, setAt),
+            DiscordChannel => WatchedChannel.Create(new ChannelId(item.Id), guildId, setBy, setAt),
             _ => throw new InvariantViolationException($"Unexpected ignore option {item.GetType().Name}.")
         }, "are no longer ignored for xp gain.", "were not ignored.");
 }

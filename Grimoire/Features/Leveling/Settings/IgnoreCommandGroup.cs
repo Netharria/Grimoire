@@ -33,7 +33,7 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
     ///     after the changed mentions, and <paramref name="unchangedOutcome" /> the one after those already in that state.
     /// </summary>
     private async Task UpdateIgnoredAsync(CommandContext ctx, DiscordChannel? channel, SnowflakeObject[]? items,
-        Func<SnowflakeObject, GuildId, ModeratorId, DateTimeOffset, Validation<XpTrackedItem>> create, string outcome,
+        Func<SnowflakeObject, GuildId, ModeratorId, DateTimeOffset, XpTrackedItem> create, string outcome,
         string unchangedOutcome)
     {
         await ctx.DeferResponseAsync();
@@ -46,17 +46,9 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
             return;
         }
 
-        var created = combined
+        var tracked = combined
             .Select(item => create(item, guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow))
-            .ToArray();
-        if (created.OfType<Validation<XpTrackedItem>.Invalid>().SelectMany(invalid => invalid.Errors).ToArray()
-            is [_, ..] errors)
-        {
-            await ctx.SendErrorResponseAsync(errors);
-            return;
-        }
-
-        var tracked = created.OfType<Validation<XpTrackedItem>.Valid>().Select(valid => valid.Value).ToFrozenSet();
+            .ToFrozenSet();
         await (await this._settingsModule.AppendIgnoredItemsEvent(guild.GetGuildId(), tracked)).Match(
             async changed =>
             {

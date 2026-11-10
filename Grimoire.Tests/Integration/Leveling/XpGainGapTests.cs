@@ -275,7 +275,7 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
     private async Task IgnoreChannelAsync(FakeChannel channel)
         => (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
         {
-            IgnoredChannel.Create(new ChannelId(channel.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow).ShouldSucceed()
+            IgnoredChannel.Create(new ChannelId(channel.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow)
         })).ShouldSucceed();
 
     private async Task SeedEarnedAsync(FakeUser user, int xp, DateTimeOffset timeOut)

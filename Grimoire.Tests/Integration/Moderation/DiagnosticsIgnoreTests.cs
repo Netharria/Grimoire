@@ -172,9 +172,8 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
     {
         var now = DateTimeOffset.UtcNow;
         var roles = Enumerable.Range(0, 60)
-            .Select(index => DiagnosticsIgnoredRole.Create(new RoleId(this.Guild.Id + 10_000 + (ulong)index), this.GuildId,
-                new ModeratorId(this.Guild.Admin.Id), now))
-            .Select(validation => (DiagnosticsIgnoredItem)((Validation<DiagnosticsIgnoredRole>.Valid)validation).Value)
+            .Select(DiagnosticsIgnoredItem (index) => DiagnosticsIgnoredRole.Create(
+                new RoleId(this.Guild.Id + 10_000 + (ulong)index), this.GuildId, new ModeratorId(this.Guild.Admin.Id), now))
             .ToList();
         (await this.Settings.AddDiagnosticsIgnoredItemsAsync(this.GuildId, roles, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 

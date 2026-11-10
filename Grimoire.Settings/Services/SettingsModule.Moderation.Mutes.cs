@@ -36,7 +36,7 @@ public sealed partial class SettingsModule
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
-        => ApplyGuildSetting(
+        => SetGuildSetting(
                 GuildSettingDisabled.Create(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow),
                 cancellationToken)
             .Map(_ => guildId);
@@ -92,14 +92,12 @@ public sealed partial class SettingsModule
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
             return await FindActiveMuteAsync(dbContext, userId, guildId, ct)
-                .BindAsync(existingMute => MuteRemoved.Create(userId, guildId, moderatorId, DateTimeOffset.UtcNow)
-                    .ToResult()
-                    .BindAsync(async muteRemoved =>
-                    {
-                        dbContext.Mutes.Add(muteRemoved);
-                        await dbContext.SaveChangesAsync(ct);
-                        return Result<MuteAdded>.Ok(existingMute);
-                    }));
+                .BindAsync(async existingMute =>
+                {
+                    dbContext.Mutes.Add(MuteRemoved.Create(userId, guildId, moderatorId, DateTimeOffset.UtcNow));
+                    await dbContext.SaveChangesAsync(ct);
+                    return Result<MuteAdded>.Ok(existingMute);
+                });
         }, new Error("mute.remove-failed", "Could not remove the mute."), cancellationToken);
 
     private static async Task<Result<MuteAdded>> FindActiveMuteAsync(SettingsDbContext dbContext, UserId userId,

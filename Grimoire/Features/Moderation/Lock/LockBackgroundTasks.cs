@@ -123,7 +123,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
     private static Task<Result<ChannelLocked>> RecordChannelUnlockAsync(ChannelLocked expiredLock, string reason,
         SettingsModule settingsModule, DiscordClient discordClient, CancellationToken cancellationToken)
         => ModerationReason.Create(reason)
-            .Bind(moderationReason =>
+            .Map(moderationReason =>
                 ChannelUnlocked.Create(
                     discordClient.GetGrimoireModeratorId(),
                     expiredLock.ChannelId,
@@ -136,7 +136,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
     private static Task<Result<ThreadLocked>> RecordThreadUnlockAsync(ThreadLocked expiredLock, string reason,
         SettingsModule settingsModule, DiscordClient discordClient, CancellationToken cancellationToken)
         => ModerationReason.Create(reason)
-            .Bind(moderationReason =>
+            .Map(moderationReason =>
                 ThreadUnlocked.Create(
                     discordClient.GetGrimoireModeratorId(),
                     expiredLock.ChannelId,

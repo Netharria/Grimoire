@@ -38,15 +38,6 @@ public sealed record ThreadLocked : ThreadLock
         DateTimeOffset setAt,
         DateTimeOffset endTime)
     {
-        if (moderatorId.Value == 0)
-            return Validation<ThreadLocked>.Fail(
-                new Error("thread-lock.moderator-id.invalid", "ModeratorId must be specified."));
-        if (channelId.Value == 0)
-            return Validation<ThreadLocked>.Fail(
-                new Error("thread-lock.channel-id.invalid", "ChannelId must be specified."));
-        if (guildId.Value == 0)
-            return Validation<ThreadLocked>.Fail(
-                new Error("thread-lock.guild-id.invalid", "GuildId must be specified."));
         if (endTime <= setAt)
             return Validation<ThreadLocked>.Fail(
                 new Error("thread-lock.end-time.invalid", "End time must be after the lock's set time."));
@@ -67,23 +58,11 @@ public sealed record ThreadUnlocked : ThreadLock
     {
     }
 
-    public static Validation<ThreadUnlocked> Create(
+    public static ThreadUnlocked Create(
         ModeratorId moderatorId,
         ChannelId channelId,
         GuildId guildId,
         DateTimeOffset setAt,
         ModerationReason? reason = null)
-    {
-        if (moderatorId.Value == 0)
-            return Validation<ThreadUnlocked>.Fail(
-                new Error("thread-unlock.moderator-id.invalid", "ModeratorId must be specified."));
-        if (channelId.Value == 0)
-            return Validation<ThreadUnlocked>.Fail(
-                new Error("thread-unlock.channel-id.invalid", "ChannelId must be specified."));
-        if (guildId.Value == 0)
-            return Validation<ThreadUnlocked>.Fail(
-                new Error("thread-unlock.guild-id.invalid", "GuildId must be specified."));
-        return Validation<ThreadUnlocked>.Succeed(
-            new ThreadUnlocked(moderatorId, channelId, guildId, setAt, reason));
-    }
+        => new ThreadUnlocked(moderatorId, channelId, guildId, setAt, reason);
 }

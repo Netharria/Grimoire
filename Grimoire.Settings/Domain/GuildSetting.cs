@@ -22,17 +22,9 @@ internal sealed record GuildSettingDefault : GuildSetting
     {
     }
 
-    internal static Validation<GuildSetting> Create(
+    internal static GuildSetting Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
-    {
-        if (guildId.Value == 0)
-            return Validation<GuildSetting>.Fail(
-                new Error("guild-setting.guild-id.invalid", "GuildId must be specified."));
-        if (setBy.Value == 0)
-            return Validation<GuildSetting>.Fail(
-                new Error("guild-setting.set-by.invalid", "ModeratorId must be specified."));
-        return Validation<GuildSetting>.Succeed(new GuildSettingDefault(type, guildId, setBy, setAt));
-    }
+        => new GuildSettingDefault(type, guildId, setBy, setAt);
 }
 
 internal sealed record GuildSettingDisabled : GuildSetting
@@ -42,17 +34,9 @@ internal sealed record GuildSettingDisabled : GuildSetting
     {
     }
 
-    internal static Validation<GuildSetting> Create(
+    internal static GuildSetting Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt)
-    {
-        if (guildId.Value == 0)
-            return Validation<GuildSetting>.Fail(
-                new Error("guild-setting.guild-id.invalid", "GuildId must be specified."));
-        if (setBy.Value == 0)
-            return Validation<GuildSetting>.Fail(
-                new Error("guild-setting.set-by.invalid", "ModeratorId must be specified."));
-        return Validation<GuildSetting>.Succeed(new GuildSettingDisabled(type, guildId, setBy, setAt));
-    }
+        => new GuildSettingDisabled(type, guildId, setBy, setAt);
 }
 
 internal sealed record GuildSettingCustomValue : GuildSetting
@@ -69,12 +53,6 @@ internal sealed record GuildSettingCustomValue : GuildSetting
     internal static Validation<GuildSetting> Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt, string? value)
     {
-        if (guildId.Value == 0)
-            return Validation<GuildSetting>.Fail(
-                new Error("guild-setting.guild-id.invalid", "GuildId must be specified."));
-        if (setBy.Value == 0)
-            return Validation<GuildSetting>.Fail(
-                new Error("guild-setting.set-by.invalid", "ModeratorId must be specified."));
         var trimmed = value?.Trim();
         if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 200)
             return Validation<GuildSetting>.Fail(

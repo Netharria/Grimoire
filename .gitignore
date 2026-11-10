@@ -370,3 +370,5 @@ Cybermancy.sln.DotSettings
 
 #Test Coverage Results
 coverageresults/
+
+.claude/

@@ -19,9 +19,9 @@ public sealed class DiagnosticsIgnoresTests
         var mod = new ModeratorId(9);
         DiagnosticsIgnoredItem[] items =
         [
-            DiagnosticsIgnoredRole.Create(new RoleId(10), guild, mod, DateTimeOffset.UtcNow).ShouldSucceed(),
-            DiagnosticsIgnoredRole.Create(new RoleId(11), guild, mod, DateTimeOffset.UtcNow).ShouldSucceed(),
-            DiagnosticsIgnoredMember.Create(new UserId(20), guild, mod, DateTimeOffset.UtcNow).ShouldSucceed()
+            DiagnosticsIgnoredRole.Create(new RoleId(10), guild, mod, DateTimeOffset.UtcNow),
+            DiagnosticsIgnoredRole.Create(new RoleId(11), guild, mod, DateTimeOffset.UtcNow),
+            DiagnosticsIgnoredMember.Create(new UserId(20), guild, mod, DateTimeOffset.UtcNow)
         ];
 
         var ignores = DiagnosticsIgnores.From(items);

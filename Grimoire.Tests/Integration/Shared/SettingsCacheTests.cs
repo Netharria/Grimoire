@@ -117,7 +117,7 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
         await using (var seed = database.CreateDbContext())
         {
             seed.Sins.Add(Sin.ForWarn(new ModerationActor.Moderator(new ModeratorId(this.Guild.Moderator.Id)),
-                new UserId(this.Guild.User1.Id), this.GuildId, DateTimeOffset.UtcNow.AddDays(-3)).ShouldSucceed());
+                new UserId(this.Guild.User1.Id), this.GuildId, DateTimeOffset.UtcNow.AddDays(-3)));
             await seed.SaveChangesAsync(Token);
         }
 
@@ -181,7 +181,7 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
     {
         await using var settingsContext = database.CreateSettingsDbContext();
         settingsContext.GuildSettings.Add(GuildSettingDisabled.Create(Module.Leveling.ToGuildSettingType()!.Value, this.GuildId,
-            this.Owner, DateTimeOffset.UtcNow).ShouldSucceed());
+            this.Owner, DateTimeOffset.UtcNow));
         await settingsContext.SaveChangesAsync(Token);
     }
 

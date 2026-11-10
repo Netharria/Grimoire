@@ -85,16 +85,12 @@ public sealed partial class SettingsModule
 
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
 
-            return await MessageLogChannelOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow)
-                .ToResult()
-                .BindAsync(async newOverride =>
-                {
-                    dbContext.MessageLogChannelOverrides.Add(newOverride);
-                    await dbContext.SaveChangesAsync(ct);
-                    await this._cache.SetAsync(CacheKey.LogOverride(channelId), option, this._cacheEntryOptions,
-                        cancellationToken: ct);
-                    return Result<MessageLogChannelOverride>.Ok(newOverride);
-                });
+            var newOverride = MessageLogChannelOverride.Create(option, channelId, guildId, setBy, DateTimeOffset.UtcNow);
+            dbContext.MessageLogChannelOverrides.Add(newOverride);
+            await dbContext.SaveChangesAsync(ct);
+            await this._cache.SetAsync(CacheKey.LogOverride(channelId), option, this._cacheEntryOptions,
+                cancellationToken: ct);
+            return Result<MessageLogChannelOverride>.Ok(newOverride);
         }, new Error("channel-log-override.save-failed", "Could not set channel log override."), cancellationToken);
 
     public async IAsyncEnumerable<MessageLogChannelOverride> GetAllOverriddenChannels(GuildId guildId,

@@ -243,11 +243,9 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
             var t1 = DateTimeOffset.UtcNow.AddHours(-2);
             var t2 = DateTimeOffset.UtcNow.AddHours(-1);
             db.MessageLogChannelOverrides.Add(
-                ((Validation<MessageLogChannelOverride>.Valid)MessageLogChannelOverride.Create(
-                    MessageLogOverrideOption.AlwaysLog, _channelId, _guildId, _modId, t1)).Value);
+                MessageLogChannelOverride.Create(MessageLogOverrideOption.AlwaysLog, _channelId, _guildId, _modId, t1));
             db.MessageLogChannelOverrides.Add(
-                ((Validation<MessageLogChannelOverride>.Valid)MessageLogChannelOverride.Create(
-                    MessageLogOverrideOption.NeverLog, _channelId, _guildId, _modId, t2)).Value);
+                MessageLogChannelOverride.Create(MessageLogOverrideOption.NeverLog, _channelId, _guildId, _modId, t2));
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 

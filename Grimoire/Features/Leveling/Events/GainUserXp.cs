@@ -186,10 +186,9 @@ public sealed partial class GainUserXp(
     {
         List<RewardEntry> removed = [];
         foreach (var reward in orphaned)
-            if (await RewardRemoved.Create(reward.RoleId, guild.GetGuildId(), new ModeratorId(guild.CurrentMember.Id),
-                        DateTimeOffset.UtcNow)
-                    .ToResult()
-                    .BindAsync(removal => settingsModule.SetRewardAsync(removal, cancellationToken)) is Result<RewardRemoved>.Success)
+            if (await settingsModule.SetRewardAsync(RewardRemoved.Create(reward.RoleId, guild.GetGuildId(),
+                    new ModeratorId(guild.CurrentMember.Id), DateTimeOffset.UtcNow), cancellationToken)
+                is Result<RewardRemoved>.Success)
                 removed.Add(reward);
 
         if (removed.Count > 0)

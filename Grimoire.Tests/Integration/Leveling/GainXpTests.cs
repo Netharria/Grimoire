@@ -97,9 +97,9 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         var now = DateTimeOffset.UtcNow;
         XpIgnoredItem? ignored = situation switch
         {
-            "ignored member" => IgnoredMember.Create(new UserId(author.Id), this.GuildId, this.Owner, now).ShouldSucceed(),
-            "ignored role" => IgnoredRole.Create(new RoleId(this.Guild.ModeratorRoleId), this.GuildId, this.Owner, now).ShouldSucceed(),
-            "ignored channel" => IgnoredChannel.Create(new ChannelId(this.Guild.General.Id), this.GuildId, this.Owner, now).ShouldSucceed(),
+            "ignored member" => IgnoredMember.Create(new UserId(author.Id), this.GuildId, this.Owner, now),
+            "ignored role" => IgnoredRole.Create(new RoleId(this.Guild.ModeratorRoleId), this.GuildId, this.Owner, now),
+            "ignored channel" => IgnoredChannel.Create(new ChannelId(this.Guild.General.Id), this.GuildId, this.Owner, now),
             _ => null
         };
         if (ignored is not null)
@@ -119,7 +119,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     {
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
         {
-            IgnoredChannel.Create(new ChannelId(this.Guild.ModLog.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow).ShouldSucceed()
+            IgnoredChannel.Create(new ChannelId(this.Guild.ModLog.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow)
         }, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");

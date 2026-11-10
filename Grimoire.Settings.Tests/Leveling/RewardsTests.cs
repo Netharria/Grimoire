@@ -24,12 +24,11 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
 
     private Task AddReward(RoleId roleId, int level, string? message = null)
         => this._sut.SetRewardAsync(
-            new RewardAdded(roleId, _guildId, _modId, DateTimeOffset.UtcNow, level, null));
+            RewardAdded.Create(roleId, _guildId, level, null, _modId, DateTimeOffset.UtcNow).ShouldSucceed());
 
     private Task RemoveReward(RoleId roleId)
         => this._sut.SetRewardAsync(
-            ((Validation<RewardRemoved>.Valid)RewardRemoved.Create(roleId, _guildId, _modId, DateTimeOffset.UtcNow))
-            .Value);
+            RewardRemoved.Create(roleId, _guildId, _modId, DateTimeOffset.UtcNow));
 
     [Fact]
     public async Task NoRewards_ReturnsEmptySet()
@@ -44,7 +43,7 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     public async Task SingleReward_ReturnedCorrectly()
     {
         await this._sut.SetRewardAsync(
-            new RewardAdded(_roleId, _guildId, _modId, DateTimeOffset.UtcNow, 5, RewardMessage.FromDatabase("GG")),
+            RewardAdded.Create(_roleId, _guildId, 5, RewardMessage.FromDatabase("GG"), _modId, DateTimeOffset.UtcNow).ShouldSucceed(),
             TestContext.Current.CancellationToken);
 
         var result = await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
@@ -138,7 +137,7 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
         await this._sut.SetModuleState(Module.Leveling, guildB, _modId, true, TestContext.Current.CancellationToken);
 
         await AddReward(_roleId, 5);
-        await this._sut.SetRewardAsync(new RewardAdded(roleB, guildB, _modId, DateTimeOffset.UtcNow, 10, null),
+        await this._sut.SetRewardAsync(RewardAdded.Create(roleB, guildB, 10, null, _modId, DateTimeOffset.UtcNow).ShouldSucceed(),
             TestContext.Current.CancellationToken);
 
         var resultA = await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)

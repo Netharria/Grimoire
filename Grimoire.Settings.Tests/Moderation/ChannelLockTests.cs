@@ -34,7 +34,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
 
     private Task<Result<ChannelLocked>> Unlock(ChannelId channelId, GuildId guildId)
         => this._sut.RemoveChannelLock(
-            ChannelUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow).ShouldSucceed());
+            ChannelUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow));
 
     [Fact]
     public async Task NoLock_IsChannelLocked_ReturnsFalse()

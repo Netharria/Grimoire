@@ -46,15 +46,6 @@ public sealed record ChannelLocked : ChannelLock
         PreviouslyDeniedPermissions previouslyDenied,
         DateTimeOffset endTime)
     {
-        if (moderatorId.Value == 0)
-            return Validation<ChannelLocked>.Fail(
-                new Error("channel-lock.moderator-id.invalid", "ModeratorId must be specified."));
-        if (channelId.Value == 0)
-            return Validation<ChannelLocked>.Fail(
-                new Error("channel-lock.channel-id.invalid", "ChannelId must be specified."));
-        if (guildId.Value == 0)
-            return Validation<ChannelLocked>.Fail(
-                new Error("channel-lock.guild-id.invalid", "GuildId must be specified."));
         if (endTime <= setAt)
             return Validation<ChannelLocked>.Fail(
                 new Error("channel-lock.end-time.invalid", "End time must be after the lock's set time."));
@@ -81,25 +72,13 @@ public sealed record ChannelUnlocked : ChannelLock
     {
     }
 
-    public static Validation<ChannelUnlocked> Create(
+    public static ChannelUnlocked Create(
         ModeratorId moderatorId,
         ChannelId channelId,
         GuildId guildId,
         DateTimeOffset setAt,
         ModerationReason? reason = null)
-    {
-        if (moderatorId.Value == 0)
-            return Validation<ChannelUnlocked>.Fail(
-                new Error("channel-unlock.moderator-id.invalid", "ModeratorId must be specified."));
-        if (channelId.Value == 0)
-            return Validation<ChannelUnlocked>.Fail(
-                new Error("channel-unlock.channel-id.invalid", "ChannelId must be specified."));
-        if (guildId.Value == 0)
-            return Validation<ChannelUnlocked>.Fail(
-                new Error("channel-unlock.guild-id.invalid", "GuildId must be specified."));
-        return Validation<ChannelUnlocked>.Succeed(
-            new ChannelUnlocked(moderatorId, channelId, guildId, setAt, reason));
-    }
+        => new ChannelUnlocked(moderatorId, channelId, guildId, setAt, reason);
 }
 
 public readonly record struct PreviouslyAllowedPermissions(long Permissions);
