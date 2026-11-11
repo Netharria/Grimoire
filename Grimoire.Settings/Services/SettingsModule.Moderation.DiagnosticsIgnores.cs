@@ -99,6 +99,38 @@ public sealed partial class SettingsModule
             }, new Error("diagnostics-ignored-items.remove-failed", "Could not update the diagnostics ignore list."),
             cancellationToken);
 
+    /// <summary>
+    ///     Removes a role from the ignore list, for when Discord deletes it: a deleted role can't be picked in
+    ///     <c>/Diagnostics Ignore Remove</c>, so it would stay on the list for good (KI-62). NotFound when it wasn't
+    ///     ignored.
+    /// </summary>
+    public Task<Result<Unit>> RemoveDiagnosticsIgnoredRoleAsync(
+        GuildId guildId,
+        RoleId roleId,
+        CancellationToken cancellationToken = default)
+        => ExecuteSafelyAsync(async ct =>
+            {
+                await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
+                // Filtered in memory, as in RemoveDiagnosticsIgnoredItemsAsync: EF can't translate RoleId on the
+                // derived type.
+                var toRemove = (await dbContext.DiagnosticsIgnoredItems
+                        .Where(item => item.GuildId == guildId)
+                        .ToListAsync(ct))
+                    .OfType<DiagnosticsIgnoredRole>()
+                    .Where(role => role.RoleId == roleId)
+                    .ToList();
+
+                if (toRemove.Count == 0)
+                    return new Result<Unit>.NotFound(
+                        new Error("diagnostics-ignored-items.not-found", "That role is not ignored."));
+
+                dbContext.DiagnosticsIgnoredItems.RemoveRange(toRemove);
+                await dbContext.SaveChangesAsync(ct);
+                await this._cache.RemoveAsync(CacheKey.DiagnosticsIgnoredItems(guildId), ct);
+                return Result<Unit>.Ok(Unit.Value);
+            }, new Error("diagnostics-ignored-items.remove-failed", "Could not update the diagnostics ignore list."),
+            cancellationToken);
+
     // Discord IDs are snowflakes, so a role and a member never share one. The table is keyed by guild and ID.
     private static (string Kind, ulong Id) Key(DiagnosticsIgnoredItem item) => item switch
     {

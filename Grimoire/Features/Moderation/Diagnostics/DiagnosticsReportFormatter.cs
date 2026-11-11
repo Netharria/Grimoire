@@ -79,13 +79,17 @@ public static class DiagnosticsReportFormatter
         if (result.AdministratorRoles.Count > 0)
             text.Append("Administrator roles (excluded, Administrator ignores channel permissions): ")
                 .Append(string.Join(", ", result.AdministratorRoles.Select(r => r.Name))).Append('\n');
+        if (result.BotRoles.Count > 0)
+            text.Append("Bot roles (excluded, bots need their own channel permissions): ")
+                .Append(string.Join(", ", result.BotRoles.Select(r => r.Name))).Append('\n');
         if (result.IgnoredRoles.Count > 0)
             text.Append("Ignored roles (excluded on request): ")
                 .Append(string.Join(", ", result.IgnoredRoles.Select(r => r.Name))).Append('\n');
         if (result.IgnoredMemberIds.Count > 0)
             text.Append("Ignored members (excluded on request, user IDs): ")
                 .Append(string.Join(", ", result.IgnoredMemberIds)).Append('\n');
-        if (result.AdministratorRoles.Count > 0 || result.IgnoredRoles.Count > 0 || result.IgnoredMemberIds.Count > 0)
+        if (result.AdministratorRoles.Count > 0 || result.BotRoles.Count > 0 || result.IgnoredRoles.Count > 0
+            || result.IgnoredMemberIds.Count > 0)
             text.Append('\n');
     }
 

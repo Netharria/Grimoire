@@ -129,6 +129,43 @@ public sealed class ModerationDiagnosticsTests
         Of(result, ChannelFindingKind.MuteRoleNotDenied).ShouldBeEmpty();
     }
 
+    /// <remarks>KI-57, DIAG-38: no muted member can reach a channel @everyone can't see.</remarks>
+    [Fact]
+    public void Channel_hidden_from_everyone_needs_no_mute_overwrite()
+        => Analyze(Guild([Channel(overwrites: Role(TestGuild, deny: See))])).ChannelFindings.ShouldBeEmpty();
+
+    /// <remarks>KI-57: a role that may see the hidden channel and speak in it still leaks.</remarks>
+    [Fact]
+    public void Role_that_may_see_and_speak_in_a_hidden_channel_is_reported()
+    {
+        var result = Analyze(Guild([
+            Channel(overwrites: [Role(TestGuild, deny: See), MuteDeny, Role(ModeratorRole, allow: See | Speak)])
+        ]));
+
+        Of(result, ChannelFindingKind.RoleCanSpeakWhenMuted).ShouldHaveSingleItem().SubjectIds.ShouldBe([ModeratorRole]);
+        Of(result, ChannelFindingKind.RoleCanSpeakWhenLocked).ShouldHaveSingleItem().SubjectIds.ShouldBe([ModeratorRole]);
+    }
+
+    /// <remarks>KI-57: a member whose own overwrite hides the channel can't speak in it.</remarks>
+    [Fact]
+    public void Member_overwrite_that_hides_the_channel_is_not_reported()
+        => Analyze(Guild([Channel(overwrites: [MuteDeny, Member(999, Speak, deny: See)])])).ChannelFindings
+            .ShouldBeEmpty();
+
+    /// <remarks>KI-58, DIAG-37: the bot's own role and other bots' roles are left out and listed.</remarks>
+    [Fact]
+    public void Bot_roles_are_not_reported_and_are_listed_separately()
+    {
+        const ulong botRole = 50;
+        var roles = Roles().Append(new RoleSnapshot(botRole, "Grimoire", DiscordPermissions.None, IsBotRole: true)).ToList();
+
+        var result = Analyze(Guild([Channel(overwrites: [MuteDeny, Role(botRole, allow: Speak)])], roles: roles));
+
+        result.ChannelFindings.ShouldBeEmpty();
+        result.BotRoles.ShouldHaveSingleItem().Id.ShouldBe(botRole);
+        result.IgnoredRoles.ShouldBeEmpty();
+    }
+
     // ---- locks ----
 
     /// <remarks>Cases: DIAG-29.</remarks>
@@ -178,6 +215,17 @@ public sealed class ModerationDiagnosticsTests
             .ShouldHaveSingleItem().SubjectIds.ShouldBe([ModeratorRole]);
         Of(Analyze(Guild([Channel(ChannelKind.Voice, false, mute)])), ChannelFindingKind.BotCannotLock)
             .ShouldHaveSingleItem();
+    }
+
+    /// <remarks>KI-59, DIAG-36: <c>/Lock</c> refuses media channels, so only their mute overwrite is checked.</remarks>
+    [Fact]
+    public void Channels_that_cannot_be_locked_are_only_mute_checked()
+    {
+        var media = Channel(botCanManage: false, overwrites: Role(ModeratorRole, allow: Speak)) with { CanBeLocked = false };
+
+        Analyze(Guild([media])).ChannelFindings.Select(f => f.Kind).ShouldBe([
+            ChannelFindingKind.MuteRoleNotDenied
+        ]);
     }
 
     // ---- guild level ----

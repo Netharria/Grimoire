@@ -49,6 +49,20 @@ public sealed class EffectivePermissionsTests
         For(channel, AdminRole).HasAllPermissions(Speak).ShouldBeTrue();
     }
 
+    /// <remarks>KI-57: without View Channel, Discord grants nothing else in the channel.</remarks>
+    [Fact]
+    public void A_channel_the_member_cannot_see_grants_nothing()
+        => For(Channel(overwrites: Role(TestGuild, deny: See))).ShouldBe(DiscordPermissions.None);
+
+    /// <remarks>KI-57</remarks>
+    [Fact]
+    public void A_role_that_may_see_a_hidden_channel_gets_its_permissions()
+    {
+        var channel = Channel(overwrites: [Role(TestGuild, deny: See), Role(ModeratorRole, allow: See)]);
+
+        For(channel, ModeratorRole).HasAllPermissions(Speak).ShouldBeTrue();
+    }
+
     [Fact]
     public void Overwrites_for_roles_the_member_does_not_hold_are_ignored()
         => For(Channel(overwrites: Role(ModeratorRole, deny: Speak))).HasAllPermissions(Speak).ShouldBeTrue();

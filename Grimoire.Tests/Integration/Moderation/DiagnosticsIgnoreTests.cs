@@ -150,25 +150,52 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
         (await this.StoredAsync()).ShouldBeEmpty();
     }
 
-    /// <summary>DIAG-67: an ignored role deleted in Discord stays on the list, and View still shows it.</summary>
+    /// <summary>
+    ///     DIAG-67 (KI-62): a deleted role can't be picked in Remove, so when Discord deletes an ignored role it is taken
+    ///     off the list, and the mod log is told. Other ignored items stay.
+    /// </summary>
     [Fact]
-    public async Task View_StillShowsAnIgnoredRoleThatWasDeleted()
+    public async Task AnIgnoredRoleDeletedInDiscord_IsTakenOffTheList_AndTheModLogTold()
     {
         var roleId = this._bot.Rest.CreateRole("Temporary");
         await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this.Guild.HasRole(roleId)), found => found);
-        await this.IgnoreAsync("add", SlashOption.MentionableRole("items_0", roleId));
+        await this.IgnoreAsync("add",
+            SlashOption.MentionableRole("items_0", roleId), SlashOption.MentionableUser("items_1", this.Guild.User1));
+
         this._bot.Rest.DeleteRole(roleId);
 
-        Fields(await this.IgnoreAsync("view"))["Roles"].ShouldBe($"<@&{roleId}>");
-        (await this.StoredAsync()).Single().ShouldBeOfType<DiagnosticsIgnoredRole>().RoleId.ShouldBe(new RoleId(roleId));
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"The role **Temporary** (`{roleId}`) was deleted, so it is no longer ignored by the diagnostics.");
+        (await this.StoredAsync()).ShouldHaveSingleItem().ShouldBeOfType<DiagnosticsIgnoredMember>().UserId
+            .ShouldBe(new UserId(this.Guild.User1.Id));
+        Fields(await this.IgnoreAsync("view"))["Roles"].ShouldBe("None");
+        this._bot.Rest.Unhandled.ShouldBeEmpty();
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>KI-62: deleting a role that isn't ignored changes nothing and posts nothing.</summary>
+    [Fact]
+    public async Task DeletingARoleThatIsNotIgnored_PostsNothing()
+    {
+        var roleId = this._bot.Rest.CreateRole("Temporary");
+        await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this.Guild.HasRole(roleId)), found => found);
+        await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1));
+
+        this._bot.Rest.DeleteRole(roleId);
+
+        (await this._bot.Rest.ReceivesRequestWithinAsync(request => this._bot.IsModLogPost(request)
+                && request.Json?["embeds"]?[0]?["description"]?.GetValue<string>().Contains("no longer ignored",
+                    StringComparison.Ordinal) == true,
+            NothingHappensWindow)).ShouldBeFalse();
+        (await this.StoredAsync()).ShouldHaveSingleItem();
     }
 
     /// <summary>
-    ///     DIAG-68 (KI-62): with more ignored roles than fit, View cuts the field at 1000 characters, which can split a
-    ///     mention and hides how many are left. It should show only whole mentions and say how many more there are.
+    ///     DIAG-68 (KI-62): with more ignored roles than fit in one field, View splits them between mentions into
+    ///     "Roles (continued)" fields, so every mention is whole and none is left out.
     /// </summary>
-    [Fact(Skip = "Fails: View cuts the Roles field at 1000 characters, splitting a mention and hiding the count. KI-62")]
-    public async Task View_OfALongList_ShowsWholeMentions_AndHowManyAreLeft()
+    [Fact]
+    public async Task View_OfALongList_SplitsBetweenMentions_AndShowsThemAll()
     {
         var now = DateTimeOffset.UtcNow;
         var roles = Enumerable.Range(0, 60)
@@ -177,13 +204,17 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
             .ToList();
         (await this.Settings.AddDiagnosticsIgnoredItemsAsync(this.GuildId, roles, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
 
-        var text = Fields(await this.IgnoreAsync("view"))["Roles"];
+        var fields = (await this.IgnoreAsync("view")).Embed!["fields"]!.AsArray()
+            .Select(field => (Name: field!["name"]!.GetValue<string>(), Value: field["value"]!.GetValue<string>()))
+            .ToList();
 
-        var shown = WholeRoleMention().Matches(text).Count;
-        shown.ShouldBePositive();
-        text.Split("<@&").Length.ShouldBe(shown + 1, "every mention shown is whole");
-        if (shown < roles.Count)
-            text.ShouldContain($"{roles.Count - shown}");
+        fields.Select(field => field.Name).ShouldBe(["Roles", "Roles (continued)", "Members"]);
+        var roleFields = fields.Where(field => field.Name.StartsWith("Roles", StringComparison.Ordinal)).ToList();
+        roleFields.ShouldAllBe(field => field.Value.Length <= 1024);
+        roleFields.ShouldAllBe(field => field.Value.Split("<@&", StringSplitOptions.None).Length
+                                        == WholeRoleMention().Matches(field.Value).Count + 1);
+        roleFields.SelectMany(field => WholeRoleMention().Matches(field.Value).Select(match => match.Value))
+            .ShouldBe(roles.Cast<DiagnosticsIgnoredRole>().Select(role => $"<@&{role.RoleId.Value}>"), ignoreOrder: true);
     }
 
     /// <summary>DIAG-69: when the list can't be saved, Add says so privately and logs nothing.</summary>

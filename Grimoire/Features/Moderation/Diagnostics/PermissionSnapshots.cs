@@ -28,14 +28,21 @@ public sealed record OverwriteSnapshot(
     DiscordPermissions Allowed,
     DiscordPermissions Denied);
 
-public sealed record RoleSnapshot(ulong Id, string Name, DiscordPermissions Permissions);
+/// <param name="IsBotRole">
+///     Managed by a bot integration (tagged with the bot's id), this bot's included. Bots need their own permissions
+///     in channels, and nobody is muted or locked out through such a role, so the checks leave it out. A role a bot
+///     merely holds, such as a staff role, is still checked, and so are other managed roles such as Server Booster.
+/// </param>
+public sealed record RoleSnapshot(ulong Id, string Name, DiscordPermissions Permissions, bool IsBotRole = false);
 
+/// <param name="CanBeLocked">Whether <c>/Lock</c> accepts the channel. It refuses media channels.</param>
 public sealed record ChannelSnapshot(
     ulong Id,
     string Name,
     ChannelKind Kind,
     IReadOnlyList<OverwriteSnapshot> Overwrites,
-    bool BotCanManage);
+    bool BotCanManage,
+    bool CanBeLocked = true);
 
 /// <param name="Roles">All roles. The @everyone role has the same ID as the guild.</param>
 /// <param name="MuteRoleId">The configured mute role, if any.</param>

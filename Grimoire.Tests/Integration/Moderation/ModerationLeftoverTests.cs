@@ -64,7 +64,9 @@ public sealed class ModerationLeftoverTests(GrimoireCoreFactory database) : IAsy
         var roleId = this._bot.Rest.CreateRole("Muted");
         (await this.Settings.SetMuteRole(new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId),
             TestContext.Current.CancellationToken)).ShouldSucceed();
-        this.Guild.SetOverwrite(this.Guild.General.Id, this.Guild.HigherRoleId, 0, FakeGuild.SendMessagesPermission, 0);
+        // The fake's @everyone has no permissions, so the role must also be allowed to see the channel (KI-57).
+        this.Guild.SetOverwrite(this.Guild.General.Id, this.Guild.HigherRoleId, 0,
+            FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission, 0);
         this._bot.Gateway.Dispatch("CHANNEL_UPDATE", this.Guild.ChannelJson(this.Guild.General));
         await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
 

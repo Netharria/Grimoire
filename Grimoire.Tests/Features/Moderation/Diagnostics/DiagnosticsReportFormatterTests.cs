@@ -42,6 +42,17 @@ public sealed class DiagnosticsReportFormatterTests
             .ShouldBeLessThan(text.IndexOf("No problems found.", StringComparison.Ordinal));
     }
 
+    /// <remarks>KI-58</remarks>
+    [Fact]
+    public void Bot_roles_are_listed_with_the_excluded_roles()
+    {
+        var roles = Roles().Append(new RoleSnapshot(50, "Grimoire", DiscordPermissions.None, IsBotRole: true)).ToList();
+        var (guild, result) = Run(Guild([Channel(overwrites: MuteDeny)], roles: roles));
+
+        DiagnosticsReportFormatter.BuildText(guild, result)
+            .ShouldContain("Bot roles (excluded, bots need their own channel permissions): Grimoire\n");
+    }
+
     [Fact]
     public void Ignored_members_are_listed_with_the_excluded_roles()
     {

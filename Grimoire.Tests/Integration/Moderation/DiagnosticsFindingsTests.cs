@@ -180,7 +180,7 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>DIAG-36 (KI-59): <c>/Lock</c> refuses media channels, so they should not get lock findings. Forums do.</summary>
-    [Fact(Skip = "Fails: media channels are lock-checked like text channels, though /Lock refuses them. KI-59")]
+    [Fact]
     public async Task Check_DoesNotLockCheckMediaChannels()
     {
         await this.StartMutedGuildAsync(guild =>
@@ -200,7 +200,7 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
     ///     DIAG-37 (KI-58): the bot's own role often has an allow overwrite, such as Send Messages in the mod log. It
     ///     should be left out like Administrator roles, not reported as speaking while muted or locked.
     /// </summary>
-    [Fact(Skip = "Fails: the bot's own role is reported as able to speak while muted and while locked. KI-58")]
+    [Fact]
     public async Task Check_LeavesOutTheBotsOwnRole()
     {
         await this.StartMutedGuildAsync(guild =>
@@ -216,10 +216,30 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>
-    ///     DIAG-38 (KI-57): a channel @everyone can't see needs no mute overwrite, because no muted member can reach
-    ///     it. View Channel isn't considered, so it is reported.
+    ///     DIAG-37 (KI-58): only roles managed by a bot are left out. A staff role that the bot also holds is held by
+    ///     people too, so its allow overwrite is still reported.
     /// </summary>
-    [Fact(Skip = "Fails: View Channel is ignored, so a channel hidden from @everyone is listed under mutes. KI-57")]
+    [Fact]
+    public async Task Check_StillReportsARoleTheBotHolds_ThatIsNotManaged()
+    {
+        await this.StartMutedGuildAsync(guild =>
+        {
+            guild.BotPermissions = PlainBot | FakeGuild.ManageRolesPermission | FakeGuild.ManageChannelsPermission;
+            var staff = guild.AddRole("Staff");
+            guild.GrantRole(guild.Bot, staff);
+            guild.SetOverwrite(guild.ModLog.Id, staff, 0, SendMessages, 0);
+        });
+
+        var report = (await this.CheckAsync(this.Guild.Admin)).Report;
+
+        Findings(report, LocksSection, this.Guild.ModLog).ShouldNotBeEmpty();
+    }
+
+    /// <summary>
+    ///     DIAG-38 (KI-57): a channel @everyone can't see needs no mute overwrite, because no muted member can reach
+    ///     it, so it is not reported.
+    /// </summary>
+    [Fact]
     public async Task Check_LeavesOutAChannelThatEveryoneCannotSee()
     {
         await this.StartMutedGuildAsync(

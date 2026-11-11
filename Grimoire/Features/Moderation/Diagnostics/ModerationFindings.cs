@@ -47,9 +47,11 @@ public sealed record ChannelFinding(
 
 /// <param name="IgnoredMemberIds">Members whose own overwrites were excluded on request.</param>
 /// <param name="AdministratorRoles">Excluded automatically, because Administrator ignores overwrites.</param>
+/// <param name="BotRoles">Excluded automatically: roles of this bot and other bots' managed roles.</param>
 /// <param name="IgnoredRoles">Excluded because the moderator asked for it, e.g. moderators who may speak in locked channels.</param>
 public sealed record DiagnosticsResult(
     IReadOnlyList<RoleSnapshot> AdministratorRoles,
+    IReadOnlyList<RoleSnapshot> BotRoles,
     IReadOnlyList<RoleSnapshot> IgnoredRoles,
     IReadOnlyList<ulong> IgnoredMemberIds,
     IReadOnlyList<GuildFinding> GuildFindings,

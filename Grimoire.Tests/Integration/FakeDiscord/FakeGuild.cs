@@ -324,7 +324,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
         lock (this._addedRoles)
             return this.FixedRoles().Concat(this._addedRoles.Select(role => (Id: role.Key, role.Value.Name, role.Value.Position, role.Value.Permissions)))
                 .Where(role => role.Id == roleId)
-                .Select(role => RoleJson(role.Id, role.Name, role.Position, role.Permissions, this._managedRoles.Contains(role.Id)))
+                .Select(role => this.RoleJson(role.Id, role.Name, role.Position, role.Permissions))
                 .FirstOrDefault();
     }
 
@@ -344,7 +344,7 @@ public sealed class FakeGuild(ulong idOffset = 0)
     {
         lock (this._addedRoles)
             return [.. this.FixedRoles().Concat(this._addedRoles.Select(role => (Id: role.Key, role.Value.Name, role.Value.Position, role.Value.Permissions)))
-                .Select(role => (JsonNode)RoleJson(role.Id, role.Name, role.Position, role.Permissions, this._managedRoles.Contains(role.Id)))];
+                .Select(role => (JsonNode)this.RoleJson(role.Id, role.Name, role.Position, role.Permissions))];
     }
 
     /// <summary>Active threads, sent in <c>GUILD_CREATE</c>'s <c>threads</c> array as Discord does.</summary>
@@ -587,6 +587,18 @@ public sealed class FakeGuild(ulong idOffset = 0)
         };
         if (includeUser)
             json["user"] = member.User.ToJson();
+        return json;
+    }
+
+    /// <summary>
+    ///     The bot's role is sent as Discord sends an integration role: managed, and tagged with the bot's id. Other
+    ///     managed roles are added with <see cref="AddRole" />.
+    /// </summary>
+    private JsonObject RoleJson(ulong id, string name, int position, ulong permissions)
+    {
+        var json = RoleJson(id, name, position, permissions, id == this.BotRoleId || this._managedRoles.Contains(id));
+        if (id == this.BotRoleId)
+            json["tags"] = new JsonObject { ["bot_id"] = FakeUser.Snowflake(this.Bot.Id) };
         return json;
     }
 

@@ -100,17 +100,56 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
             var items = await this._settingsModule.GetDiagnosticsIgnoredItemsAsync(ctx.RequiredGuild.GetGuildId())
                 .GetOrElse(() => FrozenSet<DiagnosticsIgnoredItem>.Empty);
 
-            await ctx.ReplyAsync(embed: new DiscordEmbedBuilder()
-                .WithTitle("Ignored by the diagnostics")
-                .AddField("Roles", Join(items.OfType<DiagnosticsIgnoredRole>().Select(r => $"<@&{r.RoleId.Value}>")))
-                .AddField("Members",
-                    Join(items.OfType<DiagnosticsIgnoredMember>().Select(m => $"<@{m.UserId.Value}>"))));
+            await ctx.ReplyPagesAsync(ViewPages(items));
         }
 
-        private static string Join(IEnumerable<string> mentions)
+        private const int MaxFieldLength = 1024;
+        private const int MaxFieldsPerPage = 25;
+
+        /// <summary>Room for field names and values, under Discord's 6,000 for a whole embed with title and footer.</summary>
+        private const int MaxFieldTextPerPage = 5500;
+
+        /// <summary>
+        ///     The ignore list as embed fields: Roles, then Members, each split between mentions into
+        ///     "(continued)" fields, and the fields split into as many pages as they need. KI-62.
+        /// </summary>
+        internal static IReadOnlyList<DiscordEmbedBuilder> ViewPages(IReadOnlyCollection<DiagnosticsIgnoredItem> items)
+            => [
+                .. PackFields([
+                    .. Section("Roles", items.OfType<DiagnosticsIgnoredRole>().Select(r => $"<@&{r.RoleId.Value}>")),
+                    .. Section("Members", items.OfType<DiagnosticsIgnoredMember>().Select(m => $"<@{m.UserId.Value}>"))
+                ]).Select(fields => fields.Aggregate(
+                    new DiscordEmbedBuilder().WithTitle("Ignored by the diagnostics"),
+                    (embed, field) => embed.AddField(field.Name, field.Value)))
+            ];
+
+        // Mentions never contain a line break, so packing them as lines and joining with spaces keeps each whole.
+        private static IEnumerable<(string Name, string Value)> Section(string name, IEnumerable<string> mentions)
+            => PagedReplyExtensions.Paginate(mentions, MaxFieldLength)
+                .DefaultIfEmpty("None")
+                .Select((text, index) => (index == 0 ? name : $"{name} (continued)", text.Replace('\n', ' ')));
+
+        private static IEnumerable<IReadOnlyList<(string Name, string Value)>> PackFields(
+            IEnumerable<(string Name, string Value)> fields)
         {
-            var text = string.Join(' ', mentions);
-            return text.Length == 0 ? "None" : text.Length <= 1000 ? text : text[..997] + "...";
+            List<(string Name, string Value)> page = [];
+            var length = 0;
+            foreach (var field in fields)
+            {
+                var size = field.Name.Length + field.Value.Length;
+                if (page.Count > 0 && (page.Count == MaxFieldsPerPage || length + size > MaxFieldTextPerPage))
+                {
+                    yield return page;
+                    page = [];
+                    length = 0;
+                }
+
+                page.Add(field);
+                length += size;
+            }
+
+            if (page.Count > 0)
+                yield return page;
         }
 
         private static (List<DiagnosticsIgnoredItem> Items, List<SnowflakeObject> Skipped) ToIgnoredItems(

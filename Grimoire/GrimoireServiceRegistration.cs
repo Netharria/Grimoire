@@ -141,6 +141,7 @@ internal static class GrimoireServiceRegistration
                         .AddEventHandlers<UserJoinedWhileMuted>()
                         .AddEventHandlers<LockedThreadEvents>()
                         .AddEventHandlers<SpamEvents>()
+                        .AddEventHandlers<DiagnosticsIgnoredRoleDeleted>()
                         //General Events
                         .AddEventHandlers<GatewayEvents>()
                         .AddEventHandlers<GuildAdded>()

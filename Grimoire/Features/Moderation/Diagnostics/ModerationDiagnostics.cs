@@ -16,12 +16,15 @@ public static class ModerationDiagnostics
         var administrators = guild.Roles
             .Where(role => role.Id != guild.GuildId && role.Permissions.HasPermission(DiscordPermission.Administrator))
             .ToList();
+        var botRoles = guild.Roles
+            .Where(role => role.IsBotRole && role.Id != guild.GuildId && !administrators.Contains(role))
+            .ToList();
         var ignored = guild.Roles
             .Where(role => role.Id != guild.GuildId && ignoredRoleIds.Contains(role.Id)
-                                                     && !administrators.Contains(role))
+                                                     && !administrators.Contains(role) && !botRoles.Contains(role))
             .ToList();
 
-        var skipped = administrators.Concat(ignored).Select(role => role.Id).ToHashSet();
+        var skipped = administrators.Concat(botRoles).Concat(ignored).Select(role => role.Id).ToHashSet();
         var candidates = guild.Roles
             .Where(role => role.Id != guild.GuildId && role.Id != guild.MuteRoleId && !skipped.Contains(role.Id))
             .ToList();
@@ -30,6 +33,7 @@ public static class ModerationDiagnostics
 
         return new DiagnosticsResult(
             administrators,
+            botRoles,
             ignored,
             [.. ignores.MemberIds.Order()],
             [.. CheckGuild(guild, muteRoleExists)],
@@ -87,6 +91,9 @@ public static class ModerationDiagnostics
     private static IEnumerable<ChannelFinding> CheckLocks(GuildSnapshot guild, ChannelSnapshot channel,
         IReadOnlyList<RoleSnapshot> candidates, IReadOnlySet<ulong> ignoredMemberIds)
     {
+        // Media channels can't be locked: /Lock refuses them.
+        if (!channel.CanBeLocked) yield break;
+
         if (!channel.BotCanManage)
             yield return new ChannelFinding(channel, ChannelFindingKind.BotCannotLock, []);
 
@@ -124,7 +131,8 @@ public static class ModerationDiagnostics
         IReadOnlySet<ulong> ignoredMemberIds)
         => channel.Overwrites
             .Where(o => o.Target == OverwriteTarget.Member && !ignoredMemberIds.Contains(o.Id)
-                                                            && o.Allowed.HasAnyPermission(relevant))
+                                                            && o.Allowed.HasAnyPermission(relevant)
+                                                            && !o.Denied.HasPermission(DiscordPermission.ViewChannel))
             .Select(o => o.Id)
             .ToList();
 

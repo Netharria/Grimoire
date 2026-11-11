@@ -22,11 +22,13 @@ internal static class DiagnosticsTestData
     public static readonly DiscordPermissions Speak = PermissionValues.LockPermissions;
     public static readonly DiscordPermissions VoiceSpeak = PermissionValues.VoiceLockPermissions;
 
+    public static readonly DiscordPermissions See = new(DiscordPermission.ViewChannel);
+
     public static DiscordPermissions Only(DiscordPermission permission) => new(permission);
 
     public static IReadOnlyList<RoleSnapshot> Roles(DiscordPermissions? everyone = null) =>
     [
-        new(TestGuild, "@everyone", everyone ?? Speak | VoiceSpeak),
+        new(TestGuild, "@everyone", everyone ?? See | Speak | VoiceSpeak),
         new(MuteRole, "Muted", DiscordPermissions.None),
         new(ModeratorRole, "Moderator", DiscordPermissions.None),
         new(AdminRole, "Admin", Only(DiscordPermission.Administrator)),
@@ -36,8 +38,8 @@ internal static class DiagnosticsTestData
     public static OverwriteSnapshot Role(ulong id, DiscordPermissions? allow = null, DiscordPermissions? deny = null)
         => new(id, OverwriteTarget.Role, allow ?? DiscordPermissions.None, deny ?? DiscordPermissions.None);
 
-    public static OverwriteSnapshot Member(ulong id, DiscordPermissions allow)
-        => new(id, OverwriteTarget.Member, allow, DiscordPermissions.None);
+    public static OverwriteSnapshot Member(ulong id, DiscordPermissions allow, DiscordPermissions? deny = null)
+        => new(id, OverwriteTarget.Member, allow, deny ?? DiscordPermissions.None);
 
     public static ChannelSnapshot Channel(ChannelKind kind = ChannelKind.Text, bool botCanManage = true,
         params OverwriteSnapshot[] overwrites)

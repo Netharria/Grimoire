@@ -24,19 +24,26 @@ public static class PagedReplyExtensions
         ///     reply with no buttons.
         /// </summary>
         /// <param name="ephemeral">Show the pages to the invoker only, for a reply that was deferred that way.</param>
-        public async Task ReplyPagedAsync(DiscordEmbedBuilder template, IEnumerable<string> lines, bool ephemeral = false)
+        public Task ReplyPagedAsync(DiscordEmbedBuilder template, IEnumerable<string> lines, bool ephemeral = false)
+            => ctx.ReplyPagesAsync(
+                [.. Paginate(lines).DefaultIfEmpty("").Select(text => new DiscordEmbedBuilder(template).WithDescription(text))],
+                ephemeral);
+
+        /// <summary>
+        ///     Replies with ready-made pages. One page is an ordinary reply with no buttons; more get a "Page n of m"
+        ///     footer and buttons for the invoker to move between them.
+        /// </summary>
+        /// <param name="ephemeral">Show the pages to the invoker only, for a reply that was deferred that way.</param>
+        public async Task ReplyPagesAsync(IReadOnlyList<DiscordEmbedBuilder> pages, bool ephemeral = false)
         {
-            var pages = Paginate(lines);
             if (pages.Count <= 1)
             {
-                await ctx.ReplyAsync(embed: new DiscordEmbedBuilder(template).WithDescription(pages.SingleOrDefault() ?? "").Build(),
-                    ephemeral: ephemeral);
+                await ctx.ReplyAsync(embed: (pages.SingleOrDefault() ?? new DiscordEmbedBuilder()).Build(), ephemeral: ephemeral);
                 return;
             }
 
             var embedPages = pages
-                .Select((text, index) => new Page(embed: new DiscordEmbedBuilder(template)
-                    .WithDescription(text)
+                .Select((page, index) => new Page(embed: new DiscordEmbedBuilder(page)
                     .WithFooter($"Page {index + 1} of {pages.Count}")))
                 .ToArray();
             if (ctx is SlashCommandContext slashContext)

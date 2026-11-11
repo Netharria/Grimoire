@@ -7,7 +7,10 @@
 
 namespace Grimoire.Features.Moderation.Diagnostics;
 
-/// <summary>Discord's permission resolution order for a hypothetical member holding a given set of roles.</summary>
+/// <summary>
+///     Discord's permission resolution order for a hypothetical member holding a given set of roles. A member who
+///     can't view the channel gets no permissions in it, so a hidden channel can't leak.
+/// </summary>
 public static class EffectivePermissions
 {
     /// <param name="heldRoleIds">The member's roles, not counting @everyone which everyone has.</param>
@@ -38,6 +41,9 @@ public static class EffectivePermissions
         var deny = held.Aggregate(DiscordPermissions.None, (acc, o) => acc | o.Denied);
         var allow = held.Aggregate(DiscordPermissions.None, (acc, o) => acc | o.Allowed);
 
-        return (permissions & ~deny) | allow;
+        var resolved = (permissions & ~deny) | allow;
+
+        // Without View Channel the channel is hidden, and Discord grants nothing else in it.
+        return resolved.HasPermission(DiscordPermission.ViewChannel) ? resolved : DiscordPermissions.None;
     }
 }

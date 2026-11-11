@@ -17,7 +17,10 @@ public static class DiagnosticsSnapshotBuilder
 
         return new GuildSnapshot(
             guild.Id,
-            [.. guild.Roles.Values.Select(r => new RoleSnapshot(r.Id, r.Name, r.Permissions))],
+            [
+                .. guild.Roles.Values.Select(r => new RoleSnapshot(r.Id, r.Name, r.Permissions,
+                    r.Tags?.BotId is not null))
+            ],
             muteRoleId?.Value,
             muteRole?.Position,
             bot.Permissions,
@@ -47,6 +50,7 @@ public static class DiagnosticsSnapshotBuilder
                             o.Allowed,
                             o.Denied))
                 ],
-                channel.PermissionsFor(bot).HasPermission(DiscordPermission.ManageChannels))
+                channel.PermissionsFor(bot).HasPermission(DiscordPermission.ManageChannels),
+                channel.Type is not DiscordChannelType.GuildMedia)
             : null;
 }
