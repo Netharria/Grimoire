@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -41,9 +42,16 @@ internal sealed class CleanupLogsBackgroundTask(
             .Select(async (channel, token) =>
             {
                 token.ThrowIfCancellationRequested();
+                DiscordChannel? discordChannel = null;
+                try
+                {
+                    discordChannel = await discordClient.GetChannelOrDefaultAsync(channel.ChannelId);
+                }
+                catch (UnauthorizedException) { }
+
                 return new
                 {
-                    DiscordChannel = await discordClient.GetChannelOrDefaultAsync(channel.ChannelId),
+                    DiscordChannel = discordChannel,
                     DatabaseChannel = channel
                 };
             })
