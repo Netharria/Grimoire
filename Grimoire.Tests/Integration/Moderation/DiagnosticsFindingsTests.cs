@@ -41,10 +41,13 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
     private const ulong Connect = 1UL << 20;
     private const ulong Speak = 1UL << 21;
     private const ulong TextLock = SendMessages | SendMessagesInThreads | SendTtsMessages | AddReactions;
-    private const ulong VoiceLock = Connect | Speak;
+    private const ulong VoiceSpeak = Connect | Speak;
+
+    /// <summary>What the mute role denies on voice and stage channels, which have a text chat but no threads (KI-56).</summary>
+    private const ulong VoiceMute = VoiceSpeak | SendMessages | SendTtsMessages | AddReactions;
 
     /// <summary>What @everyone holds in a usual server: it can see, type and talk.</summary>
-    private const ulong EveryoneCanSpeak = FakeGuild.ViewChannelPermission | TextLock | VoiceLock;
+    private const ulong EveryoneCanSpeak = FakeGuild.ViewChannelPermission | TextLock | VoiceSpeak;
 
     /// <summary>A bot without Administrator, Manage Roles or Manage Channels.</summary>
     private const ulong PlainBot = FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission;
@@ -229,10 +232,10 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
     }
 
     /// <summary>
-    ///     DIAG-39 (KI-56): voice and stage channels have a text chat, so the mute role must deny Send Messages there
-    ///     too. <c>/Mutes Create</c> denies only Connect and Speak.
+    ///     DIAG-39 (KI-56): voice and stage channels have a text chat, so the mute role must deny Send Messages, Send
+    ///     TTS Messages and Add Reactions there too, not only Connect and Speak.
     /// </summary>
-    [Fact(Skip = "Fails: the mute overwrite on voice and stage channels denies only Connect and Speak. KI-56")]
+    [Fact]
     public async Task MutesCreate_DeniesSendMessagesInVoiceAndStageChat()
     {
         await this.StartMutedGuildAsync(configureMuteRole: false);
@@ -241,17 +244,17 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
         var roleId = (await this.Settings.GetConfiguredMuteRole(new GuildId(this.Guild.Id), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed()!.Value.Value;
 
         foreach (var channel in new[] { this.Guild.Voice, this.Guild.Stage })
-            ((this.Guild.OverwriteOf(channel.Id, roleId)?.Deny ?? 0) & SendMessages).ShouldBe(SendMessages, channel.Name);
+            ((this.Guild.OverwriteOf(channel.Id, roleId)?.Deny ?? 0) & VoiceMute).ShouldBe(VoiceMute, channel.Name);
     }
 
     /// <summary>
     ///     DIAG-39 (KI-56): the diagnostics use the same voice set, so a voice channel whose mute overwrite denies only
-    ///     Connect and Speak isn't flagged, though muted members can still type in its chat.
+    ///     Connect and Speak (the overwrite made before the fix) is flagged, since muted members can type in its chat.
     /// </summary>
-    [Fact(Skip = "Fails: the diagnostics check voice channels for Connect and Speak only, not their text chat. KI-56")]
+    [Fact]
     public async Task Check_FlagsAVoiceChannelWhoseChatMutedMembersCanUse()
     {
-        await this.StartMutedGuildAsync();
+        await this.StartMutedGuildAsync(voiceMute: VoiceSpeak);
 
         var report = (await this.CheckAsync(this.Guild.Admin)).Report;
 
@@ -333,7 +336,7 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
     /// </summary>
     private async Task StartMutedGuildAsync(Action<FakeGuild>? configureGuild = null,
         Func<FakeGuild, FakeChannel[]>? unmuted = null, bool configureMuteRole = true, int muteRolePosition = 1,
-        bool secondGuild = false)
+        bool secondGuild = false, ulong voiceMute = VoiceMute)
     {
         this._bot = await GrimoireTestBot.StartAsync(database, guild =>
         {
@@ -347,7 +350,7 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
                 if (channel.Type is FakeChannel.TextType or FakeChannel.ForumType or FakeChannel.MediaType)
                     guild.SetOverwrite(channel.Id, this._muteRoleId, 0, 0, TextLock);
                 else if (channel.Type is FakeChannel.VoiceType or FakeChannel.StageType)
-                    guild.SetOverwrite(channel.Id, this._muteRoleId, 0, 0, VoiceLock);
+                    guild.SetOverwrite(channel.Id, this._muteRoleId, 0, 0, voiceMute);
         }, secondGuild: secondGuild);
         await this._bot.ConfigureModerationAsync();
         if (configureMuteRole)

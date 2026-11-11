@@ -32,7 +32,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     private const ulong Speak = 1UL << 21;
     private const ulong AttachFiles = 1UL << 15;
     private const ulong TextLock = SendMessages | SendMessagesInThreads | SendTtsMessages | AddReactions;
-    private const ulong VoiceLock = Connect | Speak;
+    private const ulong VoiceMute = Connect | Speak | SendMessages | SendTtsMessages | AddReactions;
 
     private GrimoireTestBot _bot = null!;
 
@@ -249,7 +249,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
         foreach (var channel in new[] { this.Guild.General, this.Guild.ModLog, this.Guild.Forum, this.Guild.Private, this.Guild.Category })
             this.Guild.OverwriteOf(channel.Id, roleId).ShouldBe((0UL, TextLock), channel.Name);
         foreach (var channel in new[] { this.Guild.Voice, this.Guild.Stage })
-            this.Guild.OverwriteOf(channel.Id, roleId).ShouldBe((0UL, VoiceLock), channel.Name);
+            this.Guild.OverwriteOf(channel.Id, roleId).ShouldBe((0UL, VoiceMute), channel.Name);
         this.Guild.OverwriteOf(this.Guild.Announcements.Id, roleId).ShouldBeNull("announcement channels are skipped");
         this.Guild.OverwriteOf(this.Guild.PublicThread.Id, roleId).ShouldBeNull("threads inherit from their parent");
 

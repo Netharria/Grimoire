@@ -5,14 +5,20 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
+using DSharpPlus.Commands.ContextChecks;
+using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.SpamFilter.Commands;
 
 [Command("SpamFilter")]
+[RequireGuild]
+[RequireModuleEnabled(Module.AntiSpam)]
 internal class SpamFilterOverrideCommands(
-    SettingsModule settingsModule)
+    SettingsModule settingsModule,
+    GuildLog guildLog)
 {
     [Command("Override")]
     [Description("Overrides the default spam filter settings. Use this to control which channels are filtered.")]
@@ -50,7 +56,14 @@ internal class SpamFilterOverrideCommands(
         await ctx.ReplyResultAsync(
             await settingsModule.SetSpamFilterOverrideAsync(channel.GetChannelId(), guild.GetGuildId(),
                 ctx.GetModeratorId(), option),
-            message);
+            message,
+            () => guildLog.SendLogMessageAsync(new GuildLogMessage
+            {
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.Purple,
+                Description = $"{ctx.User.Mention} set the spam filter override of {channel.Mention} to {overrideSetting}."
+            }));
     }
 
     [Command("View")]
@@ -73,7 +86,8 @@ internal class SpamFilterOverrideCommands(
                 });
 
         await ctx.ReplyPagedAsync(
-            new DiscordEmbedBuilder().WithColor(GrimoireColor.Purple).WithAuthor("Spam Filter Override Settings"), lines);
+            new DiscordEmbedBuilder().WithColor(GrimoireColor.Purple).WithAuthor("Spam Filter Override Settings"),
+            lines.Count == 0 ? ["None"] : lines);
     }
 }
 

@@ -87,9 +87,6 @@ public static class ModerationDiagnostics
     private static IEnumerable<ChannelFinding> CheckLocks(GuildSnapshot guild, ChannelSnapshot channel,
         IReadOnlyList<RoleSnapshot> candidates, IReadOnlySet<ulong> ignoredMemberIds)
     {
-        // Locking only applies to text-like channels.
-        if (channel.Kind is not ChannelKind.Text) yield break;
-
         if (!channel.BotCanManage)
             yield return new ChannelFinding(channel, ChannelFindingKind.BotCannotLock, []);
 

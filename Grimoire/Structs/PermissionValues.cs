@@ -13,6 +13,17 @@ public struct PermissionValues
         => new(DiscordPermission.SendMessages, DiscordPermission.SendThreadMessages, DiscordPermission.SendTtsMessages,
             DiscordPermission.AddReactions);
 
+    /// <summary>
+    ///     What a lock or a mute denies on voice and stage channels. They have a text chat too, so this also denies
+    ///     what the text set denies, apart from Send Thread Messages: they have no threads (KI-56).
+    /// </summary>
     public static DiscordPermissions VoiceLockPermissions
-        => new(DiscordPermission.Connect, DiscordPermission.Speak);
+        => new(DiscordPermission.Connect, DiscordPermission.Speak, DiscordPermission.SendMessages,
+            DiscordPermission.SendTtsMessages, DiscordPermission.AddReactions);
+
+    /// <summary>The set a lock denies on a channel of this type: the voice set on voice and stage channels.</summary>
+    public static DiscordPermissions LockPermissionsFor(DiscordChannelType channelType)
+        => channelType is DiscordChannelType.Voice or DiscordChannelType.Stage
+            ? VoiceLockPermissions
+            : LockPermissions;
 }

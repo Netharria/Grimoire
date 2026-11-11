@@ -29,7 +29,8 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         [MinMaxValue(1, 36_500)] [Parameter("duration_amount")] [Description("The amount of time the lock will last.")]
         int durationAmount,
         [ChannelTypes(DiscordChannelType.Text, DiscordChannelType.PublicThread, DiscordChannelType.PrivateThread,
-            DiscordChannelType.Category, DiscordChannelType.GuildForum)]
+            DiscordChannelType.Category, DiscordChannelType.GuildForum, DiscordChannelType.Voice,
+            DiscordChannelType.Stage)]
         [Parameter("channel")]
         [Description("The channel to lock. Current channel if not specified.")]
         DiscordChannel? channel = null,
@@ -53,7 +54,9 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                 .Match<Error?>(_ => null, error => error);
         else if (channel.Type is DiscordChannelType.Text
                  or DiscordChannelType.Category
-                 or DiscordChannelType.GuildForum)
+                 or DiscordChannelType.GuildForum
+                 or DiscordChannelType.Voice
+                 or DiscordChannelType.Stage)
             failure = (await ChannelLockAsync(guild, ctx.GetModeratorId(), channel, reason, durationType, durationAmount))
                 .Match<Error?>(_ => null, error => error);
         else
@@ -91,6 +94,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
             .FirstOrDefault(x => x.Id == guild.EveryoneRole.Id);
         var previousAllowed = previousSetting?.Allowed ?? DiscordPermissions.None;
         var previousDenied = previousSetting?.Denied ?? DiscordPermissions.None;
+        var lockPermissions = PermissionValues.LockPermissionsFor(channel.Type);
         return ModerationReason.CreateIfNotNull(reason)
             .Bind(validatedReason =>
                 ChannelLocked.Create(
@@ -99,14 +103,16 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     channel.GetChannelId(),
                     guild.GetGuildId(),
                     DateTimeOffset.UtcNow,
-                    new PreviouslyAllowedPermissions(long.Parse(previousAllowed.GetLockPermissions().ToString())),
-                    new PreviouslyDeniedPermissions(long.Parse(previousDenied.GetLockPermissions().ToString())),
+                    new PreviouslyAllowedPermissions(
+                        long.Parse(previousAllowed.GetLockPermissions(lockPermissions).ToString())),
+                    new PreviouslyDeniedPermissions(
+                        long.Parse(previousDenied.GetLockPermissions(lockPermissions).ToString())),
                     durationType.GetDateTimeOffset(durationAmount)))
             .ToResult()
             .TapAsync(_ =>
                 channel.AddOverwriteAsync(guild.EveryoneRole,
-                    previousAllowed.RevokeLockPermissions(),
-                    previousDenied.SetLockPermissions()))
+                    previousAllowed.RevokeLockPermissions(lockPermissions),
+                    previousDenied.SetLockPermissions(lockPermissions)))
             .BindAsync(channelLock =>
                 settingsModule.AddChannelLock(channelLock));
     }

@@ -262,10 +262,10 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     /// <summary>
     ///     SPAM-27, SPAM-28, SPAM-29: when the bot can't give the mute role (no Manage Roles, the role above the bot, or
-    ///     the role deleted), nothing should be recorded. Today the sin and the mute are saved first, so the expiry
-    ///     task later "unmutes" a member who was never muted.
+    ///     the role deleted), nothing is recorded and the mod log is told why (KI-55). The role is granted before the
+    ///     sin and the mute are saved, so the expiry task never "unmutes" a member who was never muted.
     /// </summary>
-    [Theory(Skip = "Fails: the sin and MuteAdded row are saved before the role is looked up or granted. KI-55")]
+    [Theory]
     [InlineData("SPAM-27 no Manage Roles")]
     [InlineData("SPAM-28 role above the bot")]
     [InlineData("SPAM-29 role deleted")]
@@ -284,12 +284,37 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         await this.SpamAsync(this.Guild.User1, this.Guild.General);
 
+        var notice = await this._bot.WaitForModLogEmbedAsync(e =>
+            e["description"]?.GetValue<string>() is { } description && description.Contains("nobody was muted", StringComparison.Ordinal));
+        notice["author"]!["name"]!.GetValue<string>().ShouldBe("Setup problem", situation);
         await Task.Delay(HandlersSettle, TestContext.Current.CancellationToken);
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldNotContain(this._muteRoleId);
         await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse(situation);
         await using var settingsContext = database.CreateSettingsDbContext();
         (await settingsContext.Mutes.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse(situation);
+    }
+
+    /// <summary>
+    ///     KI-55, as KI-07 for /Mute: a spam mute that can't be recorded is undone, since nothing would ever lift the
+    ///     role, the sin is taken back off, and the mod log is told.
+    /// </summary>
+    [Fact]
+    public async Task ASpamMuteThatCannotBeRecorded_IsUndone_AndTheModLogTold()
+    {
+        await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
+        {
+            await this.SpamAsync(this.Guild.User1, this.Guild.General);
+
+            await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+                == $"Spam from {this.Guild.User1.MemberMention} was caught, but the mute could not be recorded, so it has been undone.");
+        }
+
+        this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldNotContain(this._muteRoleId);
+        await using var dbContext = database.CreateDbContext();
+        (await dbContext.Sins.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        await using var settingsContext = database.CreateSettingsDbContext();
+        (await settingsContext.Mutes.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     // ── Where points live ─────────────────────────────────────────────────────

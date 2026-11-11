@@ -19,8 +19,6 @@ namespace Grimoire.Tests.Integration.Moderation;
 [Collection("Test collection")]
 public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
-    private static readonly TimeSpan NoModLogWindow = TimeSpan.FromSeconds(2);
-
     private GrimoireTestBot _bot = null!;
 
     private FakeGuild Guild => this._bot.Guild;
@@ -111,7 +109,7 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
     ///     SPAM-50, XC-89: with AntiSpam off, Override should refuse the way other module commands do. It has no module
     ///     check, so the override is saved.
     /// </summary>
-    [Theory(Skip = "Fails: /SpamFilter Override has no RequireModuleEnabled(AntiSpam), so it saves with AntiSpam off. KI-60")]
+    [Theory]
     [InlineData(SpamFilterOverrideSetting.Never)]
     [InlineData(SpamFilterOverrideSetting.Always)]
     public async Task Override_WithAntiSpamDisabled_IsRefused(SpamFilterOverrideSetting setting)
@@ -124,13 +122,14 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
         (await this.RowsAsync()).ShouldBeEmpty();
     }
 
-    /// <summary>SPAM-40, KI-60: every other settings change that saves posts to the mod log. Override posts nothing.</summary>
-    [Fact(Skip = "Fails: /SpamFilter Override posts nothing to the mod log, unlike every other settings change. KI-60")]
+    /// <summary>SPAM-40, KI-60: Override posts to the mod log, as every other settings change that saves does.</summary>
+    [Fact]
     public async Task Override_PostsToTheModLog()
     {
         await this.OverrideAsync(SpamFilterOverrideSetting.Never, this.Guild.General);
 
-        (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, NoModLogWindow)).ShouldBeTrue();
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"{this.Guild.Admin.MemberMention} set the spam filter override of {this.Guild.General.Mention} to Never.");
     }
 
     /// <summary>
@@ -153,7 +152,7 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
     // ── View ──────────────────────────────────────────────────────────────────
 
     /// <summary>SPAM-61: with no overrides, View should say "None", as other views do. It shows an empty embed.</summary>
-    [Fact(Skip = "Fails: /SpamFilter View pages an empty list, so the embed has only its author and no body. KI-61")]
+    [Fact]
     public async Task View_WithNoOverrides_SaysNone()
     {
         var view = await this.ViewAsync();
@@ -195,20 +194,16 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
     }
 
     /// <summary>
-    ///     SPAM-66: View works with AntiSpam off. If KI-60 is fixed with a module check on the whole command group,
-    ///     this case changes too.
+    ///     SPAM-66: KI-60 put the module check on the whole command group, so View is refused with AntiSpam off too, as
+    ///     the Log and Ignore views are with their modules off.
     /// </summary>
     [Fact]
-    public async Task View_WithAntiSpamDisabled_Works()
+    public async Task View_WithAntiSpamDisabled_IsRefused()
     {
         await this.OverrideAsync(SpamFilterOverrideSetting.Never, this.Guild.General);
         await this._bot.SetModuleAsync(Module.AntiSpam, false);
 
-        var view = await this.ViewAsync();
-
-        view.Embed!["author"]!["name"]!.GetValue<string>().ShouldBe("Spam Filter Override Settings");
-        view.Description.ShouldNotBeNull().ShouldContain($"{this.Guild.General.Mention} - Never Filter");
-        view.IsEphemeral.ShouldBeFalse();
+        (await this.ViewAsync()).Description.ShouldBe("This module is disabled in this server.");
     }
 
     /// <summary>SPAM-54: one guild's overrides are not listed in another guild.</summary>
@@ -218,6 +213,7 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
         await this._bot.DisposeAsync();
         this._bot = await GrimoireTestBot.StartAsync(database, secondGuild: true);
         var second = this._bot.SecondGuild!;
+        await this._bot.SetModuleAsync(Module.AntiSpam, true, second);
         await this.OverrideAsync(SpamFilterOverrideSetting.Never, this.Guild.General);
         await this._bot.RunSlashCommandAndWaitAsync(second.General, "spam_filter", second.Admin,
             SlashOption.Subcommand("override", SlashOption.Enum("option", SpamFilterOverrideSetting.Always),

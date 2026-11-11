@@ -31,7 +31,12 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
     private const ulong SendMessagesInThreads = 1UL << 38;
     private const ulong AttachFiles = 1UL << 15;
     private const ulong EmbedLinks = 1UL << 14;
+    private const ulong Connect = 1UL << 20;
+    private const ulong Speak = 1UL << 21;
     private const ulong TextLock = SendMessages | SendMessagesInThreads | SendTtsMessages | AddReactions;
+
+    /// <summary>What a lock denies on voice and stage channels: voice, and their text chat, which has no threads.</summary>
+    private const ulong VoiceLock = Connect | Speak | SendMessages | SendTtsMessages | AddReactions;
 
     private GrimoireTestBot _bot = null!;
 
@@ -154,6 +159,37 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         (await this.ActiveLockAsync(channel)).ShouldNotBeNull();
     }
 
+    /// <summary>Voice and stage channels are locked with the voice set, which also covers their text chat.</summary>
+    [Theory]
+    [InlineData("voice")]
+    [InlineData("stage")]
+    public async Task Lock_OfAVoiceOrStageChannel_DeniesTheVoiceSet(string kind)
+    {
+        var channel = kind == "voice" ? this.Guild.Voice : this.Guild.Stage;
+
+        (await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, channel)).Description
+            .ShouldBe($"{channel.Mention} has been locked for 2 Minutes");
+
+        this.EveryoneOverwrite(channel).ShouldBe((0UL, VoiceLock));
+        (await this.ActiveLockAsync(channel)).ShouldNotBeNull();
+        this._bot.Rest.Unhandled.ShouldBeEmpty();
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>Unlocking a voice channel puts its voice bits back, and leaves the rest alone.</summary>
+    [Fact]
+    public async Task Unlock_OfAVoiceChannel_RestoresItsVoiceBits()
+    {
+        await this.SetEveryoneOverwriteAsync(this.Guild.Voice, Connect, AttachFiles);
+        await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, this.Guild.Voice);
+
+        this.EveryoneOverwrite(this.Guild.Voice).ShouldBe((0UL, AttachFiles | VoiceLock));
+        (await this.ActiveLockAsync(this.Guild.Voice)).PreviouslyAllowed.Permissions.ShouldBe((long)Connect);
+
+        (await this.UnlockAsync(this.Guild.Voice)).Description.ShouldBe($"{this.Guild.Voice.Mention} has been unlocked");
+        this.EveryoneOverwrite(this.Guild.Voice).ShouldBe((Connect, AttachFiles));
+    }
+
     /// <summary>
     ///     M-8: a thread lock deletes every new message, so without Manage Messages it would be recorded and then fail
     ///     on every message. It's refused instead.
@@ -213,7 +249,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         var lockCommand = this._bot.Rest.RegisteredCommands["lock"];
         var options = lockCommand["options"]!.AsArray();
         options.Single(o => o!["name"]!.GetValue<string>() == "channel")!["channel_types"]!.AsArray()
-            .Select(type => type!.GetValue<int>()).ShouldBe([0, 11, 12, 4, 15], ignoreOrder: true);
+            .Select(type => type!.GetValue<int>()).ShouldBe([0, 11, 12, 4, 15, 2, 13], ignoreOrder: true);
         options.Single(o => o!["name"]!.GetValue<string>() == "duration_amount")!["min_value"]!.GetValue<int>().ShouldBe(1);
         var manageMessages = FakeGuild.ManageMessagesPermission.ToString(CultureInfo.InvariantCulture);
         lockCommand["default_member_permissions"]!.ToString().ShouldBe(manageMessages);

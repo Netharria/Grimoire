@@ -165,11 +165,20 @@ public sealed class ModerationDiagnosticsTests
         => Of(Analyze(Guild([Channel(botCanManage: false, overwrites: MuteDeny)])), ChannelFindingKind.BotCannotLock)
             .ShouldHaveSingleItem();
 
-    /// <remarks>Cases: DIAG-33.</remarks>
+    /// <remarks>Cases: DIAG-33. /Lock accepts voice and stage channels, so they are lock checked too.</remarks>
     [Fact]
-    public void Voice_channels_are_not_lock_checked()
-        => Analyze(Guild([Channel(ChannelKind.Voice, false, Role(MuteRole, deny: VoiceSpeak))])).ChannelFindings
+    public void Voice_channels_are_lock_checked_with_voice_permissions()
+    {
+        var mute = Role(MuteRole, deny: VoiceSpeak);
+
+        Of(Analyze(Guild([Channel(ChannelKind.Voice, overwrites: mute)])), ChannelFindingKind.RoleCanSpeakWhenLocked)
             .ShouldBeEmpty();
+        Of(Analyze(Guild([Channel(ChannelKind.Voice, overwrites: [mute, Role(ModeratorRole, allow: VoiceSpeak)])])),
+                ChannelFindingKind.RoleCanSpeakWhenLocked)
+            .ShouldHaveSingleItem().SubjectIds.ShouldBe([ModeratorRole]);
+        Of(Analyze(Guild([Channel(ChannelKind.Voice, false, mute)])), ChannelFindingKind.BotCannotLock)
+            .ShouldHaveSingleItem();
+    }
 
     // ---- guild level ----
 

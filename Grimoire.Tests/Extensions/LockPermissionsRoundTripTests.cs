@@ -19,9 +19,10 @@ namespace Grimoire.Tests.Extensions;
 public sealed class LockPermissionsRoundTripTests
 {
     private static readonly DiscordPermissions _lock = PermissionValues.LockPermissions;
+    private static readonly DiscordPermissions _voiceLock = PermissionValues.VoiceLockPermissions;
     private static readonly DiscordPermissions _other = new(DiscordPermission.ViewChannel, DiscordPermission.AttachFiles);
 
-    public static TheoryData<string, DiscordPermissions, DiscordPermissions> Overwrites() => new()
+    private static readonly TheoryData<string, DiscordPermissions, DiscordPermissions> _overwrites = new()
     {
         { "no overwrite", DiscordPermissions.None, DiscordPermissions.None },
         { "explicit send allowed", new DiscordPermissions(DiscordPermission.SendMessages), DiscordPermissions.None },
@@ -31,55 +32,83 @@ public sealed class LockPermissionsRoundTripTests
         { "other bits denied (private channel)", DiscordPermissions.None, _other },
         { "everything mixed", _lock | _other, DiscordPermissions.None },
         { "allow and deny mixed", new DiscordPermissions(DiscordPermission.SendMessages, DiscordPermission.ViewChannel),
-            new DiscordPermissions(DiscordPermission.AddReactions, DiscordPermission.AttachFiles) }
+            new DiscordPermissions(DiscordPermission.AddReactions, DiscordPermission.AttachFiles) },
+        { "voice bits allowed", new DiscordPermissions(DiscordPermission.Connect, DiscordPermission.Speak),
+            DiscordPermissions.None },
+        { "voice bits mixed", new DiscordPermissions(DiscordPermission.Connect),
+            new DiscordPermissions(DiscordPermission.Speak, DiscordPermission.AttachFiles) }
     };
 
+    /// <summary>Every overwrite, locked with the text set and with the voice and stage set.</summary>
+    public static TheoryData<string, DiscordPermissions, DiscordPermissions, DiscordPermissions> Overwrites()
+    {
+        var data = new TheoryData<string, DiscordPermissions, DiscordPermissions, DiscordPermissions>();
+        foreach (var (setName, lockSet) in new[] { ("text", _lock), ("voice", _voiceLock) })
+            foreach (var row in _overwrites)
+            {
+                var (name, allowed, denied) = row.Data;
+                data.Add($"{setName}: {name}", allowed, denied, lockSet);
+            }
+
+        return data;
+    }
+
     private static (DiscordPermissions Allowed, DiscordPermissions Denied) Lock(
-        DiscordPermissions allowed, DiscordPermissions denied)
-        => (allowed.RevokeLockPermissions(), denied.SetLockPermissions());
+        DiscordPermissions allowed, DiscordPermissions denied, DiscordPermissions lockSet)
+        => (allowed.RevokeLockPermissions(lockSet), denied.SetLockPermissions(lockSet));
 
     [Theory]
     [MemberData(nameof(Overwrites))]
     public void Unlocking_restores_the_overwrite_when_only_the_lock_bits_were_stored(
-        string _, DiscordPermissions allowed, DiscordPermissions denied)
+        string _, DiscordPermissions allowed, DiscordPermissions denied, DiscordPermissions lockSet)
     {
-        var (lockedAllowed, lockedDenied) = Lock(allowed, denied);
+        var (lockedAllowed, lockedDenied) = Lock(allowed, denied, lockSet);
 
-        lockedAllowed.RevertLockPermissions(allowed.GetLockPermissions()).ShouldBe(allowed);
-        lockedDenied.RevertLockPermissions(denied.GetLockPermissions()).ShouldBe(denied);
+        lockedAllowed.RevertLockPermissions(allowed.GetLockPermissions(lockSet), lockSet).ShouldBe(allowed);
+        lockedDenied.RevertLockPermissions(denied.GetLockPermissions(lockSet), lockSet).ShouldBe(denied);
     }
 
     [Theory]
     [MemberData(nameof(Overwrites))]
     public void Unlocking_restores_the_overwrite_when_every_bit_was_stored(
-        string _, DiscordPermissions allowed, DiscordPermissions denied)
+        string _, DiscordPermissions allowed, DiscordPermissions denied, DiscordPermissions lockSet)
     {
-        var (lockedAllowed, lockedDenied) = Lock(allowed, denied);
+        var (lockedAllowed, lockedDenied) = Lock(allowed, denied, lockSet);
 
-        lockedAllowed.RevertLockPermissions(allowed).ShouldBe(allowed);
-        lockedDenied.RevertLockPermissions(denied).ShouldBe(denied);
+        lockedAllowed.RevertLockPermissions(allowed, lockSet).ShouldBe(allowed);
+        lockedDenied.RevertLockPermissions(denied, lockSet).ShouldBe(denied);
     }
 
     [Fact]
     public void Permissions_changed_while_locked_are_kept_and_only_the_lock_bits_go_back()
     {
         var previousAllowed = new DiscordPermissions(DiscordPermission.SendMessages);
-        var (lockedAllowed, lockedDenied) = Lock(previousAllowed, DiscordPermissions.None);
+        var (lockedAllowed, lockedDenied) = Lock(previousAllowed, DiscordPermissions.None, _lock);
 
         // A moderator grants attach files while the channel is locked.
         var changedAllowed = lockedAllowed | DiscordPermission.AttachFiles;
 
-        changedAllowed.RevertLockPermissions(previousAllowed.GetLockPermissions())
+        changedAllowed.RevertLockPermissions(previousAllowed.GetLockPermissions(_lock), _lock)
             .ShouldBe(new DiscordPermissions(DiscordPermission.SendMessages, DiscordPermission.AttachFiles));
-        lockedDenied.RevertLockPermissions(DiscordPermissions.None).ShouldBe(DiscordPermissions.None);
+        lockedDenied.RevertLockPermissions(DiscordPermissions.None, _lock).ShouldBe(DiscordPermissions.None);
     }
 
     [Fact]
     public void The_long_overload_restores_the_same_result()
     {
         var allowed = new DiscordPermissions(DiscordPermission.SendMessages);
-        var (lockedAllowed, _) = Lock(allowed, DiscordPermissions.None);
+        var (lockedAllowed, _) = Lock(allowed, DiscordPermissions.None, _lock);
 
-        lockedAllowed.RevertLockPermissions(long.Parse(allowed.GetLockPermissions().ToString())).ShouldBe(allowed);
+        lockedAllowed.RevertLockPermissions(long.Parse(allowed.GetLockPermissions(_lock).ToString()), _lock)
+            .ShouldBe(allowed);
     }
+
+    [Theory]
+    [InlineData(DiscordChannelType.Text, false)]
+    [InlineData(DiscordChannelType.Category, false)]
+    [InlineData(DiscordChannelType.GuildForum, false)]
+    [InlineData(DiscordChannelType.Voice, true)]
+    [InlineData(DiscordChannelType.Stage, true)]
+    public void Voice_and_stage_channels_lock_with_the_voice_set(DiscordChannelType channelType, bool voice)
+        => PermissionValues.LockPermissionsFor(channelType).ShouldBe(voice ? _voiceLock : _lock);
 }

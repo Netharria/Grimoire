@@ -83,6 +83,16 @@ public static class GuildIssueCatalog
             "A mute expired but the configured mute role no longer exists, so I could not remove it from the member.",
             "Run `/Mutes Create` to make a new mute role, or `/Mutes Set` to choose an existing one, then remove the old role from the member by hand.");
 
+    public static GuildIssue CannotGiveSpamMuteRole(GuildId guildId, RoleId roleId)
+        => new(guildId, "spam.cannot-mute",
+            $"I caught spam but could not give the mute role {RoleExtensions.Mention(roleId)}, so nobody was muted.",
+            "Give my role **Manage Roles** and move it above the mute role in Server Settings > Roles.");
+
+    public static GuildIssue SpamMuteRoleMissing(GuildId guildId)
+        => new(guildId, "spam.mute-role-missing",
+            "I caught spam but the configured mute role no longer exists, so nobody was muted.",
+            "Run `/Mutes Create` to make a new mute role, or `/Mutes Set` to choose an existing one.");
+
     public static GuildIssue CannotReadAuditLog(GuildId guildId)
         => new(guildId, "audit-log.forbidden",
             "I cannot read the audit log, so I cannot tell who deleted messages or banned members outside my commands.",

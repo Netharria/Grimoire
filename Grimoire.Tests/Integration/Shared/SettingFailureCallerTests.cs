@@ -51,9 +51,12 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
 
-    /// <summary>Nothing would ever lift a mute role given without a record, so the spam filter mustn't give one.</summary>
+    /// <summary>
+    ///     Nothing would ever lift a mute role given without a record, so the spam filter takes it back off. Since KI-55
+    ///     the role is granted first, as /Mute does (KI-07), and undone when the mute can't be recorded.
+    /// </summary>
     [Fact]
-    public async Task SpamFilter_WhenTheMuteCannotBeRecorded_GivesNoMuteRole()
+    public async Task SpamFilter_WhenTheMuteCannotBeRecorded_TakesTheMuteRoleBackOff()
     {
         await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
         {
@@ -63,10 +66,11 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
                 await Task.Delay(TimeSpan.FromMilliseconds(30), Token);
             }
 
-            (await this._bot.Rest.ReceivesRequestWithinAsync(request => request.Method == HttpMethod.Put
-                    && request.Path.EndsWith($"/roles/{this._muteRoleId}", StringComparison.Ordinal), NothingHappensWindow))
-                .ShouldBeFalse();
+            await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Delete
+                && request.Path.EndsWith($"/roles/{this._muteRoleId}", StringComparison.Ordinal));
         }
+
+        this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldNotContain(this._muteRoleId);
     }
 
     [Fact]

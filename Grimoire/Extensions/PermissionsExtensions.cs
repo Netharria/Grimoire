@@ -13,25 +13,26 @@ public static class PermissionsExtensions
 {
     extension(DiscordPermissions permissions)
     {
-        public DiscordPermissions GetLockPermissions()
-            => permissions & PermissionValues.LockPermissions;
+        // lockPermissions is the set for the channel's type: PermissionValues.LockPermissionsFor.
+        public DiscordPermissions GetLockPermissions(DiscordPermissions lockPermissions)
+            => permissions & lockPermissions;
 
-        public DiscordPermissions SetLockPermissions()
-            => permissions + PermissionValues.LockPermissions;
+        public DiscordPermissions SetLockPermissions(DiscordPermissions lockPermissions)
+            => permissions + lockPermissions;
 
-        public DiscordPermissions RevokeLockPermissions()
-            => permissions - PermissionValues.LockPermissions;
+        public DiscordPermissions RevokeLockPermissions(DiscordPermissions lockPermissions)
+            => permissions - lockPermissions;
 
         /// <summary>
         ///     Puts the lock bits back to what they were before the lock and leaves every other bit as it is now.
         ///     Works on both the allowed and the denied side, and whether <paramref name="previousPermissions" /> holds
         ///     only the lock bits or every bit.
         /// </summary>
-        public DiscordPermissions RevertLockPermissions(DiscordPermissions previousPermissions)
-            => (permissions & ~PermissionValues.LockPermissions)
-               | (previousPermissions & PermissionValues.LockPermissions);
+        public DiscordPermissions RevertLockPermissions(DiscordPermissions previousPermissions,
+            DiscordPermissions lockPermissions)
+            => (permissions & ~lockPermissions) | (previousPermissions & lockPermissions);
 
-        public DiscordPermissions RevertLockPermissions(long previousPermissions)
-            => permissions.RevertLockPermissions(new DiscordPermissions(previousPermissions));
+        public DiscordPermissions RevertLockPermissions(long previousPermissions, DiscordPermissions lockPermissions)
+            => permissions.RevertLockPermissions(new DiscordPermissions(previousPermissions), lockPermissions);
     }
 }

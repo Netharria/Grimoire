@@ -19,8 +19,11 @@ internal static class ChannelLockReverter
     {
         // The @everyone overwrite should always exist, but if it does not there is nothing to keep from it.
         var current = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == everyoneRole.Id);
+        var lockPermissions = PermissionValues.LockPermissionsFor(channel.Type);
         return channel.AddOverwriteAsync(everyoneRole,
-            (current?.Allowed ?? DiscordPermissions.None).RevertLockPermissions(activeLock.PreviouslyAllowed.Permissions),
-            (current?.Denied ?? DiscordPermissions.None).RevertLockPermissions(activeLock.PreviouslyDenied.Permissions));
+            (current?.Allowed ?? DiscordPermissions.None)
+                .RevertLockPermissions(activeLock.PreviouslyAllowed.Permissions, lockPermissions),
+            (current?.Denied ?? DiscordPermissions.None)
+                .RevertLockPermissions(activeLock.PreviouslyDenied.Permissions, lockPermissions));
     }
 }

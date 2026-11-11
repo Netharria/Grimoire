@@ -132,6 +132,7 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task SpamFilterView_With150Overrides_IsPaged()
     {
+        await this._bot.SetModuleAsync(Module.AntiSpam, true);
         var channels = this.AnswerForExtraChannels(150);
         foreach (var channel in channels)
             (await this.Settings.SetSpamFilterOverrideAsync(new ChannelId(channel), this.GuildId,
