@@ -43,7 +43,7 @@ public sealed class LockPermissionsRoundTripTests
     public static TheoryData<string, DiscordPermissions, DiscordPermissions, DiscordPermissions> Overwrites()
     {
         var data = new TheoryData<string, DiscordPermissions, DiscordPermissions, DiscordPermissions>();
-        foreach (var (setName, lockSet) in new[] { ("text", _lock), ("voice", _voiceLock) })
+        foreach (var (setName, lockSet) in new[] { ("text", _lock), ("voice", _voiceLock), ("category", _lock | _voiceLock) })
             foreach (var row in _overwrites)
             {
                 var (name, allowed, denied) = row.Data;
@@ -104,11 +104,12 @@ public sealed class LockPermissionsRoundTripTests
     }
 
     [Theory]
-    [InlineData(DiscordChannelType.Text, false)]
-    [InlineData(DiscordChannelType.Category, false)]
-    [InlineData(DiscordChannelType.GuildForum, false)]
-    [InlineData(DiscordChannelType.Voice, true)]
-    [InlineData(DiscordChannelType.Stage, true)]
-    public void Voice_and_stage_channels_lock_with_the_voice_set(DiscordChannelType channelType, bool voice)
-        => PermissionValues.LockPermissionsFor(channelType).ShouldBe(voice ? _voiceLock : _lock);
+    [InlineData(DiscordChannelType.Text, true, false)]
+    [InlineData(DiscordChannelType.GuildForum, true, false)]
+    [InlineData(DiscordChannelType.Voice, false, true)]
+    [InlineData(DiscordChannelType.Stage, false, true)]
+    [InlineData(DiscordChannelType.Category, true, true)]
+    public void Each_channel_type_locks_with_its_set(DiscordChannelType channelType, bool text, bool voice)
+        => PermissionValues.LockPermissionsFor(channelType)
+            .ShouldBe((text ? _lock : DiscordPermissions.None) | (voice ? _voiceLock : DiscordPermissions.None));
 }

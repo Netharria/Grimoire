@@ -145,7 +145,10 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         this.EveryoneOverwrite(this.Guild.General).ShouldBe((SendMessages, AttachFiles));
     }
 
-    /// <summary>MOD-154 and MOD-155: categories and forums are locked the same way.</summary>
+    /// <summary>
+    ///     MOD-154 and MOD-155: categories and forums are locked the same way. A category's overwrite reaches the voice
+    ///     channels synced to it too, so it also denies the voice set.
+    /// </summary>
     [Theory]
     [InlineData("category")]
     [InlineData("forum")]
@@ -155,8 +158,22 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
 
         await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, channel);
 
-        this.EveryoneOverwrite(channel).ShouldBe((0UL, TextLock));
+        this.EveryoneOverwrite(channel).ShouldBe((0UL, kind == "category" ? TextLock | VoiceLock : TextLock));
         (await this.ActiveLockAsync(channel)).ShouldNotBeNull();
+    }
+
+    /// <summary>Unlocking a category puts both its text and its voice bits back.</summary>
+    [Fact]
+    public async Task Unlock_OfACategory_RestoresItsTextAndVoiceBits()
+    {
+        await this.SetEveryoneOverwriteAsync(this.Guild.Category, SendMessages | Connect, AttachFiles);
+        await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, this.Guild.Category);
+
+        (await this.ActiveLockAsync(this.Guild.Category)).PreviouslyAllowed.Permissions
+            .ShouldBe((long)(SendMessages | Connect));
+
+        await this.UnlockAsync(this.Guild.Category);
+        this.EveryoneOverwrite(this.Guild.Category).ShouldBe((SendMessages | Connect, AttachFiles));
     }
 
     /// <summary>Voice and stage channels are locked with the voice set, which also covers their text chat.</summary>

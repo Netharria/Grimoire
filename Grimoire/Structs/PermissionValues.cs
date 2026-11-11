@@ -21,9 +21,15 @@ public struct PermissionValues
         => new(DiscordPermission.Connect, DiscordPermission.Speak, DiscordPermission.SendMessages,
             DiscordPermission.SendTtsMessages, DiscordPermission.AddReactions);
 
-    /// <summary>The set a lock denies on a channel of this type: the voice set on voice and stage channels.</summary>
+    /// <summary>
+    ///     The set a lock denies on a channel of this type: the voice set on voice and stage channels, and both sets on
+    ///     a category, whose overwrite reaches the text and voice channels synced to it.
+    /// </summary>
     public static DiscordPermissions LockPermissionsFor(DiscordChannelType channelType)
-        => channelType is DiscordChannelType.Voice or DiscordChannelType.Stage
-            ? VoiceLockPermissions
-            : LockPermissions;
+        => channelType switch
+        {
+            DiscordChannelType.Voice or DiscordChannelType.Stage => VoiceLockPermissions,
+            DiscordChannelType.Category => LockPermissions | VoiceLockPermissions,
+            _ => LockPermissions
+        };
 }
