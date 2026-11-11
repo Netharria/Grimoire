@@ -62,6 +62,11 @@ public static class GuildIssueCatalog
             $"I could not post in <#{channelId}>.",
             "Give my role **View Channel** and **Send Messages** in that channel, and check its permission overwrites.");
 
+    public static GuildIssue CannotEmbedInChannel(GuildId guildId, ChannelId channelId)
+        => new(guildId, $"channel.cannot-embed:{channelId}",
+            $"I could not post an embed custom command in <#{channelId}>.",
+            "Give my role **Embed Links** in that channel, and check its permission overwrites.");
+
     public static GuildIssue LogChannelMissing(GuildId guildId, GuildLogType logType, ChannelId channelId)
         => new(guildId, $"log.channel-missing:{logType}",
             $"The {logType} log is set to <#{channelId}>, which no longer exists, so those logs are lost.",

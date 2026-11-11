@@ -15,10 +15,20 @@ public sealed partial class CustomCommandSettings(
     GuildLog guildLog)
 {
     /// <summary>Saves a new command, or a new version of one: versions are rows, so nothing is ever updated.</summary>
-    private async Task SaveCommandAsync(CustomCommand command)
+    /// <returns>Whether the name was new, or already had a version that this one replaces.</returns>
+    private async Task<SaveOutcome> SaveCommandAsync(CustomCommand command)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var existed = await dbContext.CustomCommands
+            .AnyAsync(x => x.GuildId == command.GuildId && x.Name == command.Name);
         await dbContext.AddAsync(command);
         await dbContext.SaveChangesAsync();
+        return existed ? SaveOutcome.Updated : SaveOutcome.Added;
+    }
+
+    private enum SaveOutcome
+    {
+        Added,
+        Updated
     }
 }

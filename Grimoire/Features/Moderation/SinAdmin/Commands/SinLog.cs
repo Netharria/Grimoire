@@ -138,10 +138,6 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
         if (resultStrings.Count == 0)
             await ctx.ReplyAsync(GrimoireColor.Green, "That user does not have any logs",
                 $"Sin log for {user.Username}");
-        foreach (var (index, message) in resultStrings.Index())
-            if (index == 0)
-                await ctx.ReplyAsync(GrimoireColor.Green, message, $"Sin log for {user.Username}");
-            else
-                await ctx.FollowUpAsync(GrimoireColor.Green, message, $"Sin log for {user.Username}", isPrivate);
+        await ctx.ReplyWithFollowUpsAsync(GrimoireColor.Green, resultStrings, $"Sin log for {user.Username}", isPrivate);
     }
 }

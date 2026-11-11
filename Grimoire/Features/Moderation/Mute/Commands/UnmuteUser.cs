@@ -37,7 +37,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
             .GetOrElse(() => null);
         var muteRole = MuteRoleResolver.Resolve(activeMute?.MuteRoleId, configuredRoleId,
                 id => guild.Roles.ContainsKey(id.Value)) is { } muteRoleId
-            ? guild.Roles[muteRoleId.Value]
+            ? await guild.GetRoleAsync(muteRoleId.Value)
             : null;
 
         // A mute role with no record, such as one added by hand, can still be taken off.

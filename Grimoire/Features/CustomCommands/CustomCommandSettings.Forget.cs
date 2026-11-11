@@ -22,7 +22,7 @@ public sealed partial class CustomCommandSettings
     [Command("Forget")]
     [Description("Forget a command that you have saved.")]
     public async Task Forget(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
         [Parameter("name")]
         [Description("The name of the command to forget.")]

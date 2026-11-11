@@ -75,13 +75,13 @@ public sealed class CustomCommandLearnGapTests(GrimoireCoreFactory database) : I
             .Message["content"]!.GetValue<string>().ShouldBe("hi");
     }
 
-    /// <summary>CC-11: learning an existing name should say it was updated, not added.</summary>
-    [Fact(Skip = "Fails: Learn always replies \"Added {name} custom command.\". KI-88")]
+    /// <summary>CC-11: learning an existing name should say it was updated, not added. KI-88.</summary>
+    [Fact]
     public async Task LearningAnExistingName_SaysUpdated()
     {
-        await this.LearnAsync("hello", "first");
+        (await this.LearnAsync("hello", "first")).Description.ShouldBe("Added hello custom command.");
 
-        (await this.LearnAsync("hello", "second")).Description.ShouldNotBe("Added hello custom command.");
+        (await this.LearnAsync("hello", "second")).Description.ShouldBe("Updated hello custom command.");
     }
 
     /// <summary>CC-12: each version carries its own roles, so learning without them opens the command to all.</summary>

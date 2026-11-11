@@ -52,6 +52,7 @@ public sealed partial class CustomCommandSettings
         var roleIds = CollectRoleIds(permissionRoles ?? []);
 
         await CustomCommandName.Create(name)
+            .Bind(validName => NotABuiltInCommand(ctx.Extension, validName))
             .Bind(validName => ParseEmbedColor(embed, embedColor)
                 .Bind(color => SplitRoleIds(restrictedUse, roleIds)
                     .Bind(roles => CustomCommandContent.Create(content)
@@ -64,11 +65,21 @@ public sealed partial class CustomCommandSettings
             .Match(
                 async command =>
                 {
-                    await this.SaveCommandAsync(command);
-                    await OnLearnSuccessAsync(ctx, guild, command.Name);
+                    var outcome = await this.SaveCommandAsync(command);
+                    await this.OnLearnSuccessAsync(ctx, guild, command.Name, outcome);
                 },
                 error => ctx.SendErrorResponseAsync(error.Message).AsTask());
     }
+
+    /// <summary>
+    ///     <c>!name</c> runs the bot's own command of that name as a text command, so a custom command can't take it
+    ///     (KI-85).
+    /// </summary>
+    private static Validation<CustomCommandName> NotABuiltInCommand(CommandsExtension extension, CustomCommandName name)
+        => extension.IsBuiltInCommandName(name.Value)
+            ? Validation<CustomCommandName>.Fail(new Error("command.learn.built-in-name",
+                $"`{name}` is the name of one of Grimoire's own commands, so a custom command can't use it."))
+            : Validation<CustomCommandName>.Succeed(name);
 
     /// <summary>A colour only means something on an embed, so one given without it is refused rather than dropped.</summary>
     private static Validation<CustomCommandEmbedColor?> ParseEmbedColor(bool embed, string? embedColor)
@@ -98,13 +109,22 @@ public sealed partial class CustomCommandSettings
             false => Validation<(IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>.Succeed(([], roleIds))
         };
 
-    private async Task OnLearnSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name)
+    private async Task OnLearnSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name,
+        SaveOutcome outcome)
     {
-        await ctx.ReplyAsync(GrimoireColor.Green, $"Added {name} custom command.");
+        await ctx.ReplyAsync(GrimoireColor.Green, outcome switch
+        {
+            SaveOutcome.Updated => $"Updated {name} custom command.",
+            _ => $"Added {name} custom command."
+        });
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {
             Color = GrimoireColor.Purple,
-            Description = $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to learn a new command: {name}",
+            Description = outcome switch
+            {
+                SaveOutcome.Updated => $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to update the command: {name}",
+                _ => $"{ctx.User.Mention} asked {guild.CurrentMember.Mention} to learn a new command: {name}"
+            },
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation
         });

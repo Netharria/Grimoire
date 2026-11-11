@@ -409,6 +409,8 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
                     [.. request.Json!["messages"]!.AsArray().Select(id => ulong.Parse(id!.ToString()))]),
             _ when Reaction().IsMatch(request.Path) && request.Method == HttpMethod.Delete
                 => new HttpResponseMessage(HttpStatusCode.NoContent),
+            // A deferred text command shows "is typing" in its channel.
+            _ when Typing().IsMatch(request.Path) && post => new HttpResponseMessage(HttpStatusCode.NoContent),
             _ when ChannelMessages().Match(request.Path) is { Success: true } match && get
                 => Json(this.HistoryPage(ulong.Parse(match.Groups[1].Value), request)),
             _ when ChannelMessages().Match(request.Path) is { Success: true } match && post
@@ -953,6 +955,9 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
 
     [GeneratedRegex(@"^channels/(\d+)/messages/bulk-delete$")]
     private static partial Regex BulkDelete();
+
+    [GeneratedRegex(@"^channels/\d+/typing$")]
+    private static partial Regex Typing();
 
     /// <summary>Deleting one member's reaction: <c>.../reactions/{emoji}/{userId}</c>.</summary>
     [GeneratedRegex(@"^channels/\d+/messages/\d+/reactions/[^/]+/\d+$")]

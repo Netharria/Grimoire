@@ -209,10 +209,10 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     /// <summary>
     ///     CC-43: thirty long versions take several pages, and every page should stay visible, with the versions
-    ///     running from 30 down to 1, each once. Each page is sent with <c>ReplyAsync</c>, which edits the deferred
-    ///     response after the first, so each page replaces the one before and only the last is left.
+    ///     running from 30 down to 1, each once. KI-113: each page used to edit the deferred response, so only the last
+    ///     was left; now the first page is the response and the rest are follow-ups.
     /// </summary>
-    [Fact(Skip = "Fails: every History page edits the original response, so only the last page is left. KI-113")]
+    [Fact]
     public async Task CommandsHistory_ThirtyLongVersions_ShowsEveryPage()
     {
         await this._bot.SetModuleAsync(Module.Commands, true);

@@ -140,8 +140,8 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
 
     // ── Revert ────────────────────────────────────────────────────────────────
 
-    /// <summary>CC-55: a hand-typed version out of DateTimeOffset's range should be "not found", not an exception.</summary>
-    [Theory(Skip = "Fails: new DateTimeOffset(ticks) throws ArgumentOutOfRangeException, so the generic error shows. KI-83")]
+    /// <summary>CC-55: a hand-typed version out of DateTimeOffset's range should be "not found", not an exception. KI-83.</summary>
+    [Theory]
     [InlineData("9000000000000000000")]
     [InlineData("-1")]
     public async Task Revert_ToAnOutOfRangeVersion_IsNotFound(string version)
@@ -202,8 +202,8 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
 
     // ── Stats and Leaderboard ─────────────────────────────────────────────────
 
-    /// <summary>CC-68: a member who can't run a restricted command shouldn't see its stats.</summary>
-    [Fact(Skip = "Fails: Stats doesn't check the role list, so a member without the role sees the stats. KI-86")]
+    /// <summary>CC-68: a member who can't run a restricted command shouldn't see its stats. KI-86.</summary>
+    [Fact]
     public async Task Stats_OfARestrictedCommand_AreHiddenFromMembersWhoCannotRunIt()
     {
         await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
@@ -213,6 +213,38 @@ public sealed class CustomCommandManageGapTests(GrimoireCoreFactory database) : 
             SlashOption.Subcommand("stats", SlashOption.String("name", "secret")));
 
         reply.Embed?["author"]?["name"]?.GetValue<string>().ShouldNotBe("Stats for !secret");
+        reply.Description.ShouldBe("No command named `secret` exists.");
+    }
+
+    /// <summary>
+    ///     KI-86: the leaderboard leaves out a restricted command for a member who can't run it, overall and by name, but
+    ///     a member with Manage Guild still sees it.
+    /// </summary>
+    [Fact]
+    public async Task Leaderboard_OfARestrictedCommand_IsHiddenFromMembersWhoCannotRunIt()
+    {
+        await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
+            SlashOption.Role("permission_role_0", this.Guild.ModeratorRoleId));
+        await this.LearnAsync("hello", "hi");
+        await using (var dbContext = database.CreateDbContext())
+        {
+            string[] used = ["secret", "hello"];
+            dbContext.CustomCommandUsages.AddRange(used.Select(name => new CustomCommandUsage
+            {
+                Name = CustomCommandName.Create(name).ShouldSucceed(), GuildId = this.GuildId,
+                UserId = new UserId(this.Guild.Moderator.Id), UsedAt = DateTimeOffset.UtcNow
+            }));
+            await dbContext.SaveChangesAsync(Token);
+        }
+
+        var overall = await this._bot.RunSlashCommandAndWaitAsync("commands", this.Guild.User1,
+            SlashOption.Subcommand("leaderboard"));
+        overall.Description.ShouldBe("**1.** `!hello` — 1 uses");
+        overall.Embed!["footer"]!["text"]!.GetValue<string>().ShouldBe("1 commands, 1 uses");
+        (await this._bot.RunSlashCommandAndWaitAsync("commands", this.Guild.User1,
+                SlashOption.Subcommand("leaderboard", SlashOption.String("name", "secret"))))
+            .Description.ShouldBe("No command named `secret` exists.");
+        (await this.CommandsAsync("leaderboard")).Description.ShouldNotBeNull().ShouldContain("`!secret`");
     }
 
     /// <summary>CC-79: the leaderboard of a command nobody has used says so.</summary>

@@ -21,7 +21,7 @@ public partial class MuteAdminCommands
         var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId()).GetOrElse(() => null) is { } configuredId
-            && guild.Roles.TryGetValue(configuredId.Value, out var configuredRole))
+            && await guild.GetRoleOrDefaultAsync(configuredId) is { } configuredRole)
         {
             await ctx.SendWarningResponseAsync(
                 $"{configuredRole.Mention} is already the mute role. Use /Mutes Refresh to update its permissions.");

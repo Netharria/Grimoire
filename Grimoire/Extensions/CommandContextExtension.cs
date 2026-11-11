@@ -72,6 +72,21 @@ public static partial class CommandContextExtension
                     : await ctx.FollowupAsync(embed));
         }
 
+        /// <summary>
+        ///     Sends an answer too long for one message: the first page is the reply, and every later page a follow-up
+        ///     with the same visibility. Replying again would edit the first reply, leaving only the last page (KI-30,
+        ///     KI-113). For one message with page buttons, use <c>PagedReplyExtensions.ReplyPagesAsync</c>.
+        /// </summary>
+        public async ValueTask ReplyWithFollowUpsAsync(DiscordColor color, IEnumerable<string> pages, string title,
+            bool ephemeral)
+        {
+            foreach (var (index, page) in pages.Index())
+                if (index == 0)
+                    await ctx.ReplyAsync(color, page, title, ephemeral: ephemeral);
+                else
+                    await ctx.FollowUpAsync(color, page, title, ephemeral);
+        }
+
         public ValueTask SendErrorResponseAsync(string message)
         {
             LogUserFacingError(ctx.Client.Logger, ctx.Command.FullName, ctx.Guild?.Id, message);

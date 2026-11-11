@@ -161,8 +161,8 @@ public sealed class CustomCommandAutocompleteTests(GrimoireCoreFactory database)
             SlashOption.String("command_name", ""))).Select(choice => choice.Value).ShouldBe(["bye"]);
     }
 
-    /// <summary>CC-103: a member who can't run a restricted command shouldn't be offered it.</summary>
-    [Fact(Skip = "Fails: the name autocomplete doesn't check the role list, so secret is offered. KI-86")]
+    /// <summary>CC-103: a member who can't run a restricted command shouldn't be offered it. KI-86.</summary>
+    [Fact]
     public async Task NameChoices_LeaveOutRestrictedCommands_TheMemberCannotRun()
     {
         await this.SeedVersionsAsync(this.Guild, "hello", 1, DateTimeOffset.UtcNow.AddDays(-1));

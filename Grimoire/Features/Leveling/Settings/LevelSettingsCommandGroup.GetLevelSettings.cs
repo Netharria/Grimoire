@@ -39,7 +39,7 @@ public sealed partial class LevelSettingsCommandGroup
         var levelLogMention =
             levelChannelLog.GetOrElse(() => null) is not { } channel
                 ? "None"
-                : guild.Channels.GetValueOrDefault(channel.Value)?.Mention;
+                : (await guild.GetChannelOrDefaultAsync(channel))?.Mention ?? "Deleted Channel";
         await ctx.ReplyAsync(
             title: "Current Level System Settings",
             message: $"**Module Enabled:** {moduleEnabled}\n" +

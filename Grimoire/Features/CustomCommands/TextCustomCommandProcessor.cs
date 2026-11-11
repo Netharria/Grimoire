@@ -18,11 +18,15 @@ public sealed partial class TextCustomCommandProcessor(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule,
     GuildIssueReporter issueReporter,
+    CommandsExtension commands,
     ILogger<TextCustomCommandProcessor> logger)
     : IEventHandler<MessageCreatedEventArgs>
 {
     private const string NotFoundCode = "text-command.not-found";
     private const string ModuleDisabledCode = "text-command.module-disabled";
+
+    /// <summary>Discord's "Cannot send an empty message" error.</summary>
+    private const int EmptyMessageCode = 50006;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs eventArgs) =>
         await Validation<MessageCreatedEventArgs>.Succeed(eventArgs)
@@ -44,6 +48,12 @@ public sealed partial class TextCustomCommandProcessor(
                 : Validation<(DiscordMember Member, string[] Args)>.Fail(
                     new Error("text-command.not-a-command", "Message is not a command")))
             .Bind(x => CustomCommandName.Create(x.Args[0]).Map(name => (x.Member, Name: name, x.Args)))
+            // The bot's own command of that name runs instead, as a text command. Learn refuses these names, but a
+            // command saved before that check, or before the bot command existed, must not answer as well (KI-85).
+            .Bind(x => commands.IsBuiltInCommandName(x.Name.Value)
+                ? Validation<(DiscordMember Member, CustomCommandName Name, string[] Args)>.Fail(
+                    new Error("text-command.built-in", "A bot command has this name"))
+                : Validation<(DiscordMember Member, CustomCommandName Name, string[] Args)>.Succeed(x))
             .ToResult()
             .BindAsync(x => FetchCommandAsync(x.Member, x.Name, x.Args))
             // A use counts once the reply is out, so a refused or empty reply isn't counted, and a failed count
@@ -84,6 +94,10 @@ public sealed partial class TextCustomCommandProcessor(
         "Could not send custom command response {CommandName} (Guild {GuildId}, Channel {ChannelId}): missing permissions")]
     private static partial void LogSendForbidden(ILogger logger, string commandName, ulong guildId, ulong channelId);
 
+    [LoggerMessage(LogLevel.Warning,
+        "Could not send embed custom command {CommandName} (Guild {GuildId}, Channel {ChannelId}): missing Embed Links")]
+    private static partial void LogEmbedForbidden(ILogger logger, string commandName, ulong guildId, ulong channelId);
+
     private async Task<Result<ParsedCommand>> FetchCommandAsync(DiscordMember member, CustomCommandName name,
         string[] args)
     {
@@ -123,6 +137,15 @@ public sealed partial class TextCustomCommandProcessor(
             // Expected when the bot cannot post in that channel: tell the moderators rather than raising an error.
             LogSendForbidden(logger, cmd.Name.Value, eventArgs.Guild.Id, eventArgs.Channel.Id);
             await issueReporter.ReportAsync(GuildIssueCatalog.CannotSendInChannel(
+                new GuildId(eventArgs.Guild.Id), new ChannelId(eventArgs.Channel.Id)));
+            return false;
+        }
+        catch (BadRequestException exception) when (exception.Code == EmptyMessageCode
+                                                    && cmd.Response is EmbedCustomCommand)
+        {
+            // Without Embed Links, Discord drops the embed and refuses the then-empty message (KI-84).
+            LogEmbedForbidden(logger, cmd.Name.Value, eventArgs.Guild.Id, eventArgs.Channel.Id);
+            await issueReporter.ReportAsync(GuildIssueCatalog.CannotEmbedInChannel(
                 new GuildId(eventArgs.Guild.Id), new ChannelId(eventArgs.Channel.Id)));
             return false;
         }

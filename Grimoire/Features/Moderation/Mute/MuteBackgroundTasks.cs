@@ -81,7 +81,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             return;
         }
 
-        var role = activeGuild.Roles[roleId.Value];
+        var role = await activeGuild.GetRoleAsync(roleId.Value);
 
         // A moderator may already have taken the role off by hand.
         if (activeUser.Roles.Any(memberRole => memberRole.Id == role.Id))

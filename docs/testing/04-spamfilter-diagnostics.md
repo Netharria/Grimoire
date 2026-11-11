@@ -72,9 +72,9 @@ Four quick repeats is just over the threshold.
 | SPAM-24 | none | `user1` spams in a voice channel's text chat **[auto]** `SpamEventsTests.SpamInAVoiceChannelsChat_IsFiltered` | Muted (voice chat is filtered like any channel) | Mute sin |
 | SPAM-25 | Bot lacks Manage Messages in `#general` **[auto]** `SpamFilterTests.Spam_WhoseMessageCannotBeDeleted_IsStillLoggedAndTold` | `user1` spams | Muted, logged and DMed; the message stays | Sin and `MuteAdded` rows; `#modlog` embed |
 | SPAM-26 | `user1` has DMs closed | `user1` spams **[auto]** `SpamEventsTests.SpamFromAMemberWithClosedDms_IsStillMuted_AndTheModLogTold` | Muted. The DM failure is posted to the mod log (KI-16) | Sin, `MuteAdded`, `#modlog` embed and DM-failure line |
-| SPAM-27 | Remove Manage Roles from the bot | `user1` spams **[auto]** `SpamEventsTests.WhenTheMuteRoleCannotBeGiven_NothingIsRecorded("SPAM-27") (skipped, KI-55)` | **Expected:** nothing recorded, or the mute reported as failed. **Actual:** the grant fails with 403 and throws. No role, no mod log, no DM, and the message is not deleted (new, observation 1) | **Actual:** a Mute sin and a `MuteAdded` row are saved anyway. An error alert in `#alerts`. The expiry task later "unmutes" a member who was never muted |
-| SPAM-28 | Drag `@Muted` above the bot's role | `user1` spams **[auto]** `SpamEventsTests.WhenTheMuteRoleCannotBeGiven_NothingIsRecorded("SPAM-28") (skipped, KI-55)` | Same as SPAM-27 (403 on the grant) | As SPAM-27 |
-| SPAM-29 | Delete `@Muted` in Discord without changing the setting | `user1` spams **[auto]** `SpamEventsTests.WhenTheMuteRoleCannotBeGiven_NothingIsRecorded("SPAM-29") (skipped, KI-55)` | **Expected:** nothing recorded. **Actual:** nothing visible happens (observation 1) | **Actual:** a Mute sin and a `MuteAdded` row are saved. No alert |
+| SPAM-27 | Remove Manage Roles from the bot | `user1` spams **[auto]** `SpamEventsTests.WhenTheMuteRoleCannotBeGiven_NothingIsRecorded("SPAM-27")` | Fixed (KI-55): the grant is tried first. Discord refuses (403), so nothing is recorded, the spam is deleted, and `#modlog` gets a "Setup problem" naming the missing permission (at most once a day) | No Mute sin, no `MuteAdded` row |
+| SPAM-28 | Drag `@Muted` above the bot's role | `user1` spams **[auto]** `SpamEventsTests.WhenTheMuteRoleCannotBeGiven_NothingIsRecorded("SPAM-28")` | Same as SPAM-27 (403 on the grant) | As SPAM-27 |
+| SPAM-29 | Delete `@Muted` in Discord without changing the setting | `user1` spams **[auto]** `SpamEventsTests.WhenTheMuteRoleCannotBeGiven_NothingIsRecorded("SPAM-29")` | Fixed (KI-55): nothing recorded, the spam is deleted, and `#modlog` gets a "Setup problem" saying the mute role is missing | No Mute sin, no `MuteAdded` row |
 | SPAM-30 | `higher` has no Manage Channels | `higher` spams **[auto]** `SpamEventsTests.MembersWithoutManageChannels_AreFiltered("higher")` | Muted like anyone: there is no rank check, and Discord only checks that `@Muted` is below the bot. If Discord refuses the grant, it behaves as SPAM-27; record which | Mute sin |
 | SPAM-31 | `pk` account (optional) | `pk` sends 5 quick proxied messages | The proxied (webhook) copies are never counted. The originals are counted; if PluralKit deletes them first, the delete fails quietly as in SPAM-25 | Mute sin if the originals trip it. **[auto]** `PluralKitAcrossFeaturesTests.SpamThroughProxies_MutesTheMember_AndLeavesTheProxies` |
 | SPAM-32 | `user1` built up 50 points in Test-A | `user1` sends 2 quick messages in Test-B **[auto]** `SpamEventsTests.Points_AreKeptPerGuild` | Not spam in Test-B: points are per guild | No Test-B sin |
@@ -82,7 +82,7 @@ Four quick repeats is just over the threshold.
 | SPAM-34 | `user1` is muted, but `#leaky` has an allow Send Messages overwrite for a role `user1` holds | `user1` spams in `#leaky` **[auto]** `SpamEventsTests.SpamWhileStillMuted_MutesAgain_ForTwiceAsLong` | Muted again; Length doubles | A second Mute sin and `MuteAdded` row while the first is active |
 
 Automated in `Grimoire.Tests/Integration/Moderation/SpamFilterTests.cs` (SPAM-01, 02, 07, 08, 12, 15 to 19, 25) and
-`SpamEventsTests.cs` (SPAM-03 to 06, 09 to 11, 13, 20 to 24, 26 to 30, 32 to 34; 27 to 29 skipped for KI-55).
+`SpamEventsTests.cs` (SPAM-03 to 06, 09 to 11, 13, 20 to 24, 26 to 30, 32 to 34).
 SPAM-14 needs channel-resolved permissions (H-13). SPAM-31 (PluralKit) is not automated here.
 
 ## B. `/SpamFilter Override option [channel]`
@@ -96,7 +96,7 @@ same as a change. Inherit is stored as a row, not deleted.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| SPAM-40 | none | `admin` runs `/SpamFilter Override option:Never channel:#general` **[auto]** `SpamFilterTests.Override_StoresTheSetting_AndViewListsIt` | "Will now never filter spam messages from #general and its sub channels/threads." | `SpamFilterOverrides` row NeverFilter, `SetBy` admin. No `#modlog` entry |
+| SPAM-40 | none | `admin` runs `/SpamFilter Override option:Never channel:#general` **[auto]** `SpamFilterTests.Override_StoresTheSetting_AndViewListsIt` and `SpamFilterOverrideTests.Override_PostsToTheModLog` | "Will now never filter spam messages from #general and its sub channels/threads." | `SpamFilterOverrides` row NeverFilter, `SetBy` admin. `#modlog`: "@admin set the spam filter override of #general to Never." (KI-60) |
 | SPAM-41 | none | `option:Always channel:<forum>` **[auto]** same test | "Will now always filter spam messages from #forum and its sub channels/threads." | Row AlwaysFilter |
 | SPAM-42 | SPAM-40 done | `option:Inherit channel:#general` **[auto]** `SpamFilterTests.Override_Inherit_ClearsTheOverrideAndSaysSo` | "#general and its sub channels/threads will now follow the parent channel's spam filter setting." (KI-37) | New row Inherit; `/SpamFilter View` no longer lists `#general` |
 | SPAM-43 | none | `option:Never` with no channel, run in `#spam` **[auto]** `SpamFilterOverrideTests.Override_WithNoChannel_IsForTheCurrentChannel` | Reply names `#spam` | Row for `#spam` |
@@ -106,7 +106,7 @@ same as a change. Inherit is stored as a row, not deleted.
 | SPAM-47 | No override on `#spam` | `option:Inherit channel:#spam` **[auto]** `SpamFilterOverrideTests.Override_Inherit_OnAChannelWithNoOverride_StoresNoRow` | The Inherit reply | No new row (already Inherit) |
 | SPAM-48 | none | `mod` (no Manage Channels) runs it **[auto]** `SpamFilterTests.SpamFilter_NeedsManageChannels("override")` | "You do not have the required permissions to use this command." | No row |
 | SPAM-49 | A member with Manage Channels but not Manage Guild | Runs it **[auto]** `SpamFilterOverrideTests.Override_ByAMemberWithManageChannelsOnly_IsAllowed` | Allowed | Row saved |
-| SPAM-50 | AntiSpam disabled | `admin` runs `option:Never` **[auto]** `SpamFilterOverrideTests.Override_WithAntiSpamDisabled_IsRefused` (skipped, KI-60) | Accepted, like SPAM-40 (no module check, observation 6) | Row saved |
+| SPAM-50 | AntiSpam disabled | `admin` runs `option:Never` **[auto]** `SpamFilterOverrideTests.Override_WithAntiSpamDisabled_IsRefused` | "This module is disabled in this server." (fixed, KI-60) | No row |
 | SPAM-51 | Settings DB unreachable **[auto]** `SettingSaveFailureTests.ASettingThatCannotBeSaved_IsReportedPrivately_AndNotLogged("spam_filter override")` | Run it | Ephemeral red "Could not save the spam filter override." | No row |
 | SPAM-52 | none | Text command `!spamfilter override Never <id of a Test-B channel>` in Test-A | Yellow "That channel does not exist in this server." if the id converts; otherwise an argument error. Slash commands can't pick another guild's channel | No row |
 | SPAM-53 | Bot can't see `#private` | `admin` overrides `#private` **[auto]** `SpamFilterOverrideTests.Override_OfAChannelTheBotCannotSee_IsAccepted` | Accepted: the command makes no Discord call for the channel | Row saved |
@@ -125,12 +125,12 @@ The reply is public.
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
 | SPAM-60 | `#general` Never, forum Always | `admin` runs `/SpamFilter View` **[auto]** `SpamFilterTests.Override_StoresTheSetting_AndViewListsIt` | Purple embed, author "Spam Filter Override Settings", lines "#general - Never Filter" and "#forum - Always Filter" | none |
-| SPAM-61 | No overrides | View **[auto]** `SpamFilterOverrideTests.View_WithNoOverrides_SaysNone` (skipped, KI-61) | **Expected:** a "None" line. **Actual:** the embed shows only its author line, with an empty body (observation 7) | none |
+| SPAM-61 | No overrides | View **[auto]** `SpamFilterOverrideTests.View_WithNoOverrides_SaysNone` | "None" (fixed, KI-61) | none |
 | SPAM-62 | `#general` set Never then Inherit | View **[auto]** `SpamFilterOverrideTests.View_LeavesOutAChannelSetBackToInherit` | `#general` is not listed | none |
 | SPAM-63 | An override on a channel, then the channel deleted | View **[auto]** `SpamFilterOverrideTests.View_LeavesOutADeletedChannel_ButKeepsItsRow` | The deleted channel is not listed | Row still there |
 | SPAM-64 | Overrides on about 150 channels (script or SQL; restart the bot after SQL) | View **[auto]** `PaginationTests.SpamFilterView_With150Overrides_IsPaged`, `Buttons_WorkForTheInvokerOnly` | Paged: "Page N of M" footer, buttons work for the invoker only | none |
 | SPAM-65 | none | `mod` runs View **[auto]** `SpamFilterTests.SpamFilter_NeedsManageChannels("view")` | "You do not have the required permissions to use this command." | none |
-| SPAM-66 | AntiSpam disabled | View **[auto]** `SpamFilterOverrideTests.View_WithAntiSpamDisabled_Works` | Works | none |
+| SPAM-66 | AntiSpam disabled | View **[auto]** `SpamFilterOverrideTests.View_WithAntiSpamDisabled_IsRefused` | "This module is disabled in this server." The whole `/SpamFilter` group needs AntiSpam since KI-60 | none |
 
 Automated in `Grimoire.Tests/Integration/Moderation/SpamFilterTests.cs` and
 `Grimoire.Tests/Integration/Moderation/SpamFilterOverrideTests.cs`, and SPAM-64 (paging) in
@@ -189,13 +189,13 @@ Run `/Diagnostics Check` as `admin` for each case, then undo the setup.
 | DIAG-30 | @everyone has an allow Send Messages overwrite in `#general` **[auto]** `ModerationDiagnosticsTests.Existing_everyone_allow_is_replaced_by_the_lock` | Check | No lock finding: the lock replaces that allow | none |
 | DIAG-31 | `user2` has a member allow Send Messages overwrite in `#general` **[auto]** `ModerationDiagnosticsTests.Member_overwrite_that_allows_speaking_is_reported` | Check | Under mutes: "These members have their own permission overwrite that overrides the mute (user IDs): <user2 id>. Fix: remove their overwrite in this channel." Under locks: "...that overrides a lock (user IDs): <user2 id>..." | none |
 | DIAG-32 | The `admin` role has Administrator and an allow overwrite in `#general` **[auto]** `ModerationDiagnosticsTests.Administrator_roles_are_not_reported_and_are_listed_separately` | Check | "Administrator roles (excluded, Administrator ignores channel permissions): admin" in embed and file; `admin` not reported for `#general` | none |
-| DIAG-33 | A role overwrite on a voice channel allows Speak **[auto]** `ModerationDiagnosticsTests.Voice_channels_are_checked_with_voice_permissions` | Check | Reported under mutes for that voice channel. Voice channels never appear under locks (`Voice_channels_are_not_lock_checked`) | none |
+| DIAG-33 | A role overwrite on a voice channel allows Speak **[auto]** `ModerationDiagnosticsTests.Voice_channels_are_checked_with_voice_permissions` and `ModerationDiagnosticsTests.Voice_channels_are_lock_checked_with_voice_permissions` | Check | Reported under mutes and under locks for that voice channel. `/Lock` accepts voice and stage channels since 2026-11-10, so they are lock-checked with the voice set | none |
 | DIAG-34 | The bot's role has an explicit deny Manage Channels overwrite in `#locktest` **[auto]** `ModerationDiagnosticsTests.Bot_without_manage_channels_in_a_channel_cannot_lock_it` | Check | Under locks for `#locktest`: "The bot does not have Manage Channels in this channel, so it cannot lock it. Fix: check this channel's permission overwrites for the bot's role." | none |
 | DIAG-35 | An announcement channel, a category and a thread, none with a mute overwrite | Check **[auto]** `DiagnosticsFindingsTests.Check_SkipsAnnouncementChannels_Categories_AndThreads` | None of them are listed | none |
-| DIAG-36 | A forum and a media channel without a mute overwrite | Check **[auto]** `DiagnosticsFindingsTests.Check_ListsForumAndMediaChannels_WithoutAMuteOverwrite` and `DiagnosticsFindingsTests.Check_DoesNotLockCheckMediaChannels` (skipped, KI-59) | Both listed under mutes and checked for locks. **Expected:** media channels not lock-checked, since `/Lock` refuses them. **Actual:** they get lock findings too (observation 5) | none |
-| DIAG-37 | The bot's role has an allow Send Messages overwrite in `#modlog` (common setup) | Check **[auto]** `DiagnosticsFindingsTests.Check_LeavesOutTheBotsOwnRole` (skipped, KI-58) | **Expected:** the bot's own role left out. **Actual:** it is reported as able to speak while muted and while locked (observation 4) | none |
-| DIAG-38 | `#private`: @everyone denied View Channel only; Send Messages left default | Check **[auto]** `DiagnosticsFindingsTests.Check_LeavesOutAChannelThatEveryoneCannotSee` (skipped, KI-57) | **Expected:** not reported, since no one but `admin` can see it. **Actual:** listed under mutes and locks if any overwrite is missing, because View Channel is not considered (observation 3) | none |
-| DIAG-39 | `user1` muted; a voice channel with default permissions | `user1` types in the voice channel's text chat **[auto]** `DiagnosticsFindingsTests.MutesCreate_DeniesSendMessagesInVoiceAndStageChat` and `DiagnosticsFindingsTests.Check_FlagsAVoiceChannelWhoseChatMutedMembersCanUse` (both skipped, KI-56) | **Expected:** refused while muted. **Actual:** allowed; the mute only denies Connect and Speak on voice channels, and the report does not flag it (observation 2) | none |
+| DIAG-36 | A forum and a media channel without a mute overwrite | Check **[auto]** `DiagnosticsFindingsTests.Check_ListsForumAndMediaChannels_WithoutAMuteOverwrite` and `DiagnosticsFindingsTests.Check_DoesNotLockCheckMediaChannels` | Both listed under mutes. Only the forum is checked for locks: `/Lock` refuses media channels (fixed, KI-59) | none |
+| DIAG-37 | The bot's role has an allow Send Messages overwrite in `#modlog` (common setup); separately, a plain `Staff` role the bot also holds | Check **[auto]** `DiagnosticsFindingsTests.Check_LeavesOutTheBotsOwnRole` and `DiagnosticsFindingsTests.Check_StillReportsARoleTheBotHolds_ThatIsNotManaged` | The bot's role, and any role managed by a bot, is left out and listed as "Bot roles (excluded, bots need their own channel permissions)" (fixed, KI-58). `Staff` is still reported: only bot-managed roles are left out | none |
+| DIAG-38 | `#private`: @everyone denied View Channel only; Send Messages left default | Check **[auto]** `DiagnosticsFindingsTests.Check_LeavesOutAChannelThatEveryoneCannotSee` | Not reported, since no one but `admin` can see it (fixed, KI-57) | none |
+| DIAG-39 | `user1` muted; a voice channel with default permissions | `user1` types, reacts or sends TTS in the voice channel's text chat **[auto]** `DiagnosticsFindingsTests.MutesCreate_DeniesSendMessagesInVoiceAndStageChat` and `DiagnosticsFindingsTests.Check_FlagsAVoiceChannelWhoseChatMutedMembersCanUse` | Refused while muted: on voice and stage channels the mute denies Connect, Speak, Send Messages, Send TTS Messages and Add Reactions (fixed, KI-56). A voice overwrite made before the fix (Connect and Speak only) is flagged until `/Mutes Refresh` | none |
 | DIAG-40 | 40+ channels with findings | Check | Embed description cut to 4000 characters ending "..."; the file has everything **[auto]** `DiagnosticsReportFormatterTests.Embed_summarizes_channel_counts_and_stays_within_the_description_limit` | none |
 | DIAG-41 | Change an overwrite by hand | Run Check straight away, then again 5 s later **[auto]** `DiagnosticsFindingsTests.Check_AfterAnOverwriteIsChangedByHand_ReflectsTheChange` | The second run reflects the change. Note if the first run is stale | none |
 
@@ -229,8 +229,8 @@ gates, so check DIAG-63 and DIAG-64 by hand. `items` takes one or more roles or 
 | DIAG-64 | Moderation disabled | `admin` runs Ignore Add, Remove and View **[auto]** `DiagnosticsIgnoreTests.Ignore_NeedsManageGuildAndTheModule` | "This module is disabled in this server." for each | No rows |
 | DIAG-65 | `@mod` ignored, `@mod` has an allow overwrite in `#general` **[auto]** `ModerationDiagnosticsTests.Ignored_roles_are_not_reported_and_are_listed` | `/Diagnostics Check` | `mod` not reported. "Ignored roles (excluded on request): mod" in embed and file | none |
 | DIAG-66 | `user2` ignored, with a member overwrite in `#general` **[auto]** `ModerationDiagnosticsTests.Ignored_members_are_not_reported_and_are_listed` | Check | `user2` not reported. "Ignored members (excluded on request, user IDs): <id>" | none |
-| DIAG-67 | An ignored role, then deleted in Discord | View; then try to Remove it **[auto]** `DiagnosticsIgnoreTests.View_StillShowsAnIgnoredRoleThatWasDeleted` (the View half; Remove needs the role picked in Discord) | View shows it as a deleted role. It can't be picked in the role option, so it can't be removed (observation 8) | Row stays |
-| DIAG-68 | 60+ roles ignored (SQL; restart the bot) | View **[auto]** `DiagnosticsIgnoreTests.View_OfALongList_ShowsWholeMentions_AndHowManyAreLeft` (skipped, KI-62) | **Expected:** every item, or a count of the rest. **Actual:** Roles is cut at 1000 characters with "...", which can split a mention (observation 8) | none |
+| DIAG-67 | An ignored role, then deleted in Discord | View **[auto]** `DiagnosticsIgnoreTests.AnIgnoredRoleDeletedInDiscord_IsTakenOffTheList_AndTheModLogTold` | The role is taken off the list when Discord deletes it. `#modlog`: "The role **name** (`id`) was deleted, so it is no longer ignored by the diagnostics." (fixed, KI-62). A role deleted while the bot is offline stays on the list | Row removed |
+| DIAG-68 | 60+ roles ignored (SQL; restart the bot) | View **[auto]** `DiagnosticsIgnoreTests.View_OfALongList_SplitsBetweenMentions_AndShowsThemAll` | Every item is shown. Mentions are split between fields of up to 1024 characters ("Roles (continued)"), never mid-mention; a list too long for one embed is paged with buttons (fixed, KI-62) | none |
 | DIAG-69 | Settings DB unreachable | Add **[auto]** `DiagnosticsIgnoreTests.Add_WhenTheListCannotBeSaved_SaysSoPrivately` | Ephemeral "Could not save the diagnostics ignore list." | none |
 | DIAG-70 | `@mod` ignored in Test-A | View in Test-B **[auto]** `DiagnosticsIgnoreTests.View_InAnotherGuild_ShowsThatGuildsList` | Test-B's own list | none |
 
@@ -266,29 +266,29 @@ via MOD-83 to MOD-85). The report contents in a follow-up are not checked by any
 
 ## Code observations
 
-1. **A spam mute is recorded before it is known to work** (new, med). `SpamEvents.cs:62-63` saves the sin, then
+1. **Fixed 2026-11-10 (KI-55). A spam mute is recorded before it is known to work** (was new, med). `SpamEvents.cs:62-63` saves the sin, then
    `:66` saves the `MuteAdded` row, then `:71-73` looks up the role and `:75` grants it. If the role is gone, the
    handler returns with both rows saved. If the grant fails (no Manage Roles, or `@Muted` above the bot), it throws,
    so there is no log, no DM and the message is not deleted. If `AddMute` fails, the sin is left on its own. This is
    KI-04's problem in the spam path. SPAM-27, 28, 29.
-2. **Muted members can still type in voice and stage channel chat** (new, med). `PermissionValues.cs:16-17` denies only
+2. **Fixed 2026-11-10 (KI-56). Muted members can still type in voice and stage channel chat** (was new, med). `PermissionValues.cs:16-17` denies only
    Connect and Speak, which `MuteAdminCommands.cs:63-64` uses for voice and stage channels. Those channels have a text
    chat that uses Send Messages. The diagnostics use the same set (`ModerationDiagnostics.cs:134-135`), so they don't
    flag it. DIAG-39.
-3. **Hidden channels are still checked** (new, low). `EffectivePermissions.cs:14-41` ignores View Channel. A channel no
+3. **Fixed 2026-11-10 (KI-57). Hidden channels are still checked** (was new, low). `EffectivePermissions.cs:14-41` ignores View Channel. A channel no
    one but staff can see is reported if its send bits are not denied. DIAG-38.
-4. **The bot's own role is reported as leaking** (new, low). `ModerationDiagnostics.cs:25-27` only leaves out
+4. **Fixed 2026-11-10 (KI-58). The bot's own role is reported as leaking** (was new, low). `ModerationDiagnostics.cs:25-27` only leaves out
    @everyone, the mute role, Administrator roles and ignored roles. The bot's role, and other bots' managed roles,
    often have allow overwrites, so they show up until someone ignores them. DIAG-37.
-5. **Media channels are lock-checked, but `/Lock` refuses them** (new, low). `DiagnosticsSnapshotBuilder.cs:32-33`
+5. **Fixed 2026-11-10 (KI-59). Media channels are lock-checked, but `/Lock` refuses them** (was new, low). `DiagnosticsSnapshotBuilder.cs:32-33`
    treats media channels as text, and `ModerationDiagnostics.cs:91` lock-checks every text kind. `LockChannel.cs:34-35`
    does not accept media channels. DIAG-36.
-6. **`/SpamFilter` has no module check, no `RequireGuild`, and no mod log** (new, low).
+6. **Fixed 2026-11-10 (KI-60). `/SpamFilter` has no module check, no `RequireGuild`, and no mod log** (was new, low).
    `SpamFilterOverrideCommands.cs:13-21` has only the Manage Channels check, so Override works with AntiSpam off.
    Every other settings change that saves posts to the mod log, but `:52-55` posts nothing. SPAM-40, SPAM-50.
-7. **`/SpamFilter View` with no overrides is an empty embed** (new, low). `SpamFilterOverrideCommands.cs:77-78` pages an
+7. **Fixed 2026-11-10 (KI-61). `/SpamFilter View` with no overrides is an empty embed** (was new, low). `SpamFilterOverrideCommands.cs:77-78` pages an
    empty list, which gives an embed with only its author. Other views say "None". SPAM-61.
-8. **The diagnostics ignore list can't be fully managed** (new, low). `DiagnosticsCommands.cs:116` cuts View at 1000
+8. **Fixed 2026-11-10 (KI-62). The diagnostics ignore list can't be fully managed** (was new, low). `DiagnosticsCommands.cs:116` cuts View at 1000
    characters, which can split a mention and hides how many are left. A deleted role can't be picked, so it stays on
    the list (harmless, as the checks only use existing roles). DIAG-67, DIAG-68.
 9. **Spam mute escalation counts pardoned mutes** (new, low, maybe intended). `SpamEvents.cs:52-55` counts every Mute

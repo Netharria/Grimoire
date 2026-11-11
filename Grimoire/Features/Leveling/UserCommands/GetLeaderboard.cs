@@ -29,8 +29,9 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
     [Command("Leaderboard")]
     [Description("Posts the leaderboard for the server.")]
     public async Task LeaderboardAsync(CommandContext ctx,
+        // Defaults to Top so that a bare !leaderboard works as a text command (KI-85).
         [Parameter("option")] [Description("Select either to view the top users, your position, or a specific user.")]
-        LeaderboardOption option,
+        LeaderboardOption option = LeaderboardOption.Top,
         [Parameter("user")] [Description("The user to find on the leaderboard.")]
         DiscordUser? user = null)
     {

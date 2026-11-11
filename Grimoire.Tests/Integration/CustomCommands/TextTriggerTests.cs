@@ -187,9 +187,9 @@ public sealed class TextTriggerTests(GrimoireCoreFactory database) : IAsyncLifet
 
     /// <summary>
     ///     CC-119: without Embed Links, Discord drops the embed and refuses the then-empty message with a 400. That
-    ///     should be reported like a channel the bot can't post in, not raised as an error on every use.
+    ///     should be reported like a channel the bot can't post in, not raised as an error on every use. KI-84.
     /// </summary>
-    [Fact(Skip = "Fails: only UnauthorizedException is caught, so the 400 is logged as an event-handler error. KI-84")]
+    [Fact]
     public async Task AnEmbedCommand_WithoutEmbedLinks_IsReported_NotRaised()
     {
         await this.LearnAsync("rules", "Be nice", SlashOption.Boolean("embed", true));
@@ -199,29 +199,81 @@ public sealed class TextTriggerTests(GrimoireCoreFactory database) : IAsyncLifet
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!rules");
 
         await this.WaitForPostAsync();
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.StartsWith(
+            $"I could not post an embed custom command in {this.Guild.General.Mention}.", StringComparison.Ordinal) == true);
         (await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this._bot.Logs.Errors.Count), count => count > 0,
             NothingHappensWindow)).ShouldBe(0);
         (await this.UsesAsync()).ShouldBeEmpty();
     }
 
     /// <summary>
-    ///     CC-126: DSharpPlus's own <c>!</c> text processor is registered too. A custom command named like a bot command
-    ///     should get one reply, and <c>!commands stats</c> should do nothing. Unskipped, there are three posts: the custom
-    ///     command, the leveling <c>/Leaderboard</c>'s parse error for <c>!leaderboard</c>, and <c>/Commands Stats</c>
-    ///     running as a text command.
+    ///     CC-126 (KI-85): the bot's own commands run as text commands with the same <c>!</c> prefix, so Learn refuses
+    ///     a custom command named like one.
     /// </summary>
-    [Fact(Skip = "Fails: DSharpPlus's ! text processor runs /Leaderboard and /Commands Stats as text commands. KI-85")]
-    public async Task BotCommandNames_AsTextCommands_OnlyRunTheCustomCommand()
+    [Theory]
+    [InlineData("leaderboard")]
+    [InlineData("commands")]
+    [InlineData("ban")]
+    public async Task Learn_OfABuiltInCommandName_IsRefused(string name)
     {
-        await this.LearnAsync("leaderboard", "custom board");
+        var reply = await this.LearnAsync(name, "custom");
+
+        reply.Description.ShouldBe($"`{name}` is the name of one of Grimoire's own commands, so a custom command can't use it.");
+        reply.IsEphemeral.ShouldBeTrue();
+        await using var dbContext = database.CreateDbContext();
+        (await dbContext.CustomCommands.CountAsync(Token)).ShouldBe(0);
+    }
+
+    /// <summary>
+    ///     CC-126 (KI-85): a custom command saved under a bot command's name before Learn refused it doesn't answer.
+    ///     <c>!leaderboard</c> runs <c>/Leaderboard</c> as a text command, with Top as its default option, and only that
+    ///     replies.
+    /// </summary>
+    [Fact]
+    public async Task ACustomCommandSavedUnderABuiltInName_DoesNotAnswer_TheBotCommandDoes()
+    {
+        await this._bot.SetModuleAsync(Module.Leveling, true);
+        await using (var seed = database.CreateDbContext())
+        {
+            seed.CustomCommands.Add(TextCustomCommand.Create(CustomCommandName.Create("leaderboard").ShouldSucceed(),
+                new GuildId(this.Guild.Id), CustomCommandContent.Create("custom board").ShouldSucceed(), [], [],
+                new ModeratorId(this.Guild.Admin.Id), DateTimeOffset.UtcNow));
+            await seed.SaveChangesAsync(Token);
+        }
+
+        // A member without Manage Messages gets no text reply outside the user command channel, as /Leaderboard
+        // would answer them privately, so the moderator asks.
+        this._bot.SendMessage(this.Guild.Moderator, this.Guild.General, "!leaderboard");
+
+        var post = await this.WaitForPostAsync();
+        post["content"]?.GetValue<string>().ShouldNotBe("custom board");
+        post["embeds"].ShouldNotBeNull().AsArray().ShouldNotBeEmpty();
+        (await this.GeneralPostCountAfterWindowAsync()).ShouldBe(1);
+        (await this.UsesAsync()).ShouldBeEmpty();
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>
+    ///     KI-85: the custom command settings that take only a name also run as text commands. Learn and Revert stay
+    ///     slash-only: Learn has too many options to type, and Revert's version is picked from the autocomplete.
+    /// </summary>
+    [Fact]
+    public async Task StatsHistoryAndForget_RunAsTextCommands()
+    {
         await this.LearnAsync("hello", "hi");
 
-        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!leaderboard");
-        (await this.WaitForPostAsync())["content"]!.GetValue<string>().ShouldBe("custom board");
-        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!commands stats hello");
+        this._bot.SendMessage(this.Guild.Admin, this.Guild.General, "!commands stats hello");
+        (await this.WaitForPostAsync())["embeds"]![0]!["author"]!["name"]!.GetValue<string>().ShouldBe("Stats for !hello");
 
-        (await this.GeneralPostCountAfterWindowAsync()).ShouldBe(1);
-        (await this.WaitForUsesAsync(1)).ShouldBe([(this.Guild.User1.Id, "leaderboard")]);
+        this._bot.SendMessage(this.Guild.Admin, this.Guild.General, "!commands history hello");
+        await this._bot.Rest.WaitForRequestAsync(request => this.IsGeneralPost(request)
+            && request.Json?["embeds"]?[0]?.ToJsonString().Contains("Version history for hello", StringComparison.Ordinal) == true);
+
+        this._bot.SendMessage(this.Guild.Admin, this.Guild.General, "!commands forget hello");
+        await this._bot.Rest.WaitForRequestAsync(request => this.IsGeneralPost(request)
+            && request.Json?["embeds"]?[0]?["description"]?.GetValue<string>() == "Removed command hello");
+        await using var dbContext = database.CreateDbContext();
+        (await dbContext.CustomCommands.CountAsync(Token)).ShouldBe(0);
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 

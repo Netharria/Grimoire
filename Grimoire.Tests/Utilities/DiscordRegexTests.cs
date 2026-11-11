@@ -62,7 +62,8 @@ public sealed class DiscordRegexTests
     ///     <c>!hug &lt;@!id&gt;</c> leaves <c>%Mention</c> empty and keeps the raw mention in <c>%Message</c>
     ///     (<c>TextCustomCommandProcessor.ResolveSnowflake</c>).
     /// </summary>
-    [Fact(Skip = "Fails: the user mention regex ignores the <@!id> nickname form. KI-114")]
+    /// <remarks>Covers KI-114.</remarks>
+    [Fact]
     public void A_nickname_mention_gives_its_id()
         => DiscordRegex.GetUserMentions("<@!123>").ShouldBe([123UL]);
 }

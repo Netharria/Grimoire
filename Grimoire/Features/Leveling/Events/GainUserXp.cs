@@ -142,7 +142,7 @@ public sealed partial class GainUserXp(
         List<RoleId> refused = [];
         foreach (var reward in newRewards)
         {
-            if (!guild.Roles.TryGetValue(reward.RoleId.Value, out var role))
+            if (await guild.GetRoleOrDefaultAsync(reward.RoleId) is not { } role)
                 continue;
             try
             {
@@ -200,7 +200,7 @@ public sealed partial class GainUserXp(
     {
         try
         {
-            if (guild.Roles.TryGetValue(reward.RoleId.Value, out var role))
+            if (await guild.GetRoleOrDefaultAsync(reward.RoleId) is { } role)
                 await member.SendMessageAsync(new DiscordEmbedBuilder()
                     .WithAuthor($"Congratulations on earning {role.Name}!", iconUrl: guild.IconUrl)
                     .WithFooter($"Message from the moderators of {guild.Name}.")

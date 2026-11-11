@@ -24,7 +24,7 @@ public partial class MuteAdminCommands
             return;
         }
 
-        if (!guild.Roles.TryGetValue(roleId.Value, out var role))
+        if (await guild.GetRoleOrDefaultAsync(roleId) is not { } role)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not find configured mute role.");
             return;

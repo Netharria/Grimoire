@@ -22,7 +22,7 @@ public sealed partial class CustomCommandSettings
     [Command("History")]
     [Description("View the version history of a command.")]
     public async Task History(
-        SlashCommandContext ctx,
+        CommandContext ctx,
         [SlashAutoCompleteProvider<GetCustomCommandOptions>]
         [Parameter("name")]
         [Description("The name of the command to view history for.")]
@@ -52,12 +52,10 @@ public sealed partial class CustomCommandSettings
             : Result<IReadOnlyList<CommandVersion>>.Ok(versions);
     }
 
-    private static async Task SendHistoryPagesAsync(CommandContext ctx, CustomCommandName name,
+    private static Task SendHistoryPagesAsync(CommandContext ctx, CustomCommandName name,
         IReadOnlyList<CommandVersion> versions)
-    {
-        foreach (var page in BuildPages(versions))
-            await ctx.ReplyAsync(GrimoireColor.Purple, page, $"Version history for {name}");
-    }
+        => ctx.ReplyWithFollowUpsAsync(GrimoireColor.Purple, BuildPages(versions), $"Version history for {name}",
+            ephemeral: false).AsTask();
 
     private static IEnumerable<string> BuildPages(IReadOnlyList<CommandVersion> versions)
     {

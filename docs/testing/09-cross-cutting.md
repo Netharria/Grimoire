@@ -270,7 +270,7 @@ is always on and can't be toggled. Disabling a module never stops timed mutes or
 | XC-86 | Every module off | `/Modules View`, `/Modules Set`, `/GeneralSettings View`, `/UserInfo`, `/Purge All` | All work | **[auto]** `CommandChecksTests.ModulesCommands_WorkWithEveryModuleDisabled`; the rest is GEN-17 |
 | XC-87 | Every module off, mod log set | `/Modules Set module:Leveling enable:True` | Mod log entry posted (General log type) | Module row true. **[auto]** `ModuleToggleTests.EveryModuleOff_ModulesSet_IsStillLogged` |
 | XC-88 | Guild just added, no settings rows | `/Modules View` | Every module False | No rows until a module is set. **[auto]** `ModuleToggleTests.NewGuild_HasNoModuleRows_AndEveryModuleIsOff` |
-| XC-89 | AntiSpam off | `/SpamFilter Override option:Always` **[auto]** `SpamFilterOverrideTests.Override_WithAntiSpamDisabled_IsRefused` (skipped, KI-60) | **Expected:** "This module is disabled in this server.", as `/ModSettings AutoPardon` does. **Actual:** the override is saved (observation 2) | `SpamFilterOverrides` row |
+| XC-89 | AntiSpam off | `/SpamFilter Override option:Always` **[auto]** `SpamFilterOverrideTests.Override_WithAntiSpamDisabled_IsRefused` | "This module is disabled in this server.", as `/ModSettings AutoPardon` does (fixed, KI-60) | No row |
 
 ## F. Settings cache invalidation
 

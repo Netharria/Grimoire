@@ -35,24 +35,34 @@ public sealed partial class CustomCommandSettings
         await ctx.DeferResponseAsync();
         var guild = ctx.RequiredGuild;
 
-        await ParseVersion(version)
+        await ParseVersion(name, version)
             .ToResult()
-            .BindAsync(ticks => FetchVersionAsync(guild.GetGuildId(), name, new DateTimeOffset(ticks, TimeSpan.Zero))
-                .Map(target => (Target: target, Ticks: ticks)))
+            .BindAsync(createdAt => this.FetchVersionAsync(guild.GetGuildId(), name, createdAt))
             .Match(
-                async found =>
+                async target =>
                 {
-                    await this.SaveCommandAsync(found.Target.AsNewVersion(ctx.GetModeratorId(), DateTimeOffset.UtcNow));
-                    await OnRevertSuccessAsync(ctx, guild, name, found.Ticks);
+                    await this.SaveCommandAsync(target.AsNewVersion(ctx.GetModeratorId(), DateTimeOffset.UtcNow));
+                    await this.OnRevertSuccessAsync(ctx, guild, name, target.CreatedAt);
                 },
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
-    private static Validation<long> ParseVersion(string version)
-        => long.TryParse(version, out var ticks)
-            ? Validation<long>.Succeed(ticks)
-            : Validation<long>.Fail(new Error("command.revert.invalid-version",
-                "Invalid version selected. Use the autocomplete to pick a version."));
+    /// <summary>
+    ///     A version is the ticks of its <c>CreatedAt</c>. A hand-typed number outside <see cref="DateTimeOffset" />'s
+    ///     range can't be any version, so it's not found rather than a crash (KI-83).
+    /// </summary>
+    private static Validation<DateTimeOffset> ParseVersion(CustomCommandName name, string version)
+        => long.TryParse(version, out var ticks) switch
+        {
+            false => Validation<DateTimeOffset>.Fail(new Error("command.revert.invalid-version",
+                "Invalid version selected. Use the autocomplete to pick a version.")),
+            true when ticks < DateTimeOffset.MinValue.UtcTicks || ticks > DateTimeOffset.MaxValue.UtcTicks =>
+                Validation<DateTimeOffset>.Fail(VersionNotFound(name)),
+            true => Validation<DateTimeOffset>.Succeed(new DateTimeOffset(ticks, TimeSpan.Zero))
+        };
+
+    private static Error VersionNotFound(CustomCommandName name)
+        => new("command.revert.not_found", $"Version not found for command `{name}`.");
 
     private async Task<Result<CustomCommand>> FetchVersionAsync(GuildId guildId, CustomCommandName name,
         DateTimeOffset targetCreatedAt)
@@ -63,15 +73,14 @@ public sealed partial class CustomCommandSettings
             .Include(x => x.Roles)
             .FirstOrDefaultAsync(x => x.GuildId == guildId && x.Name == name && x.CreatedAt == targetCreatedAt);
         return target is null
-            ? Result<CustomCommand>.Fail(new Error("command.revert.not_found",
-                $"Version not found for command `{name}`."))
+            ? Result<CustomCommand>.Fail(VersionNotFound(name))
             : Result<CustomCommand>.Ok(target);
     }
 
     private async Task OnRevertSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name,
-        long ticks)
+        DateTimeOffset createdAt)
     {
-        var unixSeconds = new DateTimeOffset(ticks, TimeSpan.Zero).ToUnixTimeSeconds();
+        var unixSeconds = createdAt.ToUnixTimeSeconds();
         await ctx.ReplyAsync(GrimoireColor.Green, $"Reverted `{name}` to version from <t:{unixSeconds}:f>.");
         await guildLog.SendLogMessageAsync(new GuildLogMessage
         {

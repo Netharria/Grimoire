@@ -12,7 +12,7 @@ namespace Grimoire.Utilities;
 
 public static partial class DiscordRegex
 {
-    [GeneratedRegex("<@(\\d+)>", RegexOptions.ECMAScript)]
+    [GeneratedRegex("<@!?(\\d+)>", RegexOptions.ECMAScript)]
     private static partial Regex UserMentionRegex();
 
     [GeneratedRegex("<@&(\\d+)>", RegexOptions.ECMAScript)]

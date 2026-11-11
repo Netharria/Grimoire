@@ -17,23 +17,24 @@ internal sealed class GetCustomCommandOptions(IDbContextFactory<GrimoireDbContex
 {
     public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
     {
-        if (context.Guild is not { } guild)
+        if (context is not { Guild: { } guild, Member: { } member })
             return [];
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         // No name is longer than 24, and levenshtein refuses input over 255 characters.
         var cleanedText = context.UserInput?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() is { } word
             ? word[..Math.Min(word.Length, 24)]
             : null;
-        return await GetChoicesAsync(dbContext, guild.GetGuildId(), cleanedText);
+        return await GetChoicesAsync(dbContext, guild.GetGuildId(), member, cleanedText);
     }
 
     private static async Task<IEnumerable<DiscordAutoCompleteChoice>> GetChoicesAsync(
-        GrimoireDbContext dbContext, GuildId guildId, string? cleanedText)
+        GrimoireDbContext dbContext, GuildId guildId, DiscordMember member, string? cleanedText)
     {
         var latestVersions = dbContext.CustomCommands
             .LatestVersions()
             .AsNoTracking()
-            .Where(x => x.GuildId == guildId);
+            .Where(x => x.GuildId == guildId)
+            .VisibleTo(member);
 
         var ordered = string.IsNullOrEmpty(cleanedText)
             ? latestVersions.OrderBy(x => x.Name)

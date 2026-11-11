@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 
@@ -29,18 +30,21 @@ public sealed partial class CustomCommandSettings
         await ctx.DeferResponseAsync();
         var guild = ctx.RequiredGuild;
 
-        await QueryStatsAsync(guild.GetGuildId(), name)
+        await this.QueryStatsAsync(guild.GetGuildId(), ctx.RequiredMember, name)
             .Match(
                 r => ctx.ReplyAsync(embed: BuildStatsEmbed(name, r.Usage, r.TopUsers)).AsTask(),
                 error => ctx.SendErrorResponseAsync(error.Message).AsTask(),
                 onNotFound: error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
-    private async Task<Result<StatsQueryResult>> QueryStatsAsync(GuildId guildId, CustomCommandName name)
+    private async Task<Result<StatsQueryResult>> QueryStatsAsync(GuildId guildId, DiscordMember member,
+        CustomCommandName name)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        // As /Commands History says: zeros would read as a command nobody uses.
-        if (!await dbContext.CustomCommands.AnyAsync(x => x.GuildId == guildId && x.Name == name))
+        // As /Commands History says: zeros would read as a command nobody uses. A command the member can't run is
+        // reported the same way, so its name isn't given away (KI-86).
+        if (!await dbContext.CustomCommands.LatestVersions().VisibleTo(member)
+                .AnyAsync(x => x.GuildId == guildId && x.Name == name))
             return new Result<StatsQueryResult>.NotFound(
                 new Error("command.stats.not_found", $"No command named `{name}` exists."));
         var now = DateTimeOffset.UtcNow;
