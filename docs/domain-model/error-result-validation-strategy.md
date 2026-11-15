@@ -1,5 +1,8 @@
 # Native C# Error, Result, and Validation Strategy
 
+> **Superseded 2026-11-14.** Grimoire is replacing its own `Result`, `Validation`, `Error` and `Unit` with language-ext's `Fin`, `Validation<Error, _>`, `Error` and `Unit`, with the cases `NotFound`, `Invalid`, `Forbidden` and `Unavailable`. See [`../langext-migration/plan.md`](../langext-migration/plan.md), part 2 (C1, C2, C4). `docs/architecture.md` (section 1.2) will become the current description.
+
+
 Date: 2026-04-18
 
 ## Strategy checklist

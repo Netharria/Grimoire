@@ -1,5 +1,8 @@
 # Section 12: Roll-up
 
+> **Superseded where decided.** [`../design-decisions.md`](../design-decisions.md) overrides this roll-up, and the migration plan's part 2 overrides both. Its phase plan (part 5) is replaced by the migration plan's sections.
+
+
 Written 2026-11-09 from sections 1 to 11, `review-decisions.md` and `docs/testing/known-issues.md`. No source code was
 changed. Code was read only where two sections disagreed (see "Contradictions resolved").
 

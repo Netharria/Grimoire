@@ -1,5 +1,8 @@
 # Domain Model Migration Strategy
 
+> **Partly superseded.** The Settings rules changed: mutes and locks become one-way state rows (design-decisions TD-1, TD-2) and guild settings become versioned JSON documents per module (TD-6). The undeployed migrations are edited in place (Q6), and runtime queries move to Dapper (migration plan C3).
+
+
 Date: 2026-04-18
 
 ## Migration checklist

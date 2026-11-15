@@ -1,5 +1,8 @@
 # Design Review: functional style, performance and C# 15
 
+> **Completed review (findings only).** The owner's answers are in [`design-decisions.md`](design-decisions.md), and the migration plan ([`../langext-migration/plan.md`](../langext-migration/plan.md)) overrides both where they differ.
+
+
 A section-by-section review of the whole codebase against the design goals of this update. It is a different review from
 `branch-review.md`. That one looked for defects. This one asks whether each part of the code has the shape the update
 is aiming for. Findings only: nothing is changed until the owner picks what to do.

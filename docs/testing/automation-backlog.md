@@ -1,5 +1,8 @@
 # Automated Integration Test Backlog
 
+> **Complete.** A-00 to A-53 were done by 2026-11-09. The harness now lives in `Grimoire.IntegrationTests`. Under the language-ext migration, logic tests move to `Grimoire.UnitTests` (plan part 4), so new harness tests are only for integrations plus one smoke test per command or handler.
+
+
 The ordered list of everything to cover with fake-Discord integration tests, like
 `Grimoire.IntegrationTests/Moderation/WarnTests.cs`. Each item is sized to fit one session. Work them top to bottom:
 earlier items build the harness pieces that later ones reuse.

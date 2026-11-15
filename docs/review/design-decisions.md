@@ -1,5 +1,8 @@
 # Design review decisions
 
+> **Read with the migration plan.** [`../langext-migration/plan.md`](../langext-migration/plan.md) part 2 (2026-11-14) overrides entries here: C1 replaces the error type of Q2b/Q2c/TD-12 with language-ext `Expected` subtypes; C2 makes the runner render failures (Q1); C3 moves Q10/Q16/Q28/TD-6's EF runtime work to Dapper (EF stays for migrations); C5 limits Discord types in the core; C6 uses `Atom`/`AtomHashMap` instead of Q20's `ConcurrentDictionary`; C10 keeps `/Warn`'s reason required (an exception to Q30).
+
+
 The owner's answers to the questions in `docs/review/design/12-rollup.md` part 7. Each entry gives the question number,
 the decision, and how it changes the findings. Where a decision differs from the review's recommendation, the entry
 says so.
@@ -54,7 +57,7 @@ says so.
 
 | Q | Decision | Effect on the findings |
 |---|----------|------------------------|
-| 23 | **Production takes the token and database settings from environment variables, and the non-secret settings from the shipped `appsettings.json`.** | SH-1 is required before the deploy. Delete the extra `ConfigurationBuilder` block in `Program.cs`. `CreateDefaultBuilder` already loads `appsettings.json` first and the environment variables after it, which is exactly this setup. With the block as it is, the file's `"token": ""` and `"Grimoire": ""` win over the environment variables. `main` has the same block, so check why production works today: its shipped file may differ. |
+| 23 | **Production takes the token and database settings from environment variables, and the non-secret settings from the shipped `appsettings.json`.** | SH-1 is required before the deploy. Delete the extra `ConfigurationBuilder` block in `Program.cs`. `CreateDefaultBuilder` already loads `appsettings.json` first and the environment variables after it, which is exactly this setup. ~~With the block as it is, the file's `"token": ""` and `"Grimoire": ""` win over the environment variables.~~ **Corrected 2026-11-14 (tested):** the block adds the file as a chained source, which treats an empty value as missing, so the empty keys on `main` fall through to the environment variables, and production works. Only a non-empty file value beats an environment variable. This branch's tracked file had one (the dev connection string), which would have replaced production's connection string. The block was removed and the value emptied in migration section 0.3. |
 | 23b | **The tracked password is for a local dev database only.** No rotation needed. | Replace it with a placeholder in `Grimoire/appsettings.json`, as CLAUDE.md now says. Moving the file to `appsettings.example.json` is unnecessary, because production ships it on purpose. |
 | 24 | **PluralKit: a token bucket with a small queue.** A delete handler may wait up to about 10 s in a burst. | SH-2 as proposed. Fixes defect 3. |
 | 25 | **Sends that create something aren't retried.** That means new messages and log posts, plus initial interaction responses past Discord's 3-second window. Retries stay for reads and idempotent calls. A rare lost post is preferred over a rare duplicate. | SH-15 as proposed. Fixes defect 11. |

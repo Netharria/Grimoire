@@ -1,5 +1,8 @@
 # Spec: Settings Layer Fixes
 
+> **Implemented spec, historical record.** Later decisions may have changed the details: check [`../review/design-decisions.md`](../review/design-decisions.md) and the migration plan.
+
+
 > **Status: Implemented** — All 9 fixes applied. Fix 1: `protected ulong Id { get; init; }` retained at the base (EF Core 10 rejects mapping typed sub-type properties to the same column as a root shadow property in TPH); the typed properties `ChannelId`/`UserId`/`RoleId` on each subtype are made `public required` while keeping the facade `get => new(Id); init => Id = value.Value` pattern — this enforces required typed initialization without EF schema changes. Fix 2: zero-ID guards added to `ChannelLocked.Create` and `ThreadLocked.Create`. Fix 3: second `ChannelLocked.Create` overload replaced with `WithPermissions` instance method; call site in `SettingsModule.Moderation.Locks.cs` updated. Fix 4: `guildId` guards added to `MuteAdded.Create`, `MuteRemoved.Create`, `RewardAdded.Create`, `RewardRemoved.Create`. Fix 5: `RewardEntry.RewardMessage` changed from `string?` to `RewardMessage?`; projection and call sites updated. Fix 6: `GuildModuleState` made `sealed`. Fix 7: `XpTimeoutPeriodExtensions.ToDatabaseString` migrated to C# 14 extension member syntax. Fix 8: `FromDatabaseOrDefault` renamed to `FromDatabase` returning `Validation<T>` on all four value types; `SettingsModule.Leveling.Levelsettings` uses `Validation.Combine`; invalid-setting errors propagate as `InvalidOperationException` caught by `GetLevelingSettings`. Fix 9: `ModerationReason.CreateIfNotNull` and `RewardMessage.CreateIfNotNull` simplified to null-conditional ternary.
 
 A collection of smaller, self-contained fixes across `Grimoire.Settings.Domain` and

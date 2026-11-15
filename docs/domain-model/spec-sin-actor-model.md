@@ -1,5 +1,8 @@
 # Spec: Sin Actor Model
 
+> **Implemented spec, historical record.** Later decisions may have changed the details: check [`../review/design-decisions.md`](../review/design-decisions.md) and the migration plan.
+
+
 > **Status: Implemented** — `AuditActor` renamed to `ModerationActor` during implementation.
 
 ## Problem

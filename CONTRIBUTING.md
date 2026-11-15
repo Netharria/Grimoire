@@ -5,7 +5,7 @@ needed and in any case appreciated.
 
 ## Overview
 
-Grimoire is written in [.NET 7] with the [DSharpPlus] commands framework. For dependency management we
+Grimoire is written in [.NET 10] with the [DSharpPlus] commands framework. For dependency management we
 use [nuget]. 
 
 ## Getting Started: Coding
@@ -21,12 +21,17 @@ If you want to make changes to Grimoire, start by creating a fork. Make your cha
 
 ## Code Style
 
-A `./editorconfig` has been setup and it is expected that all its rules have been followed. A few preferences are listed below. (Generated code is not included in this.)
+A `.editorconfig` has been set up and it is expected that all its rules have been followed. A few preferences are listed below. (Generated code is not included in this.)
 
 * Use class initializer syntax when possible.
 * When working with async code, and your method consists of a single await statement not in any if, while, etc. blocks, pass the task through instead of awaiting it. 
 
 
 [DSharpPlus]: https://github.com/DSharpPlus/DSharpPlus/
-[.NET 7]: https://dotnet.microsoft.com/en-us/download/dotnet/7.0
+[.NET 10]: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
 [nuget]: https://www.nuget.org/
+
+## Tests and project guidance
+
+See [`CLAUDE.md`](CLAUDE.md) for the solution layout, build and test commands, and the code style details, and
+[`docs/README.md`](docs/README.md) for the documentation index.

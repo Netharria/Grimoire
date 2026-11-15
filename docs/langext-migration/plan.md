@@ -56,9 +56,9 @@ the section that fixes them.
 |---|---------|----------|
 | 0.1 | Save the spike **(done 2026-11-14, 4a3f8ac)** | Commit the spike to `spike/language-ext-v5`. It's uncommitted in `../Grimoire-langext-spike`. |
 | 0.2 | KI branches and known-issues **(done 2026-11-14)** | Delete the five unmerged `ki/*` branches and all eight worktrees in `.claude/worktrees/` (C8). Check that `known-issues.md` still lists those branches' KIs as open. Confirm that the custom-command KIs committed in fb1b29e (83–88, 113, 114) are fixed, test each one, and mark them fixed, since the doc still lists them as open. |
-| 0.3 | Configuration | Q23, Q23b and SH-1: delete the extra `ConfigurationBuilder`, check why production works today, and put a placeholder in place of the tracked password. |
+| 0.3 | Configuration **(done 2026-11-14)** | Q23, Q23b and SH-1: delete the extra `ConfigurationBuilder` and put a placeholder in place of the tracked password. Finding (tested): the block only beat environment variables for **non-empty** file values, because a chained source treats an empty value as missing. So `main` works, and the risk was this branch's non-empty dev connection string. Rollup defect 1 overstated it. |
 | 0.4 | Split the test projects **(done 2026-11-14)** | Create `Grimoire.UnitTests` (no Docker, no network) and `Grimoire.IntegrationTests` (Testcontainers and the fake Discord harness). Move existing tests by what they touch: `Grimoire.Domain.Test.Unit` and the pure Settings tests go to Unit; the DB-backed `Features/*` tests, the Settings DB tests and `Integration/*` go to Integration. Shared fixtures go in a small `Grimoire.Tests.Common` only if both projects need them. Fix Stryker: `mtp` runner, unit project only, solution mode (spec: `specs/0.4-test-project-split.md`). Update CLAUDE.md and the `dotnet test` commands. Tests are moved, not rewritten. |
-| 0.5 | Docs, first pass | Part 5, steps 1–3: fix CLAUDE.md's wrong facts, mark the superseded docs, and add `docs/README.md` as an index. |
+| 0.5 | Docs, first pass **(done 2026-11-14)** | Part 5, step 1: fix CLAUDE.md's wrong facts, mark the superseded docs, and add `docs/README.md` as an index. |
 
 ### Phase 1: foundations
 
@@ -138,16 +138,16 @@ integration test. Each spec lists that mapping.
 
 Conflicts found so far:
 
-- **CLAUDE.md is wrong in four places.**
+- ~~**CLAUDE.md is wrong in four places.**~~ Fixed in 0.5, together with the `SettingsDbContext` name and the feature folders. Line endings are LF everywhere (owner, 2026-11-14): `.editorconfig` set to `lf`, `.gitattributes` added, and the 33 CRLF/mixed files converted.
   - It names `Grimoire.Test.Unit`, which doesn't exist.
   - It says commands use `ApplicationCommandModule`, but the code uses DSharpPlus.Commands.
   - It says the `this.` qualifier is always required, which no longer holds for primary-constructor parameters (Q27).
   - The five-project list is out of date.
-- **`docs/domain-model/error-result-validation-strategy.md`** describes the native `Result`/`Validation` that C4 removes.
-- **`docs/domain-model/migration-strategy.md`** says Settings is append-only. TD-1 and TD-6 changed that.
-- **`docs/domain-model/*` from April** is a review whose findings are now resolved or superseded.
-- **`design-decisions.md`** has crossed-out entries (Q13, Q17c) and amendments in place.
-- **The root `README.md` dates from 2024.**
+- *(Banner added in 0.5.)* **`docs/domain-model/error-result-validation-strategy.md`** describes the native `Result`/`Validation` that C4 removes.
+- *(Banner added in 0.5.)* **`docs/domain-model/migration-strategy.md`** says Settings is append-only. TD-1 and TD-6 changed that.
+- *(Banners added in 0.5.)* **`docs/domain-model/*` from April** is a review whose findings are now resolved or superseded.
+- **`design-decisions.md`** has crossed-out entries (Q13, Q17c) and amendments in place. *(0.5 added a banner listing the plan's overrides; the clean `docs/decisions.md` is step 3.)*
+- **The root `README.md` dates from 2024.** *(0.5 fixed its facts: .NET 10 and the configuration keys; 0.3 made its env-var claim true. The full refresh is in Phase 5.)*
 - ~~`known-issues.md` listed the KIs fixed in fb1b29e as open.~~ Fixed in 0.2.
 
 Steps:

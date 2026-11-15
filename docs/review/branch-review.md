@@ -1,5 +1,8 @@
 # Branch Review: feature/reorganizing vs main
 
+> **Completed review (findings only).** Every finding was decided in [`review-decisions.md`](review-decisions.md), which is the source of truth.
+
+
 A section-by-section review of the working tree against `main`. Findings only: nothing here is changed until the
 owner picks what to fix.
 

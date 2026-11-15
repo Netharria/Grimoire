@@ -6,19 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
 AppContext.SetSwitch("System.Net.SocketsHttpHandler.Http3Support", false);
 
+// CreateDefaultBuilder loads appsettings.json, then appsettings.{Environment}.json, then (in Development) user
+// secrets, then environment variables, then the command line. Later sources win, so an environment variable such as
+// TOKEN or CONNECTIONSTRINGS__GRIMOIRE overrides the shipped file. Don't add the file again after them (SH-1).
 await Host.CreateDefaultBuilder(args)
-    .ConfigureAppConfiguration(x =>
-    {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", false, true)
-            .Build();
-        x.AddConfiguration(configuration);
-    })
     .ConfigureServices((context, services) => services.AddGrimoire(context.Configuration))
     .RunConsoleAsync();

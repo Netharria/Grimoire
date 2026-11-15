@@ -1,5 +1,8 @@
 # Spec: Migration Plan
 
+> **Implemented spec, historical record.** Later decisions may have changed the details: check [`../review/design-decisions.md`](../review/design-decisions.md) and the migration plan.
+
+
 > **Status: Implemented** — Single migration `20260524033203_ModelRedesign` generated and verified. Key corrections applied: XpHistory.Type conversion uses raw SQL `ALTER COLUMN TYPE USING CASE` (PostgreSQL requires explicit USING for int→varchar); old XpHistory FKs/indexes manually dropped (they existed in DB but were absent from the model snapshot); ModerationActor.System actor uses `NULL` in the `ModeratorId` column so both Sins and SinReasonHistory keep that column nullable (`.IsRequired(false)` added to both EF configurations); all data migration SQL (SinReasonHistory INSERT, Pardons data copy, CustomCommands/Role backfill, MessageHistory discriminator backfill, ProxiedMessages NULL cleanup) runs before the corresponding DDL drops.
 
 > **Later:** `DropRedundantIndexes` (2026-11-09) drops `IX_SinReasonHistory_SinId_SetAt`, `IX_Pardons_SinId_SetAt` and `IX_CustomCommandUsages_GuildId_Name_UserId` below: each table's primary key serves the same queries (review P-5).

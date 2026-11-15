@@ -1,5 +1,8 @@
 # Domain Model Notes
 
+> **Historical (April 2026 review).** Kept for the reasoning behind the current model. Where it disagrees with the code, the code and [`docs/README.md`](../README.md)'s current sources win. Moves to `docs/archive/` in migration Phase 5.
+
+
 This folder captures the April 2026 review of the domain model across `Grimoire.Domain` and `Grimoire.Settings`.
 
 ## Files

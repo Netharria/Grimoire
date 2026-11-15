@@ -1,5 +1,8 @@
 # Spec: CustomCommand Role Policy
 
+> **Implemented spec, historical record.** Later decisions may have changed the details: check [`../review/design-decisions.md`](../review/design-decisions.md) and the migration plan.
+
+
 > **Status: Implemented** — `IsUserAuthorized` encodes all four cases; no column or toggle required.
 
 ## Policy semantics

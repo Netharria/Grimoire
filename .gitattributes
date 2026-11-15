@@ -1,0 +1,2 @@
+# Store and check out every text file with LF line endings (matches .editorconfig).
+* text=auto eol=lf

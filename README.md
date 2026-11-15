@@ -29,7 +29,7 @@ A: You sure can. The requirements to run are listed in the [Requirements Section
 
 # Requirements
 
-Grimoire runs using [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) and
+Grimoire runs using [.NET 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) and
 a [PostgreSQL database](https://www.postgresql.org/download/). Optionally you can run Grimoire in
 a [docker container](https://www.docker.com/get-started/).
 
@@ -50,12 +50,17 @@ file where you can set the configuration. The following properties are available
 * `ConnectionProperties.DbName` The name of the database.
 * `ConnectionProperties.Username` The Username to connect to the database with.
 * `ConnectionProperties.Password` The password for the database user.
-* `channelId` *(Optional)* The channel that Grimoire will post error logs to.
-* `guildId` *(Optional)* The server Id that will be allowed to use experimental commands.
+* `validImageExtensions` A comma-separated list of image file extensions. Required: image embeds fail without it.
+* `channelId` *(Optional)* The channel that Grimoire posts urgent alerts (errors) to.
+* `warningChannelId` *(Optional)* The channel for warning alerts and the daily warning report.
+* `warningReportTimeUtc` *(Optional)* The time of day (UTC) the daily warning report is posted.
+* `pluralkitToken`, `pluralkitUserAgent`, `pluralkitApiEndpoint` *(Optional)* PluralKit lookups, used to log proxied
+  messages under the member behind them. Lookups are off unless the token and user agent are set.
 * `Serilog.\*` Sets the configuration for logs. Reasonable defaults have been set but you can customize them here.
 
-You can also set these properties using environmental variables which will override the settings set in the
-`appsettings.json` file. Use `__` (double underscore) as a seperator between levels. If you plan on running Grimoire in
+You can also set these properties using environment variables, which override the settings in the
+`appsettings.json` file. Keep secrets such as the token and the database password in environment variables rather
+than in the file. Use `__` (double underscore) as a seperator between levels. If you plan on running Grimoire in
 a docker container, you can set the configuration in the `docker-compose.yml` file.
 
 # Running
@@ -77,10 +82,10 @@ enter server location `host.docker.internal:5432` and use the credentials in the
 
 ## Manually
 
-* Install the [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+* Install the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 * Clone this repository: `git clone https://github.com/Netharria/Grimoire`
 * Set the [configuration](#configuration) in the `appsettings.json`
-* Change director to Grimoire
+* Change directory to Grimoire
 * Run the bot: dotnet run
 
 ```

@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation
+
+[`docs/README.md`](docs/README.md) lists the current source for each topic. Work on the language-ext migration
+follows [`docs/langext-migration/plan.md`](docs/langext-migration/plan.md): each section gets a design spec in
+`docs/langext-migration/specs/`, reviewed by the owner, before its code.
+
 ## Project Overview
 
 Grimoire is a Discord bot written in C# (.NET 10) using the DSharpPlus library. It provides moderation, logging, leveling, custom commands, and community management features for Discord servers.
@@ -47,7 +53,8 @@ Six projects in the solution:
 - **Grimoire** — Main executable. Discord bot entry point, all slash command handlers, event listeners, and background services.
 - **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext`, entity configurations, and migrations.
 - **Grimoire.Domain** — Domain models only. Entity definitions and strongly-typed IDs. Has `InternalsVisibleTo("Grimoire.Data")` so EF value converters can use `internal` factory methods (`FromDatabase`, `ParseFromDatabase`).
-- **Grimoire.Settings** — Separate DbContext (`GrimoireSettingsDbContext`) for per-guild settings. Has its own service layer with hybrid caching.
+- **Grimoire.Settings** — Separate DbContext (`SettingsDbContext`) for per-guild settings. Its service layer
+  (`SettingsModule`) caches reads through `HybridCache`, backed by FusionCache.
 - **Grimoire.UnitTests** — xUnit v3 tests of pure logic: domain types, settings domain, embed builders, decisions. No Docker,
   no network; Testcontainers and Respawn are deliberately not referenced, so a database test here doesn't compile.
 - **Grimoire.IntegrationTests** — xUnit v3 tests against real Postgres (Testcontainers, Respawn) and the fake-Discord
@@ -56,21 +63,29 @@ Six projects in the solution:
 
 ## Feature Organization
 
-Inside `Grimoire/`, features are organized into modules under subfolders:
+Inside `Grimoire/Features/`, features are organized into modules:
 
 - `CustomCommands/` — User-created text commands
 - `Leveling/` — XP system, leaderboards, rewards
-- `Logging/` — Message logs, user logs (avatar/username/nickname changes), tracker
-- `Moderation/` — Bans, mutes, channel locks, warnings, sin tracking, spam filter
+- `Logging/` — Message logs, user logs (avatar/username/nickname changes) and their settings
+- `Moderation/` — Bans, kicks, mutes, channel locks, warnings, sins, publishing, diagnostics, spam filter
 - `LogCleanup/` — Background cleanup of old log entries
-- `Shared/` — Cross-cutting concerns (PluralKit integration, utility extensions)
+- `Shared/` — Cross-cutting concerns: the command error handler, alerts, guild issues, gateway health, PluralKit,
+  guild sync and invites, shared commands (modules, purge, user info)
+
+General helpers live outside `Features/`, in `Grimoire/Extensions`, `Grimoire/Utilities` and
+`Grimoire/DatabaseQueryHelpers`.
 
 ## Key Architectural Patterns
 
-- **DSharpPlus slash commands**: Command modules extend `ApplicationCommandModule`. Event listeners implement DSharpPlus event handler interfaces.
-- **EF Core with PostgreSQL**: Two DbContexts — `GrimoireDbContext` for main data, `GrimoireSettingsDbContext` for guild settings. Both use code-first migrations.
+- **DSharpPlus.Commands**: commands are plain classes with `[Command]` methods, gated by check attributes such as
+  `[RequireGuild]` and `[RequireModuleEnabled]`. Most commands work both as slash commands and as `!` text commands.
+  Event handlers implement `IEventHandler<TEventArgs>`. Grimoire is on a DSharpPlus 5 nightly (`5.0.0-nightly-02614`).
+- **EF Core with PostgreSQL**: two DbContexts, `GrimoireDbContext` for main data and `SettingsDbContext` for guild
+  settings. Both use code-first migrations. The language-ext migration (`docs/langext-migration/plan.md`) moves runtime
+  queries to Dapper and keeps EF Core for migrations only.
 - **Strongly-typed IDs**: Domain entities use custom value types for IDs (e.g., `UserId`, `GuildId`) to prevent accidental ID misuse.
-- **Hybrid caching in Settings**: Guild settings use `IHybridCache` to avoid repeated DB lookups on every event.
+- **Hybrid caching in Settings**: guild settings are read through `HybridCache` to avoid a DB lookup on every event.
 - **PluralKit integration**: Resilience pipeline with rate limiting for the external PluralKit API.
 
 ## Configuration
@@ -110,8 +125,9 @@ requirements:
 
 - File headers: AGPL-3.0 license boilerplate on every source file
 - Nullable reference types enabled; violations are errors
-- `this.` qualifier required for instance members
-- CRLF line endings, 4-space indentation
+- `this.` qualifier required for instance members. Primary-constructor parameters are used directly: no `this.` and
+  no copying them into `readonly` fields
+- LF line endings (`.editorconfig` and `.gitattributes`), 4-space indentation
 - Class initializers and collection/object initializers preferred over imperative assignment
 
 ## Testing

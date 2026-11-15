@@ -1,5 +1,8 @@
 # Spec: XpHistory Redesign
 
+> **Implemented spec, historical record.** Later decisions may have changed the details: check [`../review/design-decisions.md`](../review/design-decisions.md) and the migration plan.
+
+
 > **Status: Implemented** — `RawXp` backing column on `XpHistoryEntry` base (internal) used for aggregate queries; typed `Xp` properties on subtypes are computed from `RawXp`. `MinMaxValue(0)` corrected to `MinMaxValue(1)` on `AwardUserXp`. `.LongCountAsync()` bug in `GainUserXp` fixed to `.SumAsync(x => x.RawXp)`.
 
 ## Problem
