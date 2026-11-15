@@ -78,7 +78,8 @@ Inside `Grimoire/Features/`, features are organized into modules:
   guild sync and invites, shared commands (modules, purge, user info)
 
 General helpers live outside `Features/`, in `Grimoire/Extensions`, `Grimoire/Utilities` and
-`Grimoire/DatabaseQueryHelpers`.
+`Grimoire/DatabaseQueryHelpers`. The language-ext runtime (capabilities, runtimes, effects, boundaries, workers) is in
+`Grimoire/Functional/`, described in [`docs/architecture.md`](docs/architecture.md).
 
 ## Key Architectural Patterns
 
@@ -88,6 +89,11 @@ General helpers live outside `Features/`, in `Grimoire/Extensions`, `Grimoire/Ut
 - **EF Core with PostgreSQL**: two DbContexts, `GrimoireDbContext` for main data and `SettingsDbContext` for guild
   settings. Both use code-first migrations. The language-ext migration (`docs/langext-migration/plan.md`) moves runtime
   queries to Dapper and keeps EF Core for migrations only.
+- **Boundaries (language-ext migration, section 1.2)**: ported code returns an `Eff` and hands it to a boundary,
+  never throwing to DSharpPlus. Commands call `CommandRunner.Run(ctx, input, act)` (privacy from `[PrivateReply]`, or
+  a privacy function); event handlers call `EventRunner.Run(name, guild, () => effect)`; workers derive from
+  `EffectBackgroundService` and run items through `Items.Item(key, work)`. New code doesn't call `TryDeferAsync` or
+  the `ctx.ReplyAsync`/`SendErrorResponseAsync` helpers; those stay for unported commands until Phase 5.
 - **Strongly-typed IDs**: Domain entities use custom value types for IDs (e.g., `UserId`, `GuildId`) to prevent accidental ID misuse.
 - **Hybrid caching in Settings**: guild settings are read through `HybridCache` to avoid a DB lookup on every event.
 - **PluralKit integration**: Resilience pipeline with rate limiting for the external PluralKit API.
@@ -147,6 +153,10 @@ Two projects, split by what a test touches:
 - **Integration** (`Grimoire.IntegrationTests`): anything that needs Postgres or the fake-Discord harness. Database
   tests use the shared container fixture (`"Test collection"` or `"Settings collection"`) and reset with Respawn
   between tests. Harness tests start the real host through `GrimoireTestBot`.
+
+Effects are unit-tested against the fake runtime in `Grimoire.UnitTests/Functional/Fakes` (`TestEnv`): the production
+runtime records built from recording fakes, each of which can be told to fail. Integration tests drive an
+`EffectBackgroundService` with `GrimoireTestBot.RunEffectTickAsync<T>()`.
 
 Shared helpers (`FinShouldExtensions`, `AlertTestHelpers`) live in the unit project under the `Grimoire.TestShared`
 namespace and are linked into the integration project as files. Assert a failure by its case and message:

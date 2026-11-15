@@ -409,6 +409,9 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
                     [.. request.Json!["messages"]!.AsArray().Select(id => ulong.Parse(id!.ToString()))]),
             _ when Reaction().IsMatch(request.Path) && request.Method == HttpMethod.Delete
                 => new HttpResponseMessage(HttpStatusCode.NoContent),
+            // The bot reacting to a message, such as the 🔒 on a private command run as text.
+            _ when OwnReaction().IsMatch(request.Path) && request.Method == HttpMethod.Put
+                => new HttpResponseMessage(HttpStatusCode.NoContent),
             // A deferred text command shows "is typing" in its channel.
             _ when Typing().IsMatch(request.Path) && post => new HttpResponseMessage(HttpStatusCode.NoContent),
             _ when ChannelMessages().Match(request.Path) is { Success: true } match && get
@@ -962,4 +965,8 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
     /// <summary>Deleting one member's reaction: <c>.../reactions/{emoji}/{userId}</c>.</summary>
     [GeneratedRegex(@"^channels/\d+/messages/\d+/reactions/[^/]+/\d+$")]
     private static partial Regex Reaction();
+
+    /// <summary>The bot's own reaction: <c>.../reactions/{emoji}/@me</c>.</summary>
+    [GeneratedRegex(@"^channels/\d+/messages/\d+/reactions/[^/]+/@me$")]
+    private static partial Regex OwnReaction();
 }

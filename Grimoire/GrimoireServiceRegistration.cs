@@ -57,6 +57,8 @@ using ZiggyCreatures.Caching.Fusion;
 using AddMessageEvent = Grimoire.Features.Logging.MessageLogging.AddMessageEvent;
 using DeleteMessageEvent = Grimoire.Features.Logging.MessageLogging.DeleteMessageEvent;
 
+using Grimoire.Functional;
+
 namespace Grimoire;
 
 internal static class GrimoireServiceRegistration
@@ -117,6 +119,7 @@ internal static class GrimoireServiceRegistration
                 .AddSingleton<AlertService>()
                 .AddSingleton<IAlertSender>(provider => provider.GetRequiredService<AlertService>())
                 .AddSingleton<IInviteService, InviteService>()
+                .AddEffectRuntime()
                 .ConfigureEventHandlers(eventHandlerBuilder =>
                     eventHandlerBuilder
                         //Custom Commands

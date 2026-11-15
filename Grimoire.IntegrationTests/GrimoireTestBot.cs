@@ -30,6 +30,8 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 
+using Grimoire.Functional.Workers;
+
 namespace Grimoire.IntegrationTests;
 
 /// <summary>
@@ -254,6 +256,16 @@ public sealed class GrimoireTestBot : IAsyncDisposable
         await using var scope = this.Services.CreateAsyncScope();
         await (Task)runTask.Invoke(service, [scope.ServiceProvider, CancellationToken.None])!;
     }
+
+    /// <summary>
+    ///     Runs one supervised tick of an <see cref="EffectBackgroundService" /> now, as its schedule would: failures
+    ///     are reported and absorbed. The same instance is reused, so item backoff carries over between ticks.
+    /// </summary>
+    public Task RunEffectTickAsync<T>() where T : EffectBackgroundService
+        => ((T)(this._backgroundServices.TryGetValue(typeof(T), out var existing)
+            ? existing
+            : this._backgroundServices[typeof(T)] = ActivatorUtilities.CreateInstance<T>(this.Services)))
+        .RunTickAsync(CancellationToken.None);
 
     /// <summary>
     ///     Starts a background service that the test host leaves out, on its real timer. Its first tick comes after

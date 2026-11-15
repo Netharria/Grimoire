@@ -35,6 +35,7 @@ These override `design-decisions.md` where they differ.
 | C8 | Unmerged KI branches | **Discard** `ki/leveling`, `ki/message-logging`, `ki/guild-sync-invites`, `ki/alerts-background` and `ki/pluralkit-crosscutting`. Their KIs stay open in `known-issues.md` and are fixed in the Phase 3 sections that own them (checked: every one is assigned below). |
 | C9 | First production deploy | **Wait for the whole migration.** Phase 2 edits the undeployed migrations in place (Q6). |
 | C10 | `/Warn` reason | **Warn requires a reason**, as an exception to Q30. |
+| C11 | Text-command replies (owner, 2026-11-15, spec 1.2 OQ-1) | **Text commands reply publicly**, refusals and the generic error included, which amends Q3. The exceptions: a private command run as text reacts 🔒 and doesn't run (the user-command-channel commands `/Level` and `/Leaderboard`); a non-moderator's text `/SinLog` gets its log by DM, which reverses Q36's silent reply; text custom commands react ❓ for both "not found" and "not allowed", so Q44 holds (3.17, spec 1.2 OQ-7). |
 
 These spike deviations will be corrected to follow the decisions:
 
@@ -65,7 +66,7 @@ the section that fixes them.
 | § | Section | Depends on | Contents |
 |---|---------|------------|----------|
 | 1.1 | Error and result types **(done 2026-11-15, spec `specs/1.1-error-and-result-types.md`)** | C1, C4 | Add `LanguageExt.Core`, pinned. Add the `Expected` subtypes `NotFound`, `Invalid`, `Forbidden` and `Unavailable`. In one sweep, Domain and Settings domain move to `Fin`/`Validation<Error, _>`/`Unit`. Apply TD-5 (`Create` returns `Validation` only when it can fail) and F-4 (assertions move from `Code` to the case). Retire `GetOrElse` (TD-13). |
-| 1.2 | Runtime and boundary | 1.1, C2 | Productionise `Grimoire/Functional`: the capabilities, the runtimes and `Has<>`. Command boundary: validate, then defer (TD-11, with a privacy attribute), then run, then render (Q2c colours, Q3 ephemeral refusals, text commands silent where the slash reply would be private, the generic "[ID …]" reply plus an alert for `Unavailable` and defects). Event boundary and worker boundary, with the run summary ported and F-9. A fake runtime for unit tests. |
+| 1.2 | Runtime and boundary **(done 2026-11-15, not yet committed; spec `specs/1.2-runtime-and-boundary.md`)** | 1.1, C2 | Productionise `Grimoire/Functional`: the capabilities, the runtimes and `Has<>`. Command boundary: validate, then defer (TD-11, with a privacy attribute), then run, then render (Q2c colours, Q3 ephemeral refusals, text commands per C11 (public replies, 🔒 for private commands, DM for `/SinLog`), the generic "[ID …]" reply plus an alert for `Unavailable` and defects). Event boundary and worker boundary, with the run summary ported and F-9. A fake runtime for unit tests. |
 | 1.3 | Data access | 1.2, C3 | Dapper type handlers (strongly typed ids, `jsonb`), `Sql` values, transactions, a retry schedule only for idempotent reads, and a non-retrying streaming path (Q28 → `IAsyncEnumerable` through `IO`). Postgres errors map to `Unavailable` (Q1) at this one edge. Pattern for SQL tests in the integration project. |
 | 1.4 | Discord edge | 1.2 | TD-12 lookups (NotFound, Invalid, Forbidden, Unavailable). SH-15 retry split (Q25). SH-10 one log message record with the event's time (Q26). LOG-2 log gate on `GuildLog` (Q26b). KI-54. |
 | 1.5 | PluralKit | 1.4 | SH-2 token bucket with a small queue (Q24), the deleted-member branch (Q37), LOG-3 and LOG-4. KI-101, KI-111. |
@@ -92,7 +93,7 @@ proposes UX changes in its spec.
 | 3.3 | Ban, Unban, Kick | MOD-1/2/3/4, Q30, Q32, KI-03 handoff, MOD-11 leak (defect 8), Q33 publish | — |
 | 3.4 | Mute processor | TD-1/3/4, Q31, KI-55 order, MOD-6, `UserJoinedWhileMuted` replaced | 53 |
 | 3.5 | Lock processor (channels, threads, voice) | TD-1/2/3, permission capture, Q15 locked-thread handoff | 102, 112 |
-| 3.6 | Sins | SIN-1..6, Q8/8b, Q33, Q34/34b, Q36 | — |
+| 3.6 | Sins | SIN-1..6, Q8/8b, Q33, Q34/34b, Q36 as amended by C11 (text `/SinLog` DMs a non-moderator) | — |
 | 3.7 | Spam filter | Q20, Q14b, Q35/SIN-12 through the mute processor | 63, 107 |
 | 3.8 | Diagnostics | SIN-14/15, the parts of D-23 that are already decided | — |
 | 3.9 | `MessageCreated` pipeline | Q14, HOT-3/4, Q15 | — |
@@ -101,9 +102,9 @@ proposes UX changes in its spec.
 | 3.12 | Reactions | Q16 single upsert | 72 (re-check) |
 | 3.13 | Log cleanup worker | Q38/LOG-6, streaming | — |
 | 3.14 | XP gain and rewards | Q18 cooldown, Q41/41b, LVL-5 `PlanRewards` | 74, 75, 76, 109 |
-| 3.15 | `/Level`, Leaderboard, Award, Reclaim | TD-10, Q12, Q40, LVL-3/7 | 77, 79, 80, 81 |
+| 3.15 | `/Level`, Leaderboard, Award, Reclaim | TD-10, Q12, Q40, LVL-3/7, C11 (🔒 on private text use) | 77, 79, 80, 81 |
 | 3.16 | Leveling settings and ignores | LVL-12 | 73, 78 |
-| 3.17 | Custom commands | CC-1..9, Q21 (and dropping `fuzzystrmatch`), Q42–45 | 87 (decide: case-insensitive names). Keep the fixes for 83–86, 88, 113 and 114 |
+| 3.17 | Custom commands | CC-1..9, Q21 (and dropping `fuzzystrmatch`), Q42–45, C11 (❓ reaction for not found and not allowed) | 87 (decide: case-insensitive names). Keep the fixes for 83–86, 88, 113 and 114 |
 | 3.18 | Log and moderation settings commands, Modules | — | 65, 66, 71 |
 | 3.19 | Guild sync and invites | — | 89, 90, 98, 100, 108 |
 | 3.20 | Alerts, guild issues, gateway health | SH-11 (defect 10) | 48, 91–96, 99, 106, 110 |
@@ -153,7 +154,7 @@ Conflicts found so far:
 Steps:
 
 1. **Phase 0.5:** fix CLAUDE.md. Add a "Superseded by …" banner to the conflicting docs. Add `docs/README.md` as an index that names the current source of truth for each topic.
-2. **Phase 1.2:** add `docs/architecture.md` as the single current description: layers, effects and runtimes, the error model, the boundary rules, and the test strategy. It replaces the domain-model strategy docs.
+2. **Phase 1.2 (done 2026-11-15):** add `docs/architecture.md` as the single current description: layers, effects and runtimes, the error model, the boundary rules, and the test strategy. It replaces the domain-model strategy docs.
 3. **As sections land:** keep a clean `docs/decisions.md` that holds only the current decisions, merged from review-decisions and design-decisions. Superseded wording moves to an appendix.
 4. **Phase 5:** move the finished reviews, the implemented specs and the automation backlog to `docs/archive/`. Refresh the README.
 

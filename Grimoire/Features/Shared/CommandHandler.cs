@@ -14,6 +14,7 @@ using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Trees;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.GuildIssues;
+using Grimoire.Functional.Boundary;
 using DSharpPlus.Exceptions;
 using EntityFramework.Exceptions.Common;
 using Microsoft.Extensions.Configuration;
@@ -163,7 +164,8 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
 
     public static Task HandleEventAsync(DiscordClient sender, CommandExecutedEventArgs args)
     {
-        LogCommandOutcome(sender, args.Context, CommandOutcome.Success);
+        // A command run through CommandRunner never throws, so its outcome (a refusal, an outage) is recorded there.
+        LogCommandOutcome(sender, args.Context, CommandOutcomes.Of(args.Context));
         return Task.CompletedTask;
     }
 
@@ -209,12 +211,4 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
 
     [LoggerMessage(LogLevel.Warning, "Slow command {Command} took {DurationMs}ms (Guild {GuildId})")]
     static partial void LogSlowCommand(ILogger logger, string command, long durationMs, ulong? guildId);
-}
-
-public enum CommandOutcome
-{
-    Success,
-    CheckFailed,
-    ParseError,
-    BotMissingPermissions
 }
