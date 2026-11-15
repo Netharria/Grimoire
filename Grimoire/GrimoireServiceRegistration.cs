@@ -52,6 +52,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
+using Npgsql;
 using Serilog;
 using ZiggyCreatures.Caching.Fusion;
 using AddMessageEvent = Grimoire.Features.Logging.MessageLogging.AddMessageEvent;
@@ -93,7 +94,7 @@ internal static class GrimoireServiceRegistration
                 var username = section["Username"];
                 var password = section["Password"];
                 connectionString =
-                    $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Require; Trust Server Certificate=true; Include Error Detail=true";
+                    $"Host={hostname}; Port={port}; Database={dbName}; Username={username}; Password={password}; SSL Mode=Require; Trust Server Certificate=true";
             }
 
             services
@@ -101,11 +102,14 @@ internal static class GrimoireServiceRegistration
                 .AddDiscordClient(
                     token,
                     DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents)
-                .AddPooledDbContextFactory<GrimoireDbContext>(options =>
-                    options.UseNpgsql(connectionString,
+                // One pool for EF and Dapper (spec 1.3, OQ-1). No "Include Error Detail": Postgres's Detail holds row
+                // values; the error log has the rest (spec 1.3, section 3.6.1).
+                .AddSingleton(_ => NpgsqlDataSource.Create(connectionString))
+                .AddPooledDbContextFactory<GrimoireDbContext>((provider, options) =>
+                    options.UseNpgsql(provider.GetRequiredService<NpgsqlDataSource>(),
                             npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
                         .UseExceptionProcessor())
-                .AddSettingsServices(connectionString)
+                .AddSettingsServices()
                 .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
                 .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
                 .AddSingleton<IPluralkitService, PluralkitService>()

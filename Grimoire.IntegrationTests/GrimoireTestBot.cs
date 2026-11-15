@@ -25,6 +25,7 @@ using Grimoire.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Npgsql;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -139,6 +140,9 @@ public sealed class GrimoireTestBot : IAsyncDisposable
         });
 
         builder.Services.AddGrimoire(builder.Configuration);
+        // The shared container's pool, registered as an instance so disposing this host leaves it open.
+        if (connectionString is null)
+            builder.Services.Replace(ServiceDescriptor.Singleton(database.DataSource));
         // Extra configuration or replaced services for one test, such as alert channels or a manual clock.
         configureHost?.Invoke(builder);
 

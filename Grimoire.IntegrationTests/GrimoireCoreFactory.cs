@@ -27,9 +27,17 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
 
     internal string ConnectionString => this._postgreSqlContainer.GetConnectionString();
 
+    /// <summary>
+    ///     One pool for every test bot on this container, as one bot has in production. Before the bot built its own
+    ///     data source (spec 1.3), every host shared Npgsql's process-wide pool for the connection string; a fresh
+    ///     pool per host makes each bot's startup open cold connections, which shifts its background timing.
+    /// </summary>
+    internal NpgsqlDataSource DataSource { get; private set; } = null!;
+
     public async ValueTask InitializeAsync()
     {
         await this._postgreSqlContainer.StartAsync();
+        this.DataSource = NpgsqlDataSource.Create(this._postgreSqlContainer.GetConnectionString());
 
         await using var dbContext = new GrimoireDbContext(
             new DbContextOptionsBuilder<GrimoireDbContext>()
@@ -57,7 +65,11 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
             });
     }
 
-    public ValueTask DisposeAsync() => this._postgreSqlContainer.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        await this.DataSource.DisposeAsync();
+        await this._postgreSqlContainer.DisposeAsync();
+    }
 
     public Task ResetDatabase() => this._respawner.ResetAsync(this._dbConnection);
 

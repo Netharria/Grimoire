@@ -51,7 +51,8 @@ dotnet ef database update --project Grimoire.Data --startup-project Grimoire
 Six projects in the solution:
 
 - **Grimoire** — Main executable. Discord bot entry point, all slash command handlers, event listeners, and background services.
-- **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext`, entity configurations, and migrations.
+- **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext`, entity configurations, and migrations. Also the
+  Dapper type handlers (`Dapper/DapperTypeHandlers.cs`), which use the domain's internal `FromDatabase` factories.
 - **Grimoire.Domain** — Domain models only. Entity definitions, strongly-typed IDs, and the error cases (`Invalid`,
   `NotFound`, `Forbidden`, `Unavailable`, in `Errors.cs`). References `LanguageExt.Core` (pinned, `5.0.0-beta-78`):
   results are `Fin<T>`, input checks `Validation<Error, T>`, absent values `Option<T>`. `Migration/` holds the
@@ -87,8 +88,13 @@ General helpers live outside `Features/`, in `Grimoire/Extensions`, `Grimoire/Ut
   `[RequireGuild]` and `[RequireModuleEnabled]`. Most commands work both as slash commands and as `!` text commands.
   Event handlers implement `IEventHandler<TEventArgs>`. Grimoire is on a DSharpPlus 5 nightly (`5.0.0-nightly-02614`).
 - **EF Core with PostgreSQL**: two DbContexts, `GrimoireDbContext` for main data and `SettingsDbContext` for guild
-  settings. Both use code-first migrations. The language-ext migration (`docs/langext-migration/plan.md`) moves runtime
+  settings. Both use code-first migrations, and both run over the one `NpgsqlDataSource` the host registers, which
+  Dapper shares (one connection pool). The language-ext migration (`docs/langext-migration/plan.md`) moves runtime
   queries to Dapper and keeps EF Core for migrations only.
+- **Data access (section 1.3)**: ported code reads and writes through `Db<RT>` with `Sql.Read`/`Sql.Write` values
+  built by pure functions in the feature's SQL module. Only reads are retried; a transaction's body is `IO`, so no
+  Discord call runs inside it. Never catch a constraint exception: write the race into the statement (`ON CONFLICT`).
+  Ids are sent as `bigint`; enums are passed as `ToString()`. See `docs/architecture.md` section 5.
 - **Boundaries (language-ext migration, section 1.2)**: ported code returns an `Eff` and hands it to a boundary,
   never throwing to DSharpPlus. Commands call `CommandRunner.Run(ctx, input, act)` (privacy from `[PrivateReply]`, or
   a privacy function); event handlers call `EventRunner.Run(name, guild, () => effect)`; workers derive from
@@ -123,7 +129,8 @@ secrets rather than in that file. Keys the code reads:
 ```
 
 `ConnectionProperties` is used only when `ConnectionStrings:Grimoire` is empty, and builds a connection string with
-SSL required. Serilog is configured from the `Serilog` section. `guildId` may still appear in older settings files, but
+SSL required and without `Include Error Detail` (Postgres's `Detail` holds row values; the error logs carry the rest).
+A development database can add it to its own `ConnectionStrings:Grimoire`. Serilog is configured from the `Serilog` section. `guildId` may still appear in older settings files, but
 nothing reads it.
 
 Environment variables use `__` as separator (e.g., `ConnectionStrings__Grimoire`).
@@ -155,8 +162,10 @@ Two projects, split by what a test touches:
   between tests. Harness tests start the real host through `GrimoireTestBot`.
 
 Effects are unit-tested against the fake runtime in `Grimoire.UnitTests/Functional/Fakes` (`TestEnv`): the production
-runtime records built from recording fakes, each of which can be told to fail. Integration tests drive an
-`EffectBackgroundService` with `GrimoireTestBot.RunEffectTickAsync<T>()`.
+runtime records built from recording fakes, each of which can be told to fail. `FakeDatabase` answers by statement
+name (`Returns`, `Affects`, `Fails`). Integration tests drive an `EffectBackgroundService` with
+`GrimoireTestBot.RunEffectTickAsync<T>()`. SQL tests run the production `Sql` values through `DatabaseTestEnv`
+(`Grimoire.IntegrationTests/Database/Dapper`), which sends every `Sql.Read` to a read-only connection.
 
 Shared helpers (`FinShouldExtensions`, `AlertTestHelpers`) live in the unit project under the `Grimoire.TestShared`
 namespace and are linked into the integration project as files. Assert a failure by its case and message:

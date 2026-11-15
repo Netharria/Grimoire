@@ -17,6 +17,7 @@ Older documents carry a banner at the top saying what replaced them.
 | Manual test plan, by feature area | [`testing/README.md`](testing/README.md) | The area docs `01`–`09`. |
 | Errors and results: the four error cases, `Fin`, `Validation`, `Write<T>` | [`architecture.md`](architecture.md), section 3 | The migration bridge (`FinTaskExtensions`) is in spec 1.1. |
 | Architecture: layers, effects, error model, boundaries, tests | [`architecture.md`](architecture.md) | Updated as migration sections land. |
+| Data access: `Sql` values, `Db<RT>`, retries, transactions, database errors, Dapper type handlers, SQL tests | [`architecture.md`](architecture.md), section 5 | EF Core stays for migrations (plan C3). |
 
 ## Historical
 

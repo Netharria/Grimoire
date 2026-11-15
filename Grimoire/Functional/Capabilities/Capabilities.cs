@@ -5,8 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Data;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Functional.Data;
 using LanguageExt;
 using Microsoft.Extensions.Logging;
 using Unit = LanguageExt.Unit;
@@ -92,4 +94,49 @@ public interface ICommandIO
 
     /// <summary>Reacts to the invoking text message. Used for 🔒 when a private command is run as text.</summary>
     IO<Unit> React(string emoji);
+}
+
+/// <summary>
+///     Postgres through Dapper (spec 1.3). Each call opens a pooled connection and closes it when done. Exceptions
+///     become <c>Unavailable</c>, <c>Errors.Cancelled</c> or a defect in one place (<c>DatabaseErrors</c>).
+///     <c>Db&lt;RT&gt;</c> adds the read retry, so it is the API features use.
+/// </summary>
+public interface IDatabaseIO
+{
+    IO<Seq<A>> Query<A>(Sql sql);
+
+    /// <summary>The first row, or <c>None</c>; works for value types too. Give the statement a <c>LIMIT 1</c>.</summary>
+    IO<Option<A>> QueryOptional<A>(Sql sql);
+
+    /// <summary>Exactly one row. Zero or several rows is a defect: use <see cref="QueryOptional{A}" /> when absence is possible.</summary>
+    IO<A> QuerySingle<A>(Sql sql);
+
+    /// <summary>The number of rows affected.</summary>
+    IO<int> Execute(Sql sql);
+
+    /// <summary>
+    ///     Runs the body in one transaction on one connection: commits when it succeeds, rolls back when it fails.
+    ///     The body is <c>IO</c>, not <c>Eff</c>, so only SQL and pure code run inside: no Discord call holds a
+    ///     transaction open. The session can't start another, so transactions don't nest. Never retried.
+    /// </summary>
+    IO<A> Transaction<A>(Func<IDatabaseSession, IO<A>> body, IsolationLevel isolation = IsolationLevel.ReadCommitted);
+
+    /// <summary>
+    ///     Streams the rows through a pure fold, holding the connection only while it runs (Q28). Never retried; a
+    ///     failure part way drops the partial state. Work that calls Discord per row reads bounded pages with
+    ///     <see cref="Query{A}" /> instead, so no reader stays open across it (P-15).
+    /// </summary>
+    IO<S> Fold<A, S>(Sql sql, S seed, Func<S, A, S> step);
+
+    /// <summary>The schedule <c>Db&lt;RT&gt;</c> retries reads on. Live: <c>DatabaseRetry.Reads</c>.</summary>
+    Schedule ReadRetry { get; }
+}
+
+/// <summary>The statements of one open transaction. No retries, no nesting.</summary>
+public interface IDatabaseSession
+{
+    IO<Seq<A>> Query<A>(Sql sql);
+    IO<Option<A>> QueryOptional<A>(Sql sql);
+    IO<A> QuerySingle<A>(Sql sql);
+    IO<int> Execute(Sql sql);
 }

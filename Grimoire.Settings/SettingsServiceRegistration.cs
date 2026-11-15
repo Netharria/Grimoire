@@ -11,17 +11,20 @@ using Grimoire.Settings.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Grimoire.Settings;
 
 public static partial class SettingsServiceRegistration
 {
-    public static IServiceCollection AddSettingsServices(
-        this IServiceCollection services,
-        string connectionString)
+    /// <summary>
+    ///     Registers the settings context over the <see cref="NpgsqlDataSource" /> the host registers, so it shares
+    ///     the bot's one connection pool.
+    /// </summary>
+    public static IServiceCollection AddSettingsServices(this IServiceCollection services)
     {
-        services.AddPooledDbContextFactory<SettingsDbContext>(options =>
-            options.UseNpgsql(connectionString,
+        services.AddPooledDbContextFactory<SettingsDbContext>((provider, options) =>
+            options.UseNpgsql(provider.GetRequiredService<NpgsqlDataSource>(),
                     npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
                 .UseExceptionProcessor());
         services.AddSingleton<SettingsModule>();

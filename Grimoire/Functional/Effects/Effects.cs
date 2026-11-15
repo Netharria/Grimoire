@@ -7,7 +7,9 @@
 
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using System.Data;
 using Grimoire.Functional.Capabilities;
+using Grimoire.Functional.Data;
 using LanguageExt;
 using LanguageExt.Traits;
 using Microsoft.Extensions.Logging;
@@ -79,6 +81,36 @@ public static class Command<RT> where RT : Has<Eff<RT>, ICommandIO>
         Trait.Bind(command => command.Refuse(delivery, embed));
 
     public static Eff<RT, Unit> React(string emoji) => Trait.Bind(command => command.React(emoji));
+}
+
+/// <summary>
+///     The database, as features use it (spec 1.3). Reads (<see cref="Sql.IsRead" />) are retried on the
+///     capability's schedule while the failure is transient; writes, transactions and streams never are (Q25).
+/// </summary>
+public static class Db<RT> where RT : Has<Eff<RT>, IDatabaseIO>
+{
+    private static Eff<RT, IDatabaseIO> Trait => Has<Eff<RT>, RT, IDatabaseIO>.ask.As();
+
+    public static Eff<RT, Seq<A>> Query<A>(Sql sql) => Retrying(sql, db => db.Query<A>(sql));
+
+    /// <summary>The first row, or None. Bind it through <c>Effect.Require</c> when absence is a <c>NotFound</c>.</summary>
+    public static Eff<RT, Option<A>> QueryOptional<A>(Sql sql) => Retrying(sql, db => db.QueryOptional<A>(sql));
+
+    public static Eff<RT, A> QuerySingle<A>(Sql sql) => Retrying(sql, db => db.QuerySingle<A>(sql));
+
+    public static Eff<RT, int> Execute(Sql sql) => Retrying(sql, db => db.Execute(sql));
+
+    /// <summary>See <see cref="IDatabaseIO.Transaction{A}" />: the body runs only SQL and pure code.</summary>
+    public static Eff<RT, A> Transaction<A>(Func<IDatabaseSession, IO<A>> body,
+        IsolationLevel isolation = IsolationLevel.ReadCommitted) =>
+        Trait.Bind(db => db.Transaction(body, isolation));
+
+    /// <summary>See <see cref="IDatabaseIO.Fold{A, S}" />: a pure step over a streamed result.</summary>
+    public static Eff<RT, S> Fold<A, S>(Sql sql, S seed, Func<S, A, S> step) =>
+        Trait.Bind(db => db.Fold(sql, seed, step));
+
+    private static Eff<RT, A> Retrying<A>(Sql sql, Func<IDatabaseIO, IO<A>> run) =>
+        Trait.Bind(db => sql.IsRead ? run(db).RetryWhile(db.ReadRetry, DatabaseRetry.IsTransient) : run(db));
 }
 
 /// <summary>Small combinators the language-ext prelude doesn't have in this shape.</summary>

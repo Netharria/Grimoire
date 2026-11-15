@@ -145,6 +145,7 @@ public sealed class TestEnv
         this.Alerts = new FakeAlerts(this.Journal);
         this.GuildLog = new FakeGuildLog(this.Journal);
         this.Command = new FakeCommandIO(this.Journal);
+        this.Database = new FakeDatabase(this.Journal);
     }
 
     public Journal Journal { get; } = new();
@@ -153,8 +154,9 @@ public sealed class TestEnv
     public FakeGuildLog GuildLog { get; }
     public FakeTrace Trace { get; } = new();
     public FakeCommandIO Command { get; }
+    public FakeDatabase Database { get; }
 
-    public GrimoireEnv Env => new(this.Clock, this.Log, this.Alerts, this.GuildLog, this.Trace);
+    public GrimoireEnv Env => new(this.Clock, this.Log, this.Alerts, this.GuildLog, this.Trace, this.Database);
     public GrimoireRuntime Runtime => new(this.Env);
     public CommandRuntime CommandRuntime => new(this.Env, this.Command);
 

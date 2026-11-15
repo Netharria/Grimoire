@@ -131,7 +131,64 @@ logged, alerted (except `Forbidden`) and backed off, and the next item still run
 without using up the item's backoff (Q38). Three failed ticks in a row are Urgent, unless the cause is `NotFound`. A
 summary line is logged every five minutes. All the state is one immutable `WorkerState` in an `Atom` (C6).
 
-## 5. Tests
+## 5. Data access
+
+From spec 1.3. Runtime code reads and writes Postgres through Dapper; EF Core stays for migrations and the model
+snapshot (plan C3). Unported code still uses the EF contexts, which share the one `NpgsqlDataSource` with Dapper, so
+there is one connection pool.
+
+- **A statement is a value.** `Sql.Read(name, text, parameters)` or `Sql.Write(…)`, built by pure functions in the
+  feature's SQL module (`WarnSql`, `NicknameSql`). The name ("Warn.InsertSin") is what the fake database answers by,
+  what error logs show, and (from 1.6) the span name. Quote identifiers as EF created them (`"Sins"."GuildId"`).
+- **`Db<RT>`** has `Query`, `QueryOptional`, `QuerySingle`, `Execute`, `Transaction` and `Fold`. Bind an absent row
+  through `Effect.Require(…, new NotFound(…))`; `QuerySingle` on zero rows is a defect.
+- **Only reads are retried**: three times, under a second, and only while the failure is transient. A write,
+  including an `INSERT … RETURNING` run through `Query`, is never retried (Q25), nor is anything in a transaction.
+- **A transaction's body is `IO`, not `Eff`**: only SQL (through the session) and pure code run inside, so nothing
+  holds a transaction open across a Discord call. It commits on success and rolls back on failure, keeping the
+  body's error case.
+- **Streaming** (`Fold`) runs a pure step over an unbuffered reader. Work that calls Discord per row reads bounded
+  pages with `Query` instead, so no reader stays open across it (P-15).
+- **Never catch a constraint exception.** Write the race into the statement (`ON CONFLICT DO NOTHING`, a CTE,
+  `INSERT … SELECT … WHERE EXISTS`). A violation that still happens is a defect.
+
+**Errors** (`DatabaseErrors.Classify`, the one place a database exception becomes a value):
+
+| Failure | Becomes |
+|---|---|
+| The run's token cancelled (shutdown) | `Errors.Cancelled` |
+| Connection refused or lost, a timeout, the pool exhausted, Postgres classes `08` and `53`, `57P01`–`57P03`, `57014` | `Unavailable`, transient (a read retries) |
+| `40001` serialization, `40P01` deadlock | `Unavailable`, not retried |
+| Constraint (`23xxx`), syntax or unknown column (`42xxx`), data (`22xxx`), a mapping error, anything else | defect |
+
+Either way the error keeps a `DatabaseException`. Its message, which the alert shows, names the statement, whether it
+was a read or a write and in a transaction, the SQLSTATE and its name, Postgres's message, and the schema, table,
+column, constraint and type. Its `ToString()`, which the log writes, adds the hint, position, context, routine and the
+parameter names, then the Npgsql exception. Neither holds a parameter value or Postgres's `Detail`, which is why the
+built connection string has no `Include Error Detail`. A connection failure names the host and port and the socket
+error, never the connection string.
+
+**Type handlers** (`Grimoire.Data/Dapper/DapperTypeHandlers.cs`, registered by `AddEffectRuntime`):
+
+- Every id is sent as `bigint`, even while the columns are `numeric(20,0)`: Postgres casts the parameter, so the
+  index is still used, and P-9 needs no code change. Ids are read from either type.
+- The text value types go through their `FromDatabase` (or `Create`), `DateTimeOffset` is UTC, and `Option<T>` of
+  each is `NULL` for `None`. A unit test checks by reflection that every stored domain type has a handler.
+- `Jsonb<T>` documents use System.Text.Json (`RegisterDocument<T>(options)`): unknown fields are ignored, missing
+  ones take the record's defaults, and one that doesn't parse is a defect.
+- **Not through handlers.** Enums: pass `ToString()`. Dapper sends the number, which an insert into a `text` column
+  stores without complaint and a comparison refuses. `ModerationActor`: read the column as `long?` and map it with
+  `DatabaseColumns.Actor`. Arrays: `= ANY(@ids)` takes `DatabaseColumns.Ids(…)`. Rows: read into a private row
+  record next to the SQL and map it to the domain type with a pure function.
+
+**Tests.** Unit tests run pipelines against `FakeDatabase` (in `TestEnv`), which answers by statement name, records
+every call in the `Journal` (with `begin`, `commit` and `rollback` around a transaction), and can fail a statement a
+given number of times. SQL tests live in `Grimoire.IntegrationTests/Database/`, one class per SQL module
+(`WarnSqlTests` for `WarnSql`). They build the production `Sql` value and run it through `DatabaseTestEnv`, the live
+capability over the test container. `DatabaseTestEnv` sends every `Sql.Read` to a read-only connection, so a
+statement marked as a read that writes fails its test.
+
+## 6. Tests
 
 | Project | Holds | May touch |
 |---|---|---|

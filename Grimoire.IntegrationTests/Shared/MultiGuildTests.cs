@@ -44,9 +44,15 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task BothGuildsMembers_AreSyncedAtStartup()
     {
-        await using var dbContext = database.CreateDbContext();
-        (await dbContext.NicknameHistory.Where(row => row.UserId == new UserId(this.A.User1.Id)).Select(row => row.GuildId).ToListAsync(Token))
-            .ShouldBe([new GuildId(this.A.Id), new GuildId(this.B.Id)], ignoreOrder: true);
+        // The sync runs on GuildDownloadCompleted, in the background: ready doesn't mean it has finished.
+        var guilds = await GrimoireTestBot.EventuallyAsync(async () =>
+        {
+            await using var dbContext = database.CreateDbContext();
+            return await dbContext.NicknameHistory.Where(row => row.UserId == new UserId(this.A.User1.Id))
+                .Select(row => row.GuildId).ToListAsync(Token);
+        }, rows => rows.Count >= 2);
+
+        guilds.ShouldBe([new GuildId(this.A.Id), new GuildId(this.B.Id)], ignoreOrder: true);
     }
 
     /// <summary>A module turned on in A stays off in B.</summary>
