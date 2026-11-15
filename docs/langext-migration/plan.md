@@ -1,0 +1,167 @@
+# language-ext v5 migration plan
+
+Status: **approved direction, 2026-11-14.** The conflicts in part 2 are settled. No section has a spec yet.
+
+This plan moves Grimoire to the effect style from the `spike/language-ext-v5` spike, which is described in
+`docs/language-ext-spike.md` on that branch. It also folds in every decision in `docs/review/design-decisions.md` and
+every known issue still open in `docs/testing/known-issues.md`. It's split into sections that are small enough to
+review one at a time.
+
+## 1. Ground rules for every section
+
+1. **The spec comes first.** Before any code, the section gets a design spec in `docs/langext-migration/specs/`, built
+   from the template in part 6. The owner reviews it. Code starts only after the spec is approved.
+2. **One section is one reviewable change.** It builds, all tests pass, and it's committed before the next section
+   starts. Old and new code run side by side: the spike showed that the runner and the harness allow this.
+3. **Tests split by what they test** (part 4). A section that ports a feature also moves that feature's logic tests to
+   the unit project, and keeps only real integration tests in the integration project.
+4. **Docs are updated in the same section.** That covers the area's manual test doc, known-issues, and the architecture
+   doc. Each fixed KI is marked fixed in `known-issues.md`.
+5. **Decisions keep their IDs.** Specs cite `Q`/`TD`/`KI` IDs, so you can trace what each section implements.
+
+## 2. Settled conflicts (owner, 2026-11-14)
+
+These override `design-decisions.md` where they differ.
+
+| # | Topic | Decision |
+|---|-------|----------|
+| C1 | Error model | **Extend language-ext's errors** with Grimoire types that match the Discord error mapping (TD-12): `NotFound`, `Invalid`, `Forbidden`, `Unavailable`, all deriving from `Expected`. The error is its case plus a message; codes aren't used (Q2b). The boundary matches these cases. Any other `Error` (`Exceptional`) is a defect. |
+| C2 | Outermost edge | **The runner renders the error replies** and raises the alerts itself. Nothing is rethrown to DSharpPlus. Its handlers stay only for failures that happen before our code runs (checks, converters). |
+| C3 | Data access | **Dapper for all runtime code, EF Core only for migrations** and the model snapshot. Q28 becomes a non-retrying streaming query path. TD-6's documents are `jsonb` with System.Text.Json type handlers. Q16's upsert is a `Sql` value. |
+| C4 | Domain types | **Replace** `Grimoire.Domain.Result/Validation/Error/Unit` with `Fin`, `Validation<Error, _>` and `Unit`. `Grimoire.Domain` references `LanguageExt.Core`. |
+| C5 | Discord types in the core | **Builder types such as `DiscordEmbedBuilder` are allowed in the core.** Discord types that tests can't construct (`DiscordMember`, `DiscordGuild`, `DiscordChannel`, `DiscordMessage`, …) stay in the shell, which copies what the core needs into Grimoire records. |
+| C6 | In-memory state | **`Atom` and `AtomHashMap`** for the spam tracker (replacing Q20's `ConcurrentDictionary`), the XP cooldown (Q18), the last-known member cache (Q17d) and similar state. |
+| C7 | Integration tests | Integration covers SQL, migrations, DSharpPlus wiring, event dispatch, PluralKit/HTTP, and **one end-to-end happy-path smoke test per command and handler**. Everything else is a unit test. |
+| C8 | Unmerged KI branches | **Discard** `ki/leveling`, `ki/message-logging`, `ki/guild-sync-invites`, `ki/alerts-background` and `ki/pluralkit-crosscutting`. Their KIs stay open in `known-issues.md` and are fixed in the Phase 3 sections that own them (checked: every one is assigned below). |
+| C9 | First production deploy | **Wait for the whole migration.** Phase 2 edits the undeployed migrations in place (Q6). |
+| C10 | `/Warn` reason | **Warn requires a reason**, as an exception to Q30. |
+
+These spike deviations will be corrected to follow the decisions:
+
+- **Q3b:** the DM is sent before the reply. The spike replies first.
+- **TD-11:** the boundary defers, and a privacy attribute replaces `Command.Defer(...)` in the pipeline.
+- **TD-12:** Discord lookups return `Fin` with the C1 cases, instead of `Option` plus a `DiscordError` code.
+- **Spike records holding Discord types:** they become Grimoire records (C5).
+- **Run summary:** `GenericBackgroundService`'s run summary gets ported.
+- **Version pin:** language-ext stays pinned to an exact version. The spike used `5.0.0-beta-78`; section 1.1 checks for a newer release.
+
+## 3. Sections
+
+The phases are in order. Sections inside a phase can run in parallel unless they list a dependency. KIs are listed in
+the section that fixes them.
+
+### Phase 0: groundwork (no language-ext yet)
+
+| § | Section | Contents |
+|---|---------|----------|
+| 0.1 | Save the spike **(done 2026-11-14, 4a3f8ac)** | Commit the spike to `spike/language-ext-v5`. It's uncommitted in `../Grimoire-langext-spike`. |
+| 0.2 | KI branches and known-issues **(done 2026-11-14)** | Delete the five unmerged `ki/*` branches and all eight worktrees in `.claude/worktrees/` (C8). Check that `known-issues.md` still lists those branches' KIs as open. Confirm that the custom-command KIs committed in fb1b29e (83–88, 113, 114) are fixed, test each one, and mark them fixed, since the doc still lists them as open. |
+| 0.3 | Configuration | Q23, Q23b and SH-1: delete the extra `ConfigurationBuilder`, check why production works today, and put a placeholder in place of the tracked password. |
+| 0.4 | Split the test projects | Create `Grimoire.Tests.Unit` (no Docker, no network) and `Grimoire.Tests.Integration` (Testcontainers and the fake Discord harness). Move existing tests by what they touch: `Grimoire.Domain.Test.Unit` and the pure Settings tests go to Unit; the DB-backed `Features/*` tests, the Settings DB tests and `Integration/*` go to Integration. Shared fixtures go in a small `Grimoire.Tests.Common` only if both projects need them. Update CI, `stryker-config.json`, CLAUDE.md and the `dotnet test` commands. Tests are moved, not rewritten. |
+| 0.5 | Docs, first pass | Part 5, steps 1–3: fix CLAUDE.md's wrong facts, mark the superseded docs, and add `docs/README.md` as an index. |
+
+### Phase 1: foundations
+
+| § | Section | Depends on | Contents |
+|---|---------|------------|----------|
+| 1.1 | Error and result types | C1, C4 | Add `LanguageExt.Core`, pinned. Add the `Expected` subtypes `NotFound`, `Invalid`, `Forbidden` and `Unavailable`. In one sweep, Domain and Settings domain move to `Fin`/`Validation<Error, _>`/`Unit`. Apply TD-5 (`Create` returns `Validation` only when it can fail) and F-4 (assertions move from `Code` to the case). Retire `GetOrElse` (TD-13). |
+| 1.2 | Runtime and boundary | 1.1, C2 | Productionise `Grimoire/Functional`: the capabilities, the runtimes and `Has<>`. Command boundary: validate, then defer (TD-11, with a privacy attribute), then run, then render (Q2c colours, Q3 ephemeral refusals, text commands silent where the slash reply would be private, the generic "[ID …]" reply plus an alert for `Unavailable` and defects). Event boundary and worker boundary, with the run summary ported and F-9. A fake runtime for unit tests. |
+| 1.3 | Data access | 1.2, C3 | Dapper type handlers (strongly typed ids, `jsonb`), `Sql` values, transactions, a retry schedule only for idempotent reads, and a non-retrying streaming path (Q28 → `IAsyncEnumerable` through `IO`). Postgres errors map to `Unavailable` (Q1) at this one edge. Pattern for SQL tests in the integration project. |
+| 1.4 | Discord edge | 1.2 | TD-12 lookups (NotFound, Invalid, Forbidden, Unavailable). SH-15 retry split (Q25). SH-10 one log message record with the event's time (Q26). LOG-2 log gate on `GuildLog` (Q26b). KI-54. |
+| 1.5 | PluralKit | 1.4 | SH-2 token bucket with a small queue (Q24), the deleted-member branch (Q37), LOG-3 and LOG-4. KI-101, KI-111. |
+
+### Phase 2: schema before the first deploy (EF migrations, edited in place per Q6 unless C9 says otherwise)
+
+| § | Section | Contents |
+|---|---------|----------|
+| 2.1 | Production measurements | Q7: run the size query and the `EXPLAIN` plans from rollup part 6. This sets the time budget for 2.3. |
+| 2.2 | Settings schema | TD-6 settings as JSON per module (versioned, with who/when). TD-1 and TD-2 state rows for mutes and locks (they replace `ClosedAt` from 876e460). P-9 bigint. Q6 redundant index pairs. Migration of the legacy data into the new shapes. |
+| 2.3 | Grimoire schema | Q8 `Pardon` 1:1 plus `PardonReasonHistory`. Q11/D-19 column drops. Q10/D-20 obsolete types leave the model. TD-9 rename to `ServerDisplayNameHistory`. Q6 index pairs. P-9 bigint with the view recreated: tie-break (defect 23), names from the database (TD-9), 0 XP excluded (Q12b). Q9 string discriminators, rewritten once together with P-9. |
+| 2.4 | Rebuild and rehearse | Rebuild the dev database from `main`'s backup. Run both contexts' migrations against a copy of production. |
+
+### Phase 3: feature ports
+
+Each section ports its slice to `Eff`, implements its decisions and KIs, moves its logic tests to unit tests, and
+proposes UX changes in its spec.
+
+| § | Section | Decisions | KIs |
+|---|---------|-----------|-----|
+| 3.1 | Settings service | SET-1/2/3 typed `GuildConfig` cache, Q19 1-hour expiry, SET-10 fail-safe, KI-103 | 103, 105 |
+| 3.2 | `/Warn` (the template command) | Q3b, C10 (reason required), T-1 shape | — |
+| 3.3 | Ban, Unban, Kick | MOD-1/2/3/4, Q30, Q32, KI-03 handoff, MOD-11 leak (defect 8), Q33 publish | — |
+| 3.4 | Mute processor | TD-1/3/4, Q31, KI-55 order, MOD-6, `UserJoinedWhileMuted` replaced | 53 |
+| 3.5 | Lock processor (channels, threads, voice) | TD-1/2/3, permission capture, Q15 locked-thread handoff | 102, 112 |
+| 3.6 | Sins | SIN-1..6, Q8/8b, Q33, Q34/34b, Q36 | — |
+| 3.7 | Spam filter | Q20, Q14b, Q35/SIN-12 through the mute processor | 63, 107 |
+| 3.8 | Diagnostics | SIN-14/15, the parts of D-23 that are already decided | — |
+| 3.9 | `MessageCreated` pipeline | Q14, HOT-3/4, Q15 | — |
+| 3.10 | Message logging (edit, delete, bulk delete) | LOG-5 (Q39), defect 9, defects 12/13 | 64, 69, 70, 104 |
+| 3.11 | User logging and last-known cache | LOG-1 `Diff`, Q17/17b/17d, TD-7, TD-8, TD-9 | 67, 68, 97 |
+| 3.12 | Reactions | Q16 single upsert | 72 (re-check) |
+| 3.13 | Log cleanup worker | Q38/LOG-6, streaming | — |
+| 3.14 | XP gain and rewards | Q18 cooldown, Q41/41b, LVL-5 `PlanRewards` | 74, 75, 76, 109 |
+| 3.15 | `/Level`, Leaderboard, Award, Reclaim | TD-10, Q12, Q40, LVL-3/7 | 77, 79, 80, 81 |
+| 3.16 | Leveling settings and ignores | LVL-12 | 73, 78 |
+| 3.17 | Custom commands | CC-1..9, Q21 (and dropping `fuzzystrmatch`), Q42–45 | 87 (decide: case-insensitive names). Keep the fixes for 83–86, 88, 113 and 114 |
+| 3.18 | Log and moderation settings commands, Modules | — | 65, 66, 71 |
+| 3.19 | Guild sync and invites | — | 89, 90, 98, 100, 108 |
+| 3.20 | Alerts, guild issues, gateway health | SH-11 (defect 10) | 48, 91–96, 99, 106, 110 |
+
+### Phase 4: .NET 11 and C# 15 (once the Arch SDK ships; can be slotted in anywhere after 1.2)
+
+- Move the TFM and packages to 11.
+- Run the EF `closed` spike.
+- Make the domain sum types `closed` (the C1 error cases need a Grimoire base under `Expected` for this; decide in the Phase 4 spec), and remove the `_ =>` arms (T-3, D-23).
+
+### Phase 5: cleanup
+
+- Remove the EF runtime query helpers. `DbContext` stays for migrations only.
+- Remove `GenericBackgroundService`, the bridges and the old command helpers (`TryDeferAsync`).
+- Delete the integration tests that duplicate unit tests.
+- Write the backlog items into `docs/backlog.md`: Q29, the DM-based `/SinLog` (Q36), the UX pass from Q40, and the DSharpPlus upstream report (Q17).
+- Final docs pass (part 5, step 4).
+
+## 4. Test strategy
+
+| Project | Holds | May touch |
+|---------|-------|-----------|
+| `Grimoire.Tests.Unit` | Smart constructors, pure decisions, embed builders, state machines (mute/lock transitions), `Diff`, scoring, and whole `Eff` pipelines run against the fake runtime: outages, `Forbidden`, absent members, retries and ordering. | Nothing outside the process. |
+| `Grimoire.Tests.Integration` | Every `Sql` value against Postgres (Testcontainers + Respawn). Migrations. Live capabilities against the fake Discord REST/gateway. Command registration, options and checks, slash/text parity, ephemeral flags. PluralKit/HTTP. One end-to-end smoke test per command and handler (C7). | Docker, the fake Discord harness. |
+
+A port counts as done when every behaviour pinned by the old integration tests is covered by a unit test or a kept
+integration test. Each spec lists that mapping.
+
+## 5. Documentation
+
+Conflicts found so far:
+
+- **CLAUDE.md is wrong in four places.**
+  - It names `Grimoire.Test.Unit`, which doesn't exist.
+  - It says commands use `ApplicationCommandModule`, but the code uses DSharpPlus.Commands.
+  - It says the `this.` qualifier is always required, which no longer holds for primary-constructor parameters (Q27).
+  - The five-project list is out of date.
+- **`docs/domain-model/error-result-validation-strategy.md`** describes the native `Result`/`Validation` that C4 removes.
+- **`docs/domain-model/migration-strategy.md`** says Settings is append-only. TD-1 and TD-6 changed that.
+- **`docs/domain-model/*` from April** is a review whose findings are now resolved or superseded.
+- **`design-decisions.md`** has crossed-out entries (Q13, Q17c) and amendments in place.
+- **The root `README.md` dates from 2024.**
+- ~~`known-issues.md` listed the KIs fixed in fb1b29e as open.~~ Fixed in 0.2.
+
+Steps:
+
+1. **Phase 0.5:** fix CLAUDE.md. Add a "Superseded by …" banner to the conflicting docs. Add `docs/README.md` as an index that names the current source of truth for each topic.
+2. **Phase 1.2:** add `docs/architecture.md` as the single current description: layers, effects and runtimes, the error model, the boundary rules, and the test strategy. It replaces the domain-model strategy docs.
+3. **As sections land:** keep a clean `docs/decisions.md` that holds only the current decisions, merged from review-decisions and design-decisions. Superseded wording moves to an appendix.
+4. **Phase 5:** move the finished reviews, the implemented specs and the automation backlog to `docs/archive/`. Refresh the README.
+
+## 6. Spec template (`docs/langext-migration/specs/NN-name.md`)
+
+1. **Scope:** the files, and the decision and KI IDs it covers.
+2. **Flow:** the steps from input to the reply or log, as a list or diagram. Mark which steps are pure and which are effects.
+3. **Types:** new records and unions, their smart constructors, and the error cases.
+4. **Edge cases:** a table of each case, what happens, and the error case and colour it gets.
+5. **UX suggestions:** wording, ephemerality, embed layout and option changes, each marked "suggested", for the owner to accept or reject.
+6. **SQL:** each statement and its test.
+7. **Tests:** the unit tests, the integration tests that are kept, and the old tests mapped to their replacements.
+8. **Docs to update.**
+9. **Open questions.**

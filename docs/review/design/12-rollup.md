@@ -3,6 +3,11 @@
 Written 2026-11-09 from sections 1 to 11, `review-decisions.md` and `docs/testing/known-issues.md`. No source code was
 changed. Code was read only where two sections disagreed (see "Contradictions resolved").
 
+> **Owner decisions:** all part 7 questions (Q1 to Q45) and the owner's code TODOs (TD-1 to TD-13) are answered in
+> `docs/review/design-decisions.md`. Where it disagrees with this roll-up, that file wins. In particular,
+> F-1 is rewritten, F-2 changes, D-10/D-11, P-12, LVL-2, LVL-8 and HOT-10 are declined, and locks/mutes become
+> state-machine rows with an outbox (TD-1 to TD-4).
+
 ## 1. Summary
 
 - **145 findings were raised and 126 survive** after 19 duplicates were merged: 10 high, 38 med, 67 low and 11 optional.

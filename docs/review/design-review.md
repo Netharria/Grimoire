@@ -129,6 +129,9 @@ skipped early, run in parallel or batched.
 
 ## C# 15 readiness
 
+- **Update 2026-11-12.** .NET 11 has been released. The owner is waiting for the Arch package before installing the
+  SDK, so the repo still builds on `net10.0` until then. Check `dotnet --version` before relying on C# 15. The
+  owner's decisions are in `design-decisions.md`, which overrides the section files and the roll-up.
 - **Status now.** Every project targets `net10.0`. The only SDK installed is `10.0.114`. `global.json` pins `10.0.112`
   with `rollForward: latestMajor` and `allowPrerelease: false`, so the .NET 11 SDK is picked up automatically once it
   is installed and released. C# 15 needs `net11.0` as the TFM. Don't set `LangVersion` to `latest`.
