@@ -57,7 +57,7 @@ the section that fixes them.
 | 0.1 | Save the spike **(done 2026-11-14, 4a3f8ac)** | Commit the spike to `spike/language-ext-v5`. It's uncommitted in `../Grimoire-langext-spike`. |
 | 0.2 | KI branches and known-issues **(done 2026-11-14)** | Delete the five unmerged `ki/*` branches and all eight worktrees in `.claude/worktrees/` (C8). Check that `known-issues.md` still lists those branches' KIs as open. Confirm that the custom-command KIs committed in fb1b29e (83–88, 113, 114) are fixed, test each one, and mark them fixed, since the doc still lists them as open. |
 | 0.3 | Configuration | Q23, Q23b and SH-1: delete the extra `ConfigurationBuilder`, check why production works today, and put a placeholder in place of the tracked password. |
-| 0.4 | Split the test projects | Create `Grimoire.Tests.Unit` (no Docker, no network) and `Grimoire.Tests.Integration` (Testcontainers and the fake Discord harness). Move existing tests by what they touch: `Grimoire.Domain.Test.Unit` and the pure Settings tests go to Unit; the DB-backed `Features/*` tests, the Settings DB tests and `Integration/*` go to Integration. Shared fixtures go in a small `Grimoire.Tests.Common` only if both projects need them. Update CI, `stryker-config.json`, CLAUDE.md and the `dotnet test` commands. Tests are moved, not rewritten. |
+| 0.4 | Split the test projects **(done 2026-11-14)** | Create `Grimoire.UnitTests` (no Docker, no network) and `Grimoire.IntegrationTests` (Testcontainers and the fake Discord harness). Move existing tests by what they touch: `Grimoire.Domain.Test.Unit` and the pure Settings tests go to Unit; the DB-backed `Features/*` tests, the Settings DB tests and `Integration/*` go to Integration. Shared fixtures go in a small `Grimoire.Tests.Common` only if both projects need them. Fix Stryker: `mtp` runner, unit project only, solution mode (spec: `specs/0.4-test-project-split.md`). Update CLAUDE.md and the `dotnet test` commands. Tests are moved, not rewritten. |
 | 0.5 | Docs, first pass | Part 5, steps 1–3: fix CLAUDE.md's wrong facts, mark the superseded docs, and add `docs/README.md` as an index. |
 
 ### Phase 1: foundations
@@ -69,6 +69,7 @@ the section that fixes them.
 | 1.3 | Data access | 1.2, C3 | Dapper type handlers (strongly typed ids, `jsonb`), `Sql` values, transactions, a retry schedule only for idempotent reads, and a non-retrying streaming path (Q28 → `IAsyncEnumerable` through `IO`). Postgres errors map to `Unavailable` (Q1) at this one edge. Pattern for SQL tests in the integration project. |
 | 1.4 | Discord edge | 1.2 | TD-12 lookups (NotFound, Invalid, Forbidden, Unavailable). SH-15 retry split (Q25). SH-10 one log message record with the event's time (Q26). LOG-2 log gate on `GuildLog` (Q26b). KI-54. |
 | 1.5 | PluralKit | 1.4 | SH-2 token bucket with a small queue (Q24), the deleted-member branch (Q37), LOG-3 and LOG-4. KI-101, KI-111. |
+| 1.6 | Telemetry | 1.2, 1.3, 1.4 | OpenTelemetry traces and metrics, exported over OTLP. **Traces:** the command, event and worker boundaries each open a root span (command or event name, guild id, outcome case). The database, Discord, PluralKit, settings and cache capabilities open child spans, so a failed command's trace shows which step failed and why. Npgsql's and `HttpClient`'s own instrumentation adds the SQL and REST detail. **Metrics:** duration histograms for commands, events, worker ticks and each capability call; counters by outcome case (`Invalid`, `NotFound`, `Forbidden`, `Unavailable`, defect); gauges for the outbox backlog, the cache hit rate, the PluralKit queue and the guild log queue. **Logs:** Serilog logs carry the trace id. The "[ID …]" in the generic error reply becomes the trace id, so a user's report leads straight to its trace. No message content or names in spans or tags (defect 9). **Owner, 2026-11-14:** the backend is `grafana/otel-lgtm` on the owner's home server, which has plenty of storage, so retention can be long. Grafana's UI goes behind the existing Nginx Proxy Manager (TLS plus an access list or Grafana login). **The bot runs in the cloud and the backend at home**, which has had reliability problems before. So the bot sends to an **OpenTelemetry Collector sidecar** next to it in the cloud. The bot's in-process exporter only ever talks to localhost, so a home outage never slows or blocks the bot. The collector's `otlphttp` exporter sends to home through NPM (TLS, with basic auth from an NPM access list). It uses a **persistent sending queue** (`file_storage`, capped at a few hundred MB) and retries with backoff, so it holds telemetry through a home outage or a collector restart. When the cap is reached, the oldest data is dropped, which is acceptable. Tail sampling is optional and decided in the 1.6 spec: keep every failed or slow trace, and a sample of the successful ones. The error reply's ID is the trace id. Unit tests check spans and metrics with in-memory exporters. |
 
 ### Phase 2: schema before the first deploy (EF migrations, edited in place per Q6 unless C9 says otherwise)
 
@@ -81,7 +82,7 @@ the section that fixes them.
 
 ### Phase 3: feature ports
 
-Each section ports its slice to `Eff`, implements its decisions and KIs, moves its logic tests to unit tests, and
+Each section ports its slice to `Eff`, implements its decisions and KIs, adds its telemetry (1.6), moves its logic tests to unit tests, and
 proposes UX changes in its spec.
 
 | § | Section | Decisions | KIs |
@@ -125,8 +126,10 @@ proposes UX changes in its spec.
 
 | Project | Holds | May touch |
 |---------|-------|-----------|
-| `Grimoire.Tests.Unit` | Smart constructors, pure decisions, embed builders, state machines (mute/lock transitions), `Diff`, scoring, and whole `Eff` pipelines run against the fake runtime: outages, `Forbidden`, absent members, retries and ordering. | Nothing outside the process. |
-| `Grimoire.Tests.Integration` | Every `Sql` value against Postgres (Testcontainers + Respawn). Migrations. Live capabilities against the fake Discord REST/gateway. Command registration, options and checks, slash/text parity, ephemeral flags. PluralKit/HTTP. One end-to-end smoke test per command and handler (C7). | Docker, the fake Discord harness. |
+| `Grimoire.UnitTests` | Smart constructors, pure decisions, embed builders, state machines (mute/lock transitions), `Diff`, scoring, and whole `Eff` pipelines run against the fake runtime: outages, `Forbidden`, absent members, retries and ordering. | Nothing outside the process. |
+| `Grimoire.IntegrationTests` | Every `Sql` value against Postgres (Testcontainers + Respawn). Migrations. Live capabilities against the fake Discord REST/gateway. Command registration, options and checks, slash/text parity, ephemeral flags. PluralKit/HTTP. One end-to-end smoke test per command and handler (C7). | Docker, the fake Discord harness. |
+
+**Mutation testing:** Stryker runs against `Grimoire.UnitTests` only. Each Phase 3 spec records the area's score before and after (`dotnet stryker --since:main`), and surviving mutants in the pure core are treated as missing tests.
 
 A port counts as done when every behaviour pinned by the old integration tests is covered by a unit test or a kept
 integration test. Each spec lists that mapping.
@@ -162,6 +165,7 @@ Steps:
 4. **Edge cases:** a table of each case, what happens, and the error case and colour it gets.
 5. **UX suggestions:** wording, ephemerality, embed layout and option changes, each marked "suggested", for the owner to accept or reject.
 6. **SQL:** each statement and its test.
-7. **Tests:** the unit tests, the integration tests that are kept, and the old tests mapped to their replacements.
-8. **Docs to update.**
-9. **Open questions.**
+7. **Telemetry:** the spans, tags and metrics the section adds, and what a failure looks like in a trace.
+8. **Tests:** the unit tests, the integration tests that are kept, and the old tests mapped to their replacements.
+9. **Docs to update.**
+10. **Open questions.**

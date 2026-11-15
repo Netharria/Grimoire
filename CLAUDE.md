@@ -15,14 +15,22 @@ dotnet build
 # Run (requires appsettings configuration)
 dotnet run --project Grimoire
 
-# Run all tests
-dotnet test
+# Unit tests: fast, no Docker. Run after every change.
+dotnet test --project Grimoire.UnitTests
 
-# Run a single test project
-dotnet test Grimoire.Test.Unit
+# Integration tests: Postgres via Testcontainers and the fake-Discord harness (needs Docker). Run before committing.
+dotnet test --project Grimoire.IntegrationTests
 
-# Run a specific test
-dotnet test --filter "FullyQualifiedName~TestClassName.TestMethodName"
+# All tests
+dotnet test --solution Grimoire.sln
+
+# A specific test
+dotnet test --project Grimoire.UnitTests --filter "FullyQualifiedName~TestClassName.TestMethodName"
+
+# Mutation testing (unit tests only; config in stryker-config.json, projects in Grimoire.Mutation.sln, which must list
+# every production project too)
+dotnet stryker --since:main     # only code changed since main
+dotnet stryker                  # everything
 
 # Docker (full stack with PostgreSQL + pgAdmin)
 docker-compose up -d
@@ -34,13 +42,17 @@ dotnet ef database update --project Grimoire.Data --startup-project Grimoire
 
 ## Solution Structure
 
-Five projects in the solution:
+Six projects in the solution:
 
 - **Grimoire** — Main executable. Discord bot entry point, all slash command handlers, event listeners, and background services.
 - **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext`, entity configurations, and migrations.
 - **Grimoire.Domain** — Domain models only. Entity definitions and strongly-typed IDs. Has `InternalsVisibleTo("Grimoire.Data")` so EF value converters can use `internal` factory methods (`FromDatabase`, `ParseFromDatabase`).
 - **Grimoire.Settings** — Separate DbContext (`GrimoireSettingsDbContext`) for per-guild settings. Has its own service layer with hybrid caching.
-- **Grimoire.Test.Unit** — xUnit tests using Testcontainers (PostgreSQL), Respawn for DB cleanup, NSubstitute for mocking.
+- **Grimoire.UnitTests** — xUnit v3 tests of pure logic: domain types, settings domain, embed builders, decisions. No Docker,
+  no network; Testcontainers and Respawn are deliberately not referenced, so a database test here doesn't compile.
+- **Grimoire.IntegrationTests** — xUnit v3 tests against real Postgres (Testcontainers, Respawn) and the fake-Discord
+  harness (fake gateway and REST around the real host). `Database/` holds SQL/settings tests; the other folders are
+  harness tests by feature area.
 
 ## Feature Organization
 
@@ -93,7 +105,8 @@ Environment variables use `__` as separator (e.g., `ConnectionStrings__Grimoire`
 
 ## Code Style
 
-The `.editorconfig` enforces strict rules — CI checks compliance. Notable requirements:
+The `.editorconfig` sets strict rules, which the build and IDE analyzers check (there is no CI pipeline yet). Notable
+requirements:
 
 - File headers: AGPL-3.0 license boilerplate on every source file
 - Nullable reference types enabled; violations are errors
@@ -103,4 +116,16 @@ The `.editorconfig` enforces strict rules — CI checks compliance. Notable requ
 
 ## Testing
 
-Tests use Testcontainers to spin up a real PostgreSQL instance. Tests that touch the database must use the shared container fixture and call Respawn between tests. NSubstitute is used for mocking non-database dependencies.
+Two projects, split by what a test touches:
+
+- **Unit** (`Grimoire.UnitTests`): logic that runs in-process with nothing outside it. This is where core logic tests
+  go, and the only project Stryker mutates against.
+- **Integration** (`Grimoire.IntegrationTests`): anything that needs Postgres or the fake-Discord harness. Database
+  tests use the shared container fixture (`"Test collection"` or `"Settings collection"`) and reset with Respawn
+  between tests. Harness tests start the real host through `GrimoireTestBot`.
+
+Shared helpers (`ResultShouldExtensions`, `AlertTestHelpers`) live in the unit project under the `Grimoire.TestShared`
+namespace and are linked into the integration project as files.
+
+Test code must not write to the console: the bot's logs go to the test output through `TestOutputSink`. Console
+writes captured by xunit deadlocked under vstest and Stryker (see `docs/langext-migration/specs/0.4-test-project-split.md`).

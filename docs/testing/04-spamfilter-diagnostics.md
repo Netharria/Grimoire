@@ -81,7 +81,7 @@ Four quick repeats is just over the threshold.
 | SPAM-33 | `user1` built up 50 points | Restart the bot, then send 2 quick messages **[auto]** `SpamEventsTests.Points_AreForgottenOnRestart` | Not spam: points live in memory only | No sin |
 | SPAM-34 | `user1` is muted, but `#leaky` has an allow Send Messages overwrite for a role `user1` holds | `user1` spams in `#leaky` **[auto]** `SpamEventsTests.SpamWhileStillMuted_MutesAgain_ForTwiceAsLong` | Muted again; Length doubles | A second Mute sin and `MuteAdded` row while the first is active |
 
-Automated in `Grimoire.Tests/Integration/Moderation/SpamFilterTests.cs` (SPAM-01, 02, 07, 08, 12, 15 to 19, 25) and
+Automated in `Grimoire.IntegrationTests/Moderation/SpamFilterTests.cs` (SPAM-01, 02, 07, 08, 12, 15 to 19, 25) and
 `SpamEventsTests.cs` (SPAM-03 to 06, 09 to 11, 13, 20 to 24, 26 to 30, 32 to 34).
 SPAM-14 needs channel-resolved permissions (H-13). SPAM-31 (PluralKit) is not automated here.
 
@@ -112,9 +112,9 @@ same as a change. Inherit is stored as a row, not deleted.
 | SPAM-53 | Bot can't see `#private` | `admin` overrides `#private` **[auto]** `SpamFilterOverrideTests.Override_OfAChannelTheBotCannotSee_IsAccepted` | Accepted: the command makes no Discord call for the channel | Row saved |
 | SPAM-54 | Override set in Test-A | `/SpamFilter View` in Test-B **[auto]** `SpamFilterOverrideTests.View_InAnotherGuild_DoesNotListThisGuildsOverrides` | Test-B does not list it | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/SpamFilterTests.cs`,
-`Grimoire.Tests/Integration/Moderation/SpamFilterOverrideTests.cs` and
-`Grimoire.Tests/Integration/Shared/SettingSaveFailureTests.cs`.
+Automated in `Grimoire.IntegrationTests/Moderation/SpamFilterTests.cs`,
+`Grimoire.IntegrationTests/Moderation/SpamFilterOverrideTests.cs` and
+`Grimoire.IntegrationTests/Shared/SettingSaveFailureTests.cs`.
 
 ## C. `/SpamFilter View`
 
@@ -132,9 +132,9 @@ The reply is public.
 | SPAM-65 | none | `mod` runs View **[auto]** `SpamFilterTests.SpamFilter_NeedsManageChannels("view")` | "You do not have the required permissions to use this command." | none |
 | SPAM-66 | AntiSpam disabled | View **[auto]** `SpamFilterOverrideTests.View_WithAntiSpamDisabled_IsRefused` | "This module is disabled in this server." The whole `/SpamFilter` group needs AntiSpam since KI-60 | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/SpamFilterTests.cs` and
-`Grimoire.Tests/Integration/Moderation/SpamFilterOverrideTests.cs`, and SPAM-64 (paging) in
-`Grimoire.Tests/Integration/Shared/PaginationTests.cs`.
+Automated in `Grimoire.IntegrationTests/Moderation/SpamFilterTests.cs` and
+`Grimoire.IntegrationTests/Moderation/SpamFilterOverrideTests.cs`, and SPAM-64 (paging) in
+`Grimoire.IntegrationTests/Shared/PaginationTests.cs`.
 
 ---
 
@@ -156,7 +156,7 @@ ephemeral: a "Moderation diagnostics" embed with the full report attached as `mo
 | DIAG-07 | Bot can't send in `#private` | Run it in `#private` **[auto]** `DiagnosticsFindingsTests.Check_WithoutManageRolesOrManageChannels_RunsAnywhere_AndReportsBothAlone` | Works: an interaction reply needs no channel permission | none |
 | DIAG-08 | Different setups in Test-A and Test-B | Run it in each **[auto]** `DiagnosticsFindingsTests.Check_InEachGuild_ReportsOnlyThatGuild` | Each report covers only its own guild | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/DiagnosticsTests.cs`.
+Automated in `Grimoire.IntegrationTests/Moderation/DiagnosticsTests.cs`.
 
 ## E. What the report says
 
@@ -199,7 +199,7 @@ Run `/Diagnostics Check` as `admin` for each case, then undo the setup.
 | DIAG-40 | 40+ channels with findings | Check | Embed description cut to 4000 characters ending "..."; the file has everything **[auto]** `DiagnosticsReportFormatterTests.Embed_summarizes_channel_counts_and_stays_within_the_description_limit` | none |
 | DIAG-41 | Change an overwrite by hand | Run Check straight away, then again 5 s later **[auto]** `DiagnosticsFindingsTests.Check_AfterAnOverwriteIsChangedByHand_ReflectsTheChange` | The second run reflects the change. Note if the first run is stale | none |
 
-Automated in `Grimoire.Tests/Features/Moderation/Diagnostics/` (`ModerationDiagnosticsTests`,
+Automated in `Grimoire.UnitTests/Features/Moderation/Diagnostics/` (`ModerationDiagnosticsTests`,
 `EffectivePermissionsTests`, `DiagnosticsReportFormatterTests`). These run on plain snapshots, not on a guild, so
 DIAG-41 and how the cache is read are manual only.
 
@@ -234,8 +234,8 @@ gates, so check DIAG-63 and DIAG-64 by hand. `items` takes one or more roles or 
 | DIAG-69 | Settings DB unreachable | Add **[auto]** `DiagnosticsIgnoreTests.Add_WhenTheListCannotBeSaved_SaysSoPrivately` | Ephemeral "Could not save the diagnostics ignore list." | none |
 | DIAG-70 | `@mod` ignored in Test-A | View in Test-B **[auto]** `DiagnosticsIgnoreTests.View_InAnotherGuild_ShowsThatGuildsList` | Test-B's own list | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/DiagnosticsTests.cs` and
-`Grimoire.Tests/Features/Moderation/Diagnostics/DiagnosticsIgnoresTests.cs`.
+Automated in `Grimoire.IntegrationTests/Moderation/DiagnosticsTests.cs` and
+`Grimoire.UnitTests/Features/Moderation/Diagnostics/DiagnosticsIgnoresTests.cs`.
 
 ## G. The follow-up report from `/Mutes Create` and `/Mutes Refresh`
 
@@ -259,7 +259,7 @@ command stops early.
 | DIAG-89 | A guild with 50+ channels | `/Mutes Refresh`, then compare with `/Diagnostics Check` run 10 s later | Same findings. If the follow-up lists channels as not denied that Check doesn't, the 2 s wait was too short for the gateway; record it | none |
 | DIAG-90 | `/Mutes Refresh` run in `#general` | Compare visibility with `/Diagnostics Check` | The follow-up is public, Check is ephemeral. Note whether a public report is wanted | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/DiagnosticsTests.cs` and `MuteAdminTests.cs` (DIAG-80, 85 to 88
+Automated in `Grimoire.IntegrationTests/Moderation/DiagnosticsTests.cs` and `MuteAdminTests.cs` (DIAG-80, 85 to 88
 via MOD-83 to MOD-85). The report contents in a follow-up are not checked by any test.
 
 ---

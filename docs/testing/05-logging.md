@@ -77,7 +77,7 @@ that no longer exists shows "Deleted Channel".
 | LOG-18 | none | `mod` runs View | Permission error **[auto]** | none |
 | LOG-19 | MessageLog disabled | View | "This module is disabled in this server." **[auto]** (see Code observations: `/ModSettings View` and `/LevelSettings View` now run with their module off) | none; with UserLog too: `MessageLogSettingsGapTests.LogViews_WithTheirModulesOff_AreBothRefused` (KI-65) |
 
-Automated in `Grimoire.Tests/Integration/Logging/MessageLogSettingsTests.cs` (`View_*`, `Set_*`,
+Automated in `Grimoire.IntegrationTests/Logging/MessageLogSettingsTests.cs` (`View_*`, `Set_*`,
 `LogMessage_NeedsManageGuildAndTheModule`).
 
 ## C. `/Log Message Override option [channel]` and `/Log Message ViewOverrides`
@@ -108,9 +108,9 @@ with buttons.
 | LOG-32 | An override on a channel that was then deleted | ViewOverrides | The deleted channel is not listed | The row stays **[auto]** `MessageLogSettingsGapTests.ViewOverrides_LeavesOutDeletedChannels_ButKeepsTheirRows` (pins the kept row, KI-71) |
 | LOG-33 | Overrides in Test-A and Test-B | ViewOverrides in Test-A | Only Test-A channels **[auto]** (Settings tests) | none |
 
-Automated in `Grimoire.Tests/Integration/Logging/MessageLogSettingsTests.cs` (`NeverOverride_StopsLogging_AndInheritRestoresIt`,
+Automated in `Grimoire.IntegrationTests/Logging/MessageLogSettingsTests.cs` (`NeverOverride_StopsLogging_AndInheritRestoresIt`,
 `AlwaysOverrideOnAThread_WinsOverItsParent`, `Override_IsLoggedToTheModLog`) and
-`Grimoire.Settings.Tests/MessageLog/ChannelOverrideTests.cs` (tree walk, not-modified, latest row wins, guild isolation).
+`Grimoire.IntegrationTests/Database/SettingsLayer/MessageLog/ChannelOverrideTests.cs` (tree walk, not-modified, latest row wins, guild isolation).
 
 ## D. `/Log User Set setting option [value]` and `/Log User View`
 
@@ -135,7 +135,7 @@ message log View), with "**Join Log:**", "**Leave Log:**", "**Username Log:**", 
 | LOG-49 | none | `mod` runs View or Set | "You do not have the required permissions to use this command." **[auto]** | none; Set: `UserLogSettingsTests.Set_NeedsManageGuildAndTheModule` |
 | LOG-50 | UserLog disabled | View or Set | "This module is disabled in this server." **[auto]** | none; Set: `UserLogSettingsTests.Set_NeedsManageGuildAndTheModule`; both Views: `MessageLogSettingsGapTests.LogViews_WithTheirModulesOff_AreBothRefused` (KI-65) |
 
-Automated in `Grimoire.Tests/Integration/Logging/UserLogTests.cs` (`View_OnAFreshGuild_ShowsNoLogChannels`,
+Automated in `Grimoire.IntegrationTests/Logging/UserLogTests.cs` (`View_OnAFreshGuild_ShowsNoLogChannels`,
 `Set_StoresTheChannel_AndOffClearsIt`, `LogUser_NeedsManageGuildAndTheModule`).
 
 ---
@@ -257,7 +257,7 @@ deleted with their message by the cleanup's cascade. Nothing is posted to Discor
 | LOG-127 | Saved message 32 days old with active and removed reactions | Wait for a cleanup tick | none | Message and all its reactions deleted **[auto]** |
 | LOG-128 | Restart the bot so the message and channel are uncached | Clear all reactions | **Expected:** rows soft-deleted. **Actual:** possibly skipped: the clear event finds the guild through the cached channel (see Code observations) | Check `RemovedAt` **[auto]** `MessageEventEdgeTests.ClearingReactions_OnAMessageFromBeforeARestart_SoftDeletesThem` |
 
-Automated in `Grimoire.Tests/Integration/Logging/ReactionTests.cs`.
+Automated in `Grimoire.IntegrationTests/Logging/ReactionTests.cs`.
 
 ---
 
@@ -350,7 +350,7 @@ The module setting doesn't matter. To test by hand, backdate rows in SQL (`OldLo
 | LOG-187 | A join log and a mod-log entry | Backdate nothing; check `OldLogMessages` | none | No rows for join, leave, user or mod logs: only delete, bulk delete and edit logs are queued **[auto]** `MessageEventEdgeTests.OnlyMessageLogPosts_AreQueuedForPurge` |
 | LOG-188 | A purge of the bot's log post | Watch `#messagelog` | The purge doesn't cause a new delete log | none **[auto]** `MessageEventEdgeTests.PurgingTheBotsLogPost_LogsNothing` |
 
-Automated in `Grimoire.Tests/Integration/Logging/LogCleanupTests.cs`. Phase 10 added LOG-187 and 188 in
+Automated in `Grimoire.IntegrationTests/Logging/LogCleanupTests.cs`. Phase 10 added LOG-187 and 188 in
 `MessageEventEdgeTests`.
 
 ---

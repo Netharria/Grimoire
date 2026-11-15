@@ -372,3 +372,6 @@ Cybermancy.sln.DotSettings
 coverageresults/
 
 .claude/
+
+# Stryker mutation testing output
+StrykerOutput/

@@ -14,8 +14,8 @@ Do the standard preflight from `00-environment.md` first. Accounts: `owner`, `ad
 (GEN-01 to GEN-17). This doc builds the full matrices on top of them and does not repeat those cases.
 
 Most of this area is automated (backlog A-34 to A-38). Cases a test covers are tagged **[auto]** with the test name.
-Test classes are in `Grimoire.Tests/Integration/` unless the name starts with `Settings.Tests`, which means
-`Grimoire.Settings.Tests/`.
+Test classes are in `Grimoire.IntegrationTests/` unless the name starts with `Settings.Tests`, which means
+`Grimoire.IntegrationTests/Database/SettingsLayer/` (the settings tests that were in `Grimoire.Settings.Tests`).
 
 ## How the gates work
 

@@ -32,10 +32,10 @@
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Grimoire.Settings.Tests</_Parameter1>
+      <_Parameter1>Grimoire.UnitTests</_Parameter1>
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Grimoire.Tests</_Parameter1>
+      <_Parameter1>Grimoire.IntegrationTests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 

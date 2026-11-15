@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Integration tests: Postgres through Testcontainers, Respawn between tests, and the fake-Discord harness.
+       Pure logic tests go in Grimoire.UnitTests. Stryker never runs this project. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="10.0.1"/>
+    <PackageReference Include="NSubstitute" Version="6.2.0"/>
+    <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Respawn" Version="7.0.0"/>
+    <PackageReference Include="Shouldly" Version="4.3.0"/>
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.15.0"/>
+    <PackageReference Include="xunit.v3" Version="4.0.1"/>
+    <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.8.0"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grimoire\Grimoire.csproj"/>
+    <ProjectReference Include="..\Grimoire.Domain\Grimoire.Domain.csproj"/>
+    <ProjectReference Include="..\Grimoire.Settings\Grimoire.Settings.csproj"/>
+  </ItemGroup>
+
+  <!-- Shared with the unit project as linked files rather than a third project (spec 0.4, decision 2). -->
+  <ItemGroup>
+    <Compile Include="..\Grimoire.UnitTests\ResultShouldExtensions.cs" Link="Shared\ResultShouldExtensions.cs"/>
+    <Compile Include="..\Grimoire.UnitTests\Features\Alerts\AlertTestHelpers.cs" Link="Shared\AlertTestHelpers.cs"/>
+  </ItemGroup>
+
+</Project>

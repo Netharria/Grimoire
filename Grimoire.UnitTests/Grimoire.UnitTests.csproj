@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Unit tests: no Docker, no network. Testcontainers and Respawn are deliberately not referenced, so a database
+       test placed here doesn't compile. Database and fake-Discord tests go in Grimoire.IntegrationTests. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSubstitute" Version="6.2.0"/>
+    <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Shouldly" Version="4.3.0"/>
+    <PackageReference Include="xunit.v3" Version="4.0.1"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grimoire\Grimoire.csproj"/>
+    <ProjectReference Include="..\Grimoire.Domain\Grimoire.Domain.csproj"/>
+    <ProjectReference Include="..\Grimoire.Settings\Grimoire.Settings.csproj"/>
+  </ItemGroup>
+
+</Project>

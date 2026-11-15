@@ -1,0 +1,288 @@
+// This file is part of the Grimoire Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+
+using Grimoire.Settings.Enums;
+using Grimoire.IntegrationTests.FakeDiscord;
+
+namespace Grimoire.IntegrationTests.CustomCommands;
+
+/// <summary>
+///     Using custom commands (backlog A-30): <c>/Command</c>, and <c>!name</c> text triggers through
+///     <c>MESSAGE_CREATE</c>. Commands are learned through <c>/Commands Learn</c>. <c>%Mention</c> and
+///     <c>%Message</c> are filled from the options or the words after the name, and every use is recorded.
+/// </summary>
+[Collection("Test collection")]
+public sealed class CustomCommandUseTests(GrimoireCoreFactory database) : IAsyncLifetime
+{
+    private static readonly TimeSpan NothingHappensWindow = TimeSpan.FromSeconds(2);
+
+    private GrimoireTestBot _bot = null!;
+
+    private FakeGuild Guild => this._bot.Guild;
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
+
+    public async ValueTask InitializeAsync()
+    {
+        await database.ResetDatabase();
+        this._bot = await GrimoireTestBot.StartAsync(database);
+        await this._bot.ConfigureModerationAsync();
+        await this._bot.SetModuleAsync(Module.Commands, true);
+    }
+
+    public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
+
+    // ── /Command ──────────────────────────────────────────────────────────────
+
+    /// <remarks>Cases: CC-85.</remarks>
+    [Fact]
+    public async Task SlashCommand_RepliesWithTheContent_AndRecordsTheUse()
+    {
+        await this.LearnAsync("hello", "Hello there!");
+
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("command", this.Guild.User1, SlashOption.String("command_name", "hello"));
+
+        reply.Message["content"]!.GetValue<string>().ShouldBe("Hello there!");
+        // The use is recorded after the reply.
+        (await this.WaitForUsesAsync(1)).ShouldBe([(this.Guild.User1.Id, "hello")]);
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <remarks>Cases: CC-88.</remarks>
+    [Fact]
+    public async Task SlashCommand_FillsMentionAndMessage_AndLeavesEveryoneAsTyped()
+    {
+        await this.LearnAsync("hug", "%Mention gets a hug: %Message");
+
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("command", this.Guild.User1, SlashOption.String("command_name", "hug"),
+            SlashOption.MentionableUser("mention", this.Guild.Moderator), SlashOption.String("message", "hi @everyone"));
+
+        reply.Message["content"]!.GetValue<string>()
+            .ShouldMatch($"^<@!?{this.Guild.Moderator.Id}> gets a hug: hi @everyone$");
+        await this.WaitForUsesAsync(1);
+    }
+
+    /// <remarks>Cases: CC-86.</remarks>
+    [Fact]
+    public async Task SlashCommand_AnEmbedCommand_RepliesWithAnEmbed()
+    {
+        await this.LearnAsync("rules", "Be nice", SlashOption.Boolean("embed", true), SlashOption.String("embed_color", "ff0000"));
+
+        var reply = await this._bot.RunSlashCommandAndWaitAsync("command", this.Guild.User1, SlashOption.String("command_name", "rules"));
+
+        reply.Description.ShouldBe("Be nice");
+        reply.Embed!["color"]!.GetValue<int>().ShouldBe(0xFF0000);
+        await this.WaitForUsesAsync(1);
+    }
+
+    /// <summary>A restricted command works for a member with one of its roles, and silently does nothing otherwise.</summary>
+    /// <remarks>Cases: CC-92.</remarks>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SlashCommand_Restricted_OnlyRunsForItsRoles(bool hasRole)
+    {
+        await this.LearnAsync("secret", "shh", SlashOption.Boolean("restricted_use", true),
+            SlashOption.Role("permission_role_0", this.Guild.ModeratorRoleId));
+        var invoker = hasRole ? this.Guild.Moderator : this.Guild.User1;
+
+        var interaction = this._bot.RunSlashCommand("command", invoker, SlashOption.String("command_name", "secret"));
+
+        if (hasRole)
+        {
+            (await this._bot.Rest.WaitForRequestAsync(interaction.IsOriginalResponseEdit)).Json!["content"]!.GetValue<string>().ShouldBe("shh");
+            await this.WaitForUsesAsync(1);
+        }
+        else
+        {
+            await this._bot.Rest.WaitForRequestAsync(interaction.IsOriginalResponseDelete);
+            (await this.UsesAsync()).ShouldBeEmpty();
+        }
+    }
+
+    /// <remarks>Cases: CC-93.</remarks>
+    [Fact]
+    public async Task SlashCommand_ThatDoesNotExist_DeletesTheResponse()
+    {
+        var interaction = this._bot.RunSlashCommand("command", this.Guild.User1, SlashOption.String("command_name", "nope"));
+
+        await this._bot.Rest.WaitForRequestAsync(interaction.IsOriginalResponseDelete);
+    }
+
+    // ── !name text triggers ───────────────────────────────────────────────────
+
+    /// <remarks>Cases: CC-110.</remarks>
+    [Fact]
+    public async Task TextTrigger_PostsTheContent_AndRecordsTheUse()
+    {
+        await this.LearnAsync("hello", "Hello there!");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!hello");
+
+        (await this.WaitForPostAsync(this.Guild.General))["content"]!.GetValue<string>().ShouldBe("Hello there!");
+        (await GrimoireTestBot.EventuallyAsync(this.UsesAsync, uses => uses.Count == 1)).ShouldBe([(this.Guild.User1.Id, "hello")]);
+    }
+
+    /// <remarks>Cases: CC-111.</remarks>
+    [Fact]
+    public async Task TextTrigger_FillsMentionFromTheFirstWord_AndMessageFromTheRest()
+    {
+        await this.LearnAsync("hug", "%Mention gets a hug: %Message");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, $"!hug {this.Guild.Moderator.Mention} you are great");
+
+        (await this.WaitForPostAsync(this.Guild.General))["content"]!.GetValue<string>()
+            .ShouldMatch($"^<@!?{this.Guild.Moderator.Id}> gets a hug: you are great$");
+        await this.WaitForUsesAsync(1);
+    }
+
+    /// <summary>C-8: when the first word isn't a mention, it's part of the message, not dropped.</summary>
+    /// <remarks>Cases: CC-112.</remarks>
+    [Fact]
+    public async Task TextTrigger_WithoutAMention_KeepsTheWholeMessage()
+    {
+        await this.LearnAsync("hug", "%Mention gets a hug: %Message");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!hug hello world");
+
+        (await this.WaitForPostAsync(this.Guild.General))["content"]!.GetValue<string>().ShouldEndWith("gets a hug: hello world");
+        await this.WaitForUsesAsync(1);
+    }
+
+    /// <summary>
+    ///     D-1: main let a blank embed colour through. Stored data is trusted now, so such a row loads, and the embed
+    ///     goes out with no colour, instead of the row throwing for every query that loads it.
+    /// </summary>
+    /// <remarks>Cases: CC-115.</remarks>
+    [Fact]
+    public async Task ALegacyCommandWithABlankColour_StillRuns()
+    {
+        await this.LearnAsync("rules", "Be nice", SlashOption.Boolean("embed", true), SlashOption.String("embed_color", "ff0000"));
+        await using (var dbContext = database.CreateDbContext())
+        {
+            var entity = dbContext.Model.FindEntityType(typeof(EmbedCustomCommand))!;
+            var column = entity.FindProperty(nameof(EmbedCustomCommand.EmbedColor))!.GetColumnName();
+            await dbContext.Database.ExecuteSqlRawAsync(
+                $"""UPDATE "{entity.GetSchema() ?? "public"}"."{entity.GetTableName()}" SET "{column}" = '   ' """, Token);
+        }
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!rules");
+
+        var post = await this.WaitForPostAsync(this.Guild.General);
+        post["embeds"]![0]!["description"]!.GetValue<string>().ShouldBe("Be nice");
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>Unknown names, messages from bots, restricted commands and a disabled module post nothing.</summary>
+    /// <remarks>Cases: CC-116.</remarks>
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData("bot")]
+    [InlineData("restricted")]
+    [InlineData("module off")]
+    public async Task TextTriggers_ThatShouldNotRun_PostNothing(string situation)
+    {
+        await this.LearnAsync("hello", "Hello there!", situation == "restricted"
+            ? [SlashOption.Boolean("restricted_use", true), SlashOption.Role("permission_role_0", this.Guild.ModeratorRoleId)]
+            : []);
+        if (situation == "module off")
+            await this._bot.SetModuleAsync(Module.Commands, false);
+
+        this._bot.SendMessage(situation == "bot" ? this.Guild.Bot : this.Guild.User1, this.Guild.General,
+            situation == "unknown" ? "!nope" : "!hello");
+
+        (await this._bot.Rest.ReceivesRequestWithinAsync(request => request.Method == HttpMethod.Post
+                                                                    && request.Path == $"channels/{this.Guild.General.Id}/messages", NothingHappensWindow))
+            .ShouldBeFalse();
+        (await this.UsesAsync()).ShouldBeEmpty();
+    }
+
+    /// <remarks>Cases: CC-117.</remarks>
+    [Fact]
+    public async Task TextTrigger_WhereTheBotCannotPost_IsReported()
+    {
+        await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
+            FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
+        await this.LearnAsync("hello", "Hello there!");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.Private, "!hello");
+
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.StartsWith(
+            $"I could not post in {this.Guild.Private.Mention}.", StringComparison.Ordinal) == true);
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>
+    ///     C-1: a command made only of %Message renders empty when called without one. Discord refuses an empty
+    ///     message, and that error raised an urgent alert on every use. C-7: nothing was sent, so no use counts.
+    /// </summary>
+    /// <remarks>Cases: CC-118.</remarks>
+    [Fact]
+    public async Task TextTrigger_ThatRendersEmpty_PostsNothing_AndRecordsNoUse()
+    {
+        await this.LearnAsync("say", "%Message");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.General, "!say");
+
+        (await this._bot.Rest.ReceivesRequestWithinAsync(request => request.Method == HttpMethod.Post
+                                                                    && request.Path == $"channels/{this.Guild.General.Id}/messages", NothingHappensWindow))
+            .ShouldBeFalse();
+        (await this.UsesAsync()).ShouldBeEmpty();
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <remarks>Cases: CC-94.</remarks>
+    [Fact]
+    public async Task SlashCommand_ThatRendersEmpty_DeletesTheResponse_AndRecordsNoUse()
+    {
+        await this.LearnAsync("say", "%Message");
+
+        var interaction = this._bot.RunSlashCommand("command", this.Guild.User1, SlashOption.String("command_name", "say"));
+
+        await this._bot.Rest.WaitForRequestAsync(interaction.IsOriginalResponseDelete);
+        this._bot.Rest.Requests.Count(interaction.IsOriginalResponseEdit).ShouldBe(0);
+        (await this.UsesAsync()).ShouldBeEmpty();
+    }
+
+    /// <summary>C-7: a reply the bot isn't allowed to post isn't a use.</summary>
+    /// <remarks>Cases: CC-117.</remarks>
+    [Fact]
+    public async Task TextTrigger_WhereTheBotCannotPost_RecordsNoUse()
+    {
+        await this._bot.DisposeAsync();
+        this._bot = await GrimoireTestBot.StartAsync(database, guild => guild.BotPermissions =
+            FakeGuild.ViewChannelPermission | FakeGuild.SendMessagesPermission | FakeGuild.EmbedLinksPermission);
+        await this.LearnAsync("hello", "Hello there!");
+
+        this._bot.SendMessage(this.Guild.User1, this.Guild.Private, "!hello");
+
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.StartsWith(
+            $"I could not post in {this.Guild.Private.Mention}.", StringComparison.Ordinal) == true);
+        (await this.UsesAsync()).ShouldBeEmpty();
+    }
+
+    private Task<FakeReply> LearnAsync(string name, string content, params SlashOption[] options)
+        => this._bot.RunSlashCommandAndWaitAsync("commands", this.Guild.Admin, SlashOption.Subcommand("learn",
+            [SlashOption.String("name", name), SlashOption.String("content", content), .. options]));
+
+    private async Task<System.Text.Json.Nodes.JsonNode> WaitForPostAsync(FakeChannel channel)
+        => (await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post
+                                                               && request.Path == $"channels/{channel.Id}/messages")).Json!;
+
+    /// <summary>
+    ///     A use is recorded after the reply, so a test that ends on the reply must wait for it. Otherwise the write
+    ///     can land after the next test has reset the database.
+    /// </summary>
+    private Task<List<(ulong, string)>> WaitForUsesAsync(int count)
+        => GrimoireTestBot.EventuallyAsync(this.UsesAsync, uses => uses.Count >= count);
+
+    private async Task<List<(ulong, string)>> UsesAsync()
+    {
+        await using var dbContext = database.CreateDbContext();
+        return [.. (await dbContext.CustomCommandUsages.ToListAsync(Token)).Select(use => (use.UserId.Value, use.Name.Value))];
+    }
+}

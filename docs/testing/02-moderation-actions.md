@@ -421,7 +421,7 @@ Record failures here as `ID - observed - expected - severity`.
 
 ### Automated
 
-Integration tests in `Grimoire.Tests/Integration/Moderation/` now cover these cases. They no longer need a manual run.
+Integration tests in `Grimoire.IntegrationTests/Moderation/` now cover these cases. They no longer need a manual run.
 
 - `WarnTests`: MOD-57 (the reply, sin record and mod-log post), 59 to 63 (61 to 63 through registration), and 65 to 68.
   MOD-64 is enforced by Discord from the registered permission. The DM parts of MOD-57 and MOD-58 are skipped

@@ -78,8 +78,8 @@ The reply is "Added {name} custom command." and the mod log gets "@user asked @G
 | CC-25 | Mod log not set | Learn | Reply as CC-01 **[auto]** `CustomCommandLearnGapTests.WithoutAModLog_LearnStillWorks` | Row; nothing posted to any log |
 | CC-26 | Optional: stop the database mid-session | Learn | Generic "Encountered exception while executing commands learn [ID ...]" and an alert. The friendly "Could not save that command right now due to a database error. Please try again." only shows for non-transient update errors (review C-6) | No row |
 
-Automated in `Grimoire.Tests/Integration/CustomCommands/CustomCommandSettingsTests.cs`, with saving also covered by
-`Grimoire.Tests/Features/CustomCommands/LearnCommandTests.cs`.
+Automated in `Grimoire.IntegrationTests/CustomCommands/CustomCommandSettingsTests.cs`, with saving also covered by
+`Grimoire.IntegrationTests/Database/Features/CustomCommands/LearnCommandTests.cs`.
 
 ## B. `/Commands Forget name`
 
@@ -98,7 +98,7 @@ so a name that fails validation is a parse error, not a reply from the command. 
 | CC-36 | none | `mod` runs Forget | "You do not have the required permissions to use this command." **[auto]** `CustomCommandManageGapTests.ManagingSubcommands_NeedManageGuild` | Nothing deleted |
 | CC-37 | Commands module disabled | Forget | "This module is disabled in this server." **[auto]** `CustomCommandManageGapTests.EverySubcommand_NeedsTheModule` | Nothing deleted |
 
-Automated in `CustomCommandSettingsTests.cs` and `Grimoire.Tests/Features/CustomCommands/ForgetCommandTests.cs`.
+Automated in `CustomCommandSettingsTests.cs` and `Grimoire.IntegrationTests/Database/Features/CustomCommands/ForgetCommandTests.cs`.
 
 ## C. `/Commands History name`
 
@@ -117,7 +117,7 @@ characters; later pages are follow-ups.
 | CC-45 | Same name in Test-B | History in Test-A | Only Test-A versions. **[auto]** `HistoryCommandTests.History_SameNameDifferentGuild_GuildIsolated` | none |
 | CC-46 | none | `mod` runs History; module disabled | Permission error; "This module is disabled in this server." **[auto]** `CustomCommandManageGapTests.ManagingSubcommands_NeedManageGuild`, `EverySubcommand_NeedsTheModule` | none |
 
-Automated in `CustomCommandSettingsTests.cs` and `Grimoire.Tests/Features/CustomCommands/HistoryCommandTests.cs`.
+Automated in `CustomCommandSettingsTests.cs` and `Grimoire.IntegrationTests/Database/Features/CustomCommands/HistoryCommandTests.cs`.
 
 ## D. `/Commands Revert name version`
 
@@ -156,7 +156,7 @@ Top Users field with the top 3: "**1.** @user — N uses", or "No usage data yet
 | CC-68 | `secret` restricted to a role `user1` lacks | `user1` runs Stats `secret` | Stats are shown. Restricted commands are not hidden here **[auto]** `CustomCommandManageGapTests.Stats_OfARestrictedCommand_AreHiddenFromMembersWhoCannotRunIt` (skipped, KI-86) | none |
 | CC-69 | Commands module disabled | Stats | "This module is disabled in this server." **[auto]** `CustomCommandManageGapTests.EverySubcommand_NeedsTheModule` | none |
 
-Automated in `CustomCommandSettingsTests.cs` and `Grimoire.Tests/Features/CustomCommands/StatsCommandTests.cs`.
+Automated in `CustomCommandSettingsTests.cs` and `Grimoire.IntegrationTests/Database/Features/CustomCommands/StatsCommandTests.cs`.
 
 ## F. `/Commands Leaderboard [name]`
 
@@ -175,7 +175,7 @@ users ("Leaderboard for !{name}", footer "{uses} total uses"). Both show 15 rows
 | CC-81 | Usage in Test-B | Leaderboard in Test-A | Only Test-A usage. **[auto]** `LeaderboardCommandTests.Overall_OtherGuildUsages_NotIncluded` | none |
 | CC-82 | Commands module disabled | Leaderboard | "This module is disabled in this server." **[auto]** `CustomCommandManageGapTests.EverySubcommand_NeedsTheModule` | none |
 
-Automated in `CustomCommandSettingsTests.cs` and `Grimoire.Tests/Features/CustomCommands/LeaderboardCommandTests.cs`.
+Automated in `CustomCommandSettingsTests.cs` and `Grimoire.IntegrationTests/Database/Features/CustomCommands/LeaderboardCommandTests.cs`.
 
 ## G. `/Command command_name [mention] [message]`
 
@@ -202,16 +202,16 @@ nothing. Text content is cut to 2000 characters and embed content to 4096, endin
 | CC-98 | In `#private`, which the bot can't view or send in | `admin` runs `/Command command_name:hello` | Interaction replies still work there: "Hello there!" (record if Discord refuses) **[auto]** `CustomCommandSlashGapTests.InAChannelTheBotCannotPostIn_TheReplyStillWorks` | Usage row |
 | CC-99 | `hello` only in Test-B | `/Command command_name:hello` in Test-A | Response deleted (A-35, `MultiGuildTests`) **[auto]** `CustomCommandSlashGapTests.ACommandFromAnotherGuild_IsNotFound` | none |
 
-Automated in `Grimoire.Tests/Integration/CustomCommands/CustomCommandUseTests.cs`. The substitution helpers are unit
-tested in `Grimoire.Tests/Features/CustomCommands/GetCustomCommandTests.cs`.
+Automated in `Grimoire.IntegrationTests/CustomCommands/CustomCommandUseTests.cs`. The substitution helpers are unit
+tested in `Grimoire.UnitTests/Features/CustomCommands/GetCustomCommandTests.cs`.
 
 ## H. Autocomplete for command names
 
 `GetCustomCommandOptions`, used by `/Command`, Forget, History, Revert, Stats and Leaderboard. It offers up to 5 commands
 (newest versions only), sorted by name when nothing is typed, or by Levenshtein distance (lower-cased) to the first typed
 word, cut to 24 characters. A label gets " <Mention>" and/or " <Message>" when the content has those placeholders. The
-cases are automated in `Grimoire.Tests/Integration/CustomCommands/CustomCommandAutocompleteTests.cs` (harness H-12); the query itself is also covered by
-`Grimoire.Tests/Features/CustomCommands/AutocompleteQueryTests.cs`.
+cases are automated in `Grimoire.IntegrationTests/CustomCommands/CustomCommandAutocompleteTests.cs` (harness H-12); the query itself is also covered by
+`Grimoire.IntegrationTests/Database/Features/CustomCommands/AutocompleteQueryTests.cs`.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
@@ -251,7 +251,7 @@ the bot can't post (403), it reports `CannotSendInChannel` to the mod log and re
 | CC-126 | Learn a custom command named `leaderboard` (or `commands`) | Send `!leaderboard`, then `!commands stats hello` | **Expected:** only the custom command answers, and `!commands ...` does nothing. **Actual:** unconfirmed. DSharpPlus's own `!` text processor is registered too, and commands taking `CommandContext` (`/Commands Stats`, `/Commands Leaderboard`, the leveling `/Leaderboard`) look reachable as text. Record every reply **[auto]** `TextTriggerTests.BotCommandNames_AsTextCommands_OnlyRunTheCustomCommand` (skipped, KI-85: confirmed, three posts) | Record usage rows |
 | CC-127 | `hello` in Test-B only | `!hello` in Test-A | Nothing (A-35, `MultiGuildTests`) **[auto]** `MultiGuildTests.CustomCommands_AreSeparate` | none |
 
-Automated in `Grimoire.Tests/Integration/CustomCommands/CustomCommandUseTests.cs`. The "newest version only" lookup is
+Automated in `Grimoire.IntegrationTests/CustomCommands/CustomCommandUseTests.cs`. The "newest version only" lookup is
 covered by `AutocompleteQueryTests.GetCustomCommandQuery_*`.
 
 ## Code observations

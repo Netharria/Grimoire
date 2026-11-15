@@ -1,6 +1,10 @@
 {
     "stryker-config": {
-        "mutate": [ "!**/Migrations/**", "!**/Configuration/**"
-        ]
+        "solution": "Grimoire.Mutation.sln",
+        "test-projects": [ "Grimoire.UnitTests/Grimoire.UnitTests.csproj" ],
+        "test-runner": "mtp",
+        "mutate": [ "!**/Migrations/**", "!**/Configuration/**", "!**/*.Designer.cs" ],
+        "reporters": [ "html", "progress", "cleartext" ],
+        "thresholds": { "high": 80, "low": 60, "break": 0 }
     }
 }

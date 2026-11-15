@@ -36,7 +36,7 @@ denied, module disabled, bad input, bot-lacks-permission, and target-is-higher-r
 ## Automated integration tests
 
 `automation-backlog.md` is the ordered work list for fake-Discord integration tests, built on the harness in
-`Grimoire.Tests/Integration/`. Start a session with: "Work on automation item A-NN from
+`Grimoire.IntegrationTests/`. Start a session with: "Work on automation item A-NN from
 `docs/testing/automation-backlog.md`." Cases a test covers are marked **[auto]** in the area docs.
 
 ## Known issues

@@ -35,7 +35,7 @@ about 2048 characters is split into pages.
 | SIN-14 | Moderation disabled | `/SinLog` | "This module is disabled in this server." | none |
 | SIN-15 | Sins in Test-A and Test-B | `/SinLog` in Test-A | Only Test-A sins (A-35) | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/SinLogTests.cs`.
+Automated in `Grimoire.IntegrationTests/Moderation/SinLogTests.cs`.
 
 ## B. `/Pardon`, `/Forget`, `/Reason`
 
@@ -63,7 +63,7 @@ pardons.
 | SIN-42 | As SIN-24 | `/Reason` that sin | **Expected:** updated. **Actual:** "Could not find a sin with that ID." (KI-33) | none |
 | SIN-43 | none | Reason over 1000 characters on `/Pardon` or `/Reason` | Discord's client rejects it | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/SinAdminTests.cs`.
+Automated in `Grimoire.IntegrationTests/Moderation/SinAdminTests.cs`.
 
 ## C. `/ModSettings`
 
@@ -85,7 +85,7 @@ which is 10950 days (30 years).
 | SIN-59 | none | `mod` (no Manage Guild) runs any subcommand | Permission error | none |
 | SIN-60 | Moderation disabled | Run View, then AutoPardon and PublicBanLog | View runs and shows Module Enabled False; AutoPardon and PublicBanLog say "This module is disabled in this server." | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/ModSettingsTests.cs`.
+Automated in `Grimoire.IntegrationTests/Moderation/ModSettingsTests.cs`.
 
 ## D. `/Publish Ban|Unban|Kick sin_id`
 
@@ -108,7 +108,7 @@ be pardoned first (`/Unban` records nothing itself, KI-09).
 | SIN-79 | A ban of a user with no username history | `/Publish Ban` | **Expected:** published with the user's current name. **Actual:** the command errors (KI-33) | none |
 | SIN-80 | none | `user1` runs `/Publish Ban`; Moderation disabled | Permission error; module disabled | none |
 
-Automated in `Grimoire.Tests/Integration/Moderation/PublishTests.cs`.
+Automated in `Grimoire.IntegrationTests/Moderation/PublishTests.cs`.
 
 ## Code observations
 

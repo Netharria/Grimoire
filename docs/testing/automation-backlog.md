@@ -1,7 +1,7 @@
 # Automated Integration Test Backlog
 
 The ordered list of everything to cover with fake-Discord integration tests, like
-`Grimoire.Tests/Integration/Moderation/WarnTests.cs`. Each item is sized to fit one session. Work them top to bottom:
+`Grimoire.IntegrationTests/Moderation/WarnTests.cs`. Each item is sized to fit one session. Work them top to bottom:
 earlier items build the harness pieces that later ones reuse.
 
 To start a session, say:
@@ -13,10 +13,10 @@ To start a session, say:
 Every session that works an item follows these steps.
 
 1. **Read only what the item lists**: its source files, its manual cases in the area doc, and the harness files
-   (`Grimoire.Tests/Integration/GrimoireTestBot.cs` and `FakeDiscord/`). Don't re-read the whole bot.
-2. **Build any harness pieces it names** (the `H-` items below) first, in `Grimoire.Tests/Integration/`. Move each
+   (`Grimoire.IntegrationTests/GrimoireTestBot.cs` and `FakeDiscord/`). Don't re-read the whole bot.
+2. **Build any harness pieces it names** (the `H-` items below) first, in `Grimoire.IntegrationTests/`. Move each
    one to "Harness: available" when it's done.
-3. **Write the tests** in `Grimoire.Tests/Integration/<Area>/<Feature>Tests.cs`. Use the manual case IDs in test
+3. **Write the tests** in `Grimoire.IntegrationTests/<Area>/<Feature>Tests.cs`. Use the manual case IDs in test
    names or doc comments, so a manual case and its automated test can be traced both ways. Mark the manual case
    `**[auto]**` in its area doc.
 4. **Don't fix production bugs in passing.** When a test shows a bug, keep the test, mark it
@@ -327,7 +327,7 @@ are written skipped with the KI, unless the KI has been fixed by then.
 | A-50 | `[x]` | **PluralKit beyond the message log, and config.** `Integration/Shared/PluralKitAcrossFeaturesTests.cs` (12 tests, 3 skipped) and `StartupOrderTests.cs` (1, skipped): KI-101, 106, 111, 112. **Found KI-111** (quick proxy bursts logged as deletes) and **KI-112** (locked threads don't stop proxies) | XC-07 to 47 | none | M |
 | A-51 | `[x]` | **Channel-level permissions, module toggles, cache and restart.** Built H-13. `Integration/Shared/ChannelPermissionTests.cs`, `ModuleToggleTests.cs`, `SettingsCacheTests.cs` and `RestartPersistenceTests.cs`, 49 tests with 2 skipped (KI-102, 103). No existing test relied on guild-level permissions. XC-113 and XC-124 are covered by the expiry tests; XC-120 and XC-122 (across a restart) stay open. No new KIs | XC-54 to 124 | H-13 | L |
 | A-52 | `[x]` | **Pagination.** Built H-11. `Integration/Shared/PaginationTests.cs`, 9 tests with 1 skipped: SPAM-64, MOD-143, LVL-113, LVL-130, CC-43 and `/Log Message ViewOverrides`. **Found KI-113** (`/Commands History` shows only its last page). The leaderboards aren't paged. KI-30 was already fixed | listed | H-11 | M |
-| A-53 | `[x]` | **Unit tests for pure helpers.** `Grimoire.Tests/Features/Alerts/AlertMessageFormatterTests.cs`, `Features/Moderation/SinIdArgumentConverterTests.cs`, `Features/CustomCommands/CommandNameArgumentConverterTests.cs`, `Features/Logging/MessageLogEmbedExtensionsTests.cs`, `Utilities/DiscordRegexTests.cs` and `DiscordRetryPolicyTests.cs`, 47 tests with 2 skipped (KI-93, 114). **Found KI-114** (`<@!id>` mentions). `ModerationRank` was left out: its invoker-rank refusal and owner and self exemptions are still untested anywhere | none | none | S |
+| A-53 | `[x]` | **Unit tests for pure helpers.** `Grimoire.UnitTests/Features/Alerts/AlertMessageFormatterTests.cs`, `Features/Moderation/SinIdArgumentConverterTests.cs`, `Features/CustomCommands/CommandNameArgumentConverterTests.cs`, `Features/Logging/MessageLogEmbedExtensionsTests.cs`, `Utilities/DiscordRegexTests.cs` and `DiscordRetryPolicyTests.cs`, 47 tests with 2 skipped (KI-93, 114). **Found KI-114** (`<@!id>` mentions). `ModerationRank` was left out: its invoker-rank refusal and owner and self exemptions are still untested anywhere | none | none | S |
 
 **Left manual on purpose**, because the fake can't reproduce them faithfully: checks done in Discord's client (LVL-87,
 109, 142; CC-17), Integrations overrides (XC-52, 53), real config and startup failures (XC-02 to 05), migrations on a

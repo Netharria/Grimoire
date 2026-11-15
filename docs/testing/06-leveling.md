@@ -79,8 +79,8 @@ to the leveling log: author = username, "@user has leveled to level N.", footer 
 | LVL-20 | `pk` with PluralKit | `pk` posts a proxied message | none | One row, from the original message; none from the webhook (more in area 09). **[auto]** `PluralKitAcrossFeaturesTests.ProxiedMessages_EarnXpOnlyForTheMember_OncePerTimeout` Webhook half also in `XpGainGapTests.AWebhookCopyOfAMessage_EarnsNothing_TheOriginalEarnsOnce`. |
 | LVL-21 | XP in Test-A only | `user1` posts in Test-B | none | Test-B row is separate; Test-A total unchanged. **[auto]** `XpGainGapTests.XpInOneGuild_IsSeparateFromAnother` |
 
-Automated in `Grimoire.Tests/Integration/Leveling/GainXpTests.cs`; `BuildEarnedXp` in
-`Grimoire.Tests/Features/Leveling/Events/GainUserXpTests.cs`.
+Automated in `Grimoire.IntegrationTests/Leveling/GainXpTests.cs`; `BuildEarnedXp` in
+`Grimoire.UnitTests/Features/Leveling/Events/GainUserXpTests.cs`.
 
 ## B. Reward roles on XP gain
 
@@ -113,7 +113,7 @@ bot, and reported once: "These level rewards were removed because their roles we
 | LVL-43 | `@everyone` added as a reward (see LVL-106) | Reach it | **Expected:** refused at Add. **Actual (suspected):** Discord refuses the grant with an error the loop doesn't catch, so the handler throws on every gain and later rewards in the loop are skipped (new, Code observations 3) | Check console for an unhandled exception. **[auto]** `RewardGrantTests.AnEveryoneReward_DoesNotStopTheOtherRewards` (skipped, KI-75; confirmed against the fake's 400) |
 | LVL-44 | Reward reached through `/Award` only | Award enough XP | No role yet; the role comes on the member's next earned message | none. **[auto]** `RewardGrantTests.ARewardReachedThroughAward_IsGrantedOnTheNextEarnedMessage` Also `AwardReclaimTests.Award_GrantsTheRewardOnlyOnTheNextEarnedMessage`. |
 
-Automated in `Grimoire.Tests/Integration/Leveling/GainXpTests.cs`.
+Automated in `Grimoire.IntegrationTests/Leveling/GainXpTests.cs`.
 
 ## C. `/Level [user]`
 
@@ -136,7 +136,7 @@ or from the user if they left.
 | LVL-58 | Discord REST failing for role lookups | `/Level` with a next reward | The command fails and is reported, not "None" | **[auto]** `RewardCommandsTests.Level_DuringADiscordOutage_FailsInsteadOfShowingTheRewardAsMissing` |
 | LVL-59 | Leveling disabled | `/Level` | "This module is disabled in this server." | **[auto]** `LevelingCommands_NeedTheModule("level")` |
 
-Automated in `Grimoire.Tests/Integration/Leveling/LevelAndLeaderboardTests.cs`.
+Automated in `Grimoire.IntegrationTests/Leveling/LevelAndLeaderboardTests.cs`.
 
 ## D. `/Leaderboard option [user]` and `LeaderboardRefreshBackgroundTask`
 
@@ -165,8 +165,8 @@ Ties get distinct ranks in no set order. The refresh task runs
 | LVL-73 | DB down during a tick | Stop the DB container through a tick | Nothing in Discord | Error log; `#alerts` warning "LeaderboardRefreshBackgroundTask failed 1 time(s) in a row"; urgent after 3 |
 | LVL-74 | Leveling disabled | `/Leaderboard option:Top` | "This module is disabled in this server." | **[auto]** `LevelingCommands_NeedTheModule("leaderboard")` |
 
-Automated in `Grimoire.Tests/Integration/Leveling/LevelAndLeaderboardTests.cs` and
-`Grimoire.Tests/Features/Leveling/UserCommands/GetLeaderboardTests.cs`.
+Automated in `Grimoire.IntegrationTests/Leveling/LevelAndLeaderboardTests.cs` and
+`Grimoire.IntegrationTests/Database/Features/Leveling/UserCommands/GetLeaderboardTests.cs`.
 
 ## E. `/LevelSettings View | Set | LogSet`
 
@@ -199,7 +199,7 @@ mod log, not the leveling log.
 | LVL-98 | none | `mod` (no Manage Guild) runs View, Set, LogSet | "You do not have the required permissions to use this command." | none. **[auto]** `LevelSettings_NeedManageGuild` |
 | LVL-99 | Leveling disabled | View, then Set and LogSet | View shows "**Module Enabled:** False"; Set and LogSet say "This module is disabled in this server." | **[auto]** `LevelSettings_WithLevelingDisabled_ViewShowsIt_AndChangesAreRefused` |
 
-Automated in `Grimoire.Tests/Integration/Leveling/LevelSettingsTests.cs`.
+Automated in `Grimoire.IntegrationTests/Leveling/LevelSettingsTests.cs`.
 
 ## F. `/Rewards Add | Remove | View`
 
@@ -231,7 +231,7 @@ rewards for the server:" (Code observations 9).
 | LVL-117 | Leveling disabled | Add, Remove, View | "This module is disabled in this server." | **[auto]** `Rewards_NeedTheModule`, `Remove_NeedsTheModule` |
 | LVL-118 | Rewards in Test-B | View in Test-A | Test-A only | none. **[auto]** `LevelingGuildIsolationTests.RewardsInB_DoNotShowInA` |
 
-Automated in `Grimoire.Tests/Integration/Leveling/RewardCommandsTests.cs`.
+Automated in `Grimoire.IntegrationTests/Leveling/RewardCommandsTests.cs`.
 
 ## G. `/Ignore Add | Remove | View`
 
@@ -258,7 +258,7 @@ mod log.
 | LVL-133 | Leveling disabled | Add, Remove, View | "This module is disabled in this server." | none. **[auto]** `IgnoreCommandTests.WithLevelingDisabled_IsRefused` |
 | LVL-134 | `user1` ignored in Test-A | `user1` posts in Test-B | Earns in Test-B | Test-B row. **[auto]** `LevelingGuildIsolationTests.AMemberIgnoredInA_StillEarnsInB` |
 
-Automated in `Grimoire.Tests/Integration/Leveling/IgnoreAndAwardTests.cs`.
+Automated in `Grimoire.IntegrationTests/Leveling/IgnoreAndAwardTests.cs`.
 
 ## H. `/Award user xp` and `/Reclaim user option [amount]`
 
@@ -290,8 +290,8 @@ Both log to the mod log.
 | LVL-156 | Leveling disabled | Run either | "This module is disabled in this server." | none. **[auto]** `AwardReclaimTests.WithLevelingDisabled_IsRefused` |
 | LVL-157 | XP in Test-B | Reclaim All in Test-A | Only Test-A XP counted | none. **[auto]** `LevelingGuildIsolationTests.ReclaimAllInA_OnlyCountsAsXp` |
 
-Automated in `Grimoire.Tests/Integration/Leveling/IgnoreAndAwardTests.cs` and
-`Grimoire.Tests/Features/Leveling/Awards/ReclaimUserXpTests.cs`.
+Automated in `Grimoire.IntegrationTests/Leveling/IgnoreAndAwardTests.cs` and
+`Grimoire.UnitTests/Features/Leveling/Awards/ReclaimUserXpTests.cs`.
 
 ## I. Cross-checks for this area
 

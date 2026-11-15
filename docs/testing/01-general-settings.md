@@ -271,7 +271,7 @@ Record failures here as `ID - observed - expected - severity`.
 
 ### Automated
 
-Integration tests in `Grimoire.Tests/Integration/Shared/` now cover these cases. They no longer need a manual run.
+Integration tests in `Grimoire.IntegrationTests/Shared/` now cover these cases. They no longer need a manual run.
 
 - `CommandChecksTests`: GEN-01 to GEN-07 (GEN-07 through the registered DM permission), GEN-10 to GEN-15 and GEN-17.
 - `ModuleCommandsTests`: GEN-70, GEN-73, GEN-80 to GEN-84, GEN-86, GEN-87 and GEN-89, plus the message-log half of

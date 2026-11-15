@@ -89,7 +89,7 @@ ALRT-01, 05, 06, 12 and the cooldown in ALRT-03/04 are **[auto]**: `AlertTests.A
 `DifferentProblems_AreNotHeldBackByEachOther`, `WithoutAnUrgentChannel_NothingIsPosted`,
 `AfterAPostTimesOut_LaterAlertsAreStillProcessed` and `RepeatsOfTheSameProblem_AreHeldBack_ThenCounted`. ALRT-02 is
 **[auto]** in `AlertTests.ACommandThatFails_RaisesAnUrgentAlert_EvenWhenTheErrorReplyFails`. The key and cooldown
-logic are unit-tested in `Grimoire.Tests/Features/Alerts/AlertKeyTests.cs` and `AlertCooldownTests.cs`. Phase 10 added ALRT-08
+logic are unit-tested in `Grimoire.UnitTests/Features/Alerts/AlertKeyTests.cs` and `AlertCooldownTests.cs`. Phase 10 added ALRT-08
 to 10 and 13 in `AlertGapTests`, and ALRT-11 in `AlertMessageFormatterTests`. ALRT-07 is not automated.
 
 ## B. Warnings, flush and the daily report
@@ -126,9 +126,10 @@ A warning's type in the report includes its discriminator, for example `GuildIss
 
 **[auto]**: ALRT-20 to 23 in `AlertTests.Warnings_AreFlushed_ThenReportedOnceADay`, ALRT-24 in
 `TheReport_WaitsForItsTimeOfDay`, ALRT-25 in `ALongReport_AttachesTheFullReportAsAFile`, ALRT-26 in
-`WithoutAWarningChannel_NoReportIsPosted_AndWarningsStayOpen`. The buffer, store and formatter are unit-tested in
-`Grimoire.Tests/Features/Alerts/` (`WarningBufferTests`, `AlertOccurrenceStoreTests`, including ALRT-33's
-`DeleteOlderThan_removes_rows_last_seen_before_the_cutoff`, and `WarningReportFormatterTests`). Phase 10 added ALRT-27
+`WithoutAWarningChannel_NoReportIsPosted_AndWarningsStayOpen`. The buffer and formatter are unit-tested in
+`Grimoire.UnitTests/Features/Alerts/` (`WarningBufferTests`, `WarningReportFormatterTests`), and the store in
+`Grimoire.IntegrationTests/Database/Features/Alerts/AlertOccurrenceStoreTests`, including ALRT-33's
+`DeleteOlderThan_removes_rows_last_seen_before_the_cutoff`. Phase 10 added ALRT-27
 to 31 in `AlertGapTests` (ALRT-28 only in part: its urgent escalation needs the real timer loop). ALRT-32 and 34 are
 not automated.
 
