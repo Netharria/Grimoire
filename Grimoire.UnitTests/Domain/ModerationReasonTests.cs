@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using LanguageExt;
+
 namespace Grimoire.UnitTests.Domain;
 
 public sealed class ModerationReasonTests
@@ -14,14 +16,14 @@ public sealed class ModerationReasonTests
     [Fact]
     public void Create_Empty_IsInvalid()
         => ModerationReason.Create(string.Empty)
-            .ShouldBeOfType<Validation<ModerationReason>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
-    public void Create_WhitespaceOnly_IsInvalidWithCorrectCode()
+    public void Create_WhitespaceOnly_IsInvalidWithCorrectMessage()
     {
         var result = ModerationReason.Create("   ");
-        result.ShouldBeOfType<Validation<ModerationReason>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "moderation-reason.invalid");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("Reason must be 1\u20131000 non-whitespace characters.");
     }
 
     // ── Length ────────────────────────────────────────────────────────────────
@@ -29,14 +31,14 @@ public sealed class ModerationReasonTests
     [Fact]
     public void Create_ExactlyMaxLength_IsValid()
         => ModerationReason.Create(new string('a', 1000))
-            .ShouldBeOfType<Validation<ModerationReason>.Valid>();
+            .ShouldBeOfType<Validation<Error, ModerationReason>.Success>();
 
     [Fact]
-    public void Create_OneOverMaxLength_IsInvalidWithCorrectCode()
+    public void Create_OneOverMaxLength_IsInvalidWithCorrectMessage()
     {
         var result = ModerationReason.Create(new string('a', 1001));
-        result.ShouldBeOfType<Validation<ModerationReason>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "moderation-reason.invalid");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("Reason must be 1\u20131000 non-whitespace characters.");
     }
 
     // ── Happy paths ───────────────────────────────────────────────────────────
@@ -59,33 +61,31 @@ public sealed class ModerationReasonTests
     [Fact]
     public void Create_PaddedBeyondMaxLength_IsInvalid()
         => ModerationReason.Create("   " + new string('a', 1001) + "   ")
-            .ShouldBeOfType<Validation<ModerationReason>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     // ── CreateIfNotNull ───────────────────────────────────────────────────────
 
     [Fact]
-    public void CreateIfNotNull_Null_SucceedsWithNullValue()
+    public void CreateIfNotNull_Null_SucceedsWithNoReason()
     {
         var result = ModerationReason.CreateIfNotNull(null);
-        result.ShouldSucceed().ShouldBeNull();
+        result.ShouldSucceed().IsNone.ShouldBeTrue();
     }
 
     [Fact]
-    public void CreateIfNotNull_ValidString_SucceedsWithNonNullReason()
+    public void CreateIfNotNull_ValidString_SucceedsWithReason()
     {
         var result = ModerationReason.CreateIfNotNull("harassment");
-        var reason = result.ShouldSucceed();
-        reason.ShouldNotBeNull();
-        reason.Value.Value.ShouldBe("harassment");
+        result.ShouldSucceed().Map(reason => reason.Value).ShouldBe(Some("harassment"));
     }
 
     [Fact]
     public void CreateIfNotNull_InvalidString_IsInvalid()
         => ModerationReason.CreateIfNotNull(new string('a', 1001))
-            .ShouldBeOfType<Validation<ModerationReason?>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public void CreateIfNotNull_WhitespaceOnly_IsInvalid()
         => ModerationReason.CreateIfNotNull("   ")
-            .ShouldBeOfType<Validation<ModerationReason?>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 }

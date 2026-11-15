@@ -15,26 +15,26 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<Result<bool>> ShouldLogMessage(ChannelId channelId,
+    public async Task<Fin<bool>> ShouldLogMessage(ChannelId channelId,
         GuildId guildId,
         IReadOnlyDictionary<ChannelId, ChannelId?> channelNodes,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.MessageLog, guildId, cancellationToken)
-                .GetOrElse(() => false))
-            return Result<bool>.Ok(false);
+                .OrDefaultDuringMigration(false))
+            return Fin.Succ<bool>(false);
 
         ChannelId? currentChannelId = channelId;
         while (currentChannelId is not null)
         {
             var overrideOption = await GetChannelLogOverride(currentChannelId.Value, guildId, cancellationToken)
-                .GetOrElse(() => MessageLogOverrideOption.Inherit);
+                .OrDefaultDuringMigration(MessageLogOverrideOption.Inherit);
             switch (overrideOption)
             {
                 case MessageLogOverrideOption.AlwaysLog:
-                    return Result<bool>.Ok(true);
+                    return Fin.Succ<bool>(true);
                 case MessageLogOverrideOption.NeverLog:
-                    return Result<bool>.Ok(false);
+                    return Fin.Succ<bool>(false);
                 case MessageLogOverrideOption.Inherit:
                 default:
                     currentChannelId = channelNodes.GetValueOrDefault(currentChannelId.Value);
@@ -42,10 +42,10 @@ public sealed partial class SettingsModule
             }
         }
 
-        return Result<bool>.Ok(true);
+        return Fin.Succ<bool>(true);
     }
 
-    private Task<Result<MessageLogOverrideOption>> GetChannelLogOverride(ChannelId channelId,
+    private Task<Fin<MessageLogOverrideOption>> GetChannelLogOverride(ChannelId channelId,
         GuildId guildId,
         CancellationToken cancellationToken)
         => ExecuteSafelyAsync(async ct =>
@@ -64,24 +64,23 @@ public sealed partial class SettingsModule
                         return channelOverride ?? MessageLogOverrideOption.Inherit;
                     }, this._cacheEntryOptions,
                     cancellationToken: ct);
-                return Result<MessageLogOverrideOption>.Ok(result);
-            }, new Error("channel-log-override.lookup-failed", "Could not retrieve channel log override."),
+                return Fin.Succ<MessageLogOverrideOption>(result);
+            }, "Could not retrieve channel log override.",
             cancellationToken);
 
-    public Task<Result<MessageLogChannelOverride>> SetChannelLogOverride(
+    public Task<Fin<Write<MessageLogChannelOverride>>> SetChannelLogOverride(
         ChannelId channelId,
         GuildId guildId,
         ModeratorId setBy,
         MessageLogOverrideOption option,
         CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct =>
+        => ExecuteSafelyAsync<Write<MessageLogChannelOverride>>(async ct =>
         {
             var existingOverride = await GetChannelLogOverride(channelId, guildId, ct)
-                .GetOrElse(() => MessageLogOverrideOption.Inherit);
+                .OrDefaultDuringMigration(MessageLogOverrideOption.Inherit);
 
             if (existingOverride == option)
-                return new Result<MessageLogChannelOverride>.NotModified(
-                    new Error("channel-log-override.not-changed", "The channel is already set to this log option."));
+                return new Write<MessageLogChannelOverride>.Unchanged("The channel is already set to this log option.");
 
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
 
@@ -90,8 +89,8 @@ public sealed partial class SettingsModule
             await dbContext.SaveChangesAsync(ct);
             await this._cache.SetAsync(CacheKey.LogOverride(channelId), option, this._cacheEntryOptions,
                 cancellationToken: ct);
-            return Result<MessageLogChannelOverride>.Ok(newOverride);
-        }, new Error("channel-log-override.save-failed", "Could not set channel log override."), cancellationToken);
+            return new Write<MessageLogChannelOverride>.Saved(newOverride);
+        }, "Could not set channel log override.", cancellationToken);
 
     public async IAsyncEnumerable<MessageLogChannelOverride> GetAllOverriddenChannels(GuildId guildId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)

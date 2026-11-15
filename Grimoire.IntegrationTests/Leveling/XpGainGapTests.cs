@@ -75,7 +75,7 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
     [Fact]
     public async Task AOneMinuteTimeout_LetsTheMemberEarnAgainAfterAMinute()
     {
-        (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.XpTimeoutPeriod, 1, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.XpTimeoutPeriod, 1, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "one");
         var first = (await this.WaitForEarnedAsync(this.Guild.User1, 1)).ShouldHaveSingleItem();
@@ -156,7 +156,7 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
     [Fact]
     public async Task WithTheLevelingLogOff_ALevelUpIsPostedNowhere_ButTheXpIsSaved()
     {
-        (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner, null, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner, null, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
         await this.SetAmountAsync(15);
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "level me");
@@ -270,13 +270,13 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
                                                     && request.Body?.Contains("has leveled", StringComparison.Ordinal) == true);
 
     private async Task SetAmountAsync(int amount)
-        => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldSucceed();
+        => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldBeSaved();
 
     private async Task IgnoreChannelAsync(FakeChannel channel)
         => (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
         {
             IgnoredChannel.Create(new ChannelId(channel.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow)
-        })).ShouldSucceed();
+        })).ShouldBeSaved();
 
     private async Task SeedEarnedAsync(FakeUser user, int xp, DateTimeOffset timeOut)
     {

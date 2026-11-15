@@ -66,19 +66,16 @@ public readonly record struct CustomCommandName
 
     public override string ToString() => Value;
 
-    public static Validation<CustomCommandName> Create(string? value)
+    public static Validation<Error, CustomCommandName> Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Validation<CustomCommandName>.Fail(new Error("custom-command-name.validation.is-null-or-empty",
-                "A value for command name must be provided."));
+            return new Invalid("A value for command name must be provided.");
         var trimmed = value.Trim();
         if (trimmed.Any(char.IsWhiteSpace))
-            return Validation<CustomCommandName>.Fail(new Error("custom-command-name.validation.contains-space",
-                "A command name cannot contain spaces."));
+            return new Invalid("A command name cannot contain spaces.");
         return trimmed.Length > 24
-            ? Validation<CustomCommandName>.Fail(new Error("custom-command-name.validation.length",
-                "A command name cannot be more than 24 characters in length."))
-            : Validation<CustomCommandName>.Succeed(new CustomCommandName(trimmed));
+            ? new Invalid("A command name cannot be more than 24 characters in length.")
+            : Success<Error, CustomCommandName>(new CustomCommandName(trimmed));
     }
 }
 
@@ -99,19 +96,15 @@ public readonly partial record struct CustomCommandEmbedColor
     [GeneratedRegex(@"^[0-9A-Fa-f]{6}$", RegexOptions.None, 1000)]
     private static partial Regex ValidHexColor();
 
-    public static Validation<CustomCommandEmbedColor> Create(string? value)
+    public static Validation<Error, CustomCommandEmbedColor> Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Validation<CustomCommandEmbedColor>.Fail(new Error(
-                "custom-command-embed-color.validation.is-null-or-empty",
-                "A value for command embed color must be provided."));
+            return new Invalid("A value for command embed color must be provided.");
         var str = value.Trim();
         if (str.StartsWith('#')) str = str[1..];
         return ValidHexColor().IsMatch(str)
-            ? Validation<CustomCommandEmbedColor>.Succeed(new CustomCommandEmbedColor(str.ToUpperInvariant()))
-            : Validation<CustomCommandEmbedColor>.Fail(new Error(
-                "custom-command-embed-color.validation.does-not-contain-hex",
-                "A command embed color must be a 6 character hex color code."));
+            ? Success<Error, CustomCommandEmbedColor>(new CustomCommandEmbedColor(str.ToUpperInvariant()))
+            : new Invalid("A command embed color must be a 6 character hex color code.");
     }
 }
 
@@ -176,21 +169,18 @@ public readonly record struct CustomCommandContent
     /// </summary>
     internal static CustomCommandContent FromDatabase(string value) => new(value);
 
-    public static Validation<CustomCommandContent> Create(string? value)
+    public static Validation<Error, CustomCommandContent> Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Validation<CustomCommandContent>.Fail(new Error("custom-command-content.empty",
-                "Command content cannot be empty."));
+            return new Invalid("Command content cannot be empty.");
         // Slash options can't hold a newline, so "\n" stands for one. Nothing else is unescaped: a backslash is
         // usually meant, as in C:\temp.
         var unescaped = value.Replace(@"\n", "\n");
         if (string.IsNullOrWhiteSpace(unescaped))
-            return Validation<CustomCommandContent>.Fail(new Error("custom-command-content.empty",
-                "Command content cannot be empty."));
+            return new Invalid("Command content cannot be empty.");
         return unescaped.Length > 2000
-            ? Validation<CustomCommandContent>.Fail(new Error("custom-command-content.too-long",
-                "Command content cannot exceed 2000 characters."))
-            : Validation<CustomCommandContent>.Succeed(new CustomCommandContent(unescaped));
+            ? new Invalid("Command content cannot exceed 2000 characters.")
+            : Success<Error, CustomCommandContent>(new CustomCommandContent(unescaped));
     }
 
     public override string ToString() => Value;

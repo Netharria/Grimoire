@@ -5,12 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -31,9 +31,9 @@ public sealed partial class RewardCommandGroup
         var guild = ctx.RequiredGuild;
 
         await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
-            .Bind(rewards => rewards.Any(reward => reward.RoleId == role.GetRoleId())
-                ? Result<Unit>.Ok(Unit.Value)
-                : new Result<Unit>.NotFound(new Error("reward.not-found", $"Did not find a saved reward for {role.Mention}.")))
+            .BindFin(rewards => rewards.Any(reward => reward.RoleId == role.GetRoleId())
+                ? Fin.Succ<Unit>(unit)
+                : new NotFound($"Did not find a saved reward for {role.Mention}."))
             .BindAsync(_ => this._settingsModule.SetRewardAsync(RewardRemoved.Create(role.GetRoleId(),
                 guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow)))
             .Match(

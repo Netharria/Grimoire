@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using LanguageExt;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.Moderation;
 
 [Collection("Settings collection")]
@@ -20,7 +22,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
     public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
-    private Task<Result<ChannelLocked>> Lock(
+    private Task<Fin<ChannelLocked>> Lock(
         ChannelId channelId,
         GuildId guildId,
         DateTimeOffset endTime,
@@ -32,7 +34,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
                 channelId, guildId, DateTimeOffset.UtcNow,
                 allowed ?? _prevAllowed, denied ?? _prevDenied, endTime).ShouldSucceed());
 
-    private Task<Result<ChannelLocked>> Unlock(ChannelId channelId, GuildId guildId)
+    private Task<Fin<ChannelLocked>> Unlock(ChannelId channelId, GuildId guildId)
         => this._sut.RemoveChannelLock(
             ChannelUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow));
 
@@ -104,7 +106,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     {
         var result = await Unlock(_channelId, _guildId);
 
-        result.ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+        result.ShouldFail().ShouldBeOfType<NotFound>();
     }
 
     [Fact]
@@ -114,8 +116,8 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
 
         var result = await Unlock(_channelId, _guildId);
 
-        result.ShouldBeOfType<Result<ChannelLocked>.Success>();
-        ((Result<ChannelLocked>.Success)result).Value.ShouldNotBeNull();
+        result.ShouldSucceed();
+        ((Fin<ChannelLocked>.Succ)result).Value.ShouldNotBeNull();
 
         await using var db = factory.CreateDbContext();
         var count = await db.ChannelLocks.CountAsync(x => x.ChannelId == _channelId,
@@ -132,7 +134,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     [Fact]
     public async Task GetActiveChannelLock_NotLocked_ReturnsNotFound()
         => (await this._sut.GetActiveChannelLockAsync(_channelId, _guildId, TestContext.Current.CancellationToken))
-            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+            .ShouldFail().ShouldBeOfType<NotFound>();
 
     [Fact]
     public async Task GetActiveChannelLock_Locked_ReturnsTheLockWithItsPreviousPermissions()
@@ -168,7 +170,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
         await Unlock(_channelId, _guildId);
 
         (await this._sut.GetActiveChannelLockAsync(_channelId, _guildId, TestContext.Current.CancellationToken))
-            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+            .ShouldFail().ShouldBeOfType<NotFound>();
     }
 
     [Fact]
@@ -178,7 +180,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
 
         (await this._sut.GetActiveChannelLockAsync(_channelId, new GuildId(2UL),
                 TestContext.Current.CancellationToken))
-            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+            .ShouldFail().ShouldBeOfType<NotFound>();
     }
 
     [Fact]
@@ -222,8 +224,8 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
     {
         var result = await Unlock(_channelId, _guildId);
 
-        var notFound = result.ShouldBeOfType<Result<ChannelLocked>.NotFound>();
-        notFound.Error.Code.ShouldBe("channel-lock.not-found");
+        var notFound = result.ShouldFail().ShouldBeOfType<NotFound>();
+        notFound.Message.ShouldBe("The channel is not currently locked.");
     }
 
     [Fact]
@@ -305,7 +307,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
 
         var result = await Unlock(_channelId, guildB);
 
-        result.ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+        result.ShouldFail().ShouldBeOfType<NotFound>();
     }
 
     [Fact]
@@ -326,7 +328,7 @@ public sealed class ChannelLockTests(SettingsTestsFactory factory) : IAsyncLifet
 
         var result = await Unlock(_channelId, _guildId);
 
-        result.ShouldBeOfType<Result<ChannelLocked>.Success>();
+        result.ShouldSucceed();
     }
 
     [Fact]

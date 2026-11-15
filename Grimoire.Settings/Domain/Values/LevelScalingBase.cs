@@ -32,8 +32,8 @@ public readonly record struct LevelScalingBase
         => int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? new(value) : Default;
 
     /// <summary>A new value, which must be within today's limits.</summary>
-    public static Validation<LevelScalingBase> Create(int input)
+    public static Validation<Error, LevelScalingBase> Create(int input)
         => input is >= MinValue and <= MaxValue
-            ? Validation<LevelScalingBase>.Succeed(new LevelScalingBase(input))
-            : Validation<LevelScalingBase>.Fail(new Error("level-scaling-base.invalid", "Level scaling base must be a value between 1 and 500."));
+            ? Success<Error, LevelScalingBase>(new LevelScalingBase(input))
+            : new Invalid("Level scaling base must be a value between 1 and 500.");
 }

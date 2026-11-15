@@ -408,7 +408,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
 
     private async Task UseMuteRoleAsync(ulong roleId)
     {
-        (await this.Settings.SetMuteRole(this.GuildId, this.OwnerId, new RoleId(roleId))).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, this.OwnerId, new RoleId(roleId))).ShouldBeSaved();
         await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
     }
 

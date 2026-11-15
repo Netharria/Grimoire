@@ -39,9 +39,8 @@ public readonly record struct XpTimeoutPeriod
             : Default;
 
     /// <summary>A new timeout in minutes, which must be within today's limits.</summary>
-    public static Validation<XpTimeoutPeriod> Create(int minutes)
+    public static Validation<Error, XpTimeoutPeriod> Create(int minutes)
         => minutes is >= MinMinutes and <= MaxMinutes
-            ? Validation<XpTimeoutPeriod>.Succeed(new XpTimeoutPeriod(TimeSpan.FromMinutes(minutes)))
-            : Validation<XpTimeoutPeriod>.Fail(new Error("xp-timeout-period.invalid",
-                "Xp timeout period must be a value between 1 and 60 in minutes."));
+            ? Success<Error, XpTimeoutPeriod>(new XpTimeoutPeriod(TimeSpan.FromMinutes(minutes)))
+            : new Invalid("Xp timeout period must be a value between 1 and 60 in minutes.");
 }

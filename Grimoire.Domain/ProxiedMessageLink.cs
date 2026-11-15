@@ -31,12 +31,11 @@ public readonly record struct PluralKitSystemId
 
     internal static PluralKitSystemId FromDatabase(string value) => new(value);
 
-    public static Validation<PluralKitSystemId> Create(string? value)
+    public static Validation<Error, PluralKitSystemId> Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Validation<PluralKitSystemId>.Fail(new Error("pluralkit-system-id.empty",
-                "PluralKit system ID cannot be empty."));
-        return Validation<PluralKitSystemId>.Succeed(new PluralKitSystemId(value.Trim()));
+            return new Invalid("PluralKit system ID cannot be empty.");
+        return Success<Error, PluralKitSystemId>(new PluralKitSystemId(value.Trim()));
     }
 
     public override string ToString() => Value;
@@ -53,12 +52,11 @@ public readonly record struct PluralKitMemberId
 
     internal static PluralKitMemberId FromDatabase(string value) => new(value);
 
-    public static Validation<PluralKitMemberId> Create(string? value)
+    public static Validation<Error, PluralKitMemberId> Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Validation<PluralKitMemberId>.Fail(new Error("pluralkit-member-id.empty",
-                "PluralKit member ID cannot be empty."));
-        return Validation<PluralKitMemberId>.Succeed(new PluralKitMemberId(value.Trim()));
+            return new Invalid("PluralKit member ID cannot be empty.");
+        return Success<Error, PluralKitMemberId>(new PluralKitMemberId(value.Trim()));
     }
 
     public override string ToString() => Value;

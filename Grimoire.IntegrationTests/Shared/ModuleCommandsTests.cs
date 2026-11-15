@@ -117,7 +117,7 @@ public sealed class ModuleCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     {
         (await this._bot.Services.GetRequiredService<SettingsModule>()
             .SetLogChannelSetting(GuildLogType.Moderation, new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id), null, TestContext.Current.CancellationToken))
-            .ShouldSucceed();
+            .ShouldBeSaved();
 
         (await this.SetAsync(ModuleArgument.Leveling, true)).Description.ShouldBe("Enabled Leveling");
 

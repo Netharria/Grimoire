@@ -9,6 +9,7 @@ using Grimoire.Enums;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.IntegrationTests.Shared;
@@ -160,7 +161,7 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
 
         reply.Description.ShouldBe(SelectChannelError);
         (await this.ModLogSettingAsync()).ShouldBeNull();
-        (await this.Settings.GetUserCommandChannel(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeNull();
+        (await this.Settings.GetUserCommandChannel(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().IsNone.ShouldBeTrue();
     }
 
     /// <summary>GEN-37: errors sent after a public defer can't be ephemeral, so everyone in the channel sees them.</summary>
@@ -182,7 +183,7 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
 
         reply.Description.ShouldBe("You do not have the required permissions to use this command.");
         (await this.ModLogSettingAsync()).ShouldBeNull();
-        (await this.Settings.GetUserCommandChannel(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeNull();
+        (await this.Settings.GetUserCommandChannel(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().IsNone.ShouldBeTrue();
     }
 
     // ── UserCommands ──────────────────────────────────────────────────────────
@@ -220,7 +221,7 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
 
         (await this.UserCommandsAsync(ChannelOption.Off)).Description.ShouldBe("Disabled the User Command Channel.");
 
-        (await this.Settings.GetUserCommandChannel(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeNull();
+        (await this.Settings.GetUserCommandChannel(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().IsNone.ShouldBeTrue();
         await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()
             == $"{this.Guild.Admin.MemberMention} disabled the User Command Channel.");
     }
@@ -271,5 +272,5 @@ public sealed class GeneralSettingsCommandsTests(GrimoireCoreFactory database) :
                     : [SlashOption.Enum("option", option), SlashOption.Channel("channel", channel)]));
 
     private async Task<ulong?> ModLogSettingAsync()
-        => (await this.Settings.GetLogChannelSetting(GuildLogType.Moderation, this.GuildId)).ShouldSucceed()?.Value;
+        => (await this.Settings.GetLogChannelSetting(GuildLogType.Moderation, this.GuildId)).ShouldSucceed().ToNullable()?.Value;
 }

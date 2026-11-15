@@ -23,7 +23,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<bool>.Success>();
+        result.ShouldSucceed();
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId, TestContext.Current.CancellationToken))
             .ShouldSucceed().ShouldBeTrue();
     }
@@ -34,7 +34,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<bool>.Success>();
+        result.ShouldSucceed();
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId, TestContext.Current.CancellationToken))
             .ShouldSucceed().ShouldBeFalse();
     }
@@ -60,7 +60,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.General, _guildId, _modId, true,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<bool>.Invalid>();
+        result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<bool>.NotModified>();
+        result.ShouldBeUnchanged();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
@@ -88,7 +88,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<bool>.NotModified>();
+        result.ShouldBeUnchanged();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
@@ -124,8 +124,8 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.General, _guildId, _modId, true,
             TestContext.Current.CancellationToken);
 
-        var invalid = result.ShouldBeOfType<Result<bool>.Invalid>();
-        invalid.Error.Code.ShouldBe("module.general.immutable");
+        var invalid = result.ShouldFail().ShouldBeOfType<Invalid>();
+        invalid.Message.ShouldBe("Cannot disable the general module.");
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<bool>.NotModified>();
+        result.ShouldBeUnchanged();
     }
 
     [Fact]
@@ -188,8 +188,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, true,
             TestContext.Current.CancellationToken);
 
-        var notModified = result.ShouldBeOfType<Result<bool>.NotModified>();
-        notModified.Error.Code.ShouldBe($"guild-setting.{GuildSettingType.LevelingModuleEnabled}.not-changed");
+        result.ShouldBeUnchanged().ShouldBe("The setting was already set to that value.");
     }
 
     [Fact]

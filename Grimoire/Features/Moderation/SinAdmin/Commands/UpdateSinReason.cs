@@ -10,6 +10,7 @@ using DSharpPlus.Commands.ContextChecks;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using LanguageExt;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
@@ -31,7 +32,7 @@ internal sealed class UpdateSinReason(IDbContextFactory<GrimoireDbContext> dbCon
         var guild = ctx.RequiredGuild;
 
         // M-7: a blank reason used to reach an InvariantViolationException.
-        if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var validReason))
+        if (ModerationReason.Create(reason) is not Validation<Error, ModerationReason>.Success(var validReason))
         {
             await ctx.SendErrorResponseAsync("The reason can't be empty.");
             return;

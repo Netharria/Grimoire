@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using LanguageExt;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.GuildSettings;
 
 [Collection("Settings collection")]
@@ -38,7 +40,7 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
 
         var result = await this._sut.GetUserCommandChannel(_guildId, TestContext.Current.CancellationToken);
 
-        result.ShouldSucceed().ShouldBeNull();
+        result.ShouldSucceed().IsNone.ShouldBeTrue();
     }
 
     [Fact]
@@ -51,7 +53,7 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
             await this._sut.SetUserCommandChannelSetting(_guildId, _modId, _channelId,
                 TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<ChannelId?>.NotModified>();
+        result.ShouldBeUnchanged();
     }
 
     [Fact]
@@ -59,6 +61,6 @@ public sealed class UserCommandChannelTests(SettingsTestsFactory factory) : IAsy
     {
         var result = await this._sut.GetUserCommandChannel(_guildId, TestContext.Current.CancellationToken);
 
-        result.ShouldSucceed().ShouldBeNull();
+        result.ShouldSucceed().IsNone.ShouldBeTrue();
     }
 }

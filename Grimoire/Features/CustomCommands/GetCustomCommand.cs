@@ -10,6 +10,7 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -38,7 +39,7 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
         var guild = ctx.RequiredGuild;
 
         var result = await FetchAuthorizedCommandAsync(guild.GetGuildId(), name, ctx.Member);
-        if (result is not Result<CustomCommand>.Success { Value: var response })
+        if (result is not Fin<CustomCommand>.Succ { Value: var response })
         {
             await ctx.DeleteResponseAsync();
             return;
@@ -56,7 +57,7 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
         await dbContextFactory.RecordCommandUsageAsync(name, guild.GetGuildId(), ctx.User.GetUserId());
     }
 
-    private async Task<Result<CustomCommand>> FetchAuthorizedCommandAsync(
+    private async Task<Fin<CustomCommand>> FetchAuthorizedCommandAsync(
         GuildId guildId, CustomCommandName name, DiscordMember? member)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -64,8 +65,8 @@ public sealed class GetCustomCommand(IDbContextFactory<GrimoireDbContext> dbCont
             .GetCustomCommandQuery(guildId, name)
             .FirstOrDefaultAsync();
         return response is null || !IsUserAuthorized(member, response)
-            ? Result<CustomCommand>.Fail(new Error("command.not_found", "Command not found or not authorized."))
-            : Result<CustomCommand>.Ok(response);
+            ? new Invalid("Command not found or not authorized.")
+            : Fin.Succ<CustomCommand>(response);
     }
 
     public static bool IsUserAuthorized(DiscordMember? member, CustomCommand command)

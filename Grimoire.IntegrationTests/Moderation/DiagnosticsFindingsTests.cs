@@ -8,6 +8,7 @@
 using System.Text.Json.Nodes;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.IntegrationTests.Moderation;
@@ -261,7 +262,7 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
         await this.StartMutedGuildAsync(configureMuteRole: false);
         var interaction = this._bot.RunSlashCommand("mutes", this.Guild.Admin, SlashOption.Subcommand("create"));
         await this._bot.Rest.WaitForRequestAsync(interaction.IsFollowup, TimeSpan.FromSeconds(15));
-        var roleId = (await this.Settings.GetConfiguredMuteRole(new GuildId(this.Guild.Id), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed()!.Value.Value;
+        var roleId = (await this.Settings.GetConfiguredMuteRole(new GuildId(this.Guild.Id), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed().ToNullable()!.Value.Value;
 
         foreach (var channel in new[] { this.Guild.Voice, this.Guild.Stage })
             ((this.Guild.OverwriteOf(channel.Id, roleId)?.Deny ?? 0) & VoiceMute).ShouldBe(VoiceMute, channel.Name);
@@ -375,7 +376,7 @@ public sealed class DiagnosticsFindingsTests(GrimoireCoreFactory database) : IAs
         await this._bot.ConfigureModerationAsync();
         if (configureMuteRole)
             (await this.Settings.SetMuteRole(new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id),
-                new RoleId(this._muteRoleId))).ShouldSucceed();
+                new RoleId(this._muteRoleId))).ShouldBeSaved();
     }
 
     private async Task<(FakeReply Reply, string Report)> CheckAsync(FakeUser invoker, FakeChannel? channel = null)

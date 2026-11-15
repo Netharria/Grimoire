@@ -263,7 +263,7 @@ public sealed class CustomCommandSettingsTests(GrimoireCoreFactory database) : I
         var reply = await this.LearnAsync(name, "hi",
         [
             SlashOption.Boolean("embed", embed),
-            .. colour is null ? Array.Empty<SlashOption>() : [SlashOption.String("embed_color", colour)]
+            .. colour is null ? System.Array.Empty<SlashOption>() : [SlashOption.String("embed_color", colour)]
         ]);
 
         reply.Description.ShouldBe(error);

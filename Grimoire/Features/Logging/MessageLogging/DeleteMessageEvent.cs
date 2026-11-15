@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.PluralKit;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Logging.MessageLogging;
@@ -32,7 +33,7 @@ public sealed partial class DeleteMessageEvent(
         if (args.Guild is null
             || args.Message.Author?.Id == args.Guild.CurrentMember.Id
             || !await settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -75,8 +76,8 @@ public sealed partial class DeleteMessageEvent(
             && proxyMessageId != args.Message.Id
             && pluralkitMessage.PluralKitSystem?.Id is { } rawSystemId
             && pluralkitMessage.Member?.Id is { } rawMemberId
-            && PluralKitSystemId.Create(rawSystemId) is Validation<PluralKitSystemId>.Valid(var systemId)
-            && PluralKitMemberId.Create(rawMemberId) is Validation<PluralKitMemberId>.Valid(var memberId))
+            && PluralKitSystemId.Create(rawSystemId) is Validation<Error, PluralKitSystemId>.Success(var systemId)
+            && PluralKitMemberId.Create(rawMemberId) is Validation<Error, PluralKitMemberId>.Success(var memberId))
         {
             await dbContext.AddAsync(new ProxiedMessageLink
             {

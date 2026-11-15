@@ -10,6 +10,7 @@ using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Moderation.Kick;
 
@@ -49,7 +50,8 @@ internal sealed class KickUser(
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForKick(actor, member.GetUserId(), guild.GetGuildId(), now, ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null));
+        var sin = Sin.ForKick(actor, member.GetUserId(), guild.GetGuildId(), now,
+            ModerationReason.CreateIfNotBlank(reason).Match(Succ: r => r.ToNullable(), Fail: _ => null));
 
         // Once they're gone the bot usually can't reach them, so the DM goes first.
         await guildLog.DirectMessageAsync(member, new DiscordEmbedBuilder()

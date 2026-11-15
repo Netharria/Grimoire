@@ -10,6 +10,7 @@ using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.CustomCommands;
@@ -22,39 +23,33 @@ public sealed partial class TextCustomCommandProcessor(
     ILogger<TextCustomCommandProcessor> logger)
     : IEventHandler<MessageCreatedEventArgs>
 {
-    private const string NotFoundCode = "text-command.not-found";
-    private const string ModuleDisabledCode = "text-command.module-disabled";
-
     /// <summary>Discord's "Cannot send an empty message" error.</summary>
     private const int EmptyMessageCode = 50006;
 
     public async Task HandleEventAsync(DiscordClient sender, MessageCreatedEventArgs eventArgs) =>
-        await Validation<MessageCreatedEventArgs>.Succeed(eventArgs)
+        await Success<Error, MessageCreatedEventArgs>(eventArgs)
             .Bind(ev => ev switch
             {
                 {
                         Message.MessageType: DiscordMessageType.Default or DiscordMessageType.Reply,
                         Author: DiscordMember { IsBot: false } member
                     } =>
-                    Validation<(DiscordMember Member, string Content)>.Succeed((member, ev.Message.Content)),
-                _ => Validation<(DiscordMember Member, string Content)>.Fail(
-                    new Error("text-command.invalid-event", "Not a valid command event"))
+                    Success<Error, (DiscordMember Member, string Content)>((member, ev.Message.Content)),
+                _ => new Invalid("Not a valid command event")
             })
             .Bind(x => !string.IsNullOrWhiteSpace(x.Content) && x.Content.StartsWith('!')
                                                              && x.Content[1..].Split(' ',
                                                                      StringSplitOptions.RemoveEmptyEntries) is
                                                                  { Length: > 0 } parsedArgs
-                ? Validation<(DiscordMember Member, string[] Args)>.Succeed((x.Member, parsedArgs))
-                : Validation<(DiscordMember Member, string[] Args)>.Fail(
-                    new Error("text-command.not-a-command", "Message is not a command")))
+                ? Success<Error, (DiscordMember Member, string[] Args)>((x.Member, parsedArgs))
+                : new Invalid("Message is not a command"))
             .Bind(x => CustomCommandName.Create(x.Args[0]).Map(name => (x.Member, Name: name, x.Args)))
             // The bot's own command of that name runs instead, as a text command. Learn refuses these names, but a
             // command saved before that check, or before the bot command existed, must not answer as well (KI-85).
             .Bind(x => commands.IsBuiltInCommandName(x.Name.Value)
-                ? Validation<(DiscordMember Member, CustomCommandName Name, string[] Args)>.Fail(
-                    new Error("text-command.built-in", "A bot command has this name"))
-                : Validation<(DiscordMember Member, CustomCommandName Name, string[] Args)>.Succeed(x))
-            .ToResult()
+                ? new Invalid("A bot command has this name")
+                : Success<Error, (DiscordMember Member, CustomCommandName Name, string[] Args)>(x))
+            .ToFin()
             .BindAsync(x => FetchCommandAsync(x.Member, x.Name, x.Args))
             // A use counts once the reply is out, so a refused or empty reply isn't counted, and a failed count
             // can't stop the reply.
@@ -63,32 +58,18 @@ public sealed partial class TextCustomCommandProcessor(
                 if (await this.SendCommandResponseAsync(cmd, sender, eventArgs))
                     await dbContextFactory.RecordCommandUsageAsync(cmd.Name, cmd.Member.GetGuildId(), cmd.Member.GetUserId());
             })
+            // Most messages are not commands and fail before the lookup; the lookups worth knowing about are logged
+            // where they fail, in FetchCommandAsync.
             .Match(
                 _ => Task.CompletedTask,
-                error => this.LogFailure(error, eventArgs));
-
-    // Only lookups worth knowing about are logged. Most messages are not commands and fail earlier.
-    private Task LogFailure(Error error, MessageCreatedEventArgs eventArgs)
-    {
-        switch (error.Code)
-        {
-            case NotFoundCode:
-                LogCommandNotFound(logger, error.Target, eventArgs.Guild?.Id);
-                break;
-            case ModuleDisabledCode:
-                LogModuleDisabled(logger, eventArgs.Guild?.Id);
-                break;
-        }
-
-        return Task.CompletedTask;
-    }
+                _ => Task.CompletedTask);
 
     [LoggerMessage(LogLevel.Information,
         "Custom command {CommandName} not found or user not authorized (Guild {GuildId})")]
-    private static partial void LogCommandNotFound(ILogger logger, string? commandName, ulong? guildId);
+    private static partial void LogCommandNotFound(ILogger logger, string commandName, ulong guildId);
 
     [LoggerMessage(LogLevel.Debug, "Ignored text command because the Commands module is disabled (Guild {GuildId})")]
-    private static partial void LogModuleDisabled(ILogger logger, ulong? guildId);
+    private static partial void LogModuleDisabled(ILogger logger, ulong guildId);
 
     [LoggerMessage(LogLevel.Warning,
         "Could not send custom command response {CommandName} (Guild {GuildId}, Channel {ChannelId}): missing permissions")]
@@ -98,19 +79,26 @@ public sealed partial class TextCustomCommandProcessor(
         "Could not send embed custom command {CommandName} (Guild {GuildId}, Channel {ChannelId}): missing Embed Links")]
     private static partial void LogEmbedForbidden(ILogger logger, string commandName, ulong guildId, ulong channelId);
 
-    private async Task<Result<ParsedCommand>> FetchCommandAsync(DiscordMember member, CustomCommandName name,
+    private async Task<Fin<ParsedCommand>> FetchCommandAsync(DiscordMember member, CustomCommandName name,
         string[] args)
     {
-        if (!await settingsModule.IsModuleEnabled(Module.Commands, member.GetGuildId()).GetOrElse(() => false))
-            return Result<ParsedCommand>.Fail(new Error(ModuleDisabledCode, "The Commands module is disabled"));
+        if (!await settingsModule.IsModuleEnabled(Module.Commands, member.GetGuildId()).OrDefaultDuringMigration(false))
+        {
+            LogModuleDisabled(logger, member.Guild.Id);
+            return new Invalid("The Commands module is disabled");
+        }
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var response = await dbContext.CustomCommands
             .GetCustomCommandQuery(member.GetGuildId(), name)
             .FirstOrDefaultAsync();
-        return response is null || !GetCustomCommand.IsUserAuthorized(member, response)
-            ? Result<ParsedCommand>.Fail(new Error(NotFoundCode, "Command not found or not authorized", name.Value))
-            : Result<ParsedCommand>.Ok(new ParsedCommand(response, member, name, args));
+        if (response is null || !GetCustomCommand.IsUserAuthorized(member, response))
+        {
+            LogCommandNotFound(logger, name.Value, member.Guild.Id);
+            return new NotFound("Command not found or not authorized");
+        }
+
+        return new ParsedCommand(response, member, name, args);
     }
 
     /// <returns>Whether the reply was sent.</returns>

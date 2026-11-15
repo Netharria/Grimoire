@@ -76,7 +76,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
             await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId,
                 SpamFilterOverrideOption.AlwaysFilter, TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<SpamFilterOverride>.NotModified>();
+        result.ShouldBeUnchanged();
 
         await using var db = factory.CreateDbContext();
         var count = await db.SpamFilterOverrides
@@ -96,7 +96,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
             await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId,
                 SpamFilterOverrideOption.NeverFilter, TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<SpamFilterOverride>.Success>();
+        result.ShouldSucceed();
 
         (await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId, TestContext.Current.CancellationToken))
             .ShouldSucceed().ShouldBe(
@@ -137,8 +137,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         var result = await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId,
             SpamFilterOverrideOption.AlwaysFilter, TestContext.Current.CancellationToken);
 
-        var notModified = result.ShouldBeOfType<Result<SpamFilterOverride>.NotModified>();
-        notModified.Error.Code.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldBeUnchanged().ShouldBe("The channel is already set to this spam filter option.");
     }
 
     [Fact]

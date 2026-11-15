@@ -45,7 +45,7 @@ public sealed record ChannelLocked : ChannelLock
 
     internal void Close(DateTimeOffset closedAt) => this.ClosedAt = closedAt;
 
-    public static Validation<ChannelLocked> Create(
+    public static Validation<Error, ChannelLocked> Create(
         ModeratorId moderatorId,
         ModerationReason? reason,
         ChannelId channelId,
@@ -56,9 +56,8 @@ public sealed record ChannelLocked : ChannelLock
         DateTimeOffset endTime)
     {
         if (endTime <= setAt)
-            return Validation<ChannelLocked>.Fail(
-                new Error("channel-lock.end-time.invalid", "End time must be after the lock's set time."));
-        return Validation<ChannelLocked>.Succeed(
+            return new Invalid("End time must be after the lock's set time.");
+        return Success<Error, ChannelLocked>(
             new ChannelLocked(moderatorId, channelId, guildId, setAt, reason, previouslyAllowed, previouslyDenied,
                 endTime));
     }

@@ -16,13 +16,13 @@ public sealed partial class SettingsModule
     /// <summary>30 years: in practice, sins are never pardoned automatically unless a guild sets a duration.</summary>
     public static TimeSpan DefaultAutoPardonDuration { get; } = TimeSpan.FromDays(10950);
 
-    public Task<Result<TimeSpan>> GetAutoPardonDuration(GuildId guildId,
+    public Task<Fin<TimeSpan>> GetAutoPardonDuration(GuildId guildId,
         CancellationToken cancellationToken = default) =>
         GetGuildSetting(
                 GuildSettingType.SinAutoPardonDuration,
                 guildId,
                 cancellationToken)
-            .Map(cachedSetting =>
+            .MapFin(cachedSetting =>
             {
                 var span = cachedSetting switch
                 {
@@ -35,7 +35,7 @@ public sealed partial class SettingsModule
                 return span != TimeSpan.Zero ? span : DefaultAutoPardonDuration;
             });
 
-    public Task<Result<TimeSpan>> SetAutoPardonDuration(
+    public Task<Fin<Write<TimeSpan>>> SetAutoPardonDuration(
         GuildId guildId,
         ModeratorId moderatorId,
         TimeSpan autoPardonAfter,
@@ -43,5 +43,5 @@ public sealed partial class SettingsModule
         => ApplyGuildSetting(GuildSettingCustomValue.Create(GuildSettingType.SinAutoPardonDuration, guildId,
                 moderatorId,
                 DateTimeOffset.UtcNow, autoPardonAfter.ToString("c", CultureInfo.InvariantCulture)), cancellationToken)
-            .Map(_ => autoPardonAfter);
+            .MapFin(write => write.Map(_ => autoPardonAfter));
 }

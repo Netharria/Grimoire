@@ -16,7 +16,7 @@ public sealed class GuildMemberRemovedEvent(GuildLog guildLog, SettingsModule se
 {
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberRemovedEventArgs args)
     {
-        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).OrDefaultDuringMigration(false))
             return;
 
         var roles = args.Member.Roles.Where(x => x.Id != args.Guild.Id).Select(x => x.Mention).ToArray();

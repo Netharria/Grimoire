@@ -6,7 +6,9 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using LanguageExt;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -33,7 +35,7 @@ internal static class ChannelSettingCommand
         ChannelOption option,
         DiscordChannel? channel,
         string name,
-        Func<ChannelId?, Task<Result<ChannelId?>>> save,
+        Func<ChannelId?, Task<Fin<Write<Option<ChannelId>>>>> save,
         DiscordPermission[]? botNeeds = null,
         DiscordColor? color = null,
         bool isModerationLog = false)
@@ -42,16 +44,18 @@ internal static class ChannelSettingCommand
         botNeeds ??= LogPermissions;
 
         var choice = ctx.GetChannelOption(option, channel)
-            .Bind(selected => selected is null || botNeeds.Length == 0
-                ? Validation<DiscordChannel?>.Succeed(selected)
-                : CheckCanPost(guild, selected, botNeeds));
-        if (choice is Validation<DiscordChannel?>.Invalid { Errors: var errors })
+            .Bind(selected => selected.Match(
+                Some: chosen => botNeeds.Length == 0
+                    ? Success<Error, Option<DiscordChannel>>(chosen)
+                    : CheckCanPost(guild, chosen, botNeeds).Map(Optional),
+                None: () => Success<Error, Option<DiscordChannel>>(None)));
+        if (choice is Validation<Error, Option<DiscordChannel>>.Fail(var error))
         {
-            await ctx.SendErrorResponseAsync(errors);
+            await ctx.SendErrorResponseAsync(error);
             return;
         }
 
-        var selected = choice.GetOrElse(() => null);
+        var selected = choice.Match(Fail: _ => None, Succ: chosen => chosen).OrNull();
         await ctx.ReplyResultAsync(
             await save(selected?.GetChannelId()),
             selected is null ? $"Disabled {name}." : $"Updated {name} to {selected.Mention}",
@@ -71,23 +75,21 @@ internal static class ChannelSettingCommand
     ///     Refuses a channel the bot can't post these logs in. A wrong choice would otherwise only show up as a setup
     ///     problem once the first log fails.
     /// </summary>
-    private static Validation<DiscordChannel?> CheckCanPost(DiscordGuild guild, DiscordChannel channel,
+    private static Validation<Error, DiscordChannel> CheckCanPost(DiscordGuild guild, DiscordChannel channel,
         DiscordPermission[] botNeeds)
     {
         if (channel.Type is DiscordChannelType.Category or DiscordChannelType.GuildForum or DiscordChannelType.GuildMedia)
-            return Validation<DiscordChannel?>.Fail(new Error("channel.cannot-hold-messages",
-                $"{channel.Mention} can't hold messages. Pick a text channel."));
+            return new Invalid($"{channel.Mention} can't hold messages. Pick a text channel.");
 
         var permissions = channel.PermissionsFor(guild.CurrentMember);
         if (!permissions.HasPermission(DiscordPermission.SendMessages))
-            return Validation<DiscordChannel?>.Fail(new Error("channel.bot-cannot-send",
-                $"{guild.CurrentMember.Mention} doesn't have permission to send messages in that channel."));
+            return new Invalid($"{guild.CurrentMember.Mention} doesn't have permission to send messages in that channel.");
 
         var missing = botNeeds.Where(permission => !permissions.HasPermission(permission)).ToArray();
         return missing.Length == 0
-            ? Validation<DiscordChannel?>.Succeed(channel)
-            : Validation<DiscordChannel?>.Fail(new Error("channel.bot-permissions",
-                $"{guild.CurrentMember.Mention} also needs {string.Join(" and ", missing.Select(DisplayName))} in that channel to post these logs."));
+            ? Success<Error, DiscordChannel>(channel)
+            : new Invalid($"{guild.CurrentMember.Mention} also needs {string.Join(" and ", missing.Select(DisplayName))}"
+                          + " in that channel to post these logs.");
     }
 
     private static string DisplayName(DiscordPermission permission)

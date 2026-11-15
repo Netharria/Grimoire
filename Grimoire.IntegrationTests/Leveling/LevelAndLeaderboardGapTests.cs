@@ -134,7 +134,7 @@ public sealed class LevelAndLeaderboardGapTests(GrimoireCoreFactory database) : 
         => this._bot.RunSlashCommandAndWaitAsync("leaderboard", this.Guild.User1,
         [
             SlashOption.Enum("option", option),
-            .. user is null ? Array.Empty<SlashOption>() : [SlashOption.User("user", user)]
+            .. user is null ? System.Array.Empty<SlashOption>() : [SlashOption.User("user", user)]
         ]);
 
     private async Task SeedXpAsync(params (FakeUser User, int Xp)[] entries)

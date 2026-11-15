@@ -9,6 +9,7 @@ using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Leveling.UserCommands;
 
@@ -47,7 +48,7 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
         var userCommandChannel = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId());
 
         if (!await ctx.TryDeferAsync(!member.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                                     && userCommandChannel.GetOrElse(() => null) != ctx.GetChannelId()))
+                                     && userCommandChannel.OrNullDuringMigration() != ctx.GetChannelId()))
             return;
 
         var targetUserId = option switch
@@ -68,7 +69,7 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
     ///     Fifteen rows of the guild's leaderboard: the top, or, with <paramref name="centredOn" />, five above that
     ///     member and nine below, shifted up near the bottom so fifteen rows still show.
     /// </summary>
-    internal async Task<Result<Response>> GetLeaderboardAsync(GuildId guildId, UserId? centredOn, CancellationToken ct)
+    internal async Task<Fin<Response>> GetLeaderboardAsync(GuildId guildId, UserId? centredOn, CancellationToken ct)
     {
         await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
         var board = dbContext.LeaderboardView.AsNoTracking().Where(x => x.GuildId == guildId);
@@ -79,8 +80,7 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
         {
             if (await board.Where(x => x.UserId == userId).Select(x => (long?)x.Rank).FirstOrDefaultAsync(ct)
                 is not { } rank)
-                return new Result<Response>.NotFound(
-                    new Error("leaderboard.user-not-found", "User not found on the leaderboard"));
+                return new NotFound("User not found on the leaderboard");
             firstRank = Math.Max(1, Math.Min(rank - 5, totalCount - 14));
         }
 
@@ -91,7 +91,7 @@ public sealed class GetLeaderboard(IDbContextFactory<GrimoireDbContext> dbContex
 
         var leaderboardText = string.Join('\n', rows.Select(m =>
             $"**{m.Rank}** {UserExtensions.Mention(m.UserId)} **XP:** {m.TotalXp}"));
-        return Result<Response>.Ok(new Response(leaderboardText, totalCount));
+        return Fin.Succ<Response>(new Response(leaderboardText, totalCount));
     }
 
     internal sealed record Response(string LeaderboardText, int TotalUserCount);

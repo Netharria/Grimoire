@@ -68,15 +68,13 @@ public abstract partial record ReactionEmoji
         public string? Name { get; }
         public bool IsAnimated { get; }
 
-        public static Validation<Custom> Create(EmojiId id, string? name, bool isAnimated)
+        public static Validation<Error, Custom> Create(EmojiId id, string? name, bool isAnimated)
             => (id.Value, name) switch
             {
-                (0, _) => Validation<Custom>.Fail(new Error("reaction-emoji.custom.id-missing",
-                    "A custom emoji must have an id.")),
-                (_, not null) when !ValidName().IsMatch(name) => Validation<Custom>.Fail(new Error(
-                    "reaction-emoji.custom.name-invalid",
-                    "A custom emoji name must be 2 to 32 letters, digits or underscores.")),
-                _ => Validation<Custom>.Succeed(new Custom(id, name, isAnimated))
+                (0, _) => new Invalid("A custom emoji must have an id."),
+                (_, not null) when !ValidName().IsMatch(name)
+                    => new Invalid("A custom emoji name must be 2 to 32 letters, digits or underscores."),
+                _ => Success<Error, Custom>(new Custom(id, name, isAnimated))
             };
 
         internal static Custom ParseStored(Match markup)
@@ -85,8 +83,9 @@ public abstract partial record ReactionEmoji
                     markup.Groups[2].Length == 0 ? null : markup.Groups[2].Value,
                     markup.Groups[1].Length != 0)
                 .Match(
-                    emoji => emoji,
-                    _ => throw new ArgumentException($"'{markup.Value}' is not a valid custom emoji.", nameof(markup)));
+                    Succ: emoji => emoji,
+                    Fail: _ => throw new ArgumentException($"'{markup.Value}' is not a valid custom emoji.",
+                        nameof(markup)));
 
         /// <summary>Discord's message markup, which is also the stored form.</summary>
         public override string ToString()
@@ -103,23 +102,22 @@ public abstract partial record ReactionEmoji
 
         public string Value { get; }
 
-        public static Validation<Standard> Create(string? value)
+        public static Validation<Error, Standard> Create(string? value)
             => value switch
             {
-                null or "" => Validation<Standard>.Fail(new Error("reaction-emoji.standard.empty",
-                    "A standard emoji cannot be empty.")),
-                { Length: > MaxLength } => Validation<Standard>.Fail(new Error("reaction-emoji.standard.too-long",
-                    $"A standard emoji cannot be longer than {MaxLength} characters.")),
+                null or "" => new Invalid("A standard emoji cannot be empty."),
+                { Length: > MaxLength }
+                    => new Invalid($"A standard emoji cannot be longer than {MaxLength} characters."),
                 // Keeps the stored form unambiguous: only custom emoji start with '<'.
-                _ when value.StartsWith('<') || value.Any(char.IsWhiteSpace) => Validation<Standard>.Fail(
-                    new Error("reaction-emoji.standard.invalid", "A standard emoji cannot contain markup or spaces.")),
-                _ => Validation<Standard>.Succeed(new Standard(value))
+                _ when value.StartsWith('<') || value.Any(char.IsWhiteSpace)
+                    => new Invalid("A standard emoji cannot contain markup or spaces."),
+                _ => Success<Error, Standard>(new Standard(value))
             };
 
         internal static Standard ParseStored(string value)
             => Create(value).Match(
-                emoji => emoji,
-                _ => throw new ArgumentException($"'{value}' is not a valid standard emoji.", nameof(value)));
+                Succ: emoji => emoji,
+                Fail: _ => throw new ArgumentException($"'{value}' is not a valid standard emoji.", nameof(value)));
 
         public override string ToString() => this.Value;
     }

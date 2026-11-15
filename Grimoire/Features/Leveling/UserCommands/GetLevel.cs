@@ -9,6 +9,7 @@ using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Leveling.UserCommands;
 
@@ -29,7 +30,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
         var userCommandChannelId = await settingsModule.GetUserCommandChannel(guild.GetGuildId());
 
         if (!await ctx.TryDeferAsync(!caller.Permissions.HasPermission(DiscordPermission.ManageMessages)
-                                     && userCommandChannelId.GetOrElse(() => null) != ctx.GetChannelId()))
+                                     && userCommandChannelId.OrNullDuringMigration() != ctx.GetChannelId()))
             return;
 
         user ??= ctx.User;
@@ -40,7 +41,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .SumAsync(x => x.RawXp);
 
         if (await settingsModule.GetLevelingSettings(guild.GetGuildId())
-                is not Result<LevelingSettingEntry>.Success { Value: var levelingSettings })
+                is not Fin<LevelingSettingEntry>.Succ { Value: var levelingSettings })
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "Could not load leveling settings. Please try again later.");
             return;
@@ -52,7 +53,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
 
         // The level is what the member asked for, so a failed rewards lookup only loses the next reward.
         var rewards = await settingsModule.GetLevelingRewardsAsync(guild.GetGuildId());
-        var nextReward = rewards.GetOrElse(() => new HashSet<RewardEntry>())
+        var nextReward = rewards.OrDefaultDuringMigration(new System.Collections.Generic.HashSet<RewardEntry>())
             .OrderBy(reward => reward.RewardLevel)
             .FirstOrDefault(reward => reward.RewardLevel > currentLevel);
 
@@ -74,7 +75,7 @@ public sealed class GetLevel(IDbContextFactory<GrimoireDbContext> dbContextFacto
             .AddField("Level", $"{currentLevel}", true)
             .AddField("Progress", $"{membersXp - currentLevelXp}/{nextLevelXp - currentLevelXp}", true)
             .AddField("Next Reward",
-                rewards is not Result<IReadOnlySet<RewardEntry>>.Success ? "Unavailable"
+                rewards is not Fin<IReadOnlySet<RewardEntry>>.Succ ? "Unavailable"
                 : roleReward is null ? "None"
                 : $"{roleReward.Mention}\n at level {nextReward?.RewardLevel}", true)
             .WithThumbnail(avatarUrl)

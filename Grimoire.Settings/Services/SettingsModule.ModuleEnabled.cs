@@ -7,19 +7,17 @@
 
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
-
 namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    private static Result<GuildSettingType> ToSettingType(Module moduleType) =>
+    private static Fin<GuildSettingType> ToSettingType(Module moduleType) =>
         // Only General has no setting of its own.
         moduleType.ToGuildSettingType() is { } settingType
-            ? Result<GuildSettingType>.Ok(settingType)
-            : Result<GuildSettingType>.Fail(
-                new Error("module.general.immutable", "Cannot disable the general module."));
+            ? Fin.Succ<GuildSettingType>(settingType)
+            : new Invalid("Cannot disable the general module.");
 
-    public Task<Result<bool>> SetModuleState(
+    public Task<Fin<Write<bool>>> SetModuleState(
         Module moduleType,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -29,48 +27,53 @@ public sealed partial class SettingsModule
             .BindAsync(settingType => ApplyGuildSetting(enableModule
                     ? GuildSettingCustomValue.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow,
                         bool.TrueString)
-                    : Validation<GuildSetting>.Succeed(
+                    : Success<Error, GuildSetting>(
                         GuildSettingDisabled.Create(settingType, guildId, moderatorId, DateTimeOffset.UtcNow)),
                 cancellationToken))
-            .Map(_ => enableModule);
+            .MapFin(write => write.Map(_ => enableModule));
 
     private static bool ParseEnabled(CachedSetting? setting) =>
         setting is CachedCustomSetting { Value: var v }
         && bool.TryParse(v, out var enabled)
         && enabled;
 
-    public Task<Result<bool>> IsModuleEnabled(
+    public Task<Fin<bool>> IsModuleEnabled(
         Module moduleType,
         GuildId guildId,
         CancellationToken cancellationToken = default)
         => moduleType == Module.General
-            ? Task.FromResult(Result<bool>.Ok(true))
+            ? Task.FromResult(Fin.Succ<bool>(true))
             : ToSettingType(moduleType)
                 .BindAsync(settingType => GetGuildSetting(settingType, guildId, cancellationToken))
-                .Map(ParseEnabled);
+                .MapFin(ParseEnabled);
 
 
-    public Task<Result<GuildModuleState>> GetAllModuleState(
+    /// <summary>
+    ///     Reads the six module settings together. A failure is the first one: they're all reads of the same cache and
+    ///     database, so their failures are the same outage (spec 1.1).
+    /// </summary>
+    public async Task<Fin<GuildModuleState>> GetAllModuleState(
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
-        return Result.WhenAll(
-            GetSetting(GuildSettingType.LevelingModuleEnabled),
-            GetSetting(GuildSettingType.UserLogModuleEnabled),
-            GetSetting(GuildSettingType.ModerationModuleEnabled),
-            GetSetting(GuildSettingType.MessageLogModuleEnabled),
-            GetSetting(GuildSettingType.CustomCommandsModuleEnabled),
-            GetSetting(GuildSettingType.AntiSpamModuleEnabled)
-        ).Map(r => new GuildModuleState(
-            ParseEnabled(r.Item1),
-            ParseEnabled(r.Item2),
-            ParseEnabled(r.Item3),
-            ParseEnabled(r.Item4),
-            ParseEnabled(r.Item5),
-            ParseEnabled(r.Item6)
-        ));
+        var leveling = GetSetting(GuildSettingType.LevelingModuleEnabled);
+        var userLog = GetSetting(GuildSettingType.UserLogModuleEnabled);
+        var moderation = GetSetting(GuildSettingType.ModerationModuleEnabled);
+        var messageLog = GetSetting(GuildSettingType.MessageLogModuleEnabled);
+        var commands = GetSetting(GuildSettingType.CustomCommandsModuleEnabled);
+        var antiSpam = GetSetting(GuildSettingType.AntiSpamModuleEnabled);
+        await Task.WhenAll(leveling, userLog, moderation, messageLog, commands, antiSpam);
 
-        Task<Result<CachedSetting>> GetSetting(GuildSettingType t) =>
+        return from l in leveling.Result
+            from u in userLog.Result
+            from m in moderation.Result
+            from ml in messageLog.Result
+            from c in commands.Result
+            from a in antiSpam.Result
+            select new GuildModuleState(
+                ParseEnabled(l), ParseEnabled(u), ParseEnabled(m), ParseEnabled(ml), ParseEnabled(c), ParseEnabled(a));
+
+        Task<Fin<CachedSetting>> GetSetting(GuildSettingType t) =>
             GetGuildSetting(t, guildId, cancellationToken);
     }
 }

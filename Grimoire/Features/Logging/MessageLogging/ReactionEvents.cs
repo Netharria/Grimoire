@@ -82,14 +82,14 @@ public sealed partial class ReactionEvents(
     }
 
     private Task<bool> IsMessageLogEnabledAsync(DiscordGuild guild)
-        => settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()).GetOrElse(() => false);
+        => settingsModule.IsModuleEnabled(Module.MessageLog, guild.GetGuildId()).OrDefaultDuringMigration(false);
 
     private ReactionEmoji? ToReactionEmoji(DiscordEmoji emoji)
         => emoji.ToReactionEmoji().Match<ReactionEmoji?>(
-            valid => valid,
-            errors =>
+            Succ: valid => valid,
+            Fail: error =>
             {
-                LogUnrecognizedEmoji(this._logger, emoji.Id, emoji.Name, string.Join("; ", errors.Select(e => e.Message)));
+                LogUnrecognizedEmoji(this._logger, emoji.Id, emoji.Name, error.Messages);
                 return null;
             });
 

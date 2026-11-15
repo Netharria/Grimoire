@@ -39,7 +39,7 @@ public sealed record ThreadLocked : ThreadLock
 
     internal void Close(DateTimeOffset closedAt) => this.ClosedAt = closedAt;
 
-    public static Validation<ThreadLocked> Create(
+    public static Validation<Error, ThreadLocked> Create(
         ModeratorId moderatorId,
         ModerationReason? reason,
         ChannelId channelId,
@@ -48,9 +48,8 @@ public sealed record ThreadLocked : ThreadLock
         DateTimeOffset endTime)
     {
         if (endTime <= setAt)
-            return Validation<ThreadLocked>.Fail(
-                new Error("thread-lock.end-time.invalid", "End time must be after the lock's set time."));
-        return Validation<ThreadLocked>.Succeed(
+            return new Invalid("End time must be after the lock's set time.");
+        return Success<Error, ThreadLocked>(
             new ThreadLocked(moderatorId, channelId, guildId, setAt, reason, endTime));
     }
 }

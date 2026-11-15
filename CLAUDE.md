@@ -52,7 +52,11 @@ Six projects in the solution:
 
 - **Grimoire** — Main executable. Discord bot entry point, all slash command handlers, event listeners, and background services.
 - **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext`, entity configurations, and migrations.
-- **Grimoire.Domain** — Domain models only. Entity definitions and strongly-typed IDs. Has `InternalsVisibleTo("Grimoire.Data")` so EF value converters can use `internal` factory methods (`FromDatabase`, `ParseFromDatabase`).
+- **Grimoire.Domain** — Domain models only. Entity definitions, strongly-typed IDs, and the error cases (`Invalid`,
+  `NotFound`, `Forbidden`, `Unavailable`, in `Errors.cs`). References `LanguageExt.Core` (pinned, `5.0.0-beta-78`):
+  results are `Fin<T>`, input checks `Validation<Error, T>`, absent values `Option<T>`. `Migration/` holds the
+  temporary, `[Obsolete]` bridge for `Task<Fin<T>>` chains (spec 1.1). Has `InternalsVisibleTo("Grimoire.Data")` so EF
+  value converters can use `internal` factory methods (`FromDatabase`, `ParseFromDatabase`).
 - **Grimoire.Settings** — Separate DbContext (`SettingsDbContext`) for per-guild settings. Its service layer
   (`SettingsModule`) caches reads through `HybridCache`, backed by FusionCache.
 - **Grimoire.UnitTests** — xUnit v3 tests of pure logic: domain types, settings domain, embed builders, decisions. No Docker,
@@ -129,6 +133,10 @@ requirements:
   no copying them into `readonly` fields
 - LF line endings (`.editorconfig` and `.gitattributes`), 4-space indentation
 - Class initializers and collection/object initializers preferred over imperative assignment
+- `using LanguageExt;` is global in `Grimoire.Domain` and `Grimoire.Settings` only. Elsewhere add it per file: a global
+  import makes `HashSet<T>`, `Queryable.Distinct` and `Duration` ambiguous. `LanguageExt.Common` and
+  `LanguageExt.Prelude` (static) are global everywhere except the integration tests, where `Prelude.Array` clashes
+  with `System.Array`
 
 ## Testing
 
@@ -140,8 +148,10 @@ Two projects, split by what a test touches:
   tests use the shared container fixture (`"Test collection"` or `"Settings collection"`) and reset with Respawn
   between tests. Harness tests start the real host through `GrimoireTestBot`.
 
-Shared helpers (`ResultShouldExtensions`, `AlertTestHelpers`) live in the unit project under the `Grimoire.TestShared`
-namespace and are linked into the integration project as files.
+Shared helpers (`FinShouldExtensions`, `AlertTestHelpers`) live in the unit project under the `Grimoire.TestShared`
+namespace and are linked into the integration project as files. Assert a failure by its case and message:
+`result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe(...)`; a settings write with `ShouldBeSaved()` or
+`ShouldBeUnchanged()`.
 
 Test code must not write to the console: the bot's logs go to the test output through `TestOutputSink`. Console
 writes captured by xunit deadlocked under vstest and Stryker (see `docs/langext-migration/specs/0.4-test-project-split.md`).

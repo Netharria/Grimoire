@@ -40,7 +40,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         this._bot = await GrimoireTestBot.StartAsync(database);
         await this._bot.ConfigureModerationAsync();
         this._muteRoleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(this._muteRoleId))).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(this._muteRoleId))).ShouldBeSaved();
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
@@ -153,7 +153,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     {
         await this.MuteByHandAsync(this.Guild.User1, expired: true);
         var newRole = this._bot.Rest.CreateRole("Muted B");
-        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(newRole), TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(newRole), TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         await this._bot.RunBackgroundTickAsync<MuteBackgroundTasks>();
 
@@ -277,7 +277,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     {
         await this.MuteByHandAsync(this.Guild.User1, expired: false);
         var configured = this._bot.Rest.CreateRole("Muted B");
-        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(configured), TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(configured), TestContext.Current.CancellationToken)).ShouldBeSaved();
         this._bot.Rest.DeleteRole(this._muteRoleId);
 
         await this.LeaveAndRejoinAsync(this.Guild.User1);

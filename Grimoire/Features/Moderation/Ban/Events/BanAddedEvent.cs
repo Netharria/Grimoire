@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Ban.Events;
@@ -29,7 +30,7 @@ public partial class BanAddedEvent(
     public async Task HandleEventAsync(DiscordClient sender, GuildBanAddedEventArgs args)
     {
         if (!await settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
 
         var pending = banHandoff.TakeBan(args.Guild.GetGuildId(), args.Member.GetUserId());
@@ -63,7 +64,8 @@ public partial class BanAddedEvent(
         var now = DateTimeOffset.UtcNow;
         // An unusable reason, such as one over 1000 characters from the audit log, is left out, not a lost ban.
         var sin = Sin.ForBan(actor, args.Member.GetUserId(), args.Guild.GetGuildId(), now,
-            ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null));
+            ModerationReason.CreateIfNotBlank(reason)
+                .Match(Succ: r => r.ToNullable(), Fail: _ => null));
         dbContext.Sins.Add(sin);
         await dbContext.SaveChangesAsync();
         return sin.Id;

@@ -10,6 +10,7 @@ using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -37,7 +38,7 @@ public sealed partial class CustomCommandSettings
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
-    private async Task<Result<IReadOnlyList<CommandVersion>>> GetVersionsAsync(GuildId guildId, CustomCommandName name)
+    private async Task<Fin<IReadOnlyList<CommandVersion>>> GetVersionsAsync(GuildId guildId, CustomCommandName name)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var versions = await dbContext.CustomCommands
@@ -47,9 +48,8 @@ public sealed partial class CustomCommandSettings
             .Select(x => new CommandVersion(x.CreatedAt, x.ModeratorId, x.Content))
             .ToListAsync();
         return versions.Count == 0
-            ? Result<IReadOnlyList<CommandVersion>>.Fail(new Error("command.history.not_found",
-                $"No command named `{name}` exists."))
-            : Result<IReadOnlyList<CommandVersion>>.Ok(versions);
+            ? new Invalid($"No command named `{name}` exists.")
+            : Fin.Succ<IReadOnlyList<CommandVersion>>(versions);
     }
 
     private static Task SendHistoryPagesAsync(CommandContext ctx, CustomCommandName name,

@@ -10,6 +10,7 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -33,11 +34,12 @@ public sealed partial class CustomCommandSettings
         await this.QueryStatsAsync(guild.GetGuildId(), ctx.RequiredMember, name)
             .Match(
                 r => ctx.ReplyAsync(embed: BuildStatsEmbed(name, r.Usage, r.TopUsers)).AsTask(),
-                error => ctx.SendErrorResponseAsync(error.Message).AsTask(),
-                onNotFound: error => ctx.SendWarningResponseAsync(error.Message).AsTask());
+                error => error is NotFound
+                    ? ctx.SendWarningResponseAsync(error.Message).AsTask()
+                    : ctx.SendErrorResponseAsync(error).AsTask());
     }
 
-    private async Task<Result<StatsQueryResult>> QueryStatsAsync(GuildId guildId, DiscordMember member,
+    private async Task<Fin<StatsQueryResult>> QueryStatsAsync(GuildId guildId, DiscordMember member,
         CustomCommandName name)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -45,12 +47,11 @@ public sealed partial class CustomCommandSettings
         // reported the same way, so its name isn't given away (KI-86).
         if (!await dbContext.CustomCommands.LatestVersions().VisibleTo(member)
                 .AnyAsync(x => x.GuildId == guildId && x.Name == name))
-            return new Result<StatsQueryResult>.NotFound(
-                new Error("command.stats.not_found", $"No command named `{name}` exists."));
+            return new NotFound($"No command named `{name}` exists.");
         var now = DateTimeOffset.UtcNow;
         var usage = await FetchUsageStatsAsync(dbContext, guildId, name, now);
         var topUsers = await FetchTopUsersAsync(dbContext, guildId, name);
-        return Result<StatsQueryResult>.Ok(new StatsQueryResult(usage, topUsers));
+        return Fin.Succ<StatsQueryResult>(new StatsQueryResult(usage, topUsers));
     }
 
     private static Task<UsageStats?> FetchUsageStatsAsync(GrimoireDbContext dbContext, GuildId guildId,

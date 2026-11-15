@@ -40,12 +40,12 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     public async Task ALookupDuringAnOutage_Fails_AndIsNotCached()
     {
         (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 42,
-            TestContext.Current.CancellationToken)).ShouldSucceed();
+            TestContext.Current.CancellationToken)).ShouldBeSaved();
         var down = true;
         var sut = SettingsModuleFactory.Create(factory.ConnectionString, () => down);
 
         (await sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken))
-            .ShouldBeOfType<Result<LevelingSettingEntry>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Unavailable>();
 
         down = false;
         (await sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
@@ -63,8 +63,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [InlineData(15, 50)]
     public async Task GetLevelFromXp_IsExact_ForSmallBaseAndModifier(int levelBase, int modifier)
     {
-        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldSucceed();
-        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldBeSaved();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldBeSaved();
         var settings = (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed();
 
         foreach (var xp in new long[] { 0, 1, 999, 1_001, 5_000, 25_000, 100_000, 2_000_000 })
@@ -85,8 +85,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [InlineData(500, 200)]
     public async Task GetLevelFromXp_MatchesCountingUp(int levelBase, int modifier)
     {
-        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldSucceed();
-        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldBeSaved();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldBeSaved();
         var settings = (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed();
 
         foreach (var xp in Enumerable.Range(0, 400).Select(i => (long)i * i * 7).Append(2_000_000))
@@ -102,8 +102,8 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     [InlineData(15, 50)]
     public async Task GetLevelFromXp_ForAnAbsurdAmount_ReturnsAtOnce(int levelBase, int modifier)
     {
-        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldSucceed();
-        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, levelBase, TestContext.Current.CancellationToken)).ShouldBeSaved();
+        (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, modifier, TestContext.Current.CancellationToken)).ShouldBeSaved();
         var settings = (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed();
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -203,7 +203,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
             await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 0,
                 TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Invalid>();
+        result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -213,7 +213,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
             await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 61,
                 TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Invalid>();
+        result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 0,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Invalid>();
+        result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 101,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Invalid>();
+        result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -240,7 +240,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 501,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Invalid>();
+        result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -249,7 +249,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 201,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Invalid>();
+        result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 20,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.NotModified>();
+        result.ShouldBeUnchanged();
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
@@ -295,7 +295,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 30,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
 
         var settings = await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)
             .ShouldSucceed();
@@ -308,7 +308,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 1,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
         (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Base
             .Value.ShouldBe(1);
     }
@@ -319,7 +319,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 500,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
         (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Base
             .Value.ShouldBe(500);
     }
@@ -328,7 +328,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     public async Task Base_BelowMin_ReturnsInvalid()
         => (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Base, 0,
                 TestContext.Current.CancellationToken))
-            .ShouldBeOfType<Result<int>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public async Task Modifier_MinExact_IsValid()
@@ -336,7 +336,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 1,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
         (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Modifier
             .Value.ShouldBe(1);
     }
@@ -347,7 +347,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 200,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
         (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Modifier
             .Value.ShouldBe(200);
     }
@@ -356,7 +356,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     public async Task Modifier_BelowMin_ReturnsInvalid()
         => (await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Modifier, 0,
                 TestContext.Current.CancellationToken))
-            .ShouldBeOfType<Result<int>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public async Task Amount_MinExact_IsValid()
@@ -364,7 +364,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 1,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
         (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Amount
             .Value.ShouldBe(1);
     }
@@ -375,7 +375,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.Amount, 100,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
         (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed().Amount
             .Value.ShouldBe(100);
     }
@@ -386,7 +386,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 1,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
         (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
             .XpTimeoutPeriod.Value
             .ShouldBe(TimeSpan.FromMinutes(1));
@@ -398,7 +398,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
         var result = await this._sut.SetLevelingSettings(_guildId, _modId, LevelSettings.XpTimeoutPeriod, 60,
             TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<int>.Success>();
+        result.ShouldSucceed();
         (await this._sut.GetLevelingSettings(_guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
             .XpTimeoutPeriod.Value
             .ShouldBe(TimeSpan.FromMinutes(60));

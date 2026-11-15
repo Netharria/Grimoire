@@ -34,7 +34,7 @@ internal sealed class AwardUserXp(IDbContextFactory<GrimoireDbContext> dbContext
         var awarded = PositiveXpAmount.Create(xpToAward)
             .Map(xp => AwardedXp.Create(xp, ctx.GetModeratorId(), user.GetUserId(), guild.GetGuildId(),
                 DateTimeOffset.UtcNow))
-            .Match(a => a, _ => throw new InvariantViolationException());
+            .Match(Succ: a => a, Fail: _ => throw new InvariantViolationException());
 
         await dbContext.XpHistory.AddAsync(awarded);
         await dbContext.SaveChangesAsync();

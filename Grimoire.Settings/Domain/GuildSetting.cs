@@ -50,14 +50,13 @@ internal sealed record GuildSettingCustomValue : GuildSetting
 
     public string Value { get; }
 
-    internal static Validation<GuildSetting> Create(
+    internal static Validation<Error, GuildSetting> Create(
         GuildSettingType type, GuildId guildId, ModeratorId setBy, DateTimeOffset setAt, string? value)
     {
         var trimmed = value?.Trim();
         if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 200)
-            return Validation<GuildSetting>.Fail(
-                new Error("guild-setting.value.invalid", "Value must be between 1 and 200 non-whitespace characters."));
-        return Validation<GuildSetting>.Succeed(
+            return new Invalid("Value must be between 1 and 200 non-whitespace characters.");
+        return Success<Error, GuildSetting>(
             new GuildSettingCustomValue(type, guildId, setBy, setAt, trimmed));
     }
 }

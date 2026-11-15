@@ -5,8 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-
 using DSharpPlus.Commands.Processors.TextCommands;
+using Grimoire.Settings.Domain;
+using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Extensions;
@@ -118,20 +119,23 @@ public static partial class CommandContextExtension
             await ctx.FollowUpAsync(color, message, string.Empty, ephemeral: true);
         }
 
-        public ValueTask SendErrorResponseAsync(IEnumerable<Error> errors)
-            => ctx.SendErrorResponseAsync(string.Join("; ", errors.Select(error => error.Message)));
+        /// <summary>
+        ///     Replies with every message in <paramref name="error" />: one per failed check when it holds several, as
+        ///     applicative validation gives.
+        /// </summary>
+        public ValueTask SendErrorResponseAsync(Error error)
+            => ctx.SendErrorResponseAsync(error.Messages);
 
         /// <summary>
         ///     Replies to a settings change and runs <paramref name="onSaved" />, usually the mod log entry, only if it
         ///     saved. Setting the value it already has counts as saved, so repeating a command still replies normally.
         /// </summary>
-        public Task ReplyResultAsync<T>(Result<T> result, string reply, Func<ValueTask>? onSaved = null,
+        public Task ReplyResultAsync<T>(Fin<Write<T>> result, string reply, Func<ValueTask>? onSaved = null,
             DiscordColor? color = null)
         {
             return result.Match(
                 _ => Saved(),
-                error => ctx.SendErrorResponseAsync(error.Message).AsTask(),
-                onNotModified: _ => Saved());
+                error => ctx.SendErrorResponseAsync(error).AsTask());
 
             async Task Saved()
             {
@@ -142,16 +146,15 @@ public static partial class CommandContextExtension
         }
 
         [Pure]
-        public Validation<DiscordChannel?> GetChannelOption(ChannelOption channelOption,
+        public Validation<Error, Option<DiscordChannel>> GetChannelOption(ChannelOption channelOption,
             DiscordChannel? selectedChannel)
             => channelOption switch
             {
-                ChannelOption.Off => Validation<DiscordChannel?>.Succeed(null),
-                ChannelOption.CurrentChannel => Validation<DiscordChannel?>.Succeed(ctx.Channel),
+                ChannelOption.Off => Success<Error, Option<DiscordChannel>>(None),
+                ChannelOption.CurrentChannel => Success<Error, Option<DiscordChannel>>(ctx.Channel),
                 ChannelOption.SelectChannel when selectedChannel is not null
-                    => Validation<DiscordChannel?>.Succeed(selectedChannel),
-                ChannelOption.SelectChannel => Validation<DiscordChannel?>.Fail(
-                    new Error("channel.required", "Select a channel when using the Select Channel option.")),
+                    => Success<Error, Option<DiscordChannel>>(selectedChannel),
+                ChannelOption.SelectChannel => new Invalid("Select a channel when using the Select Channel option."),
                 _ => throw new InvariantViolationException("Invalid ChannelOption value.")
             };
 

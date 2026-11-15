@@ -8,6 +8,7 @@
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Moderation.Diagnostics;
 
@@ -22,7 +23,7 @@ public sealed class DiagnosticsIgnoredRoleDeleted(SettingsModule settingsModule,
     {
         var guildId = args.Guild.GetGuildId();
         if (await settingsModule.RemoveDiagnosticsIgnoredRoleAsync(guildId, args.Role.GetRoleId())
-            is not Result<Unit>.Success)
+            is not Fin<Unit>.Succ)
             return;
 
         await guildLog.SendLogMessageAsync(new GuildLogMessage

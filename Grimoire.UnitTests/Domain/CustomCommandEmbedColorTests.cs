@@ -12,42 +12,42 @@ public sealed class CustomCommandEmbedColorTests
     // ── Null / empty / whitespace ─────────────────────────────────────────────
 
     [Fact]
-    public void Create_Null_IsInvalidWithCorrectCode()
+    public void Create_Null_IsInvalidWithCorrectMessage()
     {
         var result = CustomCommandEmbedColor.Create(null);
-        result.ShouldBeOfType<Validation<CustomCommandEmbedColor>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-embed-color.validation.is-null-or-empty");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A value for command embed color must be provided.");
     }
 
     [Fact]
     public void Create_Empty_IsInvalid()
         => CustomCommandEmbedColor.Create(string.Empty)
-            .ShouldBeOfType<Validation<CustomCommandEmbedColor>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public void Create_WhitespaceOnly_IsInvalid()
         => CustomCommandEmbedColor.Create("   ")
-            .ShouldBeOfType<Validation<CustomCommandEmbedColor>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     // ── Invalid hex ───────────────────────────────────────────────────────────
 
     [Fact]
-    public void Create_NonHexCharacters_IsInvalidWithCorrectCode()
+    public void Create_NonHexCharacters_IsInvalidWithCorrectMessage()
     {
         var result = CustomCommandEmbedColor.Create("GGGGGG");
-        result.ShouldBeOfType<Validation<CustomCommandEmbedColor>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-embed-color.validation.does-not-contain-hex");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A command embed color must be a 6 character hex color code.");
     }
 
     [Fact]
     public void Create_FiveHexChars_IsInvalid()
         => CustomCommandEmbedColor.Create("abc12")
-            .ShouldBeOfType<Validation<CustomCommandEmbedColor>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public void Create_SevenHexChars_IsInvalid()
         => CustomCommandEmbedColor.Create("abc1234")
-            .ShouldBeOfType<Validation<CustomCommandEmbedColor>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     // ── Happy paths ───────────────────────────────────────────────────────────
 

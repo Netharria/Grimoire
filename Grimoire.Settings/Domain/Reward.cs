@@ -30,7 +30,7 @@ public sealed record RewardAdded : Reward
     public int RewardLevel { get; }
     public RewardMessage? RewardMessage { get; }
 
-    public static Validation<RewardAdded> Create(
+    public static Validation<Error, RewardAdded> Create(
         RoleId roleId,
         GuildId guildId,
         int rewardLevel,
@@ -39,9 +39,8 @@ public sealed record RewardAdded : Reward
         DateTimeOffset setAt)
     {
         if (rewardLevel < 0)
-            return Validation<RewardAdded>.Fail(
-                new Error("reward.reward-level.invalid", "Reward Level must be greater than or equal to zero."));
-        return Validation<RewardAdded>.Succeed(
+            return new Invalid("Reward Level must be greater than or equal to zero.");
+        return Success<Error, RewardAdded>(
             new RewardAdded(roleId, guildId, setBy, setAt, rewardLevel, rewardMessage));
     }
 }

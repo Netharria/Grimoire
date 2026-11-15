@@ -5,10 +5,12 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Duration = Grimoire.Enums.Duration;
 using Grimoire.Enums;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.IntegrationTests.Moderation;
@@ -49,7 +51,7 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
     [Fact]
     public async Task View_ShowsTheConfiguredValues()
     {
-        (await this.Settings.SetAutoPardonDuration(this.GuildId, new ModeratorId(this.Guild.Owner.Id), TimeSpan.FromDays(60), TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetAutoPardonDuration(this.GuildId, new ModeratorId(this.Guild.Owner.Id), TimeSpan.FromDays(60), TestContext.Current.CancellationToken)).ShouldBeSaved();
         (await this.Settings.SetLogChannelSetting(GuildLogType.PublicModeration, this.GuildId, new ModeratorId(this.Guild.Owner.Id), new ChannelId(this.Guild.General.Id), TestContext.Current.CancellationToken)).ShouldBeSetOrUnchanged();
 
         (await this.ModSettingsAsync(this.Guild.Admin, SlashOption.Subcommand("view"))).Description
@@ -184,5 +186,5 @@ public sealed class ModSettingsTests(GrimoireCoreFactory database) : IAsyncLifet
                 : [SlashOption.Enum("option", option), SlashOption.Channel("channel", channel)]));
 
     private async Task<ulong?> BanLogSettingAsync()
-        => (await this.Settings.GetLogChannelSetting(GuildLogType.PublicModeration, this.GuildId)).ShouldSucceed()?.Value;
+        => (await this.Settings.GetLogChannelSetting(GuildLogType.PublicModeration, this.GuildId)).ShouldSucceed().ToNullable()?.Value;
 }

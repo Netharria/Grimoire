@@ -442,7 +442,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     private async Task<ulong> ConfigureMuteRoleAsync(string name, int position = 1)
     {
         var roleId = this._bot.Rest.CreateRole(name, 0, position);
-        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId))).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId))).ShouldBeSaved();
         return roleId;
     }
 
@@ -450,7 +450,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         => this._bot.RunSlashCommandAndWaitAsync("mute", moderator,
         [
             SlashOption.User("user", target), SlashOption.Enum("duration_type", type), SlashOption.Integer("duration_amount", amount),
-            .. reason is null ? Array.Empty<SlashOption>() : [SlashOption.String("reason", reason)]
+            .. reason is null ? System.Array.Empty<SlashOption>() : [SlashOption.String("reason", reason)]
         ]);
 
     private Task<FakeReply> UnmuteAsync(FakeUser moderator, FakeUser target)

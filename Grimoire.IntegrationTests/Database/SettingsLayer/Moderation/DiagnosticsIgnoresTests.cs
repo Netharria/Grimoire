@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using LanguageExt;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.Moderation;
 
 /// <remarks>Cases: XC-103 (the ignore list's cache).</remarks>
@@ -25,7 +27,7 @@ public sealed class DiagnosticsIgnoresTests(SettingsTestsFactory factory) : IAsy
     private static DiagnosticsIgnoredItem Member(ulong id)
         => DiagnosticsIgnoredMember.Create(new UserId(id), _guildId, _modId, DateTimeOffset.UtcNow);
 
-    private Task<Result<IReadOnlyList<DiagnosticsIgnoredItem>>> Add(params DiagnosticsIgnoredItem[] items)
+    private Task<Fin<Write<IReadOnlyList<DiagnosticsIgnoredItem>>>> Add(params DiagnosticsIgnoredItem[] items)
         => this._sut.AddDiagnosticsIgnoredItemsAsync(_guildId, items, TestContext.Current.CancellationToken);
 
     private async Task<DiagnosticsIgnoredItem[]> Get(SettingsModule? sut = null)
@@ -40,7 +42,7 @@ public sealed class DiagnosticsIgnoresTests(SettingsTestsFactory factory) : IAsy
     [Fact]
     public async Task Added_roles_and_members_are_returned_with_their_types()
     {
-        await this.Add(Role(10), Member(20)).ShouldSucceed();
+        await this.Add(Role(10), Member(20)).ShouldBeSaved();
 
         var items = await this.Get();
 
@@ -51,7 +53,7 @@ public sealed class DiagnosticsIgnoresTests(SettingsTestsFactory factory) : IAsy
     [Fact]
     public async Task Added_items_survive_a_fresh_module_with_an_empty_cache()
     {
-        await this.Add(Role(10)).ShouldSucceed();
+        await this.Add(Role(10)).ShouldBeSaved();
 
         (await this.Get(SettingsModuleFactory.Create(factory.ConnectionString))).ShouldHaveSingleItem();
     }
@@ -59,34 +61,34 @@ public sealed class DiagnosticsIgnoresTests(SettingsTestsFactory factory) : IAsy
     [Fact]
     public async Task Adding_an_already_ignored_item_is_not_modified_and_adds_no_row()
     {
-        await this.Add(Role(10)).ShouldSucceed();
+        await this.Add(Role(10)).ShouldBeSaved();
 
-        (await this.Add(Role(10))).ShouldBeOfType<Result<IReadOnlyList<DiagnosticsIgnoredItem>>.NotModified>();
+        (await this.Add(Role(10))).ShouldBeUnchanged();
         (await this.Get()).Length.ShouldBe(1);
     }
 
     [Fact]
     public async Task Adding_a_mix_only_reports_the_new_items()
     {
-        await this.Add(Role(10)).ShouldSucceed();
+        await this.Add(Role(10)).ShouldBeSaved();
 
-        var added = await this.Add(Role(10), Role(11)).ShouldSucceed();
+        var added = await this.Add(Role(10), Role(11)).ShouldBeSaved();
 
         added.ShouldHaveSingleItem().ShouldBeOfType<DiagnosticsIgnoredRole>().RoleId.ShouldBe(new RoleId(11));
     }
 
     [Fact]
     public async Task Adding_nothing_is_not_modified()
-        => (await this.Add()).ShouldBeOfType<Result<IReadOnlyList<DiagnosticsIgnoredItem>>.NotModified>();
+        => (await this.Add()).ShouldBeUnchanged();
 
     [Fact]
     public async Task Adding_an_item_for_another_guild_fails()
-        => (await this.Add(Role(10, new GuildId(2)))).ShouldBeOfType<Result<IReadOnlyList<DiagnosticsIgnoredItem>>.Invalid>();
+        => (await this.Add(Role(10, new GuildId(2)))).ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public async Task Removing_deletes_the_row_and_updates_the_list()
     {
-        await this.Add(Role(10), Member(20)).ShouldSucceed();
+        await this.Add(Role(10), Member(20)).ShouldBeSaved();
 
         var removed = await this._sut
             .RemoveDiagnosticsIgnoredItemsAsync(_guildId, [Role(10)], TestContext.Current.CancellationToken)
@@ -100,6 +102,6 @@ public sealed class DiagnosticsIgnoresTests(SettingsTestsFactory factory) : IAsy
     public async Task Removing_something_that_is_not_ignored_is_not_found()
         => (await this._sut.RemoveDiagnosticsIgnoredItemsAsync(_guildId, [Role(10)],
                 TestContext.Current.CancellationToken))
-            .ShouldBeOfType<Result<IReadOnlyList<DiagnosticsIgnoredItem>>.NotFound>();
+            .ShouldFail().ShouldBeOfType<NotFound>();
 
 }

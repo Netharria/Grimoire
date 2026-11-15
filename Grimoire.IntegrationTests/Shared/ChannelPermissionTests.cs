@@ -264,7 +264,7 @@ public sealed class ChannelPermissionTests(GrimoireCoreFactory database) : IAsyn
         await this._bot.SetModuleAsync(Module.AntiSpam, true);
         var muteRoleId = this._bot.Rest.CreateRole("Muted");
         (await this._bot.Services.GetRequiredService<SettingsModule>().SetMuteRole(new GuildId(this.Guild.Id),
-            new ModeratorId(this.Guild.Owner.Id), new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+            new ModeratorId(this.Guild.Owner.Id), new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
         this.Guild.SetOverwrite(this.Guild.General.Id, this.Guild.User1.Id, MemberOverwrite,
             FakeGuild.ManageMessagesPermission | FakeGuild.ManageChannelsPermission, 0);
         this._bot.Gateway.Dispatch("CHANNEL_UPDATE", this.Guild.ChannelJson(this.Guild.General));

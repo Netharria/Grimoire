@@ -789,17 +789,17 @@ public sealed record SlashOption(
 
     /// <summary>Users anywhere in this option tree, which Discord lists in the interaction's resolved data.</summary>
     public IEnumerable<FakeUser> ResolvedUsers()
-        => (this.ResolvedUser is { } user ? [user] : Array.Empty<FakeUser>())
+        => (this.ResolvedUser is { } user ? [user] : System.Array.Empty<FakeUser>())
             .Concat((this.Options ?? []).SelectMany(option => option.ResolvedUsers()));
 
     /// <summary>Roles anywhere in this option tree, which Discord lists in the interaction's resolved data.</summary>
     public IEnumerable<ulong> ResolvedRoles()
-        => (this.ResolvedRoleId is { } roleId ? [roleId] : Array.Empty<ulong>())
+        => (this.ResolvedRoleId is { } roleId ? [roleId] : System.Array.Empty<ulong>())
             .Concat((this.Options ?? []).SelectMany(option => option.ResolvedRoles()));
 
     /// <summary>Channels anywhere in this option tree, which Discord lists in the interaction's resolved data.</summary>
     public IEnumerable<FakeChannel> ResolvedChannels()
-        => (this.ResolvedChannel is { } channel ? [channel] : Array.Empty<FakeChannel>())
+        => (this.ResolvedChannel is { } channel ? [channel] : System.Array.Empty<FakeChannel>())
             .Concat((this.Options ?? []).SelectMany(option => option.ResolvedChannels()));
 
     public JsonObject ToJson()

@@ -5,10 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using LanguageExt;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -25,7 +25,7 @@ public sealed partial class RewardCommandGroup
         var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
-            is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })
+            is not Fin<IReadOnlySet<RewardEntry>>.Succ { Value: var rewards })
         {
             await ctx.SendErrorResponseAsync("Could not load the rewards. Please try again later.");
             return;

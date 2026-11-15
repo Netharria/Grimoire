@@ -232,7 +232,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
         => this._bot.RunSlashCommandAndWaitAsync("leaderboard", this.Guild.User1,
         [
             SlashOption.Enum("option", option),
-            .. user is null ? Array.Empty<SlashOption>() : [SlashOption.User("user", user)]
+            .. user is null ? System.Array.Empty<SlashOption>() : [SlashOption.User("user", user)]
         ]);
 
     private Task SeedXpAsync(params (FakeUser User, int Xp)[] entries) => this.SeedXpAsync(true, entries);

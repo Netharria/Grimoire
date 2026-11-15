@@ -32,7 +32,7 @@ public sealed partial class AddMessageEvent(
         if (!await settingsModule.ShouldLogMessage(
                 args.GetChannelId(),
                 args.Guild.GetGuildId(),
-                args.Channel.BuildChannelTree().ToDictionary()).GetOrElse(() => false))
+                args.Channel.BuildChannelTree().ToDictionary()).OrDefaultDuringMigration(false))
             return;
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();

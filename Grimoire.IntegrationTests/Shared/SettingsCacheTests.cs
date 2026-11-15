@@ -69,7 +69,7 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
         await this._bot.SetModuleAsync(Module.AntiSpam, true);
         var roleA = this._bot.Rest.CreateRole("Muted A");
         var roleB = this._bot.Rest.CreateRole("Muted B");
-        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(roleA), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(roleA), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
         await this.MuteAsync(this.Guild.User1);
         await this._bot.Rest.WaitForRequestAsync(this.IsRoleGrant(this.Guild.User1, roleA));
         await this._bot.RunSlashCommandAndWaitAsync("unmute", this.Guild.Admin, SlashOption.User("user", this.Guild.User1));

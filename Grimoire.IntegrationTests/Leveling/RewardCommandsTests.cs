@@ -258,7 +258,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         => this.RewardsCommandAsync("add",
         [
             SlashOption.Role("role", roleId), SlashOption.Integer("level", level),
-            .. message is null ? Array.Empty<SlashOption>() : [SlashOption.String("message", message)]
+            .. message is null ? System.Array.Empty<SlashOption>() : [SlashOption.String("message", message)]
         ]);
 
     private async Task<IReadOnlySet<Grimoire.Settings.Domain.RewardEntry>> RewardsAsync()

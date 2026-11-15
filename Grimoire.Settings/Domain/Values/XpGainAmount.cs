@@ -32,8 +32,8 @@ public readonly record struct XpGainAmount
         => int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? new(value) : Default;
 
     /// <summary>A new value, which must be within today's limits.</summary>
-    public static Validation<XpGainAmount> Create(int input)
+    public static Validation<Error, XpGainAmount> Create(int input)
         => input is >= MinValue and <= MaxValue
-            ? Validation<XpGainAmount>.Succeed(new XpGainAmount(input))
-            : Validation<XpGainAmount>.Fail(new Error("xp-gain-amount.invalid", "Xp gain amount must be a value between 1 and 100."));
+            ? Success<Error, XpGainAmount>(new XpGainAmount(input))
+            : new Invalid("Xp gain amount must be a value between 1 and 100.");
 }

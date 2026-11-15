@@ -10,6 +10,7 @@ using DSharpPlus.Commands.ContextChecks;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using LanguageExt;
 
 namespace Grimoire.Features.Moderation.SinAdmin.Commands;
 
@@ -31,7 +32,7 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
         var guild = ctx.RequiredGuild;
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var pardonReason))
+        if (ModerationReason.Create(reason) is not Validation<Error, ModerationReason>.Success(var pardonReason))
         {
             await ctx.SendErrorResponseAsync("The reason can't be empty.");
             return;

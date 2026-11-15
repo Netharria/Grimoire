@@ -9,6 +9,7 @@ using Grimoire.Features.Shared.SharedDtos;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.IntegrationTests.Shared;
@@ -79,7 +80,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task AMuteInB_OnlyAffectsB()
     {
-        (await this.Settings.SetMuteRole(new GuildId(this.B.Id), new ModeratorId(this.B.Owner.Id), new RoleId(this.B.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(new GuildId(this.B.Id), new ModeratorId(this.B.Owner.Id), new RoleId(this.B.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         await this._bot.RunSlashCommandAndWaitAsync(this.B.General, "mute", this.B.Moderator, SlashOption.User("user", this.B.User1),
             SlashOption.Enum("duration_type", DurationType.Hours), SlashOption.Integer("duration_amount", 1));
@@ -90,7 +91,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
         this.A.GetMember(this.A.User1).RoleIds.ShouldBeEmpty();
         (await this.Settings.GetActiveMute(new UserId(this.B.User1.Id), new GuildId(this.B.Id), Token)).ShouldSucceed();
         (await this.Settings.GetActiveMute(new UserId(this.A.User1.Id), new GuildId(this.A.Id), Token))
-            .ShouldNotBeOfType<Result<Grimoire.Settings.Domain.MuteAdded>.Success>();
+            .ShouldNotBeOfType<Fin<Grimoire.Settings.Domain.MuteAdded>.Succ>();
     }
 
     /// <summary>Sins from A don't show in B's sin log.</summary>
@@ -160,7 +161,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task AMuteInB_DoesNotUseAsMuteRole()
     {
-        (await this.Settings.SetMuteRole(new GuildId(this.A.Id), new ModeratorId(this.A.Owner.Id), new RoleId(this.A.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(new GuildId(this.A.Id), new ModeratorId(this.A.Owner.Id), new RoleId(this.A.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         (await this._bot.RunSlashCommandAndWaitAsync(this.B.General, "mute", this.B.Moderator, SlashOption.User("user", this.B.User1),
                 SlashOption.Enum("duration_type", DurationType.Hours), SlashOption.Integer("duration_amount", 1)))
@@ -171,7 +172,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task MutesViewInB_ShowsBsOwnSetting()
     {
-        (await this.Settings.SetMuteRole(new GuildId(this.A.Id), new ModeratorId(this.A.Owner.Id), new RoleId(this.A.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(new GuildId(this.A.Id), new ModeratorId(this.A.Owner.Id), new RoleId(this.A.KickerRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         var reply = await this._bot.RunSlashCommandAndWaitAsync(this.B.General, "mutes", this.B.Admin, SlashOption.Subcommand("view"));
 

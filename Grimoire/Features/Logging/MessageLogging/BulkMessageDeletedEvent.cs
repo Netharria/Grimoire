@@ -25,7 +25,7 @@ public sealed class BulkMessageDeletedEvent(
         if (args.Guild is null) return;
 
         if (!await settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
 
         var messageIds = args.Messages.Select(x => x.GetMessageId()).ToHashSet();

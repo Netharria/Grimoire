@@ -7,11 +7,13 @@
 
 global using Grimoire.DatabaseQueryHelpers;
 global using Grimoire.Domain;
+global using Grimoire.Domain.Migration;
 global using Grimoire.Features.CustomCommands;
 global using Grimoire.Settings;
 global using Grimoire.Settings.Domain;
 global using Grimoire.Settings.Enums;
 global using Grimoire.Settings.Services;
+global using LanguageExt.Common;
 global using Microsoft.EntityFrameworkCore;
 global using Grimoire.TestShared;
 global using Shouldly;

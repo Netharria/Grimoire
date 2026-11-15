@@ -30,38 +30,38 @@ public sealed class OutageTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task AddMute_Fails()
         => (await this._down.AddMute(_userId, _guildId, _modId, new SinId(1L), DateTimeOffset.UtcNow.AddHours(1),
-            new RoleId(300UL), Token)).ShouldBeOfType<Result<MuteAdded>.Invalid>();
+            new RoleId(300UL), Token)).ShouldFail().ShouldBeOfType<Unavailable>();
 
     [Fact]
     public async Task RemoveMute_Fails()
-        => (await this._down.RemoveMute(_userId, _guildId, _modId, Token)).ShouldBeOfType<Result<MuteAdded>.Invalid>();
+        => (await this._down.RemoveMute(_userId, _guildId, _modId, Token)).ShouldFail().ShouldBeOfType<Unavailable>();
 
     [Fact]
     public async Task GetActiveMute_Fails()
-        => (await this._down.GetActiveMute(_userId, _guildId, Token)).ShouldBeOfType<Result<MuteAdded>.Invalid>();
+        => (await this._down.GetActiveMute(_userId, _guildId, Token)).ShouldFail().ShouldBeOfType<Unavailable>();
 
     [Fact]
     public async Task GetAllIgnoredItems_Fails()
         => (await this._down.GetAllIgnoredItems(_guildId, Token))
-            .ShouldBeOfType<Result<FrozenSet<XpIgnoredItem>>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Unavailable>();
 
     /// <summary>A failure, not "not ignored": the caller decides what an unknown answer means.</summary>
     [Fact]
     public async Task IsMessageIgnored_Fails()
-        => (await this._down.IsMessageIgnored(_guildId, _userId, new HashSet<RoleId>(), _channelId, cancellationToken: Token))
-            .ShouldBeOfType<Result<bool>.Invalid>();
+        => (await this._down.IsMessageIgnored(_guildId, _userId, new System.Collections.Generic.HashSet<RoleId>(), _channelId, cancellationToken: Token))
+            .ShouldFail().ShouldBeOfType<Unavailable>();
 
     [Fact]
     public async Task IsMemberIgnored_Fails()
-        => (await this._down.IsMemberIgnored(_guildId, _userId, new HashSet<RoleId>(), Token))
-            .ShouldBeOfType<Result<bool>.Invalid>();
+        => (await this._down.IsMemberIgnored(_guildId, _userId, new System.Collections.Generic.HashSet<RoleId>(), Token))
+            .ShouldFail().ShouldBeOfType<Unavailable>();
 
     [Fact]
     public async Task AppendIgnoredItemsEvent_Fails()
         => (await this._down.AppendIgnoredItemsEvent(_guildId,
-                new HashSet<XpTrackedItem>
+                new System.Collections.Generic.HashSet<XpTrackedItem>
                 {
                     new IgnoredMember { UserId = _userId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
                 }, Token))
-            .ShouldBeOfType<Result<IReadOnlySet<XpTrackedItem>>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Unavailable>();
 }

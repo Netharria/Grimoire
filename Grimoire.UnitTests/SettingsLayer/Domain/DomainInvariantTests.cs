@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Settings.Domain.Values;
+using LanguageExt;
 
 namespace Grimoire.UnitTests.SettingsLayer.Domain;
 
@@ -32,12 +33,11 @@ public sealed class DomainInvariantTests
     // ── ChannelLocked ─────────────────────────────────────────────────────────
 
     [Fact]
-    public void ChannelLocked_EndTimeEqualsSetAt_IsInvalidWithCorrectCode()
+    public void ChannelLocked_EndTimeEqualsSetAt_IsInvalidWithCorrectMessage()
     {
         var reason = ModerationReason.FromDatabase("reason");
         var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _now);
-        var invalid = result.ShouldBeOfType<Validation<ChannelLocked>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "channel-lock.end-time.invalid");
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the lock's set time.");
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public sealed class DomainInvariantTests
     {
         var reason = ModerationReason.FromDatabase("reason");
         var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _past);
-        result.ShouldBeOfType<Validation<ChannelLocked>.Invalid>();
+        result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -54,18 +54,17 @@ public sealed class DomainInvariantTests
         var reason = ModerationReason.FromDatabase("reason");
         var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied,
             _future);
-        result.ShouldBeOfType<Validation<ChannelLocked>.Valid>();
+        result.ShouldBeOfType<Validation<Error, ChannelLocked>.Success>();
     }
 
     // ── ThreadLocked ──────────────────────────────────────────────────────────
 
     [Fact]
-    public void ThreadLocked_EndTimeEqualsSetAt_IsInvalidWithCorrectCode()
+    public void ThreadLocked_EndTimeEqualsSetAt_IsInvalidWithCorrectMessage()
     {
         var reason = ModerationReason.FromDatabase("reason");
         var result = ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _now);
-        var invalid = result.ShouldBeOfType<Validation<ThreadLocked>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "thread-lock.end-time.invalid");
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the lock's set time.");
     }
 
     [Fact]
@@ -73,7 +72,7 @@ public sealed class DomainInvariantTests
     {
         var reason = ModerationReason.FromDatabase("reason");
         ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _past)
-            .ShouldBeOfType<Validation<ThreadLocked>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
@@ -81,54 +80,45 @@ public sealed class DomainInvariantTests
     {
         var reason = ModerationReason.FromDatabase("reason");
         ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _future)
-            .ShouldBeOfType<Validation<ThreadLocked>.Valid>();
+            .ShouldBeOfType<Validation<Error, ThreadLocked>.Success>();
     }
 
     [Fact]
-    public void MuteAdded_EndTimeEqualsSetAt_IsInvalidWithCodeAndMessage()
+    public void MuteAdded_EndTimeEqualsSetAt_IsInvalidWithMessage()
     {
         var result = MuteAdded.Create(_userId, _guildId, _modId, _sinId, _now, _now);
-        var invalid = result.ShouldBeOfType<Validation<MuteAdded>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("mute.end-time.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the mute's set time.");
     }
 
     [Fact]
     public void MuteAdded_EndTimeBeforeSetAt_IsInvalid()
         => MuteAdded.Create(_userId, _guildId, _modId, _sinId, _now, _past)
-            .ShouldBeOfType<Validation<MuteAdded>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
-    public void MuteAdded_SelfMute_IsInvalidWithCodeAndMessage()
+    public void MuteAdded_SelfMute_IsInvalidWithMessage()
     {
         var selfId = new UserId(999UL);
         var result = MuteAdded.Create(selfId, _guildId, new ModeratorId(999UL), _sinId, _past, _future);
-        var invalid = result.ShouldBeOfType<Validation<MuteAdded>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("mute.self-mute.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("A moderator cannot mute themselves.");
     }
 
     [Fact]
-    public void MuteAdded_SinIdZero_IsInvalidWithCodeAndMessage()
+    public void MuteAdded_SinIdZero_IsInvalidWithMessage()
     {
         var result = MuteAdded.Create(_userId, _guildId, _modId, new SinId(0L), _past, _future);
-        var invalid = result.ShouldBeOfType<Validation<MuteAdded>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("mute.sin-id.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Sin Id must be a positive number.");
     }
 
     [Fact]
     public void MuteAdded_SinIdNegative_IsInvalid()
         => MuteAdded.Create(_userId, _guildId, _modId, new SinId(-1L), _past, _future)
-            .ShouldBeOfType<Validation<MuteAdded>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public void MuteAdded_AllValid_IsValid()
         => MuteAdded.Create(_userId, _guildId, _modId, _sinId, _past, _future)
-            .ShouldBeOfType<Validation<MuteAdded>.Valid>();
+            .ShouldBeOfType<Validation<Error, MuteAdded>.Success>();
 
     // ── ChannelLocked / ThreadLocked error messages ───────────────────────────
 
@@ -137,8 +127,7 @@ public sealed class DomainInvariantTests
     {
         var reason = ModerationReason.FromDatabase("reason");
         var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _now);
-        var invalid = result.ShouldBeOfType<Validation<ChannelLocked>.Invalid>();
-        invalid.Errors.ShouldHaveSingleItem().Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the lock's set time.");
     }
 
     [Fact]
@@ -146,8 +135,7 @@ public sealed class DomainInvariantTests
     {
         var reason = ModerationReason.FromDatabase("reason");
         var result = ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _now);
-        var invalid = result.ShouldBeOfType<Validation<ThreadLocked>.Invalid>();
-        invalid.Errors.ShouldHaveSingleItem().Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the lock's set time.");
     }
 
     // ── ModerationReason ──────────────────────────────────────────────────────
@@ -156,30 +144,26 @@ public sealed class DomainInvariantTests
     public void ModerationReason_WhitespaceInput_IsInvalidWithErrorCode()
     {
         var result = ModerationReason.Create("   ");
-        var invalid = result.ShouldBeOfType<Validation<ModerationReason>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "moderation-reason.invalid");
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Reason must be 1\u20131000 non-whitespace characters.");
     }
 
     [Fact]
-    public void RewardAdded_NegativeLevel_IsInvalidWithCodeAndMessage()
+    public void RewardAdded_NegativeLevel_IsInvalidWithMessage()
     {
         var result = RewardAdded.Create(_roleId, _guildId, -1, null, _modId, _now);
-        var invalid = result.ShouldBeOfType<Validation<RewardAdded>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("reward.reward-level.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Reward Level must be greater than or equal to zero.");
     }
 
     [Fact]
     public void RewardAdded_ZeroLevel_IsValid()
         => RewardAdded.Create(_roleId, _guildId, 0, null, _modId, _now)
-            .ShouldBeOfType<Validation<RewardAdded>.Valid>();
+            .ShouldBeOfType<Validation<Error, RewardAdded>.Success>();
 
     [Fact]
     public void RewardAdded_WithMessage_IsValid()
     {
         var msg = RewardMessage.Create("Congratulations!").ShouldSucceed();
         RewardAdded.Create(_roleId, _guildId, 10, msg, _modId, _now)
-            .ShouldBeOfType<Validation<RewardAdded>.Valid>();
+            .ShouldBeOfType<Validation<Error, RewardAdded>.Success>();
     }
 }

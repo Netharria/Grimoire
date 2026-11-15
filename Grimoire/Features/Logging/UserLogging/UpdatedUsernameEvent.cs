@@ -18,7 +18,7 @@ public sealed class UpdatedUsernameEvent(
 {
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberUpdatedEventArgs args)
     {
-        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).OrDefaultDuringMigration(false))
             return;
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();

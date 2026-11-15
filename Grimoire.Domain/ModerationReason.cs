@@ -18,24 +18,23 @@ public readonly record struct ModerationReason
 
     internal static ModerationReason FromDatabase(string value) => new(value);
 
-    public static Validation<ModerationReason?> CreateIfNotNull(string? input)
+    public static Validation<Error, Option<ModerationReason>> CreateIfNotNull(string? input)
         => input is null
-            ? Validation<ModerationReason?>.Succeed(null)
-            : Create(input).Map(r => (ModerationReason?)r);
+            ? Option<ModerationReason>.None
+            : Create(input).Map(Optional);
 
     /// <summary>For an optional reason: none given, or only whitespace, means no reason.</summary>
-    public static Validation<ModerationReason?> CreateIfNotBlank(string? input)
+    public static Validation<Error, Option<ModerationReason>> CreateIfNotBlank(string? input)
         => string.IsNullOrWhiteSpace(input)
-            ? Validation<ModerationReason?>.Succeed(null)
-            : Create(input).Map(r => (ModerationReason?)r);
+            ? Option<ModerationReason>.None
+            : Create(input).Map(Optional);
 
-    public static Validation<ModerationReason> Create(string input)
+    public static Validation<Error, ModerationReason> Create(string input)
     {
         var trimmed = input.Trim();
         if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 1000)
-            return Validation<ModerationReason>.Fail(
-                new Error("moderation-reason.invalid", "Reason must be 1\u20131000 non-whitespace characters."));
-        return Validation<ModerationReason>.Succeed(new ModerationReason(trimmed));
+            return new Invalid("Reason must be 1\u20131000 non-whitespace characters.");
+        return Success<Error, ModerationReason>(new ModerationReason(trimmed));
     }
 
     public override string ToString() => Value;

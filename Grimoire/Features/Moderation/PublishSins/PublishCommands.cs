@@ -110,7 +110,7 @@ public sealed partial class PublishCommands(
         var guild = ctx.RequiredGuild;
         var banLogChannelId =
             await this._settingsModule.GetLogChannelSetting(GuildLogType.PublicModeration, guild.GetGuildId())
-                .GetOrElse(() => null);
+                .OrNullDuringMigration();
 
         if (banLogChannelId is null)
             return null;

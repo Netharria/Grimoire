@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Moderation.Lock.Commands;
 
@@ -42,9 +43,9 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
 
         var guild = ctx.RequiredGuild;
 
-        if (LockTargetPermissions.CheckModerator(ctx.RequiredMember, channel) is Result<Unit>.Invalid denied)
+        if (LockTargetPermissions.CheckModerator(ctx.RequiredMember, channel) is Fin<Unit>.Fail denied)
         {
-            await ctx.SendErrorResponseAsync(denied.Error.Message);
+            await ctx.SendErrorResponseAsync(denied.Error);
             return;
         }
 
@@ -84,7 +85,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         });
     }
 
-    private Task<Result<ChannelLocked>> ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId,
+    private Task<Fin<ChannelLocked>> ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId,
         DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount)
@@ -99,7 +100,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
             .Bind(validatedReason =>
                 ChannelLocked.Create(
                     moderatorId,
-                    validatedReason,
+                    validatedReason.ToNullable(),
                     channel.GetChannelId(),
                     guild.GetGuildId(),
                     DateTimeOffset.UtcNow,
@@ -108,7 +109,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                     new PreviouslyDeniedPermissions(
                         long.Parse(previousDenied.GetLockPermissions(lockPermissions).ToString())),
                     durationType.GetDateTimeOffset(durationAmount)))
-            .ToResult()
+            .ToFin()
             .TapAsync(_ =>
                 channel.AddOverwriteAsync(guild.EveryoneRole,
                     previousAllowed.RevokeLockPermissions(lockPermissions),
@@ -117,24 +118,23 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                 settingsModule.AddChannelLock(channelLock));
     }
 
-    private Task<Result<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,
+    private Task<Fin<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,
         DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount) =>
         // A thread lock is enforced by deleting every new message, which takes Manage Messages in the thread.
         (channel.PermissionsFor(guild.CurrentMember).HasPermission(DiscordPermission.ManageMessages)
             ? ModerationReason.CreateIfNotNull(reason)
-            : Validation<ModerationReason?>.Fail(new Error("thread-lock.bot-permissions",
-                $"{guild.CurrentMember.Mention} needs **Manage Messages** in {channel.Mention} to lock it.")))
+            : new Invalid($"{guild.CurrentMember.Mention} needs **Manage Messages** in {channel.Mention} to lock it."))
             .Bind(validatedReason =>
                 ThreadLocked.Create(
                     moderatorId,
-                    validatedReason,
+                    validatedReason.ToNullable(),
                     channel.GetChannelId(),
                     guild.GetGuildId(),
                     DateTimeOffset.UtcNow,
                     durationType.GetDateTimeOffset(durationAmount)))
-            .ToResult()
+            .ToFin()
             .BindAsync(channelLock =>
                 settingsModule.AddThreadLock(channelLock));
 }

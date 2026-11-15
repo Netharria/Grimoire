@@ -174,7 +174,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
         await this._bot.SetModuleAsync(Module.Leveling, true);
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
             new ChannelId(this.Guild.LevelLog.Id), Token)).ShouldBeSetOrUnchanged();
-        (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, 15, Token)).ShouldSucceed();
+        (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, 15, Token)).ShouldBeSaved();
         (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(this.Guild.KickerRoleId), this.GuildId, 2, null,
             this.Owner, DateTimeOffset.UtcNow).ShouldSucceed(), Token)).ShouldSucceed();
 
@@ -198,7 +198,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
     {
         await this._bot.SetModuleAsync(Module.AntiSpam, true);
         var muteRoleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), Token)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), Token)).ShouldBeSaved();
         var proxies = new List<ulong>();
         this._bot.Rest.On(HttpMethod.Delete, @"channels/\d+/messages/\d+",
             _ => FakeDiscordRest.Error(HttpStatusCode.NotFound, 10008, "Unknown Message"));

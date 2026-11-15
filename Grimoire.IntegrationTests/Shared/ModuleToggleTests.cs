@@ -153,7 +153,7 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
     {
         await this._bot.ConfigureModerationAsync();
         var muteRoleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
         await this.SeedExpiredMuteAsync(this.Guild.User1, muteRoleId);
         await this.SeedExpiredChannelLockAsync(this.Guild.General);
         await this._bot.SetModuleAsync(Module.Moderation, false);

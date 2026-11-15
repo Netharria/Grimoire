@@ -202,7 +202,7 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
             .Select(DiagnosticsIgnoredItem (index) => DiagnosticsIgnoredRole.Create(
                 new RoleId(this.Guild.Id + 10_000 + (ulong)index), this.GuildId, new ModeratorId(this.Guild.Admin.Id), now))
             .ToList();
-        (await this.Settings.AddDiagnosticsIgnoredItemsAsync(this.GuildId, roles, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.AddDiagnosticsIgnoredItemsAsync(this.GuildId, roles, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         var fields = (await this.IgnoreAsync("view")).Embed!["fields"]!.AsArray()
             .Select(field => (Name: field!["name"]!.GetValue<string>(), Value: field["value"]!.GetValue<string>()))

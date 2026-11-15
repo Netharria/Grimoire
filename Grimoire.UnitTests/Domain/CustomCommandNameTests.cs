@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using LanguageExt;
+
 namespace Grimoire.UnitTests.Domain;
 
 public sealed class CustomCommandNameTests
@@ -12,52 +14,52 @@ public sealed class CustomCommandNameTests
     // ── Null / empty / whitespace ─────────────────────────────────────────────
 
     [Fact]
-    public void Create_Null_IsInvalidWithCorrectCode()
+    public void Create_Null_IsInvalidWithCorrectMessage()
     {
         var result = CustomCommandName.Create(null);
-        result.ShouldBeOfType<Validation<CustomCommandName>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-name.validation.is-null-or-empty");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A value for command name must be provided.");
     }
 
     [Fact]
     public void Create_Empty_IsInvalid()
         => CustomCommandName.Create(string.Empty)
-            .ShouldBeOfType<Validation<CustomCommandName>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public void Create_WhitespaceOnly_IsInvalid()
         => CustomCommandName.Create("   ")
-            .ShouldBeOfType<Validation<CustomCommandName>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     // ── Internal spaces ───────────────────────────────────────────────────────
 
     [Fact]
-    public void Create_ContainsInternalSpace_IsInvalidWithCorrectCode()
+    public void Create_ContainsInternalSpace_IsInvalidWithCorrectMessage()
     {
         var result = CustomCommandName.Create("hello world");
-        result.ShouldBeOfType<Validation<CustomCommandName>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-name.validation.contains-space");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A command name cannot contain spaces.");
     }
 
     [Fact]
     public void Create_LeadingAndTrailingSpacesAroundSpacedName_IsInvalidAfterTrim()
         // After trimming "  a b  " becomes "a b", which still has an internal space.
         => CustomCommandName.Create("  a b  ")
-            .ShouldBeOfType<Validation<CustomCommandName>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     // ── Length ────────────────────────────────────────────────────────────────
 
     [Fact]
     public void Create_ExactlyMaxLength_IsValid()
         => CustomCommandName.Create(new string('x', 24))
-            .ShouldBeOfType<Validation<CustomCommandName>.Valid>();
+            .ShouldBeOfType<Validation<Error, CustomCommandName>.Success>();
 
     [Fact]
-    public void Create_OneOverMaxLength_IsInvalidWithCorrectCode()
+    public void Create_OneOverMaxLength_IsInvalidWithCorrectMessage()
     {
         var result = CustomCommandName.Create(new string('x', 25));
-        result.ShouldBeOfType<Validation<CustomCommandName>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-name.validation.length");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A command name cannot be more than 24 characters in length.");
     }
 
     // ── Happy paths ───────────────────────────────────────────────────────────
@@ -79,5 +81,5 @@ public sealed class CustomCommandNameTests
 
     [Fact]
     public void Create_SingleCharacter_IsValid()
-        => CustomCommandName.Create("a").ShouldBeOfType<Validation<CustomCommandName>.Valid>();
+        => CustomCommandName.Create("a").ShouldBeOfType<Validation<Error, CustomCommandName>.Success>();
 }

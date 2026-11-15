@@ -9,6 +9,7 @@ using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
+using LanguageExt;
 
 namespace Grimoire.Features.Moderation.Warn;
 
@@ -36,7 +37,7 @@ internal sealed class Warn(IDbContextFactory<GrimoireDbContext> dbContextFactory
         }
 
         // M-7: a blank reason used to save the sin and then throw, leaving no reply and no log.
-        if (ModerationReason.Create(reason) is not Validation<ModerationReason>.Valid(var validReason))
+        if (ModerationReason.Create(reason) is not Validation<Error, ModerationReason>.Success(var validReason))
         {
             await ctx.SendErrorResponseAsync("The reason can't be empty.");
             return;

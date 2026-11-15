@@ -20,7 +20,7 @@ public partial class MuteAdminCommands
 
         var guild = ctx.RequiredGuild;
 
-        if (await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId()).GetOrElse(() => null) is { } configuredId
+        if (await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId()).OrNullDuringMigration() is { } configuredId
             && await guild.GetRoleOrDefaultAsync(configuredId) is { } configuredRole)
         {
             await ctx.SendWarningResponseAsync(
@@ -34,7 +34,7 @@ public partial class MuteAdminCommands
             $"Role {role.Mention} is created. Now Saving role to {ctx.Client.CurrentUser.Mention} configuration.");
 
         var saveError = (await this._settingsModule.SetMuteRole(guild.GetGuildId(), ctx.GetModeratorId(), role.GetRoleId()))
-            .Match<Error?>(_ => null, error => error, onNotModified: _ => null);
+            .Match<Error?>(_ => null, error => error);
         if (saveError is not null)
         {
             await ctx.SendErrorResponseAsync(

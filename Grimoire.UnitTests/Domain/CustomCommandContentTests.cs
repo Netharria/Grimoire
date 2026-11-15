@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using LanguageExt;
+
 namespace Grimoire.UnitTests.Domain;
 
 public sealed class CustomCommandContentTests
@@ -12,36 +14,36 @@ public sealed class CustomCommandContentTests
     // ── Null / empty / whitespace ─────────────────────────────────────────────
 
     [Fact]
-    public void Create_Null_IsInvalidWithCorrectCode()
+    public void Create_Null_IsInvalidWithCorrectMessage()
     {
         var result = CustomCommandContent.Create(null);
-        result.ShouldBeOfType<Validation<CustomCommandContent>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-content.empty");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("Command content cannot be empty.");
     }
 
     [Fact]
     public void Create_Empty_IsInvalid()
         => CustomCommandContent.Create(string.Empty)
-            .ShouldBeOfType<Validation<CustomCommandContent>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public void Create_WhitespaceOnly_IsInvalid()
         => CustomCommandContent.Create("   ")
-            .ShouldBeOfType<Validation<CustomCommandContent>.Invalid>();
+            .ShouldFail().ShouldBeOfType<Invalid>();
 
     // ── Length ────────────────────────────────────────────────────────────────
 
     [Fact]
     public void Create_ExactlyMaxLength_IsValid()
         => CustomCommandContent.Create(new string('a', 2000))
-            .ShouldBeOfType<Validation<CustomCommandContent>.Valid>();
+            .ShouldBeOfType<Validation<Error, CustomCommandContent>.Success>();
 
     [Fact]
-    public void Create_OneOverMaxLength_IsInvalidWithCorrectCode()
+    public void Create_OneOverMaxLength_IsInvalidWithCorrectMessage()
     {
         var result = CustomCommandContent.Create(new string('a', 2001));
-        result.ShouldBeOfType<Validation<CustomCommandContent>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-content.too-long");
+        result.ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("Command content cannot exceed 2000 characters.");
     }
 
     // ── Happy paths ───────────────────────────────────────────────────────────
@@ -66,7 +68,7 @@ public sealed class CustomCommandContentTests
 
     [Fact]
     public void Create_SingleCharacter_IsValid()
-        => CustomCommandContent.Create("x").ShouldBeOfType<Validation<CustomCommandContent>.Valid>();
+        => CustomCommandContent.Create("x").ShouldBeOfType<Validation<Error, CustomCommandContent>.Success>();
 
     // ── Escape sequences ──────────────────────────────────────────────────────
 
@@ -102,8 +104,8 @@ public sealed class CustomCommandContentTests
     [Fact]
     public void Create_OnlyNewlineEscape_IsInvalid()
         => CustomCommandContent.Create(@"\n")
-            .ShouldBeOfType<Validation<CustomCommandContent>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "custom-command-content.empty");
+            .ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("Command content cannot be empty.");
 
     [Fact]
     public void Create_AWindowsPath_IsKeptAsTyped_ExceptForNewlineEscapes()

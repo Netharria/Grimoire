@@ -10,6 +10,7 @@ using Grimoire.Enums;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using Option = Grimoire.Features.Leveling.Settings.LevelSettingsCommandGroup.LevelSettingsOptions;
 
@@ -194,11 +195,11 @@ public sealed class LevelSettingsGapTests(GrimoireCoreFactory database) : IAsync
         => this.LevelSettingsAsync("log_set",
         [
             SlashOption.Enum("option", option),
-            .. channel is null ? Array.Empty<SlashOption>() : [SlashOption.Channel("channel", channel)]
+            .. channel is null ? System.Array.Empty<SlashOption>() : [SlashOption.Channel("channel", channel)]
         ]);
 
     private async Task<ulong?> LogChannelAsync()
-        => (await this.Settings.GetLogChannelSetting(GuildLogType.Leveling, this.GuildId)).ShouldSucceed()?.Value;
+        => (await this.Settings.GetLogChannelSetting(GuildLogType.Leveling, this.GuildId)).ShouldSucceed().ToNullable()?.Value;
 
     private Task<List<EarnedXp>> EarnedAsync(FakeUser user, int count, TimeSpan? window = null)
         => GrimoireTestBot.EventuallyAsync(async () =>

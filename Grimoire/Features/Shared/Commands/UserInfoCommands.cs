@@ -9,6 +9,7 @@ using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -89,7 +90,7 @@ internal sealed class UserInfoCommands(
         DiscordEmbedBuilder embed)
     {
         if (!await settingsModule.IsModuleEnabled(Module.UserLog, guildId)
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
         var usernames = await dbContext.UsernameHistory
             .AsNoTracking()
@@ -128,7 +129,7 @@ internal sealed class UserInfoCommands(
         IReadOnlySet<RoleId> roleIds)
     {
         if (!await settingsModule.IsModuleEnabled(Module.Leveling, guildId)
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
 
         var membersXp = await dbContext.XpHistory
@@ -137,9 +138,9 @@ internal sealed class UserInfoCommands(
 
         // The rest of the profile is still worth showing, so a failed lookup only leaves out the level fields.
         if (await settingsModule.GetLevelingSettings(guildId)
-                is not Result<LevelingSettingEntry>.Success { Value: var levelSettings }
+                is not Fin<LevelingSettingEntry>.Succ { Value: var levelSettings }
             || await settingsModule.GetLevelingRewardsAsync(guildId)
-                is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })
+                is not Fin<IReadOnlySet<RewardEntry>>.Succ { Value: var rewards })
             return;
 
         var membersLevel = levelSettings.GetLevelFromXp(membersXp);
@@ -167,10 +168,10 @@ internal sealed class UserInfoCommands(
         DiscordEmbedBuilder embed)
     {
         if (!await settingsModule.IsModuleEnabled(Module.Moderation, guildId)
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
         var autoPardonAfter = await settingsModule.GetAutoPardonDuration(guildId)
-            .GetOrElse(() => SettingsModule.DefaultAutoPardonDuration);
+            .OrDefaultDuringMigration(SettingsModule.DefaultAutoPardonDuration);
         var response = await dbContext.Sins
             .AsNoTracking()
             .Where(sin => sin.UserId == userId

@@ -22,11 +22,10 @@ public readonly record struct PositiveXpAmount
     /// <summary>Bypasses validation for EF Core materialisation. DB data is trusted post-migration.</summary>
     internal static PositiveXpAmount FromDatabase(long value) => new(value);
 
-    public static Validation<PositiveXpAmount> Create(long value)
+    public static Validation<Error, PositiveXpAmount> Create(long value)
         => value > 0
-            ? Validation<PositiveXpAmount>.Succeed(new PositiveXpAmount(value))
-            : Validation<PositiveXpAmount>.Fail(
-                new Error("xp-amount.must-be-positive", "XP amount must be greater than zero."));
+            ? Success<Error, PositiveXpAmount>(new PositiveXpAmount(value))
+            : new Invalid("XP amount must be greater than zero.");
 
     public override string ToString() => Value.ToString();
 }
@@ -44,11 +43,10 @@ public readonly record struct NegativeXpAmount
     /// <summary>Bypasses validation for EF Core materialisation. DB data is trusted post-migration.</summary>
     internal static NegativeXpAmount FromDatabase(long value) => new(value);
 
-    public static Validation<NegativeXpAmount> Create(long value)
+    public static Validation<Error, NegativeXpAmount> Create(long value)
         => value < 0
-            ? Validation<NegativeXpAmount>.Succeed(new NegativeXpAmount(value))
-            : Validation<NegativeXpAmount>.Fail(
-                new Error("xp-amount.must-be-negative", "XP amount must be less than zero."));
+            ? Success<Error, NegativeXpAmount>(new NegativeXpAmount(value))
+            : new Invalid("XP amount must be less than zero.");
 
     public override string ToString() => Value.ToString();
 }

@@ -10,6 +10,7 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.IntegrationTests.Moderation;
@@ -81,7 +82,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
 
         (reply.Description == PermissionError).ShouldBe(!allowed);
         if (!allowed)
-            (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeNull();
+            (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().IsNone.ShouldBeTrue();
     }
 
     /// <summary>MOD-72.</summary>
@@ -98,7 +99,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     public async Task View_ShowsTheConfiguredRole()
     {
         var roleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId), TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId), TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         Field((await this.MutesAsync(this.Guild.Admin, "view")).Embed!, "Mute Role").ShouldBe($"<@&{roleId}>");
     }
@@ -108,7 +109,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     public async Task View_WithTheConfiguredRoleDeleted_ShowsNone()
     {
         var roleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId), TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId), TestContext.Current.CancellationToken)).ShouldBeSaved();
         this._bot.Rest.DeleteRole(roleId);
 
         var mutesRole = await GrimoireTestBot.EventuallyAsync(
@@ -198,7 +199,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
 
         reply.Description.ShouldBe(expected ?? $"<@&{roleId}> is at or above my highest role, so I couldn't give it to anyone.");
         reply.IsEphemeral.ShouldBeTrue();
-        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeNull();
+        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().IsNone.ShouldBeTrue();
     }
 
     /// <summary>MOD-77 and MOD-88: every subcommand needs the bot to hold Manage Roles.</summary>
@@ -218,7 +219,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
             : await this.MutesAsync(this.Guild.Admin, "create");
 
         reply.Description.ShouldBe("The bot did not have the needed permissions to execute this command.");
-        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeNull();
+        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().IsNone.ShouldBeTrue();
         this._bot.Rest.Requests.Count(request => request.Method == HttpMethod.Post && request.Path.EndsWith("/roles", StringComparison.Ordinal))
             .ShouldBe(0);
     }
@@ -235,7 +236,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
         await this._bot.Rest.WaitForRequestAsync(request => request.Path.Contains($"/{interaction.Token}", StringComparison.Ordinal)
                                                             && request.Method == HttpMethod.Post && request.Path.StartsWith("webhooks/", StringComparison.Ordinal),
             TimeSpan.FromSeconds(15));
-        var roleId = (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed()!.Value.Value;
+        var roleId = (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ToNullable()!.Value.Value;
         var bot = $"<@{this.Guild.Bot.Id}>";
 
         this.EditsOf(interaction).ShouldBe([
@@ -271,7 +272,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
         var edits = await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this.EditsOf(interaction)), found => found.Count >= 3);
 
         edits[^1].ShouldContain(this.Guild.Private.Mention);
-        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ShouldNotBeNull();
+        (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().IsSome.ShouldBeTrue();
     }
 
     /// <summary>MOD-83: a second Create keeps the configured role and points at Refresh.</summary>
@@ -279,7 +280,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     public async Task Create_WithARoleAlreadyConfigured_KeepsItAndSaysToRefresh()
     {
         await this.CreateAndWaitAsync();
-        var first = (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed()!.Value;
+        var first = (await this.Settings.GetConfiguredMuteRole(this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed().ToNullable()!.Value;
         var rolesCreated = this.RolesCreated();
 
         var reply = await this.MutesAsync(this.Guild.Admin, "create");
@@ -303,7 +304,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
         if (configureThenDelete)
         {
             var roleId = this._bot.Rest.CreateRole("Muted");
-            (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId), TestContext.Current.CancellationToken)).ShouldSucceed();
+            (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId), TestContext.Current.CancellationToken)).ShouldBeSaved();
             this._bot.Rest.DeleteRole(roleId);
             await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
         }
@@ -316,7 +317,7 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     public async Task Refresh_FixesExistingOverwrites_AndKeepsUnrelatedBits()
     {
         var roleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId), TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(roleId), TestContext.Current.CancellationToken)).ShouldBeSaved();
         this.Guild.SetOverwrite(this.Guild.General.Id, roleId, 0, SendMessages | AttachFiles, 0);
         this._bot.Gateway.Dispatch("CHANNEL_UPDATE", this.Guild.ChannelJson(this.Guild.General));
         await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);

@@ -10,6 +10,7 @@ using System.Text;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using LanguageExt;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -27,7 +28,7 @@ public sealed partial class IgnoreCommandGroup
         var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetAllIgnoredItems(guild.GetGuildId())
-            is not Result<FrozenSet<XpIgnoredItem>>.Success { Value: var ignoredItems })
+            is not Fin<FrozenSet<XpIgnoredItem>>.Succ { Value: var ignoredItems })
         {
             await ctx.SendErrorResponseAsync("Could not load the ignored items. Please try again later.");
             return;

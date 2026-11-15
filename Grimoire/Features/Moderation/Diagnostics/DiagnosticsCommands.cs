@@ -33,7 +33,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
 
         var guild = ctx.RequiredGuild;
         var muteRoleId = await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId())
-            .GetOrElse(() => null);
+            .OrNullDuringMigration();
         var ignores = await this._settingsModule.GetDiagnosticsIgnores(guild.GetGuildId());
 
         await ctx.EditResponseAsync(DiagnosticsResponse.Build(guild, muteRoleId, ignores));
@@ -65,7 +65,10 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
 
             await (await this._settingsModule.AddDiagnosticsIgnoredItemsAsync(guild.GetGuildId(), ignored))
                 .MatchAsync(
-                    added => this.ReportAsync(ctx, guild, added, "now ignored by the diagnostics", skipped),
+                    write => write.Match(
+                        saved: added => this.ReportAsync(ctx, guild, added, "now ignored by the diagnostics", skipped),
+                        // Nothing new to ignore: a warning, as when it was a failure.
+                        unchanged: message => ctx.SendWarningResponseAsync(message).AsTask()),
                     error => ctx.SendWarningResponseAsync(error.Message).AsTask());
         }
 
@@ -98,7 +101,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
             await ctx.DeferResponseAsync();
 
             var items = await this._settingsModule.GetDiagnosticsIgnoredItemsAsync(ctx.RequiredGuild.GetGuildId())
-                .GetOrElse(() => FrozenSet<DiagnosticsIgnoredItem>.Empty);
+                .OrDefaultDuringMigration(FrozenSet<DiagnosticsIgnoredItem>.Empty);
 
             await ctx.ReplyPagesAsync(ViewPages(items));
         }

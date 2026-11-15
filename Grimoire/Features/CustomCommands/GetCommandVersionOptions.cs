@@ -7,6 +7,7 @@
 
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -20,7 +21,7 @@ internal sealed class GetCommandVersionOptions(IDbContextFactory<GrimoireDbConte
         => context.Guild is { } guild
            && context.Options.FirstOrDefault(o => o.Name.Equals("name", StringComparison.OrdinalIgnoreCase))?.Value
                is string rawName
-           && CustomCommandName.Create(rawName) is Validation<CustomCommandName>.Valid { Value: var name }
+           && CustomCommandName.Create(rawName) is Validation<Error, CustomCommandName>.Success { Value: var name }
             ? BuildChoices(await this.GetVersionsAsync(guild.GetGuildId(), name), guild)
             : [];
 

@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.SpamFilter;
@@ -31,7 +32,7 @@ internal sealed partial class SpamEvents(
             return;
 
         if (!await settingsModule.IsModuleEnabled(Module.AntiSpam, args.Guild.GetGuildId())
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
 
         var checkSpamResult = await spamModule.CheckSpam(args.Message);
@@ -44,7 +45,7 @@ internal sealed partial class SpamEvents(
 
         var guildId = args.Guild.GetGuildId();
         var muteRoleId = await settingsModule.GetEffectiveMuteRole(guildId)
-            .GetOrElse(() => null);
+            .OrNullDuringMigration();
         if (muteRoleId is null)
             return;
 
@@ -66,7 +67,8 @@ internal sealed partial class SpamEvents(
         var muteEndTime = DateTimeOffset.UtcNow.Add(duration);
         var now = DateTimeOffset.UtcNow;
         var sin = Sin.ForMute(new ModerationActor.System(), member.GetUserId(), guildId, now,
-            ModerationReason.CreateIfNotBlank(checkSpamResult.Reason).Match(r => r, _ => null));
+            ModerationReason.CreateIfNotBlank(checkSpamResult.Reason)
+                .Match(Succ: r => r.ToNullable(), Fail: _ => null));
 
         if (!await this.TryRecordMuteAsync(dbContext, sin, member, new ModeratorId(args.Guild.CurrentMember.Id),
                 muteEndTime, muteRoleId.Value))
@@ -155,7 +157,7 @@ internal sealed partial class SpamEvents(
             await dbContext.SaveChangesAsync();
 
             if (await settingsModule.AddMute(member.GetUserId(), member.GetGuildId(), moderatorId, sin.Id,
-                    muteEndTime, muteRoleId) is Result<MuteAdded>.Success)
+                    muteEndTime, muteRoleId) is Fin<MuteAdded>.Succ)
                 return true;
 
             // Take the sin back off, so the member's record doesn't show a mute that never happened.

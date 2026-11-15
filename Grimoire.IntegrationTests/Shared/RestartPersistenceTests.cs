@@ -89,7 +89,7 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
     public async Task Mute_SurvivesARestart_AndIsGivenBackOnRejoin()
     {
         var muteRoleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
         var now = DateTimeOffset.UtcNow;
         await using (var settingsContext = database.CreateSettingsDbContext())
         {
@@ -134,7 +134,7 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
     {
         await this._bot.SetModuleAsync(Module.AntiSpam, true);
         var muteRoleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, this.Owner, new RoleId(muteRoleId), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
         await this.SpamAsync();
         Field(await this.WaitForSpamMuteAsync(), "Length").ShouldBe("1 minute(s)");
         await Task.Delay(NothingHappensWindow, Token);

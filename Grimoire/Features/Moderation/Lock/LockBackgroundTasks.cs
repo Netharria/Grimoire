@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -120,7 +121,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
             .TapAsync(_ => SendLockExpiredLogAsync(channel!, guildLog, cancellationToken));
     }
 
-    private static Task<Result<ChannelLocked>> RecordChannelUnlockAsync(ChannelLocked expiredLock, string reason,
+    private static Task<Fin<ChannelLocked>> RecordChannelUnlockAsync(ChannelLocked expiredLock, string reason,
         SettingsModule settingsModule, DiscordClient discordClient, CancellationToken cancellationToken)
         => ModerationReason.Create(reason)
             .Map(moderationReason =>
@@ -130,10 +131,10 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                     expiredLock.GuildId,
                     DateTimeOffset.UtcNow,
                     moderationReason))
-            .ToResult()
+            .ToFin()
             .BindAsync(channelUnlock => settingsModule.RemoveChannelLock(channelUnlock, cancellationToken));
 
-    private static Task<Result<ThreadLocked>> RecordThreadUnlockAsync(ThreadLocked expiredLock, string reason,
+    private static Task<Fin<ThreadLocked>> RecordThreadUnlockAsync(ThreadLocked expiredLock, string reason,
         SettingsModule settingsModule, DiscordClient discordClient, CancellationToken cancellationToken)
         => ModerationReason.Create(reason)
             .Map(moderationReason =>
@@ -143,7 +144,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                     expiredLock.GuildId,
                     DateTimeOffset.UtcNow,
                     moderationReason))
-            .ToResult()
+            .ToFin()
             .BindAsync(threadUnlock => settingsModule.RemoveThreadLock(threadUnlock, cancellationToken));
 
     private static async Task SendLockExpiredLogAsync(

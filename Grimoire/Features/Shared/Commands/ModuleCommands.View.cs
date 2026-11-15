@@ -7,6 +7,7 @@
 
 using Grimoire.Settings.Domain;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.Shared.Commands;
 
@@ -22,7 +23,7 @@ internal sealed partial class ModuleCommands
         var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetAllModuleState(guild.GetGuildId())
-            is not Result<GuildModuleState>.Success { Value: var guildSettings })
+            is not Fin<GuildModuleState>.Succ { Value: var guildSettings })
         {
             await ctx.SendErrorResponseAsync("Could not load the module states. Please try again later.");
             return;

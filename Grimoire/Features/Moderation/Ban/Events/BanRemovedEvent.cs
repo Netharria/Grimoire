@@ -22,7 +22,7 @@ public class BanRemovedEvent(
     public async Task HandleEventAsync(DiscordClient sender, GuildBanRemovedEventArgs args)
     {
         if (!await settingsModule.IsModuleEnabled(Module.Moderation, args.Guild.GetGuildId())
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
 
         var unbannedByBot = banHandoff.TakeUnban(args.Guild.GetGuildId(), args.Member.GetUserId());

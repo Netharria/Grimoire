@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using LanguageExt;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.Moderation;
 
 [Collection("Settings collection")]
@@ -18,13 +20,13 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
     public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
-    private Task<Result<ThreadLocked>> Lock(ChannelId channelId, GuildId guildId, DateTimeOffset endTime,
+    private Task<Fin<ThreadLocked>> Lock(ChannelId channelId, GuildId guildId, DateTimeOffset endTime,
         string reason = "test")
         => this._sut.AddThreadLock(
             ThreadLocked.Create(_modId, ModerationReason.FromDatabase(reason),
                 channelId, guildId, DateTimeOffset.UtcNow, endTime).ShouldSucceed());
 
-    private Task<Result<ThreadLocked>> Unlock(ChannelId channelId, GuildId guildId)
+    private Task<Fin<ThreadLocked>> Unlock(ChannelId channelId, GuildId guildId)
         => this._sut.RemoveThreadLock(
             ThreadUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow));
 
@@ -76,7 +78,7 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         var result = await Unlock(_channelId, _guildId);
 
-        result.ShouldBeOfType<Result<ThreadLocked>.NotFound>();
+        result.ShouldFail().ShouldBeOfType<NotFound>();
     }
 
     [Fact]
@@ -86,8 +88,8 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
 
         var result = await Unlock(_channelId, _guildId);
 
-        result.ShouldBeOfType<Result<ThreadLocked>.Success>();
-        ((Result<ThreadLocked>.Success)result).Value.ShouldNotBeNull();
+        result.ShouldSucceed();
+        ((Fin<ThreadLocked>.Succ)result).Value.ShouldNotBeNull();
 
         await using var db = factory.CreateDbContext();
         var count = await db.ThreadLocks.CountAsync(x => x.ChannelId == _channelId,
@@ -143,8 +145,8 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         var result = await Unlock(_channelId, _guildId);
 
-        var notFound = result.ShouldBeOfType<Result<ThreadLocked>.NotFound>();
-        notFound.Error.Code.ShouldBe("thread-lock.not-found");
+        var notFound = result.ShouldFail().ShouldBeOfType<NotFound>();
+        notFound.Message.ShouldBe("The thread is not currently locked.");
     }
 
     [Fact]
@@ -223,7 +225,7 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
 
         var result = await Unlock(_channelId, guildB);
 
-        result.ShouldBeOfType<Result<ThreadLocked>.NotFound>();
+        result.ShouldFail().ShouldBeOfType<NotFound>();
     }
 
     [Fact]
@@ -244,7 +246,7 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
 
         var result = await Unlock(_channelId, _guildId);
 
-        result.ShouldBeOfType<Result<ThreadLocked>.Success>();
+        result.ShouldSucceed();
     }
 
     [Fact]

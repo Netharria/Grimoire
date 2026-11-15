@@ -5,6 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-namespace Grimoire.Domain;
-
-public sealed record Error(string Code, string Message, string? Target = null);
+global using LanguageExt;
+global using LanguageExt.Common;
+global using static LanguageExt.Prelude;

@@ -48,7 +48,7 @@ public sealed record MuteAdded : Mute
 
     internal void Close(DateTimeOffset closedAt) => this.ClosedAt = closedAt;
 
-    public static Validation<MuteAdded> Create(
+    public static Validation<Error, MuteAdded> Create(
         UserId userId,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -58,15 +58,12 @@ public sealed record MuteAdded : Mute
         RoleId? muteRoleId = null)
     {
         if (endTime <= setAt)
-            return Validation<MuteAdded>.Fail(
-                new Error("mute.end-time.invalid", "End time must be after the mute's set time."));
+            return new Invalid("End time must be after the mute's set time.");
         if (moderatorId.Value == userId.Value)
-            return Validation<MuteAdded>.Fail(
-                new Error("mute.self-mute.invalid", "A moderator cannot mute themselves."));
+            return new Invalid("A moderator cannot mute themselves.");
         if (sinId.Value <= 0)
-            return Validation<MuteAdded>.Fail(
-                new Error("mute.sin-id.invalid", "Sin Id must be a positive number."));
-        return Validation<MuteAdded>.Succeed(
+            return new Invalid("Sin Id must be a positive number.");
+        return Success<Error, MuteAdded>(
             new MuteAdded(userId, guildId, moderatorId, sinId, setAt, endTime, muteRoleId));
     }
 }

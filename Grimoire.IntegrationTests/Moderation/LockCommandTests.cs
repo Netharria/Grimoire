@@ -241,7 +241,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
 
         this.EveryoneOverwrite(this.Guild.ModLog).ShouldBeNull();
         (await this.Settings.GetActiveChannelLockAsync(new ChannelId(this.Guild.ModLog.Id), new GuildId(this.Guild.Id)))
-            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+            .ShouldFail().ShouldBeOfType<NotFound>();
     }
 
     /// <summary>Review M-4: nor can they lift another moderator's lock there.</summary>
@@ -327,7 +327,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         await this.LockAsync(this.Guild.General, DurationType.Minutes, 2, this.Guild.Private);
 
         (await this.Settings.GetActiveChannelLockAsync(new ChannelId(this.Guild.Private.Id), new GuildId(this.Guild.Id), TestContext.Current.CancellationToken))
-            .ShouldBeOfType<Result<ChannelLocked>.NotFound>();
+            .ShouldFail().ShouldBeOfType<NotFound>();
     }
 
     /// <summary>MOD-177: overwrites need Manage Roles, so a bot without it is stopped before anything changes.</summary>
@@ -387,8 +387,8 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         => this._bot.RunSlashCommandAndWaitAsync(from, "lock", this.Guild.Moderator,
         [
             SlashOption.Enum("duration_type", type), SlashOption.Integer("duration_amount", amount),
-            .. channel is null ? Array.Empty<SlashOption>() : [SlashOption.Channel("channel", channel)],
-            .. reason is null ? Array.Empty<SlashOption>() : [SlashOption.String("reason", reason)]
+            .. channel is null ? System.Array.Empty<SlashOption>() : [SlashOption.Channel("channel", channel)],
+            .. reason is null ? System.Array.Empty<SlashOption>() : [SlashOption.String("reason", reason)]
         ]);
 
     private Task<FakeReply> UnlockAsync(FakeChannel channel)

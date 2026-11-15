@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Settings.Domain.Values;
+using LanguageExt;
 
 namespace Grimoire.UnitTests.SettingsLayer.Domain;
 
@@ -15,143 +16,121 @@ public sealed class ValueObjectTests
 
     [Fact]
     public void LevelScalingBase_MinExact_IsValid()
-        => LevelScalingBase.Create(1).ShouldBeOfType<Validation<LevelScalingBase>.Valid>();
+        => LevelScalingBase.Create(1).ShouldBeOfType<Validation<Error, LevelScalingBase>.Success>();
 
     [Fact]
     public void LevelScalingBase_MaxExact_IsValid()
-        => LevelScalingBase.Create(500).ShouldBeOfType<Validation<LevelScalingBase>.Valid>();
+        => LevelScalingBase.Create(500).ShouldBeOfType<Validation<Error, LevelScalingBase>.Success>();
 
     [Fact]
-    public void LevelScalingBase_BelowMin_IsInvalidWithCodeAndMessage()
+    public void LevelScalingBase_BelowMin_IsInvalidWithMessage()
     {
         var result = LevelScalingBase.Create(0);
-        var invalid = result.ShouldBeOfType<Validation<LevelScalingBase>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("level-scaling-base.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Level scaling base must be a value between 1 and 500.");
     }
 
     [Fact]
-    public void LevelScalingBase_AboveMax_IsInvalidWithCode()
+    public void LevelScalingBase_AboveMax_IsInvalidWithMessage()
     {
         var result = LevelScalingBase.Create(501);
-        var invalid = result.ShouldBeOfType<Validation<LevelScalingBase>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "level-scaling-base.invalid");
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Level scaling base must be a value between 1 and 500.");
     }
 
     // ── LevelScalingModifier ─────────────────────────────────────────────────
 
     [Fact]
     public void LevelScalingModifier_MinExact_IsValid()
-        => LevelScalingModifier.Create(1).ShouldBeOfType<Validation<LevelScalingModifier>.Valid>();
+        => LevelScalingModifier.Create(1).ShouldBeOfType<Validation<Error, LevelScalingModifier>.Success>();
 
     [Fact]
     public void LevelScalingModifier_MaxExact_IsValid()
-        => LevelScalingModifier.Create(200).ShouldBeOfType<Validation<LevelScalingModifier>.Valid>();
+        => LevelScalingModifier.Create(200).ShouldBeOfType<Validation<Error, LevelScalingModifier>.Success>();
 
     [Fact]
-    public void LevelScalingModifier_BelowMin_IsInvalidWithCodeAndMessage()
+    public void LevelScalingModifier_BelowMin_IsInvalidWithMessage()
     {
         var result = LevelScalingModifier.Create(0);
-        var invalid = result.ShouldBeOfType<Validation<LevelScalingModifier>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("level-scaling-modifier.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Level scaling modifier must be a value between 1 and 200.");
     }
 
     [Fact]
-    public void LevelScalingModifier_AboveMax_IsInvalidWithCode()
+    public void LevelScalingModifier_AboveMax_IsInvalidWithMessage()
     {
         var result = LevelScalingModifier.Create(201);
-        var invalid = result.ShouldBeOfType<Validation<LevelScalingModifier>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "level-scaling-modifier.invalid");
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Level scaling modifier must be a value between 1 and 200.");
     }
 
     // ── XpGainAmount ─────────────────────────────────────────────────────────
 
     [Fact]
     public void XpGainAmount_MinExact_IsValid()
-        => XpGainAmount.Create(1).ShouldBeOfType<Validation<XpGainAmount>.Valid>();
+        => XpGainAmount.Create(1).ShouldBeOfType<Validation<Error, XpGainAmount>.Success>();
 
     [Fact]
     public void XpGainAmount_MaxExact_IsValid()
-        => XpGainAmount.Create(100).ShouldBeOfType<Validation<XpGainAmount>.Valid>();
+        => XpGainAmount.Create(100).ShouldBeOfType<Validation<Error, XpGainAmount>.Success>();
 
     [Fact]
-    public void XpGainAmount_BelowMin_IsInvalidWithCodeAndMessage()
+    public void XpGainAmount_BelowMin_IsInvalidWithMessage()
     {
         var result = XpGainAmount.Create(0);
-        var invalid = result.ShouldBeOfType<Validation<XpGainAmount>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("xp-gain-amount.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Xp gain amount must be a value between 1 and 100.");
     }
 
     [Fact]
-    public void XpGainAmount_AboveMax_IsInvalidWithCode()
+    public void XpGainAmount_AboveMax_IsInvalidWithMessage()
     {
         var result = XpGainAmount.Create(101);
-        var invalid = result.ShouldBeOfType<Validation<XpGainAmount>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "xp-gain-amount.invalid");
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Xp gain amount must be a value between 1 and 100.");
     }
 
     // ── XpTimeoutPeriod ──────────────────────────────────────────────────────
 
     [Fact]
     public void XpTimeoutPeriod_MinExact_IsValid()
-        => XpTimeoutPeriod.Create(1).ShouldBeOfType<Validation<XpTimeoutPeriod>.Valid>();
+        => XpTimeoutPeriod.Create(1).ShouldBeOfType<Validation<Error, XpTimeoutPeriod>.Success>();
 
     [Fact]
     public void XpTimeoutPeriod_MaxExact_IsValid()
-        => XpTimeoutPeriod.Create(60).ShouldBeOfType<Validation<XpTimeoutPeriod>.Valid>();
+        => XpTimeoutPeriod.Create(60).ShouldBeOfType<Validation<Error, XpTimeoutPeriod>.Success>();
 
     [Fact]
-    public void XpTimeoutPeriod_BelowMin_IsInvalidWithCodeAndMessage()
+    public void XpTimeoutPeriod_BelowMin_IsInvalidWithMessage()
     {
         var result = XpTimeoutPeriod.Create(0);
-        var invalid = result.ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("xp-timeout-period.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Xp timeout period must be a value between 1 and 60 in minutes.");
     }
 
     [Fact]
-    public void XpTimeoutPeriod_AboveMax_IsInvalidWithCode()
+    public void XpTimeoutPeriod_AboveMax_IsInvalidWithMessage()
     {
         var result = XpTimeoutPeriod.Create(61);
-        var invalid = result.ShouldBeOfType<Validation<XpTimeoutPeriod>.Invalid>();
-        invalid.Errors.ShouldContain(e => e.Code == "xp-timeout-period.invalid");
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Xp timeout period must be a value between 1 and 60 in minutes.");
     }
 
     // ── RewardMessage ────────────────────────────────────────────────────────
 
     [Fact]
     public void RewardMessage_ExactMaxLength_IsValid()
-        => RewardMessage.Create(new string('a', 4096)).ShouldBeOfType<Validation<RewardMessage>.Valid>();
+        => RewardMessage.Create(new string('a', 4096)).ShouldBeOfType<Validation<Error, RewardMessage>.Success>();
 
     [Fact]
-    public void RewardMessage_ExceedsMaxLength_IsInvalidWithCodeAndMessage()
+    public void RewardMessage_ExceedsMaxLength_IsInvalidWithMessage()
     {
         var result = RewardMessage.Create(new string('a', 4097));
-        var invalid = result.ShouldBeOfType<Validation<RewardMessage>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("reward-message.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Reward message must be 1\u20134096 non-whitespace characters.");
     }
 
     [Fact]
-    public void RewardMessage_Null_IsInvalidWithCodeAndMessage()
+    public void RewardMessage_Null_IsInvalidWithMessage()
     {
         var result = RewardMessage.Create(null);
-        var invalid = result.ShouldBeOfType<Validation<RewardMessage>.Invalid>();
-        var error = invalid.Errors.ShouldHaveSingleItem();
-        error.Code.ShouldBe("reward-message.invalid");
-        error.Message.ShouldNotBeNullOrWhiteSpace();
+        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Reward message must be 1\u20134096 non-whitespace characters.");
     }
 
     [Fact]
     public void RewardMessage_Empty_IsInvalid()
-        => RewardMessage.Create(string.Empty).ShouldBeOfType<Validation<RewardMessage>.Invalid>();
+        => RewardMessage.Create(string.Empty).ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
     public void RewardMessage_FromDatabase_Null_ReturnsNull()

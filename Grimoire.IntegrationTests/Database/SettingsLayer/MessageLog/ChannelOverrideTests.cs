@@ -125,7 +125,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
             await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog,
                 TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<MessageLogChannelOverride>.NotModified>();
+        result.ShouldBeUnchanged();
 
         await using var db = factory.CreateDbContext();
         var count = await db.MessageLogChannelOverrides
@@ -144,7 +144,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
             await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog,
                 TestContext.Current.CancellationToken);
 
-        result.ShouldBeOfType<Result<MessageLogChannelOverride>.Success>();
+        result.ShouldSucceed();
 
         var shouldLog = await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>(),
             TestContext.Current.CancellationToken).ShouldSucceed();
@@ -184,8 +184,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
             await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog,
                 TestContext.Current.CancellationToken);
 
-        var notModified = result.ShouldBeOfType<Result<MessageLogChannelOverride>.NotModified>();
-        notModified.Error.Code.ShouldBe("channel-log-override.not-changed");
+        result.ShouldBeUnchanged().ShouldBe("The channel is already set to this log option.");
     }
 
     [Fact]

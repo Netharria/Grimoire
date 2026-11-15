@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -28,9 +28,9 @@ public sealed partial class SettingsModule(
     private readonly IDbContextFactory<SettingsDbContext> _dbContextFactory = dbContextFactory;
     private readonly ILogger<SettingsModule> _logger = logger;
 
-    private Task<Result<CachedSetting>> GetGuildSetting(GuildSettingType key, GuildId guildId,
+    private Task<Fin<CachedSetting>> GetGuildSetting(GuildSettingType key, GuildId guildId,
         CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct => Result<CachedSetting>.Ok(
+        => ExecuteSafelyAsync(async ct => Fin.Succ<CachedSetting>(
                 await this._cache.GetOrCreateAsync(
                         CacheKey.GuildSetting(key, guildId),
                         new { key, guildId, this._dbContextFactory },
@@ -45,7 +45,7 @@ public sealed partial class SettingsModule(
                             return ToCachedSetting(result);
                         }, this._cacheEntryOptions,
                         cancellationToken: ct)),
-            new Error($"guild-setting.{key}.lookup-failed", $"Failed when retrieving entry for {key} for guild {guildId}"),
+            $"Failed when retrieving entry for {key} for guild {guildId}",
             cancellationToken);
 
     /// <remarks>
@@ -75,9 +75,9 @@ public sealed partial class SettingsModule(
             _ => new CachedDefaultSetting()
         };
 
-    private Task<Result<GuildSetting>> SetGuildSetting(GuildSetting newSetting,
+    private Task<Fin<Write<GuildSetting>>> SetGuildSetting(GuildSetting newSetting,
         CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct =>
+        => ExecuteSafelyAsync<Write<GuildSetting>>(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
             var current = await dbContext.GuildSettings
@@ -87,21 +87,24 @@ public sealed partial class SettingsModule(
                 .FirstOrDefaultAsync(ct);
 
             if (IsRedundantWrite(current, newSetting))
-                return new Result<GuildSetting>.NotModified(new Error($"guild-setting.{newSetting.Type}.not-changed",
-                    "The setting was already set to that value."));
+                return new Write<GuildSetting>.Unchanged("The setting was already set to that value.");
             dbContext.GuildSettings.Add(newSetting);
             await dbContext.SaveChangesAsync(ct);
             await this._cache.RemoveAsync(CacheKey.GuildSetting(newSetting.Type, newSetting.GuildId), ct);
-            return Result<GuildSetting>.Ok(newSetting);
-        }, new Error($"guild-setting.{newSetting.Type}.conflict", "Was not able to save the setting to the database."),
+            return new Write<GuildSetting>.Saved(newSetting);
+        }, "Was not able to save the setting to the database.",
             cancellationToken);
 
     [LoggerMessage(LogLevel.Error, "Settings module operation failed: {message}")]
     private static partial void LogOperationFailure(ILogger logger, string message, Exception? ex);
 
-    private async Task<Result<T>> ExecuteSafelyAsync<T>(
-        Func<CancellationToken, Task<Result<T>>> operation,
-        Error failureError,
+    /// <summary>
+    ///     The IO edge for settings (Q1): a thrown exception becomes <see cref="Unavailable" />, with the exception kept
+    ///     for the log. <paramref name="failureMessage" /> is for the logs, not the user.
+    /// </summary>
+    private async Task<Fin<T>> ExecuteSafelyAsync<T>(
+        Func<CancellationToken, Task<Fin<T>>> operation,
+        string failureMessage,
         CancellationToken cancellationToken)
     {
         try
@@ -111,7 +114,7 @@ public sealed partial class SettingsModule(
         catch (Exception ex)
         {
             LogOperationFailure(this._logger, ex.Message, ex);
-            return Result<T>.Fail(failureError);
+            return Unavailable.From(failureMessage, ex);
         }
     }
 
@@ -125,12 +128,12 @@ public sealed partial class SettingsModule(
             _ => false
         };
 
-    public Task<Result<ChannelId?>> GetUserCommandChannel(GuildId guildId,
+    public Task<Fin<Option<ChannelId>>> GetUserCommandChannel(GuildId guildId,
         CancellationToken cancellationToken = default)
         => GetGuildSetting(GuildSettingType.UserCommandChannel, guildId, cancellationToken)
-            .Map(ParseChannelId);
+            .MapFin(ParseChannelId);
 
-    public Task<Result<ChannelId?>> SetUserCommandChannelSetting(
+    public Task<Fin<Write<Option<ChannelId>>>> SetUserCommandChannelSetting(
         GuildId guildId,
         ModeratorId moderatorId,
         ChannelId? channelId,
@@ -138,7 +141,7 @@ public sealed partial class SettingsModule(
         => SetChannelSetting(GuildSettingType.UserCommandChannel, guildId, moderatorId, channelId, cancellationToken);
 
     /// <summary>Saves a channel setting. A null channel turns the setting off.</summary>
-    private Task<Result<ChannelId?>> SetChannelSetting(
+    private Task<Fin<Write<Option<ChannelId>>>> SetChannelSetting(
         GuildSettingType type,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -147,26 +150,26 @@ public sealed partial class SettingsModule(
         => ApplyGuildSetting(channelId is { } id
                     ? GuildSettingCustomValue.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow,
                         id.Value.ToString(CultureInfo.InvariantCulture))
-                    : Validation<GuildSetting>.Succeed(
+                    : Success<Error, GuildSetting>(
                         GuildSettingDisabled.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow)),
                 cancellationToken)
-            .Map(_ => channelId);
+            .MapFin(write => write.Map(_ => Optional(channelId)));
 
-    private Task<Result<GuildSetting>> ApplyGuildSetting(Validation<GuildSetting> validation,
+    private Task<Fin<Write<GuildSetting>>> ApplyGuildSetting(Validation<Error, GuildSetting> validation,
         CancellationToken cancellationToken = default)
-        => validation.ToResult().BindAsync(setting => SetGuildSetting(setting, cancellationToken));
+        => validation.ToFin().BindAsync(setting => SetGuildSetting(setting, cancellationToken));
 
-    private static T? ParseId<T>(CachedSetting setting, Func<ulong, T> create) where T : struct =>
+    private static Option<T> ParseId<T>(CachedSetting setting, Func<ulong, T> create) =>
         setting is CachedCustomSetting { Value: var v }
         && ulong.TryParse(v, NumberStyles.None, CultureInfo.InvariantCulture, out var id)
         && id != 0
             ? create(id)
-            : null;
+            : None;
 
-    private static ChannelId? ParseChannelId(CachedSetting setting)
+    private static Option<ChannelId> ParseChannelId(CachedSetting setting)
         => ParseId(setting, id => new ChannelId(id));
 
-    private static RoleId? ParseRoleId(CachedSetting setting)
+    private static Option<RoleId> ParseRoleId(CachedSetting setting)
         => ParseId(setting, id => new RoleId(id));
 
     private abstract record CachedSetting;

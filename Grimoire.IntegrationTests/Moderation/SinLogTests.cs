@@ -107,7 +107,7 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     public async Task SinsOlderThanTheAutoPardonWindow_AreLeftOut()
     {
         (await this._bot.Services.GetRequiredService<SettingsModule>()
-            .SetAutoPardonDuration(this.GuildId, new ModeratorId(this.Guild.Owner.Id), TimeSpan.FromDays(30), TestContext.Current.CancellationToken)).ShouldSucceed();
+            .SetAutoPardonDuration(this.GuildId, new ModeratorId(this.Guild.Owner.Id), TimeSpan.FromDays(30), TestContext.Current.CancellationToken)).ShouldBeSaved();
         var recent = await this.SeedSinAsync(SinType.Warn, this.Guild.User1, this.Guild.Moderator);
         var old = await this.SeedSinAsync(SinType.Warn, this.Guild.User1, this.Guild.Moderator, at: DateTimeOffset.UtcNow.AddDays(-40));
 
@@ -225,7 +225,7 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         => this._bot.RunSlashCommandAndWaitAsync("sin_log", invoker,
         [
             SlashOption.Enum("type", type),
-            .. user is null ? Array.Empty<SlashOption>() : [SlashOption.User("user", user)]
+            .. user is null ? System.Array.Empty<SlashOption>() : [SlashOption.User("user", user)]
         ]);
 
     /// <summary>Seeds a sin, with each reason added a minute apart so the last one is the newest.</summary>

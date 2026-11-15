@@ -45,6 +45,6 @@ public sealed class LockedThreadEvents(SettingsModule settingsModule)
     }
 
     private async Task<bool> IsEnforcedAsync(ChannelId channelId, GuildId guildId)
-        => await settingsModule.IsModuleEnabled(Module.Moderation, guildId).GetOrElse(() => false)
-           && await settingsModule.IsThreadLocked(channelId, guildId).GetOrElse(() => false);
+        => await settingsModule.IsModuleEnabled(Module.Moderation, guildId).OrDefaultDuringMigration(false)
+           && await settingsModule.IsThreadLocked(channelId, guildId).OrDefaultDuringMigration(false);
 }

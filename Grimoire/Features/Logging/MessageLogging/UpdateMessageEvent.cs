@@ -27,7 +27,7 @@ public sealed class UpdateMessageEvent(
             return;
 
         if (!await settingsModule.IsModuleEnabled(Module.MessageLog, args.Guild.GetGuildId())
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();

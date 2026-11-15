@@ -15,33 +15,33 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public async Task<Result<RoleId?>> GetEffectiveMuteRole(
+    public async Task<Fin<Option<RoleId>>> GetEffectiveMuteRole(
         GuildId guildId,
         CancellationToken cancellationToken = default)
     {
         if (!await IsModuleEnabled(Module.Moderation, guildId, cancellationToken)
-                .GetOrElse(() => false))
-            return Result<RoleId?>.Ok(null);
+                .OrDefaultDuringMigration(false))
+            return Option<RoleId>.None;
         return await GetConfiguredMuteRole(guildId, cancellationToken);
     }
 
-    public Task<Result<RoleId?>> GetConfiguredMuteRole(
+    public Task<Fin<Option<RoleId>>> GetConfiguredMuteRole(
         GuildId guildId,
         CancellationToken cancellationToken = default)
         => GetGuildSetting(GuildSettingType.MuteRole, guildId, cancellationToken)
-            .Map(ParseRoleId);
+            .MapFin(ParseRoleId);
 
     /// <summary>No command turns the mute role off; the integration tests use this to reach the unset state.</summary>
-    internal Task<Result<GuildId>> DisableMuteRole(
+    internal Task<Fin<Write<GuildId>>> DisableMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         CancellationToken cancellationToken = default)
         => SetGuildSetting(
                 GuildSettingDisabled.Create(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow),
                 cancellationToken)
-            .Map(_ => guildId);
+            .MapFin(write => write.Map(_ => guildId));
 
-    public Task<Result<RoleId>> SetMuteRole(
+    public Task<Fin<Write<RoleId>>> SetMuteRole(
         GuildId guildId,
         ModeratorId moderatorId,
         RoleId muteRoleId,
@@ -50,9 +50,9 @@ public sealed partial class SettingsModule
                 GuildSettingCustomValue.Create(GuildSettingType.MuteRole, guildId, moderatorId, DateTimeOffset.UtcNow,
                     muteRoleId.Value.ToString(CultureInfo.InvariantCulture)),
                 cancellationToken)
-            .Map(_ => muteRoleId);
+            .MapFin(write => write.Map(_ => muteRoleId));
 
-    public Task<Result<MuteAdded>> AddMute(
+    public Task<Fin<MuteAdded>> AddMute(
         UserId userId,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -62,7 +62,7 @@ public sealed partial class SettingsModule
         CancellationToken cancellationToken = default)
         => MuteAdded.Create(userId, guildId, moderatorId, sinId, DateTimeOffset.UtcNow, endTime, muteRoleId) switch
         {
-            Validation<MuteAdded>.Valid(var mute) => ExecuteSafelyAsync(async ct =>
+            Validation<Error, MuteAdded>.Success(var mute) => ExecuteSafelyAsync(async ct =>
             {
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
                 // A mute of a muted member replaces the one in force.
@@ -71,13 +71,13 @@ public sealed partial class SettingsModule
                     .FirstOrDefaultAsync(ct))?.Close(mute.SetAt);
                 dbContext.Mutes.Add(mute);
                 await dbContext.SaveChangesAsync(ct);
-                return Result<MuteAdded>.Ok(mute);
-            }, new Error("mute.save-failed", "Could not save the mute."), cancellationToken),
-            _ => Task.FromResult(Result<MuteAdded>.Fail(new Error("mute.invalid", "Mute parameters are invalid.")))
+                return Fin.Succ<MuteAdded>(mute);
+            }, "Could not save the mute.", cancellationToken),
+            _ => Task.FromResult(Fin.Fail<MuteAdded>(new Invalid("Mute parameters are invalid.")))
         };
 
     /// <summary>The member's current mute, expired or not, without changing anything.</summary>
-    public Task<Result<MuteAdded>> GetActiveMute(
+    public Task<Fin<MuteAdded>> GetActiveMute(
         UserId userId,
         GuildId guildId,
         CancellationToken cancellationToken = default)
@@ -85,9 +85,9 @@ public sealed partial class SettingsModule
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
             return await FindActiveMuteAsync(dbContext, userId, guildId, ct);
-        }, new Error("mute.lookup-failed", "Could not look up the member's mute."), cancellationToken);
+        }, "Could not look up the member's mute.", cancellationToken);
 
-    public Task<Result<MuteAdded>> RemoveMute(
+    public Task<Fin<MuteAdded>> RemoveMute(
         UserId userId,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -102,19 +102,19 @@ public sealed partial class SettingsModule
                     existingMute.Close(removal.SetAt);
                     dbContext.Mutes.Add(removal);
                     await dbContext.SaveChangesAsync(ct);
-                    return Result<MuteAdded>.Ok(existingMute);
+                    return Fin.Succ<MuteAdded>(existingMute);
                 });
-        }, new Error("mute.remove-failed", "Could not remove the mute."), cancellationToken);
+        }, "Could not remove the mute.", cancellationToken);
 
-    private static async Task<Result<MuteAdded>> FindActiveMuteAsync(SettingsDbContext dbContext, UserId userId,
+    private static async Task<Fin<MuteAdded>> FindActiveMuteAsync(SettingsDbContext dbContext, UserId userId,
         GuildId guildId, CancellationToken cancellationToken)
         // Tracked, so RemoveMute can close it in the same save.
         => await ActiveMutes(dbContext)
                 .Where(x => x.UserId == userId && x.GuildId == guildId)
                 .FirstOrDefaultAsync(cancellationToken) switch
             {
-                { } mute => Result<MuteAdded>.Ok(mute),
-                null => new Result<MuteAdded>.NotFound(new Error("mute.not-found", "No active mute found for this user."))
+                { } mute => Fin.Succ<MuteAdded>(mute),
+                null => new NotFound("No active mute found for this user.")
             };
 
     public async IAsyncEnumerable<MuteAdded> GetAllExpiredMutes(

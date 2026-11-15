@@ -27,7 +27,7 @@ internal static class ModerationRank
         if (invoker.Id == guild.OwnerId || invoker.Id == target.Id)
             return null;
 
-        var muteRoleId = await settingsModule.GetEffectiveMuteRole(guild.GetGuildId()).GetOrElse(() => null);
+        var muteRoleId = await settingsModule.GetEffectiveMuteRole(guild.GetGuildId()).OrNullDuringMigration();
         var targetRank = target.Roles.Where(role => role.Id != muteRoleId?.Value)
             .Select(role => role.Position)
             .DefaultIfEmpty(0)

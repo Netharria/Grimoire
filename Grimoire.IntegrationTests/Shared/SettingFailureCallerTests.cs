@@ -41,7 +41,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
             await this._bot.SetModuleAsync(module, true);
         this._muteRoleId = this._bot.Rest.CreateRole("Muted");
         (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(this._muteRoleId), Token))
-            .ShouldSucceed();
+            .ShouldBeSaved();
         // Read now, so these come from the cache once a table is broken.
         foreach (var module in new[] { Module.Leveling, Module.Moderation, Module.AntiSpam })
             await this.Settings.IsModuleEnabled(module, this.GuildId, Token);

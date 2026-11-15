@@ -12,6 +12,7 @@ using Grimoire.Settings.Domain;
 using Grimoire.Settings.Domain.Values;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.Leveling.Rewards;
 
@@ -45,11 +46,11 @@ public sealed partial class RewardCommandGroup
                     role.GetRoleId(),
                     guild.GetGuildId(),
                     level,
-                    validatedMessage,
+                    validatedMessage.ToNullable(),
                     ctx.GetModeratorId(),
                     DateTimeOffset.UtcNow)
             )
-            .ToResult()
+            .ToFin()
             .BindAsync(async reward => await this._settingsModule.SetRewardAsync(reward))
             .Match(
                 reward => OnAddSuccess(ctx, reward, role, guild),
@@ -57,17 +58,14 @@ public sealed partial class RewardCommandGroup
             );
     }
 
-    private static Validation<DiscordRole> ValidateBotCanGrant(DiscordGuild guild, DiscordRole role)
+    private static Validation<Error, DiscordRole> ValidateBotCanGrant(DiscordGuild guild, DiscordRole role)
         => role switch
         {
-            { IsManaged: true } => Validation<DiscordRole>.Fail(new Error("reward.role-id.managed",
-                "That role is managed by an integration, such as a bot or Server Booster, so it can't be given out.")),
+            { IsManaged: true } => new Invalid("That role is managed by an integration, such as a bot or Server Booster, so it can't be given out."),
             // Discord needs the bot's top role strictly above the role it grants.
-            _ when role.Position >= guild.CurrentMember.Hierarchy => Validation<DiscordRole>.Fail(new Error(
-                "reward.role-id.bot-permissions",
-                $"{guild.CurrentMember.DisplayName} will not be able to apply this " +
-                $"reward role because the role has the same or a higher rank than it does.")),
-            _ => Validation<DiscordRole>.Succeed(role)
+            _ when role.Position >= guild.CurrentMember.Hierarchy => new Invalid($"{guild.CurrentMember.DisplayName} will not be able to apply this " +
+                $"reward role because the role has the same or a higher rank than it does."),
+            _ => Success<Error, DiscordRole>(role)
         };
 
     private static Task OnFail(CommandContext ctx, Error error)

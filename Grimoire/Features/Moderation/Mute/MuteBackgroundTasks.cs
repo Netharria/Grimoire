@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -64,9 +65,9 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
         var configuredResult = await settingsModule.GetConfiguredMuteRole(activeGuild.GetGuildId(), cancellationToken);
         // Not being able to read the setting is not the same as having no mute role. Retry later instead of dropping
         // the mute without taking the role off.
-        if (configuredResult is Result<RoleId?>.Invalid)
+        if (configuredResult.IsFail)
             throw new InvalidOperationException("Could not read the mute role setting.");
-        var configuredRoleId = configuredResult.GetOrElse(() => null);
+        var configuredRoleId = configuredResult.OrNullDuringMigration();
 
         var muteRoleId = MuteRoleResolver.Resolve(expiredMute.MuteRoleId, configuredRoleId,
             id => activeGuild.Roles.ContainsKey(id.Value));
@@ -139,7 +140,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
     {
         if (await settingsModule.RemoveMute(mute.UserId, mute.GuildId, new ModeratorId(discordClient.CurrentUser.Id),
                     cancellationToken)
-                is not (Result<MuteAdded>.Success or Result<MuteAdded>.NotFound))
+                is not (Fin<MuteAdded>.Succ or Fin<MuteAdded>.Fail(NotFound)))
             throw new InvalidOperationException("Could not remove the expired mute.");
     }
 }

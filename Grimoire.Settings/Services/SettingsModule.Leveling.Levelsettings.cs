@@ -1,4 +1,4 @@
-﻿// This file is part of the Grimoire Project.
+// This file is part of the Grimoire Project.
 //
 // Copyright (c) Netharia 2021-Present.
 //
@@ -23,17 +23,16 @@ public sealed partial class SettingsModule
         GuildSettingType.XpGainAmount
     ];
 
-    public Task<Result<LevelingSettingEntry>> GetLevelingSettings(
+    public Task<Fin<LevelingSettingEntry>> GetLevelingSettings(
         GuildId guildId,
         CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct => Result<LevelingSettingEntry>.Ok(
+        => ExecuteSafelyAsync(async ct => Fin.Succ<LevelingSettingEntry>(
                 await this._cache.GetOrCreateAsync(
                     CacheKey.LevelingSettings(guildId),
                     guildId,
                     GetLevelingSettingsCacheEntry,
                     this._cacheEntryOptions,
-                    cancellationToken: ct)),
-            new Error("levelsettings.fetch.failed", "Could not fetch level settings from cache"), cancellationToken);
+                    cancellationToken: ct)), "Could not fetch level settings from cache", cancellationToken);
 
     private async ValueTask<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
         GuildId guildId,
@@ -56,7 +55,7 @@ public sealed partial class SettingsModule
             XpGainAmount.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount)));
     }
 
-    public Task<Result<int>> SetLevelingSettings(
+    public Task<Fin<Write<int>>> SetLevelingSettings(
         GuildId guildId,
         ModeratorId setBy,
         LevelSettings settingToChange,
@@ -67,13 +66,14 @@ public sealed partial class SettingsModule
                     GuildSettingCustomValue.Create(setting.Item1, guildId, setBy, DateTimeOffset.UtcNow, setting.Item2)),
                 cancellationToken)
             .TapAsync(async _ => await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken))
-            .Map(_ => newValue);
+            .MapFin(write => write.Map(_ => newValue));
 
-    private static Validation<(GuildSettingType, string)> CreateLevelingSetting(LevelSettings setting, int value)
+    private static Validation<Error, (GuildSettingType, string)> CreateLevelingSetting(LevelSettings setting, int value)
         => setting switch
         {
             LevelSettings.Amount => XpGainAmount.Create(value).Map(x => (GuildSettingType.XpGainAmount, x.ToString())),
-            LevelSettings.Base => LevelScalingBase.Create(value).Map(x => (GuildSettingType.LevelScalingBase, x.ToString())),
+            LevelSettings.Base => LevelScalingBase.Create(value)
+                .Map(x => (GuildSettingType.LevelScalingBase, x.ToString())),
             LevelSettings.Modifier => LevelScalingModifier.Create(value)
                 .Map(x => (GuildSettingType.LevelScalingModifier, x.ToString())),
             LevelSettings.XpTimeoutPeriod => XpTimeoutPeriod.Create(value)

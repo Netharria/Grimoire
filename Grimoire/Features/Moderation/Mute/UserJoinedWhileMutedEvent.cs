@@ -8,6 +8,7 @@
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 
 namespace Grimoire.Features.Moderation.Mute;
 
@@ -17,12 +18,12 @@ public sealed class UserJoinedWhileMuted(SettingsModule settingsModule) : IEvent
     {
         var guildId = args.Guild.GetGuildId();
         if (await settingsModule.GetActiveMute(args.Member.GetUserId(), guildId)
-            is not Result<MuteAdded>.Success { Value: var mute } || mute.EndTime <= DateTimeOffset.UtcNow)
+            is not Fin<MuteAdded>.Succ { Value: var mute } || mute.EndTime <= DateTimeOffset.UtcNow)
             return;
-        if (!await settingsModule.IsModuleEnabled(Module.Moderation, guildId).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.Moderation, guildId).OrDefaultDuringMigration(false))
             return;
 
-        var configuredRoleId = await settingsModule.GetConfiguredMuteRole(guildId).GetOrElse(() => null);
+        var configuredRoleId = await settingsModule.GetConfiguredMuteRole(guildId).OrNullDuringMigration();
         if (MuteRoleResolver.Resolve(mute.MuteRoleId, configuredRoleId, id => args.Guild.Roles.ContainsKey(id.Value))
             is not { } roleId)
             return;

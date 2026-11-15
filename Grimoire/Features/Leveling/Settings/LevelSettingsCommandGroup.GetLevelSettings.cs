@@ -8,6 +8,7 @@
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
+using LanguageExt;
 
 namespace Grimoire.Features.Leveling.Settings;
 
@@ -25,19 +26,19 @@ public sealed partial class LevelSettingsCommandGroup
         var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetLevelingSettings(guild.GetGuildId())
-            is not Result<LevelingSettingEntry>.Success { Value: var response })
+            is not Fin<LevelingSettingEntry>.Succ { Value: var response })
         {
             await ctx.SendErrorResponseAsync("Could not load the leveling settings. Please try again later.");
             return;
         }
 
         var moduleEnabled = await this._settingsModule.IsModuleEnabled(Module.Leveling, guild.GetGuildId())
-            .GetOrElse(() => false);
+            .OrDefaultDuringMigration(false);
         var levelChannelLog =
             await this._settingsModule.GetLogChannelSetting(GuildLogType.Leveling, guild.GetGuildId());
 
         var levelLogMention =
-            levelChannelLog.GetOrElse(() => null) is not { } channel
+            levelChannelLog.OrNullDuringMigration() is not { } channel
                 ? "None"
                 : (await guild.GetChannelOrDefaultAsync(channel))?.Mention ?? "Deleted Channel";
         await ctx.ReplyAsync(

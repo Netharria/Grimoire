@@ -112,8 +112,7 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         var response = await CreateSut().GetLeaderboardAsync(
             _guildId, new UserId(999UL), TestContext.Current.CancellationToken);
 
-        response.ShouldBeOfType<Result<GetLeaderboard.Response>.NotFound>()
-            .Error.Code.ShouldBe("leaderboard.user-not-found");
+        response.ShouldFail().ShouldBeOfType<NotFound>().Message.ShouldBe("User not found on the leaderboard");
     }
 
     [Fact]
@@ -145,6 +144,6 @@ public sealed class GetLeaderboardTests(GrimoireCoreFactory factory) : IAsyncLif
         var response = await CreateSut().GetLeaderboardAsync(
             _guildId, new UserId(1UL), TestContext.Current.CancellationToken);
 
-        response.ShouldBeOfType<Result<GetLeaderboard.Response>.NotFound>();
+        response.ShouldFail().ShouldBeOfType<NotFound>();
     }
 }

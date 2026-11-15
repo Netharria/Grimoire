@@ -141,7 +141,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
             IgnoredChannel.Create(new ChannelId(this.Guild.General.Id), this.GuildId, new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow),
             IgnoredRole.Create(new RoleId(this.Guild.KickerRoleId), this.GuildId, new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow),
             IgnoredMember.Create(new UserId(this.Guild.User1.Id), this.GuildId, new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow)
-        }, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        }, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         var reply = await this.IgnoreAsync("view");
 
@@ -159,7 +159,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, Enumerable.Range(0, 300)
             .Select(i => (XpTrackedItem)IgnoredMember.Create(new UserId(1_100_000_000_000_100_000 + (ulong)i), this.GuildId,
                 new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow))
-            .ToHashSet(), cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+            .ToHashSet(), cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         var reply = await this.IgnoreAsync("view");
 
@@ -280,7 +280,7 @@ public sealed class IgnoreAndAwardTests(GrimoireCoreFactory database) : IAsyncLi
         => this._bot.RunSlashCommandAndWaitAsync("reclaim", this.Guild.Moderator,
         [
             SlashOption.User("user", this.Guild.User1), SlashOption.Enum("option", option),
-            .. amount == 0 ? Array.Empty<SlashOption>() : [SlashOption.Integer("amount", amount)]
+            .. amount == 0 ? System.Array.Empty<SlashOption>() : [SlashOption.Integer("amount", amount)]
         ]);
 
     private async Task SeedXpAsync(FakeUser user, int xp)

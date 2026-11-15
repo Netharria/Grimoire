@@ -45,12 +45,11 @@ public readonly record struct MessageContent
 
     internal static MessageContent FromDatabase(string content) => new(content);
 
-    public static Validation<MessageContent> Create(string? content)
+    public static Validation<Error, MessageContent> Create(string? content)
     {
         if (content is null || content.Length > 4000)
-            return Validation<MessageContent>.Fail(
-                new Error("message-content.invalid", "Message content cannot exceed 4000 characters."));
-        return Validation<MessageContent>.Succeed(new MessageContent(content));
+            return new Invalid("Message content cannot exceed 4000 characters.");
+        return Success<Error, MessageContent>(new MessageContent(content));
     }
 
     [Pure]

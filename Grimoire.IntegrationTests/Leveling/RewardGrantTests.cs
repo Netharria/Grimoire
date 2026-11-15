@@ -261,7 +261,7 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
             == $"{user.MemberMention} has earned <@&{roleId}>");
 
     private async Task SetAmountAsync(int amount)
-        => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldSucceed();
+        => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldBeSaved();
 
     private async Task AddRewardAsync(ulong roleId, int level, string? message)
         => (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(roleId), this.GuildId, level,

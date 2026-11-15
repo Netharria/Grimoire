@@ -29,14 +29,14 @@ public readonly record struct Nickname
 
     internal static Nickname FromDatabase(string value) => new(value);
 
-    public static Validation<Nickname> Create(string? value)
+    public static Validation<Error, Nickname> Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Validation<Nickname>.Fail(new Error("nickname.empty", "Nickname cannot be empty."));
+            return new Invalid("Nickname cannot be empty.");
         var trimmed = value.Trim();
         return trimmed.Length > 32
-            ? Validation<Nickname>.Fail(new Error("nickname.too-long", "Nickname cannot exceed 32 characters."))
-            : Validation<Nickname>.Succeed(new Nickname(trimmed));
+            ? new Invalid("Nickname cannot exceed 32 characters.")
+            : Success<Error, Nickname>(new Nickname(trimmed));
     }
 
     public static Nickname? CreateIfNotEmpty(string? value)

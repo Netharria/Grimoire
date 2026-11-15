@@ -103,7 +103,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
             _ => null
         };
         if (ignored is not null)
-            (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored }, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+            (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored }, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
         if (situation == "module off")
             await this._bot.SetModuleAsync(Module.Leveling, false);
 
@@ -120,7 +120,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
         {
             IgnoredChannel.Create(new ChannelId(this.Guild.ModLog.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow)
-        }, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed();
+        }, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
 
@@ -361,7 +361,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         => embed["description"]?.GetValue<string>().StartsWith("These level rewards were removed", StringComparison.Ordinal) == true;
 
     private async Task SetAmountAsync(int amount)
-        => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldSucceed();
+        => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldBeSaved();
 
     private async Task AddRewardAsync(ulong roleId, int level, string? message)
         => (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(roleId), this.GuildId, level,

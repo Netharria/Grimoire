@@ -11,6 +11,7 @@ using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using LogSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogSetting;
 using OverrideSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogOverrideSetting;
@@ -244,7 +245,7 @@ public sealed class MessageLogSettingsGapTests(GrimoireCoreFactory database) : I
         => this.MessageAsync(SlashOption.Subcommand("set",
         [
             SlashOption.Enum("setting", setting), SlashOption.Enum("option", option),
-            .. channel is null ? Array.Empty<SlashOption>() : [SlashOption.Channel("value", channel)]
+            .. channel is null ? System.Array.Empty<SlashOption>() : [SlashOption.Channel("value", channel)]
         ]));
 
     private Task<FakeReply> OverrideAsync(OverrideSetting setting, FakeChannel channel)
@@ -252,7 +253,7 @@ public sealed class MessageLogSettingsGapTests(GrimoireCoreFactory database) : I
             SlashOption.Channel("channel", channel)));
 
     private async Task<ulong?> LogChannelAsync(GuildLogType logType)
-        => (await this.Settings.GetLogChannelSetting(logType, this.GuildId)).ShouldSucceed()?.Value;
+        => (await this.Settings.GetLogChannelSetting(logType, this.GuildId)).ShouldSucceed().ToNullable()?.Value;
 
     private int ModLogPostsWith(string description)
         => this._bot.Rest.Requests.Count(request => this._bot.IsModLogPost(request)

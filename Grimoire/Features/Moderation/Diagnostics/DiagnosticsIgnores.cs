@@ -32,7 +32,7 @@ public static class DiagnosticsIgnoresSettingsExtensions
         /// <summary>The guild's ignore list. If it cannot be loaded, nothing is ignored.</summary>
         public async Task<DiagnosticsIgnores> GetDiagnosticsIgnores(GuildId guildId)
             => await settingsModule.GetDiagnosticsIgnoredItemsAsync(guildId)
-                .Map(DiagnosticsIgnores.From)
-                .GetOrElse(() => DiagnosticsIgnores.Empty);
+                .MapFin(DiagnosticsIgnores.From)
+                .OrDefaultDuringMigration(DiagnosticsIgnores.Empty);
     }
 }

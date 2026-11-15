@@ -26,8 +26,8 @@ public sealed class ReactionEmojiTests
     [Fact]
     public void Custom_WithoutId_IsInvalid()
         => ReactionEmoji.Custom.Create(new EmojiId(0), "pepe", false)
-            .ShouldBeOfType<Validation<ReactionEmoji.Custom>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "reaction-emoji.custom.id-missing");
+            .ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A custom emoji must have an id.");
 
     [Theory]
     [InlineData("a")]
@@ -36,8 +36,8 @@ public sealed class ReactionEmojiTests
     [InlineData("abcdefghijklmnopqrstuvwxyz1234567")]
     public void Custom_WithNameDiscordWouldReject_IsInvalid(string name)
         => ReactionEmoji.Custom.Create(new EmojiId(555), name, false)
-            .ShouldBeOfType<Validation<ReactionEmoji.Custom>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "reaction-emoji.custom.name-invalid");
+            .ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A custom emoji name must be 2 to 32 letters, digits or underscores.");
 
     // ── Standard ──────────────────────────────────────────────────────────────
 
@@ -53,22 +53,23 @@ public sealed class ReactionEmojiTests
     [InlineData("")]
     public void Standard_Empty_IsInvalid(string? emoji)
         => ReactionEmoji.Standard.Create(emoji)
-            .ShouldBeOfType<Validation<ReactionEmoji.Standard>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "reaction-emoji.standard.empty");
+            .ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A standard emoji cannot be empty.");
 
     [Fact]
     public void Standard_LongerThanTheColumn_IsInvalid()
         => ReactionEmoji.Standard.Create(new string('x', 65))
-            .ShouldBeOfType<Validation<ReactionEmoji.Standard>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "reaction-emoji.standard.too-long");
+            .ShouldFail()
+            .ShouldBeOfType<Invalid>().Message
+            .ShouldBe($"A standard emoji cannot be longer than {ReactionEmoji.Standard.MaxLength} characters.");
 
     [Theory]
     [InlineData("<:pepe:555>")]
     [InlineData("👍 👍")]
     public void Standard_ThatCouldBeMistakenForCustomMarkup_IsInvalid(string emoji)
         => ReactionEmoji.Standard.Create(emoji)
-            .ShouldBeOfType<Validation<ReactionEmoji.Standard>.Invalid>()
-            .Errors.ShouldContain(e => e.Code == "reaction-emoji.standard.invalid");
+            .ShouldFail()
+            .ShouldBeOfType<Invalid>().Message.ShouldBe("A standard emoji cannot contain markup or spaces.");
 
     // ── Equality ──────────────────────────────────────────────────────────────
 

@@ -41,7 +41,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
             await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId,
                 TestContext.Current.CancellationToken);
 
-        result.ShouldSucceed().ShouldBeNull();
+        result.ShouldSucceed().IsNone.ShouldBeTrue();
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
             await this._sut.GetLogChannelSetting(GuildLogType.Leveling, _guildId,
                 TestContext.Current.CancellationToken);
 
-        result.ShouldSucceed().ShouldBeNull();
+        result.ShouldSucceed().IsNone.ShouldBeTrue();
     }
 
     [Fact]

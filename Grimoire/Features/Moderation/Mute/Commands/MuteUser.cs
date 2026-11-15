@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
@@ -60,7 +61,7 @@ public sealed partial class MuteUser(
 
         var muteRoleId = await settingsModule.GetEffectiveMuteRole(guild.GetGuildId());
 
-        if (muteRoleId.GetOrElse(() => null) is not { } muteId)
+        if (muteRoleId.OrNullDuringMigration() is not { } muteId)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow,
                 "The mute role is not configured. Please configure it before using this command.");
@@ -82,7 +83,8 @@ public sealed partial class MuteUser(
 
         var actor = new ModerationActor.Moderator(ctx.GetModeratorId());
         var now = DateTimeOffset.UtcNow;
-        var sin = Sin.ForMute(actor, member.GetUserId(), guild.GetGuildId(), now, ModerationReason.CreateIfNotBlank(reason).Match(r => r, _ => null));
+        var sin = Sin.ForMute(actor, member.GetUserId(), guild.GetGuildId(), now,
+            ModerationReason.CreateIfNotBlank(reason).Match(Succ: r => r.ToNullable(), Fail: _ => null));
 
         if (!await this.TryRecordMuteAsync(sin, member, ctx.GetModeratorId(), muteEndTime, muteId))
         {
@@ -132,7 +134,7 @@ public sealed partial class MuteUser(
             await dbContext.SaveChangesAsync();
 
             if (await settingsModule.AddMute(member.GetUserId(), member.GetGuildId(), moderatorId, sin.Id,
-                    muteEndTime, muteId) is Result<MuteAdded>.Success)
+                    muteEndTime, muteId) is Fin<MuteAdded>.Succ)
                 return true;
 
             // Take the sin back off, so the member's record doesn't show a mute that never happened.

@@ -10,6 +10,7 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -36,7 +37,7 @@ public sealed partial class CustomCommandSettings
         var guild = ctx.RequiredGuild;
 
         await ParseVersion(name, version)
-            .ToResult()
+            .ToFin()
             .BindAsync(createdAt => this.FetchVersionAsync(guild.GetGuildId(), name, createdAt))
             .Match(
                 async target =>
@@ -51,20 +52,19 @@ public sealed partial class CustomCommandSettings
     ///     A version is the ticks of its <c>CreatedAt</c>. A hand-typed number outside <see cref="DateTimeOffset" />'s
     ///     range can't be any version, so it's not found rather than a crash (KI-83).
     /// </summary>
-    private static Validation<DateTimeOffset> ParseVersion(CustomCommandName name, string version)
+    private static Validation<Error, DateTimeOffset> ParseVersion(CustomCommandName name, string version)
         => long.TryParse(version, out var ticks) switch
         {
-            false => Validation<DateTimeOffset>.Fail(new Error("command.revert.invalid-version",
-                "Invalid version selected. Use the autocomplete to pick a version.")),
+            false => new Invalid("Invalid version selected. Use the autocomplete to pick a version."),
             true when ticks < DateTimeOffset.MinValue.UtcTicks || ticks > DateTimeOffset.MaxValue.UtcTicks =>
-                Validation<DateTimeOffset>.Fail(VersionNotFound(name)),
-            true => Validation<DateTimeOffset>.Succeed(new DateTimeOffset(ticks, TimeSpan.Zero))
+                Fail<Error, DateTimeOffset>(VersionNotFound(name)),
+            true => Success<Error, DateTimeOffset>(new DateTimeOffset(ticks, TimeSpan.Zero))
         };
 
-    private static Error VersionNotFound(CustomCommandName name)
-        => new("command.revert.not_found", $"Version not found for command `{name}`.");
+    private static NotFound VersionNotFound(CustomCommandName name)
+        => new NotFound($"Version not found for command `{name}`.");
 
-    private async Task<Result<CustomCommand>> FetchVersionAsync(GuildId guildId, CustomCommandName name,
+    private async Task<Fin<CustomCommand>> FetchVersionAsync(GuildId guildId, CustomCommandName name,
         DateTimeOffset targetCreatedAt)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -73,8 +73,8 @@ public sealed partial class CustomCommandSettings
             .Include(x => x.Roles)
             .FirstOrDefaultAsync(x => x.GuildId == guildId && x.Name == name && x.CreatedAt == targetCreatedAt);
         return target is null
-            ? Result<CustomCommand>.Fail(VersionNotFound(name))
-            : Result<CustomCommand>.Ok(target);
+            ? Fin.Fail<CustomCommand>(VersionNotFound(name))
+            : Fin.Succ<CustomCommand>(target);
     }
 
     private async Task OnRevertSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name,

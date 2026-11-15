@@ -21,18 +21,17 @@ public readonly record struct RewardMessage
             ? new RewardMessage(value)
             : null;
 
-    public static Validation<RewardMessage?> CreateIfNotNull(string? input)
+    public static Validation<Error, Option<RewardMessage>> CreateIfNotNull(string? input)
         => input is null
-            ? Validation<RewardMessage?>.Succeed(null)
-            : Create(input).Map(r => (RewardMessage?)r);
+            ? Option<RewardMessage>.None
+            : Create(input).Map(Optional);
 
-    public static Validation<RewardMessage> Create(string? input)
+    public static Validation<Error, RewardMessage> Create(string? input)
     {
         var trimmed = input?.Trim();
         if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 4096)
-            return Validation<RewardMessage>.Fail(
-                new Error("reward-message.invalid", "Reward message must be 1\u20134096 non-whitespace characters."));
-        return Validation<RewardMessage>.Succeed(new RewardMessage(trimmed));
+            return new Invalid("Reward message must be 1\u20134096 non-whitespace characters.");
+        return Success<Error, RewardMessage>(new RewardMessage(trimmed));
     }
 
     public override string ToString() => Value;

@@ -12,6 +12,7 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Leveling.Events;
@@ -40,7 +41,7 @@ public sealed partial class GainUserXp(
             return;
 
         if (!await settingsModule.IsModuleEnabled(Module.Leveling, member.GetGuildId())
-                .GetOrElse(() => false))
+                .OrDefaultDuringMigration(false))
             return;
 
         // If the ignore list can't be read, award nothing: XP given to an ignored member can't be taken back cleanly.
@@ -50,7 +51,7 @@ public sealed partial class GainUserXp(
                     member.Roles.Select(x => x.GetRoleId()).ToHashSet(),
                     args.GetChannelId(),
                     args.Channel is { IsThread: true, ParentId: { } parentId } ? new ChannelId(parentId) : null)
-                .GetOrElse(() => true))
+                .OrDefaultDuringMigration(true))
             return;
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -64,10 +65,10 @@ public sealed partial class GainUserXp(
             .SumAsync(entry => entry.RawXp);
 
         var settingsResult = await settingsModule.GetLevelingSettings(member.GetGuildId());
-        if (settingsResult is not Result<LevelingSettingEntry>.Success { Value: var levelingSettings })
+        if (settingsResult is not Fin<LevelingSettingEntry>.Succ { Value: var levelingSettings })
         {
             // Without settings XP silently stops for the guild, so make it visible.
-            var reason = settingsResult.Match(_ => string.Empty, error => error.Code);
+            var reason = settingsResult.Match(_ => string.Empty, error => $"{error.GetType().Name}: {error.Message}");
             LogSettingsUnavailable(this._logger, member.GetGuildId(), reason);
             alerts.Send(new Alert
             {
@@ -96,7 +97,7 @@ public sealed partial class GainUserXp(
         => PositiveXpAmount.Create(settings.Amount.Value)
             .Map(amount => EarnedXp.Create(amount, userId, guildId,
                 DateTimeOffset.UtcNow + settings.XpTimeoutPeriod.Value))
-            .Match(e => e, _ => throw new InvariantViolationException());
+            .Match(Succ: e => e, Fail: _ => throw new InvariantViolationException());
 
     private ValueTask SendLevelUpNotificationAsync(DiscordMember member, int currentLevel)
         => guildLog.SendLogMessageAsync(new GuildLogMessageCustomEmbed
@@ -118,7 +119,7 @@ public sealed partial class GainUserXp(
 
         // The next XP gain tries again.
         if (await settingsModule.GetLevelingRewardsAsync(guildId, cancellationToken)
-            is not Result<IReadOnlySet<RewardEntry>>.Success { Value: var rewards })
+            is not Fin<IReadOnlySet<RewardEntry>>.Succ { Value: var rewards })
             return;
 
         // Nothing else removes a reward whose role was deleted, including while the bot was offline, and a deleted
@@ -188,7 +189,7 @@ public sealed partial class GainUserXp(
         foreach (var reward in orphaned)
             if (await settingsModule.SetRewardAsync(RewardRemoved.Create(reward.RoleId, guild.GetGuildId(),
                     new ModeratorId(guild.CurrentMember.Id), DateTimeOffset.UtcNow), cancellationToken)
-                is Result<RewardRemoved>.Success)
+                is Fin<RewardRemoved>.Succ)
                 removed.Add(reward);
 
         if (removed.Count > 0)

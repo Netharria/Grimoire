@@ -136,7 +136,7 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
         var channels = this.AnswerForExtraChannels(150);
         foreach (var channel in channels)
             (await this.Settings.SetSpamFilterOverrideAsync(new ChannelId(channel), this.GuildId,
-                new ModeratorId(this.Guild.Admin.Id), SpamFilterOverrideOption.NeverFilter, Token)).ShouldSucceed();
+                new ModeratorId(this.Guild.Admin.Id), SpamFilterOverrideOption.NeverFilter, Token)).ShouldBeSaved();
 
         var (command, first) = await this.RunPagedAsync(this.Guild.Admin, "spam_filter", SlashOption.Subcommand("view"));
 
@@ -195,7 +195,7 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
         var channels = this.AnswerForExtraChannels(150);
         foreach (var channel in channels)
             (await this.Settings.SetChannelLogOverride(new ChannelId(channel), this.GuildId,
-                new ModeratorId(this.Guild.Admin.Id), MessageLogOverrideOption.NeverLog, Token)).ShouldSucceed();
+                new ModeratorId(this.Guild.Admin.Id), MessageLogOverrideOption.NeverLog, Token)).ShouldBeSaved();
 
         var (command, first) = await this.RunPagedAsync(this.Guild.Admin, "log",
             SlashOption.Group("message", SlashOption.Subcommand("view_overrides")));
@@ -283,7 +283,7 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
         (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, ids
             .Select(id => (XpTrackedItem)IgnoredMember.Create(new UserId(id), this.GuildId,
                 new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow))
-            .ToHashSet())).ShouldSucceed();
+            .ToHashSet())).ShouldBeSaved();
         return ids;
     }
 

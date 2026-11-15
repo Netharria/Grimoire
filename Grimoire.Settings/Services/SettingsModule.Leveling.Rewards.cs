@@ -14,11 +14,11 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public Task<Result<IReadOnlySet<RewardEntry>>> GetLevelingRewardsAsync(
+    public Task<Fin<IReadOnlySet<RewardEntry>>> GetLevelingRewardsAsync(
         GuildId guildId,
         CancellationToken cancellationToken = default)
         => ExecuteSafelyAsync(async ct =>
-                Result<IReadOnlySet<RewardEntry>>.Ok(
+                Fin.Succ<IReadOnlySet<RewardEntry>>(
                     await this._cache.GetOrCreateAsync(CacheKey.LevelingRewards(guildId),
                         guildId,
                         async (guildIdState, innerCt) =>
@@ -35,10 +35,9 @@ public sealed partial class SettingsModule
                                     new RewardEntry(added.RoleId, added.RewardLevel, added.RewardMessage))
                                 .ToFrozenSet();
                         }, this._cacheEntryOptions,
-                        cancellationToken: ct)),
-            new Error("reward.lookup-failed", "Could not retrieve rewards."), cancellationToken);
+                        cancellationToken: ct)), "Could not retrieve rewards.", cancellationToken);
 
-    public Task<Result<T>> SetRewardAsync<T>(
+    public Task<Fin<T>> SetRewardAsync<T>(
         T reward,
         CancellationToken cancellationToken = default) where T : Reward
         => ExecuteSafelyAsync(async ct =>
@@ -47,6 +46,6 @@ public sealed partial class SettingsModule
             dbContext.Rewards.Add(reward);
             await dbContext.SaveChangesAsync(ct);
             await this._cache.RemoveAsync(CacheKey.LevelingRewards(reward.GuildId), ct);
-            return Result<T>.Ok(reward);
-        }, new Error("set-reward.failed", "Could not set reward"), cancellationToken);
+            return Fin.Succ<T>(reward);
+        }, "Could not set reward", cancellationToken);
 }

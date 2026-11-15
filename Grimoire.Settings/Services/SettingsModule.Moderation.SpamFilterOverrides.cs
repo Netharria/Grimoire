@@ -14,7 +14,7 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public Task<Result<SpamFilterOverrideOption>> GetSpamFilterOverrideAsync(
+    public Task<Fin<SpamFilterOverrideOption>> GetSpamFilterOverrideAsync(
         GuildId guildId,
         ChannelId channelId,
         CancellationToken cancellationToken = default)
@@ -37,8 +37,8 @@ public sealed partial class SettingsModule
                     },
                     this._cacheEntryOptions,
                     cancellationToken: ct);
-                return Result<SpamFilterOverrideOption>.Ok(result);
-            }, new Error("spam-filter-override.lookup-failed", "Could not retrieve spam filter override."),
+                return Fin.Succ<SpamFilterOverrideOption>(result);
+            }, "Could not retrieve spam filter override.",
             cancellationToken);
 
     public async IAsyncEnumerable<SpamFilterOverride> GetAllSpamFilterOverrideAsync(GuildId guildId,
@@ -68,21 +68,20 @@ public sealed partial class SettingsModule
                 yield return spamFilterOverride;
     }
 
-    public Task<Result<SpamFilterOverride>> SetSpamFilterOverrideAsync(
+    public Task<Fin<Write<SpamFilterOverride>>> SetSpamFilterOverrideAsync(
         ChannelId channelId,
         GuildId guildId,
         ModeratorId setBy,
         SpamFilterOverrideOption option,
         CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct =>
+        => ExecuteSafelyAsync<Write<SpamFilterOverride>>(async ct =>
             {
                 var currentSetting = await GetSpamFilterOverrideAsync(guildId, channelId, ct)
-                    .GetOrElse(() => SpamFilterOverrideOption.Inherit);
+                    .OrDefaultDuringMigration(SpamFilterOverrideOption.Inherit);
 
                 if (currentSetting == option)
-                    return new Result<SpamFilterOverride>.NotModified(
-                        new Error("spam-filter-override.not-changed",
-                            "The channel is already set to this spam filter option."));
+                    return new Write<SpamFilterOverride>.Unchanged(
+                        "The channel is already set to this spam filter option.");
 
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
 
@@ -92,7 +91,7 @@ public sealed partial class SettingsModule
                 await dbContext.SaveChangesAsync(ct);
                 await this._cache.SetAsync(CacheKey.SpamFilterOverride(channelId), option,
                     this._cacheEntryOptions, cancellationToken: ct);
-                return Result<SpamFilterOverride>.Ok(spamFilterOverride);
-            }, new Error("spam-filter-override.save-failed", "Could not save the spam filter override."),
+                return new Write<SpamFilterOverride>.Saved(spamFilterOverride);
+            }, "Could not save the spam filter override.",
             cancellationToken);
 }

@@ -15,7 +15,8 @@ Older documents carry a banner at the top saying what replaced them.
 | Branch-review decisions (defect fixes) | [`review/review-decisions.md`](review/review-decisions.md) | |
 | Known issues | [`testing/known-issues.md`](testing/known-issues.md) | Each open KI is assigned to a migration section. |
 | Manual test plan, by feature area | [`testing/README.md`](testing/README.md) | The area docs `01`–`09`. |
-| Architecture: layers, effects, error model, boundaries | `architecture.md` *(written in migration section 1.2)* | Until then: the plan's part 2 and `docs/language-ext-spike.md` on the `spike/language-ext-v5` branch. |
+| Errors and results: the four error cases, `Fin`, `Validation`, `Write<T>`, the migration bridge | [`langext-migration/specs/1.1-error-and-result-types.md`](langext-migration/specs/1.1-error-and-result-types.md) | Until `architecture.md` replaces it in section 1.2. |
+| Architecture: layers, effects, error model, boundaries | `architecture.md` *(written in migration section 1.2)* | Until then: the plan's part 2, spec 1.1, and `docs/language-ext-spike.md` on the `spike/language-ext-v5` branch. |
 
 ## Historical
 

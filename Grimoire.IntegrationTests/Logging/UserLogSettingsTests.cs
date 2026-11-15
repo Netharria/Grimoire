@@ -9,6 +9,7 @@ using Grimoire.Enums;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using UserLogSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.User.UserLogSetting;
 
@@ -155,9 +156,9 @@ public sealed class UserLogSettingsTests(GrimoireCoreFactory database) : IAsyncL
         => this.UserAsync(SlashOption.Subcommand("set",
         [
             SlashOption.Enum("setting", setting), SlashOption.Enum("option", option),
-            .. channel is null ? Array.Empty<SlashOption>() : [SlashOption.Channel("value", channel)]
+            .. channel is null ? System.Array.Empty<SlashOption>() : [SlashOption.Channel("value", channel)]
         ]));
 
     private async Task<ulong?> LogChannelAsync(GuildLogType logType)
-        => (await this.Settings.GetLogChannelSetting(logType, this.GuildId)).ShouldSucceed()?.Value;
+        => (await this.Settings.GetLogChannelSetting(logType, this.GuildId)).ShouldSucceed().ToNullable()?.Value;
 }

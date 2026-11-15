@@ -49,7 +49,7 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
                 await settingsModule.GetSpamFilterOverrideAsync(
                     currentChannel.Guild.GetGuildId(),
                     currentChannel.GetChannelId(),
-                    cancellationToken).GetOrElse(() => SpamFilterOverrideOption.Inherit);
+                    cancellationToken).OrDefaultDuringMigration(SpamFilterOverrideOption.Inherit);
 
             if (spamFilterOverrideOption == SpamFilterOverrideOption.AlwaysFilter)
                 break;

@@ -50,24 +50,27 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
             .Select(item => create(item, guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow))
             .ToFrozenSet();
         await (await this._settingsModule.AppendIgnoredItemsEvent(guild.GetGuildId(), tracked)).Match(
-            async changed =>
+            write => write.Match(
+                saved: changed => ReportChangedAsync(changed),
+                unchanged: _ => ctx.ReplyAsync(GrimoireColor.Yellow,
+                    $"{BuildIgnoreList(tracked)} {unchangedOutcome}").AsTask()),
+            error => ctx.SendErrorResponseAsync(error).AsTask());
+
+        async Task ReportChangedAsync(IReadOnlySet<XpTrackedItem> changed)
+        {
+            var message = $"{BuildIgnoreList(changed)} {outcome}";
+            var unchanged = tracked.Except(changed).ToArray();
+            await ctx.ReplyAsync(GrimoireColor.Green, unchanged.Length == 0
+                ? message
+                : $"{message}\n{BuildIgnoreList(unchanged)} {unchangedOutcome}");
+            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
             {
-                var message = $"{BuildIgnoreList(changed)} {outcome}";
-                var unchanged = tracked.Except(changed).ToArray();
-                await ctx.ReplyAsync(GrimoireColor.Green, unchanged.Length == 0
-                    ? message
-                    : $"{message}\n{BuildIgnoreList(unchanged)} {unchangedOutcome}");
-                await this._guildLog.SendLogMessageAsync(new GuildLogMessage
-                {
-                    GuildId = guild.GetGuildId(),
-                    GuildLogType = GuildLogType.Moderation,
-                    Color = GrimoireColor.DarkPurple,
-                    Description = message
-                });
-            },
-            error => ctx.SendErrorResponseAsync(error.Message).AsTask(),
-            onNotModified: _ => ctx.ReplyAsync(GrimoireColor.Yellow,
-                $"{BuildIgnoreList(tracked)} {unchangedOutcome}").AsTask());
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.DarkPurple,
+                Description = message
+            });
+        }
     }
 
     private static string BuildIgnoreList(IEnumerable<XpTrackedItem> items)

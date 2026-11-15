@@ -10,6 +10,7 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using Grimoire.DatabaseQueryHelpers;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -40,7 +41,7 @@ public sealed partial class CustomCommandSettings
                 error => ctx.SendWarningResponseAsync(error.Message).AsTask());
     }
 
-    private async Task<Result<LeaderboardDisplay>> GetOverallLeaderboardAsync(GuildId guildId, DiscordMember member)
+    private async Task<Fin<LeaderboardDisplay>> GetOverallLeaderboardAsync(GuildId guildId, DiscordMember member)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         // Commands the member can't run are neither ranked nor counted (KI-86).
@@ -53,22 +54,23 @@ public sealed partial class CustomCommandSettings
             .Take(15)
             .ToListAsync();
         // The footer counts everything, not only the fifteen shown.
-        var (commandCount, useCount) = (await usages.Select(x => x.Name).Distinct().CountAsync(), await usages.CountAsync());
+        var (commandCount, useCount) =
+            (await Queryable.Distinct(usages.Select(x => x.Name)).CountAsync(), await usages.CountAsync());
         return rankings.Count == 0
-            ? Result<LeaderboardDisplay>.Fail(new Error("command.leaderboard.empty", "No commands have been used yet."))
-            : Result<LeaderboardDisplay>.Ok(new LeaderboardDisplay(
+            ? new Invalid("No commands have been used yet.")
+            : Fin.Succ<LeaderboardDisplay>(new LeaderboardDisplay(
                 string.Join("\n", rankings.Select((r, i) => $"**{i + 1}.** `!{r.Name}` — {r.Count} uses")),
                 "Command Leaderboard",
                 $"{commandCount} commands, {useCount} uses"));
     }
 
-    private async Task<Result<LeaderboardDisplay>> GetCommandLeaderboardAsync(GuildId guildId, DiscordMember member,
+    private async Task<Fin<LeaderboardDisplay>> GetCommandLeaderboardAsync(GuildId guildId, DiscordMember member,
         CustomCommandName name)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         // A command the member can't run is reported as missing, so its name isn't given away (KI-86).
         if (await HiddenNames(dbContext, guildId, member).ContainsAsync(name))
-            return Result<LeaderboardDisplay>.Fail(CommandNotFound(name));
+            return Fin.Fail<LeaderboardDisplay>(CommandNotFound(name));
         var rankings = await dbContext.CustomCommandUsages
             .Where(x => x.GuildId == guildId && x.Name == name)
             .GroupBy(x => x.UserId)
@@ -77,14 +79,14 @@ public sealed partial class CustomCommandSettings
             .Take(15)
             .ToListAsync();
         if (rankings.Count == 0)
-            return Result<LeaderboardDisplay>.Fail(
+            return Fin.Fail<LeaderboardDisplay>(
                 await dbContext.CustomCommands.AnyAsync(x => x.GuildId == guildId && x.Name == name)
-                    ? new Error("command.leaderboard.command_empty", $"Command `!{name}` has not been used yet.")
+                    ? new Invalid($"Command `!{name}` has not been used yet.")
                     : CommandNotFound(name));
 
         // The footer counts every use, not only those of the fifteen shown.
         var useCount = await dbContext.CustomCommandUsages.CountAsync(x => x.GuildId == guildId && x.Name == name);
-        return Result<LeaderboardDisplay>.Ok(new LeaderboardDisplay(
+        return Fin.Succ<LeaderboardDisplay>(new LeaderboardDisplay(
             string.Join("\n",
                 rankings.Select((r, i) => $"**{i + 1}.** {UserExtensions.Mention(r.UserId)} — {r.Count} uses")),
             $"Leaderboard for !{name}",
@@ -96,8 +98,8 @@ public sealed partial class CustomCommandSettings
         => dbContext.CustomCommands.LatestVersions().Where(x => x.GuildId == guildId).HiddenFrom(member)
             .Select(x => x.Name);
 
-    private static Error CommandNotFound(CustomCommandName name)
-        => new("command.leaderboard.not_found", $"No command named `{name}` exists.");
+    private static NotFound CommandNotFound(CustomCommandName name)
+        => new NotFound($"No command named `{name}` exists.");
 
     private sealed record LeaderboardDisplay(string Text, string Title, string Footer);
 }

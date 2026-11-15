@@ -137,7 +137,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
 
         var ignored = IgnoredMember.Create(new UserId(this.Guild.User1.Id), this.GuildId, new ModeratorId(this.Guild.Owner.Id),
             DateTimeOffset.UtcNow);
-        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored }, TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new System.Collections.Generic.HashSet<XpTrackedItem> { ignored }, TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         Field(await this.UserInfoAsync(this.Guild.User1), "Can Gain Xp").ShouldBe("No");
     }
@@ -148,7 +148,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     {
         var ignored = IgnoredRole.Create(new RoleId(this.Guild.ModeratorRoleId), this.GuildId, new ModeratorId(this.Guild.Owner.Id),
             DateTimeOffset.UtcNow);
-        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored }, TestContext.Current.CancellationToken)).ShouldSucceed();
+        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new System.Collections.Generic.HashSet<XpTrackedItem> { ignored }, TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         Field(await this.UserInfoAsync(this.Guild.Moderator), "Can Gain Xp").ShouldBe("No");
     }
@@ -174,7 +174,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     public async Task SinCounts_ArePerType_AndExcludeSinsOlderThanTheAutoPardonWindow()
     {
         (await this.Settings.SetAutoPardonDuration(this.GuildId, new ModeratorId(this.Guild.Owner.Id), TimeSpan.FromDays(30), TestContext.Current.CancellationToken))
-            .ShouldSucceed();
+            .ShouldBeSaved();
         var now = DateTimeOffset.UtcNow;
         await this.SeedSinsAsync(
             (SinType.Warn, now.AddDays(-1)), (SinType.Warn, now.AddDays(-2)), (SinType.Mute, now.AddDays(-3)),

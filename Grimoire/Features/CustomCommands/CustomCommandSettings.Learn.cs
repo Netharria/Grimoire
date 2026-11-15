@@ -10,6 +10,7 @@ using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
+using LanguageExt;
 
 namespace Grimoire.Features.CustomCommands;
 
@@ -61,33 +62,31 @@ public sealed partial class CustomCommandSettings
                                 roles.Deny, ctx.GetModeratorId(), DateTimeOffset.UtcNow)
                             : TextCustomCommand.Create(validName, guildId, validContent, roles.Allow, roles.Deny,
                                 ctx.GetModeratorId(), DateTimeOffset.UtcNow)))))
-            .ToResult()
+            .ToFin()
             .Match(
                 async command =>
                 {
                     var outcome = await this.SaveCommandAsync(command);
                     await this.OnLearnSuccessAsync(ctx, guild, command.Name, outcome);
                 },
-                error => ctx.SendErrorResponseAsync(error.Message).AsTask());
+                error => ctx.SendErrorResponseAsync(error).AsTask());
     }
 
     /// <summary>
     ///     <c>!name</c> runs the bot's own command of that name as a text command, so a custom command can't take it
     ///     (KI-85).
     /// </summary>
-    private static Validation<CustomCommandName> NotABuiltInCommand(CommandsExtension extension, CustomCommandName name)
+    private static Validation<Error, CustomCommandName> NotABuiltInCommand(CommandsExtension extension, CustomCommandName name)
         => extension.IsBuiltInCommandName(name.Value)
-            ? Validation<CustomCommandName>.Fail(new Error("command.learn.built-in-name",
-                $"`{name}` is the name of one of Grimoire's own commands, so a custom command can't use it."))
-            : Validation<CustomCommandName>.Succeed(name);
+            ? new Invalid($"`{name}` is the name of one of Grimoire's own commands, so a custom command can't use it.")
+            : Success<Error, CustomCommandName>(name);
 
     /// <summary>A colour only means something on an embed, so one given without it is refused rather than dropped.</summary>
-    private static Validation<CustomCommandEmbedColor?> ParseEmbedColor(bool embed, string? embedColor)
+    private static Validation<Error, CustomCommandEmbedColor?> ParseEmbedColor(bool embed, string? embedColor)
         => embedColor switch
         {
-            null => Validation<CustomCommandEmbedColor?>.Succeed(null),
-            _ when !embed => Validation<CustomCommandEmbedColor?>.Fail(new Error("command.learn.color-without-embed",
-                "An embed color only applies to an embed. Set embed to true, or leave out the color.")),
+            null => Success<Error, CustomCommandEmbedColor?>(null),
+            _ when !embed => new Invalid("An embed color only applies to an embed. Set embed to true, or leave out the color."),
             _ => CustomCommandEmbedColor.Create(embedColor).Map(color => (CustomCommandEmbedColor?)color)
         };
 
@@ -98,15 +97,13 @@ public sealed partial class CustomCommandSettings
     ///     A restricted command may be used only by its roles, so it needs one. Roles on an unrestricted command are the
     ///     ones that may not use it, as on <c>main</c>.
     /// </summary>
-    private static Validation<(IReadOnlyList<RoleId> Allow, IReadOnlyList<RoleId> Deny)> SplitRoleIds(
+    private static Validation<Error, (IReadOnlyList<RoleId> Allow, IReadOnlyList<RoleId> Deny)> SplitRoleIds(
         bool restrictedUse, IReadOnlyList<RoleId> roleIds)
         => restrictedUse switch
         {
-            true when roleIds.Count == 0 => Validation<(IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>.Fail(new Error(
-                "command.learn.restricted-no-roles",
-                "A restricted command must have at least one permission role.")),
-            true => Validation<(IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>.Succeed((roleIds, [])),
-            false => Validation<(IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>.Succeed(([], roleIds))
+            true when roleIds.Count == 0 => new Invalid("A restricted command must have at least one permission role."),
+            true => Success<Error, (IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>((roleIds, [])),
+            false => Success<Error, (IReadOnlyList<RoleId>, IReadOnlyList<RoleId>)>(([], roleIds))
         };
 
     private async Task OnLearnSuccessAsync(CommandContext ctx, DiscordGuild guild, CustomCommandName name,

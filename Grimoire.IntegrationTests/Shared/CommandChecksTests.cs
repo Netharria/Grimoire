@@ -99,7 +99,7 @@ public sealed class CommandChecksTests(GrimoireCoreFactory database) : IAsyncLif
         var (command, options) = module switch
         {
             "moderation" => ("ban", new[] { SlashOption.User("user", this.Guild.User1) }),
-            "leveling" => ("level", Array.Empty<SlashOption>()),
+            "leveling" => ("level", System.Array.Empty<SlashOption>()),
             "commands" => ("commands", [SlashOption.Subcommand("stats", SlashOption.String("name", "hello"))]),
             "message log" => ("log", [SlashOption.Group("message", SlashOption.Subcommand("view"))]),
             "user log" => ("log", [SlashOption.Group("user", SlashOption.Subcommand("view"))]),

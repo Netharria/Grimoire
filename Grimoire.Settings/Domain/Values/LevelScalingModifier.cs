@@ -32,8 +32,8 @@ public readonly record struct LevelScalingModifier
         => int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? new(value) : Default;
 
     /// <summary>A new value, which must be within today's limits.</summary>
-    public static Validation<LevelScalingModifier> Create(int input)
+    public static Validation<Error, LevelScalingModifier> Create(int input)
         => input is >= MinValue and <= MaxValue
-            ? Validation<LevelScalingModifier>.Succeed(new LevelScalingModifier(input))
-            : Validation<LevelScalingModifier>.Fail(new Error("level-scaling-modifier.invalid", "Level scaling modifier must be a value between 1 and 200."));
+            ? Success<Error, LevelScalingModifier>(new LevelScalingModifier(input))
+            : new Invalid("Level scaling modifier must be a value between 1 and 200.");
 }

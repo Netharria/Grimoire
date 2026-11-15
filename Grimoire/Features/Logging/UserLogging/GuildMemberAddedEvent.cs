@@ -19,7 +19,7 @@ internal sealed class GuildMemberAddedEvent(
 {
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
-        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).GetOrElse(() => false))
+        if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).OrDefaultDuringMigration(false))
             return;
         // Without Manage Server the invites can't be listed, so the join is logged with no invite.
         var invites = await args.Guild.GetGuildInvitesAsync();

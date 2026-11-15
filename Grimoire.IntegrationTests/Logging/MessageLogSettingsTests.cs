@@ -9,6 +9,7 @@ using Grimoire.Enums;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using LogSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogSetting;
 using OverrideSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogOverrideSetting;
@@ -227,14 +228,14 @@ public sealed class MessageLogSettingsTests(GrimoireCoreFactory database) : IAsy
         => this.MessageAsync(SlashOption.Subcommand("set",
         [
             SlashOption.Enum("setting", setting), SlashOption.Enum("option", option),
-            .. channel is null ? Array.Empty<SlashOption>() : [SlashOption.Channel("value", channel)]
+            .. channel is null ? System.Array.Empty<SlashOption>() : [SlashOption.Channel("value", channel)]
         ]));
 
     private Task<FakeReply> OverrideAsync(OverrideSetting setting, FakeChannel channel)
         => this.MessageAsync(SlashOption.Subcommand("override", SlashOption.Enum("option", setting), SlashOption.Channel("channel", channel)));
 
     private async Task<ulong?> LogChannelAsync(GuildLogType logType)
-        => (await this.Settings.GetLogChannelSetting(logType, this.GuildId)).ShouldSucceed()?.Value;
+        => (await this.Settings.GetLogChannelSetting(logType, this.GuildId)).ShouldSucceed().ToNullable()?.Value;
 
     private Task<bool> MessageSavedWithinAsync(ulong messageId, TimeSpan window)
         => GrimoireTestBot.EventuallyAsync(async () =>

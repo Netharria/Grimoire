@@ -33,7 +33,7 @@ public sealed partial class GuildLogPublisher(
             {
                 if (!await settingsModule.IsModuleEnabled(result.GuildLogType.GetLogTypeModule(), result.GuildId,
                             cancellationToken)
-                        .GetOrElse(() => false))
+                        .OrDefaultDuringMigration(false))
                     continue;
 
                 var logChannelId = await settingsModule.GetLogChannelSetting(
@@ -41,7 +41,7 @@ public sealed partial class GuildLogPublisher(
                     result.GuildId,
                     cancellationToken);
 
-                if (logChannelId.GetOrElse(() => null) is not { } logChannel)
+                if (logChannelId.OrNullDuringMigration() is not { } logChannel)
                     continue;
 
                 var channel = await discordClient.GetChannelOrDefaultAsync(logChannel);
@@ -80,7 +80,7 @@ public sealed partial class GuildLogPublisher(
             {
                 LogProcessError(this._logger, ex, result.GuildId, result.GuildLogType);
                 if (await settingsModule.GetLogChannelSetting(result.GuildLogType, result.GuildId, cancellationToken)
-                        .GetOrElse(() => null) is { } channelId)
+                        .OrNullDuringMigration() is { } channelId)
                     this.Report(GuildIssueCatalog.CannotSendInChannel(result.GuildId, channelId), cancellationToken);
             }
             catch (Exception ex)

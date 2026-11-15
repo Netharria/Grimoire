@@ -14,7 +14,7 @@ namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    public Task<Result<FrozenSet<DiagnosticsIgnoredItem>>> GetDiagnosticsIgnoredItemsAsync(
+    public Task<Fin<FrozenSet<DiagnosticsIgnoredItem>>> GetDiagnosticsIgnoredItemsAsync(
         GuildId guildId,
         CancellationToken cancellationToken = default)
         => ExecuteSafelyAsync(async ct =>
@@ -33,24 +33,23 @@ public sealed partial class SettingsModule
                     },
                     this._cacheEntryOptions,
                     cancellationToken: ct);
-                return Result<FrozenSet<DiagnosticsIgnoredItem>>.Ok(items);
-            }, new Error("diagnostics-ignored-items.lookup-failed", "Could not retrieve the diagnostics ignore list."),
+                return Fin.Succ<FrozenSet<DiagnosticsIgnoredItem>>(items);
+            }, "Could not retrieve the diagnostics ignore list.",
             cancellationToken);
 
     /// <summary>Adds each item that is not already ignored. Returns only the ones that were added.</summary>
-    public Task<Result<IReadOnlyList<DiagnosticsIgnoredItem>>> AddDiagnosticsIgnoredItemsAsync(
+    public Task<Fin<Write<IReadOnlyList<DiagnosticsIgnoredItem>>>> AddDiagnosticsIgnoredItemsAsync(
         GuildId guildId,
         IReadOnlyCollection<DiagnosticsIgnoredItem> items,
         CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct =>
+        => ExecuteSafelyAsync<Write<IReadOnlyList<DiagnosticsIgnoredItem>>>(async ct =>
             {
                 if (items.Count == 0)
-                    return new Result<IReadOnlyList<DiagnosticsIgnoredItem>>.NotModified(
-                        new Error("diagnostics-ignored-items.empty", "No roles or members were provided to ignore."));
+                    return new Write<IReadOnlyList<DiagnosticsIgnoredItem>>.Unchanged(
+                        "No roles or members were provided to ignore.");
                 if (items.Any(item => item.GuildId != guildId))
-                    return Result<IReadOnlyList<DiagnosticsIgnoredItem>>.Fail(
-                        new Error("diagnostics-ignored-items.guild-id.mismatch",
-                            "The guild id provided in the ignored items does not match the expected guild id."));
+                    return new Invalid(
+                        "The guild id provided in the ignored items does not match the expected guild id.");
 
                 await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
                 var existing = (await dbContext.DiagnosticsIgnoredItems
@@ -62,19 +61,18 @@ public sealed partial class SettingsModule
                 var toAdd = items.DistinctBy(Key).Where(item => !existing.Contains(Key(item))).ToList();
 
                 if (toAdd.Count == 0)
-                    return new Result<IReadOnlyList<DiagnosticsIgnoredItem>>.NotModified(
-                        new Error("diagnostics-ignored-items.already-ignored",
-                            "Those roles and members are already ignored."));
+                    return new Write<IReadOnlyList<DiagnosticsIgnoredItem>>.Unchanged(
+                        "Those roles and members are already ignored.");
 
                 dbContext.DiagnosticsIgnoredItems.AddRange(toAdd);
                 await dbContext.SaveChangesAsync(ct);
                 await this._cache.RemoveAsync(CacheKey.DiagnosticsIgnoredItems(guildId), ct);
-                return Result<IReadOnlyList<DiagnosticsIgnoredItem>>.Ok(toAdd);
-            }, new Error("diagnostics-ignored-items.save-failed", "Could not save the diagnostics ignore list."),
+                return new Write<IReadOnlyList<DiagnosticsIgnoredItem>>.Saved(toAdd);
+            }, "Could not save the diagnostics ignore list.",
             cancellationToken);
 
     /// <summary>Removes each role or member that is currently ignored. Returns only the ones that were removed.</summary>
-    public Task<Result<IReadOnlyList<DiagnosticsIgnoredItem>>> RemoveDiagnosticsIgnoredItemsAsync(
+    public Task<Fin<IReadOnlyList<DiagnosticsIgnoredItem>>> RemoveDiagnosticsIgnoredItemsAsync(
         GuildId guildId,
         IReadOnlyCollection<DiagnosticsIgnoredItem> items,
         CancellationToken cancellationToken = default)
@@ -89,14 +87,13 @@ public sealed partial class SettingsModule
                     .ToList();
 
                 if (toRemove.Count == 0)
-                    return new Result<IReadOnlyList<DiagnosticsIgnoredItem>>.NotFound(
-                        new Error("diagnostics-ignored-items.not-found", "None of those roles or members are ignored."));
+                    return new NotFound("None of those roles or members are ignored.");
 
                 dbContext.DiagnosticsIgnoredItems.RemoveRange(toRemove);
                 await dbContext.SaveChangesAsync(ct);
                 await this._cache.RemoveAsync(CacheKey.DiagnosticsIgnoredItems(guildId), ct);
-                return Result<IReadOnlyList<DiagnosticsIgnoredItem>>.Ok(toRemove);
-            }, new Error("diagnostics-ignored-items.remove-failed", "Could not update the diagnostics ignore list."),
+                return Fin.Succ<IReadOnlyList<DiagnosticsIgnoredItem>>(toRemove);
+            }, "Could not update the diagnostics ignore list.",
             cancellationToken);
 
     /// <summary>
@@ -104,7 +101,7 @@ public sealed partial class SettingsModule
     ///     <c>/Diagnostics Ignore Remove</c>, so it would stay on the list for good (KI-62). NotFound when it wasn't
     ///     ignored.
     /// </summary>
-    public Task<Result<Unit>> RemoveDiagnosticsIgnoredRoleAsync(
+    public Task<Fin<Unit>> RemoveDiagnosticsIgnoredRoleAsync(
         GuildId guildId,
         RoleId roleId,
         CancellationToken cancellationToken = default)
@@ -121,14 +118,13 @@ public sealed partial class SettingsModule
                     .ToList();
 
                 if (toRemove.Count == 0)
-                    return new Result<Unit>.NotFound(
-                        new Error("diagnostics-ignored-items.not-found", "That role is not ignored."));
+                    return new NotFound("That role is not ignored.");
 
                 dbContext.DiagnosticsIgnoredItems.RemoveRange(toRemove);
                 await dbContext.SaveChangesAsync(ct);
                 await this._cache.RemoveAsync(CacheKey.DiagnosticsIgnoredItems(guildId), ct);
-                return Result<Unit>.Ok(Unit.Value);
-            }, new Error("diagnostics-ignored-items.remove-failed", "Could not update the diagnostics ignore list."),
+                return Fin.Succ<Unit>(unit);
+            }, "Could not update the diagnostics ignore list.",
             cancellationToken);
 
     // Discord IDs are snowflakes, so a role and a member never share one. The table is keyed by guild and ID.

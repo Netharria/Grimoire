@@ -79,7 +79,7 @@ public sealed class SinTests
     [InlineData(null)]
     [InlineData("   ")]
     public void CreateIfNotBlank_TreatsNothingOrWhitespaceAsNoReason(string? input)
-        => ModerationReason.CreateIfNotBlank(input).ShouldSucceed().ShouldBeNull();
+        => ModerationReason.CreateIfNotBlank(input).ShouldSucceed().IsNone.ShouldBeTrue();
 
     [Fact]
     public void CreateIfNotBlank_KeepsARealReason_Trimmed()

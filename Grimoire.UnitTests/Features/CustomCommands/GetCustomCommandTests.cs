@@ -119,8 +119,8 @@ public sealed class GetCustomCommandTests
         bool hasDenyRole, bool expected)
     {
         RoleId allow = new(10UL), deny = new(20UL), unrelated = new(30UL);
-        RoleId[] memberRoles = [unrelated, .. hasAllowRole ? [allow] : Array.Empty<RoleId>(),
-            .. hasDenyRole ? [deny] : Array.Empty<RoleId>()];
+        RoleId[] memberRoles = [unrelated, .. hasAllowRole ? [allow] : System.Array.Empty<RoleId>(),
+            .. hasDenyRole ? [deny] : System.Array.Empty<RoleId>()];
 
         GetCustomCommand.IsUserAuthorized(memberRoles, allowConfigured ? [allow] : [], denyConfigured ? [deny] : [])
             .ShouldBe(expected);

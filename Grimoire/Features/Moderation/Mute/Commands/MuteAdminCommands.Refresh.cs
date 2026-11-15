@@ -18,7 +18,7 @@ public partial class MuteAdminCommands
         var guild = ctx.RequiredGuild;
         var response = await this._settingsModule.GetConfiguredMuteRole(guild.GetGuildId());
 
-        if (response.GetOrElse(() => null) is not { } roleId)
+        if (response.OrNullDuringMigration() is not { } roleId)
         {
             await ctx.ReplyAsync(GrimoireColor.Yellow, "No mute role is configured.");
             return;

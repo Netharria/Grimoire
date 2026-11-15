@@ -16,9 +16,9 @@ internal sealed partial class GeneralSettingsCommands
 
         var modLogChannelId =
             await this._settingsModule.GetLogChannelSetting(GuildLogType.Moderation, guild.GetGuildId())
-                .GetOrElse(() => null);
+                .OrNullDuringMigration();
         var userCommandChannelId = await this._settingsModule.GetUserCommandChannel(guild.GetGuildId())
-            .GetOrElse(() => null);
+            .OrNullDuringMigration();
 
         var moderationLogText = modLogChannelId is null
             ? "None"

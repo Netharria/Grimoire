@@ -39,7 +39,7 @@ public sealed class SpamFilterTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.ConfigureModerationAsync();
         await this._bot.SetModuleAsync(Module.AntiSpam, true);
         this._muteRoleId = this._bot.Rest.CreateRole("Muted");
-        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(this._muteRoleId))).ShouldSucceed();
+        (await this.Settings.SetMuteRole(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RoleId(this._muteRoleId))).ShouldBeSaved();
     }
 
     public async ValueTask DisposeAsync() => await this._bot.DisposeAsync();
