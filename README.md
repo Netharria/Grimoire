@@ -55,7 +55,8 @@ file where you can set the configuration. The following properties are available
 * `warningChannelId` *(Optional)* The channel for warning alerts and the daily warning report.
 * `warningReportTimeUtc` *(Optional)* The time of day (UTC) the daily warning report is posted.
 * `pluralkitToken`, `pluralkitUserAgent`, `pluralkitApiEndpoint` *(Optional)* PluralKit lookups, used to log proxied
-  messages under the member behind them. Lookups are off unless the token and user agent are set.
+  messages under the member behind them. Lookups are off unless all three are set (the endpoint as an absolute URL,
+  for example `https://api.pluralkit.me/v2/`); a startup warning names any that are missing.
 * `Serilog.\*` Sets the configuration for logs. Reasonable defaults have been set but you can customize them here.
 
 You can also set these properties using environment variables, which override the settings in the

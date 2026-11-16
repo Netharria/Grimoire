@@ -20,6 +20,7 @@ Older documents carry a banner at the top saying what replaced them.
 | Architecture: layers, effects, error model, boundaries, tests | [`architecture.md`](architecture.md) | Updated as migration sections land. |
 | Data access: `Sql` values, `Db<RT>`, retries, transactions, database errors, Dapper type handlers, SQL tests | [`architecture.md`](architecture.md), section 5 | EF Core stays for migrations (plan C3). |
 | Discord calls: `Discord<RT>`, snapshots, retries, Discord errors, guild log posts and the log gate | [`architecture.md`](architecture.md), section 6 | Spec 1.4. |
+| PluralKit lookups: `PluralKit<RT>`, `ProxyLookup`, the rate limit and its errors | [`architecture.md`](architecture.md), section 7 | Spec 1.5. |
 
 ## Historical
 

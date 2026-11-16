@@ -52,8 +52,8 @@ interval before its first tick.
 | XC-03 | `token` empty, or a revoked token | Start the bot | Bot never comes online | Record the error and whether the process exits or retries. Migrations still run first |
 | XC-04 | `ConnectionStrings:Grimoire` empty, `ConnectionProperties` section filled | Start against the local docker DB | Note: the fallback string forces `SSL Mode=Require`, so a local DB without SSL is refused | Record the error. With an SSL-enabled DB, it starts |
 | XC-05 | DB container stopped | Start the bot | Bot never comes online | Npgsql retries (`EnableRetryOnFailure`), then the host stops with a connection error. Discord is never contacted |
-| XC-06 | `pluralkitToken` or `pluralkitUserAgent` empty | Start, then delete three logged messages | Deletes logged as usual | One warning "UserAgent or Pluralkit Token Not Present. Pluralkit integration disabled." for the whole run. **[auto]** `PluralKitTests.WithoutPluralKitConfigured_TheWarningIsLoggedOnce` |
-| XC-07 | `pluralkitToken` and `pluralkitUserAgent` set, `pluralkitApiEndpoint` removed | Start, then `user1` sends a message and deletes it within a minute | **Expected:** PluralKit treated as not configured; the delete is logged. **Actual (from code):** the bot starts, but `CreateClient("Pluralkit")` throws `ArgumentException` outside the lookup's `try`, so the delete handler fails and nothing is logged (observation 1) | Console: event handler error; no `MessageDeletedEntry` row. **[auto]** `PluralKitAcrossFeaturesTests.WithoutAnApiEndpoint_AQuickDelete_IsStillLogged` (skipped, KI-101) |
+| XC-06 | `pluralkitToken` or `pluralkitUserAgent` empty | Start, then delete three logged messages | Deletes logged as usual | One warning "PluralKit integration is off: … is missing." naming each missing key, for the whole run. **[auto]** `PluralKitTests.WithoutPluralKitConfigured_TheWarningIsLoggedOnce` |
+| XC-07 | `pluralkitToken` and `pluralkitUserAgent` set, `pluralkitApiEndpoint` removed | Start, then `user1` sends a message and deletes it within a minute | PluralKit is off; the delete is logged (fixed in spec 1.5, KI-101) | One warning "PluralKit integration is off: pluralkitApiEndpoint is missing."; a `MessageDeletedEntry` row; no PluralKit request. **[auto]** `PluralKitAcrossFeaturesTests.WithoutAnApiEndpoint_AQuickDelete_IsStillLogged` |
 | XC-08 | Normal start | Watch the console for the first minute | none | `LockBackgroundTasks` and `MuteBackgroundTasks` log their start delay only after the migration log (or after connect). First lock/mute tick within about 10 s |
 | XC-09 | Bot in Test-A and Test-B | Start the bot | none | Members of both guilds synced into username, nickname and avatar history. **[auto]** `MultiGuildTests.BothGuildsMembers_AreSyncedAtStartup` |
 | XC-10 | Invite tracking on, user log join channel set | `user2` joins with an invite in the first seconds after start | Join logged; the invite may be missing | Known startup window, see KI-52. Record how long after "ready" the invite shows |
@@ -95,9 +95,10 @@ delete and edit channels are set. PluralKit must be configured (`pluralkitToken`
 | XC-32 | After XC-30 | Wait over a minute, then delete the proxy | Same as XC-31: the link is read from the DB, so no lookup is needed | Delete entry on the proxy. **[auto]** `PluralKitAcrossFeaturesTests.DeletingAnOldProxy_UsesTheStoredLink_WithoutALookup` |
 | XC-33 | none | `user1` sends and deletes a plain message | Logged as usual | **[auto]** `PluralKitTests.AMessagePluralKitDoesNotKnow_IsLoggedAsUsual` |
 | XC-34 | After XC-30 | `pk` edits the proxy through PluralKit | Edit log shows before and after, with `pk`'s avatar, not the webhook's | Edit entry. **[auto]** `PluralKitTests.EditingAProxy_ShowsTheOriginalAuthorsAvatar` |
-| XC-35 | PluralKit API returns 403, non-JSON, or a changed shape | Delete a logged message | Logged as an ordinary delete | Info log "PluralKit lookup for message ... failed". **[auto]** `PluralKitTests.APluralKitFailure_StillLogsTheDelete` |
-| XC-36 | none | Delete five plain messages in one second | All five logged | Lookups beyond two a second are refused by the rate limiter and fall back to an ordinary log. **[auto]** `PluralKitTests.ABurstOfDeletes_IsAllLogged` |
-| XC-37 | none | `pk` sends five proxied messages within a second | **Expected:** five proxies, no delete logs. **Actual (from the limiter):** originals whose lookup is rate-limited are logged as deleted by `pk`, and their proxies get no link | Record how many false delete logs appear. Later deletes of those proxies show the webhook as author. **[auto]** `PluralKitAcrossFeaturesTests.FiveQuickProxies_AreAllLinked_AndNoneLoggedAsDeleted` (skipped: 3 of 5 logged, KI-111) |
+| XC-35 | PluralKit API returns 403, non-JSON, or a changed shape | Delete a logged message | Logged as an ordinary delete | Log "PluralKit lookup for message ... failed (Problem)": Warning for a refusal or an answer that can't be read, with a Warning alert for a refusal; Information for an outage (spec 1.5, section 3.4). **[auto]** `PluralKitTests.APluralKitFailure_StillLogsTheDelete` |
+| XC-36 | none | Delete five plain messages in one second | All five logged | Lookups past the rate limit wait in its queue (spec 1.5); each is answered "not found" and logged as usual. **[auto]** `PluralKitTests.ABurstOfDeletes_IsAllLogged` |
+| XC-37 | none | `pk` sends five proxied messages within a second | Five proxies, no delete logs (fixed in spec 1.5, KI-111: lookups queue instead of being refused) | Five `ProxiedMessageLink` rows. **[auto]** `PluralKitAcrossFeaturesTests.FiveQuickProxies_AreAllLinked_AndNoneLoggedAsDeleted` |
+| XC-37b | `pk`'s PluralKit member deleted | `pk` sends a message PluralKit proxies (PluralKit answers with no system or member) | The original's delete is not logged, and no link is saved (Q37) | No `MessageDeletedEntry` and no `ProxiedMessageLink` row; a Debug line. **[auto]** `PluralKitTests.AProxyOfADeletedMember_IsNotLoggedOrLinked` |
 | XC-38 | none | Delete a message that was never logged (sent while the message log was off) | Nothing logged | No PluralKit request. **[auto]** `PluralKitTests.DeletingAnUnloggedMessage_AsksPluralKitNothing` |
 | XC-39 | `#spam` has message-log override Never | `pk` proxies a message in `#spam` | Nothing logged | Neither message saved; no PluralKit request. **[auto]** `PluralKitAcrossFeaturesTests.InANeverLoggedChannel_NothingIsSaved_AndPluralKitIsNotAsked` |
 | XC-40 | Leveling on, XP timeout 3 min, `pk` has no timeout running | `pk` sends one proxied message | none | One `EarnedXp` row for `pk` from the original. None for the webhook user id. **[auto]** `PluralKitAcrossFeaturesTests.ProxiedMessages_EarnXpOnlyForTheMember_OncePerTimeout` |
@@ -387,7 +388,9 @@ Record failures here as `ID - observed - expected - severity`.
 ## Automated coverage
 
 - `Shared/StartupMigrationTests`: XC-01, XC-20, XC-21.
-- `Logging/PluralKitTests`: XC-06, XC-30, XC-31, XC-33 to XC-36, XC-38.
+- `Logging/PluralKitTests`: XC-06, XC-30, XC-31, XC-33 to XC-36, XC-37b, XC-38.
+- `Shared/PluralKitAcrossFeaturesTests`: XC-07, XC-32, XC-37, XC-39 to XC-47.
+- `Shared/PluralKit/LivePluralKitTests`: the live lookup, its errors and its rate limiter (spec 1.5).
 - `Shared/CommandMatrixTests`: the registration snapshot under D, XC-50, and XC-70 for 35 commands.
 - `Shared/CommandChecksTests`, `Shared/ModuleCommandsTests`: XC-86, XC-90, part of XC-77.
 - `ModSettingsTests`, `LevelSettingsTests`: XC-71, XC-72.
@@ -403,8 +406,6 @@ Record failures here as `ID - observed - expected - severity`.
 
 Candidates for new tests:
 
-- XC-07: start with token and user agent but no endpoint, delete a fresh message, expect a delete log.
-- XC-37: five proxies in one second through `FakePluralKit`; count false delete logs.
 - XC-40 to XC-43: proxied messages through `SendMessage` with a webhook author, for leveling and the spam filter.
 - XC-45: purge proxied messages and check the bulk log's author.
 - XC-61: restart with Manage Channels only, `/Unlock` a locked channel.

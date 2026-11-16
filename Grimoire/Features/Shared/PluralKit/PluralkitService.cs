@@ -5,73 +5,30 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using Grimoire.Features.Shared.PluralKit.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Polly;
+using Grimoire.Functional.Runtime;
+using LanguageExt;
+using Microsoft.Extensions.Hosting;
 
 namespace Grimoire.Features.Shared.PluralKit;
 
+/// <summary>
+///     The bridge for <c>DeleteMessageEvent</c>, which stays on EF until section 3.10 (spec 1.5, section 3.9). 3.10
+///     calls <see cref="DeletedMessageLookup{RT}" /> from the ported handler and deletes this.
+/// </summary>
 public interface IPluralkitService
 {
-    ValueTask<PluralKitMessage?> GetProxiedMessageInformation(ulong messageId, DateTimeOffset messageTimestamp);
+    /// <summary>What PluralKit says about a deleted message. A failure has been logged and is answered as NotProxied.</summary>
+    ValueTask<ProxyLookup> Lookup(MessageId deleted, DateTimeOffset createdAt);
 }
 
-/// <remarks>A singleton: DSharpPlus makes a scope per event, so a scoped one would log its warning on every delete.</remarks>
-public sealed partial class PluralkitService : IPluralkitService
+public sealed class PluralkitService(GrimoireEnv env, IHostApplicationLifetime lifetime) : IPluralkitService
 {
-    private const string MessageEndpoint = "messages/";
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly bool _isConfigured;
-    private readonly ILogger<PluralkitService> _logger;
-
-    public PluralkitService(IHttpClientFactory httpClientFactory,
-        IConfiguration configuration,
-        ILogger<PluralkitService> logger)
+    public async ValueTask<ProxyLookup> Lookup(MessageId deleted, DateTimeOffset createdAt)
     {
-        this._httpClientFactory = httpClientFactory;
-        this._logger = logger;
-        this._isConfigured = !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitUserAgent", ""))
-                             && !string.IsNullOrWhiteSpace(configuration.GetValue("pluralkitToken", ""));
-        if (!this._isConfigured)
-            PluralkitNotConfiguredLog(logger);
+        using var envIO = EnvIO.New(token: lifetime.ApplicationStopping);
+        var result = await DeletedMessageLookup<GrimoireRuntime>.Run(deleted, createdAt)
+            .RunAsync(new GrimoireRuntime(env), envIO);
+        // Only cancellation gets through, at shutdown; the delete is then handled as an ordinary one.
+        return result.Match(Succ: lookup => lookup, Fail: _ => new ProxyLookup.NotProxied());
     }
-
-    /// <summary>
-    ///     The message as PluralKit knows it, or null if it doesn't or can't be asked. The lookup is optional, so no
-    ///     failure escapes: the caller logs the message without the PluralKit details instead.
-    /// </summary>
-    public async ValueTask<PluralKitMessage?> GetProxiedMessageInformation(ulong messageId,
-        DateTimeOffset messageTimestamp)
-    {
-        if (!this._isConfigured) return null;
-        if (messageTimestamp.AddSeconds(60) < DateTimeOffset.UtcNow) return null;
-        var httpClient = this._httpClientFactory.CreateClient("Pluralkit");
-        try
-        {
-            return await httpClient.GetFromJsonAsync<PluralKitMessage>(MessageEndpoint + messageId);
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.NotFound)
-        {
-            return null;
-        }
-        // The pipeline's timeout, rate limiter and circuit breaker all throw ExecutionRejectedException; retries that
-        // run out throw HttpRequestException; a changed response shape throws JsonException. No token is passed, so a
-        // cancellation can only be HttpClient's own timeout.
-        catch (Exception ex) when (ex is HttpRequestException or ExecutionRejectedException or JsonException
-                                       or TaskCanceledException)
-        {
-            LogLookupFailed(this._logger, ex, messageId);
-            return null;
-        }
-    }
-
-    [LoggerMessage(LogLevel.Warning, "UserAgent or Pluralkit Token Not Present. Pluralkit integration disabled.")]
-    static partial void PluralkitNotConfiguredLog(ILogger<PluralkitService> logger);
-
-    [LoggerMessage(LogLevel.Information, "PluralKit lookup for message {MessageId} failed, so it's handled as an ordinary message")]
-    static partial void LogLookupFailed(ILogger logger, Exception ex, ulong messageId);
 }

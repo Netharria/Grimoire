@@ -69,7 +69,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
     ///     XC-07: with the token and user agent set but no API endpoint, PluralKit should count as not configured and
     ///     the delete be logged as usual.
     /// </summary>
-    [Fact(Skip = "Fails: PluralKit counts as configured without pluralkitApiEndpoint, and CreateClient throws outside the try, so the delete isn't logged. KI-101")]
+    [Fact]
     public async Task WithoutAnApiEndpoint_AQuickDelete_IsStillLogged()
     {
         // The harness sets pluralkitUserAgent; an empty value here hides its endpoint, as if the key were removed.
@@ -86,6 +86,9 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
         await using var dbContext = database.CreateDbContext();
         (await dbContext.MessageHistory.OfType<MessageDeletedEntry>().AnyAsync(Token)).ShouldBeTrue();
         this._bot.Logs.Errors.ShouldBeEmpty();
+        this._bot.Logs.Events.ShouldContain(logEvent =>
+            logEvent.RenderMessage(null).Contains("pluralkitApiEndpoint is missing", StringComparison.Ordinal));
+        this._pluralKit.Lookups.ShouldBeEmpty();
     }
 
     // ── Message log ───────────────────────────────────────────────────────────
@@ -112,10 +115,10 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
     }
 
     /// <summary>
-    ///     XC-37: five proxies in a second. Each original should be linked, not logged as deleted. The lookup is limited
-    ///     to two a second with no queue, so the others are logged as deletes by <c>pk</c> and their proxies get no link.
+    ///     XC-37, KI-111: five proxies in a second. Each original is linked, not logged as deleted: lookups past the rate
+    ///     limit wait in its queue instead of being refused (SH-2).
     /// </summary>
-    [Fact(Skip = "Fails: the PluralKit rate limiter (2 a second, no queue) refuses the other lookups, so 3 of 5 originals are logged as deleted and their proxies get no link. KI-111")]
+    [Fact]
     public async Task FiveQuickProxies_AreAllLinked_AndNoneLoggedAsDeleted()
     {
         var pairs = new List<(ulong Original, ulong Proxy)>();

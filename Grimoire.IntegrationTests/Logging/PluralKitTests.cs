@@ -65,6 +65,25 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <summary>
+    ///     Q37: PluralKit confirms the proxy but sends no system or member, because the member was deleted. The
+    ///     original's delete is PluralKit's, so it isn't logged, and no link is saved.
+    /// </summary>
+    [Fact]
+    public async Task AProxyOfADeletedMember_IsNotLoggedOrLinked()
+    {
+        var original = await this.SendLoggedAsync(this.Guild.User1, "a:hello");
+        var proxy = await this.SendLoggedAsync(this._webhook, "hello");
+        this._pluralKit.AddProxyOfDeletedMember(original, proxy, this.Guild.User1, this.Guild);
+
+        this._bot.DeleteMessage(original, this.Channel);
+
+        (await this.DeleteLoggedWithinAsync(NothingHappensWindow)).ShouldBeFalse();
+        this._pluralKit.Lookups.ShouldContain($"messages/{original}");
+        (await this.LinksAsync()).ShouldBeEmpty();
+        this._bot.Logs.Errors.ShouldBeEmpty();
+    }
+
     /// <summary>Deleting the proxy afterwards is logged against the member who wrote it.</summary>
     /// <remarks>Cases: XC-31, LOG-99.</remarks>
     [Fact]
@@ -148,7 +167,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
             "Author").ShouldBe(this.Guild.User1.Mention);
     }
 
-    /// <summary>I-3: the rate limiter allows two lookups a second with no queue, so a burst of deletes is refused by it.</summary>
+    /// <summary>I-3 and SH-2: a burst of deletes waits its turn in the rate limiter's queue, and every one is logged.</summary>
     /// <remarks>Cases: XC-36.</remarks>
     [Fact]
     public async Task ABurstOfDeletes_IsAllLogged()
@@ -184,7 +203,7 @@ public sealed class PluralKitTests(GrimoireCoreFactory database) : IAsyncLifetim
                 .Any(field => field?["value"]?.GetValue<string>() == content) == true);
         }
 
-        this._bot.Logs.Events.Count(logEvent => logEvent.MessageTemplate.Text.Contains("Pluralkit integration disabled", StringComparison.Ordinal))
+        this._bot.Logs.Events.Count(logEvent => logEvent.MessageTemplate.Text.Contains("PluralKit integration is off", StringComparison.Ordinal))
             .ShouldBe(1);
     }
 

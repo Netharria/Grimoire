@@ -181,6 +181,7 @@ public sealed class TestEnv
         this.Database = new FakeDatabase(this.Journal);
         this.Discord = new FakeDiscord(this.Journal);
         this.GuildIssues = new FakeGuildIssues(this.Journal);
+        this.PluralKit = new FakePluralKitIO(this.Journal);
     }
 
     public Journal Journal { get; } = new();
@@ -192,9 +193,10 @@ public sealed class TestEnv
     public FakeDatabase Database { get; }
     public FakeDiscord Discord { get; }
     public FakeGuildIssues GuildIssues { get; }
+    public FakePluralKitIO PluralKit { get; }
 
     public GrimoireEnv Env => new(this.Clock, this.Log, this.Alerts, this.GuildLog, this.Trace, this.Database,
-        this.Discord, this.GuildIssues);
+        this.Discord, this.GuildIssues, this.PluralKit);
     public GrimoireRuntime Runtime => new(this.Env);
     public CommandRuntime CommandRuntime => new(this.Env, this.Command);
 

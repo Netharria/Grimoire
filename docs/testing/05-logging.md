@@ -212,7 +212,7 @@ written but nothing is downloaded.
 | LOG-96 | A message posted before the bot started | Delete it | Nothing logged; PluralKit is not asked **[auto]** | No row |
 | LOG-97 | none | Delete one of the bot's log posts by hand | Nothing logged **[auto]** | No row |
 | LOG-98 | Message not in the bot's cache (restart the bot after posting) | Delete | Still logged with the stored author **[auto]** | Deleted entry |
-| LOG-99 | `pk` sends a message PluralKit proxies | Watch `#messagelog` | The original's delete is not logged; deleting the proxy later logs Original Author, System Id, Member Id **[auto]** | `ProxiedMessageLink` row |
+| LOG-99 | `pk` sends a message PluralKit proxies | Watch `#messagelog` | The original's delete is not logged; deleting the proxy later logs Original Author, System Id, Member Id. If `pk`'s PluralKit member was deleted, PluralKit sends no ids: the original's delete is still not logged, and nothing is linked (Q37) **[auto]** | `ProxiedMessageLink` row |
 | LOG-100 | Delete log `#private` | Delete | `#modlog` "I could not post in #private." | Deleted entry **[auto]** `MessageEventEdgeTests.ADeleteLogTheBotCannotPostIn_IsReported` |
 | LOG-101 | MessageLog disabled | Delete a saved message | Nothing **[auto]** | No row |
 

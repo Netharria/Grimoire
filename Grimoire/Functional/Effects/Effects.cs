@@ -11,6 +11,9 @@ using System.Data;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Data;
 using Grimoire.Functional.Discord;
+using Grimoire.Functional.PluralKit;
+using Grimoire.Features.Shared.PluralKit;
+using Grimoire.Features.Shared.PluralKit.Models;
 using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Settings.Enums;
 using LanguageExt;
@@ -123,6 +126,40 @@ public static class Discord<RT> where RT : Has<Eff<RT>, IDiscordIO>
 
     private static Eff<RT, A> Retried<A>(Func<IDiscordIO, IO<A>> call) =>
         Trait.Bind(discord => call(discord).RetryWhile(discord.ReadRetry, DiscordErrors.IsTransient));
+}
+
+/// <summary>
+///     PluralKit's message lookup (spec 1.5). Asks only when PluralKit is on and the message is under 60 s old; retries
+///     transient failures, each attempt waiting its turn in the rate limiter; and gives up past the cap.
+/// </summary>
+public static class PluralKit<RT> where RT : Has<Eff<RT>, IPluralKitIO>, Has<Eff<RT>, ITimeIO>
+{
+    private static Eff<RT, IPluralKitIO> Trait => Has<Eff<RT>, RT, IPluralKitIO>.ask.As();
+
+    /// <summary>What PluralKit says about a message that was just deleted. Fails with <c>Unavailable</c> or a defect.</summary>
+    public static Eff<RT, ProxyLookup> Lookup(MessageId deleted, DateTimeOffset createdAt) =>
+        from pluralKit in Trait
+        from now in Clock<RT>.UtcNow
+        from result in pluralKit.IsEnabled && PluralKitWindow.ShouldAsk(createdAt, now)
+            ? Ask(pluralKit, deleted)
+            : Eff<RT, ProxyLookup>.Pure(new ProxyLookup.NotAsked())
+        select result;
+
+    private static Eff<RT, ProxyLookup> Ask(IPluralKitIO pluralKit, MessageId deleted) =>
+        Eff<RT, Option<PluralKitMessage>>.LiftIO(
+                pluralKit.GetMessage(deleted)
+                    .RetryWhile(pluralKit.ReadRetry, PluralKitErrors.IsTransient)
+                    .Timeout(pluralKit.Cap)
+                    // The timeout cancels the call, so it ends as Cancelled too. Only the run's own token means
+                    // shutdown; anything else was the cap.
+                    .Catch(error => error.Is(Errors.TimedOut) || error.Is(Errors.Cancelled),
+                        error => IO.lift(env => env.Token.IsCancellationRequested).Bind(shuttingDown => shuttingDown
+                            ? IO.fail<Option<PluralKitMessage>>(error)
+                            : IO.fail<Option<PluralKitMessage>>(PluralKitErrors.TooSlow(pluralKit.Cap)))))
+            .Bind(found => found.Match(
+                Some: message => message.Classify(deleted).Match(
+                    Succ: Eff<RT, ProxyLookup>.Pure, Fail: Eff<RT, ProxyLookup>.Fail),
+                None: () => Eff<RT, ProxyLookup>.Pure(new ProxyLookup.NotProxied())));
 }
 
 public static class Trace<RT> where RT : Has<Eff<RT>, ITraceIO>

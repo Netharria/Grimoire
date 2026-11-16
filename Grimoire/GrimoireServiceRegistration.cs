@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Threading.RateLimiting;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Extensions;
@@ -52,6 +51,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
+using Grimoire.Functional.PluralKit;
 using Npgsql;
 using Serilog;
 using ZiggyCreatures.Caching.Fusion;
@@ -72,17 +72,6 @@ internal static class GrimoireServiceRegistration
         /// </summary>
         public IServiceCollection AddGrimoire(IConfiguration configuration)
         {
-            var rateLimiter = new SlidingWindowRateLimiter(
-                new SlidingWindowRateLimiterOptions
-                {
-                    PermitLimit = 2,
-                    Window = TimeSpan.FromSeconds(1),
-                    AutoReplenishment = true,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    SegmentsPerWindow = 1,
-                    QueueLimit = 0
-                });
-
             var token = configuration.GetValue<string>("token")!;
             var connectionString = configuration.GetConnectionString("Grimoire");
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -124,6 +113,7 @@ internal static class GrimoireServiceRegistration
                 .AddSingleton<IAlertSender>(provider => provider.GetRequiredService<AlertService>())
                 .AddSingleton<IInviteService, InviteService>()
                 .AddEffectRuntime()
+                .AddPluralKit()
                 .ConfigureEventHandlers(eventHandlerBuilder =>
                     eventHandlerBuilder
                         //Custom Commands
@@ -245,25 +235,6 @@ internal static class GrimoireServiceRegistration
 
             services.AddFusionCache()
                 .AsHybridCache();
-
-            services.AddHttpClient("Pluralkit", x =>
-            {
-                var endpoint = configuration["pluralkitApiEndpoint"];
-                var userAgent = configuration["pluralkitUserAgent"];
-                var pluralkitToken = configuration["pluralkitToken"];
-
-                ArgumentException.ThrowIfNullOrEmpty(endpoint);
-
-                x.BaseAddress = new Uri(endpoint);
-                x.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
-                x.DefaultRequestHeaders.Add("Authorization", pluralkitToken);
-            }).AddStandardResilienceHandler(builder
-                => builder.RateLimiter = new HttpRateLimiterStrategyOptions
-                {
-                    Name = $"{nameof(RateLimiter)}",
-                    RateLimiter = args => rateLimiter
-                        .AcquireAsync(cancellationToken: args.Context.CancellationToken)
-                });
 
             return services;
         }

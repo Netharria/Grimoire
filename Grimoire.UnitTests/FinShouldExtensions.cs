@@ -39,6 +39,12 @@ public static class FinShouldExtensions
         public async ValueTask<Error> ShouldFail() => (await task).ShouldFail();
     }
 
+    extension<T>(Option<T> option)
+    {
+        public T ShouldBeSome()
+            => option.Case is T value ? value : throw new ShouldAssertException("expected Some, got None");
+    }
+
     extension<T>(Validation<Error, T> validation)
     {
         public T ShouldSucceed()

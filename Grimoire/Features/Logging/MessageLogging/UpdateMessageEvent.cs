@@ -44,9 +44,10 @@ public sealed class UpdateMessageEvent(
                     .OrderByDescending(h => h.Timestamp)
                     .Select(h => (MessageContent?)h.Content)
                     .FirstOrDefault(),
-                OriginalUserId = (UserId?)m.ProxiedMessageLink!.OriginalMessage!.UserId,
-                SystemId = (PluralKitSystemId?)m.ProxiedMessageLink.SystemId,
-                MemberId = (PluralKitMemberId?)m.ProxiedMessageLink.MemberId
+                Proxy = m.ProxiedMessageLink == null
+                    ? null
+                    : new ProxyAuthor(m.ProxiedMessageLink.OriginalMessage!.UserId, m.ProxiedMessageLink.SystemId,
+                        m.ProxiedMessageLink.MemberId)
             })
             .FirstOrDefaultAsync();
 
@@ -77,7 +78,7 @@ public sealed class UpdateMessageEvent(
             return;
 
         // As in the delete log: the avatar is optional, and a proxied message shows the member behind it.
-        var avatarUrl = await sender.GetUserAvatar(message.OriginalUserId ?? message.UserId, args.Guild);
+        var avatarUrl = await sender.GetUserAvatar(message.Proxy?.OriginalUserId ?? message.UserId, args.Guild);
 
         var embed = new DiscordEmbedBuilder()
             .WithDescription($"**[Jump Url]({args.Message.JumpLink})**")
@@ -89,7 +90,7 @@ public sealed class UpdateMessageEvent(
         if (avatarUrl is not null)
             embed.WithThumbnail(avatarUrl);
 
-        embed.AddMessageAuthorFields(message.UserId, message.OriginalUserId, message.SystemId, message.MemberId);
+        embed.AddMessageAuthorFields(message.UserId, message.Proxy);
 
         // Discord caps a message's embeds at 6,000 characters together, so a long edit sends Before and After
         // separately. The copy is taken first, so it carries only one of them.

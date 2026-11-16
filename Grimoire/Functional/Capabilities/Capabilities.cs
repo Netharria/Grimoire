@@ -9,6 +9,7 @@ using System.Data;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.GuildIssues;
+using Grimoire.Features.Shared.PluralKit.Models;
 using Grimoire.Functional.Data;
 using Grimoire.Functional.Discord;
 using Grimoire.Settings.Enums;
@@ -98,6 +99,29 @@ public interface IDiscordIO
 
     /// <summary>The schedule <c>Discord&lt;RT&gt;</c> retries on. Live: <c>DiscordRetry.Reads</c>. Fake: no delay.</summary>
     Schedule ReadRetry { get; }
+}
+
+/// <summary>
+///     PluralKit's message lookup (spec 1.5). Every answer becomes a value in one place (<c>PluralKitErrors</c>):
+///     <c>None</c> for a message PluralKit doesn't know (404/20006), <c>Unavailable</c> for anything that went wrong.
+///     <c>PluralKit&lt;RT&gt;</c> adds the 60-second window, the retry and the cap, so it is the API features use.
+/// </summary>
+public interface IPluralKitIO
+{
+    /// <summary>False when PluralKit isn't configured. <see cref="GetMessage" /> is then never called.</summary>
+    bool IsEnabled { get; }
+
+    /// <summary>
+    ///     The message as PluralKit knows it, by the proxy's id or the original's. Waits for a token from the rate
+    ///     limiter's bucket first, or fails at once when its queue is full.
+    /// </summary>
+    IO<Option<PluralKitMessage>> GetMessage(MessageId message);
+
+    /// <summary>The schedule <c>PluralKit&lt;RT&gt;</c> retries on. Live: <c>PluralKitRetry.Reads</c>. Fake: no delay.</summary>
+    Schedule ReadRetry { get; }
+
+    /// <summary>The longest a whole lookup may take, queue and retries included. Live: <c>PluralKitRetry.Cap</c>.</summary>
+    TimeSpan Cap { get; }
 }
 
 /// <summary>

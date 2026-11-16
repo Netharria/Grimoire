@@ -11,7 +11,6 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.PluralKit;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
-using LanguageExt;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Logging.MessageLogging;
@@ -55,9 +54,10 @@ public sealed partial class DeleteMessageEvent(
                 Attachments = m.Attachments
                     .Select(a => new AttachmentDto { Id = a.Id, AttachmentUrl = a.AttachmentUrl })
                     .ToArray(),
-                OriginalUserId = m.ProxiedMessageLink!.OriginalMessage!.UserId,
-                SystemId = m.ProxiedMessageLink.SystemId,
-                MemberId = m.ProxiedMessageLink.MemberId
+                Proxy = m.ProxiedMessageLink == null
+                    ? null
+                    : new ProxyAuthor(m.ProxiedMessageLink.OriginalMessage!.UserId, m.ProxiedMessageLink.SystemId,
+                        m.ProxiedMessageLink.MemberId)
             })
             .FirstOrDefaultAsync();
 
@@ -66,26 +66,15 @@ public sealed partial class DeleteMessageEvent(
         if (message is null || message.UserId.Value == args.Guild.CurrentMember.Id)
             return;
 
-        var pluralkitMessage =
-            await pluralKitService.GetProxiedMessageInformation(args.Message.Id,
-                args.Message.CreationTimestamp);
+        // PluralKit deletes each original it proxies. That isn't a member's delete, so it's linked or skipped, not
+        // logged (spec 1.5, section 2.2). A failed lookup comes back as NotProxied: the delete is logged as usual.
+        var lookup = await pluralKitService.Lookup(args.Message.GetMessageId(), args.Message.CreationTimestamp);
+        if (lookup is ProxyLookup.ReplacedByProxyOfDeletedMember)
+            return;
 
-        if (pluralkitMessage is not null
-            && ulong.TryParse(pluralkitMessage.Id, out var proxyMessageId)
-            && ulong.TryParse(pluralkitMessage.OriginalId, out var originalMessageId)
-            && proxyMessageId != args.Message.Id
-            && pluralkitMessage.PluralKitSystem?.Id is { } rawSystemId
-            && pluralkitMessage.Member?.Id is { } rawMemberId
-            && PluralKitSystemId.Create(rawSystemId) is Validation<Error, PluralKitSystemId>.Success(var systemId)
-            && PluralKitMemberId.Create(rawMemberId) is Validation<Error, PluralKitMemberId>.Success(var memberId))
+        if (lookup is ProxyLookup.ReplacedByProxy(var link))
         {
-            await dbContext.AddAsync(new ProxiedMessageLink
-            {
-                ProxyMessageId = new MessageId(proxyMessageId),
-                OriginalMessageId = new MessageId(originalMessageId),
-                SystemId = systemId,
-                MemberId = memberId
-            });
+            await dbContext.AddAsync(link);
             try
             {
                 await dbContext.SaveChangesAsync();
@@ -152,12 +141,12 @@ public sealed partial class DeleteMessageEvent(
             .WithColor(GrimoireColor.Red);
 
         var avatarUrl = await sender.GetUserAvatar(
-            response.OriginalUserId ?? response.UserId,
+            response.Proxy?.OriginalUserId ?? response.UserId,
             args.Guild);
         if (avatarUrl is not null)
             embed.WithThumbnail(avatarUrl);
 
-        embed.AddMessageAuthorFields(response.UserId, response.OriginalUserId, response.SystemId, response.MemberId);
+        embed.AddMessageAuthorFields(response.UserId, response.Proxy);
 
         if (auditLogEntry?.UserResponsible is not null)
             embed.AddField("Deleted By", auditLogEntry.UserResponsible.Mention, true);
@@ -186,8 +175,6 @@ public sealed partial class DeleteMessageEvent(
         public MessageContent? Content { get; init; }
         public MessageId? ReferencedMessage { get; init; }
         public AttachmentDto[] Attachments { get; init; } = [];
-        public UserId? OriginalUserId { get; init; }
-        public PluralKitSystemId? SystemId { get; init; }
-        public PluralKitMemberId? MemberId { get; init; }
+        public ProxyAuthor? Proxy { get; init; }
     }
 }

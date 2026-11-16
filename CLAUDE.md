@@ -109,7 +109,11 @@ General helpers live outside `Features/`, in `Grimoire/Extensions`, `Grimoire/Ut
   section 6.
 - **Strongly-typed IDs**: Domain entities use custom value types for IDs (e.g., `UserId`, `GuildId`) to prevent accidental ID misuse.
 - **Hybrid caching in Settings**: guild settings are read through `HybridCache` to avoid a DB lookup on every event.
-- **PluralKit integration**: Resilience pipeline with rate limiting for the external PluralKit API.
+- **PluralKit (section 1.5)**: ported code asks PluralKit through `PluralKit<RT>.Lookup`, which returns a `ProxyLookup`
+  and asks only for deletes under 60 s old. The live capability queues lookups in a token bucket (5 a second, about
+  10 s of queue) instead of refusing them; transient failures are retried in `PluralKit<RT>`, under a 15 s cap. The
+  delete log uses `DeletedMessageLookup<RT>`, which never fails: a failed lookup is logged and the delete logged as
+  usual. See `docs/architecture.md` section 7.
 
 ## Configuration
 
@@ -129,9 +133,9 @@ secrets rather than in that file. Keys the code reads:
   "channelId": "<urgent alert channel ID, optional>",
   "warningChannelId": "<warning alert channel ID, optional>",
   "warningReportTimeUtc": "<time of the daily warning report, optional>",
-  "pluralkitToken": "<optional>",
-  "pluralkitUserAgent": "<optional; PluralKit lookups are off unless this and the token are set>",
-  "pluralkitApiEndpoint": "<optional>"
+  "pluralkitToken": "<optional; PluralKit lookups are off unless all three PluralKit keys are set>",
+  "pluralkitUserAgent": "<optional>",
+  "pluralkitApiEndpoint": "<optional, an absolute URL such as https://api.pluralkit.me/v2/>"
 }
 ```
 
@@ -172,7 +176,8 @@ Effects are unit-tested against the fake runtime in `Grimoire.UnitTests/Function
 runtime records built from recording fakes, each of which can be told to fail. `FakeDatabase` answers by statement
 name (`Returns`, `Affects`, `Fails`). `FakeDiscord` is a small in-memory guild (`Has(snapshot)`; anything it doesn't
 hold is `NotFound`; `Fails(operation, error)`, with `FakeDiscord.Outage()` and `FakeDiscord.MissingPermission(…)`),
-and `FakeGuildIssues` records guild issue reports. Integration tests drive an `EffectBackgroundService` with
+and `FakeGuildIssues` records guild issue reports. `FakePluralKitIO` answers for the messages it `Knows` and can
+`Fail`; the integration tests' `FakePluralKit` stands behind the real HttpClient. Integration tests drive an `EffectBackgroundService` with
 `GrimoireTestBot.RunEffectTickAsync<T>()`. SQL tests run the production `Sql` values through `DatabaseTestEnv`
 (`Grimoire.IntegrationTests/Database/Dapper`), which sends every `Sql.Read` to a read-only connection.
 

@@ -47,6 +47,7 @@ Code lives in `Grimoire/Functional/`: `Capabilities/`, `Runtime/`, `Effects/`, `
 | `IDatabaseIO` | `Db<RT>` | Dapper over Npgsql | 1.3 |
 | `IDiscordIO` | `Discord<RT>` | Discord lookups and actions: ids in, snapshots out, the error cases on failure | 1.4 |
 | `IGuildIssueIO` | `GuildIssues<RT>` | Setup problems shown to a guild's moderators, through `GuildIssueReporter` | 1.4 |
+| `IPluralKitIO` | `PluralKit<RT>` | PluralKit's message lookup, rate limited, with the error cases on failure | 1.5 |
 | `ISettingsIO` | `Settings<RT>` | Typed guild configuration | 3.1 |
 
 Two runtimes hold the capabilities. **`GrimoireRuntime`** is for events and workers. **`CommandRuntime`** adds
@@ -245,7 +246,43 @@ or fix. Grimoire contains them at this edge and never reaches into DSharpPlus's 
 (`FakeDiscord.Outage()` for a transient one, `FakeDiscord.MissingPermission(…)` for a refusal). `FakeGuildIssues`
 records reports. The live edge's tests (`Grimoire.IntegrationTests/Shared/Discord/`) run it against the fake REST.
 
-## 7. Tests
+## 7. PluralKit
+
+From spec 1.5. Ported code asks PluralKit about a deleted message through `PluralKit<RT>.Lookup(message, createdAt)`.
+
+- **What it answers** is a `ProxyLookup`: `NotAsked` (PluralKit is off, or the message is over 60 s old),
+  `NotProxied` (PluralKit's 404 with code 20006), `ReplacedByProxy(link)` (PluralKit deleted this original; the
+  `ProxiedMessageLink` is already built), `ReplacedByProxyOfDeletedMember` (the same, but PluralKit sent no system or
+  member because the member was deleted: nothing is logged or linked, Q37) and `IsTheProxy`. PluralKit's strings are
+  parsed once, in `PluralKitMessage.Classify`.
+- **The rate limit.** PluralKit publishes 10 lookups a second; the live capability keeps to 5 with a token bucket (one
+  token every 200 ms, a burst of 2, so never more than 7 in a second) and queues up to 50 lookups, about 10 s, instead
+  of refusing them (Q24). Past that the lookup fails at once.
+- **Retry and cap.** `PluralKit<RT>` retries an outage or a 429 twice (about 0.5 and 1 s), each attempt waiting its
+  turn in the bucket, and gives up after 15 s in all. Each HTTP attempt has 5 s.
+- **Errors** (`PluralKitErrors`, the one place an answer or exception becomes a value). Every failure is
+  `Unavailable` carrying a `PluralKitCallException` with its `PluralKitProblem`, except a defect:
+
+| Answer | Problem | Retried | The delete log's fallback logs it as |
+|---|---|---|---|
+| 5xx, a timeout, a lost connection | `Outage` | yes | Information |
+| 429 | `RateLimited` | yes | Warning |
+| The bucket's queue is full | `QueueFull` | no | Warning |
+| Past the 15 s cap | `TooSlow` | no | Information |
+| 401, 403, 400, a 404 without code 20006 | `Refused` | no | Warning, and a Warning alert |
+| A body that isn't the message, or is about another message | `Unreadable` | no | Warning |
+| Anything else | `Unexpected` (a defect) | no | Error, and a Warning alert |
+
+- **The delete log never loses a delete to PluralKit** (I-3): `DeletedMessageLookup<RT>.Run` logs a failure as above
+  and answers `NotProxied`. Only cancellation gets through.
+- **Configuration.** `PluralKitOptions.From` reads `pluralkitApiEndpoint`, `pluralkitUserAgent` and `pluralkitToken`
+  when the capability is first resolved. With any missing, the capability is `DisabledPluralKitIO` and one warning
+  names them (KI-101).
+
+**Tests.** `FakePluralKitIO` (in `TestEnv`) answers for the messages it `Knows` and can fail. The live capability's
+tests (`Grimoire.IntegrationTests/Shared/PluralKit/`) run it, with its HttpClient and bucket, against `FakePluralKit`.
+
+## 8. Tests
 
 | Project | Holds | May touch |
 |---|---|---|

@@ -25,7 +25,8 @@ internal static class FunctionalServiceRegistration
         ///     them, and the command and event runners. All singletons: the capabilities hold no per-request state, and
         ///     the per-command reply capability is built by <see cref="CommandRunner" /> for each run. The database
         ///     capability uses the <see cref="NpgsqlDataSource" /> registered by <c>AddGrimoire</c>, which the EF
-        ///     contexts share (spec 1.3, OQ-1).
+        ///     contexts share (spec 1.3, OQ-1). <see cref="IPluralKitIO" /> comes from <c>AddPluralKit</c>, which reads its
+        ///     settings (spec 1.5).
         /// </summary>
         public IServiceCollection AddEffectRuntime()
         {
@@ -47,7 +48,8 @@ internal static class FunctionalServiceRegistration
                     provider.GetRequiredService<ITraceIO>(),
                     provider.GetRequiredService<IDatabaseIO>(),
                     provider.GetRequiredService<IDiscordIO>(),
-                    provider.GetRequiredService<IGuildIssueIO>()))
+                    provider.GetRequiredService<IGuildIssueIO>(),
+                    provider.GetRequiredService<IPluralKitIO>()))
                 .AddSingleton<CommandRunner>()
                 .AddSingleton<EventRunner>();
         }

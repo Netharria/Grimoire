@@ -13,7 +13,7 @@ namespace Grimoire.Functional.Runtime;
 
 /// <summary>
 ///     The capabilities every runtime shares. Production builds it once from DI; a unit test builds one from fakes.
-///     Sections 1.3 (database), 1.4 (Discord, guild issues) and 3.1 (settings) each add a field here and a <c>Has</c> per
+///     Sections 1.3 (database), 1.4 (Discord, guild issues), 1.5 (PluralKit) and 3.1 (settings) each add a field here and a <c>Has</c> per
 ///     runtime.
 /// </summary>
 public sealed record GrimoireEnv(
@@ -24,7 +24,8 @@ public sealed record GrimoireEnv(
     ITraceIO Trace,
     IDatabaseIO Database,
     IDiscordIO Discord,
-    IGuildIssueIO GuildIssues);
+    IGuildIssueIO GuildIssues,
+    IPluralKitIO PluralKit);
 
 /// <summary>
 ///     The runtime for event handlers and background workers. Each <c>Has</c> tells language-ext where to find a
@@ -38,7 +39,8 @@ public sealed record GrimoireRuntime(GrimoireEnv Env) :
     Has<Eff<GrimoireRuntime>, ITraceIO>,
     Has<Eff<GrimoireRuntime>, IDatabaseIO>,
     Has<Eff<GrimoireRuntime>, IDiscordIO>,
-    Has<Eff<GrimoireRuntime>, IGuildIssueIO>
+    Has<Eff<GrimoireRuntime>, IGuildIssueIO>,
+    Has<Eff<GrimoireRuntime>, IPluralKitIO>
 {
     static K<Eff<GrimoireRuntime>, ITimeIO> Has<Eff<GrimoireRuntime>, ITimeIO>.Ask => Get(rt => rt.Env.Time);
     static K<Eff<GrimoireRuntime>, ILogIO> Has<Eff<GrimoireRuntime>, ILogIO>.Ask => Get(rt => rt.Env.Log);
@@ -57,6 +59,9 @@ public sealed record GrimoireRuntime(GrimoireEnv Env) :
     static K<Eff<GrimoireRuntime>, IGuildIssueIO> Has<Eff<GrimoireRuntime>, IGuildIssueIO>.Ask =>
         Get(rt => rt.Env.GuildIssues);
 
+    static K<Eff<GrimoireRuntime>, IPluralKitIO> Has<Eff<GrimoireRuntime>, IPluralKitIO>.Ask =>
+        Get(rt => rt.Env.PluralKit);
+
     private static Eff<GrimoireRuntime, A> Get<A>(Func<GrimoireRuntime, A> select) =>
         Eff<GrimoireRuntime, A>.Lift(select);
 }
@@ -74,6 +79,7 @@ public sealed record CommandRuntime(GrimoireEnv Env, ICommandIO Command) :
     Has<Eff<CommandRuntime>, IDatabaseIO>,
     Has<Eff<CommandRuntime>, IDiscordIO>,
     Has<Eff<CommandRuntime>, IGuildIssueIO>,
+    Has<Eff<CommandRuntime>, IPluralKitIO>,
     Has<Eff<CommandRuntime>, ICommandIO>
 {
     static K<Eff<CommandRuntime>, ITimeIO> Has<Eff<CommandRuntime>, ITimeIO>.Ask => Get(rt => rt.Env.Time);
@@ -86,6 +92,9 @@ public sealed record CommandRuntime(GrimoireEnv Env, ICommandIO Command) :
 
     static K<Eff<CommandRuntime>, IGuildIssueIO> Has<Eff<CommandRuntime>, IGuildIssueIO>.Ask =>
         Get(rt => rt.Env.GuildIssues);
+
+    static K<Eff<CommandRuntime>, IPluralKitIO> Has<Eff<CommandRuntime>, IPluralKitIO>.Ask =>
+        Get(rt => rt.Env.PluralKit);
     static K<Eff<CommandRuntime>, ICommandIO> Has<Eff<CommandRuntime>, ICommandIO>.Ask => Get(rt => rt.Command);
 
     private static Eff<CommandRuntime, A> Get<A>(Func<CommandRuntime, A> select) => Eff<CommandRuntime, A>.Lift(select);
