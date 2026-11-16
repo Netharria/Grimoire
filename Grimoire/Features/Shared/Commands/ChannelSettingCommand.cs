@@ -59,7 +59,7 @@ internal static class ChannelSettingCommand
         await ctx.ReplyResultAsync(
             await save(selected?.GetChannelId()),
             selected is null ? $"Disabled {name}." : $"Updated {name} to {selected.Mention}",
-            selected is null && isModerationLog ? null : () => guildLog.SendLogMessageAsync(new GuildLogMessage
+            selected is null && isModerationLog ? null : () => guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

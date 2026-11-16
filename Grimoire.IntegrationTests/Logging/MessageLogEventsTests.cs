@@ -230,10 +230,14 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
         FieldsOf(await this.WaitForDeleteLogPostAsync()).ShouldContain(("Failed to download these images.", "**old.png**"));
     }
 
-    /// <summary>I-7: Discord's 5xx is retried, and the retry must upload the image again, not an emptied stream.</summary>
-    /// <remarks>Cases: LOG-91.</remarks>
+    /// <summary>
+    ///     A log post that gets a 5xx isn't retried (Q25, spec 1.4): the 5xx may come after Discord already posted it,
+    ///     and a retry would post it twice. The log is lost, and the publisher moves straight on. This reverses I-7's
+    ///     retry, which also had to rewind the image uploads.
+    /// </summary>
+    /// <remarks>Cases: LOG-91b.</remarks>
     [Fact]
-    public async Task Delete_WithAnImage_WhoseFirstPostFails_UploadsItAgainOnTheRetry()
+    public async Task Delete_WithAnImage_WhosePostFails_IsNotPostedTwice()
     {
         var messageId = await this.SendLoggedWithAttachmentsAsync("look", "cat.png");
 
@@ -241,10 +245,42 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
             FakeDiscordRest.Error(System.Net.HttpStatusCode.InternalServerError, 0, "Internal Server Error"));
         this._bot.DeleteMessage(messageId, this.Channel);
 
-        var posts = await GrimoireTestBot.EventuallyAsync(() => Task.FromResult(this._bot.Rest.Requests
-            .Where(this._bot.IsModLogPost).ToList()), found => found.Count >= 2, TimeSpan.FromSeconds(30));
-        posts[^1].Files.ShouldHaveSingleItem().Value.ShouldNotBeEmpty();
-        posts[^1].Files.Single().Value.ShouldBe(posts[0].Files.Single().Value);
+        var lost = await this._bot.Logs.WaitForAsync(log => log.MessageTemplate.Text.StartsWith(
+            "A guild log post was lost", StringComparison.Ordinal), TimeSpan.FromSeconds(10));
+        lost.Level.ShouldBe(Serilog.Events.LogEventLevel.Warning);
+        await Task.Delay(NothingHappensWindow, TestContext.Current.CancellationToken);
+        var posts = this._bot.Rest.Requests.Where(this._bot.IsModLogPost).ToList();
+        posts.Count.ShouldBe(1, string.Join("\n---\n", posts.Select(post => post.Body)));
+    }
+
+    /// <summary>
+    ///     The edit log is gated before it looks up the author's avatar (LOG-2, defect 17). The author has left, so the
+    ///     lookup can't be answered from the member cache and shows as a REST request.
+    /// </summary>
+    /// <remarks>Cases: LOG-94b.</remarks>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Edit_WithTheEditLogOff_LooksUpNoAvatar(bool editLogOn)
+    {
+        var messageId = await this.SendLoggedAsync("before");
+        this._bot.MemberLeaves(this.Guild.User1);
+        if (!editLogOn)
+            (await this._bot.Services.GetRequiredService<SettingsModule>().SetLogChannelSetting(
+                GuildLogType.MessageEdited, new GuildId(this.Guild.Id), new ModeratorId(this.Guild.Owner.Id),
+                null, TestContext.Current.CancellationToken)).ShouldBeSetOrUnchanged();
+        var memberLookup = $"guilds/{this.Guild.Id}/members/{this.Guild.User1.Id}";
+        var lookupsBefore = this._bot.Rest.Requests.Count(request => request.Path == memberLookup);
+
+        this._bot.EditMessage(messageId, this.Guild.User1, this.Channel, "after");
+
+        (await GrimoireTestBot.EventuallyAsync(async () => await this.HistoryOfAsync<MessageEditedEntry>(messageId),
+            entries => entries.Count > 0)).ShouldNotBeEmpty();
+        if (editLogOn)
+            await this.WaitForLogAsync($"Message edited in #{this.Channel.Name}");
+        else
+            (await this.LoggedWithinAsync("Message edited", NothingHappensWindow)).ShouldBeFalse();
+        (this._bot.Rest.Requests.Count(request => request.Path == memberLookup) > lookupsBefore).ShouldBe(editLogOn);
     }
 
     private async Task<ulong> SendLoggedWithAttachmentsAsync(string content, params string[] fileNames)

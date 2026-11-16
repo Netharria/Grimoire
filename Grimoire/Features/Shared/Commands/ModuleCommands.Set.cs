@@ -44,7 +44,7 @@ internal sealed partial class ModuleCommands
             await this._settingsModule.SetModuleState(MapToModule(module), guild.GetGuildId(), ctx.GetModeratorId(),
                 enable),
             $"{(enable ? "Enabled" : "Disabled")} {module}",
-            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            () => this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

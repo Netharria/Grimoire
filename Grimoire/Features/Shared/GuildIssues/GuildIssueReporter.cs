@@ -39,7 +39,7 @@ public sealed partial class GuildIssueReporter(
         if (this._throttle.TryAcquire(issue.GuildId, issue.Code) is not { } repeats)
             return;
 
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = issue.GuildId,
             GuildLogType = GuildLogType.Moderation,

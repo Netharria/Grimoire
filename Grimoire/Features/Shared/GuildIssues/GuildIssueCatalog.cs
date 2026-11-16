@@ -40,6 +40,28 @@ public static class GuildIssueCatalog
             + "Channel permission overwrites for my role can also block it.");
     }
 
+    /// <summary>
+    ///     A permission Discord refused ported code (spec 1.4, section 3.7). Names the channel when the refusal was
+    ///     channel-specific, so a moderator fixes the overwrite and not the role.
+    /// </summary>
+    public static GuildIssue BotMissingPermission(BotRefusal refusal)
+    {
+        // Some operations already name their channel ("send a message in <#1>"); the rest get it added.
+        var where = refusal.Channel
+            .Filter(_ => !refusal.Operation.Contains("<#", StringComparison.Ordinal))
+            .Match(channel => $" in <#{channel.Value}>", () => string.Empty);
+        var scope = refusal.Channel.Match(_ => " in that channel, and check its permission overwrites",
+            () => string.Empty);
+        var roleOrder = refusal.AboutRoleOrder
+            ? " For an action on a member or a role, also move my role above theirs in Server Settings > Roles."
+            : string.Empty;
+        var channelKey = refusal.Channel.Match(channel => channel.Value.ToString(), () => "guild");
+
+        return new GuildIssue(refusal.Guild, $"bot-missing-permission:{refusal.Permission}:{channelKey}",
+            $"Discord refused to let me {refusal.Operation}{where}: I don't have **{refusal.Permission}**.",
+            $"Give my role **{refusal.Permission}**{scope}.{roleOrder}");
+    }
+
     public static GuildIssue RewardRolesNotGrantable(GuildId guildId, IEnumerable<RoleId> roles)
         => new(guildId, "leveling.reward-roles-forbidden",
             $"I could not give the level reward roles {Mentions(roles)}.",

@@ -75,7 +75,7 @@ internal sealed partial class SpamEvents(
         {
             // Nothing would ever lift a role with no mute on record.
             await member.RevokeRoleAsync(muteRole, "The mute could not be recorded.");
-            await guildLog.SendLogMessageAsync(new GuildLogMessage
+            await guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guildId,
                 GuildLogType = GuildLogType.Moderation,

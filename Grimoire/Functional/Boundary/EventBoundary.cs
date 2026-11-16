@@ -22,7 +22,7 @@ namespace Grimoire.Functional.Boundary;
 ///     effect never fails with a Grimoire case, so nothing reaches DSharpPlus's <c>IClientErrorHandler</c>.
 /// </summary>
 public static class EventBoundary<RT>
-    where RT : Has<Eff<RT>, ILogIO>, Has<Eff<RT>, IAlertIO>
+    where RT : Has<Eff<RT>, ILogIO>, Has<Eff<RT>, IAlertIO>, Has<Eff<RT>, IGuildIssueIO>
 {
     private const string Category = "Grimoire.Events";
 
@@ -46,6 +46,7 @@ public static class EventBoundary<RT>
                 LogLevel.Warning, AlertSeverity.Warning),
             _ => Report(handler, guild, error, outcome, LogLevel.Error, AlertSeverity.Urgent)
         }
+        from __ in BotRefusals<RT>.Report(error, Category)
         select outcome;
 
     private static Eff<RT, Unit> Report(string handler, Option<GuildId> guild, Error error, CommandOutcome outcome,

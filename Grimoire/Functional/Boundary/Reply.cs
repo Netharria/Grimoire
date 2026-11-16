@@ -15,7 +15,7 @@ namespace Grimoire.Functional.Boundary;
 ///     What a command shows on success. Later pages go out as follow-ups with the reply's visibility (KI-30, KI-113).
 ///     <see cref="Log" />, if set, is posted after the reply (T-1).
 /// </summary>
-public sealed record Reply(DiscordEmbed Embed, Seq<DiscordEmbed> FollowUps, Option<GuildLogMessageBase> Log)
+public sealed record Reply(DiscordEmbed Embed, Seq<DiscordEmbed> FollowUps, Option<GuildLogMessage> Log)
 {
     [Pure]
     public static Reply Of(DiscordEmbed embed) => new(embed, [], None);
@@ -32,15 +32,15 @@ public sealed record Reply(DiscordEmbed Embed, Seq<DiscordEmbed> FollowUps, Opti
                 pages.Tail.Map(page => Replies.Embed(colour, page, title)), None),
             () => Of(colour, string.Empty, title));
 
-    /// <summary>Posts the same embed to the guild's log of <paramref name="type" />.</summary>
+    /// <summary>
+    ///     Posts the same embed to the guild's log of <paramref name="type" />, timestamped <paramref name="at" />, the
+    ///     time the command ran (Q26).
+    /// </summary>
     [Pure]
-    public Reply Logged(GuildId guild, GuildLogType type) =>
-        this with
-        {
-            Log = new GuildLogMessageCustomEmbed { GuildId = guild, GuildLogType = type, Embed = this.Embed }
-        };
+    public Reply Logged(GuildId guild, GuildLogType type, DateTimeOffset at) =>
+        this with { Log = GuildLogMessage.Embed(guild, type, at, this.Embed) };
 
     /// <summary>Posts a log that differs from the reply.</summary>
     [Pure]
-    public Reply Logged(GuildLogMessageBase log) => this with { Log = Optional(log) };
+    public Reply Logged(GuildLogMessage log) => this with { Log = Optional(log) };
 }

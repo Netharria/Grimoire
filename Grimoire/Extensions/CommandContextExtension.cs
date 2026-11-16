@@ -55,11 +55,11 @@ public static partial class CommandContextExtension
                     {
                         Interaction.ResponseState: DiscordInteractionResponseState.Unacknowledged
                     } slashCommandContext
-                    => DiscordRetryPolicy.RetryDiscordCall(async _ =>
-                        await slashCommandContext.RespondAsync(embed, ephemeral)),
+                    // The initial response and a new text reply create something: never retried (Q25).
+                    => slashCommandContext.RespondAsync(embed, ephemeral),
                 TextCommandContext { Response: null }
-                    => DiscordRetryPolicy.RetryDiscordCall(async _ => await ctx.RespondAsync(embed)),
-                _ => DiscordRetryPolicy.RetryDiscordCall(async _ => { await ctx.EditResponseAsync(embed); })
+                    => ctx.RespondAsync(embed),
+                _ => DiscordRetryPolicy.RetryDiscordRead(async _ => { await ctx.EditResponseAsync(embed); })
             };
         }
 
@@ -67,10 +67,10 @@ public static partial class CommandContextExtension
         public async ValueTask FollowUpAsync(DiscordColor color, string message, string title, bool ephemeral)
         {
             var embed = BuildReplyEmbed(color, message, title);
-            await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-                ctx is SlashCommandContext slashCommandContext
-                    ? await slashCommandContext.FollowupAsync(embed, ephemeral)
-                    : await ctx.FollowupAsync(embed));
+            // A follow-up is a new message: never retried (Q25).
+            _ = ctx is SlashCommandContext slashCommandContext
+                ? await slashCommandContext.FollowupAsync(embed, ephemeral)
+                : await ctx.FollowupAsync(embed);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ public static partial class CommandContextExtension
                 return;
             }
 
-            await DiscordRetryPolicy.RetryDiscordCall(async _ => await slashCommandContext.DeleteResponseAsync());
+            await DiscordRetryPolicy.RetryDiscordRead(async _ => await slashCommandContext.DeleteResponseAsync());
             await ctx.FollowUpAsync(color, message, string.Empty, ephemeral: true);
         }
 

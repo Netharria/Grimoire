@@ -75,7 +75,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         await ctx.ReplyAsync(
             message: $"{channel.Mention} has been locked for {durationAmount} {durationType}");
 
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

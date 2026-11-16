@@ -3,21 +3,28 @@
 // Copyright (c) Netharia 2021-Present.
 //
 // All rights reserved.
-// Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.GuildIssues;
+using Grimoire.Functional.Effects;
+using Grimoire.Functional.Runtime;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
+using LanguageExt;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Shared.Channels.GuildLog;
 
 /// <summary>Posts the messages queued on <see cref="GuildLog" /> to each guild's configured log channel.</summary>
+/// <remarks>
+///     The post goes through the Discord edge (spec 1.4) and isn't retried (Q25): a 502 may come after Discord already
+///     posted it, and a retry would post it twice. So one failed post loses that log only, and the single reader moves
+///     straight on instead of holding every guild's logs for the length of a retry (defect 11).
+/// </remarks>
 public sealed partial class GuildLogPublisher(
     GuildLog queue,
-    DiscordClient discordClient,
+    GrimoireEnv env,
     GuildIssueReporter issueReporter,
     ILogger<GuildLogPublisher> logger,
     SettingsModule settingsModule,
@@ -28,65 +35,64 @@ public sealed partial class GuildLogPublisher(
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await foreach (var result in queue.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var message in queue.Reader.ReadAllAsync(cancellationToken))
             try
             {
-                if (!await settingsModule.IsModuleEnabled(result.GuildLogType.GetLogTypeModule(), result.GuildId,
-                            cancellationToken)
-                        .OrDefaultDuringMigration(false))
-                    continue;
-
-                var logChannelId = await settingsModule.GetLogChannelSetting(
-                    result.GuildLogType,
-                    result.GuildId,
-                    cancellationToken);
-
-                if (logChannelId.OrNullDuringMigration() is not { } logChannel)
-                    continue;
-
-                var channel = await discordClient.GetChannelOrDefaultAsync(logChannel);
-
-                if (channel is null)
-                {
-                    this.Report(GuildIssueCatalog.LogChannelMissing(result.GuildId, result.GuildLogType, logChannel),
-                        cancellationToken);
-                    continue;
-                }
-
-                var builder = result.GetMessageBuilder();
-                var message = await DiscordRetryPolicy.RetryDiscordCall(async _ =>
-                {
-                    // A failed attempt may have read part of a file, so each attempt starts the uploads over.
-                    foreach (var file in builder.Files.Where(file => file.Stream.CanSeek))
-                        file.Stream.Position = 0;
-                    return await channel.SendMessageAsync(builder);
-                }, cancellationToken);
-
-                if (ShouldPurgeMessageAfterInterval(result.GuildLogType))
-                    await this.ScheduleMessagePurge(
-                        message.GetMessageId(),
-                        channel.GetChannelId(),
-                        result.GuildId,
-                        cancellationToken);
+                await this.PublishAsync(message, cancellationToken);
             }
-            // A timed-out request also throws OperationCanceledException; only shutdown may end the loop.
+            // Only shutdown may end the loop.
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
-            // The log is lost, but the guild hears why. The daily throttle stops this looping when the channel the
-            // bot can't post in is the mod log itself.
-            catch (UnauthorizedException ex)
-            {
-                LogProcessError(this._logger, ex, result.GuildId, result.GuildLogType);
-                if (await settingsModule.GetLogChannelSetting(result.GuildLogType, result.GuildId, cancellationToken)
-                        .OrNullDuringMigration() is { } channelId)
-                    this.Report(GuildIssueCatalog.CannotSendInChannel(result.GuildId, channelId), cancellationToken);
-            }
             catch (Exception ex)
             {
-                LogProcessError(this._logger, ex, result.GuildId, result.GuildLogType);
+                LogProcessError(this._logger, ex, message.Guild, message.Type);
             }
+    }
+
+    private async Task PublishAsync(GuildLogMessage message, CancellationToken cancellationToken)
+    {
+        // Checked again here: the setting can change while the message waits in the queue.
+        if (!await settingsModule.IsModuleEnabled(message.Type.GetLogTypeModule(), message.Guild, cancellationToken)
+                .OrDefaultDuringMigration(false))
+            return;
+
+        if (await settingsModule.GetLogChannelSetting(message.Type, message.Guild, cancellationToken)
+                .OrNullDuringMigration() is not { } logChannel)
+            return;
+
+        // No token: DSharpPlus's send can't be cancelled anyway, and registering on the service's stopping token
+        // races the host disposing it at shutdown (ObjectDisposedException). Shutdown is still seen below.
+        using var envIO = EnvIO.New();
+        var posted = await Discord<GrimoireRuntime>.SendMessage(logChannel, message.Message)
+            .RunAsync(new GrimoireRuntime(env), envIO);
+
+        switch (posted)
+        {
+            case Fin<MessageId>.Succ(var id) when ShouldPurgeMessageAfterInterval(message.Type):
+                await this.ScheduleMessagePurge(id, logChannel, message.Guild, cancellationToken);
+                break;
+            case Fin<MessageId>.Succ:
+                break;
+            // The guild hears why its logs are lost. The daily throttle stops this looping when the channel the bot
+            // can't post in is the mod log itself.
+            case Fin<MessageId>.Fail(NotFound):
+                this.Report(GuildIssueCatalog.LogChannelMissing(message.Guild, message.Type, logChannel),
+                    cancellationToken);
+                break;
+            case Fin<MessageId>.Fail(Forbidden refused):
+                LogPostRefused(this._logger, message.Guild, message.Type, refused.Message);
+                this.Report(GuildIssueCatalog.CannotSendInChannel(message.Guild, logChannel), cancellationToken);
+                break;
+            case Fin<MessageId>.Fail(var error) when cancellationToken.IsCancellationRequested:
+                LogShutdown(this._logger, message.Guild, message.Type, error.Message);
+                break;
+            case Fin<MessageId>.Fail(var error):
+                LogPostLost(this._logger, Functional.Boundary.Boundary<GrimoireRuntime>.ExceptionOf(error).OrNull(),
+                    message.Guild, message.Type, error.Message);
+                break;
+        }
     }
 
     /// <summary>
@@ -116,6 +122,24 @@ public sealed partial class GuildLogPublisher(
         Exception exception,
         GuildId guildId,
         GuildLogType guildLogType);
+
+    [LoggerMessage(
+        EventId = 1002,
+        Level = LogLevel.Warning,
+        Message = "A guild log post was lost, not retried (Q25). GuildId={GuildId}, GuildLogType={GuildLogType}: {Reason}")]
+    private static partial void LogPostLost(ILogger logger, Exception? exception, GuildId guildId,
+        GuildLogType guildLogType, string reason);
+
+    [LoggerMessage(
+        EventId = 1003,
+        Level = LogLevel.Error,
+        Message = "Failed to process guild log: Discord refused the post. GuildId={GuildId}, GuildLogType={GuildLogType}: {Reason}")]
+    private static partial void LogPostRefused(ILogger logger, GuildId guildId, GuildLogType guildLogType,
+        string reason);
+
+    [LoggerMessage(LogLevel.Information,
+        "A guild log post was stopped by shutdown. GuildId={GuildId}, GuildLogType={GuildLogType}: {Reason}")]
+    private static partial void LogShutdown(ILogger logger, GuildId guildId, GuildLogType guildLogType, string reason);
 
     /// <summary>Message log posts quote message content, so they are deleted after a while; the rest are kept.</summary>
     private static bool ShouldPurgeMessageAfterInterval(GuildLogType guildLogType)

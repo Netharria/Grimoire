@@ -41,7 +41,7 @@ internal sealed partial class ModSettings
             await this._settingsModule.SetAutoPardonDuration(guild.GetGuildId(), ctx.GetModeratorId(),
                 durationType.GetTimeSpan(durationAmount)),
             $"Will now auto pardon sins after {durationAmount} {durationType}",
-            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            () => this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

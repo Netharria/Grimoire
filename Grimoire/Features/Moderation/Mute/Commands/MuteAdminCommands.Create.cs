@@ -55,7 +55,7 @@ public partial class MuteAdminCommands
             await ctx.ReplyAsync(GrimoireColor.Yellow, $"Successfully created role {role.Mention} but, " +
                                                        $"was not able to set permissions for the following channels. {string.Join(' ', result.Select(x => x.Channel.Mention))}");
 
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

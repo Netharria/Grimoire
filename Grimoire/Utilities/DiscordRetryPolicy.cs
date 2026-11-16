@@ -11,6 +11,12 @@ using Polly.Retry;
 
 namespace Grimoire.Utilities;
 
+/// <summary>
+///     The retry for unported code's Discord calls that read or are idempotent: fetches, edits, deletes, overwrites
+///     (SH-15). A call that creates something (a new message, a follow-up, a DM, an initial interaction response) is
+///     never retried, because a 502 may come after Discord already did it (Q25). Ported code uses
+///     <c>Discord&lt;RT&gt;</c>, whose retry is shorter (spec 1.4, section 3.6).
+/// </summary>
 public static class DiscordRetryPolicy
 {
     private static readonly RetryStrategyOptions _retryStrategyOptions
@@ -26,16 +32,16 @@ public static class DiscordRetryPolicy
     private static readonly ResiliencePipeline _resiliencePipeline =
         new ResiliencePipelineBuilder().AddRetry(_retryStrategyOptions).Build();
 
-    public static ValueTask RetryDiscordCall(Func<CancellationToken, ValueTask> function,
+    public static ValueTask RetryDiscordRead(Func<CancellationToken, ValueTask> function,
         CancellationToken cancellationToken = default)
         => _resiliencePipeline.ExecuteAsync(function, cancellationToken);
 
-    public static ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function,
+    public static ValueTask<T> RetryDiscordRead<T>(Func<CancellationToken, ValueTask<T>> function,
         CancellationToken cancellationToken = default)
         => _resiliencePipeline.ExecuteAsync(function, cancellationToken);
 
     /// <returns>The call's result, or <paramref name="defaultValue" /> if Discord refuses it or retries run out.</returns>
-    public static async ValueTask<T> RetryDiscordCall<T>(Func<CancellationToken, ValueTask<T>> function, T defaultValue,
+    public static async ValueTask<T> RetryDiscordRead<T>(Func<CancellationToken, ValueTask<T>> function, T defaultValue,
         CancellationToken cancellationToken = default)
     {
         try

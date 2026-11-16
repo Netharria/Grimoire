@@ -63,7 +63,7 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
             await ctx.ReplyAsync(GrimoireColor.Green, unchanged.Length == 0
                 ? message
                 : $"{message}\n{BuildIgnoreList(unchanged)} {unchangedOutcome}");
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            await this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

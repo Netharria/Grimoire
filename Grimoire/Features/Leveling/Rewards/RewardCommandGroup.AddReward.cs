@@ -80,7 +80,7 @@ public sealed partial class RewardCommandGroup
             $"Successfully updated the rewards to include {role.Mention} at level {reward.RewardLevel}.";
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, responseMessage);
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

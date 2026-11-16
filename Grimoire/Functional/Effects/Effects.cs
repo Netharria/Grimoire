@@ -10,6 +10,9 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using System.Data;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Data;
+using Grimoire.Functional.Discord;
+using Grimoire.Features.Shared.GuildIssues;
+using Grimoire.Settings.Enums;
 using LanguageExt;
 using LanguageExt.Traits;
 using Microsoft.Extensions.Logging;
@@ -59,8 +62,67 @@ public static class Alerts<RT> where RT : Has<Eff<RT>, IAlertIO>
 
 public static class GuildLogs<RT> where RT : Has<Eff<RT>, IGuildLogIO>
 {
-    public static Eff<RT, Unit> Send(GuildLogMessageBase message) =>
-        Has<Eff<RT>, RT, IGuildLogIO>.ask.As().Bind(log => log.Send(message));
+    private static Eff<RT, IGuildLogIO> Trait => Has<Eff<RT>, RT, IGuildLogIO>.ask.As();
+
+    /// <summary>
+    ///     Runs <paramref name="build" /> only when someone will see the log (Q26b, LOG-2), then queues it. The only way
+    ///     ported code posts a log. A failing build fails the post with its case; the caller decides what that means.
+    /// </summary>
+    public static Eff<RT, Unit> Post(GuildId guild, GuildLogType type, Eff<RT, GuildLogMessage> build) =>
+        from logged in Trait.Bind(log => log.IsLogged(guild, type))
+        from _ in logged
+            ? build.Bind(message => Trait.Bind(log => log.Enqueue(message)))
+            : Effect.Done<RT>()
+        select unit;
+
+    /// <summary>A message that's already built.</summary>
+    public static Eff<RT, Unit> Post(GuildLogMessage message) =>
+        Post(message.Guild, message.Type, Eff<RT, GuildLogMessage>.Pure(message));
+}
+
+public static class GuildIssues<RT> where RT : Has<Eff<RT>, IGuildIssueIO>
+{
+    public static Eff<RT, Unit> Report(GuildIssue issue) =>
+        Has<Eff<RT>, RT, IGuildIssueIO>.ask.As().Bind(issues => issues.Report(issue));
+}
+
+/// <summary>
+///     Discord calls (spec 1.4). Lookups and idempotent calls are retried while the failure is transient; calls that
+///     create something never are (Q25). The choice is made here, per call, so unit tests see it.
+/// </summary>
+public static class Discord<RT> where RT : Has<Eff<RT>, IDiscordIO>
+{
+    private static Eff<RT, IDiscordIO> Trait => Has<Eff<RT>, RT, IDiscordIO>.ask.As();
+
+    public static Eff<RT, ChannelSnapshot> GetChannel(ChannelId channel) =>
+        Retried(discord => discord.GetChannel(channel));
+
+    public static Eff<RT, UserSnapshot> GetUser(UserId user) => Retried(discord => discord.GetUser(user));
+
+    /// <summary><c>NotFound</c> when the member left: only that means "gone" (TD-12).</summary>
+    public static Eff<RT, MemberSnapshot> GetMember(GuildId guild, UserId user) =>
+        Retried(discord => discord.GetMember(guild, user));
+
+    public static Eff<RT, RoleSnapshot> GetRole(GuildId guild, RoleId role) =>
+        Retried(discord => discord.GetRole(guild, role));
+
+    public static Eff<RT, MessageSnapshot> GetMessage(ChannelId channel, MessageId message) =>
+        Retried(discord => discord.GetMessage(channel, message));
+
+    /// <summary>Never retried: a 502 may come after Discord already posted it, and a retry would post twice (Q25).</summary>
+    public static Eff<RT, MessageId> SendMessage(ChannelId channel, DiscordMessageBuilder message) =>
+        Trait.Bind(discord => discord.SendMessage(channel, message));
+
+    /// <summary>Never retried (Q25).</summary>
+    public static Eff<RT, Unit> SendDirectMessage(UserId user, DiscordMessageBuilder message) =>
+        Trait.Bind(discord => discord.SendDirectMessage(user, message));
+
+    /// <summary>Retried: a retry after a delete that went through finds the message gone, which counts as done.</summary>
+    public static Eff<RT, Unit> DeleteMessage(ChannelId channel, MessageId message, string reason) =>
+        Retried(discord => discord.DeleteMessage(channel, message, reason));
+
+    private static Eff<RT, A> Retried<A>(Func<IDiscordIO, IO<A>> call) =>
+        Trait.Bind(discord => call(discord).RetryWhile(discord.ReadRetry, DiscordErrors.IsTransient));
 }
 
 public static class Trace<RT> where RT : Has<Eff<RT>, ITraceIO>

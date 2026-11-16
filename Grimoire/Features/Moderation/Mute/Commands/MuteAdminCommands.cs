@@ -71,7 +71,7 @@ public sealed partial class MuteAdminCommands(SettingsModule settingsModule, Gui
         DiscordPermissions mutedPermissions)
     {
         var existing = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == role.Id);
-        return await DiscordRetryPolicy.RetryDiscordCall(async _ =>
+        return await DiscordRetryPolicy.RetryDiscordRead(async _ =>
         {
             await channel.AddOverwriteAsync(role,
                 (existing?.Allowed ?? DiscordPermissions.None) - mutedPermissions,

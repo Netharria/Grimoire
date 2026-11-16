@@ -88,7 +88,7 @@ public sealed partial class PublishCommands(
         await SavePublishedMessageAsync(dbContext, sinId, publish, publishedMessageId, publicMessage.GetMessageId());
 
         await ctx.ReplyAsync(GrimoireColor.Green, $"Successfully published {Noun(publish)} : {sinId}");
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

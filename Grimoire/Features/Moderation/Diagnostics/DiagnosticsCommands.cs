@@ -192,7 +192,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
                           + (skipped.Count > 0 ? $"\nSkipped {skipped.Count} item(s) that are not roles or members." : "");
 
             await ctx.ReplyAsync(GrimoireColor.Green, message);
-            await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            await this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

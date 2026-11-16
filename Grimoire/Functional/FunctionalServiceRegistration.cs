@@ -9,6 +9,7 @@ using Grimoire.Data.Dapper;
 using Grimoire.Functional.Boundary;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Data;
+using Grimoire.Functional.Discord;
 using Grimoire.Functional.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -36,13 +37,17 @@ internal static class FunctionalServiceRegistration
                 .AddSingleton<IGuildLogIO, LiveGuildLogIO>()
                 .AddSingleton<ITraceIO, LiveTraceIO>()
                 .AddSingleton<IDatabaseIO, NpgsqlDatabaseIO>()
+                .AddSingleton<IDiscordIO, LiveDiscordIO>()
+                .AddSingleton<IGuildIssueIO, LiveGuildIssueIO>()
                 .AddSingleton(provider => new GrimoireEnv(
                     provider.GetRequiredService<ITimeIO>(),
                     provider.GetRequiredService<ILogIO>(),
                     provider.GetRequiredService<IAlertIO>(),
                     provider.GetRequiredService<IGuildLogIO>(),
                     provider.GetRequiredService<ITraceIO>(),
-                    provider.GetRequiredService<IDatabaseIO>()))
+                    provider.GetRequiredService<IDatabaseIO>(),
+                    provider.GetRequiredService<IDiscordIO>(),
+                    provider.GetRequiredService<IGuildIssueIO>()))
                 .AddSingleton<CommandRunner>()
                 .AddSingleton<EventRunner>();
         }

@@ -100,6 +100,13 @@ General helpers live outside `Features/`, in `Grimoire/Extensions`, `Grimoire/Ut
   a privacy function); event handlers call `EventRunner.Run(name, guild, () => effect)`; workers derive from
   `EffectBackgroundService` and run items through `Items.Item(key, work)`. New code doesn't call `TryDeferAsync` or
   the `ctx.ReplyAsync`/`SendErrorResponseAsync` helpers; those stay for unported commands until Phase 5.
+- **Discord calls (section 1.4)**: ported code calls Discord through `Discord<RT>`, never DSharpPlus directly. It
+  takes ids and returns snapshot records (`MemberSnapshot`, `ChannelSnapshot`, …), never DSharpPlus entities. Only
+  lookups and idempotent calls are retried; anything that creates a message is never retried (Q25). Guild logs are
+  posted through `GuildLogs<RT>.Post(guild, type, build)`, which builds only when the log is on, as one
+  `GuildLogMessage` record stamped with the event's time. A suspected DSharpPlus bug goes in
+  `docs/upstream/dsharpplus.md` as a `DSP-` entry, for the owner to report or fix. See `docs/architecture.md`
+  section 6.
 - **Strongly-typed IDs**: Domain entities use custom value types for IDs (e.g., `UserId`, `GuildId`) to prevent accidental ID misuse.
 - **Hybrid caching in Settings**: guild settings are read through `HybridCache` to avoid a DB lookup on every event.
 - **PluralKit integration**: Resilience pipeline with rate limiting for the external PluralKit API.
@@ -163,7 +170,9 @@ Two projects, split by what a test touches:
 
 Effects are unit-tested against the fake runtime in `Grimoire.UnitTests/Functional/Fakes` (`TestEnv`): the production
 runtime records built from recording fakes, each of which can be told to fail. `FakeDatabase` answers by statement
-name (`Returns`, `Affects`, `Fails`). Integration tests drive an `EffectBackgroundService` with
+name (`Returns`, `Affects`, `Fails`). `FakeDiscord` is a small in-memory guild (`Has(snapshot)`; anything it doesn't
+hold is `NotFound`; `Fails(operation, error)`, with `FakeDiscord.Outage()` and `FakeDiscord.MissingPermission(…)`),
+and `FakeGuildIssues` records guild issue reports. Integration tests drive an `EffectBackgroundService` with
 `GrimoireTestBot.RunEffectTickAsync<T>()`. SQL tests run the production `Sql` values through `DatabaseTestEnv`
 (`Grimoire.IntegrationTests/Database/Dapper`), which sends every `Sql.Read` to a read-only connection.
 

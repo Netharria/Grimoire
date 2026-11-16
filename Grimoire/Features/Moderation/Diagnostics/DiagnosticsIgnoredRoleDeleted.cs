@@ -26,7 +26,7 @@ public sealed class DiagnosticsIgnoredRoleDeleted(SettingsModule settingsModule,
             is not Fin<Unit>.Succ)
             return;
 
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guildId,
             GuildLogType = GuildLogType.Moderation,

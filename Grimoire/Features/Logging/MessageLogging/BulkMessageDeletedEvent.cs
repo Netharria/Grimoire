@@ -67,24 +67,21 @@ public sealed class BulkMessageDeletedEvent(
                 }));
         await dbContext.SaveChangesAsync();
 
-        if (!await settingsModule.IsLogChannelSet(GuildLogType.BulkMessageDeleted, guildId))
-            return;
-
-        var embed = new DiscordEmbedBuilder()
-            .WithTitle("Bulk Message Delete")
-            .WithDescription($"**Message Count:** {messages.Length}\n" +
-                             $"**Channel:** {args.Channel.Mention}\n" +
-                             "Full message dump attached.")
-            .WithColor(GrimoireColor.Red);
-
-        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
-        {
-            GuildId = guildId,
-            GuildLogType = GuildLogType.BulkMessageDeleted,
-            Message = new DiscordMessageBuilder()
-                .AddEmbed(embed)
-                .AddFile($"{DateTime.UtcNow:r}.txt", BuildBulkMessageLogFile(messages))
-        });
+        // The dump is built only when someone will see it (LOG-2).
+        await guildLog.SendLogMessageAsync(guildId, GuildLogType.BulkMessageDeleted,
+            () => ValueTask.FromResult<GuildLogMessageBase>(new GuildLogMessageCustomMessage
+            {
+                GuildId = guildId,
+                GuildLogType = GuildLogType.BulkMessageDeleted,
+                Message = new DiscordMessageBuilder()
+                    .AddEmbed(new DiscordEmbedBuilder()
+                        .WithTitle("Bulk Message Delete")
+                        .WithDescription($"**Message Count:** {messages.Length}\n" +
+                                         $"**Channel:** {args.Channel.Mention}\n" +
+                                         "Full message dump attached.")
+                        .WithColor(GrimoireColor.Red))
+                    .AddFile($"{DateTime.UtcNow:r}.txt", BuildBulkMessageLogFile(messages))
+            }));
     }
 
     /// <summary>A text dump in message order. The author is named from history, so it needs no lookups.</summary>

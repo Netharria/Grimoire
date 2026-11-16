@@ -46,7 +46,7 @@ public sealed partial class RewardCommandGroup
         var responseMessage = $"{ctx.User.Mention} removed {role.Mention} reward";
 
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, responseMessage);
-        await this._guildLog.SendLogMessageAsync(new GuildLogMessage
+        await this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

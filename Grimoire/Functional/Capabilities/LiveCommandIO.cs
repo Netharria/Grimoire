@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using DSharpPlus.Commands.Processors.TextCommands;
-using DSharpPlus.Exceptions;
+using Grimoire.Functional.Discord;
 using LanguageExt;
 using Unit = LanguageExt.Unit;
 
@@ -16,16 +16,16 @@ namespace Grimoire.Functional.Capabilities;
 ///     The reply capability for one invocation. It holds the invoker's DM channel once opened, in an <c>Atom</c>.
 /// </summary>
 /// <remarks>
-///     Initial responses (the defer, an undeferred refusal) aren't retried: past Discord's 3-second window a retry
-///     can't succeed, and it could post twice (Q25). Edits and deletes keep <see cref="DiscordRetryPolicy" />.
-///     DSharpPlus exceptions are mapped to the error cases here, as a minimal version of section 1.4's Discord edge.
+///     Nothing that creates a message is retried: not the initial response or the defer (past Discord's 3-second
+///     window a retry can't succeed), not a follow-up or a DM (a retry could post twice) (Q25). Edits and deletes keep
+///     <see cref="DiscordRetryPolicy" />. Exceptions become error cases through <see cref="DiscordErrors" /> (spec 1.4).
 /// </remarks>
 internal sealed class LiveCommandIO(CommandContext ctx) : ICommandIO
 {
     private readonly Atom<Option<DiscordChannel>> _directMessages = Atom(Option<DiscordChannel>.None);
 
     public IO<Unit> Defer(Delivery delivery) =>
-        Call(async () =>
+        this.Call("Discord.Defer", "answer this command", async () =>
         {
             switch (ctx, delivery)
             {
@@ -42,7 +42,7 @@ internal sealed class LiveCommandIO(CommandContext ctx) : ICommandIO
         });
 
     public IO<Unit> Reply(Delivery delivery, DiscordEmbed embed, Seq<DiscordEmbed> followUps) =>
-        Call(async () =>
+        this.Call("Discord.Reply", "reply to this command", async () =>
         {
             if (delivery is Delivery.DirectMessage)
             {
@@ -54,13 +54,13 @@ internal sealed class LiveCommandIO(CommandContext ctx) : ICommandIO
 
             await this.FirstResponseAsync(embed, ephemeral: delivery is Delivery.Ephemeral);
             foreach (var page in followUps)
-                await DiscordRetryPolicy.RetryDiscordCall(async _ => ctx is SlashCommandContext slash
+                _ = ctx is SlashCommandContext slash
                     ? await slash.FollowupAsync(page, delivery is Delivery.Ephemeral)
-                    : await ctx.FollowupAsync(page));
+                    : await ctx.FollowupAsync(page);
         });
 
     public IO<Unit> Refuse(Delivery delivery, DiscordEmbed embed) =>
-        Call(async () =>
+        this.Call("Discord.Refuse", "reply to this command", async () =>
         {
             switch (ctx, delivery)
             {
@@ -73,8 +73,8 @@ internal sealed class LiveCommandIO(CommandContext ctx) : ICommandIO
                 {
                     Interaction.ResponseState: not DiscordInteractionResponseState.Unacknowledged
                 } slash, _):
-                    await DiscordRetryPolicy.RetryDiscordCall(async _ => await slash.DeleteResponseAsync());
-                    await DiscordRetryPolicy.RetryDiscordCall(async _ => await slash.FollowupAsync(embed, true));
+                    await DiscordRetryPolicy.RetryDiscordRead(async _ => await slash.DeleteResponseAsync());
+                    await slash.FollowupAsync(embed, true);
                     break;
                 default:
                     await this.FirstResponseAsync(embed, ephemeral: true);
@@ -83,7 +83,7 @@ internal sealed class LiveCommandIO(CommandContext ctx) : ICommandIO
         });
 
     public IO<Unit> React(string emoji) =>
-        Call(async () =>
+        this.Call("Discord.React", "react to your message", async () =>
         {
             if (ctx is TextCommandContext text)
                 await text.Message.CreateReactionAsync(DiscordEmoji.FromUnicode(emoji));
@@ -101,7 +101,7 @@ internal sealed class LiveCommandIO(CommandContext ctx) : ICommandIO
                 await ctx.RespondAsync(embed);
                 break;
             default:
-                await DiscordRetryPolicy.RetryDiscordCall(async _ => { await ctx.EditResponseAsync(embed); });
+                await DiscordRetryPolicy.RetryDiscordRead(async _ => { await ctx.EditResponseAsync(embed); });
                 break;
         }
     }
@@ -118,23 +118,22 @@ internal sealed class LiveCommandIO(CommandContext ctx) : ICommandIO
         return channel;
     }
 
-    private static IO<Unit> Call(Func<Task> call) =>
-        IO.liftAsync(async () =>
-        {
-            await call();
-            return unit;
-        }).MapFail(Classify);
-
-    private static Error Classify(Error error) =>
-        error.Exception.Match(
-            exception => exception switch
+    /// <summary>
+    ///     Runs one reply step through the Discord edge. A text reply the bot can't post in its channel is a refusal
+    ///     with the channel, so the boundary tells the guild; an interaction reply needs no channel permission.
+    /// </summary>
+    private IO<Unit> Call(string name, string action, Func<Task> call) =>
+        LiveDiscordIO.Attempt(this.Operation(name, action), async _ =>
             {
-                UnauthorizedException => new Forbidden("Discord refused: the bot is missing a permission, "
-                                                       + "or the member doesn't accept direct messages."),
-                NotFoundException => new NotFound("The Discord interaction or message no longer exists."),
-                ServerErrorException or RateLimitException or HttpRequestException
-                    => Unavailable.From("Discord could not be reached.", exception),
-                _ => error
-            },
-            () => error);
+                await call();
+                return unit;
+            })
+            .Bind(result => result.Match(Succ: IO.pure, Fail: IO.fail<Unit>));
+
+    private DiscordOperation Operation(string name, string action) =>
+        ctx is TextCommandContext
+            ? new DiscordOperation(name, action, "this command's response",
+                Optional(ctx.Guild).Map(guild => guild.GetGuildId()), ctx.GetChannelId(),
+                name is "Discord.React" ? "Add Reactions" : "Send Messages")
+            : new DiscordOperation(name, action, "this command's response");
 }

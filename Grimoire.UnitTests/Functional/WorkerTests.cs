@@ -167,6 +167,23 @@ public sealed class EffectBackgroundServiceTests
     }
 
     [Fact]
+    public async Task AnItemRefusedByDiscord_TellsTheGuild_InsteadOfAlerting()
+    {
+        var worker = new ProbeWorker(this._env.Env)
+        {
+            Work = key => key == "bad"
+                ? Eff<GrimoireRuntime, Unit>.Fail(FakeDiscord.MissingPermission(new GuildId(10), "Manage Channels"))
+                : Eff<GrimoireRuntime, Unit>.Pure(unit)
+        };
+
+        await worker.RunTickAsync(CancellationToken.None);
+
+        this._env.Alerts.Sent.ShouldBeEmpty();
+        this._env.GuildIssues.Reported.ShouldHaveSingleItem().Code.ShouldBe("bot-missing-permission:Manage Channels:guild");
+        worker.Processed.ShouldBe(["bad", "good"]);
+    }
+
+    [Fact]
     public async Task ADefectInOneItem_IsBackedOff_AndTheNextStillRuns()
     {
         var worker = new ProbeWorker(this._env.Env)

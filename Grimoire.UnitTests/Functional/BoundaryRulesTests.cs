@@ -172,12 +172,18 @@ public sealed class RepliesTests
     }
 
     [Fact]
-    public void Logged_PostsTheSameEmbed()
+    public void Logged_PostsTheSameEmbed_TimestampedWhenTheCommandRan()
     {
-        var reply = Reply.Of(GrimoireColor.Purple, "done").Logged(new GuildId(1), GuildLogType.Moderation);
+        var at = new DateTimeOffset(2026, 11, 15, 12, 0, 0, TimeSpan.Zero);
+        var reply = Reply.Of(GrimoireColor.Purple, "done").Logged(new GuildId(1), GuildLogType.Moderation, at);
 
-        reply.Log.Case.ShouldBeOfType<GuildLogMessageCustomEmbed>()
-            .Embed.ShouldBe(reply.Embed);
+        var log = reply.Log.Case.ShouldBeOfType<GuildLogMessage>();
+        log.Guild.ShouldBe(new GuildId(1));
+        log.Type.ShouldBe(GuildLogType.Moderation);
+        log.At.ShouldBe(at);
+        var embed = log.Message.Embeds.ShouldHaveSingleItem();
+        embed.Description.ShouldBe(reply.Embed.Description);
+        embed.Timestamp.ShouldBe(at);
     }
 }
 

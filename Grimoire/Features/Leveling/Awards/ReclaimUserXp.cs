@@ -79,7 +79,7 @@ public sealed class ReclaimUserXp(IDbContextFactory<GrimoireDbContext> dbContext
     private async Task ReportReclaimAsync(CommandContext ctx, DiscordUser user, DiscordGuild guild, long xpTaken)
     {
         await ctx.ReplyAsync(GrimoireColor.DarkPurple, $"{xpTaken} xp has been taken from {user.Mention}.");
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

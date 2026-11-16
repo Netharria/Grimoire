@@ -43,7 +43,7 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
                 : this.TryUnlockChannelAsync(guild, channel, moderatorId).MapFin(_ => unit))
             .TapAsync(_ => ctx.ReplyAsync(message: $"{channel.Mention} has been unlocked").AsTask())
             .Match(
-                _ => guildLog.SendLogMessageAsync(new GuildLogMessage
+                _ => guildLog.SendLogMessageAsync(new GuildLogTextMessage
                 {
                     GuildId = guild.GetGuildId(),
                     GuildLogType = GuildLogType.Moderation,

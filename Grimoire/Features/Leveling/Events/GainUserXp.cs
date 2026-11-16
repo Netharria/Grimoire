@@ -166,7 +166,7 @@ public sealed partial class GainUserXp(
             .Where(reward => reward.RewardMessage.HasValue)
             .Select(reward => this.SendRewardMessageAsync(guild, member, reward)));
 
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Leveling,

@@ -8,6 +8,8 @@
 using System.Security.Cryptography;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.GuildIssues;
+using Grimoire.Settings.Enums;
 using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -54,12 +56,35 @@ internal sealed class LiveAlertIO(IServiceProvider services) : IAlertIO
 
 internal sealed class LiveGuildLogIO(GuildLog guildLog) : IGuildLogIO
 {
-    public IO<Unit> Send(GuildLogMessageBase message) =>
+    public IO<bool> IsLogged(GuildId guild, GuildLogType type) =>
+        IO.liftAsync(env => guildLog.IsLoggedAsync(guild, type, env.Token));
+
+    public IO<Unit> Enqueue(GuildLogMessage message) =>
         IO.liftAsync(async env =>
         {
-            await guildLog.SendLogMessageAsync(message, env.Token);
+            await guildLog.EnqueueAsync(message, env.Token);
             return unit;
         });
+}
+
+/// <summary>
+///     Starts the report and returns. The reporter posts through the guild log queue, so waiting for it from inside the
+///     publisher, the queue's only reader, could wait forever. A failed report is logged by the continuation.
+/// </summary>
+internal sealed partial class LiveGuildIssueIO(GuildIssueReporter reporter, ILogger<LiveGuildIssueIO> logger)
+    : IGuildIssueIO
+{
+    public IO<Unit> Report(GuildIssue issue) =>
+        IO.lift(() =>
+        {
+            _ = reporter.ReportAsync(issue).ContinueWith(
+                task => LogReportFailure(logger, task.Exception!, issue.GuildId, issue.Code),
+                CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+            return unit;
+        });
+
+    [LoggerMessage(LogLevel.Error, "Could not report setup problem {Code} for guild {GuildId}")]
+    private static partial void LogReportFailure(ILogger logger, Exception exception, GuildId guildId, string code);
 }
 
 /// <summary>10 random hex characters, as the old error handler made. Section 1.6 replaces this with the trace id.</summary>

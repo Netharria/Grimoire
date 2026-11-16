@@ -41,11 +41,12 @@ Code lives in `Grimoire/Functional/`: `Capabilities/`, `Runtime/`, `Effects/`, `
 | `ITimeIO` | `Clock<RT>` | Wall-clock time and monotonic timestamps | 1.2 |
 | `ILogIO` | `Log<RT>` | Structured log lines (message templates, so Serilog keeps the properties) | 1.2 |
 | `IAlertIO` | `Alerts<RT>` | Alerts, through `IAlertSender` | 1.2 |
-| `IGuildLogIO` | `GuildLogs<RT>` | Guild log posts, through the `GuildLog` queue | 1.2 |
+| `IGuildLogIO` | `GuildLogs<RT>` | Guild log posts, through the `GuildLog` queue and its gate (1.4) | 1.2 |
 | `ITraceIO` | `Trace<RT>` | The error id quoted in the generic reply (the trace id from 1.6) | 1.2 |
 | `ICommandIO` | `Command<RT>` | Defer, reply, refuse and react, for one invocation | 1.2 |
 | `IDatabaseIO` | `Db<RT>` | Dapper over Npgsql | 1.3 |
-| `IDiscordIO` | `Discord<RT>` | Discord lookups and actions, returning the error cases | 1.4 |
+| `IDiscordIO` | `Discord<RT>` | Discord lookups and actions: ids in, snapshots out, the error cases on failure | 1.4 |
+| `IGuildIssueIO` | `GuildIssues<RT>` | Setup problems shown to a guild's moderators, through `GuildIssueReporter` | 1.4 |
 | `ISettingsIO` | `Settings<RT>` | Typed guild configuration | 3.1 |
 
 Two runtimes hold the capabilities. **`GrimoireRuntime`** is for events and workers. **`CommandRuntime`** adds
@@ -116,6 +117,10 @@ Text custom commands aren't commands to DSharpPlus. Their handler reacts ❓ for
 so a restricted command's existence isn't revealed (Q44, section 3.17).
 
 The runner records each run's outcome, and `CommandHandler`'s "Command … finished with {Outcome}" line reports it.
+
+A `Forbidden` that carries a `BotRefusal` (Discord refused the bot a permission, section 6) also becomes a guild
+issue for the moderators, in all three boundaries: one report per distinct issue, throttled to once a day by
+`GuildIssueReporter`. A refusal by our own rules, or a member's closed DMs, carries none.
 
 ### 4.2 Events
 
@@ -188,7 +193,59 @@ given number of times. SQL tests live in `Grimoire.IntegrationTests/Database/`, 
 capability over the test container. `DatabaseTestEnv` sends every `Sql.Read` to a read-only connection, so a
 statement marked as a read that writes fails its test.
 
-## 6. Tests
+## 6. Discord
+
+From spec 1.4. Ported code calls Discord through `Discord<RT>`, never DSharpPlus directly.
+
+- **Ids in, snapshots out.** `IDiscordIO` takes ids and returns Grimoire records (`ChannelSnapshot`,
+  `UserSnapshot`, `MemberSnapshot`, `RoleSnapshot`, `MessageSnapshot`), because DSharpPlus's entities can't be built
+  in a test (plan C5). Each snapshot's `From` is the one place its entity is read. The live capability resolves ids
+  with DSharpPlus's own lookups, which return its cached entity and ask REST only on a miss; Grimoire keeps no cache of
+  Discord entities.
+- **Only lookups and idempotent calls are retried** (Q25): three times, under 4 s, while the failure is transient.
+  New messages, follow-ups, DMs, log posts and initial interaction responses are never retried, because a 502 may
+  come after Discord already did it. A delete that finds the message gone counts as done. `Discord<RT>` makes the
+  choice per call. Unported code uses `DiscordRetryPolicy.RetryDiscordRead` for reads and edits only.
+- **Adding an operation:** a method on `IDiscordIO` taking ids; in `LiveDiscordIO`, a `DiscordOperation` (name,
+  action, target, guild, channel, the permission it needs) and the call through `Call`/`Attempt`, with no
+  try/catch; in `Discord<RT>`, retried or not; the same in `FakeDiscord`; integration tests for success, 404,
+  403/50013 and 500.
+
+**Errors** (`DiscordErrors.Classify`, the one place a Discord exception becomes a value). `DiscordFailure.Read` reads
+the exception once (the status, which DSharpPlus keeps on `UnauthorizedException` for both 401 and 403, and the JSON
+`code` and top-level `message`); the decision is a pure function of that.
+
+| Failure | Becomes |
+|---|---|
+| The run's token cancelled | `Errors.Cancelled` |
+| 404 | `NotFound` ("That member no longer exists."). On the guild lookup itself, also 403 50001: "The server is no longer available to me." (provisional, spec 1.4 OQ-9) |
+| 403 50013 Missing Permissions, 50001 Missing Access | `Forbidden` naming the permission (and the role order for member and role actions), with a `BotRefusal` when the call has a guild |
+| 403 50007 | `Forbidden`: closed DMs, no refusal |
+| 401 | defect: the token is bad |
+| 400, 405, 413, a bulk delete of old messages | `Invalid`, quoting only Discord's top-level message, never its `errors` (which can echo content) |
+| 5xx, a timeout, a lost connection | `Unavailable`, transient |
+| A rate limit DSharpPlus couldn't absorb; a `NullReferenceException` inside DSharpPlus's REST client (KI-54) | `Unavailable`, not retried |
+| Anything else | defect |
+
+Each `Unavailable` keeps a `DiscordCallException` naming the operation and the status, for the log and the alert.
+
+**Guild logs.** A post is one `GuildLogMessage` record (Q26): guild, type, `At` (when the event happened, never when
+it's posted) and the message, built by `Text`, `Embed` or `Of`, which stamp any embed without a timestamp with `At`.
+`GuildLogs<RT>.Post(guild, type, build)` is the only way ported code posts one: it asks the gate in `GuildLog`
+(module on and a channel set, both cache hits) and runs `build` only then, on the caller, never in the publisher's
+single reader (Q26b). The publisher checks the setting again, posts once through the Discord edge, and reports a
+deleted channel or a refused post as a guild issue. Unported code's `GuildLogMessageBase` classes are converted when
+queued, stamped with the time then.
+
+Problems found in DSharpPlus itself go in [`upstream/dsharpplus.md`](upstream/dsharpplus.md), for the owner to report
+or fix. Grimoire contains them at this edge and never reaches into DSharpPlus's internals.
+
+**Tests.** `FakeDiscord` (in `TestEnv`) is a small in-memory guild: a lookup of something it doesn't hold is
+`NotFound`, every call is in the `Journal` as `discord Name`, and an operation can be told to fail by name
+(`FakeDiscord.Outage()` for a transient one, `FakeDiscord.MissingPermission(…)` for a refusal). `FakeGuildIssues`
+records reports. The live edge's tests (`Grimoire.IntegrationTests/Shared/Discord/`) run it against the fake REST.
+
+## 7. Tests
 
 | Project | Holds | May touch |
 |---|---|---|

@@ -25,7 +25,10 @@ namespace Grimoire.UnitTests.Functional;
 public sealed class CommandBoundaryTests
 {
     private static readonly GuildId Guild = new(10);
-    private static readonly Reply Done = Reply.Of(GrimoireColor.Purple, "done").Logged(Guild, GuildLogType.Moderation);
+    private static readonly DateTimeOffset RanAt = new(2026, 11, 15, 12, 0, 0, TimeSpan.Zero);
+
+    private static readonly Reply Done =
+        Reply.Of(GrimoireColor.Purple, "done").Logged(Guild, GuildLogType.Moderation, RanAt);
 
     private readonly TestEnv _env = new();
     private bool _acted;
@@ -65,7 +68,7 @@ public sealed class CommandBoundaryTests
         (await this.Run(Slash, Privacy.Public, Valid)).ShouldSucceed().ShouldBe(CommandOutcome.Success);
 
         this._env.Command.Calls.ShouldBe([new Deferred(Delivery.Public), new Replied(Delivery.Public, Done.Embed, [])]);
-        this._env.Journal.Entries.ShouldBe(["deferred", "replied", "guild log"]);
+        this._env.Journal.Entries.ShouldBe(["deferred", "replied", "guild log gate Moderation", "guild log"]);
         this._env.Alerts.Sent.ShouldBeEmpty();
     }
 
@@ -425,7 +428,6 @@ public sealed class CommandBoundaryTests
     {
         await this.Run(Slash, Privacy.Public, Valid);
 
-        this._env.GuildLog.Sent.ShouldHaveSingleItem().ShouldBeOfType<GuildLogMessageCustomEmbed>().Embed
-            .ShouldBe(Done.Embed);
+        this._env.GuildLog.Sent.ShouldHaveSingleItem().ShouldBe(Done.Log.Case.ShouldBeOfType<GuildLogMessage>());
     }
 }

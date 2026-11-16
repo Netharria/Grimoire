@@ -59,7 +59,7 @@ public sealed partial class CustomCommandSettings
         }
 
         await ctx.ReplyAsync(GrimoireColor.Green, $"Removed command {name}");
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

@@ -30,7 +30,7 @@ internal static class ModerationDirectMessage
         }
         catch (DiscordException)
         {
-            await guildLog.SendLogMessageAsync(new GuildLogMessage
+            await guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = member.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

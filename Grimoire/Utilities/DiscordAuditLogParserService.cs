@@ -42,7 +42,7 @@ public sealed class DiscordAuditLogParserService(
 
         try
         {
-            deleteEntry = await DiscordRetryPolicy.RetryDiscordCall(async token => await guild
+            deleteEntry = await DiscordRetryPolicy.RetryDiscordRead(async token => await guild
                 .GetAuditLogsAsync(10, actionType: DiscordAuditLogActionType.MessageDelete)
                 .OfType<DiscordAuditLogMessageEntry>()
                 .Where(x => x.Target.GetUserId() == authorId && x.Channel.GetChannelId() == channelId)

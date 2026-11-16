@@ -52,7 +52,7 @@ public partial class LogSettingsCommands
                 await this._settingsModule.SetChannelLogOverride(channel.GetChannelId(), guild.GetGuildId(),
                     ctx.GetModeratorId(), option),
                 message,
-                () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+                () => this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
                 {
                     GuildId = guild.GetGuildId(),
                     GuildLogType = GuildLogType.Moderation,

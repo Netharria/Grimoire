@@ -127,16 +127,15 @@ public sealed partial class DeleteMessageEvent(
                 });
         await dbContext.SaveChangesAsync();
 
-        // The history is kept either way, but building the log means an avatar lookup and downloading every image.
-        if (!await settingsModule.IsLogChannelSet(GuildLogType.MessageDeleted, args.Guild.GetGuildId()))
-            return;
-
-        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
-        {
-            GuildId = args.Guild.GetGuildId(),
-            GuildLogType = GuildLogType.MessageDeleted,
-            Message = await BuildLogMessage(sender, args, message, auditLogEntry)
-        });
+        // The history is kept either way, but building the log means an avatar lookup and downloading every image,
+        // so it's built only when someone will see it (LOG-2).
+        await guildLog.SendLogMessageAsync(args.Guild.GetGuildId(), GuildLogType.MessageDeleted,
+            async () => new GuildLogMessageCustomMessage
+            {
+                GuildId = args.Guild.GetGuildId(),
+                GuildLogType = GuildLogType.MessageDeleted,
+                Message = await this.BuildLogMessage(sender, args, message, auditLogEntry)
+            });
     }
 
     private async Task<DiscordMessageBuilder> BuildLogMessage(

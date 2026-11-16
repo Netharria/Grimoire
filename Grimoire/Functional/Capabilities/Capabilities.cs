@@ -8,7 +8,10 @@
 using System.Data;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Functional.Data;
+using Grimoire.Functional.Discord;
+using Grimoire.Settings.Enums;
 using LanguageExt;
 using Microsoft.Extensions.Logging;
 using Unit = LanguageExt.Unit;
@@ -48,9 +51,53 @@ public interface IAlertIO
     IO<Unit> Send(Alert alert);
 }
 
+/// <summary>The guild log queue (spec 1.4, section 3.9). Features post through <c>GuildLogs&lt;RT&gt;.Post</c>.</summary>
 public interface IGuildLogIO
 {
-    IO<Unit> Send(GuildLogMessageBase message);
+    /// <summary>
+    ///     Whether a log of this type would be posted: its module is on and it has a channel. A cache hit. A failed
+    ///     settings lookup counts as no, since the publisher would drop the log too.
+    /// </summary>
+    IO<bool> IsLogged(GuildId guild, GuildLogType type);
+
+    IO<Unit> Enqueue(GuildLogMessage message);
+}
+
+/// <summary>Setup problems shown to the guild's moderators, once a day each (GuildIssueReporter).</summary>
+public interface IGuildIssueIO
+{
+    /// <summary>Starts the report and returns: it posts through the guild log queue, which mustn't wait on itself.</summary>
+    IO<Unit> Report(GuildIssue issue);
+}
+
+/// <summary>
+///     Discord through DSharpPlus (spec 1.4). Takes ids and returns snapshots, so pipelines run against a fake. Every
+///     exception becomes an error case in one place (<c>DiscordErrors</c>): <c>NotFound</c> only when Discord says
+///     the thing doesn't exist. <c>Discord&lt;RT&gt;</c> adds the retry for reads and idempotent calls, so it is the
+///     API features use.
+/// </summary>
+public interface IDiscordIO
+{
+    IO<ChannelSnapshot> GetChannel(ChannelId channel);
+    IO<UserSnapshot> GetUser(UserId user);
+    IO<MemberSnapshot> GetMember(GuildId guild, UserId user);
+    IO<RoleSnapshot> GetRole(GuildId guild, RoleId role);
+    IO<MessageSnapshot> GetMessage(ChannelId channel, MessageId message);
+
+    /// <summary>Creates a message. Never retried (Q25): a 502 may come after Discord already posted it.</summary>
+    IO<MessageId> SendMessage(ChannelId channel, DiscordMessageBuilder message);
+
+    /// <summary>
+    ///     Opens the user's DM channel and posts. Never retried. Closed DMs are <c>Forbidden</c> with no
+    ///     <c>BotRefusal</c>: that's the user's setting, not the guild's.
+    /// </summary>
+    IO<Unit> SendDirectMessage(UserId user, DiscordMessageBuilder message);
+
+    /// <summary>Idempotent, so it's retried. A message that's already gone counts as deleted.</summary>
+    IO<Unit> DeleteMessage(ChannelId channel, MessageId message, string reason);
+
+    /// <summary>The schedule <c>Discord&lt;RT&gt;</c> retries on. Live: <c>DiscordRetry.Reads</c>. Fake: no delay.</summary>
+    Schedule ReadRetry { get; }
 }
 
 /// <summary>

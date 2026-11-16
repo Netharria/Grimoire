@@ -113,7 +113,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             }
 
         await guildLog.SendLogMessageAsync(
-            new GuildLogMessage
+            new GuildLogTextMessage
             {
                 GuildId = activeGuild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

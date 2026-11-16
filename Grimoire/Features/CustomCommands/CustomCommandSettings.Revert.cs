@@ -82,7 +82,7 @@ public sealed partial class CustomCommandSettings
     {
         var unixSeconds = createdAt.ToUnixTimeSeconds();
         await ctx.ReplyAsync(GrimoireColor.Green, $"Reverted `{name}` to version from <t:{unixSeconds}:f>.");
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             Color = GrimoireColor.Purple,
             Description = $"{ctx.User.Mention} reverted command `{name}` to version from <t:{unixSeconds}:f>.",

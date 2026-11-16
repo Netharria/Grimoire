@@ -24,7 +24,8 @@ public static class CommandBoundary<RT>
     Has<Eff<RT>, ILogIO>,
     Has<Eff<RT>, IAlertIO>,
     Has<Eff<RT>, IGuildLogIO>,
-    Has<Eff<RT>, ITraceIO>
+    Has<Eff<RT>, ITraceIO>,
+    Has<Eff<RT>, IGuildIssueIO>
 {
     private const string Category = "Grimoire.Commands";
 
@@ -109,7 +110,7 @@ public static class CommandBoundary<RT>
                 ? DirectMessageClosed(invocation, error)
                 : ReportReplyFailure(invocation, "reply", error).Map(_ => CommandOutcome.Success),
             Succ: _ => reply.Log.Match(
-                log => Boundary<RT>.Attempt(GuildLogs<RT>.Send(log)).Bind(posted => posted.Match(
+                log => Boundary<RT>.Attempt(GuildLogs<RT>.Post(log)).Bind(posted => posted.Match(
                     Fail: error => ReportReplyFailure(invocation, "guild log post", error)
                         .Map(_ => CommandOutcome.Success),
                     Succ: _ => Eff<RT, CommandOutcome>.Pure(CommandOutcome.Success))),
@@ -126,6 +127,7 @@ public static class CommandBoundary<RT>
                 "Command {Command} was cancelled by shutdown", invocation.Command),
             _ => Crashed(invocation, refuseVia, outcome, error)
         }
+        from __ in BotRefusals<RT>.Report(error, Category)
         select outcome;
 
     /// <summary>
@@ -174,6 +176,7 @@ public static class CommandBoundary<RT>
             Exception = Boundary<RT>.ExceptionOf(error).OrNull(),
             GuildId = invocation.Guild.ToNullable()
         })
+        from ___ in BotRefusals<RT>.Report(error, Category)
         select unit;
 
     private static ulong? GuildOf(Invocation invocation) => invocation.Guild.Map(id => id.Value).ToNullable();

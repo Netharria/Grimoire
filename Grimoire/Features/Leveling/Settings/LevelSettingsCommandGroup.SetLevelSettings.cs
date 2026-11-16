@@ -63,7 +63,7 @@ public sealed partial class LevelSettingsCommandGroup
             await this._settingsModule.SetLevelingSettings(guild.GetGuildId(), ctx.GetModeratorId(),
                 ToLevelSettings(levelSettingsOptions), value),
             $"Updated {levelSettingsOptions} level setting to {value}",
-            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            () => this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

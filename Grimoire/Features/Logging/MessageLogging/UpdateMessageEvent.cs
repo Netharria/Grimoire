@@ -71,6 +71,11 @@ public sealed class UpdateMessageEvent(
             // ignored
         }
 
+        // The history is kept either way, but the log looks up the author's avatar, so it's built only when someone
+        // will see it (LOG-2, defect 17). It can be two messages, so it asks the gate itself.
+        if (!await guildLog.IsLoggedAsync(args.Guild.GetGuildId(), GuildLogType.MessageEdited))
+            return;
+
         // As in the delete log: the avatar is optional, and a proxied message shows the member behind it.
         var avatarUrl = await sender.GetUserAvatar(message.OriginalUserId ?? message.UserId, args.Guild);
 

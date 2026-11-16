@@ -45,28 +45,25 @@ public sealed class UpdatedAvatarEvent(
             });
         await dbContext.SaveChangesAsync();
 
-        // The history is kept either way, but the log downloads the new avatar to re-upload it.
-        if (!await settingsModule.IsLogChannelSet(GuildLogType.AvatarUpdated, args.Guild.GetGuildId()))
-            return;
-
-        var embed = new DiscordEmbedBuilder()
-            .WithAuthor("Avatar Updated")
-            .WithDescription($"**User:** {args.Member.Mention}\n\n" +
-                             $"Old avatar in thumbnail. New avatar down below")
-            .WithThumbnail(oldAvatar.Value)
-            .WithColor(GrimoireColor.Purple)
-            .WithTimestamp(DateTimeOffset.UtcNow);
-
-        await guildLog.SendLogMessageAsync(new GuildLogMessageCustomMessage
-        {
-            GuildId = args.Guild.GetGuildId(),
-            GuildLogType = GuildLogType.AvatarUpdated,
-            Message = await imageEmbedService
-                .BuildImageEmbedAsync(
-                    [newAvatar.Value],
-                    args.Member.GetUserId(),
-                    embed,
-                    false)
-        });
+        // The history is kept either way, but the log downloads the new avatar to re-upload it, so it's built only
+        // when someone will see it (LOG-2).
+        await guildLog.SendLogMessageAsync(args.Guild.GetGuildId(), GuildLogType.AvatarUpdated,
+            async () => new GuildLogMessageCustomMessage
+            {
+                GuildId = args.Guild.GetGuildId(),
+                GuildLogType = GuildLogType.AvatarUpdated,
+                Message = await imageEmbedService
+                    .BuildImageEmbedAsync(
+                        [newAvatar.Value],
+                        args.Member.GetUserId(),
+                        new DiscordEmbedBuilder()
+                            .WithAuthor("Avatar Updated")
+                            .WithDescription($"**User:** {args.Member.Mention}\n\n" +
+                                             $"Old avatar in thumbnail. New avatar down below")
+                            .WithThumbnail(oldAvatar.Value)
+                            .WithColor(GrimoireColor.Purple)
+                            .WithTimestamp(DateTimeOffset.UtcNow),
+                        false)
+            });
     }
 }

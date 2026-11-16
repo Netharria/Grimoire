@@ -56,7 +56,7 @@ internal sealed class PurgeCommands(GuildLog guildLog)
         if (messagesDeleted == 0 || ctx.Guild is not { } guild)
             return;
 
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             GuildId = guild.GetGuildId(),
             GuildLogType = GuildLogType.Moderation,

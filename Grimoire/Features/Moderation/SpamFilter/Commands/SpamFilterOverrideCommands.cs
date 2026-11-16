@@ -57,7 +57,7 @@ internal class SpamFilterOverrideCommands(
             await settingsModule.SetSpamFilterOverrideAsync(channel.GetChannelId(), guild.GetGuildId(),
                 ctx.GetModeratorId(), option),
             message,
-            () => guildLog.SendLogMessageAsync(new GuildLogMessage
+            () => guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

@@ -114,7 +114,7 @@ public sealed partial class CustomCommandSettings
             SaveOutcome.Updated => $"Updated {name} custom command.",
             _ => $"Added {name} custom command."
         });
-        await guildLog.SendLogMessageAsync(new GuildLogMessage
+        await guildLog.SendLogMessageAsync(new GuildLogTextMessage
         {
             Color = GrimoireColor.Purple,
             Description = outcome switch

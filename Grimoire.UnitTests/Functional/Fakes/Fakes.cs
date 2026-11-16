@@ -8,6 +8,7 @@
 using DSharpPlus.Entities;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
+using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Runtime;
 using LanguageExt;
@@ -74,18 +75,50 @@ public sealed class FakeAlerts(Journal journal) : IAlertIO
 
 public sealed class FakeGuildLog(Journal journal) : IGuildLogIO
 {
-    private readonly Atom<Seq<GuildLogMessageBase>> _sent = Atom(Seq<GuildLogMessageBase>());
+    private readonly Atom<Seq<GuildLogMessage>> _sent = Atom(Seq<GuildLogMessage>());
 
-    public Seq<GuildLogMessageBase> Sent => this._sent.Value;
+    public Seq<GuildLogMessage> Sent => this._sent.Value;
 
     /// <summary>When set, every post fails with this error.</summary>
     public Option<Error> Fails { get; set; }
 
-    public IO<Unit> Send(GuildLogMessageBase message) =>
+    /// <summary>The gate's answer: whether the log's module is on and it has a channel. On by default.</summary>
+    public bool Logged { get; set; } = true;
+
+    /// <summary>When set, the gate's settings lookup fails with this error.</summary>
+    public Option<Error> GateFails { get; set; }
+
+    public IO<bool> IsLogged(GuildId guild, GuildLogType type) =>
+        this.GateFails.Match(IO.fail<bool>, () => IO.lift(() =>
+        {
+            journal.Add($"guild log gate {type}");
+            return this.Logged;
+        }));
+
+    public IO<Unit> Enqueue(GuildLogMessage message) =>
         this.Fails.Match(IO.fail<Unit>, () => IO.lift(() =>
         {
             journal.Add("guild log");
             this._sent.Swap(sent => sent.Add(message));
+            return unit;
+        }));
+}
+
+/// <summary>Records each guild issue reported, in the shared journal too.</summary>
+public sealed class FakeGuildIssues(Journal journal) : IGuildIssueIO
+{
+    private readonly Atom<Seq<GuildIssue>> _reported = Atom(Seq<GuildIssue>());
+
+    public Seq<GuildIssue> Reported => this._reported.Value;
+
+    /// <summary>When set, every report fails with this error.</summary>
+    public Option<Error> Fails { get; set; }
+
+    public IO<Unit> Report(GuildIssue issue) =>
+        this.Fails.Match(IO.fail<Unit>, () => IO.lift(() =>
+        {
+            journal.Add($"guild issue {issue.Code}");
+            this._reported.Swap(reported => reported.Add(issue));
             return unit;
         }));
 }
@@ -146,6 +179,8 @@ public sealed class TestEnv
         this.GuildLog = new FakeGuildLog(this.Journal);
         this.Command = new FakeCommandIO(this.Journal);
         this.Database = new FakeDatabase(this.Journal);
+        this.Discord = new FakeDiscord(this.Journal);
+        this.GuildIssues = new FakeGuildIssues(this.Journal);
     }
 
     public Journal Journal { get; } = new();
@@ -155,8 +190,11 @@ public sealed class TestEnv
     public FakeTrace Trace { get; } = new();
     public FakeCommandIO Command { get; }
     public FakeDatabase Database { get; }
+    public FakeDiscord Discord { get; }
+    public FakeGuildIssues GuildIssues { get; }
 
-    public GrimoireEnv Env => new(this.Clock, this.Log, this.Alerts, this.GuildLog, this.Trace, this.Database);
+    public GrimoireEnv Env => new(this.Clock, this.Log, this.Alerts, this.GuildLog, this.Trace, this.Database,
+        this.Discord, this.GuildIssues);
     public GrimoireRuntime Runtime => new(this.Env);
     public CommandRuntime CommandRuntime => new(this.Env, this.Command);
 

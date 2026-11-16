@@ -26,7 +26,7 @@ public sealed class DiscordRetryPolicyTests
     {
         var calls = 0;
 
-        var result = await DiscordRetryPolicy.RetryDiscordCall(_ =>
+        var result = await DiscordRetryPolicy.RetryDiscordRead(_ =>
         {
             calls++;
             return ValueTask.FromResult(7);
@@ -41,7 +41,7 @@ public sealed class DiscordRetryPolicyTests
     {
         var calls = 0;
 
-        await Should.ThrowAsync<NotFoundException>(async () => await DiscordRetryPolicy.RetryDiscordCall(_ =>
+        await Should.ThrowAsync<NotFoundException>(async () => await DiscordRetryPolicy.RetryDiscordRead(_ =>
         {
             calls++;
             throw Discord<NotFoundException>();
@@ -60,7 +60,7 @@ public sealed class DiscordRetryPolicyTests
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         var calls = 0;
 
-        await Should.ThrowAsync<OperationCanceledException>(async () => await DiscordRetryPolicy.RetryDiscordCall(_ =>
+        await Should.ThrowAsync<OperationCanceledException>(async () => await DiscordRetryPolicy.RetryDiscordRead(_ =>
         {
             calls++;
             cancellation.Cancel();
@@ -72,18 +72,18 @@ public sealed class DiscordRetryPolicyTests
 
     [Fact]
     public async Task With_a_default_a_refused_call_gives_the_default()
-        => (await DiscordRetryPolicy.RetryDiscordCall<int>(_ => throw Discord<UnauthorizedException>(), -1,
+        => (await DiscordRetryPolicy.RetryDiscordRead<int>(_ => throw Discord<UnauthorizedException>(), -1,
             TestContext.Current.CancellationToken)).ShouldBe(-1);
 
     [Fact]
     public async Task With_a_default_a_successful_call_gives_its_result()
-        => (await DiscordRetryPolicy.RetryDiscordCall(_ => ValueTask.FromResult(3), -1,
+        => (await DiscordRetryPolicy.RetryDiscordRead(_ => ValueTask.FromResult(3), -1,
             TestContext.Current.CancellationToken)).ShouldBe(3);
 
     [Fact]
     public async Task With_a_default_other_exceptions_still_escape()
         => await Should.ThrowAsync<InvalidOperationException>(async () =>
-            await DiscordRetryPolicy.RetryDiscordCall<int>(_ => throw new InvalidOperationException(), -1,
+            await DiscordRetryPolicy.RetryDiscordRead<int>(_ => throw new InvalidOperationException(), -1,
                 TestContext.Current.CancellationToken));
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class DiscordRetryPolicyTests
     {
         var calls = 0;
 
-        await DiscordRetryPolicy.RetryDiscordCall(_ =>
+        await DiscordRetryPolicy.RetryDiscordRead(_ =>
         {
             calls++;
             return ValueTask.CompletedTask;

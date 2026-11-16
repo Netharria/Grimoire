@@ -32,7 +32,7 @@ public partial class MuteAdminCommands
         await ctx.ReplyResultAsync(
             await this._settingsModule.SetMuteRole(guild.GetGuildId(), ctx.GetModeratorId(), role.GetRoleId()),
             $"Will now use role {role.Mention} for muting users.",
-            () => this._guildLog.SendLogMessageAsync(new GuildLogMessage
+            () => this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
             {
                 GuildId = guild.GetGuildId(),
                 GuildLogType = GuildLogType.Moderation,

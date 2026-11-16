@@ -174,7 +174,7 @@ public sealed class Items
         from __ in Log<GrimoireRuntime>.Warning(this._category, Boundary<GrimoireRuntime>.ExceptionOf(error),
             "Background task {TaskName} could not process {Item} ({Outcome}): {Reason}",
             this._taskName, key, outcome, error.Messages)
-        // A missing permission is expected, and the work reports it to the guild itself.
+        // A missing permission is expected: the guild hears about it through its issue report instead.
         from ___ in outcome is CommandOutcome.Forbidden
             ? Effect.Done<GrimoireRuntime>()
             : Alerts<GrimoireRuntime>.Send(new Alert
@@ -185,6 +185,7 @@ public sealed class Items
                 Message = $"{this._taskName} could not process {key}: {error.Messages}",
                 Exception = Boundary<GrimoireRuntime>.ExceptionOf(error).OrNull()
             })
+        from ____ in BotRefusals<GrimoireRuntime>.Report(error, this._category)
         select unit;
 
     private Eff<GrimoireRuntime, Unit> Swap(Func<WorkerState, WorkerState> change) =>
