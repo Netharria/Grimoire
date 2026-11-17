@@ -11,6 +11,7 @@ using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Runtime;
+using Grimoire.Functional.Telemetry;
 using LanguageExt;
 using Unit = LanguageExt.Unit;
 
@@ -123,10 +124,99 @@ public sealed class FakeGuildIssues(Journal journal) : IGuildIssueIO
         }));
 }
 
-public sealed class FakeTrace : ITraceIO
+/// <summary>A span the fake recorded: what it was, how it ended, its parent, and its events and late tags.</summary>
+public sealed record RecordedSpan(
+    Operation Operation,
+    SpanEnd End,
+    Option<string> Parent,
+    Seq<(string Name, Tags Tags)> Events,
+    Tags Tagged)
+{
+    public string Name => this.Operation.SpanName;
+    public string Outcome => this.End.Outcome;
+}
+
+/// <summary>
+///     Records spans, events and counters in its own lists, not the <see cref="Journal" />, so tests that check the
+///     order of calls aren't affected. Nesting is tracked with an <c>AsyncLocal</c>, as <c>Activity.Current</c> is.
+/// </summary>
+public sealed class FakeTelemetry : ITelemetryIO
 {
     public const string Id = "abc123def0";
+
+    private readonly AsyncLocal<OpenSpan?> _current = new();
+    private readonly Atom<Seq<RecordedSpan>> _spans = Atom(Seq<RecordedSpan>());
+    private readonly Atom<Seq<(Counter Counter, Tags Tags)>> _counts = Atom(Seq<(Counter, Tags)>());
+
+    /// <summary>Finished spans, in the order they ended: children before their parent.</summary>
+    public Seq<RecordedSpan> Spans => this._spans.Value;
+
+    public Seq<(Counter Counter, Tags Tags)> Counts => this._counts.Value;
+
     public IO<string> ErrorId => IO.pure(Id);
+
+    public RecordedSpan Single(string name) => this.Spans.Filter(span => span.Name == name).Single();
+
+    public IO<A> Span<A>(Operation operation, IO<A> body, Func<A, SpanEnd> ended) =>
+        IO.liftAsync(async env =>
+            {
+                var parent = this._current.Value;
+                var open = new OpenSpan(operation, operation.IsRoot ? null : parent);
+                this._current.Value = open;
+                var result = await body.Try().Run().RunAsync(env);
+                var end = SpanResult.Of(result, env.Token.IsCancellationRequested, ended);
+                this._spans.Swap(spans => spans.Add(open.Finish(end)));
+                return result;
+            })
+            .Bind(result => result.Match(Succ: IO.pure, Fail: IO.fail<A>));
+
+    public IO<Unit> Event(string name, Tags tags) =>
+        IO.lift(() =>
+        {
+            this._current.Value?.AddEvent(name, tags);
+            return unit;
+        });
+
+    public IO<Unit> Tag(Tags tags) =>
+        IO.lift(() =>
+        {
+            this._current.Value?.AddTags(tags);
+            return unit;
+        });
+
+    public IO<Unit> Count(Counter counter, Tags tags) =>
+        IO.lift(() =>
+        {
+            this._counts.Swap(counts => counts.Add((counter, tags)));
+            return unit;
+        });
+
+    private sealed class OpenSpan(Operation operation, OpenSpan? parent)
+    {
+        private readonly Lock _lock = new();
+        private Seq<(string, Tags)> _events;
+        private Tags _tags = Tags.Empty;
+
+        public void AddEvent(string name, Tags tags)
+        {
+            lock (this._lock)
+                this._events = this._events.Add((name, tags));
+        }
+
+        public void AddTags(Tags tags)
+        {
+            lock (this._lock)
+                this._tags = this._tags.Add(tags);
+        }
+
+        public RecordedSpan Finish(SpanEnd end)
+        {
+            lock (this._lock)
+                return new RecordedSpan(operation, end, Optional(parent?.Name), this._events, this._tags);
+        }
+
+        private string Name => operation.SpanName;
+    }
 }
 
 /// <summary>One call on <see cref="FakeCommandIO" />, in the order it happened.</summary>
@@ -188,14 +278,14 @@ public sealed class TestEnv
     public FakeLog Log { get; } = new();
     public FakeAlerts Alerts { get; }
     public FakeGuildLog GuildLog { get; }
-    public FakeTrace Trace { get; } = new();
+    public FakeTelemetry Telemetry { get; } = new();
     public FakeCommandIO Command { get; }
     public FakeDatabase Database { get; }
     public FakeDiscord Discord { get; }
     public FakeGuildIssues GuildIssues { get; }
     public FakePluralKitIO PluralKit { get; }
 
-    public GrimoireEnv Env => new(this.Clock, this.Log, this.Alerts, this.GuildLog, this.Trace, this.Database,
+    public GrimoireEnv Env => new(this.Clock, this.Log, this.Alerts, this.GuildLog, this.Telemetry, this.Database,
         this.Discord, this.GuildIssues, this.PluralKit);
     public GrimoireRuntime Runtime => new(this.Env);
     public CommandRuntime CommandRuntime => new(this.Env, this.Command);

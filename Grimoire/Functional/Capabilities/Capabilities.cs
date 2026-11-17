@@ -12,6 +12,7 @@ using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Features.Shared.PluralKit.Models;
 using Grimoire.Functional.Data;
 using Grimoire.Functional.Discord;
+using Grimoire.Functional.Telemetry;
 using Grimoire.Settings.Enums;
 using LanguageExt;
 using Microsoft.Extensions.Logging;
@@ -125,11 +126,34 @@ public interface IPluralKitIO
 }
 
 /// <summary>
-///     The id a user quotes from the generic error reply. Until section 1.6 it is random; 1.6 makes it the trace id.
+///     Spans, span events and counters (spec 1.6). One capability, because a span and its duration metric share the
+///     outcome. The live implementation is the only code that touches <c>ActivitySource</c> and <c>Meter</c>.
+///     Features use it through <c>Telemetry&lt;RT&gt;</c>, and get their spans from <c>Db</c>, <c>Discord</c> and
+///     <c>PluralKit</c> without asking.
 /// </summary>
-public interface ITraceIO
+public interface ITelemetryIO
 {
+    /// <summary>
+    ///     The id a user quotes from the generic error reply: the current trace id (32 hex characters), or 10 random
+    ///     hex characters when no span is recording.
+    /// </summary>
     IO<string> ErrorId { get; }
+
+    /// <summary>
+    ///     Runs <paramref name="body" /> inside a span. The span is current for everything the body awaits, so
+    ///     Npgsql's and HttpClient's spans nest under it. When it ends, the span gets the result's outcome, tags and
+    ///     status, and the operation's metric is recorded. The result passes through unchanged.
+    ///     <paramref name="ended" /> describes a success; a failure is described by <c>SpanResult.OfError</c>.
+    /// </summary>
+    IO<A> Span<A>(Operation operation, IO<A> body, Func<A, SpanEnd> ended);
+
+    /// <summary>An event on the current span ("retry", "guild-issue"). Does nothing when no span is recording.</summary>
+    IO<Unit> Event(string name, Tags tags);
+
+    /// <summary>Tags on the current span, for what is known only at the end (a tick's item count).</summary>
+    IO<Unit> Tag(Tags tags);
+
+    IO<Unit> Count(Counter counter, Tags tags);
 }
 
 /// <summary>How a command's replies go out. Decided once per run, before validation.</summary>

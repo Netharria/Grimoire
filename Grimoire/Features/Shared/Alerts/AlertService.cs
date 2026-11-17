@@ -6,6 +6,8 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Threading.Channels;
+using Grimoire.Functional.Telemetry;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +17,9 @@ public sealed partial class AlertService(
     AlertChannels channels,
     WarningBuffer warningBuffer,
     ILogger<AlertService> logger,
-    TimeProvider timeProvider) : BackgroundService, IAlertSender
+    TimeProvider timeProvider,
+    GrimoireMetrics? metrics = null,
+    IConfiguration? configuration = null) : BackgroundService, IAlertSender
 {
     private const int QueueCapacity = 256;
     private static readonly TimeSpan UrgentCooldown = TimeSpan.FromMinutes(5);
@@ -31,7 +35,9 @@ public sealed partial class AlertService(
 
     public void Send(Alert alert)
     {
-        if (!this._channel.Writer.TryWrite(alert))
+        var written = this._channel.Writer.TryWrite(alert);
+        metrics?.CountAlert(alert.Severity.ToString(), alert.Type, dropped: !written);
+        if (!written)
             LogAlertDropped(logger, alert.Type);
     }
 
@@ -66,7 +72,8 @@ public sealed partial class AlertService(
                 if (this._cooldown.TryAcquire(alert.Key) is not { } suppressed)
                     return;
                 if (await channels.GetAsync(AlertSeverity.Urgent) is { } channel)
-                    await channel.SendMessageAsync(AlertMessageFormatter.FormatUrgent(alert, suppressed));
+                    await channel.SendMessageAsync(AlertMessageFormatter.FormatUrgent(alert, suppressed,
+                        configuration?[AlertMessageFormatter.TraceUrlSetting]));
                 return;
             default:
                 throw new ArgumentOutOfRangeException(nameof(alert), alert.Severity, null);

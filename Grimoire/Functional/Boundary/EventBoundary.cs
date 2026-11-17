@@ -9,6 +9,7 @@ using Grimoire.Features.Shared.Alerts;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Effects;
 using Grimoire.Functional.Runtime;
+using Grimoire.Functional.Telemetry;
 using LanguageExt;
 using LanguageExt.Traits;
 using Microsoft.Extensions.Hosting;
@@ -22,14 +23,16 @@ namespace Grimoire.Functional.Boundary;
 ///     effect never fails with a Grimoire case, so nothing reaches DSharpPlus's <c>IClientErrorHandler</c>.
 /// </summary>
 public static class EventBoundary<RT>
-    where RT : Has<Eff<RT>, ILogIO>, Has<Eff<RT>, IAlertIO>, Has<Eff<RT>, IGuildIssueIO>
+    where RT : Has<Eff<RT>, ILogIO>, Has<Eff<RT>, IAlertIO>, Has<Eff<RT>, IGuildIssueIO>, Has<Eff<RT>, ITelemetryIO>
 {
     private const string Category = "Grimoire.Events";
 
+    /// <summary>The handler's effect inside its root span (spec 1.6); a failure is reported inside it too.</summary>
     public static Eff<RT, CommandOutcome> Run(string handler, Option<GuildId> guild, Eff<RT, Unit> effect) =>
-        Boundary<RT>.Attempt(effect).Bind(result => result.Match(
-            Succ: _ => Eff<RT, CommandOutcome>.Pure(CommandOutcome.Success),
-            Fail: error => Failed(handler, guild, error)));
+        Telemetry<RT>.Root(Operation.Event(handler, guild),
+            Boundary<RT>.Attempt(effect).Bind(result => result.Match(
+                Succ: _ => Eff<RT, CommandOutcome>.Pure(CommandOutcome.Success),
+                Fail: error => Failed(handler, guild, error))));
 
     private static Eff<RT, CommandOutcome> Failed(string handler, Option<GuildId> guild, Error error) =>
         from shuttingDown in Boundary<RT>.ShuttingDown
@@ -51,6 +54,7 @@ public static class EventBoundary<RT>
 
     private static Eff<RT, Unit> Report(string handler, Option<GuildId> guild, Error error, CommandOutcome outcome,
         LogLevel level, AlertSeverity severity) =>
+        from errorId in Telemetry<RT>.ErrorId
         from _ in Log<RT>.Write(new LogEntry(level, Category,
             "Event handler {HandlerName} failed ({Outcome}) in guild {GuildId}: {Reason}",
             [handler, outcome, GuildOf(guild), error.Messages], Boundary<RT>.ExceptionOf(error)))
@@ -64,9 +68,10 @@ public static class EventBoundary<RT>
                 _ => "EventHandlerFailure"
             },
             Discriminator = handler,
-            Message = $"{handler} failed ({outcome}): {error.Messages}",
+            Message = $"{handler} failed ({outcome}) [Id `{errorId}`]: {error.Messages}",
             Exception = Boundary<RT>.ExceptionOf(error).OrNull(),
-            GuildId = guild.ToNullable()
+            GuildId = guild.ToNullable(),
+            TraceId = errorId
         })
         select unit;
 

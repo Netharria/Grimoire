@@ -8,6 +8,7 @@
 using Grimoire.Features.Shared.GuildIssues;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Effects;
+using Grimoire.Functional.Telemetry;
 using LanguageExt;
 using LanguageExt.Traits;
 using Unit = LanguageExt.Unit;
@@ -46,7 +47,8 @@ public static class Boundary<RT> where RT : Has<Eff<RT>, ILogIO>
 }
 
 /// <summary>The guild-issue half of a Discord refusal, shared by the three boundaries (spec 1.4, section 3.7).</summary>
-public static class BotRefusals<RT> where RT : Has<Eff<RT>, ILogIO>, Has<Eff<RT>, IGuildIssueIO>
+public static class BotRefusals<RT>
+    where RT : Has<Eff<RT>, ILogIO>, Has<Eff<RT>, IGuildIssueIO>, Has<Eff<RT>, ITelemetryIO>
 {
     /// <summary>
     ///     Tells the guild about every permission Discord refused the bot inside <paramref name="error" />, one report
@@ -54,9 +56,12 @@ public static class BotRefusals<RT> where RT : Has<Eff<RT>, ILogIO>, Has<Eff<RT>
     ///     reports nothing. A failed report is only logged: the outcome stays the same.
     /// </summary>
     public static Eff<RT, Unit> Report(Error error, string category) =>
-        Of(error).Fold(Effect.Done<RT>(), (reports, issue) => reports.Bind(_ => Boundary<RT>.Quietly(
-            GuildIssues<RT>.Report(issue), category, "Could not report {Code} to guild {GuildId}", issue.Code,
-            issue.GuildId.Value)));
+        Of(error).Fold(Effect.Done<RT>(), (reports, issue) => reports
+            .Bind(_ => Telemetry<RT>.Event(TelemetryNames.GuildIssueEvent, Tags.Of((TelemetryNames.IssueCode, issue.Code))))
+            .Bind(_ => Telemetry<RT>.Count(Counter.GuildIssues, Tags.Of((TelemetryNames.IssueCode, issue.Code))))
+            .Bind(_ => Boundary<RT>.Quietly(
+                GuildIssues<RT>.Report(issue), category, "Could not report {Code} to guild {GuildId}", issue.Code,
+                issue.GuildId.Value)));
 
     /// <summary>The issues to report, in order, without repeats. Pure.</summary>
     public static Seq<GuildIssue> Of(Error error) =>

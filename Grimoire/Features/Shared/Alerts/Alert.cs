@@ -35,6 +35,12 @@ public sealed record Alert
 
     public GuildId? GuildId { get; init; }
 
+    /// <summary>
+    ///     The id the alert quotes as "[Id …]": the trace id when the alert was raised inside a span (spec 1.6). An
+    ///     urgent alert links to the trace when <c>telemetryTraceUrl</c> is set.
+    /// </summary>
+    public string? TraceId { get; init; }
+
     public string Key => AlertKey.Compute(this.Type, this.Discriminator, this.Exception);
 }
 

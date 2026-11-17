@@ -326,6 +326,22 @@ code any more; `CLAUDE.md` still mentions one under `Logging/`.
 
 ---
 
+## H. Telemetry (spec 1.6)
+
+Needs a local `grafana/otel-lgtm` with the repo's tail-sampling config merged in
+([`docs/operations/telemetry.md`](../operations/telemetry.md)), and the bot run with
+`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`.
+
+| ID | Precondition | Action | Expected result | Notes |
+|----|--------------|--------|-----------------|-------|
+| XC-125 | Telemetry on | Make a ported command fail with an outage (for example stop Postgres during it) | The reply quotes a 32-character id; Tempo finds the trace by it; the failed `db` span has the SQLSTATE and the exception | **[auto]** `TelemetryWiringTests.AProbeCommandsOutage_IsOneTrace_WhoseIdTheReplyQuotes` |
+| XC-126 | Telemetry on, a slash command run | Open its trace | The interaction callback's `url.full` shows `{token}`, never the token | **[auto]** `TelemetryWiringTests.AnInteractionsUrl_IsRedacted_BeforeExport` |
+| XC-127 | Telemetry on | Stop `otel-lgtm` for one minute, use the bot, start it again | Traces from that minute arrive after it's back | In-memory retry |
+| XC-128 | Telemetry on | Stop `otel-lgtm` for ten minutes, use the bot | The console has "Telemetry export problem" at most once a minute per kind; the bot is unaffected | Spans past the queue are dropped (OQ-3) |
+| XC-129 | No `OTEL_EXPORTER_OTLP_ENDPOINT` | Start the bot | "Telemetry export is off" once at startup; error ids are still 32 characters | **[auto]** `TelemetryWiringTests.WithoutAnEndpoint_TheStartupLineSaysExportIsOff` |
+| XC-130 | `telemetryTraceUrl` set | Cause an urgent alert | The alert ends with a "View trace" link that opens the trace | **[auto]** `AlertTraceLinkTests` for the text |
+| XC-131 | Telemetry on, idle for an hour | Look at Tempo | No traces of successful worker ticks that did nothing; failed ticks and ticks with items are there | Tail sampling (OQ-2) |
+
 ## Code observations
 
 Things noticed while reading the source. "New" means not yet in `known-issues.md`.

@@ -107,7 +107,9 @@ public sealed class BoundaryTests(GrimoireCoreFactory database) : IAsyncLifetime
         reply.IsEphemeral.ShouldBeTrue();
         reply.Description.ShouldStartWith("Something went wrong while running `/probe_public`.");
         var errorId = reply.Description!.Split('`')[^2];
-        var alert = this._alerts.Sent.ShouldHaveSingleItem();
+        // Only the urgent one: CommandHandler may also raise a SlowCommand warning once the command finishes, since
+        // the fake interaction's id dates it long ago. Whether that has arrived yet is a race.
+        var alert = this._alerts.Sent.Where(sent => sent.Severity == AlertSeverity.Urgent).ShouldHaveSingleItem();
         alert.Type.ShouldBe(type);
         alert.Severity.ShouldBe(AlertSeverity.Urgent);
         alert.Message.ShouldContain(errorId);

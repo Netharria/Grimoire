@@ -8,6 +8,9 @@
 using System.Diagnostics;
 using DSharpPlus.Exceptions;
 using Grimoire.Features.Shared.Alerts;
+using Grimoire.Functional.Capabilities;
+using Grimoire.Functional.Telemetry;
+using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,6 +28,7 @@ public abstract partial class GenericBackgroundService(
     private readonly RetryBackoff _backoff = new(TimeProvider.System);
     private readonly PeriodicTimer _timer = new(timeSpan);
 
+    private int _attemptedThisTick;
     private long _runs;
     private long _failures;
     private long _totalMs;
@@ -47,8 +51,13 @@ public abstract partial class GenericBackgroundService(
             var started = Stopwatch.GetTimestamp();
             try
             {
-                await using var scope = serviceProvider.CreateAsyncScope();
-                await RunTask(scope.ServiceProvider, cancellationToken);
+                await this.TracedAsync(Operation.WorkerTick(this.TaskName), async () =>
+                {
+                    this._attemptedThisTick = 0;
+                    await using var scope = serviceProvider.CreateAsyncScope();
+                    await RunTask(scope.ServiceProvider, cancellationToken);
+                    Activity.Current?.SetTag(TelemetryNames.WorkerItems, this._attemptedThisTick);
+                }, cancellationToken);
                 this._consecutiveFailures = 0;
             }
             // Only this service's own token means shutdown. A timed-out HttpClient request throws
@@ -76,7 +85,8 @@ public abstract partial class GenericBackgroundService(
 
         try
         {
-            await work();
+            this._attemptedThisTick++;
+            await this.TracedAsync(Operation.WorkerItem(this.TaskName, item), work, cancellationToken);
             this._backoff.RecordSuccess(item);
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
@@ -95,6 +105,27 @@ public abstract partial class GenericBackgroundService(
                     Exception = ex
                 });
         }
+    }
+
+    /// <summary>
+    ///     Runs the work inside a span (spec 1.6, OQ-6): the tick is a root, so the old workers' EF and Discord calls
+    ///     show up as traces before Phase 3 ports them. The exception passes through unchanged.
+    /// </summary>
+    private async Task TracedAsync(Operation operation, Func<Task> work, CancellationToken cancellationToken)
+    {
+        if (serviceProvider.GetService<ITelemetryIO>() is not { } telemetry)
+        {
+            await work();
+            return;
+        }
+
+        using var envIO = EnvIO.New(token: cancellationToken);
+        await telemetry.Span(operation, IO.liftAsync(async () =>
+            {
+                await work();
+                return LanguageExt.Unit.Default;
+            }), _ => SpanResult.Succeeded())
+            .RunAsync(envIO);
     }
 
     private void RaiseFailureAlert(Exception ex)

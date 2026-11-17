@@ -21,7 +21,8 @@ namespace Grimoire.Features.Shared.PluralKit;
 ///     <see cref="ProxyLookup.NotProxied" />. Only cancellation gets through.
 /// </summary>
 public static class DeletedMessageLookup<RT>
-    where RT : Has<Eff<RT>, IPluralKitIO>, Has<Eff<RT>, ITimeIO>, Has<Eff<RT>, ILogIO>, Has<Eff<RT>, IAlertIO>
+    where RT : Has<Eff<RT>, IPluralKitIO>, Has<Eff<RT>, ITimeIO>, Has<Eff<RT>, ILogIO>, Has<Eff<RT>, IAlertIO>,
+    Has<Eff<RT>, ITelemetryIO>
 {
     private const string Category = "Grimoire.PluralKit";
 

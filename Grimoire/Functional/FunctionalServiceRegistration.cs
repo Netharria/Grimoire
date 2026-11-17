@@ -11,6 +11,7 @@ using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Data;
 using Grimoire.Functional.Discord;
 using Grimoire.Functional.Runtime;
+using Grimoire.Functional.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
@@ -25,7 +26,8 @@ internal static class FunctionalServiceRegistration
         ///     them, and the command and event runners. All singletons: the capabilities hold no per-request state, and
         ///     the per-command reply capability is built by <see cref="CommandRunner" /> for each run. The database
         ///     capability uses the <see cref="NpgsqlDataSource" /> registered by <c>AddGrimoire</c>, which the EF
-        ///     contexts share (spec 1.3, OQ-1). <see cref="IPluralKitIO" /> comes from <c>AddPluralKit</c>, which reads its
+        ///     contexts share (spec 1.3, OQ-1). <see cref="ITelemetryIO" /> takes the <c>ActivitySource</c> and
+        ///     <see cref="GrimoireMetrics" /> that <c>AddTelemetry</c> registers (spec 1.6). <see cref="IPluralKitIO" /> comes from <c>AddPluralKit</c>, which reads its
         ///     settings (spec 1.5).
         /// </summary>
         public IServiceCollection AddEffectRuntime()
@@ -36,7 +38,7 @@ internal static class FunctionalServiceRegistration
                 .AddSingleton<ILogIO, LiveLogIO>()
                 .AddSingleton<IAlertIO, LiveAlertIO>()
                 .AddSingleton<IGuildLogIO, LiveGuildLogIO>()
-                .AddSingleton<ITraceIO, LiveTraceIO>()
+                .AddSingleton<ITelemetryIO, LiveTelemetryIO>()
                 .AddSingleton<IDatabaseIO, NpgsqlDatabaseIO>()
                 .AddSingleton<IDiscordIO, LiveDiscordIO>()
                 .AddSingleton<IGuildIssueIO, LiveGuildIssueIO>()
@@ -45,7 +47,7 @@ internal static class FunctionalServiceRegistration
                     provider.GetRequiredService<ILogIO>(),
                     provider.GetRequiredService<IAlertIO>(),
                     provider.GetRequiredService<IGuildLogIO>(),
-                    provider.GetRequiredService<ITraceIO>(),
+                    provider.GetRequiredService<ITelemetryIO>(),
                     provider.GetRequiredService<IDatabaseIO>(),
                     provider.GetRequiredService<IDiscordIO>(),
                     provider.GetRequiredService<IGuildIssueIO>(),

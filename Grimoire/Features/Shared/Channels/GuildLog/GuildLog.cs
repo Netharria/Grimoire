@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
 using System.Threading.Channels;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
@@ -26,19 +27,25 @@ public sealed class GuildLog(SettingsModule settingsModule, TimeProvider timePro
 {
     private const int QueueCapacity = 1024;
 
-    private readonly Channel<GuildLogMessage> _channel =
-        Channel.CreateBounded<GuildLogMessage>(new BoundedChannelOptions(QueueCapacity)
+    private readonly Channel<QueuedLog> _channel =
+        Channel.CreateBounded<QueuedLog>(new BoundedChannelOptions(QueueCapacity)
         {
             SingleReader = true,
             SingleWriter = false,
             FullMode = BoundedChannelFullMode.Wait // backpressure instead of unbounded memory growth
         });
 
-    internal ChannelReader<GuildLogMessage> Reader => this._channel.Reader;
+    internal ChannelReader<QueuedLog> Reader => this._channel.Reader;
 
-    /// <summary>Queues a finished message.</summary>
+    /// <summary>How many posts are waiting, for the <c>grimoire.guildlog.queue.depth</c> gauge (spec 1.6).</summary>
+    internal int QueuedCount => this._channel.Reader.Count;
+
+    /// <summary>
+    ///     Queues a finished message, with the span that queued it, so the publisher's span can link back to it
+    ///     (spec 1.6, section 3.7). The record itself stays free of tracing types.
+    /// </summary>
     public ValueTask EnqueueAsync(GuildLogMessage message, CancellationToken cancellationToken = default)
-        => this._channel.Writer.WriteAsync(message, cancellationToken);
+        => this._channel.Writer.WriteAsync(new QueuedLog(message, Activity.Current?.Context), cancellationToken);
 
     /// <summary>
     ///     The bridge for code not yet ported: the old message is converted and stamped with the time it's queued,
@@ -75,3 +82,6 @@ public sealed class GuildLog(SettingsModule settingsModule, TimeProvider timePro
     /// </summary>
     internal void Complete() => this._channel.Writer.TryComplete();
 }
+
+/// <summary>A queued post and the span context it was queued from, if any.</summary>
+internal readonly record struct QueuedLog(GuildLogMessage Message, ActivityContext? Origin);

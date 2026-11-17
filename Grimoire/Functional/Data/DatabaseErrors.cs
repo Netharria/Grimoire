@@ -84,7 +84,13 @@ internal static class DatabaseErrors
         }
 
         details.Append($"  Parameters: {(sql.ParameterNames.IsEmpty ? "—" : string.Join(", ", sql.ParameterNames.Map(name => "@" + name)))}");
-        return new DatabaseException(summary.ToString(), details.ToString(), transient, exception);
+        var postgresError = exception as PostgresException;
+        return new DatabaseException(summary.ToString(), details.ToString(), transient, exception)
+        {
+            SqlState = postgresError?.SqlState,
+            Table = postgresError?.TableName,
+            Constraint = postgresError?.ConstraintName
+        };
     }
 
     private static string Quoted(string? value) => string.IsNullOrEmpty(value) ? "—" : $"\"{value}\"";
@@ -147,6 +153,15 @@ public sealed class DatabaseException : Exception
 
     /// <summary>True when retrying a read could get past it.</summary>
     public bool IsTransient { get; }
+
+    /// <summary>Postgres's SQLSTATE, or null when the failure wasn't Postgres's answer. A span tag (spec 1.6).</summary>
+    public string? SqlState { get; init; }
+
+    /// <summary>The table Postgres named, if any. A span tag (spec 1.6).</summary>
+    public string? Table { get; init; }
+
+    /// <summary>The constraint Postgres named, if any. A span tag (spec 1.6).</summary>
+    public string? Constraint { get; init; }
 
     public override string ToString() =>
         $"{this.GetType().FullName}: {this.Message}\n{this.Details}\n ---> {this.InnerException}";

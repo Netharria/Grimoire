@@ -47,11 +47,18 @@ public enum PluralKitProblem
 /// </summary>
 public sealed class PluralKitCallException : Exception
 {
-    internal PluralKitCallException(string message, PluralKitProblem problem, Exception? inner = null)
+    internal PluralKitCallException(string message, PluralKitProblem problem, Exception? inner = null,
+        int? status = null)
         : base(message, inner)
-        => this.Problem = problem;
+    {
+        this.Problem = problem;
+        this.Status = status;
+    }
 
     public PluralKitProblem Problem { get; }
+
+    /// <summary>The HTTP status PluralKit answered with; null when there was no answer. A span tag (spec 1.6).</summary>
+    public int? Status { get; }
 
     /// <summary>Worth asking again: an outage or a rate limit.</summary>
     public bool IsTransient => this.Problem is PluralKitProblem.Outage or PluralKitProblem.RateLimited;
@@ -78,14 +85,14 @@ internal static class PluralKitErrors
         {
             (HttpStatusCode.NotFound, MessageNotFound) => Fin.Succ(Option<PluralKitMessage>.None),
             (HttpStatusCode.NotFound, _) => Fail(PluralKitProblem.Refused,
-                "answered 404 without code 20006; check pluralkitApiEndpoint"),
+                "answered 404 without code 20006; check pluralkitApiEndpoint", status),
             (HttpStatusCode.TooManyRequests, _) => Fail(PluralKitProblem.RateLimited,
-                $"answered 429 (retry after {error.RetryAfterMs.Match(ms => $"{ms} ms", () => "an unknown time")})"),
+                $"answered 429 (retry after {error.RetryAfterMs.Match(ms => $"{ms} ms", () => "an unknown time")})", status),
             (HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.BadRequest, _) =>
-                Fail(PluralKitProblem.Refused, $"refused the lookup: {Describe(status, error)}"),
+                Fail(PluralKitProblem.Refused, $"refused the lookup: {Describe(status, error)}", status),
             ( >= HttpStatusCode.InternalServerError, _) =>
-                Fail(PluralKitProblem.Outage, $"failed: {Describe(status, error)}"),
-            _ => Fail(PluralKitProblem.Unexpected, $"answered {Describe(status, error)}")
+                Fail(PluralKitProblem.Outage, $"failed: {Describe(status, error)}", status),
+            _ => Fail(PluralKitProblem.Unexpected, $"answered {Describe(status, error)}", status)
         };
     }
 
@@ -140,19 +147,20 @@ internal static class PluralKitErrors
         }
     }
 
-    private static Fin<Option<PluralKitMessage>> Fail(PluralKitProblem problem, string what) =>
-        Fin.Fail<Option<PluralKitMessage>>(Failure(problem, what, null));
+    private static Fin<Option<PluralKitMessage>> Fail(PluralKitProblem problem, string what, HttpStatusCode status) =>
+        Fin.Fail<Option<PluralKitMessage>>(Failure(problem, what, null, (int)status));
 
-    private static Error Failure(PluralKitProblem problem, string what, Exception? exception) =>
+    private static Error Failure(PluralKitProblem problem, string what, Exception? exception, int? status = null) =>
         problem is PluralKitProblem.Unexpected
             // A defect keeps the description as the exception's own message: language-ext rebuilds an exceptional
             // error from its exception while an effect runs (spec 1.4, section 3.13).
-            ? Error.New(new PluralKitCallException(Describe(what), problem, exception))
-            : Outage(problem, what, Optional(exception));
+            ? Error.New(new PluralKitCallException(Describe(what), problem, exception, status))
+            : Outage(problem, what, Optional(exception), status);
 
-    private static Unavailable Outage(PluralKitProblem problem, string what, Option<Exception> exception) =>
+    private static Unavailable Outage(PluralKitProblem problem, string what, Option<Exception> exception,
+        int? status = null) =>
         Unavailable.From(UnavailableMessage,
-            new PluralKitCallException(Describe(what), problem, exception.OrNull()));
+            new PluralKitCallException(Describe(what), problem, exception.OrNull(), status));
 
     private static string Describe(string what) => $"PluralKit call {Operation} {what}";
 

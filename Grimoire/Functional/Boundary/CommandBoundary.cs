@@ -8,6 +8,7 @@
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Effects;
+using Grimoire.Functional.Telemetry;
 using LanguageExt;
 using LanguageExt.Traits;
 using Unit = LanguageExt.Unit;
@@ -24,12 +25,26 @@ public static class CommandBoundary<RT>
     Has<Eff<RT>, ILogIO>,
     Has<Eff<RT>, IAlertIO>,
     Has<Eff<RT>, IGuildLogIO>,
-    Has<Eff<RT>, ITraceIO>,
-    Has<Eff<RT>, IGuildIssueIO>
+    Has<Eff<RT>, ITelemetryIO>,
+    Has<Eff<RT>, IGuildIssueIO>,
+    Has<Eff<RT>, ITimeIO>
 {
     private const string Category = "Grimoire.Commands";
 
+    /// <summary>
+    ///     The whole run inside the command's root span (spec 1.6), so every call it makes nests under it and the
+    ///     generic reply's id is its trace id.
+    /// </summary>
     public static Eff<RT, CommandOutcome> Run<TIn>(
+        Invocation invocation,
+        Eff<RT, Privacy> privacy,
+        Func<Invocation, Validation<Error, TIn>> input,
+        Func<TIn, Eff<RT, Reply>> act) =>
+        Clock<RT>.UtcNow.Bind(now => Telemetry<RT>.Root(
+            Operation.Command(invocation, now - invocation.CreatedAt),
+            Untraced(invocation, privacy, input, act)));
+
+    private static Eff<RT, CommandOutcome> Untraced<TIn>(
         Invocation invocation,
         Eff<RT, Privacy> privacy,
         Func<Invocation, Validation<Error, TIn>> input,
@@ -146,7 +161,7 @@ public static class CommandBoundary<RT>
     /// <summary>An outage or a defect: logged and alerted first, because the reply is the step most likely to fail.</summary>
     private static Eff<RT, Unit> Crashed(Invocation invocation, Delivery delivery, CommandOutcome outcome,
         Error error) =>
-        from errorId in Trace<RT>.ErrorId
+        from errorId in Telemetry<RT>.ErrorId
         from _ in Log<RT>.Error(Category, Boundary<RT>.ExceptionOf(error),
             "Error on Command: [ID {ErrorId}] {InteractionName} ({Outcome}) in guild {GuildId}: {Reason}",
             errorId, invocation.Command, outcome, GuildOf(invocation), error.Message)
@@ -159,7 +174,8 @@ public static class CommandBoundary<RT>
                 ? $"{invocation.Command} could not reach a dependency [Id `{errorId}`]: {error.Message}"
                 : $"Encountered exception while executing {invocation.Command} [Id `{errorId}`]",
             Exception = Boundary<RT>.ExceptionOf(error).OrNull(),
-            GuildId = invocation.Guild.ToNullable()
+            GuildId = invocation.Guild.ToNullable(),
+            TraceId = errorId
         })
         from ___ in SendRefusal(invocation, delivery, Replies.Generic(invocation.Command, errorId))
         select unit;

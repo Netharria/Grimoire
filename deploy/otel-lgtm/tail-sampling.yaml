@@ -1,0 +1,40 @@
+# Tail sampling for Grimoire's traces (spec 1.6, OQ-2), for the OpenTelemetry Collector inside grafana/otel-lgtm.
+#
+# This is not a whole collector config. Merge it into the image's own config (see docs/operations/telemetry.md):
+#   1. Copy the image's config out:  docker cp otel-lgtm:/otel-lgtm/otelcol-config.yaml ./otelcol-config.yaml
+#      (check the path for your image version: `docker exec otel-lgtm ls /otel-lgtm`).
+#   2. Add the two processors below under `processors:`.
+#   3. In `service.pipelines.traces.processors`, put `memory_limiter` first and `tail_sampling` before `batch`.
+#   4. Mount the edited file back over the original, read-only, and restart the container.
+#
+# Policy: keep every trace, except a worker tick that succeeded and attempted no item. The Mute and Lock workers tick
+# every 5 s, so those are most of the traces and say nothing. A tick that failed, or did any work, is kept, and so is
+# every command, event and guild log post. Metrics aren't sampled: they're counted in the bot.
+#
+# Check the keys against the collector version in your image: `ottl_condition` and the `drop` policy need a recent
+# contrib collector.
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+  tail_sampling:
+    # The longest a trace can take to finish arriving. A command finishes well inside it; a slow worker tick may be
+    # split, which only means its late spans are decided on their own.
+    decision_wait: 30s
+    num_traces: 50000
+    policies:
+      - name: drop-idle-worker-ticks
+        type: drop
+        drop:
+          drop_sub_policy:
+            - name: idle-successful-tick
+              type: ottl_condition
+              ottl_condition:
+                error_mode: ignore
+                span:
+                  - 'attributes["grimoire.worker.items"] == 0 and attributes["grimoire.outcome"] == "Success"'
+      - name: keep-everything-else
+        type: always_sample

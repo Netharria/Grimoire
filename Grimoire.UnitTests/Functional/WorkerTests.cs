@@ -8,6 +8,7 @@
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Functional.Boundary;
 using Grimoire.Functional.Runtime;
+using Grimoire.Functional.Telemetry;
 using Grimoire.Functional.Workers;
 using Grimoire.UnitTests.Functional.Fakes;
 using LanguageExt;
@@ -255,6 +256,65 @@ public sealed class EffectBackgroundServiceTests
         summary.Category.ShouldBe(typeof(ProbeWorker).FullName);
         summary.Args.Take(3).ShouldBe(["ProbeWorker", 2L, 0L]);
     }
+
+    [Fact]
+    public async Task ATick_IsARootSpan_WithAnItemSpanPerItem_AndItsItemCount()
+    {
+        var worker = new ProbeWorker(this._env.Env)
+        {
+            Work = key => key == "bad"
+                ? Eff<GrimoireRuntime, Unit>.Fail(new NotFound("channel gone"))
+                : Eff<GrimoireRuntime, Unit>.Pure(unit)
+        };
+
+        await worker.RunTickAsync(CancellationToken.None);
+
+        var spans = this._env.Telemetry.Spans;
+        var tick = this._env.Telemetry.Single("worker ProbeWorker");
+        tick.Outcome.ShouldBe("Success");
+        tick.Tagged.Find(TelemetryNames.WorkerItems).ShouldBe(Some((object)2));
+        var items = spans.Filter(span => span.Name == "worker.item");
+        items.Map(span => span.Outcome).ShouldBe(["NotFound", "Success"]);
+        items.ShouldAllBe(span => span.Parent == Some("worker ProbeWorker"));
+        // The item's alert is raised inside the tick's trace, so it carries the trace id.
+        this._env.Alerts.Sent.ShouldHaveSingleItem().Message.ShouldContain(FakeTelemetry.Id);
+    }
+
+    [Fact]
+    public async Task AnItemInBackoff_HasNoSpan_AndIsNotCounted()
+    {
+        var worker = new ProbeWorker(this._env.Env)
+        {
+            Work = key => key == "bad"
+                ? Eff<GrimoireRuntime, Unit>.Fail(new NotFound("channel gone"))
+                : Eff<GrimoireRuntime, Unit>.Pure(unit)
+        };
+
+        await worker.RunTickAsync(CancellationToken.None);
+        await worker.RunTickAsync(CancellationToken.None);
+
+        var ticks = this._env.Telemetry.Spans.Filter(span => span.Name == "worker ProbeWorker");
+        ticks.Map(tick => tick.Tagged.Find(TelemetryNames.WorkerItems)).ShouldBe([Some((object)2), Some((object)1)]);
+        this._env.Telemetry.Spans.Filter(span => span.Name == "worker.item").Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task AFailedTick_EndsItsSpanAsAnError_AndItsAlertCarriesTheId()
+    {
+        var worker = new ProbeWorker(this._env.Env) { Work = _ => Eff<GrimoireRuntime, Unit>.Fail(DatabaseOutage) };
+
+        await worker.RunTickAsync(CancellationToken.None);
+
+        var tick = this._env.Telemetry.Single("worker ProbeWorker");
+        tick.Outcome.ShouldBe("Unavailable");
+        tick.End.IsError.ShouldBeTrue();
+        this._env.Alerts.Sent.ShouldContain(alert => alert.Type == "BackgroundTaskFailure"
+                                                    && alert.Message.Contains(FakeTelemetry.Id));
+    }
+
+    private static Error DatabaseOutage =>
+        Grimoire.Functional.Data.DatabaseErrors.Classify(new TimeoutException(),
+            Grimoire.Functional.Data.Sql.Read("Probe.Read", "SELECT 1"), false, "db:5432", CancellationToken.None);
 
     /// <summary>Processes "bad" then "good" each tick, through <see cref="EffectBackgroundService.Items" />.</summary>
     private sealed class ProbeWorker(GrimoireEnv env) : EffectBackgroundService(env, TimeSpan.FromMinutes(1))

@@ -9,9 +9,11 @@ using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using System.Data;
 using Grimoire.Functional.Capabilities;
+using Grimoire.Functional.Boundary;
 using Grimoire.Functional.Data;
 using Grimoire.Functional.Discord;
 using Grimoire.Functional.PluralKit;
+using Grimoire.Functional.Telemetry;
 using Grimoire.Features.Shared.PluralKit;
 using Grimoire.Features.Shared.PluralKit.Models;
 using Grimoire.Features.Shared.GuildIssues;
@@ -63,7 +65,7 @@ public static class Alerts<RT> where RT : Has<Eff<RT>, IAlertIO>
         Has<Eff<RT>, RT, IAlertIO>.ask.As().Bind(alerts => alerts.Send(alert));
 }
 
-public static class GuildLogs<RT> where RT : Has<Eff<RT>, IGuildLogIO>
+public static class GuildLogs<RT> where RT : Has<Eff<RT>, IGuildLogIO>, Has<Eff<RT>, ITelemetryIO>
 {
     private static Eff<RT, IGuildLogIO> Trait => Has<Eff<RT>, RT, IGuildLogIO>.ask.As();
 
@@ -75,7 +77,7 @@ public static class GuildLogs<RT> where RT : Has<Eff<RT>, IGuildLogIO>
         from logged in Trait.Bind(log => log.IsLogged(guild, type))
         from _ in logged
             ? build.Bind(message => Trait.Bind(log => log.Enqueue(message)))
-            : Effect.Done<RT>()
+            : Telemetry<RT>.Count(Counter.GuildLogSkipped, Tags.Of((TelemetryNames.GuildLogType, type.ToString())))
         select unit;
 
     /// <summary>A message that's already built.</summary>
@@ -93,62 +95,76 @@ public static class GuildIssues<RT> where RT : Has<Eff<RT>, IGuildIssueIO>
 ///     Discord calls (spec 1.4). Lookups and idempotent calls are retried while the failure is transient; calls that
 ///     create something never are (Q25). The choice is made here, per call, so unit tests see it.
 /// </summary>
-public static class Discord<RT> where RT : Has<Eff<RT>, IDiscordIO>
+public static class Discord<RT> where RT : Has<Eff<RT>, IDiscordIO>, Has<Eff<RT>, ITelemetryIO>
 {
     private static Eff<RT, IDiscordIO> Trait => Has<Eff<RT>, RT, IDiscordIO>.ask.As();
+    private static Eff<RT, ITelemetryIO> TelemetryTrait => Has<Eff<RT>, RT, ITelemetryIO>.ask.As();
 
     public static Eff<RT, ChannelSnapshot> GetChannel(ChannelId channel) =>
-        Retried(discord => discord.GetChannel(channel));
+        Retried(Operation.Discord("Discord.GetChannel"), discord => discord.GetChannel(channel));
 
-    public static Eff<RT, UserSnapshot> GetUser(UserId user) => Retried(discord => discord.GetUser(user));
+    public static Eff<RT, UserSnapshot> GetUser(UserId user) =>
+        Retried(Operation.Discord("Discord.GetUser"), discord => discord.GetUser(user));
 
     /// <summary><c>NotFound</c> when the member left: only that means "gone" (TD-12).</summary>
     public static Eff<RT, MemberSnapshot> GetMember(GuildId guild, UserId user) =>
-        Retried(discord => discord.GetMember(guild, user));
+        Retried(Operation.Discord("Discord.GetMember", guild), discord => discord.GetMember(guild, user));
 
     public static Eff<RT, RoleSnapshot> GetRole(GuildId guild, RoleId role) =>
-        Retried(discord => discord.GetRole(guild, role));
+        Retried(Operation.Discord("Discord.GetRole", guild), discord => discord.GetRole(guild, role));
 
     public static Eff<RT, MessageSnapshot> GetMessage(ChannelId channel, MessageId message) =>
-        Retried(discord => discord.GetMessage(channel, message));
+        Retried(Operation.Discord("Discord.GetMessage"), discord => discord.GetMessage(channel, message));
 
     /// <summary>Never retried: a 502 may come after Discord already posted it, and a retry would post twice (Q25).</summary>
     public static Eff<RT, MessageId> SendMessage(ChannelId channel, DiscordMessageBuilder message) =>
-        Trait.Bind(discord => discord.SendMessage(channel, message));
+        Once(Operation.Discord("Discord.SendMessage"), discord => discord.SendMessage(channel, message));
 
     /// <summary>Never retried (Q25).</summary>
     public static Eff<RT, Unit> SendDirectMessage(UserId user, DiscordMessageBuilder message) =>
-        Trait.Bind(discord => discord.SendDirectMessage(user, message));
+        Once(Operation.Discord("Discord.SendDirectMessage"), discord => discord.SendDirectMessage(user, message));
 
     /// <summary>Retried: a retry after a delete that went through finds the message gone, which counts as done.</summary>
     public static Eff<RT, Unit> DeleteMessage(ChannelId channel, MessageId message, string reason) =>
-        Retried(discord => discord.DeleteMessage(channel, message, reason));
+        Retried(Operation.Discord("Discord.DeleteMessage"), discord => discord.DeleteMessage(channel, message, reason));
 
-    private static Eff<RT, A> Retried<A>(Func<IDiscordIO, IO<A>> call) =>
-        Trait.Bind(discord => call(discord).RetryWhile(discord.ReadRetry, DiscordErrors.IsTransient));
+    private static Eff<RT, A> Retried<A>(Operation operation, Func<IDiscordIO, IO<A>> call) =>
+        from discord in Trait
+        from telemetry in TelemetryTrait
+        from result in Observed.Retried(telemetry, operation, call(discord), discord.ReadRetry,
+            DiscordErrors.IsTransient)
+        select result;
+
+    private static Eff<RT, A> Once<A>(Operation operation, Func<IDiscordIO, IO<A>> call) =>
+        from discord in Trait
+        from telemetry in TelemetryTrait
+        from result in Observed.Call(telemetry, operation, call(discord))
+        select result;
 }
 
 /// <summary>
 ///     PluralKit's message lookup (spec 1.5). Asks only when PluralKit is on and the message is under 60 s old; retries
 ///     transient failures, each attempt waiting its turn in the rate limiter; and gives up past the cap.
 /// </summary>
-public static class PluralKit<RT> where RT : Has<Eff<RT>, IPluralKitIO>, Has<Eff<RT>, ITimeIO>
+public static class PluralKit<RT>
+    where RT : Has<Eff<RT>, IPluralKitIO>, Has<Eff<RT>, ITimeIO>, Has<Eff<RT>, ITelemetryIO>
 {
     private static Eff<RT, IPluralKitIO> Trait => Has<Eff<RT>, RT, IPluralKitIO>.ask.As();
+    private static Eff<RT, ITelemetryIO> TelemetryTrait => Has<Eff<RT>, RT, ITelemetryIO>.ask.As();
 
     /// <summary>What PluralKit says about a message that was just deleted. Fails with <c>Unavailable</c> or a defect.</summary>
     public static Eff<RT, ProxyLookup> Lookup(MessageId deleted, DateTimeOffset createdAt) =>
         from pluralKit in Trait
         from now in Clock<RT>.UtcNow
         from result in pluralKit.IsEnabled && PluralKitWindow.ShouldAsk(createdAt, now)
-            ? Ask(pluralKit, deleted)
+            ? Telemetry<RT>.Span(Operation.PluralKit(), Ask(pluralKit, deleted), lookup => lookup.GetType().Name)
             : Eff<RT, ProxyLookup>.Pure(new ProxyLookup.NotAsked())
         select result;
 
     private static Eff<RT, ProxyLookup> Ask(IPluralKitIO pluralKit, MessageId deleted) =>
-        Eff<RT, Option<PluralKitMessage>>.LiftIO(
-                pluralKit.GetMessage(deleted)
-                    .RetryWhile(pluralKit.ReadRetry, PluralKitErrors.IsTransient)
+        TelemetryTrait.Bind(telemetry => Eff<RT, Option<PluralKitMessage>>.LiftIO(
+                Observed.Retrying(telemetry, Operation.PluralKit(), pluralKit.GetMessage(deleted), pluralKit.ReadRetry,
+                        PluralKitErrors.IsTransient)
                     .Timeout(pluralKit.Cap)
                     // The timeout cancels the call, so it ends as Cancelled too. Only the run's own token means
                     // shutdown; anything else was the cap.
@@ -159,12 +175,46 @@ public static class PluralKit<RT> where RT : Has<Eff<RT>, IPluralKitIO>, Has<Eff
             .Bind(found => found.Match(
                 Some: message => message.Classify(deleted).Match(
                     Succ: Eff<RT, ProxyLookup>.Pure, Fail: Eff<RT, ProxyLookup>.Fail),
-                None: () => Eff<RT, ProxyLookup>.Pure(new ProxyLookup.NotProxied())));
+                None: () => Eff<RT, ProxyLookup>.Pure(new ProxyLookup.NotProxied()))));
 }
 
-public static class Trace<RT> where RT : Has<Eff<RT>, ITraceIO>
+/// <summary>
+///     Spans and counters (spec 1.6). A boundary opens its root span here; features rarely need to, because every
+///     database, Discord and PluralKit call already has one.
+/// </summary>
+public static class Telemetry<RT> where RT : Has<Eff<RT>, ITelemetryIO>
 {
-    public static Eff<RT, string> ErrorId => Has<Eff<RT>, RT, ITraceIO>.ask.As().Bind(trace => trace.ErrorId);
+    private static Eff<RT, ITelemetryIO> Trait => Has<Eff<RT>, RT, ITelemetryIO>.ask.As();
+
+    /// <summary>The id the generic reply quotes: the current trace id.</summary>
+    public static Eff<RT, string> ErrorId => Trait.Bind(telemetry => telemetry.ErrorId);
+
+    /// <summary>
+    ///     Runs the whole effect, with its runtime, inside a span, so every call it makes nests under the span.
+    ///     <paramref name="outcomeOf" /> labels a success; by default, "Success".
+    /// </summary>
+    public static Eff<RT, A> Span<A>(Operation operation, Eff<RT, A> body, Func<A, string>? outcomeOf = null)
+        where A : notnull =>
+        Span(operation, body, outcomeOf is null
+            ? _ => SpanResult.Succeeded()
+            : value => SpanResult.Succeeded(outcomeOf(value)));
+
+    /// <summary>A boundary's root span. The boundary never fails: its outcome decides the span's status.</summary>
+    public static Eff<RT, CommandOutcome> Root(Operation operation, Eff<RT, CommandOutcome> boundary) =>
+        Span(operation, boundary, SpanResult.Of);
+
+    /// <summary>A span whose success is described by the value: a worker tick that kept its own failure.</summary>
+    public static Eff<RT, A> Span<A>(Operation operation, Eff<RT, A> body, Func<A, SpanEnd> ended)
+        where A : notnull =>
+        Trait.Bind(telemetry => body.MapIO(io => telemetry.Span(operation, io, ended)).As());
+
+    public static Eff<RT, Unit> Event(string name, Tags tags) => Trait.Bind(telemetry => telemetry.Event(name, tags));
+
+    /// <summary>Tags on the current span, for what's known only at the end.</summary>
+    public static Eff<RT, Unit> Tag(Tags tags) => Trait.Bind(telemetry => telemetry.Tag(tags));
+
+    public static Eff<RT, Unit> Count(Counter counter, Tags tags) =>
+        Trait.Bind(telemetry => telemetry.Count(counter, tags));
 }
 
 public static class Command<RT> where RT : Has<Eff<RT>, ICommandIO>
@@ -186,9 +236,10 @@ public static class Command<RT> where RT : Has<Eff<RT>, ICommandIO>
 ///     The database, as features use it (spec 1.3). Reads (<see cref="Sql.IsRead" />) are retried on the
 ///     capability's schedule while the failure is transient; writes, transactions and streams never are (Q25).
 /// </summary>
-public static class Db<RT> where RT : Has<Eff<RT>, IDatabaseIO>
+public static class Db<RT> where RT : Has<Eff<RT>, IDatabaseIO>, Has<Eff<RT>, ITelemetryIO>
 {
     private static Eff<RT, IDatabaseIO> Trait => Has<Eff<RT>, RT, IDatabaseIO>.ask.As();
+    private static Eff<RT, ITelemetryIO> TelemetryTrait => Has<Eff<RT>, RT, ITelemetryIO>.ask.As();
 
     public static Eff<RT, Seq<A>> Query<A>(Sql sql) => Retrying(sql, db => db.Query<A>(sql));
 
@@ -202,14 +253,25 @@ public static class Db<RT> where RT : Has<Eff<RT>, IDatabaseIO>
     /// <summary>See <see cref="IDatabaseIO.Transaction{A}" />: the body runs only SQL and pure code.</summary>
     public static Eff<RT, A> Transaction<A>(Func<IDatabaseSession, IO<A>> body,
         IsolationLevel isolation = IsolationLevel.ReadCommitted) =>
-        Trait.Bind(db => db.Transaction(body, isolation));
+        from db in Trait
+        from telemetry in TelemetryTrait
+        from result in Observed.Call(telemetry, Operation.DatabaseTransaction(isolation), db.Transaction(body, isolation))
+        select result;
 
     /// <summary>See <see cref="IDatabaseIO.Fold{A, S}" />: a pure step over a streamed result.</summary>
     public static Eff<RT, S> Fold<A, S>(Sql sql, S seed, Func<S, A, S> step) =>
-        Trait.Bind(db => db.Fold(sql, seed, step));
+        from db in Trait
+        from telemetry in TelemetryTrait
+        from result in Observed.Call(telemetry, Operation.Database(sql), db.Fold(sql, seed, step))
+        select result;
 
     private static Eff<RT, A> Retrying<A>(Sql sql, Func<IDatabaseIO, IO<A>> run) =>
-        Trait.Bind(db => sql.IsRead ? run(db).RetryWhile(db.ReadRetry, DatabaseRetry.IsTransient) : run(db));
+        from db in Trait
+        from telemetry in TelemetryTrait
+        from result in sql.IsRead
+            ? Observed.Retried(telemetry, Operation.Database(sql), run(db), db.ReadRetry, DatabaseRetry.IsTransient)
+            : Observed.Call(telemetry, Operation.Database(sql), run(db))
+        select result;
 }
 
 /// <summary>Small combinators the language-ext prelude doesn't have in this shape.</summary>

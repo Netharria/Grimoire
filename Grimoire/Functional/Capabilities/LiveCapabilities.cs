@@ -5,7 +5,6 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Security.Cryptography;
 using Grimoire.Features.Shared.Alerts;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Features.Shared.GuildIssues;
@@ -87,8 +86,3 @@ internal sealed partial class LiveGuildIssueIO(GuildIssueReporter reporter, ILog
     private static partial void LogReportFailure(ILogger logger, Exception exception, GuildId guildId, string code);
 }
 
-/// <summary>10 random hex characters, as the old error handler made. Section 1.6 replaces this with the trace id.</summary>
-internal sealed class LiveTraceIO : ITraceIO
-{
-    public IO<string> ErrorId => IO.lift(() => RandomNumberGenerator.GetHexString(10));
-}

@@ -109,6 +109,12 @@ General helpers live outside `Features/`, in `Grimoire/Extensions`, `Grimoire/Ut
   section 6.
 - **Strongly-typed IDs**: Domain entities use custom value types for IDs (e.g., `UserId`, `GuildId`) to prevent accidental ID misuse.
 - **Hybrid caching in Settings**: guild settings are read through `HybridCache` to avoid a DB lookup on every event.
+- **Telemetry (section 1.6)**: OpenTelemetry through `ITelemetryIO`/`Telemetry<RT>`. The boundaries open root
+  spans; every `Db`, `Discord` and `PluralKit` call is a child span, with retries as events, so features get spans
+  for free and add only counters with bounded tags. Span tags come from typed error fields, never messages, content,
+  names or user ids (defect 9); guild ids go on spans, never on metrics. The generic reply's id is the trace id.
+  Export is on only with `OTEL_EXPORTER_OTLP_ENDPOINT` (straight to home: App Platform has no sidecars). See
+  `docs/architecture.md` section 8 and `docs/operations/telemetry.md`.
 - **PluralKit (section 1.5)**: ported code asks PluralKit through `PluralKit<RT>.Lookup`, which returns a `ProxyLookup`
   and asks only for deletes under 60 s old. The live capability queues lookups in a token bucket (5 a second, about
   10 s of queue) instead of refusing them; transient failures are retried in `PluralKit<RT>`, under a 15 s cap. The
@@ -135,9 +141,13 @@ secrets rather than in that file. Keys the code reads:
   "warningReportTimeUtc": "<time of the daily warning report, optional>",
   "pluralkitToken": "<optional; PluralKit lookups are off unless all three PluralKit keys are set>",
   "pluralkitUserAgent": "<optional>",
-  "pluralkitApiEndpoint": "<optional, an absolute URL such as https://api.pluralkit.me/v2/>"
+  "pluralkitApiEndpoint": "<optional, an absolute URL such as https://api.pluralkit.me/v2/>",
+  "telemetryTraceUrl": "<optional: a Grafana link with {traceId} in it, added to urgent alerts>"
 }
 ```
+
+Telemetry export uses the standard environment variables `OTEL_EXPORTER_OTLP_ENDPOINT` and
+`OTEL_EXPORTER_OTLP_HEADERS` (the basic-auth header); without the endpoint nothing is exported.
 
 `ConnectionProperties` is used only when `ConnectionStrings:Grimoire` is empty, and builds a connection string with
 SSL required and without `Include Error Detail` (Postgres's `Detail` holds row values; the error logs carry the rest).
@@ -176,9 +186,11 @@ Effects are unit-tested against the fake runtime in `Grimoire.UnitTests/Function
 runtime records built from recording fakes, each of which can be told to fail. `FakeDatabase` answers by statement
 name (`Returns`, `Affects`, `Fails`). `FakeDiscord` is a small in-memory guild (`Has(snapshot)`; anything it doesn't
 hold is `NotFound`; `Fails(operation, error)`, with `FakeDiscord.Outage()` and `FakeDiscord.MissingPermission(…)`),
-and `FakeGuildIssues` records guild issue reports. `FakePluralKitIO` answers for the messages it `Knows` and can
+and `FakeGuildIssues` records guild issue reports. `FakeTelemetry` records spans (with their parents), events and
+counters in its own lists, not the `Journal`. `FakePluralKitIO` answers for the messages it `Knows` and can
 `Fail`; the integration tests' `FakePluralKit` stands behind the real HttpClient. Integration tests drive an `EffectBackgroundService` with
-`GrimoireTestBot.RunEffectTickAsync<T>()`. SQL tests run the production `Sql` values through `DatabaseTestEnv`
+`GrimoireTestBot.RunEffectTickAsync<T>()`. Telemetry tests export the host's spans to an in-memory exporter and pick
+them by trace id: other test hosts share the `Grimoire` source. SQL tests run the production `Sql` values through `DatabaseTestEnv`
 (`Grimoire.IntegrationTests/Database/Dapper`), which sends every `Sql.Read` to a read-only connection.
 
 Shared helpers (`FinShouldExtensions`, `AlertTestHelpers`) live in the unit project under the `Grimoire.TestShared`

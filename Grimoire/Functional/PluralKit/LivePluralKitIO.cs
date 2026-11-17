@@ -9,6 +9,8 @@ using System.Threading.RateLimiting;
 using Grimoire.Features.Shared.PluralKit;
 using Grimoire.Features.Shared.PluralKit.Models;
 using Grimoire.Functional.Capabilities;
+using System.Diagnostics;
+using Grimoire.Functional.Telemetry;
 using LanguageExt;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +22,8 @@ namespace Grimoire.Functional.PluralKit;
 ///     PluralKit's message lookup over the named <see cref="HttpClient" /> (spec 1.5). A singleton that owns the one
 ///     rate limiter, so every lookup in the process shares its bucket. No try/catch outside <see cref="Attempt" />.
 /// </summary>
-internal sealed class LivePluralKitIO(IHttpClientFactory httpClientFactory) : IPluralKitIO, IDisposable
+internal sealed class LivePluralKitIO(IHttpClientFactory httpClientFactory, GrimoireMetrics? metrics = null)
+    : IPluralKitIO, IDisposable
 {
     public const string ClientName = "Pluralkit";
     private const string MessageEndpoint = "messages/";
@@ -62,9 +65,18 @@ internal sealed class LivePluralKitIO(IHttpClientFactory httpClientFactory) : IP
         {
             try
             {
+                var waiting = Stopwatch.GetTimestamp();
                 using var lease = await this._limiter.AcquireAsync(1, env.Token);
                 if (!lease.IsAcquired)
+                {
+                    metrics?.CountPluralKitQueueFull();
                     return Fin.Fail<Option<PluralKitMessage>>(PluralKitErrors.QueueFull());
+                }
+
+                // The shell's part of the lookup's span (spec 1.6, section 3.7): how long the bucket made it wait.
+                var waited = Stopwatch.GetElapsedTime(waiting);
+                metrics?.RecordPluralKitQueueWait(waited);
+                Activity.Current?.SetTag(TelemetryNames.PluralKitQueueWaitMs, (long)waited.TotalMilliseconds);
 
                 using var response = await httpClientFactory.CreateClient(ClientName)
                     .GetAsync(MessageEndpoint + message.Value, env.Token);

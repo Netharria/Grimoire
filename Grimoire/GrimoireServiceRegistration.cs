@@ -52,6 +52,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Grimoire.Functional.PluralKit;
+using Grimoire.Functional.Telemetry;
 using Npgsql;
 using Serilog;
 using ZiggyCreatures.Caching.Fusion;
@@ -87,13 +88,14 @@ internal static class GrimoireServiceRegistration
             }
 
             services
-                .AddSerilog(x => x.ReadFrom.Configuration(configuration))
+                .AddSerilog(x => x.ReadFrom.Configuration(configuration).WithTelemetry(configuration))
                 .AddDiscordClient(
                     token,
                     DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents)
                 // One pool for EF and Dapper (spec 1.3, OQ-1). No "Include Error Detail": Postgres's Detail holds row
-                // values; the error log has the rest (spec 1.3, section 3.6.1).
-                .AddSingleton(_ => NpgsqlDataSource.Create(connectionString))
+                // values; the error log has the rest (spec 1.3, section 3.6.1). Named, so Npgsql's pool metrics are
+                // tagged "grimoire" rather than with the connection string (spec 1.6).
+                .AddSingleton(_ => new NpgsqlDataSourceBuilder(connectionString) { Name = "grimoire" }.Build())
                 .AddPooledDbContextFactory<GrimoireDbContext>((provider, options) =>
                     options.UseNpgsql(provider.GetRequiredService<NpgsqlDataSource>(),
                             npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
@@ -112,6 +114,7 @@ internal static class GrimoireServiceRegistration
                 .AddSingleton<AlertService>()
                 .AddSingleton<IAlertSender>(provider => provider.GetRequiredService<AlertService>())
                 .AddSingleton<IInviteService, InviteService>()
+                .AddTelemetry(configuration)
                 .AddEffectRuntime()
                 .AddPluralKit()
                 .ConfigureEventHandlers(eventHandlerBuilder =>

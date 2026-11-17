@@ -9,6 +9,7 @@ using System.Data;
 using Grimoire.Data.Dapper;
 using Grimoire.Functional.Capabilities;
 using Grimoire.Functional.Data;
+using Grimoire.Functional.Telemetry;
 using LanguageExt;
 using LanguageExt.Traits;
 using Npgsql;
@@ -16,10 +17,20 @@ using Npgsql;
 namespace Grimoire.IntegrationTests.Database.Dapper;
 
 /// <summary>A runtime with only the database, for SQL tests: <c>Db&lt;RT&gt;</c> needs nothing else.</summary>
-public sealed record DatabaseRuntime(IDatabaseIO Database) : Has<Eff<DatabaseRuntime>, IDatabaseIO>
+public sealed record DatabaseRuntime(IDatabaseIO Database) :
+    Has<Eff<DatabaseRuntime>, IDatabaseIO>,
+    Has<Eff<DatabaseRuntime>, ITelemetryIO>
 {
+    /// <summary>The live telemetry on a source and meter nothing listens to: Db&lt;RT&gt; opens a span per call.</summary>
+    private static readonly ITelemetryIO Telemetry = new LiveTelemetryIO(
+        new System.Diagnostics.ActivitySource("Grimoire.Tests.Database"), new GrimoireMetrics("Grimoire.Tests.Database"),
+        TimeProvider.System);
+
     static K<Eff<DatabaseRuntime>, IDatabaseIO> Has<Eff<DatabaseRuntime>, IDatabaseIO>.Ask =>
         Eff<DatabaseRuntime, IDatabaseIO>.Lift(runtime => runtime.Database);
+
+    static K<Eff<DatabaseRuntime>, ITelemetryIO> Has<Eff<DatabaseRuntime>, ITelemetryIO>.Ask =>
+        Eff<DatabaseRuntime, ITelemetryIO>.Lift(_ => Telemetry);
 }
 
 /// <summary>

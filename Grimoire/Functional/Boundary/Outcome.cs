@@ -47,6 +47,18 @@ public static class Outcome
             var cases => cases.MaxBy(Severity)
         };
 
+    /// <summary>
+    ///     The single error <see cref="Classify" /> takes its case from: for a <c>ManyErrors</c>, its worst. The span's
+    ///     tags are read from it (spec 1.6, section 3.3).
+    /// </summary>
+    [Pure]
+    public static Error WorstOf(Error error, bool shuttingDown) =>
+        error.AsIterable().ToArray() switch
+        {
+            [] => error,
+            var errors => errors.MaxBy(single => Severity(CaseOf(single, shuttingDown)))!
+        };
+
     /// <summary>True for the cases whose message is shown to the user.</summary>
     [Pure]
     public static bool IsRefusal(CommandOutcome outcome) =>

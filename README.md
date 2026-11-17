@@ -59,6 +59,11 @@ file where you can set the configuration. The following properties are available
   for example `https://api.pluralkit.me/v2/`); a startup warning names any that are missing.
 * `Serilog.\*` Sets the configuration for logs. Reasonable defaults have been set but you can customize them here.
 
+* `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS` *(Optional, environment variables)* Where to send
+  OpenTelemetry traces, metrics and logs over OTLP/HTTP, and the auth header for it. Without the endpoint nothing is
+  exported. `telemetryTraceUrl` *(Optional)* adds a "View trace" link to urgent alerts. See
+  [`docs/operations/telemetry.md`](docs/operations/telemetry.md).
+
 You can also set these properties using environment variables, which override the settings in the
 `appsettings.json` file. Keep secrets such as the token and the database password in environment variables rather
 than in the file. Use `__` (double underscore) as a seperator between levels. If you plan on running Grimoire in

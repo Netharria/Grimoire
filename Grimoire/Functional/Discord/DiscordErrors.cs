@@ -95,11 +95,22 @@ internal sealed record DiscordFailure(
 /// </summary>
 public sealed class DiscordCallException : Exception
 {
-    internal DiscordCallException(string message, bool isTransient, Exception inner) : base(message, inner)
-        => this.IsTransient = isTransient;
+    internal DiscordCallException(string message, bool isTransient, Exception inner, int? status = null,
+        int? code = null) : base(message, inner)
+    {
+        this.IsTransient = isTransient;
+        this.Status = status;
+        this.Code = code;
+    }
 
     /// <summary>A 5xx or no answer at all: worth retrying for a read or an idempotent call.</summary>
     public bool IsTransient { get; }
+
+    /// <summary>The HTTP status Discord answered with; null when there was no answer. A span tag (spec 1.6).</summary>
+    public int? Status { get; }
+
+    /// <summary>Discord's JSON error code; null when it sent none. A span tag (spec 1.6).</summary>
+    public int? Code { get; }
 }
 
 internal static class DiscordErrors
@@ -121,16 +132,17 @@ internal static class DiscordErrors
         {
             { Kind: DiscordFailureKind.Response } => failure.Status.Match(
                 status => FromStatus(status, failure, operation, exception),
-                () => Defect(operation, "failed with no status", exception)),
+                () => Defect(operation, "failed with no status", exception, failure)),
             { Kind: DiscordFailureKind.RateLimited } =>
-                Outage(operation, "rate limited beyond DSharpPlus's own waits", false, exception),
+                Outage(operation, "rate limited beyond DSharpPlus's own waits", false, exception, failure),
             { Kind: DiscordFailureKind.BulkDeleteTooOld } =>
                 new Invalid("Discord can't bulk delete messages older than 14 days."),
             { Kind: DiscordFailureKind.NoResponse } =>
-                Outage(operation, "no response (timeout or connection)", true, exception),
+                Outage(operation, "no response (timeout or connection)", true, exception, failure),
             { Kind: DiscordFailureKind.LibraryFault } =>
-                Outage(operation, "DSharpPlus failed inside its REST client (KI-54, DSP-4)", false, exception),
-            _ => Defect(operation, "failed", exception)
+                Outage(operation, "DSharpPlus failed inside its REST client (KI-54, DSP-4)", false, exception,
+                    failure),
+            _ => Defect(operation, "failed", exception, failure)
         };
 
     /// <summary>Unavailable from a 5xx or from no answer. Not a rate limit, a refusal or a defect. Pure.</summary>
@@ -152,13 +164,13 @@ internal static class DiscordErrors
             (HttpStatusCode.Forbidden, MissingAccess or MissingPermissions) => MissingPermission(failure, operation),
             (HttpStatusCode.Forbidden, _) => new Forbidden($"Discord refused to let me {operation.Action}."),
             (HttpStatusCode.Unauthorized, _) =>
-                Defect(operation, "was rejected: Discord refused the bot's token (401)", exception),
+                Defect(operation, "was rejected: Discord refused the bot's token (401)", exception, failure),
             (HttpStatusCode.BadRequest or HttpStatusCode.MethodNotAllowed, _) => new Invalid(
                 failure.Message.Length > 0 ? $"Discord refused that: {failure.Message}." : "Discord refused that."),
             (HttpStatusCode.RequestEntityTooLarge, _) => new Invalid("The upload is too large for Discord."),
             ( >= HttpStatusCode.InternalServerError, _) =>
-                Outage(operation, $"{(int)status} {failure.Message}".TrimEnd(), true, exception),
-            _ => Defect(operation, $"failed with {(int)status} (code {failure.Code})", exception)
+                Outage(operation, $"{(int)status} {failure.Message}".TrimEnd(), true, exception, failure),
+            _ => Defect(operation, $"failed with {(int)status} (code {failure.Code})", exception, failure)
         };
 
     /// <summary>
@@ -186,14 +198,22 @@ internal static class DiscordErrors
     ///     exceptional error's exception while an effect runs and rebuilds the error from it, so the description has to
     ///     be the exception's own message to survive.
     /// </summary>
-    private static Error Defect(DiscordOperation operation, string outcome, Exception exception) =>
-        Error.New(new DiscordCallException(Describe(operation, outcome), false, exception));
+    private static Error Defect(DiscordOperation operation, string outcome, Exception exception,
+        DiscordFailure failure) =>
+        Error.New(new DiscordCallException(Describe(operation, outcome), false, exception, StatusOf(failure),
+            CodeOf(failure)));
 
     private static NotFound GuildGone() => new("The server is no longer available to me.");
 
-    private static Unavailable Outage(DiscordOperation operation, string what, bool transient, Exception exception) =>
+    private static Unavailable Outage(DiscordOperation operation, string what, bool transient, Exception exception,
+        DiscordFailure failure) =>
         Unavailable.From("Discord could not be reached.",
-            new DiscordCallException(Describe(operation, $"failed: {what}"), transient, exception));
+            new DiscordCallException(Describe(operation, $"failed: {what}"), transient, exception, StatusOf(failure),
+                CodeOf(failure)));
+
+    private static int? StatusOf(DiscordFailure failure) => failure.Status.Map(status => (int)status).ToNullable();
+
+    private static int? CodeOf(DiscordFailure failure) => failure.Code == 0 ? null : failure.Code;
 
     private static string Describe(DiscordOperation operation, string outcome) =>
         $"Discord call {operation.Name} {outcome}";

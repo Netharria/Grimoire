@@ -32,7 +32,8 @@ DSharpPlus ──► shell: [Command] method, IEventHandler, EffectBackgroundSer
 - **Capabilities.** One interface per kind of side effect, each method returning `IO<A>`. Live implementations
   are the imperative shell; unit tests use recording fakes.
 
-Code lives in `Grimoire/Functional/`: `Capabilities/`, `Runtime/`, `Effects/`, `Boundary/` and `Workers/`.
+Code lives in `Grimoire/Functional/`: `Capabilities/`, `Runtime/`, `Effects/`, `Boundary/`, `Workers/` and
+`Telemetry/`.
 
 ## 2. Effects and runtimes
 
@@ -42,7 +43,7 @@ Code lives in `Grimoire/Functional/`: `Capabilities/`, `Runtime/`, `Effects/`, `
 | `ILogIO` | `Log<RT>` | Structured log lines (message templates, so Serilog keeps the properties) | 1.2 |
 | `IAlertIO` | `Alerts<RT>` | Alerts, through `IAlertSender` | 1.2 |
 | `IGuildLogIO` | `GuildLogs<RT>` | Guild log posts, through the `GuildLog` queue and its gate (1.4) | 1.2 |
-| `ITraceIO` | `Trace<RT>` | The error id quoted in the generic reply (the trace id from 1.6) | 1.2 |
+| `ITelemetryIO` | `Telemetry<RT>` | Spans, span events and counters; the error id quoted in the generic reply is the trace id | 1.2, 1.6 |
 | `ICommandIO` | `Command<RT>` | Defer, reply, refuse and react, for one invocation | 1.2 |
 | `IDatabaseIO` | `Db<RT>` | Dapper over Npgsql | 1.3 |
 | `IDiscordIO` | `Discord<RT>` | Discord lookups and actions: ids in, snapshots out, the error cases on failure | 1.4 |
@@ -282,13 +283,59 @@ From spec 1.5. Ported code asks PluralKit about a deleted message through `Plura
 **Tests.** `FakePluralKitIO` (in `TestEnv`) answers for the messages it `Knows` and can fail. The live capability's
 tests (`Grimoire.IntegrationTests/Shared/PluralKit/`) run it, with its HttpClient and bucket, against `FakePluralKit`.
 
-## 8. Tests
+## 8. Telemetry
+
+From spec 1.6. OpenTelemetry traces, metrics and logs, exported over OTLP/HTTP from the bot's own process to
+`otel-lgtm` on the owner's home server. Setup and use: [`operations/telemetry.md`](operations/telemetry.md).
+
+- **One capability, `ITelemetryIO`.** `Telemetry<RT>.Span(operation, effect)` runs the whole effect, with its
+  runtime, inside a span (`MapIO`), so the span is `Activity.Current` for everything the effect awaits: retries,
+  timeouts and forks included. Npgsql's and `HttpClient`'s own spans nest under it. A span can't be started by one
+  `IO` and stopped by another, because `Activity.Current` is an `AsyncLocal`.
+- **Where spans open.** Root spans: `CommandBoundary.Run` (`command {name}`), `EventBoundary.Run`
+  (`event {handler}`), each worker tick (`worker {task}`, in both worker bases) and each guild log post
+  (`guildlog post`, linked to the span that queued it). Children: every `Db<RT>` call (`db {Sql.Name}`,
+  `db transaction`), every `Discord<RT>` call (`discord Discord.{Method}`), `PluralKit<RT>.Lookup` when it asks
+  (`pluralkit PluralKit.GetMessage`) and each worker item (`worker.item`). Features get these for free; a feature adds
+  only counters of its own events, with bounded tags.
+- **Retries** are `retry` events on the call's one span, one per retry, and `grimoire.call.retries`.
+- **Outcome and status** (`SpanResult`, pure): `grimoire.outcome` is the `CommandOutcome` name (or a value's own
+  label, such as the `ProxyLookup` case). Only `Unavailable` and defects set status error; a refusal is not a fault.
+- **Tags** (`TelemetryTags`, pure) come from typed fields only: the SQLSTATE, table and constraint of a
+  `DatabaseException`; the status and code of a `DiscordCallException`; the problem and status of a
+  `PluralKitCallException`; the permission of a `BotRefusal`. **Never** a message, SQL text built by us, a parameter
+  value, message content, a name or a user id (defect 9). Guild ids go on spans, never on metrics.
+- **Sampling** (`GrimoireSampler`): a span with no parent is kept only if it's one of our roots (`grimoire.root`).
+  So unported EF queries and DSharpPlus's own REST calls don't become one-span traces. Tail sampling at home drops
+  successful worker ticks that did nothing.
+- **Redaction**: Discord puts the interaction token in the URL path; `RedactingProcessor` replaces it with
+  `{token}` on every `HttpClient` span before export.
+- **The error id** is the root's trace id (32 hex characters), in the generic reply, the log line and the alert.
+  Outside any span it's 10 random hex characters, as before.
+- **Metrics** (meter `Grimoire`, seconds): `grimoire.command.duration` (recorded by `CommandHandler` for every
+  command, ported or not, from Discord's timestamp), `grimoire.event.duration`, `grimoire.worker.tick.duration`,
+  `grimoire.call.duration` (by dependency, operation and outcome), and counters for retries, worker items, guild log
+  posts and skips, guild issues, alerts and PluralKit's full queue; gauges for the guild log queue, the PluralKit
+  queue and the gateway. Built in: `System.Runtime`, `Npgsql` (pool named `grimoire`), `System.Net.Http`,
+  FusionCache.
+- **Logs** carry the trace id (Serilog reads `Activity.Current`), on the console and over OTLP.
+- **Export** is on only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. The exporters send from background threads with
+  bounded queues and drop the newest data when full; they never block the bot. `ExportHealth` logs the SDK's
+  export problems at most once a minute.
+
+**Tests.** `FakeTelemetry` (in `TestEnv`) records spans, their parents, events, late tags and counters in its own
+lists, not the `Journal`. `LiveTelemetryIOTests` run the live capability against a real `ActivityListener` and
+`MeterListener` on a source named for the test. `TelemetryWiringTests` (integration) export the real host's spans and
+metrics to in-memory exporters and pick their spans by trace id, since other hosts share the `Grimoire` source.
+
+## 9. Tests
 
 | Project | Holds | May touch |
 |---|---|---|
 | `Grimoire.UnitTests` | Smart constructors, pure decisions, embed builders, and whole `Eff` pipelines run against the fake runtime (`Functional/Fakes`): outages, refusals, defects, ordering | Nothing outside the process |
 | `Grimoire.IntegrationTests` | SQL against Postgres, migrations, DSharpPlus wiring, event dispatch, PluralKit/HTTP, and one end-to-end smoke test per command and handler (C7) | Docker, the fake Discord harness |
 
-The fake runtime is the production `GrimoireRuntime` and `CommandRuntime` built from recording fakes (`TestEnv`).
+The fake runtime is the production `GrimoireRuntime` and `CommandRuntime` built from recording fakes (`TestEnv`),
+`FakeTelemetry` among them.
 Each fake can be told to fail with a given error, and a shared `Journal` records the order of calls across them.
 Stryker runs against the unit tests only.

@@ -234,12 +234,12 @@ public sealed class CommandBoundaryTests
         alert.Severity.ShouldBe(AlertSeverity.Urgent);
         alert.Discriminator.ShouldBe("Probe");
         alert.GuildId.ShouldBe(Guild);
-        alert.Message.ShouldBe($"Probe could not reach a dependency [Id `{FakeTrace.Id}`]: Settings database down.");
+        alert.Message.ShouldBe($"Probe could not reach a dependency [Id `{FakeTelemetry.Id}`]: Settings database down.");
         alert.Exception.ShouldBeOfType<TimeoutException>();
         this._env.Command.Calls[1].ShouldBeOfType<Refused>().Embed.Description
-            .ShouldBe(Replies.Generic("Probe", FakeTrace.Id).Description);
+            .ShouldBe(Replies.Generic("Probe", FakeTelemetry.Id).Description);
         this._env.Log.Entries.ShouldContain(entry =>
-            entry.Level == LogLevel.Error && entry.Args.Exists(arg => Equals(arg, FakeTrace.Id)));
+            entry.Level == LogLevel.Error && entry.Args.Exists(arg => Equals(arg, FakeTelemetry.Id)));
     }
 
     [Fact]
@@ -262,7 +262,7 @@ public sealed class CommandBoundaryTests
         var alert = this._env.Alerts.Sent.ShouldHaveSingleItem();
         alert.Type.ShouldBe("UnhandledException");
         alert.Severity.ShouldBe(AlertSeverity.Urgent);
-        alert.Message.ShouldBe($"Encountered exception while executing Probe [Id `{FakeTrace.Id}`]");
+        alert.Message.ShouldBe($"Encountered exception while executing Probe [Id `{FakeTelemetry.Id}`]");
         alert.Exception.ShouldBeOfType<InvalidOperationException>();
         this._env.Command.Calls[^1].ShouldBeOfType<Refused>();
     }

@@ -9,6 +9,7 @@ using Grimoire.Features.Shared.Alerts;
 using Grimoire.Functional.Boundary;
 using Grimoire.Functional.Effects;
 using Grimoire.Functional.Runtime;
+using Grimoire.Functional.Telemetry;
 using LanguageExt;
 using Microsoft.Extensions.Hosting;
 using Unit = LanguageExt.Unit;
@@ -76,23 +77,40 @@ public abstract class EffectBackgroundService : BackgroundService
         }
     }
 
-    /// <summary>The tick, with any failure reported and turned into success so the schedule keeps going.</summary>
+    /// <summary>
+    ///     The tick inside its root span (spec 1.6), with any failure reported, inside the span too, and turned into
+    ///     success so the schedule keeps going. The span ends with the tick's own result and the items it attempted.
+    /// </summary>
     private Eff<GrimoireRuntime, Unit> Supervised() =>
         from start in Clock<GrimoireRuntime>.Timestamp
-        from result in Boundary<GrimoireRuntime>.Attempt(Eff<GrimoireRuntime, Unit>.Pure(unit).Bind(_ => this.Tick()))
+        from traced in Telemetry<GrimoireRuntime>.Span(Operation.WorkerTick(this.TaskName), this.TracedTick(),
+            tick => tick.Result.Match(
+                Succ: _ => SpanResult.Succeeded(),
+                Fail: error => SpanResult.OfError(error, tick.ShuttingDown)))
         from elapsed in Clock<GrimoireRuntime>.ElapsedSince(start)
-        from shuttingDown in Boundary<GrimoireRuntime>.ShuttingDown
-        from _ in result.Match(
-            Succ: _ => this.Swap(state => state.TickSucceeded()).Map(_ => unit),
-            Fail: error => shuttingDown
-                // Shutdown ends the schedule; there's nothing to report.
-                ? Eff<GrimoireRuntime, Unit>.Fail(error)
-                : this.ReportTickFailure(error))
+        from _ in traced.Result.IsFail && traced.ShuttingDown
+            // Shutdown ends the schedule; there's nothing to report.
+            ? Eff<GrimoireRuntime, Unit>.Fail(traced.Result.Match(Succ: _ => Errors.Cancelled, Fail: error => error))
+            : Effect.Done<GrimoireRuntime>()
         from now in Clock<GrimoireRuntime>.UtcNow
-        from __ in this.RecordRun(elapsed, result.IsFail, now)
+        from __ in this.RecordRun(elapsed, traced.Result.IsFail, now)
         select unit;
 
+    private Eff<GrimoireRuntime, TickResult> TracedTick() =>
+        from _ in this.Items.Begin()
+        from result in Boundary<GrimoireRuntime>.Attempt(Eff<GrimoireRuntime, Unit>.Pure(unit).Bind(_ => this.Tick()))
+        from shuttingDown in Boundary<GrimoireRuntime>.ShuttingDown
+        from __ in result.Match(
+            Succ: _ => this.Swap(state => state.TickSucceeded()).Map(_ => unit),
+            Fail: error => shuttingDown ? Effect.Done<GrimoireRuntime>() : this.ReportTickFailure(error))
+        from attempted in this.Items.Attempted
+        from ___ in Telemetry<GrimoireRuntime>.Tag(Tags.Of((TelemetryNames.WorkerItems, attempted)))
+        select new TickResult(result, shuttingDown);
+
+    private sealed record TickResult(Fin<Unit> Result, bool ShuttingDown);
+
     private Eff<GrimoireRuntime, Unit> ReportTickFailure(Error error) =>
+        from errorId in Telemetry<GrimoireRuntime>.ErrorId
         from state in this.Swap(current => current.TickFailed())
         let outcome = Outcome.Classify(error, false)
         from _ in Log<GrimoireRuntime>.Error(this.Category, Boundary<GrimoireRuntime>.ExceptionOf(error),
@@ -104,8 +122,10 @@ public abstract class EffectBackgroundService : BackgroundService
             Severity = WorkerState.SeverityFor(state.ConsecutiveFailures, outcome),
             Type = "BackgroundTaskFailure",
             Discriminator = this.TaskName,
-            Message = $"{this.TaskName} failed {state.ConsecutiveFailures} time(s) in a row: {error.Messages}",
-            Exception = Boundary<GrimoireRuntime>.ExceptionOf(error).OrNull()
+            Message = $"{this.TaskName} failed {state.ConsecutiveFailures} time(s) in a row [Id `{errorId}`]: "
+                      + error.Messages,
+            Exception = Boundary<GrimoireRuntime>.ExceptionOf(error).OrNull(),
+            TraceId = errorId
         })
         select unit;
 
@@ -133,6 +153,7 @@ public abstract class EffectBackgroundService : BackgroundService
 /// <summary>Runs a worker's items one by one, each with its own backoff, sharing the worker's state.</summary>
 public sealed class Items
 {
+    private readonly Atom<int> _attempted = Atom(0);
     private readonly string _category;
     private readonly Atom<WorkerState> _state;
     private readonly string _taskName;
@@ -156,8 +177,21 @@ public sealed class Items
             : Effect.Done<GrimoireRuntime>()
         select unit;
 
+    /// <summary>Starts a tick's count of attempted items, for its span's <c>grimoire.worker.items</c>.</summary>
+    internal Eff<GrimoireRuntime, Unit> Begin() =>
+        Eff<GrimoireRuntime, Unit>.Lift(() =>
+        {
+            this._attempted.Swap(_ => 0);
+            return unit;
+        });
+
+    internal Eff<GrimoireRuntime, int> Attempted => Eff<GrimoireRuntime, int>.Lift(() => this._attempted.Value);
+
+    /// <summary>The work inside its item span (spec 1.6); the span counts <c>grimoire.worker.items</c> by outcome.</summary>
     private Eff<GrimoireRuntime, Unit> Attempt(string key, Eff<GrimoireRuntime, Unit> work, DateTimeOffset now) =>
-        from result in Boundary<GrimoireRuntime>.Attempt(Eff<GrimoireRuntime, Unit>.Pure(unit).Bind(_ => work))
+        from counted in Eff<GrimoireRuntime, int>.Lift(() => this._attempted.Swap(count => count + 1))
+        from result in Boundary<GrimoireRuntime>.Attempt(Telemetry<GrimoireRuntime>.Span(
+            Operation.WorkerItem(this._taskName, key), Eff<GrimoireRuntime, Unit>.Pure(unit).Bind(_ => work)))
         from shuttingDown in Boundary<GrimoireRuntime>.ShuttingDown
         from _ in result.Match(
             Succ: _ => this.Swap(state => state with { Backoff = state.Backoff.Succeeded(key) }),
@@ -171,6 +205,7 @@ public sealed class Items
     private Eff<GrimoireRuntime, Unit> ItemFailed(string key, Error error, CommandOutcome outcome,
         DateTimeOffset now) =>
         from _ in this.Swap(state => state with { Backoff = state.Backoff.Failed(key, now) })
+        from errorId in Telemetry<GrimoireRuntime>.ErrorId
         from __ in Log<GrimoireRuntime>.Warning(this._category, Boundary<GrimoireRuntime>.ExceptionOf(error),
             "Background task {TaskName} could not process {Item} ({Outcome}): {Reason}",
             this._taskName, key, outcome, error.Messages)
@@ -182,8 +217,9 @@ public sealed class Items
                 Severity = AlertSeverity.Warning,
                 Type = "BackgroundTaskItemFailure",
                 Discriminator = this._taskName,
-                Message = $"{this._taskName} could not process {key}: {error.Messages}",
-                Exception = Boundary<GrimoireRuntime>.ExceptionOf(error).OrNull()
+                Message = $"{this._taskName} could not process {key} [Id `{errorId}`]: {error.Messages}",
+                Exception = Boundary<GrimoireRuntime>.ExceptionOf(error).OrNull(),
+                TraceId = errorId
             })
         from ____ in BotRefusals<GrimoireRuntime>.Report(error, this._category)
         select unit;

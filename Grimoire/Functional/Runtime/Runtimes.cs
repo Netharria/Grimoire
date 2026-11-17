@@ -13,7 +13,7 @@ namespace Grimoire.Functional.Runtime;
 
 /// <summary>
 ///     The capabilities every runtime shares. Production builds it once from DI; a unit test builds one from fakes.
-///     Sections 1.3 (database), 1.4 (Discord, guild issues), 1.5 (PluralKit) and 3.1 (settings) each add a field here and a <c>Has</c> per
+///     Sections 1.3 (database), 1.4 (Discord, guild issues), 1.5 (PluralKit), 1.6 (telemetry, renamed from trace) and 3.1 (settings) each add a field here and a <c>Has</c> per
 ///     runtime.
 /// </summary>
 public sealed record GrimoireEnv(
@@ -21,7 +21,7 @@ public sealed record GrimoireEnv(
     ILogIO Log,
     IAlertIO Alerts,
     IGuildLogIO GuildLog,
-    ITraceIO Trace,
+    ITelemetryIO Telemetry,
     IDatabaseIO Database,
     IDiscordIO Discord,
     IGuildIssueIO GuildIssues,
@@ -36,7 +36,7 @@ public sealed record GrimoireRuntime(GrimoireEnv Env) :
     Has<Eff<GrimoireRuntime>, ILogIO>,
     Has<Eff<GrimoireRuntime>, IAlertIO>,
     Has<Eff<GrimoireRuntime>, IGuildLogIO>,
-    Has<Eff<GrimoireRuntime>, ITraceIO>,
+    Has<Eff<GrimoireRuntime>, ITelemetryIO>,
     Has<Eff<GrimoireRuntime>, IDatabaseIO>,
     Has<Eff<GrimoireRuntime>, IDiscordIO>,
     Has<Eff<GrimoireRuntime>, IGuildIssueIO>,
@@ -49,7 +49,8 @@ public sealed record GrimoireRuntime(GrimoireEnv Env) :
     static K<Eff<GrimoireRuntime>, IGuildLogIO> Has<Eff<GrimoireRuntime>, IGuildLogIO>.Ask =>
         Get(rt => rt.Env.GuildLog);
 
-    static K<Eff<GrimoireRuntime>, ITraceIO> Has<Eff<GrimoireRuntime>, ITraceIO>.Ask => Get(rt => rt.Env.Trace);
+    static K<Eff<GrimoireRuntime>, ITelemetryIO> Has<Eff<GrimoireRuntime>, ITelemetryIO>.Ask =>
+        Get(rt => rt.Env.Telemetry);
 
     static K<Eff<GrimoireRuntime>, IDatabaseIO> Has<Eff<GrimoireRuntime>, IDatabaseIO>.Ask =>
         Get(rt => rt.Env.Database);
@@ -75,7 +76,7 @@ public sealed record CommandRuntime(GrimoireEnv Env, ICommandIO Command) :
     Has<Eff<CommandRuntime>, ILogIO>,
     Has<Eff<CommandRuntime>, IAlertIO>,
     Has<Eff<CommandRuntime>, IGuildLogIO>,
-    Has<Eff<CommandRuntime>, ITraceIO>,
+    Has<Eff<CommandRuntime>, ITelemetryIO>,
     Has<Eff<CommandRuntime>, IDatabaseIO>,
     Has<Eff<CommandRuntime>, IDiscordIO>,
     Has<Eff<CommandRuntime>, IGuildIssueIO>,
@@ -86,7 +87,8 @@ public sealed record CommandRuntime(GrimoireEnv Env, ICommandIO Command) :
     static K<Eff<CommandRuntime>, ILogIO> Has<Eff<CommandRuntime>, ILogIO>.Ask => Get(rt => rt.Env.Log);
     static K<Eff<CommandRuntime>, IAlertIO> Has<Eff<CommandRuntime>, IAlertIO>.Ask => Get(rt => rt.Env.Alerts);
     static K<Eff<CommandRuntime>, IGuildLogIO> Has<Eff<CommandRuntime>, IGuildLogIO>.Ask => Get(rt => rt.Env.GuildLog);
-    static K<Eff<CommandRuntime>, ITraceIO> Has<Eff<CommandRuntime>, ITraceIO>.Ask => Get(rt => rt.Env.Trace);
+    static K<Eff<CommandRuntime>, ITelemetryIO> Has<Eff<CommandRuntime>, ITelemetryIO>.Ask =>
+        Get(rt => rt.Env.Telemetry);
     static K<Eff<CommandRuntime>, IDatabaseIO> Has<Eff<CommandRuntime>, IDatabaseIO>.Ask => Get(rt => rt.Env.Database);
     static K<Eff<CommandRuntime>, IDiscordIO> Has<Eff<CommandRuntime>, IDiscordIO>.Ask => Get(rt => rt.Env.Discord);
 

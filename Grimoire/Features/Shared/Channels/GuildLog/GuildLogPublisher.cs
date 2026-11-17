@@ -6,7 +6,10 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Shared.GuildIssues;
+using System.Diagnostics;
+using Grimoire.Functional.Boundary;
 using Grimoire.Functional.Effects;
+using Grimoire.Functional.Telemetry;
 using Grimoire.Functional.Runtime;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
@@ -35,10 +38,10 @@ public sealed partial class GuildLogPublisher(
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await foreach (var message in queue.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var (message, origin) in queue.Reader.ReadAllAsync(cancellationToken))
             try
             {
-                await this.PublishAsync(message, cancellationToken);
+                await this.TracedAsync(message, origin, cancellationToken);
             }
             // Only shutdown may end the loop.
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -51,16 +54,34 @@ public sealed partial class GuildLogPublisher(
             }
     }
 
-    private async Task PublishAsync(GuildLogMessage message, CancellationToken cancellationToken)
+    /// <summary>
+    ///     One root span per post, linked to the span that queued it (spec 1.6, section 3.7). Its outcome counts
+    ///     <c>grimoire.guildlog.posts</c>.
+    /// </summary>
+    private async Task TracedAsync(GuildLogMessage message, ActivityContext? origin,
+        CancellationToken cancellationToken)
+    {
+        var operation = Operation.GuildLogPost(message.Guild, message.Type.ToString()) with
+        {
+            LinkedTo = origin is { } context && context != default ? Some(context) : None
+        };
+        using var envIO = EnvIO.New();
+        await env.Telemetry.Span(operation, IO.liftAsync(() => this.PublishAsync(message, cancellationToken)),
+                ended => ended)
+            .RunAsync(envIO);
+    }
+
+    /// <returns>The post's outcome, for its span: "Success", "Off", or the error's case and tags.</returns>
+    private async Task<SpanEnd> PublishAsync(GuildLogMessage message, CancellationToken cancellationToken)
     {
         // Checked again here: the setting can change while the message waits in the queue.
         if (!await settingsModule.IsModuleEnabled(message.Type.GetLogTypeModule(), message.Guild, cancellationToken)
                 .OrDefaultDuringMigration(false))
-            return;
+            return SpanResult.Succeeded(Off);
 
         if (await settingsModule.GetLogChannelSetting(message.Type, message.Guild, cancellationToken)
                 .OrNullDuringMigration() is not { } logChannel)
-            return;
+            return SpanResult.Succeeded(Off);
 
         // No token: DSharpPlus's send can't be cancelled anyway, and registering on the service's stopping token
         // races the host disposing it at shutdown (ObjectDisposedException). Shutdown is still seen below.
@@ -93,7 +114,14 @@ public sealed partial class GuildLogPublisher(
                     message.Guild, message.Type, error.Message);
                 break;
         }
+
+        return posted.Match(
+            Succ: _ => SpanResult.Succeeded(),
+            Fail: error => SpanResult.OfError(error, cancellationToken.IsCancellationRequested));
     }
+
+    /// <summary>The module or the channel was turned off while the post waited.</summary>
+    private const string Off = "Off";
 
     /// <summary>
     ///     Reports without waiting: the report is posted through this same queue, and if the queue were full, waiting

@@ -25,6 +25,12 @@ public sealed record RecordedRequest(
     string Query = "",
     IReadOnlyDictionary<string, string>? Attachments = null)
 {
+    /// <summary>
+    ///     The span that was current when the request was sent: the parent a real HttpClient span would get. The fake
+    ///     handler replaces the socket handler, where .NET creates that span, so the tests check nesting with this.
+    /// </summary>
+    public System.Diagnostics.ActivityContext? SentFrom { get; init; }
+
     /// <summary>Files uploaded with the request, by file name, as text.</summary>
     public IReadOnlyDictionary<string, string> Files => this.Attachments ?? new Dictionary<string, string>();
 
@@ -320,7 +326,10 @@ public sealed partial class FakeDiscordRest(FakeGuild guild) : HttpMessageHandle
             : null;
         var recorded = new RecordedRequest(request.Method, Uri.UnescapeDataString(path),
             await ReadBodyAsync(request.Content, cancellationToken), auditLogReason, request.RequestUri.Query,
-            await ReadFilesAsync(request.Content, cancellationToken));
+            await ReadFilesAsync(request.Content, cancellationToken))
+        {
+            SentFrom = System.Diagnostics.Activity.Current?.Context
+        };
 
         Func<RecordedRequest, HttpResponseMessage>? overridden;
         lock (this._lock)

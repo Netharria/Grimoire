@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Functional.Telemetry;
 using System.Security.Cryptography;
 using System.Text;
 using DSharpPlus.Commands;
@@ -127,6 +128,7 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
                 return;
         }
 
+        RecordDuration(sender, args.Context, CommandOutcome.Defect);
         var errorHexString = RandomNumberGenerator.GetHexString(10);
         var commandOptions = args.Context.Arguments;
         var log = new StringBuilder();
@@ -179,6 +181,7 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
         var durationMs = GetElapsedMilliseconds(context);
         var guildId = context.Guild?.Id;
         var command = context.Command.FullName;
+        RecordDuration(sender, context, outcome);
 
         LogCommandFinished(sender.Logger, command, outcome, durationMs, guildId, options.ToString());
         if (durationMs > SlowCommandThresholdMs)
@@ -186,6 +189,19 @@ public sealed partial class CommandHandler(IServiceProvider services, ILogger<Co
             LogSlowCommand(sender.Logger, command, durationMs, guildId);
             SendWarning(sender, "SlowCommand", command, $"{command} took {durationMs}ms", guildId is { } id ? new GuildId(id) : null);
         }
+    }
+
+    /// <summary>
+    ///     <c>grimoire.command.duration</c> for every command, ported or not (spec 1.6, section 3.7), timed as the
+    ///     "finished" line is: from Discord's timestamp, which is what the user waits for.
+    /// </summary>
+    private static void RecordDuration(DiscordClient sender, CommandContext context, CommandOutcome outcome)
+    {
+        var elapsedMs = GetElapsedMilliseconds(context);
+        if (elapsedMs >= 0)
+            sender.ServiceProvider.GetService<GrimoireMetrics>()?.RecordCommand(context.Command.FullName,
+                context is SlashCommandContext ? "slash" : "text", outcome.ToString(),
+                TimeSpan.FromMilliseconds(elapsedMs));
     }
 
     // Elapsed time since Discord created the interaction/message. Includes gateway delay, which is what the user waits for.
