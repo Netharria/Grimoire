@@ -82,7 +82,8 @@ All three, each done with the fix it covers:
 
 ## Still needed before deploy
 
-The production queries in sections 2, 3 and 7, and the real-Discord checks in section 9's "Before deploying".
+~~The production queries in sections 2, 3 and 7~~ (run 2026-11-19 in migration section 2.1: both guards are 0; see
+`docs/langext-migration/measurements/2.1-results.md`), and the real-Discord checks in section 9's "Before deploying".
 
 ## Rulings
 

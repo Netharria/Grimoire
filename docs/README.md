@@ -11,6 +11,7 @@ Older documents carry a banner at the top saying what replaced them.
 | Running the bot, configuration for self-hosting | [`../README.md`](../README.md) | User-facing. |
 | The language-ext migration: sections, order, settled conflicts | [`langext-migration/plan.md`](langext-migration/plan.md) | Part 2 overrides the design decisions where they differ. |
 | Design specs for each migration section | [`langext-migration/specs/`](langext-migration/specs/) | One per section, reviewed before its code. |
+| Production measurements and the first deploy's budget | [`langext-migration/measurements/2.1-results.md`](langext-migration/measurements/2.1-results.md) | Section 2.1. The scripts beside it; `2.1-copy.sql` writes and runs only on a throwaway clone. |
 | Design decisions (FP, performance, schema, feature behaviour) | [`review/design-decisions.md`](review/design-decisions.md) | Read with the plan's part 2. |
 | Branch-review decisions (defect fixes) | [`review/review-decisions.md`](review/review-decisions.md) | |
 | Known issues | [`testing/known-issues.md`](testing/known-issues.md) | Each open KI is assigned to a migration section. |

@@ -1,0 +1,177 @@
+[P-0] -- Migration history: the last three (expect 20250705185227_SpamFilterOverrides first)
+[P-0] {"MigrationId":"20250705185227_SpamFilterOverrides"}
+[P-0] {"MigrationId":"20240914022701_RemoveUnneccessaryKeys"}
+[P-0] {"MigrationId":"20240616231422_CustomCommandsSimplifyPermissions"}
+[P-0] -- No Settings schema yet (expect true)
+[P-0] {"settings_schema_absent":true}
+[P-1] -- Server and database
+[P-1] {"version":"PostgreSQL 18.3 (Debian 18.3-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit","database_size":"547 MB","database_bytes":573150911,"measured_at":"2026-11-19T03:49:19.925206+00:00"}
+[P-1] -- Settings that affect rewrites and sorts
+[P-1] {"name":"maintenance_work_mem","setting":"65536","unit":"kB"}
+[P-1] {"name":"max_parallel_maintenance_workers","setting":"2","unit":null}
+[P-1] {"name":"max_wal_size","setting":"1024","unit":"MB"}
+[P-1] {"name":"shared_buffers","setting":"16384","unit":"8kB"}
+[P-1] {"name":"statement_timeout","setting":"300000","unit":"ms"}
+[P-1] {"name":"track_io_timing","setting":"off","unit":null}
+[P-1] {"name":"work_mem","setting":"4096","unit":"kB"}
+[P-2] -- Every table: rows, sizes, maintenance
+[P-2] {"relname":"XpHistory","live_rows":2334079,"dead_rows":0,"heap":"188 MB","indexes":"292 MB","toast":"0 bytes","total":"481 MB","total_bytes":503881728,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"Messages","live_rows":64331,"dead_rows":0,"heap":"6016 kB","indexes":"10 MB","toast":"0 bytes","total":"16 MB","total_bytes":17047552,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"MessageHistory","live_rows":66375,"dead_rows":0,"heap":"8256 kB","indexes":"5304 kB","toast":"24 kB","total":"13 MB","total_bytes":13942784,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"Avatars","live_rows":46387,"dead_rows":0,"heap":"7680 kB","indexes":"2696 kB","toast":"8192 bytes","total":"10 MB","total_bytes":10665984,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"Members","live_rows":24478,"dead_rows":0,"heap":"1440 kB","indexes":"2416 kB","toast":"0 bytes","total":"3888 kB","total_bytes":3981312,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"NicknameHistory","live_rows":22880,"dead_rows":0,"heap":"1664 kB","indexes":"2048 kB","toast":"0 bytes","total":"3744 kB","total_bytes":3833856,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"UsernameHistory","live_rows":25148,"dead_rows":0,"heap":"1616 kB","indexes":"1008 kB","toast":"0 bytes","total":"2656 kB","total_bytes":2719744,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"Users","live_rows":24245,"dead_rows":0,"heap":"1056 kB","indexes":"760 kB","toast":"0 bytes","total":"1848 kB","total_bytes":1892352,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"OldLogMessages","live_rows":7461,"dead_rows":0,"heap":"616 kB","indexes":"928 kB","toast":"0 bytes","total":"1576 kB","total_bytes":1613824,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"Sins","live_rows":2703,"dead_rows":0,"heap":"352 kB","indexes":"488 kB","toast":"8192 bytes","total":"880 kB","total_bytes":901120,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"Attachments","live_rows":2182,"dead_rows":0,"heap":"576 kB","indexes":"176 kB","toast":"8192 bytes","total":"792 kB","total_bytes":811008,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"ProxiedMessages","live_rows":2212,"dead_rows":0,"heap":"152 kB","indexes":"304 kB","toast":"8192 bytes","total":"496 kB","total_bytes":507904,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"CustomCommands","live_rows":507,"dead_rows":0,"heap":"160 kB","indexes":"72 kB","toast":"8192 bytes","total":"264 kB","total_bytes":270336,"last_vacuum":null,"last_analyze":"2026-11-19"}
+[P-2] {"relname":"Channels","live_rows":1355,"dead_rows":0,"heap":"80 kB","indexes":"128 kB","toast":"0 bytes","total":"240 kB","total_bytes":245760,"last_vacuum":"2026-11-19","last_analyze":"2026-11-19"}
+[P-2] {"relname":"Roles","live_rows":658,"dead_rows":0,"heap":"40 kB","indexes":"80 kB","toast":"0 bytes","total":"144 kB","total_bytes":147456,"last_vacuum":null,"last_analyze":"2026-11-19"}
+[P-2] {"relname":"GuildUserLogSettings","live_rows":32,"dead_rows":0,"heap":"8192 bytes","indexes":"96 kB","toast":"0 bytes","total":"104 kB","total_bytes":106496,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"GuildMessageLogSettings","live_rows":32,"dead_rows":0,"heap":"8192 bytes","indexes":"64 kB","toast":"0 bytes","total":"72 kB","total_bytes":73728,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"Mutes","live_rows":3,"dead_rows":0,"heap":"8192 bytes","indexes":"64 kB","toast":"0 bytes","total":"72 kB","total_bytes":73728,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"Pardons","live_rows":38,"dead_rows":0,"heap":"8192 bytes","indexes":"48 kB","toast":"8192 bytes","total":"64 kB","total_bytes":65536,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"Guilds","live_rows":32,"dead_rows":0,"heap":"8192 bytes","indexes":"48 kB","toast":"0 bytes","total":"56 kB","total_bytes":57344,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"Rewards","live_rows":23,"dead_rows":0,"heap":"8192 bytes","indexes":"32 kB","toast":"8192 bytes","total":"48 kB","total_bytes":49152,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"MessagesLogChannelOverrides","live_rows":1,"dead_rows":0,"heap":"8192 bytes","indexes":"32 kB","toast":"0 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"GuildLevelSettings","live_rows":32,"dead_rows":0,"heap":"8192 bytes","indexes":"32 kB","toast":"0 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"Trackers","live_rows":0,"dead_rows":0,"heap":"0 bytes","indexes":"40 kB","toast":"0 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"IgnoredRoles","live_rows":2,"dead_rows":0,"heap":"8192 bytes","indexes":"32 kB","toast":"0 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"IgnoredMembers","live_rows":7,"dead_rows":0,"heap":"8192 bytes","indexes":"32 kB","toast":"0 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"IgnoredChannels","live_rows":5,"dead_rows":0,"heap":"8192 bytes","indexes":"32 kB","toast":"0 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"GuildModerationSettings","live_rows":32,"dead_rows":0,"heap":"8192 bytes","indexes":"32 kB","toast":"0 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"SpamFilterOverrides","live_rows":5,"dead_rows":0,"heap":"8192 bytes","indexes":"32 kB","toast":"0 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"Locks","live_rows":0,"dead_rows":0,"heap":"0 bytes","indexes":"32 kB","toast":"8192 bytes","total":"40 kB","total_bytes":40960,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"Reaction","live_rows":0,"dead_rows":0,"heap":"0 bytes","indexes":"24 kB","toast":"0 bytes","total":"24 kB","total_bytes":24576,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"PublishedMessages","live_rows":84,"dead_rows":0,"heap":"8192 bytes","indexes":"16 kB","toast":"0 bytes","total":"24 kB","total_bytes":24576,"last_vacuum":null,"last_analyze":"2026-11-19"}
+[P-2] {"relname":"GuildCommandsSettings","live_rows":10,"dead_rows":0,"heap":"8192 bytes","indexes":"16 kB","toast":"0 bytes","total":"24 kB","total_bytes":24576,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"__EFMigrationsHistory","live_rows":10,"dead_rows":0,"heap":"8192 bytes","indexes":"16 kB","toast":"0 bytes","total":"24 kB","total_bytes":24576,"last_vacuum":null,"last_analyze":null}
+[P-2] {"relname":"CustomCommandsRole","live_rows":0,"dead_rows":0,"heap":"0 bytes","indexes":"24 kB","toast":"0 bytes","total":"24 kB","total_bytes":24576,"last_vacuum":null,"last_analyze":null}
+[P-3] -- Indexes on the five largest tables
+[P-3] {"table_name":"XpHistory","index_name":"PK_XpHistory","size":"131 MB"}
+[P-3] {"table_name":"XpHistory","index_name":"IX_XpHistory_AwarderId_GuildId","size":"91 MB"}
+[P-3] {"table_name":"XpHistory","index_name":"IX_XpHistory_GuildId","size":"70 MB"}
+[P-3] {"table_name":"Messages","index_name":"IX_Messages_UserId_GuildId","size":"3152 kB"}
+[P-3] {"table_name":"Messages","index_name":"IX_Messages_ChannelId","size":"2008 kB"}
+[P-3] {"table_name":"Messages","index_name":"PK_Messages","size":"2008 kB"}
+[P-3] {"table_name":"Messages","index_name":"IX_Messages_GuildId","size":"2008 kB"}
+[P-3] {"table_name":"Messages","index_name":"IX_Messages_CreatedTimestamp","size":"1424 kB"}
+[P-3] {"table_name":"MessageHistory","index_name":"IX_MessageHistory_GuildId_DeletedByModeratorId","size":"2656 kB"}
+[P-3] {"table_name":"MessageHistory","index_name":"PK_MessageHistory","size":"2648 kB"}
+[P-3] {"table_name":"Avatars","index_name":"PK_Avatars","size":"2696 kB"}
+[P-3] {"table_name":"Members","index_name":"AK_Members_GuildId_UserId","size":"1216 kB"}
+[P-3] {"table_name":"Members","index_name":"PK_Members","size":"1200 kB"}
+[P-4] -- XP rows per member
+[P-4] {"members":24478,"max_rows":46269,"p50_rows":2,"p99_rows":2103}
+[P-4] -- The five heaviest members' row counts
+[P-4] {"n":46269}
+[P-4] {"n":42127}
+[P-4] {"n":41085}
+[P-4] {"n":34984}
+[P-4] {"n":29388}
+[P-4] -- Guilds, and the largest guild's rows and members
+[P-4] {"guilds":28,"largest_guild_rows":2227957,"largest_guild_members":23893}
+[P-4] -- Members whose total is 0 or less (left off the board by Q12b)
+[P-4] {"members_with_zero_xp":14301}
+[P-4a] -- Whole-table XP aggregate (also the hardware ratio k)
+[P-4a] Finalize HashAggregate  (cost=46943.61..47162.61 rows=17520 width=57) (actual time=913.541..926.125 rows=24478.00 loops=1)
+[P-4a]   Group Key: "GuildId", "UserId"
+[P-4a]   Batches: 1  Memory Usage: 3857kB
+[P-4a]   Buffers: shared hit=15576 read=8504
+[P-4a]   ->  Gather  (cost=42099.33..46523.13 rows=42048 width=57) (actual time=852.082..888.424 rows=35111.00 loops=1)
+[P-4a]         Workers Planned: 2
+[P-4a]         Workers Launched: 2
+[P-4a]         Buffers: shared hit=15576 read=8504
+[P-4a]         ->  Partial HashAggregate  (cost=41099.33..41318.33 rows=17520 width=57) (actual time=842.747..849.776 rows=11703.67 loops=3)
+[P-4a]               Group Key: "GuildId", "UserId"
+[P-4a]               Batches: 1  Memory Usage: 3601kB
+[P-4a]               Buffers: shared hit=15576 read=8504
+[P-4a]               Worker 0:  Batches: 1  Memory Usage: 1809kB
+[P-4a]               Worker 1:  Batches: 1  Memory Usage: 1553kB
+[P-4a]               ->  Parallel Seq Scan on "XpHistory"  (cost=0.00..33805.33 rows=972533 width=33) (actual time=0.044..339.544 rows=778026.33 loops=3)
+[P-4a]                     Buffers: shared hit=15576 read=8504
+[P-4a] Planning:
+[P-4a]   Buffers: shared hit=9
+[P-4a] Planning Time: 0.073 ms
+[P-4a] Execution Time: 936.389 ms
+[P-4b] -- The leaderboard view's body, as committed
+[P-4b] WindowAgg  (cost=48397.50..48747.88 rows=17520 width=65) (actual time=935.195..969.977 rows=24478.00 loops=1)
+[P-4b]   Window: w1 AS (PARTITION BY "GuildId" ORDER BY (sum("Xp")) ROWS UNBOUNDED PRECEDING)
+[P-4b]   Storage: Memory  Maximum Storage: 17kB
+[P-4b]   Buffers: shared hit=15858 read=8222
+[P-4b]   ->  Sort  (cost=48397.48..48441.28 rows=17520 width=57) (actual time=935.189..945.655 rows=24478.00 loops=1)
+[P-4b]         Sort Key: "GuildId", (sum("Xp")) DESC
+[P-4b]         Sort Method: quicksort  Memory: 1920kB
+[P-4b]         Buffers: shared hit=15858 read=8222
+[P-4b]         ->  Finalize HashAggregate  (cost=46943.61..47162.61 rows=17520 width=57) (actual time=904.400..916.707 rows=24478.00 loops=1)
+[P-4b]               Group Key: "GuildId", "UserId"
+[P-4b]               Batches: 1  Memory Usage: 3857kB
+[P-4b]               Buffers: shared hit=15858 read=8222
+[P-4b]               ->  Gather  (cost=42099.33..46523.13 rows=42048 width=57) (actual time=841.809..878.830 rows=37006.00 loops=1)
+[P-4b]                     Workers Planned: 2
+[P-4b]                     Workers Launched: 2
+[P-4b]                     Buffers: shared hit=15858 read=8222
+[P-4b]                     ->  Partial HashAggregate  (cost=41099.33..41318.33 rows=17520 width=57) (actual time=833.838..841.128 rows=12335.33 loops=3)
+[P-4b]                           Group Key: "GuildId", "UserId"
+[P-4b]                           Batches: 1  Memory Usage: 3601kB
+[P-4b]                           Buffers: shared hit=15858 read=8222
+[P-4b]                           Worker 0:  Batches: 1  Memory Usage: 2065kB
+[P-4b]                           Worker 1:  Batches: 1  Memory Usage: 1809kB
+[P-4b]                           ->  Parallel Seq Scan on "XpHistory"  (cost=0.00..33805.33 rows=972533 width=33) (actual time=0.043..336.256 rows=778026.33 loops=3)
+[P-4b]                                 Buffers: shared hit=15858 read=8222
+[P-4b] Planning:
+[P-4b]   Buffers: shared hit=4
+[P-4b] Planning Time: 0.066 ms
+[P-4b] Execution Time: 980.511 ms
+[P-4c] -- One member's total, for the heaviest member (upper bound: main lacks the branch's index)
+[P-4c] Aggregate  (cost=27187.90..27187.91 rows=1 width=32) (actual time=58.673..58.677 rows=1.00 loops=1)
+[P-4c]   Buffers: shared hit=8149 read=5103
+[P-4c]   ->  Bitmap Heap Scan on "XpHistory"  (cost=1610.10..27085.09 rows=41126 width=8) (actual time=3.110..36.693 rows=46269.00 loops=1)
+[P-4c]         Recheck Cond: (("UserId" = '<id>'::numeric) AND ("GuildId" = '<id>'::numeric))
+[P-4c]         Heap Blocks: exact=12917
+[P-4c]         Buffers: shared hit=8149 read=5103
+[P-4c]         ->  Bitmap Index Scan on "PK_XpHistory"  (cost=0.00..1599.82 rows=41126 width=0) (actual time=2.128..2.129 rows=46269.00 loops=1)
+[P-4c]               Index Cond: (("UserId" = '<id>'::numeric) AND ("GuildId" = '<id>'::numeric))
+[P-4c]               Index Searches: 1
+[P-4c]               Buffers: shared read=335
+[P-4c] Planning:
+[P-4c]   Buffers: shared hit=3
+[P-4c] Planning Time: 0.061 ms
+[P-4c] Execution Time: 58.691 ms
+[P-5] -- XpHistory by Type (Q9 rewrite; Type 4 is deleted)
+[P-5] {"Type":0,"count":2298034}
+[P-5] {"Type":1,"count":32}
+[P-5] {"Type":2,"count":10}
+[P-5] {"Type":3,"count":11525}
+[P-5] {"Type":4,"count":24478}
+[P-5] -- MessageHistory by Action (Q9 UPDATE)
+[P-5] {"Action":0,"by_moderator":false,"count":64331}
+[P-5] {"Action":1,"by_moderator":false,"count":1370}
+[P-5] {"Action":2,"by_moderator":false,"count":673}
+[P-5] {"Action":2,"by_moderator":true,"count":1}
+[P-5] -- ProxiedMessages rows ModelRedesign deletes
+[P-5] {"proxied_rows_deleted":0}
+[P-5] -- Pardons (Q8)
+[P-5] {"pardons":38,"without_reason":24}
+[P-5] -- Mutes (TD-1)
+[P-5] {"mutes":3,"overdue":3}
+[P-5] -- Locks (TD-1)
+[P-5] {"locks":0,"overdue":0}
+[P-6] -- P-1: roles on unrestricted custom commands
+[P-6] {"p1_roles_on_unrestricted":0}
+[P-6] -- P-1: restricted custom commands with no roles (open decision if not 0)
+[P-6] {"p1_restricted_without_roles":0}
+[P-6] -- P-2: reclaimed XP with a moderator
+[P-6] {"p2_reclaimed_with_moderator":10}
+[P-6] -- GUARD, must be 0: awarded XP with no awarder (ModelRedesign aborts)
+[P-6] {"guard_awarded_without_awarder":0}
+[P-6] -- GUARD, must be 0: pardons with no moderator (RequirePardonModerator aborts)
+[P-6] {"guard_pardons_without_moderator":0}
+[P-7] -- S-1: level settings out of range
+[P-7] {"s1_level_settings_out_of_range":0}
+[P-7] -- S-3: locks with no captured permissions (upper bound)
+[P-7] {"s3_locks_without_permissions":0}
+[end] finished at 2026-11-19 03:49:25.278769+00
