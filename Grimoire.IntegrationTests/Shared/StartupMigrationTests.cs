@@ -15,15 +15,14 @@ using Npgsql;
 namespace Grimoire.IntegrationTests.Shared;
 
 /// <summary>
-///     Startup and migrations (backlog A-38). On start the bot applies any pending migrations to both the main and
-///     the settings schema, then connects. Each test gets a fresh database in the shared container, so the shared
+///     Startup and migrations (backlog A-38). On start the bot applies any pending migrations of the one chain that
+///     covers both the main and the settings schema (spec 2.0), then connects. Each test gets a fresh database in the shared container, so the shared
 ///     database the other tests use is never touched.
 /// </summary>
 [Collection("Test collection")]
 public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsyncLifetime
 {
     private const string MigrationLog = "Applied pending migrations";
-    private const string SettingsMigrationLog = "Applied pending settings migrations";
 
     private readonly string _name = $"startup_{Guid.NewGuid():N}";
 
@@ -43,37 +42,47 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
     {
         await using var bot = await GrimoireTestBot.StartAsync(database, connectionString: this.ConnectionString);
 
-        await using var main = this.MainContext();
-        (await main.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
-        await using var settings = this.SettingsContext();
-        (await settings.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
-        bot.Logs.Events.ShouldContain(e => e.RenderMessage(null).StartsWith(MigrationLog, StringComparison.Ordinal));
+        await using var chain = MigrationChain.Context(this.ConnectionString);
+        (await chain.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        bot.Logs.Events.Count(e => e.RenderMessage(null).StartsWith(MigrationLog, StringComparison.Ordinal)).ShouldBe(1);
         (await bot.RunSlashCommandAndWaitAsync("modules", bot.Guild.Admin, SlashOption.Subcommand("view"))).Embed.ShouldNotBeNull();
         // EF reads the migration history before the table exists on a fresh database, and logs that as an error.
         bot.Logs.Errors.Where(error => !error.Contains("__EFMigrationsHistory", StringComparison.Ordinal)).ShouldBeEmpty();
     }
 
-    /// <summary>A database one migration behind on each schema is brought up to date.</summary>
+    /// <summary>A database one migration behind on the chain is brought up to date.</summary>
     /// <remarks>Cases: XC-21.</remarks>
     [Fact]
     public async Task OnADatabaseOneMigrationBehind_TheLastMigrationIsApplied()
     {
-        await using (var main = this.MainContext())
-            await main.GetService<IMigrator>().MigrateAsync(main.Database.GetMigrations().SkipLast(1).Last(),
-                cancellationToken: TestContext.Current.CancellationToken);
-        await using (var settings = this.SettingsContext())
-            await settings.GetService<IMigrator>().MigrateAsync(settings.Database.GetMigrations().SkipLast(1).Last(),
+        await using (var chain = MigrationChain.Context(this.ConnectionString))
+            await chain.GetService<IMigrator>().MigrateAsync(chain.Database.GetMigrations().SkipLast(1).Last(),
                 cancellationToken: TestContext.Current.CancellationToken);
 
         await using var bot = await GrimoireTestBot.StartAsync(database, connectionString: this.ConnectionString);
 
-        // Both contexts share __EFMigrationsHistory, so the newest applied row can belong to either one.
-        await using var mainAfter = this.MainContext();
-        (await mainAfter.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
-        await using var settingsAfter = this.SettingsContext();
-        (await settingsAfter.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
-        bot.Logs.Events.ShouldContain(e => e.RenderMessage(null).StartsWith(SettingsMigrationLog, StringComparison.Ordinal));
+        await using var after = MigrationChain.Context(this.ConnectionString);
+        (await after.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        bot.Logs.Events.ShouldContain(e => e.RenderMessage(null).StartsWith(MigrationLog, StringComparison.Ordinal));
         bot.Logs.Errors.ShouldBeEmpty();
+    }
+
+    /// <summary>
+    ///     Spec 2.0: in the one chain, Settings <c>Initial</c> (which copies the legacy settings out of
+    ///     <c>public</c>) runs straight after <c>ModelRedesign</c>, and so before every later migration of either
+    ///     schema. 2.0 proved that this order copies the same data as the old one (the whole Grimoire chain first) on a
+    ///     copy of production. A new id that moved <c>Initial</c> needs that check again.
+    /// </summary>
+    [Fact]
+    public void SettingsInitial_RunsStraightAfterModelRedesign()
+    {
+        using var chain = MigrationChain.Context(this.ConnectionString);
+        var migrations = chain.Database.GetMigrations().ToList();
+
+        var initial = migrations.FindIndex(name => name.EndsWith("_Initial", StringComparison.Ordinal));
+        var modelRedesign = migrations.FindIndex(name => name.EndsWith("_ModelRedesign", StringComparison.Ordinal));
+
+        initial.ShouldBe(modelRedesign + 1);
     }
 
     /// <summary>
@@ -84,7 +93,7 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
     public async Task AddClosedAt_ClosesEverythingALaterEventEnded_AndLeavesTheRestOpen()
     {
         var token = TestContext.Current.CancellationToken;
-        await using (var settings = this.SettingsContext())
+        await using (var settings = MigrationChain.Context(this.ConnectionString))
         {
             var migrations = settings.Database.GetMigrations().ToList();
             var target = migrations.Single(name => name.EndsWith("_AddClosedAtToLocksAndMutes", StringComparison.Ordinal));
@@ -135,9 +144,6 @@ public sealed class StartupMigrationTests(GrimoireCoreFactory database) : IAsync
 
         bot.Logs.Events.ShouldNotContain(e => e.RenderMessage(null).StartsWith("Applied pending", StringComparison.Ordinal));
     }
-
-    private GrimoireDbContext MainContext()
-        => new(new DbContextOptionsBuilder<GrimoireDbContext>().UseNpgsql(this.ConnectionString).Options);
 
     private SettingsDbContext SettingsContext()
         => new(new DbContextOptionsBuilder<SettingsDbContext>().UseNpgsql(this.ConnectionString).Options);

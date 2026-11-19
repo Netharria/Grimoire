@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <RootNamespace>Grimoire.Migrations</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Migrations only (spec 2.0): one chain for the public and Settings schemas. Nothing here is queried. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12"/>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <TreatAsUsed>true</TreatAsUsed>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <TreatAsUsed>true</TreatAsUsed>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grimoire.Data\Grimoire.Data.csproj"/>
+    <ProjectReference Include="..\Grimoire.Settings\Grimoire.Settings.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared with Grimoire.Data and Grimoire.Settings: the id conventions are internal to each assembly. -->
+    <Compile Include="..\Grimoire.Data\Conventions\StronglyTypedIdConventions.cs" Link="Conventions\StronglyTypedIdConventions.cs"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Grimoire.UnitTests"/>
+    <InternalsVisibleTo Include="Grimoire.IntegrationTests"/>
+  </ItemGroup>
+
+</Project>

@@ -141,7 +141,10 @@ summary line is logged every five minutes. All the state is one immutable `Worke
 ## 5. Data access
 
 From spec 1.3. Runtime code reads and writes Postgres through Dapper; EF Core stays for migrations and the model
-snapshot (plan C3). Unported code still uses the EF contexts, which share the one `NpgsqlDataSource` with Dapper, so
+snapshot (plan C3). Since spec 2.0, one migrations-only context (`GrimoireMigrationsDbContext`, in
+`Grimoire.Migrations`) migrates both schemas as one ordered chain, so a data copy always runs before the change that
+depends on it; its model is the two runtime models together, built by the same `Configure` methods. Unported code still
+uses the two runtime EF contexts, which share the one `NpgsqlDataSource` with Dapper, so
 there is one connection pool.
 
 - **A statement is a value.** `Sql.Read(name, text, parameters)` or `Sql.Write(…)`, built by pure functions in the

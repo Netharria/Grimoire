@@ -61,18 +61,17 @@ interval before its first tick.
 
 ## B. Migrations
 
-Both contexts use the same connection string and database, in separate schemas. Each pending set is applied with a
-30-minute command timeout (`SettingsServiceRegistration.MigrationCommandTimeout`) and logged at Warning with its
-duration.
+Both schemas are in one database and migrate as one chain, in id order (spec 2.0). The pending migrations are applied
+with a 30-minute command timeout (`MigrationRunner.CommandTimeout`) and logged once at Warning with their duration.
+Each migration is its own transaction (checked in spec 2.0), so a failure keeps the migrations before it.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| XC-20 | Empty database | Start the bot | Bot online, commands work | "Applied pending migrations in N ms" and "Applied pending settings migrations in N ms". EF logs two errors while reading the not-yet-created history tables; that is EF noise (A-38). **[auto]** `StartupMigrationTests.OnAnEmptyDatabase_AllMigrationsAreApplied_AndTheBotWorks` |
-| XC-21 | Database one migration behind on each schema | Start the bot | Bot online | Only the last migration of each schema applied. **[auto]** `StartupMigrationTests.OnADatabaseOneMigrationBehind_TheLastMigrationIsApplied` |
+| XC-20 | Empty database | Start the bot | Bot online, commands work | "Applied pending migrations in N ms", once. EF logs two errors while reading the not-yet-created history tables; that is EF noise (A-38). **[auto]** `StartupMigrationTests.OnAnEmptyDatabase_AllMigrationsAreApplied_AndTheBotWorks` |
+| XC-21 | Database one migration behind on the chain | Start the bot | Bot online | Only the last migration applied. **[auto]** `StartupMigrationTests.OnADatabaseOneMigrationBehind_TheLastMigrationIsApplied` |
 | XC-22 | Restored copy of the production database, current branch (includes `DropOrphanedLegacyForeignKeys`, `SyncIndexesWithModel`, `AddReactionModel`, `RequirePardonModerator`, `RenameAttachmentFileNameToAttachmentUrl`) | Start the bot | Bot online; `/Modules View`, `/SinLog`, `/Level` show the expected data | Every migration logged once. Spot-check row counts of `Sins`, `Pardons`, `XpHistory`, `Messages`, `Attachments` before and after. Record the total migration time. Reference (2.1, a backup a few months old, today's chains): 10.3 s locally, about 6 minutes estimated on production |
 | XC-23 | Same as XC-22 on a large `Messages` / `Attachments` table | Start the bot | none | No Npgsql 30 s timeout: the 30-minute command timeout applies. Record the longest statement. Reference (2.1): `XpHistory."Type"` to `varchar(21)`, 4.5 s locally, about 2 minutes estimated on production |
-| XC-24 | A pending main migration made to fail (for example, a row that breaks a new constraint) | Start the bot | Bot never comes online | Host exits with the migration error. The failed migration is rolled back. Settings migrations are not attempted. Fix the row and restart: the rest apply |
-| XC-25 | Main schema current, a pending settings migration made to fail | Start the bot | Bot never comes online | Main schema unchanged, host exits with the settings error. Restart after the fix applies only the settings migration |
+| XC-24 | A pending migration made to fail (for example, a row that breaks a new constraint), in either schema | Start the bot | Bot never comes online | Host exits with the migration error. The failed migration is rolled back; the ones before it stay applied, and none after it is attempted. Fix the row and restart: the rest apply. (Spec 2.0 merged the old XC-25, a failing settings migration, into this case: there is one chain.) |
 | XC-26 | Pending migrations | Start two bot processes at the same moment on the same DB | Record | Record whether the second waits, fails, or applies twice. Do not run this against production data |
 | XC-27 | Database ahead of the binary (run an older build after XC-22) | Start the older build | Record | No pending migrations, so it starts without warning. Record any query errors from renamed columns (for example `AttachmentUrl`) |
 | XC-28 | Pending migration that takes over 2 minutes (XC-23), `warningReportTimeUtc` in the past today | Start the bot and watch `#alerts` | Record | `DailyWarningReportService` and `WarningFlushService` start before migrations finish, so their first tick may query the old schema. Expect at most a `BackgroundTaskFailure` warning, then normal ticks (observation 8). **[auto]** `StartupOrderTests.TheWarningServices_StartAfterMigrations` (registration order, no slow migration; skipped, KI-106) |

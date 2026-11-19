@@ -41,25 +41,33 @@ dotnet stryker                  # everything
 # Docker (full stack with PostgreSQL + pgAdmin)
 docker-compose up -d
 
-# EF migrations (run from repo root)
-dotnet ef migrations add <MigrationName> --context GrimoireDbContext --project Grimoire.Data --startup-project Grimoire
-dotnet ef database update --project Grimoire.Data --startup-project Grimoire
+# EF migrations (run from repo root): one chain for both schemas, in Grimoire.Migrations (spec 2.0). The design-time
+# host needs ConnectionStrings__Grimoire set, even for commands that don't connect.
+dotnet ef migrations add <MigrationName> --context GrimoireMigrationsDbContext --project Grimoire.Migrations --startup-project Grimoire
+dotnet ef database update --context GrimoireMigrationsDbContext --project Grimoire.Migrations --startup-project Grimoire
+# database update from the command line doesn't use startup's 30-minute timeout: add "Command Timeout=1800" to the
+# connection string for a large database (spec 2.1, OQ-4).
 ```
 
 ## Solution Structure
 
-Six projects in the solution:
+Seven projects in the solution:
 
 - **Grimoire** — Main executable. Discord bot entry point, all slash command handlers, event listeners, and background services.
-- **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext`, entity configurations, and migrations. Also the
+- **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext` and its entity configurations (the model is built by
+  `GrimoireModel.Configure`, which the migrations context calls too). No migrations: see Grimoire.Migrations. Also the
   Dapper type handlers (`Dapper/DapperTypeHandlers.cs`), which use the domain's internal `FromDatabase` factories.
 - **Grimoire.Domain** — Domain models only. Entity definitions, strongly-typed IDs, and the error cases (`Invalid`,
   `NotFound`, `Forbidden`, `Unavailable`, in `Errors.cs`). References `LanguageExt.Core` (pinned, `5.0.0-beta-78`):
   results are `Fin<T>`, input checks `Validation<Error, T>`, absent values `Option<T>`. `Migration/` holds the
   temporary, `[Obsolete]` bridge for `Task<Fin<T>>` chains (spec 1.1). Has `InternalsVisibleTo("Grimoire.Data")` so EF
   value converters can use `internal` factory methods (`FromDatabase`, `ParseFromDatabase`).
-- **Grimoire.Settings** — Separate DbContext (`SettingsDbContext`) for per-guild settings. Its service layer
-  (`SettingsModule`) caches reads through `HybridCache`, backed by FusionCache.
+- **Grimoire.Settings** — Separate DbContext (`SettingsDbContext`, model built by `SettingsModel.Configure`) for
+  per-guild settings, in the `Settings` schema. Its service layer (`SettingsModule`) caches reads through
+  `HybridCache`, backed by FusionCache.
+- **Grimoire.Migrations** — Migrations only (spec 2.0): `GrimoireMigrationsDbContext`, whose model is both runtime
+  models together, holds the one ordered chain for both schemas and the one snapshot. Startup applies it through
+  `MigrationRunner`. Never queried; the runtime contexts have no migrations of their own (a unit test checks).
 - **Grimoire.UnitTests** — xUnit v3 tests of pure logic: domain types, settings domain, embed builders, decisions. No Docker,
   no network; Testcontainers and Respawn are deliberately not referenced, so a database test here doesn't compile.
 - **Grimoire.IntegrationTests** — xUnit v3 tests against real Postgres (Testcontainers, Respawn) and the fake-Discord
@@ -87,9 +95,11 @@ General helpers live outside `Features/`, in `Grimoire/Extensions`, `Grimoire/Ut
 - **DSharpPlus.Commands**: commands are plain classes with `[Command]` methods, gated by check attributes such as
   `[RequireGuild]` and `[RequireModuleEnabled]`. Most commands work both as slash commands and as `!` text commands.
   Event handlers implement `IEventHandler<TEventArgs>`. Grimoire is on a DSharpPlus 5 nightly (`5.0.0-nightly-02614`).
-- **EF Core with PostgreSQL**: two DbContexts, `GrimoireDbContext` for main data and `SettingsDbContext` for guild
-  settings. Both use code-first migrations, and both run over the one `NpgsqlDataSource` the host registers, which
-  Dapper shares (one connection pool). The language-ext migration (`docs/langext-migration/plan.md`) moves runtime
+- **EF Core with PostgreSQL**: two runtime DbContexts, `GrimoireDbContext` for main data and `SettingsDbContext` for
+  guild settings, and one migrations-only `GrimoireMigrationsDbContext` that migrates both schemas as one chain (spec
+  2.0). Change a model's configuration, then add the migration to `Grimoire.Migrations`; `MigrationModelTests` fails
+  if the runtime models and the migrations model drift apart. All of them run over the one `NpgsqlDataSource` the host
+  registers, which Dapper shares (one connection pool). The language-ext migration (`docs/langext-migration/plan.md`) moves runtime
   queries to Dapper and keeps EF Core for migrations only.
 - **Data access (section 1.3)**: ported code reads and writes through `Db<RT>` with `Sql.Read`/`Sql.Write` values
   built by pure functions in the feature's SQL module. Only reads are retried; a transaction's body is `IO`, so no

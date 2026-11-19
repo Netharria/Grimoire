@@ -29,12 +29,9 @@ public sealed class SettingsTestsFactory : IAsyncLifetime
     {
         await this._postgreSqlContainer.StartAsync();
 
-        await using var dbContext = new SettingsDbContext(
-            new DbContextOptionsBuilder<SettingsDbContext>()
-                .UseNpgsql(this._postgreSqlContainer.GetConnectionString())
-                .Options);
-
-        await dbContext.Database.MigrateAsync();
+        // The whole chain, both schemas (spec 2.0): Settings' migrations have no chain of their own. Only the
+        // Settings schema is reset between tests.
+        await MigrationChain.ApplyAsync(this._postgreSqlContainer.GetConnectionString());
 
         this._dbConnection = new NpgsqlConnection(this._postgreSqlContainer.GetConnectionString());
         await this._dbConnection.OpenAsync();

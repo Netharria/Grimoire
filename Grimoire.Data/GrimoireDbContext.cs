@@ -129,6 +129,5 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
         => configurationBuilder.ConfigureStronglyTypedIds();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-        => modelBuilder.ApplyConfigurationsFromAssembly(typeof(GrimoireDbContext).Assembly)
-            .HasPostgresExtension("fuzzystrmatch");
+        => GrimoireModel.Configure(modelBuilder);
 }

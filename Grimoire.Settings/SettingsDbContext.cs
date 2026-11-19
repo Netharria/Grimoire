@@ -28,7 +28,7 @@ public sealed class SettingsDbContext(DbContextOptions<SettingsDbContext> option
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("Settings");
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SettingsDbContext).Assembly);
+        modelBuilder.HasDefaultSchema(SettingsModel.Schema);
+        SettingsModel.Configure(modelBuilder);
     }
 }

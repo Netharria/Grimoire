@@ -5,16 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Settings;
+using Grimoire.Migrations;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Utilities;
 
-internal sealed partial class DiscordStartService(
+internal sealed class DiscordStartService(
     DiscordClient discordClient,
-    IDbContextFactory<GrimoireDbContext> dbContextFactory,
-    IDbContextFactory<SettingsDbContext> settingsDbContextFactory,
+    IDbContextFactory<GrimoireMigrationsDbContext> migrationsContextFactory,
     ILogger<DiscordStartService> logger) : IHostedService
 {
     private readonly ILogger<DiscordStartService> _logger = logger;
@@ -29,25 +28,7 @@ internal sealed partial class DiscordStartService(
     public Task StopAsync(CancellationToken cancellationToken)
         => discordClient.DisconnectAsync();
 
-    private async Task ApplyDatabaseMigrations(CancellationToken cancellationToken)
-    {
-        await using var context = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
-        if (pendingMigrations.Any())
-        {
-            Stopwatch sw = new();
-            sw.Start();
-            // A migration can rewrite a large table in one statement, which Npgsql's default 30 seconds can't fit.
-            context.Database.SetCommandTimeout(SettingsServiceRegistration.MigrationCommandTimeout);
-            await context.Database.MigrateAsync(cancellationToken);
-            sw.Stop();
-            LogMigrationDuration(this._logger, sw.ElapsedMilliseconds);
-        }
-
-        await SettingsServiceRegistration.MigrateSettingsDb(settingsDbContextFactory, this._logger,
-            cancellationToken);
-    }
-
-    [LoggerMessage(LogLevel.Warning, "Applied pending migrations in {time} ms")]
-    static partial void LogMigrationDuration(ILogger<DiscordStartService> logger, long time);
+    /// <summary>Applies the one migration chain of both schemas before the bot connects (spec 2.0).</summary>
+    private Task ApplyDatabaseMigrations(CancellationToken cancellationToken)
+        => MigrationRunner.ApplyPendingAsync(migrationsContextFactory, this._logger, cancellationToken);
 }

@@ -5,17 +5,15 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.Diagnostics;
 using EntityFramework.Exceptions.PostgreSQL;
 using Grimoire.Settings.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace Grimoire.Settings;
 
-public static partial class SettingsServiceRegistration
+public static class SettingsServiceRegistration
 {
     /// <summary>
     ///     Registers the settings context over the <see cref="NpgsqlDataSource" /> the host registers, so it shares
@@ -31,29 +29,4 @@ public static partial class SettingsServiceRegistration
 
         return services;
     }
-
-    /// <summary>
-    ///     How long one migration statement may run at startup. A migration can rewrite a large table in one
-    ///     statement, which Npgsql's default of 30 seconds can't fit, and a timeout rolls the migration back.
-    /// </summary>
-    public static readonly TimeSpan MigrationCommandTimeout = TimeSpan.FromMinutes(30);
-
-    public static async Task MigrateSettingsDb(IDbContextFactory<SettingsDbContext> settingsDbContext, ILogger logger,
-        CancellationToken cancellationToken)
-    {
-        await using var context = await settingsDbContext.CreateDbContextAsync(cancellationToken);
-        var pendingMigrations = await context.Database.GetPendingMigrationsAsync(cancellationToken);
-        if (pendingMigrations.Any())
-        {
-            Stopwatch sw = new();
-            sw.Start();
-            context.Database.SetCommandTimeout(MigrationCommandTimeout);
-            await context.Database.MigrateAsync(cancellationToken);
-            sw.Stop();
-            LogMigrationDuration(logger, sw.ElapsedMilliseconds);
-        }
-    }
-
-    [LoggerMessage(LogLevel.Warning, "Applied pending settings migrations in {time} ms")]
-    static partial void LogMigrationDuration(ILogger logger, long time);
 }

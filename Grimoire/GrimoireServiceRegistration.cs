@@ -60,6 +60,7 @@ using AddMessageEvent = Grimoire.Features.Logging.MessageLogging.AddMessageEvent
 using DeleteMessageEvent = Grimoire.Features.Logging.MessageLogging.DeleteMessageEvent;
 
 using Grimoire.Functional;
+using Grimoire.Migrations;
 
 namespace Grimoire;
 
@@ -101,6 +102,7 @@ internal static class GrimoireServiceRegistration
                             npgsqlOptionsAction => npgsqlOptionsAction.EnableRetryOnFailure())
                         .UseExceptionProcessor())
                 .AddSettingsServices()
+                .AddMigrations()
                 .AddScoped<IDiscordImageEmbedService, DiscordImageEmbedService>()
                 .AddScoped<IDiscordAuditLogParserService, DiscordAuditLogParserService>()
                 .AddSingleton<IPluralkitService, PluralkitService>()

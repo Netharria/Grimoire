@@ -14,13 +14,11 @@
 -- Runbook (spec section 2, step 4), against a throwaway clone of a production backup:
 --   1. Clone:   CREATE DATABASE grimoire_21; then pg_dump -Fc <restore> | pg_restore -d grimoire_21 --no-owner;
 --               VACUUM ANALYZE.
---   2. C-1:     dotnet ef migrations script 20250705185227_SpamFilterOverrides --context GrimoireDbContext
---                 --project Grimoire.Data --startup-project Grimoire -o c1-grimoire.sql
---               dotnet ef migrations script 0 --context SettingsDbContext
---                 --project Grimoire.Settings --startup-project Grimoire -o c1-settings.sql
---               (the design-time host needs ConnectionStrings__Grimoire set; strip the files' byte-order mark), then
---               run each with psql -v ON_ERROR_STOP=1 -e and \timing on, Grimoire first, sampling
---               pg_database_size every 0.5 s for the peak.
+--   2. C-1:     dotnet ef migrations script 20250705185227_SpamFilterOverrides --context GrimoireMigrationsDbContext
+--                 --project Grimoire.Migrations --startup-project Grimoire -o c1.sql
+--               (one chain since spec 2.0; 2.1 itself ran the two old chains, Grimoire first. The design-time host
+--               needs ConnectionStrings__Grimoire set; strip the file's byte-order mark), then run it with
+--               psql -v ON_ERROR_STOP=1 -e and \timing on, sampling pg_database_size every 0.5 s for the peak.
 --   3. C-2, C-3: psql -X -v ON_ERROR_STOP=1 -e -d grimoire_21 -f 2.1-copy.sql, with the same size sampling.
 --   4. Drop the clone.
 

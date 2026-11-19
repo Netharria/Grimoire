@@ -8,15 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="10.0.1"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3"/>
     <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.8.0"/>
   </ItemGroup>
@@ -28,6 +20,7 @@
   <ItemGroup>
     <!-- Shared with Grimoire.Data, which this project doesn't reference. -->
     <Compile Include="..\Grimoire.Data\Conventions\StronglyTypedIdConventions.cs" Link="Conventions\StronglyTypedIdConventions.cs"/>
+    <Compile Include="..\Grimoire.Data\Conventions\EntitySetConventions.cs" Link="Conventions\EntitySetConventions.cs"/>
   </ItemGroup>
 
   <ItemGroup>

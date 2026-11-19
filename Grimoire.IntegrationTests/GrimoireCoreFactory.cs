@@ -39,20 +39,10 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
         await this._postgreSqlContainer.StartAsync();
         this.DataSource = NpgsqlDataSource.Create(this._postgreSqlContainer.GetConnectionString());
 
-        await using var dbContext = new GrimoireDbContext(
-            new DbContextOptionsBuilder<GrimoireDbContext>()
-                .UseNpgsql(this._postgreSqlContainer.GetConnectionString())
-                .Options);
-
-        await dbContext.Database.MigrateAsync();
-
-        // Integration tests run the whole bot, which also reads guild settings, so the settings schema must exist
-        // before Respawn takes its table snapshot or it would never be reset between tests.
-        await using var settingsDbContext = new SettingsDbContext(
-            new DbContextOptionsBuilder<SettingsDbContext>()
-                .UseNpgsql(this._postgreSqlContainer.GetConnectionString())
-                .Options);
-        await settingsDbContext.Database.MigrateAsync();
+        // Both schemas, through the one chain (spec 2.0). Integration tests run the whole bot, which also reads guild
+        // settings, so the settings schema must exist before Respawn takes its table snapshot or it would never be
+        // reset between tests.
+        await MigrationChain.ApplyAsync(this._postgreSqlContainer.GetConnectionString());
 
         this._dbConnection = new NpgsqlConnection(this._postgreSqlContainer.GetConnectionString());
         await this._dbConnection.OpenAsync();

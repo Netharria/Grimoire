@@ -55,6 +55,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Grimoire.Data\Grimoire.Data.csproj"/>
+    <ProjectReference Include="..\Grimoire.Migrations\Grimoire.Migrations.csproj"/>
     <ProjectReference Include="..\Grimoire.Domain\Grimoire.Domain.csproj"/>
     <ProjectReference Include="..\Grimoire.Settings\Grimoire.Settings.csproj"/>
   </ItemGroup>

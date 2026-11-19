@@ -5,6 +5,7 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Migrations;
 using Grimoire.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -44,7 +45,7 @@ public sealed class PooledContextTests(GrimoireCoreFactory database) : IAsyncLif
         await using (first = await factory.CreateDbContextAsync(token))
         {
             defaultTimeout = first.Database.GetCommandTimeout();
-            first.Database.SetCommandTimeout(SettingsServiceRegistration.MigrationCommandTimeout);
+            first.Database.SetCommandTimeout(MigrationRunner.CommandTimeout);
         }
 
         await using var second = await factory.CreateDbContextAsync(token);
