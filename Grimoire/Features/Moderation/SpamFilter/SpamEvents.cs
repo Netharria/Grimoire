@@ -16,6 +16,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.SpamFilter;
 
+using Mute = Grimoire.Settings.Domain.Mute;
+
 internal sealed partial class SpamEvents(
     IDbContextFactory<GrimoireDbContext> dbContextFactory,
     SettingsModule settingsModule,
@@ -157,7 +159,7 @@ internal sealed partial class SpamEvents(
             await dbContext.SaveChangesAsync();
 
             if (await settingsModule.AddMute(member.GetUserId(), member.GetGuildId(), moderatorId, sin.Id,
-                    muteEndTime, muteRoleId) is Fin<MuteAdded>.Succ)
+                    muteEndTime, muteRoleId) is Fin<Mute>.Succ)
                 return true;
 
             // Take the sin back off, so the member's record doesn't show a mute that never happened.

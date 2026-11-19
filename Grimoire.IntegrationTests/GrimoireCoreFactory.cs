@@ -77,7 +77,7 @@ public sealed class GrimoireCoreFactory : IAsyncLifetime
 
     /// <summary>
     ///     Makes the settings tables that hold <paramref name="entityNames" /> refuse every insert until the result is
-    ///     disposed. Reads still work. Name each entity by its CLR type, such as <c>GuildSetting</c>.
+    ///     disposed. Reads still work. Name each entity by its CLR type, such as <c>GuildSettingRow</c>. Updates are refused too.
     /// </summary>
     public Task<IAsyncDisposable> RefuseSettingsInsertsAsync(params string[] entityNames)
         => this.AlterSettingsTablesAsync(entityNames,

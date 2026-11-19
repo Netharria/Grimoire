@@ -103,7 +103,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
     [Fact]
     public async Task Mute_ThatCannotBeRecorded_IsUndone()
     {
-        await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
+        await using (await database.RefuseSettingsInsertsAsync("MuteRow"))
             (await this.MuteAsync(this.Guild.Moderator, this.Guild.User1, DurationType.Minutes, 2)).Description
                 .ShouldBe("The mute could not be recorded, so it has been undone.");
 
@@ -175,7 +175,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteAdded>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
+        (await settingsContext.Mutes.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
         (await this.Settings.GetActiveMute(new UserId(this.Guild.User1.Id), this.GuildId, TestContext.Current.CancellationToken)).ShouldSucceed()
             .EndTime.ShouldBeGreaterThan(DateTimeOffset.UtcNow.AddHours(23));
     }
@@ -332,8 +332,8 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await GrimoireTestBot.EventuallyAsync(() => this.DmsTo(this.Guild.User1), dms => dms.Count >= 2))[^1]["description"]!
             .GetValue<string>().ShouldBe($"You have been unmuted by {this.Guild.Moderator.MemberMention}");
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
-        (await settingsContext.Mutes.OfType<MuteAdded>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await settingsContext.Mutes.Where(mute => mute.State == "Removed").CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await settingsContext.Mutes.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Unmute");
     }
 
@@ -396,7 +396,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Rest.Requests.Single(this.IsRoleChange(HttpMethod.Delete, this.Guild.User1)).Path
             .ShouldEndWith($"/roles/{configured}");
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await settingsContext.Mutes.Where(mute => mute.State == "Removed").CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
     /// <summary>MOD-118: with no role left to remove, the record is cleared and the moderator is told.</summary>
@@ -413,7 +413,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         reply.Description.ShouldNotBeNull().ShouldStartWith("The role this member was muted with no longer exists");
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await settingsContext.Mutes.Where(mute => mute.State == "Removed").CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         this._bot.Rest.Requests.Count(this._bot.IsModLogPost).ShouldBe(modLogPostsBefore);
     }
@@ -431,7 +431,7 @@ public sealed class MuteTests(GrimoireCoreFactory database) : IAsyncLifetime
             .ShouldBe($"{issue.Summary}\n**Suggested fix:** {issue.SuggestedFix}");
 
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteRemoved>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        (await settingsContext.Mutes.Where(mute => mute.State == "Removed").AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     /// <summary>MOD-120.</summary>

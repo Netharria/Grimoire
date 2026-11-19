@@ -1,6 +1,6 @@
 # Design review decisions
 
-> **Read with the migration plan.** [`../langext-migration/plan.md`](../langext-migration/plan.md) part 2 (2026-11-14) overrides entries here: C1 replaces the error type of Q2b/Q2c/TD-12 with language-ext `Expected` subtypes; C2 makes the runner render failures (Q1); C3 moves Q10/Q16/Q28/TD-6's EF runtime work to Dapper (EF stays for migrations); C5 limits Discord types in the core; C6 uses `Atom`/`AtomHashMap` instead of Q20's `ConcurrentDictionary`; C10 keeps `/Warn`'s reason required (an exception to Q30); C11 (2026-11-15) makes text commands reply publicly, with a 🔒 reaction for private ones, and replaces Q36's silent text `/SinLog` with a DM.
+> **Read with the migration plan.** [`../langext-migration/plan.md`](../langext-migration/plan.md) part 2 (2026-11-14) overrides entries here: C1 replaces the error type of Q2b/Q2c/TD-12 with language-ext `Expected` subtypes; C2 makes the runner render failures (Q1); C3 moves Q10/Q16/Q28/TD-6's EF runtime work to Dapper (EF stays for migrations); C5 limits Discord types in the core; C6 uses `Atom`/`AtomHashMap` instead of Q20's `ConcurrentDictionary`; C10 keeps `/Warn`'s reason required (an exception to Q30); C11 (2026-11-15) makes text commands reply publicly, with a 🔒 reaction for private ones, and replaces Q36's silent text `/SinLog` with a DM. C13 (2026-11-19) moves TD-6's per-module `Enabled` flags into one `Modules` document.
 
 
 The owner's answers to the questions in `docs/review/design/12-rollup.md` part 7. Each entry gives the question number,

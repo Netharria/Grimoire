@@ -43,7 +43,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
     }
 
     private static async Task ProcessExpiredChannelLockAsync(
-        ChannelLocked expiredLock,
+        ChannelLock expiredLock,
         SettingsModule settingsModule,
         DiscordClient discordClient,
         GuildLog guildLog,
@@ -62,8 +62,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
                 return;
             case ExpiredItemAction.Resolve:
                 // The channel was deleted, so there is nothing to unlock.
-                await RecordChannelUnlockAsync(expiredLock, "Channel no longer exists.", settingsModule,
-                    discordClient, cancellationToken);
+                await RecordChannelUnlockAsync(expiredLock, settingsModule, cancellationToken);
                 return;
         }
 
@@ -71,8 +70,7 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
         // permission overwrites to revert, and trying would fail on every tick, so just let the lock expire.
         if (channel!.IsThread)
         {
-            await RecordChannelUnlockAsync(expiredLock, "Channel lock expired.", settingsModule, discordClient,
-                    cancellationToken)
+            await RecordChannelUnlockAsync(expiredLock, settingsModule, cancellationToken)
                 .TapAsync(_ => SendLockExpiredLogAsync(channel, guildLog, cancellationToken));
             return;
         }
@@ -89,13 +87,12 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
             throw;
         }
 
-        await RecordChannelUnlockAsync(expiredLock, "Channel lock expired.", settingsModule, discordClient,
-            cancellationToken)
+        await RecordChannelUnlockAsync(expiredLock, settingsModule, cancellationToken)
             .TapAsync(_ => SendLockExpiredLogAsync(channel, guildLog, cancellationToken));
     }
 
     private static async Task ProcessExpiredThreadLockAsync(
-        ThreadLocked expiredLock,
+        ThreadLock expiredLock,
         SettingsModule settingsModule,
         DiscordClient discordClient,
         GuildLog guildLog,
@@ -111,41 +108,22 @@ internal sealed class LockBackgroundTasks(IServiceProvider serviceProvider, ILog
             case ExpiredItemAction.KeepForLater:
                 return;
             case ExpiredItemAction.Resolve:
-                await RecordThreadUnlockAsync(expiredLock, "Thread no longer exists.", settingsModule, discordClient,
-                    cancellationToken);
+                await RecordThreadUnlockAsync(expiredLock, settingsModule, cancellationToken);
                 return;
         }
 
-        await RecordThreadUnlockAsync(expiredLock, "Thread lock expired.", settingsModule, discordClient,
-                cancellationToken)
+        await RecordThreadUnlockAsync(expiredLock, settingsModule, cancellationToken)
             .TapAsync(_ => SendLockExpiredLogAsync(channel!, guildLog, cancellationToken));
     }
 
-    private static Task<Fin<ChannelLocked>> RecordChannelUnlockAsync(ChannelLocked expiredLock, string reason,
-        SettingsModule settingsModule, DiscordClient discordClient, CancellationToken cancellationToken)
-        => ModerationReason.Create(reason)
-            .Map(moderationReason =>
-                ChannelUnlocked.Create(
-                    discordClient.GetGrimoireModeratorId(),
-                    expiredLock.ChannelId,
-                    expiredLock.GuildId,
-                    DateTimeOffset.UtcNow,
-                    moderationReason))
-            .ToFin()
-            .BindAsync(channelUnlock => settingsModule.RemoveChannelLock(channelUnlock, cancellationToken));
+    /// <summary>The lock ran out, or its channel is gone: it becomes Expired (spec 2.2).</summary>
+    private static Task<Fin<ChannelLock>> RecordChannelUnlockAsync(ChannelLock expiredLock,
+        SettingsModule settingsModule, CancellationToken cancellationToken)
+        => settingsModule.ExpireChannelLock(expiredLock, cancellationToken);
 
-    private static Task<Fin<ThreadLocked>> RecordThreadUnlockAsync(ThreadLocked expiredLock, string reason,
-        SettingsModule settingsModule, DiscordClient discordClient, CancellationToken cancellationToken)
-        => ModerationReason.Create(reason)
-            .Map(moderationReason =>
-                ThreadUnlocked.Create(
-                    discordClient.GetGrimoireModeratorId(),
-                    expiredLock.ChannelId,
-                    expiredLock.GuildId,
-                    DateTimeOffset.UtcNow,
-                    moderationReason))
-            .ToFin()
-            .BindAsync(threadUnlock => settingsModule.RemoveThreadLock(threadUnlock, cancellationToken));
+    private static Task<Fin<ThreadLock>> RecordThreadUnlockAsync(ThreadLock expiredLock,
+        SettingsModule settingsModule, CancellationToken cancellationToken)
+        => settingsModule.ExpireThreadLock(expiredLock, cancellationToken);
 
     private static async Task SendLockExpiredLogAsync(
         DiscordChannel channel,

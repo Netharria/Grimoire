@@ -13,6 +13,8 @@ using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 using ModuleArgument = Grimoire.Features.Shared.Commands.ModuleCommands.ModuleArguments;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
 namespace Grimoire.IntegrationTests.Shared;
 
 /// <summary>
@@ -93,9 +95,9 @@ public sealed class RestartPersistenceTests(GrimoireCoreFactory database) : IAsy
         var now = DateTimeOffset.UtcNow;
         await using (var settingsContext = database.CreateSettingsDbContext())
         {
-            settingsContext.Mutes.Add(MuteAdded.Create(new UserId(this.Guild.User1.Id), this.GuildId,
+            settingsContext.Mutes.Add(SettingsRows.Mute(new UserId(this.Guild.User1.Id), this.GuildId,
                 new ModeratorId(this.Guild.Moderator.Id), new SinId(1), now.AddMinutes(-1), now.AddMinutes(30),
-                new RoleId(muteRoleId)).ShouldSucceed());
+                new RoleId(muteRoleId)));
             await settingsContext.SaveChangesAsync(Token);
         }
 

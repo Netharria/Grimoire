@@ -150,25 +150,14 @@ public sealed class ValueObjectTests
     [Fact]
     public void FromDatabase_KeepsALegacyValueOutsideTodaysLimits()
     {
-        LevelScalingBase.FromDatabase("1000").Value.ShouldBe(1000);
-        LevelScalingModifier.FromDatabase("500").Value.ShouldBe(500);
-        XpGainAmount.FromDatabase("250").Value.ShouldBe(250);
-        XpTimeoutPeriod.FromDatabase("02:00:00").Value.ShouldBe(TimeSpan.FromHours(2));
+        LevelScalingBase.FromDatabase(1000).Value.ShouldBe(1000);
+        LevelScalingModifier.FromDatabase(500).Value.ShouldBe(500);
+        XpGainAmount.FromDatabase(250).Value.ShouldBe(250);
+        XpTimeoutPeriod.FromDatabase(7200).Value.ShouldBe(TimeSpan.FromHours(2));
     }
 
-    /// <summary>The migration writes total hours, so a timeout of a day or more is past what TimeSpan parses.</summary>
+    /// <summary>Stored as whole seconds (spec 2.2), so a timeout of a day or more needs no special form.</summary>
     [Fact]
-    public void XpTimeoutPeriod_FromDatabase_ReadsTotalHours()
-        => XpTimeoutPeriod.FromDatabase("25:30:00").Value.ShouldBe(TimeSpan.FromHours(25.5));
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("abc")]
-    public void FromDatabase_WithNothingReadable_UsesTheDefault(string? stored)
-    {
-        LevelScalingBase.FromDatabase(stored).ShouldBe(LevelScalingBase.Default);
-        LevelScalingModifier.FromDatabase(stored).ShouldBe(LevelScalingModifier.Default);
-        XpGainAmount.FromDatabase(stored).ShouldBe(XpGainAmount.Default);
-        XpTimeoutPeriod.FromDatabase(stored).ShouldBe(XpTimeoutPeriod.Default);
-    }
+    public void XpTimeoutPeriod_FromDatabase_ReadsADayOrMore()
+        => XpTimeoutPeriod.FromDatabase(91_800).Value.ShouldBe(TimeSpan.FromHours(25.5));
 }

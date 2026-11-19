@@ -8,8 +8,11 @@ Source: `Grimoire/Features/Shared/Commands/`, `Grimoire/Features/Shared/Attribut
 
 Do the standard preflight from `00-environment.md` first. Accounts: `owner`, `admin`, `mod`
 (no ManageGuild), `user1`, `user2`. "Settings DB" means the guild settings tables owned by
-`GrimoireSettingsDbContext`; settings are cached, so verify through `/GeneralSettings View` or
-`/Modules View` as well as SQL.
+`GrimoireSettingsDbContext`. Since spec 2.2 a guild's settings are versioned JSON documents in
+`"Settings"."GuildSettings"`, one per kind (`Modules`, `General`, `Leveling`, `MessageLog`, `Moderation`,
+`UserLog`); the latest `Version` is in force, and a missing document or field is the default. Settings are cached,
+so verify through `/GeneralSettings View` or `/Modules View` as well as SQL, for example
+`SELECT "Version", "Value", "SetBy" FROM "Settings"."GuildSettings" WHERE "GuildId" = <guild> AND "Document" = 'Modules' ORDER BY "Version" DESC;`.
 
 ## Behaviour summary (what the code does)
 
@@ -228,7 +231,7 @@ Prepare `#spam`: helper to post N messages as `user1` and `user2` alternating; k
 | GEN-170 | Change a setting in Test-A | Restart the bot **[auto]** `GeneralLeftoverTests.GeneralSettingsAndModules_SurviveARestart` | Value persists (`/GeneralSettings View`, `/Modules View`) | Settings DB |
 | GEN-171 | Edit a setting directly in SQL | Do not restart, run View **[auto]** `GeneralLeftoverTests.AModuleStateEditedInTheDatabase_IsStaleUntilARestart` | Stale value (cache), then correct after restart (documents the cache behaviour from `00-environment.md`) | Settings DB |
 | GEN-172 | Bot removed from Test-B then re-added | Run `/Modules View` in Test-B **[auto]** `GeneralLeftoverTests.AfterTheBotLeavesAndRejoins_ModulesViewStillWorks` (the previous state is kept) | Defaults or previous state; no exception (also see area 08 `GuildAdded`) | Settings DB |
-| GEN-173 | Two admins run `/Modules Set` on the same module at the same moment | Both complete **[auto]** `GeneralLeftoverTests.TwoModuleSetsAtOnce_BothComplete_AndTheNewestWriteWins` (each write adds a row; the newest wins) | Final state equals the later write; no error | Settings DB single row |
+| GEN-173 | Two admins run `/Modules Set` on the same module at the same moment | Both complete **[auto]** `GeneralLeftoverTests.TwoModuleSetsAtOnce_BothComplete_AndTheNewestWriteWins` (each write that changes the `Modules` document adds a version; a write that loses the race re-reads and re-applies; a disable that finds the module off already replies "The setting was already set to that value.") | Final state equals the later write; no error | One `Modules` version per write that changed it |
 
 ---
 

@@ -17,6 +17,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Mute;
 
+using Mute = Grimoire.Settings.Domain.Mute;
+
 internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILogger<MuteBackgroundTasks> logger)
     : GenericBackgroundService(serviceProvider, logger, TimeSpan.FromSeconds(5))
 {
@@ -36,7 +38,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
     }
 
     private static async Task ProcessExpiredMuteAsync(
-        MuteAdded expiredMute,
+        Mute expiredMute,
         SettingsModule settingsModule,
         DiscordClient discordClient,
         GuildLog guildLog,
@@ -54,7 +56,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                 return;
             case ExpiredItemAction.Resolve:
                 // The member left, so there is no role to remove and nobody to notify.
-                await RemoveMuteAsync(expiredMute, settingsModule, discordClient, cancellationToken);
+                await RemoveMuteAsync(expiredMute, settingsModule, cancellationToken);
                 return;
         }
 
@@ -78,7 +80,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
             if (configuredRoleId is not null)
                 await issueReporter.ReportAsync(GuildIssueCatalog.MuteRoleMissing(activeGuild.GetGuildId()),
                     cancellationToken);
-            await RemoveMuteAsync(expiredMute, settingsModule, discordClient, cancellationToken);
+            await RemoveMuteAsync(expiredMute, settingsModule, cancellationToken);
             return;
         }
 
@@ -99,7 +101,7 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
                 throw;
             }
 
-        await RemoveMuteAsync(expiredMute, settingsModule, discordClient, cancellationToken);
+        await RemoveMuteAsync(expiredMute, settingsModule, cancellationToken);
 
         // Bots can't DM each other, and DSharpPlus refuses with ArgumentException before sending.
         if (!activeUser.IsBot)
@@ -134,13 +136,15 @@ internal sealed class MuteBackgroundTasks(IServiceProvider serviceProvider, ILog
         }
     }
 
-    /// <summary>Throws on failure, so the mute is retried with a growing delay. NotFound means it's already gone.</summary>
-    private static async Task RemoveMuteAsync(MuteAdded mute, SettingsModule settingsModule, DiscordClient discordClient,
+    /// <summary>
+    ///     Records the mute as Expired (spec 2.2). Throws on failure, so the mute is retried with a growing delay.
+    ///     NotFound means it's already ended, by an unmute.
+    /// </summary>
+    private static async Task RemoveMuteAsync(Mute mute, SettingsModule settingsModule,
         CancellationToken cancellationToken)
     {
-        if (await settingsModule.RemoveMute(mute.UserId, mute.GuildId, new ModeratorId(discordClient.CurrentUser.Id),
-                    cancellationToken)
-                is not (Fin<MuteAdded>.Succ or Fin<MuteAdded>.Fail(NotFound)))
-            throw new InvalidOperationException("Could not remove the expired mute.");
+        if (await settingsModule.ExpireMute(mute, cancellationToken)
+                is not (Fin<Mute>.Succ or Fin<Mute>.Fail(NotFound)))
+            throw new InvalidOperationException("Could not record the expired mute.");
     }
 }

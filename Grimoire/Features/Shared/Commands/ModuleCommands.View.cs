@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
 using JetBrains.Annotations;
 using LanguageExt;
 
@@ -23,7 +24,7 @@ internal sealed partial class ModuleCommands
         var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetAllModuleState(guild.GetGuildId())
-            is not Fin<GuildModuleState>.Succ { Value: var guildSettings })
+            is not Fin<ModuleStates>.Succ { Value: var guildSettings })
         {
             await ctx.SendErrorResponseAsync("Could not load the module states. Please try again later.");
             return;
@@ -31,11 +32,11 @@ internal sealed partial class ModuleCommands
 
         await ctx.ReplyAsync(
             title: "Current states of modules.",
-            message: $"**Leveling Enabled:** {guildSettings.LevelingEnabled}\n" +
-                     $"**User Log Enabled:** {guildSettings.UserLogEnabled}\n" +
-                     $"**Message Log Enabled:** {guildSettings.MessageLogEnabled}\n" +
-                     $"**Moderation Enabled:** {guildSettings.ModerationEnabled}\n" +
-                     $"**Commands Enabled:** {guildSettings.CommandsEnabled}\n" +
-                     $"**Anti Spam Enabled:** {guildSettings.AntiSpamEnabled}\n");
+            message: $"**Leveling Enabled:** {guildSettings.Leveling}\n" +
+                     $"**User Log Enabled:** {guildSettings.UserLog}\n" +
+                     $"**Message Log Enabled:** {guildSettings.MessageLog}\n" +
+                     $"**Moderation Enabled:** {guildSettings.Moderation}\n" +
+                     $"**Commands Enabled:** {guildSettings.Commands}\n" +
+                     $"**Anti Spam Enabled:** {guildSettings.AntiSpam}\n");
     }
 }

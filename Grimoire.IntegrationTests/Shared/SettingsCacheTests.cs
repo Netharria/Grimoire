@@ -17,6 +17,10 @@ using Microsoft.Extensions.DependencyInjection;
 using LogSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogSetting;
 using ModuleArgument = Grimoire.Features.Shared.Commands.ModuleCommands.ModuleArguments;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
+using Grimoire.Settings.Domain.Documents;
+
 namespace Grimoire.IntegrationTests.Shared;
 
 /// <summary>
@@ -180,9 +184,8 @@ public sealed class SettingsCacheTests(GrimoireCoreFactory database) : IAsyncLif
     private async Task DisableLevelingInTheDatabaseAsync()
     {
         await using var settingsContext = database.CreateSettingsDbContext();
-        settingsContext.GuildSettings.Add(GuildSettingDisabled.Create(Module.Leveling.ToGuildSettingType()!.Value, this.GuildId,
-            this.Owner, DateTimeOffset.UtcNow));
-        await settingsContext.SaveChangesAsync(Token);
+        var modules = await SettingsRows.LatestParsed<ModuleStates>(settingsContext, this.GuildId, Token);
+        await SettingsRows.AddNextVersion(settingsContext, this.GuildId, modules with { Leveling = false }, Token);
     }
 
     private Task<FakeReply> LevelAsync() => this._bot.RunSlashCommandAndWaitAsync("level", this.Guild.User1);

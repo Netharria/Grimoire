@@ -134,7 +134,7 @@ public sealed class SettingSaveFailureTests(GrimoireCoreFactory database) : IAsy
     private async Task<T> WhileSettingsCannotBeSavedAsync<T>(Func<Task<T>> action)
     {
         await using var refusing = await database.RefuseSettingsInsertsAsync(
-            "GuildSetting", "MessageLogChannelOverride", "SpamFilterOverride");
+            "GuildSettingRow", "MessageLogChannelOverride", "SpamFilterOverride");
         return await action();
     }
 }

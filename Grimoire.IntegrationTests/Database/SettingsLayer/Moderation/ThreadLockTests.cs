@@ -20,15 +20,14 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
     public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
-    private Task<Fin<ThreadLocked>> Lock(ChannelId channelId, GuildId guildId, DateTimeOffset endTime,
+    private Task<Fin<ThreadLock>> Lock(ChannelId channelId, GuildId guildId, DateTimeOffset endTime,
         string reason = "test")
         => this._sut.AddThreadLock(
-            ThreadLocked.Create(_modId, ModerationReason.FromDatabase(reason),
+            NewThreadLock.Create(_modId, ModerationReason.FromDatabase(reason),
                 channelId, guildId, DateTimeOffset.UtcNow, endTime).ShouldSucceed());
 
-    private Task<Fin<ThreadLocked>> Unlock(ChannelId channelId, GuildId guildId)
-        => this._sut.RemoveThreadLock(
-            ThreadUnlocked.Create(_modId, channelId, guildId, DateTimeOffset.UtcNow));
+    private Task<Fin<ThreadLock>> Unlock(ChannelId channelId, GuildId guildId)
+        => this._sut.RemoveThreadLock(channelId, guildId, _modId);
 
     [Fact]
     public async Task NoLock_IsThreadLocked_ReturnsFalse()
@@ -65,7 +64,6 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         count.ShouldBe(2);
 
         var latest = await db.ThreadLocks
-            .OfType<ThreadLocked>()
             .Where(x => x.ChannelId == _channelId)
             .OrderByDescending(x => x.SetAt)
             .FirstAsync(TestContext.Current.CancellationToken);
@@ -82,21 +80,23 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
     }
 
     [Fact]
-    public async Task RemoveThreadLock_Locked_ReturnsSuccessAndInsertsUnlockEntry()
+    public async Task RemoveThreadLock_Locked_ReturnsSuccessAndMarksTheLockRemoved()
     {
         await Lock(_channelId, _guildId, DateTimeOffset.UtcNow.AddHours(1));
 
         var result = await Unlock(_channelId, _guildId);
 
         result.ShouldSucceed();
-        ((Fin<ThreadLocked>.Succ)result).Value.ShouldNotBeNull();
+        ((Fin<ThreadLock>.Succ)result).Value.ShouldNotBeNull();
 
         await using var db = factory.CreateDbContext();
         var count = await db.ThreadLocks.CountAsync(x => x.ChannelId == _channelId,
             TestContext.Current.CancellationToken);
-        count.ShouldBe(2);
-        (await db.ThreadLocks.OfType<ThreadUnlocked>()
-            .AnyAsync(x => x.ChannelId == _channelId, TestContext.Current.CancellationToken)).ShouldBeTrue();
+        count.ShouldBe(1);
+        var removed = await db.ThreadLocks.SingleAsync(x => x.ChannelId == _channelId,
+            TestContext.Current.CancellationToken);
+        removed.State.ShouldBe("Removed");
+        removed.RemovedBy.ShouldBe(_modId);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         (await freshSut.IsThreadLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
@@ -110,12 +110,12 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         var setAt = DateTimeOffset.UtcNow.AddHours(-2);
 
         await using var db = factory.CreateDbContext();
-        db.ThreadLocks.Add(ThreadLocked.Create(
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("past"), _channelId, _guildId, setAt,
-            setAt.AddHours(1)).ShouldSucceed());
-        db.ThreadLocks.Add(ThreadLocked.Create(
+            setAt.AddHours(1)));
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("future"), futureChannel, _guildId, DateTimeOffset.UtcNow,
-            DateTimeOffset.UtcNow.AddHours(1)).ShouldSucceed());
+            DateTimeOffset.UtcNow.AddHours(1)));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var expired = await this._sut.GetAllExpiredThreadLocks(TestContext.Current.CancellationToken)
@@ -168,9 +168,9 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         var t1 = DateTimeOffset.UtcNow.AddHours(-2);
 
         await using var db = factory.CreateDbContext();
-        db.ThreadLocks.Add(ThreadLocked.Create(
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("locked"), _channelId, _guildId, t1,
-            t1.AddHours(4)).ShouldSucceed());
+            t1.AddHours(4)));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         (await this._sut.IsThreadLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
@@ -186,9 +186,9 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         var t1 = DateTimeOffset.UtcNow.AddHours(-2);
 
         await using var db = factory.CreateDbContext();
-        db.ThreadLocks.Add(ThreadLocked.Create(
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("locked"), _channelId, guildB, t1,
-            t1.AddHours(4)).ShouldSucceed());
+            t1.AddHours(4)));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         (await this._sut.IsThreadLocked(_channelId, _guildId, TestContext.Current.CancellationToken)).ShouldSucceed()
@@ -203,12 +203,12 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         var t2 = DateTimeOffset.UtcNow.AddHours(-1);
 
         await using var db = factory.CreateDbContext();
-        db.ThreadLocks.Add(ThreadLocked.Create(
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("first"), _channelId, _guildId, t1,
-            t1.AddHours(4)).ShouldSucceed());
-        db.ThreadLocks.Add(ThreadLocked.Create(
+            t1.AddHours(4)));
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
-            t2.AddHours(4)).ShouldSucceed());
+            t2.AddHours(4)));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
@@ -236,12 +236,12 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         var t2 = DateTimeOffset.UtcNow.AddHours(-1);
 
         await using var db = factory.CreateDbContext();
-        db.ThreadLocks.Add(ThreadLocked.Create(
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("first"), _channelId, _guildId, t1,
-            t1.AddHours(4)).ShouldSucceed());
-        db.ThreadLocks.Add(ThreadLocked.Create(
+            t1.AddHours(4)));
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
-            t2.AddHours(4)).ShouldSucceed());
+            t2.AddHours(4)));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await Unlock(_channelId, _guildId);
@@ -257,12 +257,12 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         var t2 = DateTimeOffset.UtcNow.AddHours(-1);
 
         await using var db = factory.CreateDbContext();
-        db.ThreadLocks.Add(ThreadLocked.Create(
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("expired"), _channelId, _guildId, t1,
-            t1.AddHours(1)).ShouldSucceed());
-        db.ThreadLocks.Add(ThreadLocked.Create(
+            t1.AddHours(1)));
+        db.ThreadLocks.Add(SettingsRows.ThreadLock(
             _modId, ModerationReason.FromDatabase("other"), otherChannel, _guildId, t2,
-            t2.AddHours(4)).ShouldSucceed());
+            t2.AddHours(4)));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var expired = await this._sut.GetAllExpiredThreadLocks(TestContext.Current.CancellationToken)
@@ -278,20 +278,21 @@ public sealed class ThreadLockTests(SettingsTestsFactory factory) : IAsyncLifeti
         var t2 = DateTimeOffset.UtcNow.AddHours(-1);
 
         var token = TestContext.Current.CancellationToken;
-        (await this._sut.AddThreadLock(ThreadLocked.Create(
+        (await this._sut.AddThreadLock(NewThreadLock.Create(
             _modId, ModerationReason.FromDatabase("old-expired"), _channelId, _guildId, t1,
             t1.AddHours(1)).ShouldSucceed(), token)).ShouldSucceed();
-        (await this._sut.AddThreadLock(ThreadLocked.Create(
+        (await this._sut.AddThreadLock(NewThreadLock.Create(
             _modId, ModerationReason.FromDatabase("newer-active"), _channelId, _guildId, t2,
             t2.AddHours(4)).ShouldSucceed(), token)).ShouldSucceed();
 
         var expired = await this._sut.GetAllExpiredThreadLocks(token).ToListAsync(token);
 
         expired.ShouldBeEmpty();
-        // Review S-13: the newer lock closed the older one in the same save.
+        // TD-1: the newer lock replaced the older one in the same transaction, which is Removed at the newer one's time.
         await using var db = factory.CreateDbContext();
-        var closedAt = await db.ThreadLocks.OfType<ThreadLocked>().OrderBy(x => x.SetAt).Select(x => x.ClosedAt).ToListAsync(token);
-        closedAt[0].ShouldNotBeNull().ShouldBe(t2, TimeSpan.FromMilliseconds(1));
-        closedAt[1].ShouldBeNull();
+        var rows = await db.ThreadLocks.OrderBy(x => x.SetAt).ToListAsync(token);
+        rows[0].State.ShouldBe("Removed");
+        rows[0].EndedAt.ShouldNotBeNull().ShouldBe(t2, TimeSpan.FromMilliseconds(1));
+        rows[1].State.ShouldBe("Active");
     }
 }

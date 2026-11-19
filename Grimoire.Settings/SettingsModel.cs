@@ -34,6 +34,9 @@ public static class SettingsModel
             if (entityType.ClrType.Assembly == typeof(SettingsDbContext).Assembly && entityType.GetTableName() is not null)
                 entityType.Builder.ToSchema(Schema);
 
+        // P-9 for this schema (spec 2.2); public follows in 2.3.
+        modelBuilder.UseBigintIds(type => type.Assembly == typeof(SettingsDbContext).Assembly);
+
         modelBuilder.FixConstraintNames(type => type.Assembly == typeof(SettingsDbContext).Assembly);
     }
 }

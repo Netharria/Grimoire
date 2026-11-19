@@ -13,6 +13,8 @@ using Grimoire.IntegrationTests.FakeDiscord;
 using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
 namespace Grimoire.IntegrationTests.Moderation;
 
 /// <summary>
@@ -163,8 +165,8 @@ public sealed class MuteAdminTests(GrimoireCoreFactory database) : IAsyncLifetim
     private async Task RecordMuteAsync(ulong userId, bool expired = false)
     {
         var now = DateTimeOffset.UtcNow;
-        var mute = MuteAdded.Create(new UserId(userId), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId(1),
-            now.AddMinutes(-10), expired ? now.AddMinutes(-1) : now.AddMinutes(10), null).ShouldSucceed();
+        var mute = SettingsRows.Mute(new UserId(userId), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId((long)userId),
+            now.AddMinutes(-10), expired ? now.AddMinutes(-1) : now.AddMinutes(10), null);
         await using var settingsContext = database.CreateSettingsDbContext();
         settingsContext.Mutes.Add(mute);
         await settingsContext.SaveChangesAsync(TestContext.Current.CancellationToken);

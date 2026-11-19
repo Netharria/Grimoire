@@ -43,22 +43,5 @@ public static class GuildLogTypeExtensions
                 GuildLogType.PublicModeration => Module.Moderation,
                 _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
             };
-
-        public GuildSettingType ToGuildSettingType()
-            => guildLogType switch
-            {
-                GuildLogType.Moderation => GuildSettingType.ModerationLogChannel,
-                GuildLogType.Leveling => GuildSettingType.LevelingLogChannel,
-                GuildLogType.BulkMessageDeleted => GuildSettingType.BulkDeleteLogChannel,
-                GuildLogType.MessageEdited => GuildSettingType.EditLogChannel,
-                GuildLogType.MessageDeleted => GuildSettingType.DeleteLogChannel,
-                GuildLogType.UserJoined => GuildSettingType.JoinLogChannel,
-                GuildLogType.UserLeft => GuildSettingType.LeaveLogChannel,
-                GuildLogType.AvatarUpdated => GuildSettingType.AvatarLogChannel,
-                GuildLogType.NicknameUpdated => GuildSettingType.NicknameLogChannel,
-                GuildLogType.UsernameUpdated => GuildSettingType.UsernameLogChannel,
-                GuildLogType.PublicModeration => GuildSettingType.PublicModerationLogChannel,
-                _ => throw new ArgumentOutOfRangeException(nameof(guildLogType), guildLogType, null)
-            };
     }
 }

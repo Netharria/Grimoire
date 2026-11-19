@@ -26,10 +26,9 @@ public readonly record struct XpGainAmount
 
     /// <summary>
     ///     Stored values are trusted, so a guild keeps its curve when its value is outside today's limits, as main
-    ///     allowed. With no value stored, or one that can't be read, the default applies.
+    ///     allowed (S-1). A missing value is the default, which the settings document decides, not this.
     /// </summary>
-    internal static XpGainAmount FromDatabase(string? input)
-        => int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? new(value) : Default;
+    internal static XpGainAmount FromDatabase(int value) => new(value);
 
     /// <summary>A new value, which must be within today's limits.</summary>
     public static Validation<Error, XpGainAmount> Create(int input)

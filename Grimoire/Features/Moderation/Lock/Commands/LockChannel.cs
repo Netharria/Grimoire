@@ -85,7 +85,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         });
     }
 
-    private Task<Fin<ChannelLocked>> ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId,
+    private Task<Fin<ChannelLock>> ChannelLockAsync(DiscordGuild guild, ModeratorId moderatorId,
         DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount)
@@ -98,7 +98,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
         var lockPermissions = PermissionValues.LockPermissionsFor(channel.Type);
         return ModerationReason.CreateIfNotNull(reason)
             .Bind(validatedReason =>
-                ChannelLocked.Create(
+                NewChannelLock.Create(
                     moderatorId,
                     validatedReason.ToNullable(),
                     channel.GetChannelId(),
@@ -118,7 +118,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
                 settingsModule.AddChannelLock(channelLock));
     }
 
-    private Task<Fin<ThreadLocked>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,
+    private Task<Fin<ThreadLock>> ThreadLockAsync(DiscordGuild guild, ModeratorId moderatorId,
         DiscordChannel channel,
         string? reason,
         DurationType durationType, long durationAmount) =>
@@ -127,7 +127,7 @@ public sealed class LockChannel(SettingsModule settingsModule, GuildLog guildLog
             ? ModerationReason.CreateIfNotNull(reason)
             : new Invalid($"{guild.CurrentMember.Mention} needs **Manage Messages** in {channel.Mention} to lock it."))
             .Bind(validatedReason =>
-                ThreadLocked.Create(
+                NewThreadLock.Create(
                     moderatorId,
                     validatedReason.ToNullable(),
                     channel.GetChannelId(),

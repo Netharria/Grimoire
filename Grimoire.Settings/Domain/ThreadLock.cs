@@ -7,70 +7,61 @@
 
 namespace Grimoire.Settings.Domain;
 
-public abstract record ThreadLock(
-    ModeratorId ModeratorId,
-    ChannelId ChannelId,
+/// <summary>
+///     A stored thread lock: one row per lock, which moves through <see cref="ItemState" /> (TD-1, spec 2.2). Its key
+///     is the thread and the time it was set.
+/// </summary>
+public sealed record ThreadLock(
     GuildId GuildId,
+    ChannelId ChannelId,
+    ModerationReason? Reason,
+    ModeratorId ModeratorId,
     DateTimeOffset SetAt,
-    ModerationReason? Reason);
-
-public sealed record ThreadLocked : ThreadLock
+    DateTimeOffset EndTime,
+    ItemState State)
 {
-    private ThreadLocked(
-        ModeratorId moderatorId,
-        ChannelId channelId,
-        GuildId guildId,
-        DateTimeOffset setAt,
-        ModerationReason? reason,
-        DateTimeOffset endTime)
-        : base(moderatorId, channelId, guildId, setAt, reason)
-    {
-        EndTime = endTime;
-    }
+    public bool InForce => this.State.InForce;
 
-    public DateTimeOffset EndTime { get; }
+    public Fin<ThreadLock> Activate(DateTimeOffset at)
+        => this.State.Activate(at).Map(state => this with { State = state });
 
-    /// <summary>
-    ///     When this lock stopped being in force: the time of the next event for the same thread, an end or a newer
-    ///     lock. Null while it is in force. Only the settings module sets it, in the same save as that event, so the
-    ///     expiry polls can read open rows without searching the whole history (review S-13).
-    /// </summary>
-    public DateTimeOffset? ClosedAt { get; private set; }
+    public Fin<ThreadLock> Expire(DateTimeOffset at)
+        => this.State.Expire(at).Map(state => this with { State = state });
 
-    internal void Close(DateTimeOffset closedAt) => this.ClosedAt = closedAt;
-
-    public static Validation<Error, ThreadLocked> Create(
-        ModeratorId moderatorId,
-        ModerationReason? reason,
-        ChannelId channelId,
-        GuildId guildId,
-        DateTimeOffset setAt,
-        DateTimeOffset endTime)
-    {
-        if (endTime <= setAt)
-            return new Invalid("End time must be after the lock's set time.");
-        return Success<Error, ThreadLocked>(
-            new ThreadLocked(moderatorId, channelId, guildId, setAt, reason, endTime));
-    }
+    public Fin<ThreadLock> Remove(ModeratorId by, ModerationReason? reason, DateTimeOffset at)
+        => this.State.Remove(by, reason, at).Map(state => this with { State = state });
 }
 
-public sealed record ThreadUnlocked : ThreadLock
+/// <summary>A thread lock to record: checked, with no id yet.</summary>
+public sealed record NewThreadLock
 {
-    private ThreadUnlocked(
-        ModeratorId moderatorId,
-        ChannelId channelId,
-        GuildId guildId,
-        DateTimeOffset setAt,
-        ModerationReason? reason)
-        : base(moderatorId, channelId, guildId, setAt, reason)
+    private NewThreadLock(ModeratorId moderatorId, ModerationReason? reason, ChannelId channelId, GuildId guildId,
+        DateTimeOffset setAt, DateTimeOffset endTime)
     {
+        this.ModeratorId = moderatorId;
+        this.Reason = reason;
+        this.ChannelId = channelId;
+        this.GuildId = guildId;
+        this.SetAt = setAt;
+        this.EndTime = endTime;
     }
 
-    public static ThreadUnlocked Create(
+    public ModeratorId ModeratorId { get; }
+    public ModerationReason? Reason { get; }
+    public ChannelId ChannelId { get; }
+    public GuildId GuildId { get; }
+    public DateTimeOffset SetAt { get; }
+    public DateTimeOffset EndTime { get; }
+
+    public static Validation<Error, NewThreadLock> Create(
         ModeratorId moderatorId,
+        ModerationReason? reason,
         ChannelId channelId,
         GuildId guildId,
         DateTimeOffset setAt,
-        ModerationReason? reason = null)
-        => new ThreadUnlocked(moderatorId, channelId, guildId, setAt, reason);
+        DateTimeOffset endTime)
+        => endTime <= setAt
+            ? new Invalid("End time must be after the lock's set time.")
+            : Success<Error, NewThreadLock>(new NewThreadLock(moderatorId, reason, channelId, guildId,
+                ItemState.Stored(setAt), endTime));
 }

@@ -133,7 +133,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
         await using var dbContext = database.CreateDbContext();
         (await dbContext.Sins.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteAdded>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
+        (await settingsContext.Mutes.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
     // ── Scoring ───────────────────────────────────────────────────────────────
@@ -302,7 +302,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
     [Fact]
     public async Task ASpamMuteThatCannotBeRecorded_IsUndone_AndTheModLogTold()
     {
-        await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
+        await using (await database.RefuseSettingsInsertsAsync("MuteRow"))
         {
             await this.SpamAsync(this.Guild.User1, this.Guild.General);
 
@@ -468,7 +468,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
     private static string? Field(JsonNode embed, string name)
         => embed["fields"]?.AsArray().FirstOrDefault(field => field?["name"]?.GetValue<string>() == name)?["value"]?.GetValue<string>();
 
-    private async Task<MuteAdded> ActiveMuteAsync(FakeUser user)
+    private async Task<Mute> ActiveMuteAsync(FakeUser user)
         => await GrimoireTestBot.EventuallyAsync(
             async () => (await this.Settings.GetActiveMute(new UserId(user.Id), this.GuildId)).Match(mute => mute, _ => null!),
             mute => mute is not null) ?? throw new ShouldAssertException($"{user.Username} has no active mute");

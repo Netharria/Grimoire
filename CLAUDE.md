@@ -63,7 +63,9 @@ Seven projects in the solution:
   temporary, `[Obsolete]` bridge for `Task<Fin<T>>` chains (spec 1.1). Has `InternalsVisibleTo("Grimoire.Data")` so EF
   value converters can use `internal` factory methods (`FromDatabase`, `ParseFromDatabase`).
 - **Grimoire.Settings** — Separate DbContext (`SettingsDbContext`, model built by `SettingsModel.Configure`) for
-  per-guild settings, in the `Settings` schema. Its service layer (`SettingsModule`) caches reads through
+  per-guild settings, in the `Settings` schema (ids `bigint`). Guild settings are versioned JSON documents, one per
+  module plus `Modules` for the on/off flags (`Domain/Documents`, C13); mutes and locks are one state row each
+  (`ItemState`, TD-1), mapped from internal rows in `Rows/` (spec 2.2). Its service layer (`SettingsModule`) caches reads through
   `HybridCache`, backed by FusionCache.
 - **Grimoire.Migrations** — Migrations only (spec 2.0): `GrimoireMigrationsDbContext`, whose model is both runtime
   models together, holds the one ordered chain for both schemas and the one snapshot. Startup applies it through

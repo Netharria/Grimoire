@@ -5,11 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
 
-using System.Collections.Frozen;
-using System.Globalization;
 using Grimoire.Settings.Domain;
-using Grimoire.Settings.Enums;
+using Grimoire.Settings.Domain.Documents;
 using Grimoire.Settings.Helpers;
+using Grimoire.Settings.Rows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
@@ -21,6 +20,9 @@ public sealed partial class SettingsModule(
     HybridCache cache,
     ILogger<SettingsModule> logger)
 {
+    /// <summary>How many times a document write re-reads and re-applies after losing a race (spec 2.2, section 2.3).</summary>
+    private const int DocumentWriteAttempts = 3;
+
     private readonly HybridCache _cache = cache;
 
     private readonly HybridCacheEntryOptions _cacheEntryOptions = new() { Expiration = TimeSpan.FromDays(1) };
@@ -28,72 +30,98 @@ public sealed partial class SettingsModule(
     private readonly IDbContextFactory<SettingsDbContext> _dbContextFactory = dbContextFactory;
     private readonly ILogger<SettingsModule> _logger = logger;
 
-    private Task<Fin<CachedSetting>> GetGuildSetting(GuildSettingType key, GuildId guildId,
-        CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct => Fin.Succ<CachedSetting>(
+    /// <summary>
+    ///     A guild's document, cached under its own key (C13). A missing document is <c>Empty</c>, which means every
+    ///     setting in it is the default. One that doesn't parse fails rather than reading as defaults.
+    /// </summary>
+    private Task<Fin<T>> GetDocument<T>(GuildId guildId, CancellationToken cancellationToken)
+        where T : class, ISettingsDocument<T>
+        => ExecuteSafelyAsync(async ct => Fin.Succ<T>(
                 await this._cache.GetOrCreateAsync(
-                        CacheKey.GuildSetting(key, guildId),
-                        new { key, guildId, this._dbContextFactory },
-                        async (state, innerCt) =>
-                        {
-                            await using var dbContext = await state._dbContextFactory.CreateDbContextAsync(innerCt);
-                            var result = await dbContext.GuildSettings
-                                .AsNoTracking()
-                                .Where(setting => setting.Type == state.key && setting.GuildId == state.guildId)
-                                .OrderByDescending(setting => setting.SetAt)
-                                .FirstOrDefaultAsync(innerCt);
-                            return ToCachedSetting(result);
-                        }, this._cacheEntryOptions,
-                        cancellationToken: ct)),
-            $"Failed when retrieving entry for {key} for guild {guildId}",
+                    CacheKey.Document(T.Kind, guildId),
+                    (guildId, this._dbContextFactory),
+                    static async (state, innerCt) =>
+                    {
+                        await using var dbContext = await state._dbContextFactory.CreateDbContextAsync(innerCt);
+                        return ParseOrEmpty<T>(await LatestDocument(dbContext, state.guildId, T.Kind, innerCt));
+                    },
+                    this._cacheEntryOptions,
+                    cancellationToken: ct)),
+            $"Failed when retrieving the {T.Kind} settings for guild {guildId}",
             cancellationToken);
 
-    /// <remarks>
-    ///     A failure is thrown, not swallowed: an empty result would read as "no custom settings", and the caller
-    ///     caches what it builds from that.
-    /// </remarks>
-    private async Task<List<GuildSetting>> GetGuildSettings(
+    /// <summary>
+    ///     Applies <paramref name="change" /> to the latest version of a document and stores the result as the next
+    ///     version (TD-6). A change that leaves the document as it was stores nothing. A write that loses a race with
+    ///     another one re-reads and re-applies, so neither is lost. The cache key is cleared on every path (KI-103).
+    /// </summary>
+    private Task<Fin<Write<T>>> UpdateDocument<T>(
         GuildId guildId,
-        FrozenSet<GuildSettingType> settingTypes,
-        CancellationToken cancellationToken = default)
-    {
-        await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(cancellationToken);
-        return await dbContext.GuildSettings
-            .AsNoTracking()
-            .Where(s => s.GuildId == guildId && settingTypes.Contains(s.Type))
-            .GroupBy(s => s.Type)
-            .Select(g => g.OrderByDescending(s => s.SetAt).First())
-            .ToListAsync(cancellationToken);
-    }
-
-
-    private static CachedSetting ToCachedSetting(GuildSetting? guildSetting) =>
-        guildSetting switch
-        {
-            GuildSettingCustomValue customValue => new CachedCustomSetting(customValue.Value),
-            GuildSettingDisabled => new CachedDisabledSetting(),
-            _ => new CachedDefaultSetting()
-        };
-
-    private Task<Fin<Write<GuildSetting>>> SetGuildSetting(GuildSetting newSetting,
-        CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync<Write<GuildSetting>>(async ct =>
+        ModeratorId setBy,
+        Func<T, Fin<T>> change,
+        CancellationToken cancellationToken)
+        where T : class, ISettingsDocument<T>
+        => ExecuteSafelyAsync<Write<T>>(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
-            var current = await dbContext.GuildSettings
-                .AsNoTracking()
-                .Where(s => s.GuildId == newSetting.GuildId && s.Type == newSetting.Type)
-                .OrderByDescending(s => s.SetAt)
-                .FirstOrDefaultAsync(ct);
+            for (var attempt = 0; attempt < DocumentWriteAttempts; attempt++)
+            {
+                var latest = await LatestDocument(dbContext, guildId, T.Kind, ct);
+                var current = ParseOrEmpty<T>(latest);
+                var changed = change(current);
+                if (changed is Fin<T>.Fail(var error))
+                    return error;
+                var updated = (T)changed;
 
-            if (IsRedundantWrite(current, newSetting))
-                return new Write<GuildSetting>.Unchanged("The setting was already set to that value.");
-            dbContext.GuildSettings.Add(newSetting);
-            await dbContext.SaveChangesAsync(ct);
-            await this._cache.RemoveAsync(CacheKey.GuildSetting(newSetting.Type, newSetting.GuildId), ct);
-            return new Write<GuildSetting>.Saved(newSetting);
-        }, "Was not able to save the setting to the database.",
-            cancellationToken);
+                // Value equality: on a generic T, == would compare references and see every write as a change.
+                if (EqualityComparer<T>.Default.Equals(updated, current))
+                {
+                    await this._cache.RemoveAsync(CacheKey.Document(T.Kind, guildId), ct);
+                    return new Write<T>.Unchanged("The setting was already set to that value.");
+                }
+
+                if (await InsertNextVersion(dbContext, guildId, T.Kind, latest?.Version ?? 0,
+                        SettingsJson.Serialize(updated), setBy, ct))
+                {
+                    await this._cache.RemoveAsync(CacheKey.Document(T.Kind, guildId), ct);
+                    return new Write<T>.Saved(updated);
+                }
+            }
+
+            return new Unavailable($"The {T.Kind} settings kept changing while they were being saved.");
+        }, "Was not able to save the setting to the database.", cancellationToken);
+
+    private static T ParseOrEmpty<T>(GuildSettingRow? row) where T : class, ISettingsDocument<T>
+        => row is null ? T.Empty : SettingsJson.Parse<T>(row.Value);
+
+    private static Task<GuildSettingRow?> LatestDocument(SettingsDbContext dbContext, GuildId guildId,
+        SettingsDocument document, CancellationToken cancellationToken)
+        => dbContext.GuildSettings
+            .AsNoTracking()
+            .Where(row => row.GuildId == guildId && row.Document == document)
+            .OrderByDescending(row => row.Version)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    /// <summary>
+    ///     Inserts version <paramref name="expected" /> + 1, only if <paramref name="expected" /> is still the latest.
+    ///     False means another write got there first. The race is in the statement, not in a caught exception: two
+    ///     inserts that both pass the check meet the primary key, and <c>ON CONFLICT DO NOTHING</c> drops the second.
+    /// </summary>
+    private static async Task<bool> InsertNextVersion(SettingsDbContext dbContext, GuildId guildId,
+        SettingsDocument document, int expected, string value, ModeratorId setBy, CancellationToken cancellationToken)
+    {
+        var guild = unchecked((long)guildId.Value);
+        var name = document.ToString();
+        var moderator = unchecked((long)setBy.Value);
+        var setAt = DateTimeOffset.UtcNow;
+        return await dbContext.Database.ExecuteSqlAsync($"""
+            INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+            SELECT {guild}, {name}, {expected} + 1, CAST({value} AS jsonb), {moderator}, {setAt}
+            WHERE COALESCE((SELECT max("Version") FROM "Settings"."GuildSettings"
+                            WHERE "GuildId" = {guild} AND "Document" = {name}), 0) = {expected}
+            ON CONFLICT DO NOTHING
+            """, cancellationToken) == 1;
+    }
 
     [LoggerMessage(LogLevel.Error, "Settings module operation failed: {message}")]
     private static partial void LogOperationFailure(ILogger logger, string message, Exception? ex);
@@ -118,65 +146,17 @@ public sealed partial class SettingsModule(
         }
     }
 
-    private static bool IsRedundantWrite(GuildSetting? current, GuildSetting incoming) =>
-        (current, incoming) switch
-        {
-            (GuildSettingDisabled, GuildSettingDisabled) => true,
-            (GuildSettingDefault, GuildSettingDefault) => true,
-            (GuildSettingCustomValue a, GuildSettingCustomValue b) =>
-                string.Equals(a.Value, b.Value, StringComparison.Ordinal),
-            _ => false
-        };
-
     public Task<Fin<Option<ChannelId>>> GetUserCommandChannel(GuildId guildId,
         CancellationToken cancellationToken = default)
-        => GetGuildSetting(GuildSettingType.UserCommandChannel, guildId, cancellationToken)
-            .MapFin(ParseChannelId);
+        => GetDocument<GeneralConfig>(guildId, cancellationToken)
+            .MapFin(general => Optional(general.UserCommandChannel));
 
     public Task<Fin<Write<Option<ChannelId>>>> SetUserCommandChannelSetting(
         GuildId guildId,
         ModeratorId moderatorId,
         ChannelId? channelId,
         CancellationToken cancellationToken = default)
-        => SetChannelSetting(GuildSettingType.UserCommandChannel, guildId, moderatorId, channelId, cancellationToken);
-
-    /// <summary>Saves a channel setting. A null channel turns the setting off.</summary>
-    private Task<Fin<Write<Option<ChannelId>>>> SetChannelSetting(
-        GuildSettingType type,
-        GuildId guildId,
-        ModeratorId moderatorId,
-        ChannelId? channelId,
-        CancellationToken cancellationToken)
-        => ApplyGuildSetting(channelId is { } id
-                    ? GuildSettingCustomValue.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow,
-                        id.Value.ToString(CultureInfo.InvariantCulture))
-                    : Success<Error, GuildSetting>(
-                        GuildSettingDisabled.Create(type, guildId, moderatorId, DateTimeOffset.UtcNow)),
-                cancellationToken)
-            .MapFin(write => write.Map(_ => Optional(channelId)));
-
-    private Task<Fin<Write<GuildSetting>>> ApplyGuildSetting(Validation<Error, GuildSetting> validation,
-        CancellationToken cancellationToken = default)
-        => validation.ToFin().BindAsync(setting => SetGuildSetting(setting, cancellationToken));
-
-    private static Option<T> ParseId<T>(CachedSetting setting, Func<ulong, T> create) =>
-        setting is CachedCustomSetting { Value: var v }
-        && ulong.TryParse(v, NumberStyles.None, CultureInfo.InvariantCulture, out var id)
-        && id != 0
-            ? create(id)
-            : None;
-
-    private static Option<ChannelId> ParseChannelId(CachedSetting setting)
-        => ParseId(setting, id => new ChannelId(id));
-
-    private static Option<RoleId> ParseRoleId(CachedSetting setting)
-        => ParseId(setting, id => new RoleId(id));
-
-    private abstract record CachedSetting;
-
-    private record CachedDefaultSetting : CachedSetting;
-
-    private record CachedDisabledSetting : CachedSetting;
-
-    private record CachedCustomSetting(string Value) : CachedSetting;
+        => UpdateDocument<GeneralConfig>(guildId, moderatorId,
+                general => general with { UserCommandChannel = channelId }, cancellationToken)
+            .MapFin(write => write.Map(general => Optional(general.UserCommandChannel)));
 }

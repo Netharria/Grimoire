@@ -17,8 +17,8 @@ Do the standard preflight from `00-environment.md` first. Also:
   ManageRoles, ManageChannels, ManageMessages and View Audit Log for the happy paths; remove one at a time for the
   bot-lacks-permission cases and restore it afterwards.
 - "Sins" = `Sins` and `SinReasonHistory` in `GrimoireDbContext`. "Mutes", "ChannelLocks" and "ThreadLocks" are in
-  `GrimoireSettingsDbContext` (append-only event rows: the latest row per user/channel is the current state, so
-  "unmute" adds a `MuteRemoved` row rather than deleting). Table names assume EF defaults; adjust to your schema.
+  `GrimoireSettingsDbContext` (one row per mute or lock, spec 2.2: its `State` moves from `Active` to `Expired`, or to
+  `Removed` when a moderator ends it or a newer mute or lock replaces it; nothing is deleted). Table names assume EF defaults; adjust to your schema.
 - Have a disposable account (`user2`) you can ban, kick and re-invite repeatedly. Keep an invite link handy.
 
 ## Behaviour summary (what the code does)
@@ -30,7 +30,7 @@ Do the standard preflight from `00-environment.md` first. Also:
 | `/Kick member [reason]` | KickMembers | KickMembers | Sin (Kick) + reason | public embed | yes (same embed) |
 | `/Warn user reason` | ManageMessages (`RequirePermissions`) | none | Sin (Warn) + reason | public embed, then DM | yes |
 | `/Mute user duration_type duration_amount [reason]` | ManageMessages | ManageRoles | Sin (Mute) + `Mutes` row | public embed, then DM | yes |
-| `/Unmute user` | ManageMessages | ManageRoles | `MuteRemoved` row | public embed, then DM | yes |
+| `/Unmute user` | ManageMessages | ManageRoles | mute row moves to `Removed` | public embed, then DM | yes |
 | `/Lock duration_type duration_amount [channel] [reason]` | ManageMessages (`RequirePermissions`) | ManageChannels | `ChannelLocks` / `ThreadLocks` row | public text | yes |
 | `/Unlock [channel]` | ManageMessages | ManageChannels | unlock row | public text | yes |
 | `/Mutes Create` | ManageGuild | ManageRoles | mute role setting | several public messages + diagnostics follow-up | yes |
@@ -196,15 +196,15 @@ Precondition unless stated: mute role configured (MOD-73 or MOD-79), `user2` in 
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| MOD-90 | `user2` DMs open | `mod` runs `/Mute user:user2 duration_type:Minutes duration_amount:2 reason:"cooldown"` | Red embed "Mute": User, Sin Id, Moderator, Length "2 Minutes", Reason. `user2` receives the `@Muted` role (Audit Log reason "cooldown"). DM: "You have been muted for 2 Minutes by @mod for cooldown". `user2` cannot send in `#general`, cannot react, cannot speak in voice | `Sins` row type Mute + reason. `Mutes`: `MuteAdded` row with `MuteRoleId` = the configured role and `EndTime` about now+2 min. `#modlog` embed |
+| MOD-90 | `user2` DMs open | `mod` runs `/Mute user:user2 duration_type:Minutes duration_amount:2 reason:"cooldown"` | Red embed "Mute": User, Sin Id, Moderator, Length "2 Minutes", Reason. `user2` receives the `@Muted` role (Audit Log reason "cooldown"). DM: "You have been muted for 2 Minutes by @mod for cooldown". `user2` cannot send in `#general`, cannot react, cannot speak in voice | `Sins` row type Mute + reason. `Mutes`: an `Active` row with `MuteRoleId` = the configured role and `EndTime` about now+2 min. `#modlog` embed |
 | MOD-91 | none | Mute with `Hours:1` and `Days:1` | Length shown correctly; `EndTime` matches | `Mutes.EndTime` = now + 1 h / 1 d |
 | MOD-92 | none | Mute without a reason | Embed has no Reason field. The role grant passes a null audit reason; DM says "...by @mod for " with an empty tail. Record exactly what is sent (observation 5) | Sin row, no reason history |
 | MOD-93 | none | `duration_amount:0` | Accepted (min is 0). Role granted; mute expires on the next tick (about 5 s) | `Mutes` `EndTime` about now. See MOD-124 for the expiry behaviour |
 | MOD-94 | none | `duration_amount:-1` | Client rejects | none |
 | MOD-95 | `user2` DMs closed | `/Mute user:user2 ...` | Mute still works; embed shown | `#modlog` red line "Was not able to send a direct message with the mute details to @user2." **and** the mute embed |
-| MOD-96 | `user2` already muted (MOD-90 active) | Mute again with a different duration | Role is already present; second embed shown | A second `MuteAdded` row (newer `SetAt`); the newer row is the active one, so expiry follows the **new** end time. Two Sin rows |
+| MOD-96 | `user2` already muted (MOD-90 active) | Mute again with a different duration | Role is already present; second embed shown | The first mute row moves to `Removed` (by `mod`, at the new mute's time) and a new `Active` row holds the **new** end time, which expiry follows. Two Sin rows |
 | MOD-97 | 1001-character reason | Run `/Mute` | Client rejects | none |
-| MOD-99 | Moderation enabled, bot restarted during an active mute | Restart the bot, then wait for expiry | Mute expires on schedule after restart (persisted) | `MuteRemoved` row appears |
+| MOD-99 | Moderation enabled, bot restarted during an active mute | Restart the bot, then wait for expiry | Mute expires on schedule after restart (persisted) | The mute row moves to `Expired` |
 
 ### F2. Permission and target checks
 
@@ -216,8 +216,8 @@ Precondition unless stated: mute role configured (MOD-73 or MOD-79), `user2` in 
 | MOD-103 | No mute role configured | `/Mute user:user2 ...` | Yellow "The mute role is not configured. Please configure it before using this command." | No Sin, no Mutes row |
 | MOD-104 | Moderation disabled | `/Mute` | "This module is disabled in this server." | none |
 | MOD-105 | Bot lacks ManageRoles | `/Mute` | Bot-permission check message | none |
-| MOD-106 | Configured role id exists in settings but the role was deleted in Discord | `/Mute user:user2 ...` | Yellow "The configured mute role does not exist. Please configure it again..." | **A Sin row and a `MuteAdded` row are already saved** even though no role was granted (observation 4). `/Mutes View` may list `user2` |
-| MOD-107 | Mute role above the bot role | `/Mute user:user2 ...` | Discord refuses (403). Bot-missing-permissions embed with suggested fix | Sin + `MuteAdded` rows exist but no role was granted (same phantom-record issue as MOD-106); `#alerts`/mod log gets the guild issue |
+| MOD-106 | Configured role id exists in settings but the role was deleted in Discord | `/Mute user:user2 ...` | Yellow "The configured mute role does not exist. Please configure it again..." | **A Sin row and an `Active` mute row are already saved** even though no role was granted (observation 4). `/Mutes View` may list `user2` |
+| MOD-107 | Mute role above the bot role | `/Mute user:user2 ...` | Discord refuses (403). Bot-missing-permissions embed with suggested fix | A Sin row and an `Active` mute row exist but no role was granted (same phantom-record issue as MOD-106); `#alerts`/mod log gets the guild issue |
 | MOD-108 | none | `mod` mutes `higher` | Discord 403; same handling as MOD-107 | phantom rows |
 | MOD-109 | none | `mod` mutes `admin` (below bot, above `mod`) | Allowed (no invoker-hierarchy check). Confirm intent | rows |
 | MOD-110 | none | `mod` mutes themself and the bot | Self-mute works (no self check); bot mute is refused with 403 or accepted depending on hierarchy. Record | rows |
@@ -229,18 +229,18 @@ Precondition unless stated: mute role configured (MOD-73 or MOD-79), `user2` in 
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| MOD-112 | `user2` muted by MOD-90 | `mod` runs `/Unmute user:user2` | Green embed "Unmute": User, Moderator. Role removed (audit reason "Unmuted by mod", the username). DM "You have been unmuted by @mod". `user2` can speak again | New `MuteRemoved` row; original `MuteAdded` row untouched. `#modlog` embed |
+| MOD-112 | `user2` muted by MOD-90 | `mod` runs `/Unmute user:user2` | Green embed "Unmute": User, Moderator. Role removed (audit reason "Unmuted by mod", the username). DM "You have been unmuted by @mod". `user2` can speak again | The mute row moves to `Removed`, with `RemovedBy` = `mod` and `EndedAt` set. `#modlog` embed |
 | MOD-113 | `user2` DMs closed | Unmute | Works; embed shown | `#modlog` red line "Was not able to send a direct message with the unmute details to @user2" plus the embed |
 | MOD-114 | `user2` **not** muted, no role | `/Unmute user:user2` | Configured role is resolved and "revoked" (no-op); the "Unmute" embed and DM are still sent. No "not muted" message. **Misleading**: report it | `RemoveMute` finds nothing; no rows written |
 | MOD-115 | `user2` has the Muted role added by hand, no DB record | `/Unmute user:user2` | Role is removed (fallback to configured role) | none |
-| MOD-116 | `user2` muted; then run `/Mutes Set` to point at a different role B; the recorded role is still A | `/Unmute user:user2` | Role **A** (recorded) is removed, not B | `MuteRemoved` row |
-| MOD-117 | `user2` muted with role A, then A deleted in Discord; configured role B exists | `/Unmute` | Falls back to B; B removal is a no-op; embed shown | `MuteRemoved` row |
-| MOD-118 | Muted with role A; A deleted; **no** configured role (delete the setting row, restart the bot) | `/Unmute` | Yellow message: "The role this member was muted with no longer exists and no mute role is set... Their mute is cleared" | `MuteRemoved` row; no embed/DM/mod-log |
-| MOD-119 | Bot role below the mute role | `/Unmute user:user2` | Discord 403 -> bot-missing-permissions embed | **No** `MuteRemoved` row (mute stays recorded, per code comment). Fix the hierarchy and retry succeeds |
+| MOD-116 | `user2` muted; then run `/Mutes Set` to point at a different role B; the recorded role is still A | `/Unmute user:user2` | Role **A** (recorded) is removed, not B | Mute row `Removed` |
+| MOD-117 | `user2` muted with role A, then A deleted in Discord; configured role B exists | `/Unmute` | Falls back to B; B removal is a no-op; embed shown | Mute row `Removed` |
+| MOD-118 | Muted with role A; A deleted; **no** configured role (delete the setting row, restart the bot) | `/Unmute` | Yellow message: "The role this member was muted with no longer exists and no mute role is set... Their mute is cleared" | Mute row `Removed`; no embed/DM/mod-log |
+| MOD-119 | Bot role below the mute role | `/Unmute user:user2` | Discord 403 -> bot-missing-permissions embed | The mute row stays `Active` (mute stays recorded, per code comment). Fix the hierarchy and retry succeeds |
 | MOD-120 | none | `user1` (no perms) | Permission error | none |
 | MOD-121 | Bot lacks ManageRoles | `/Unmute` | Bot-permission check message | none |
 | MOD-122 | Moderation disabled | `/Unmute` | "This module is disabled in this server." | none |
-| MOD-123 | After an unmute | Wait past the original `EndTime` | Nothing more happens: no "Mute expired" DM or log (record is superseded by `MuteRemoved`) | no new rows |
+| MOD-123 | After an unmute | Wait past the original `EndTime` | Nothing more happens: no "Mute expired" DM or log (the mute row is `Removed` already) | no new rows |
 
 ---
 
@@ -250,23 +250,23 @@ Use 1-minute mutes. Console at Debug for `Grimoire.Features.Moderation.Mute`.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| MOD-124 | `user2` muted 1 min, DMs open | Wait for expiry plus about 10 s | Role removed (audit reason "Mute expired"). DM embed "Mute on @user2 has expired." `#modlog` "Mute on @user2 has expired." | `MuteRemoved` row with moderator = the bot user |
-| MOD-125 | `user2` muted 1 min, DMs closed | Wait | Role removed; DM failure ignored; mod-log line still posted | `MuteRemoved` row |
-| MOD-126 | Muted 1 min; remove the role by hand before expiry | Wait | No role revoke attempted; DM and mod-log still sent | `MuteRemoved` row |
-| MOD-127 | Muted 1 min; `user2` **leaves** the guild before expiry | Wait | Nothing sent, nothing to remove | `MuteRemoved` row (Resolve path). `user2` rejoining after this is **not** muted |
+| MOD-124 | `user2` muted 1 min, DMs open | Wait for expiry plus about 10 s | Role removed (audit reason "Mute expired"). DM embed "Mute on @user2 has expired." `#modlog` "Mute on @user2 has expired." | The mute row moves to `Expired` |
+| MOD-125 | `user2` muted 1 min, DMs closed | Wait | Role removed; DM failure ignored; mod-log line still posted | Mute row `Expired` |
+| MOD-126 | Muted 1 min; remove the role by hand before expiry | Wait | No role revoke attempted; DM and mod-log still sent | Mute row `Expired` |
+| MOD-127 | Muted 1 min; `user2` **leaves** the guild before expiry | Wait | Nothing sent, nothing to remove | Mute row `Expired` (Resolve path). `user2` rejoining after this is **not** muted |
 | MOD-128 | Muted 5 min; `user2` leaves then rejoins **before** expiry | Rejoin | `user2` receives the mute role again (audit reason "Rejoined while muted") | none; the mute record is unchanged |
 | MOD-129 | Same as MOD-128 but rejoin **after** the `EndTime` and after the task ran | Rejoin | No role given | none |
-| MOD-130 | Same as MOD-128 but rejoin after `EndTime` **while** the task has not run (stop the bot, wait, rejoin, start the bot) | Rejoin then start | On rejoin: no role (end time passed). On start: expiry task finds the member with no role, records the removal, sends the DM and log | `MuteRemoved` row |
-| MOD-131 | `user2` was muted then unmuted (MOD-112) | Leave and rejoin | No role given (latest row is `MuteRemoved`) | none |
+| MOD-130 | Same as MOD-128 but rejoin after `EndTime` **while** the task has not run (stop the bot, wait, rejoin, start the bot) | Rejoin then start | On rejoin: no role (end time passed). On start: expiry task finds the member with no role, records the removal, sends the DM and log | Mute row `Expired` |
+| MOD-131 | `user2` was muted then unmuted (MOD-112) | Leave and rejoin | No role given (the mute row is `Removed`) | none |
 | MOD-132 | Muted with role A, A deleted, configured role B is set; `user2` leaves and rejoins before expiry | Rejoin | Role **B** is granted (fallback) | none |
 | MOD-133 | Moderation disabled while the member is muted and leaves/rejoins | Rejoin | No role granted | none |
-| MOD-134 | Bot role dropped **below** the mute role before expiry | Wait for expiry | Revoke fails; a `CannotUnmuteMember` guild issue is raised (mod log / `#alerts`). Role stays on `user2`. No mod-log "expired" line | **No** `MuteRemoved` row. Console error at the next attempt |
-| MOD-135 | Continue MOD-134 and restore the hierarchy | Wait up to the backoff (first retry 30 s, then 60 s...) | Role removed, DM and log sent on the next allowed attempt | `MuteRemoved` row |
-| MOD-136 | Muted 1 min; delete the mute role in Discord; the configured setting still points to it | Wait | `MuteRoleMissing` issue is reported; nothing to remove | `MuteRemoved` row (removed so it is not retried forever) |
-| MOD-137 | Muted 1 min; delete the mute role and clear the setting | Wait | No issue reported (nothing configured to complain about) | `MuteRemoved` row |
-| MOD-138 | Muted with role A; set configured role to B via `/Mutes Set` | Wait for expiry | Role A (recorded) is removed | `MuteRemoved` row |
-| MOD-139 | Test a mute row for a guild the bot is no longer in (insert manually or leave Test-B with an expired mute) | Wait | Nothing happens; the record is kept (`KeepForLater`) and no repeated Discord calls in the log | Row remains, no `MuteRemoved` |
-| MOD-140 | Two users muted with expiries within the same tick | Wait | Both handled independently. A failure on one (MOD-134) does not block the other | one `MuteRemoved` each; failed one absent |
+| MOD-134 | Bot role dropped **below** the mute role before expiry | Wait for expiry | Revoke fails; a `CannotUnmuteMember` guild issue is raised (mod log / `#alerts`). Role stays on `user2`. No mod-log "expired" line | The mute row stays `Active`. Console error at the next attempt |
+| MOD-135 | Continue MOD-134 and restore the hierarchy | Wait up to the backoff (first retry 30 s, then 60 s...) | Role removed, DM and log sent on the next allowed attempt | Mute row `Expired` |
+| MOD-136 | Muted 1 min; delete the mute role in Discord; the configured setting still points to it | Wait | `MuteRoleMissing` issue is reported; nothing to remove | Mute row `Expired` (removed so it is not retried forever) |
+| MOD-137 | Muted 1 min; delete the mute role and clear the setting | Wait | No issue reported (nothing configured to complain about) | Mute row `Expired` |
+| MOD-138 | Muted with role A; set configured role to B via `/Mutes Set` | Wait for expiry | Role A (recorded) is removed | Mute row `Expired` |
+| MOD-139 | Test a mute row for a guild the bot is no longer in (insert manually or leave Test-B with an expired mute) | Wait | Nothing happens; the record is kept (`KeepForLater`) and no repeated Discord calls in the log | The row stays `Active` |
+| MOD-140 | Two users muted with expiries within the same tick | Wait | Both handled independently. A failure on one (MOD-134) does not block the other | each row moves to `Expired`; the failed one stays `Active` |
 | MOD-141 | `/Mutes View` while a mute has expired but the task has not yet run | View | The member is still listed (expired mutes are not filtered) | none |
 | MOD-142 | Muted user leaves | `/Mutes View` | Leaver is **not** listed even though the mute is active | none |
 | MOD-143 | 30+ muted members | `/Mutes View` | The list is paged: every muted member is listed, with Page N of M in the footer and buttons for the invoker | none. **[auto]** `PaginationTests.MutesView_EphemeralList_PagesForTheInvoker`, `Buttons_WorkForTheInvokerOnly` |
@@ -281,14 +281,14 @@ Use `#locktest` unless stated. Verify the lock by having `user1` try to send a m
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| MOD-144 | `#locktest` has **no** `@everyone` overwrite | `mod` runs `/Lock duration_type:Minutes duration_amount:2` in `#locktest` (no channel option) | "#locktest has been locked for 2 Minutes". `@everyone` overwrite now denies Send Messages, Send in Threads, TTS, Add Reactions. `user1` cannot post or react. Admin/mod still can | `ChannelLocks`: `ChannelLocked` row, `EndTime` now+2 min, previous allowed/denied = 0. `#modlog` "#locktest has been locked for 2 Minutes by @mod" |
+| MOD-144 | `#locktest` has **no** `@everyone` overwrite | `mod` runs `/Lock duration_type:Minutes duration_amount:2` in `#locktest` (no channel option) | "#locktest has been locked for 2 Minutes". `@everyone` overwrite now denies Send Messages, Send in Threads, TTS, Add Reactions. `user1` cannot post or react. Admin/mod still can | `ChannelLocks`: an `Active` row, `EndTime` now+2 min, previous allowed/denied = 0. `#modlog` "#locktest has been locked for 2 Minutes by @mod" |
 | MOD-145 | Same, with `reason:"raid"` | Lock | Log line ends "for raid" | `ChannelLocks` row has the reason |
 | MOD-146 | none | Lock with `channel:#locktest` while running in `#general` | Locks `#locktest` | row for `#locktest` |
 | MOD-147 | `#locktest` has an `@everyone` overwrite **allowing** Send Messages and denying Attach Files | Lock | Send Messages flips to deny; **Attach Files stays denied** | Previous allowed has Send Messages bit recorded |
 | MOD-148 | `#locktest` has `@everyone` deny Add Reactions already | Lock then Unlock | After unlock the deny on Add Reactions is still there (restored to previous state, not cleared) | Recorded previous denied contains the bit |
-| MOD-149 | Locked (MOD-144) | `/Unlock channel:#locktest` | "#locktest has been unlocked". Overwrite restored exactly to its pre-lock state (removed bits gone, previously allowed bits back). `user1` can post again | New `ChannelUnlocked` row. `#modlog` "@mod unlocked #locktest" |
+| MOD-149 | Locked (MOD-144) | `/Unlock channel:#locktest` | "#locktest has been unlocked". Overwrite restored exactly to its pre-lock state (removed bits gone, previously allowed bits back). `user1` can post again | The lock row moves to `Removed`. `#modlog` "@mod unlocked #locktest" |
 | MOD-150 | `#locktest` not locked | `/Unlock` | "#locktest is not locked." | none |
-| MOD-151 | Locked; run `/Lock` again with a longer duration | Second lock | Reply "locked for N ...". Overwrite still locked. **Original previous permissions are preserved** (a later unlock restores the true pre-lock state, not the locked state) | Second `ChannelLocked` row with the **first** row's previous allowed/denied values and the new `EndTime` |
+| MOD-151 | Locked; run `/Lock` again with a longer duration | Second lock | Reply "locked for N ...". Overwrite still locked. **Original previous permissions are preserved** (a later unlock restores the true pre-lock state, not the locked state) | The first lock row moves to `Removed`; a new `Active` row has the **first** row's previous allowed/denied values and the new `EndTime` |
 | MOD-152 | Continue MOD-151 | `/Unlock` | Overwrite equals the original pre-lock state | unlock row |
 | MOD-153 | Locked | Manually change the `@everyone` overwrite for an unrelated bit (e.g. deny Embed Links), then `/Unlock` | Embed Links deny stays; only lock bits revert | unlock row |
 | MOD-154 | none | `/Lock ... channel:` a **category** | Category overwrite denies the text lock set and the voice set (Connect, Speak, Send Messages, Send TTS Messages, Add Reactions); channels that sync with the category, text and voice alike, become locked; channels with their own `@everyone` overwrite do not. Note which | `ChannelLocks` row for the category |
@@ -305,7 +305,7 @@ Use `#locktest` unless stated. Verify the lock by having `user1` try to send a m
 | MOD-160 | as MOD-159 | `user1` adds a reaction in the locked thread | Reaction is removed | none |
 | MOD-161 | as MOD-159 | `mod` (ManageMessages) and `admin` post and react | Messages and reactions stay | none |
 | MOD-162 | as MOD-159 | Bot's own message in the thread (e.g. another command reply) | Check whether the bot's own messages are deleted (bot member without ManageMessages in the thread would be). Record | none |
-| MOD-163 | as MOD-159 | `/Unlock channel:<thread>` (or run inside the thread) | "<thread> has been unlocked". `user1` can post again | `ThreadUnlocked` row. Mod-log line |
+| MOD-163 | as MOD-159 | `/Unlock channel:<thread>` (or run inside the thread) | "<thread> has been unlocked". `user1` can post again | Thread lock row `Removed`. Mod-log line |
 | MOD-164 | Thread not locked | `/Unlock channel:<thread>` | "<thread> is not locked." | none |
 | MOD-165 | Private thread | Repeat MOD-159..163 | Same behaviour | rows |
 | MOD-166 | A thread in a forum channel | Lock and post as `user1` | Same behaviour | row |
@@ -330,14 +330,14 @@ Use `#locktest` unless stated. Verify the lock by having `user1` try to send a m
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| MOD-178 | `#locktest` locked for 1 minute | Wait about 1 min 10 s | Overwrite restored to the pre-lock state. Embed "Lock on #locktest has expired." is posted **in `#locktest`** and in `#modlog` | `ChannelUnlocked` row with moderator = the bot and reason "Channel lock expired." |
-| MOD-179 | Thread locked for 1 minute | Wait | "Lock on <thread> has expired." posted in the thread and mod log. `user1` can post again | `ThreadUnlocked` row, reason "Thread lock expired." |
+| MOD-178 | `#locktest` locked for 1 minute | Wait about 1 min 10 s | Overwrite restored to the pre-lock state. Embed "Lock on #locktest has expired." is posted **in `#locktest`** and in `#modlog` | The lock row moves to `Expired` (an expiry records no moderator or reason, spec 2.2) |
+| MOD-179 | Thread locked for 1 minute | Wait | "Lock on <thread> has expired." posted in the thread and mod log. `user1` can post again | The thread lock row moves to `Expired` |
 | MOD-180 | Locked; `mod` runs `/Unlock` before expiry | Wait past `EndTime` | No expiry message (record superseded) | no new rows |
 | MOD-181 | Locked twice (MOD-151), first end time passes, second later | Wait through the first `EndTime` | Channel stays locked (newest row wins). Unlocks at the second end | one unlock row after the second `EndTime` |
-| MOD-182 | Locked 1 min; delete `#locktest` in Discord | Wait | Nothing to unlock; the record is closed (reason "Channel no longer exists.") with no messages sent | `ChannelUnlocked` row |
-| MOD-183 | Thread locked 1 min; delete the thread | Wait | Same, "Thread no longer exists." | `ThreadUnlocked` row |
+| MOD-182 | Locked 1 min; delete `#locktest` in Discord | Wait | Nothing to unlock; the record is closed as `Expired` with no messages sent | Lock row `Expired` |
+| MOD-183 | Thread locked 1 min; delete the thread | Wait | Same, "Thread no longer exists." | Thread lock row `Expired` |
 | MOD-184 | Locked 1 min; remove the bot's ManageRoles or ManageChannels | Wait | Overwrite change refused; `CannotUnlockChannel` guild issue reported; channel stays locked | **No** unlock row; retried with backoff |
-| MOD-185 | Continue MOD-184, restore permission | Wait up to the retry window (30 s, 60 s, ...) | Overwrite reverted, messages sent | `ChannelUnlocked` row |
+| MOD-185 | Continue MOD-184, restore permission | Wait up to the retry window (30 s, 60 s, ...) | Overwrite reverted, messages sent | Lock row `Expired` |
 | MOD-186 | Locked channel where the `@everyone` overwrite was deleted by hand | Wait for expiry | Overwrite recreated as neutral or removed; no exception | unlock row |
 | MOD-187 | Bot stopped during lock and expiry | Start the bot after `EndTime` | Lock lifted on the first ticks | unlock row |
 | MOD-188 | Lock row for a guild the bot left | Wait | Untouched, no repeated Discord calls | row remains |
@@ -453,7 +453,7 @@ Integration tests in `Grimoire.IntegrationTests/Moderation/` now cover these cas
   both null (MOD-116..118, 132, 138).
 - `ExpiredItemTriage.For`: all four (in-guild, target-exists) combinations (MOD-127, 136, 139, 182).
 - `SettingsModule` mute state: latest row wins across add / add / remove; `GetAllExpiredMutes` returns only the
-  latest row per user and only when expired; `GetActiveMute` after `MuteRemoved` is NotFound (MOD-96, 112, 123, 131).
+  latest row per user and only when expired; `GetActiveMute` after an unmute (`Removed`) is NotFound (MOD-96, 112, 123, 131).
 - `SettingsModule` lock state: re-lock keeps the **original** previous allowed/denied (MOD-151, 152); unlock of an
   unlocked channel returns NotFound (MOD-150, 164); expired-lock queries return only the newest row.
 - `PermissionsExtensions` lock helpers (`RevokeLockPermissions`, `SetLockPermissions`, `RevertLockPermissions`,

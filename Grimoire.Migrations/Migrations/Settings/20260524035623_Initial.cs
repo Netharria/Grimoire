@@ -26,19 +26,24 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    ChannelId = table.Column<long>(type: "bigint", nullable: false),
                     Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    EventType = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false),
-                    PreviouslyAllowed = table.Column<long>(type: "bigint", nullable: true),
-                    PreviouslyDenied = table.Column<long>(type: "bigint", nullable: true),
-                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    PreviouslyAllowed = table.Column<long>(type: "bigint", nullable: false),
+                    PreviouslyDenied = table.Column<long>(type: "bigint", nullable: false),
+                    ModeratorId = table.Column<long>(type: "bigint", nullable: false),
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    State = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    ActivatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    EndedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    RemovedBy = table.Column<long>(type: "bigint", nullable: true),
+                    RemoveReason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ChannelLocks", x => new { x.ChannelId, x.GuildId, x.SetAt });
+                    table.PrimaryKey("PK_ChannelLocks", x => new { x.GuildId, x.ChannelId, x.SetAt });
+                    table.CheckConstraint("CK_ChannelLocks_State", "(\"State\" = 'Pending' AND \"ActivatedAt\" IS NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Active' AND \"ActivatedAt\" IS NOT NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Expired' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Removed' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NOT NULL)");
                 });
 
             migrationBuilder.CreateTable(
@@ -46,17 +51,18 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    Type = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    State = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false),
-                    Value = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true)
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
+                    Document = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false),
+                    Value = table.Column<string>(type: "jsonb", nullable: false),
+                    SetBy = table.Column<long>(type: "bigint", nullable: false),
+                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_GuildSettings", x => new { x.Type, x.GuildId, x.SetAt });
-                    table.CheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\r\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
+                    table.PrimaryKey("PK_GuildSettings", x => new { x.GuildId, x.Document, x.Version });
+                    table.CheckConstraint("CK_GuildSettings_Value", "jsonb_typeof(\"Value\") = 'object'");
+                    table.CheckConstraint("CK_GuildSettings_Version", "\"Version\" >= 1");
                 });
 
             migrationBuilder.CreateTable(
@@ -64,11 +70,11 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    ChannelId = table.Column<long>(type: "bigint", nullable: false),
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     ChannelOption = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
+                    SetBy = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -80,17 +86,23 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SinId = table.Column<long>(type: "bigint", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    MuteRoleId = table.Column<long>(type: "bigint", nullable: true),
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
+                    ModeratorId = table.Column<long>(type: "bigint", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    EventType = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
-                    SinId = table.Column<long>(type: "bigint", nullable: true),
-                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    State = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    ActivatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    EndedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    RemovedBy = table.Column<long>(type: "bigint", nullable: true),
+                    RemoveReason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Mutes", x => new { x.UserId, x.GuildId, x.SetAt });
+                    table.PrimaryKey("PK_Mutes", x => x.SinId);
+                    table.CheckConstraint("CK_Mutes_State", "(\"State\" = 'Pending' AND \"ActivatedAt\" IS NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Active' AND \"ActivatedAt\" IS NOT NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Expired' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Removed' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NOT NULL)");
                 });
 
             migrationBuilder.CreateTable(
@@ -98,10 +110,10 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    RoleId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    RoleId = table.Column<long>(type: "bigint", nullable: false),
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SetBy = table.Column<long>(type: "bigint", nullable: false),
                     RewardType = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
                     RewardLevel = table.Column<int>(type: "integer", nullable: true),
                     RewardMessage = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: true)
@@ -116,11 +128,11 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    ChannelId = table.Column<long>(type: "bigint", nullable: false),
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     ChannelOption = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
+                    SetBy = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -132,17 +144,22 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    ChannelId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    ChannelId = table.Column<long>(type: "bigint", nullable: false),
                     Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    EventType = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: false),
-                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    ModeratorId = table.Column<long>(type: "bigint", nullable: false),
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    State = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    ActivatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    EndedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    RemovedBy = table.Column<long>(type: "bigint", nullable: true),
+                    RemoveReason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ThreadLocks", x => new { x.ChannelId, x.GuildId, x.SetAt });
+                    table.PrimaryKey("PK_ThreadLocks", x => new { x.GuildId, x.ChannelId, x.SetAt });
+                    table.CheckConstraint("CK_ThreadLocks_State", "(\"State\" = 'Pending' AND \"ActivatedAt\" IS NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Active' AND \"ActivatedAt\" IS NOT NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Expired' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Removed' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NOT NULL)");
                 });
 
             migrationBuilder.CreateTable(
@@ -150,10 +167,10 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings",
                 columns: table => new
                 {
-                    Id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    Id = table.Column<long>(type: "bigint", nullable: false),
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    SetBy = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    SetBy = table.Column<long>(type: "bigint", nullable: false),
                     Type = table.Column<string>(type: "character varying(21)", maxLength: 21, nullable: false)
                 },
                 constraints: table =>
@@ -162,31 +179,19 @@ namespace Grimoire.Settings.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChannelLocks_ChannelId_GuildId_SetAt",
-                schema: "Settings",
-                table: "ChannelLocks",
-                columns: new[] { "ChannelId", "GuildId", "SetAt" },
-                descending: new[] { false, false, true });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ChannelLocks_EndTime",
                 schema: "Settings",
                 table: "ChannelLocks",
-                column: "EndTime");
+                column: "EndTime",
+                filter: "\"State\" IN ('Pending', 'Active')");
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildSettings_GuildId_Type_SetAt",
+                name: "IX_ChannelLocks_InForce",
                 schema: "Settings",
-                table: "GuildSettings",
-                columns: new[] { "GuildId", "Type", "SetAt" },
-                descending: new[] { false, false, true });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MessageLogChannelOverrides_ChannelId_GuildId_SetAt",
-                schema: "Settings",
-                table: "MessageLogChannelOverrides",
-                columns: new[] { "ChannelId", "GuildId", "SetAt" },
-                descending: new[] { false, false, true });
+                table: "ChannelLocks",
+                columns: new[] { "GuildId", "ChannelId" },
+                unique: true,
+                filter: "\"State\" IN ('Pending', 'Active')");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MessageLogChannelOverrides_GuildId",
@@ -198,28 +203,16 @@ namespace Grimoire.Settings.Migrations
                 name: "IX_Mutes_EndTime",
                 schema: "Settings",
                 table: "Mutes",
-                column: "EndTime");
+                column: "EndTime",
+                filter: "\"State\" IN ('Pending', 'Active')");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Mutes_UserId_GuildId_SetAt",
+                name: "IX_Mutes_InForce",
                 schema: "Settings",
                 table: "Mutes",
-                columns: new[] { "UserId", "GuildId", "SetAt" },
-                descending: new[] { false, false, true });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Rewards_GuildId_RoleId_SetAt",
-                schema: "Settings",
-                table: "Rewards",
-                columns: new[] { "GuildId", "RoleId", "SetAt" },
-                descending: new[] { false, false, true });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SpamFilterOverrides_ChannelId_GuildId_SetAt",
-                schema: "Settings",
-                table: "SpamFilterOverrides",
-                columns: new[] { "ChannelId", "GuildId", "SetAt" },
-                descending: new[] { false, false, true });
+                columns: new[] { "GuildId", "UserId" },
+                unique: true,
+                filter: "\"State\" IN ('Pending', 'Active')");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SpamFilterOverrides_GuildId",
@@ -228,231 +221,154 @@ namespace Grimoire.Settings.Migrations
                 column: "GuildId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ThreadLocks_ChannelId_GuildId_SetAt",
-                schema: "Settings",
-                table: "ThreadLocks",
-                columns: new[] { "ChannelId", "GuildId", "SetAt" },
-                descending: new[] { false, false, true });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ThreadLocks_EndTime",
                 schema: "Settings",
                 table: "ThreadLocks",
-                column: "EndTime");
+                column: "EndTime",
+                filter: "\"State\" IN ('Pending', 'Active')");
 
             migrationBuilder.CreateIndex(
-                name: "IX_XpTrackedItems_GuildId_Id_SetAt",
+                name: "IX_ThreadLocks_InForce",
                 schema: "Settings",
-                table: "XpTrackedItems",
-                columns: new[] { "GuildId", "Id", "SetAt" },
-                descending: new[] { false, false, true });
+                table: "ThreadLocks",
+                columns: new[] { "GuildId", "ChannelId" },
+                unique: true,
+                filter: "\"State\" IN ('Pending', 'Active')");
 
             // ================================================================
-            // DATA MIGRATION
-            // Copy existing settings from Grimoire.Data (public schema) tables
-            // into the new Settings schema. The source tables are left in place;
-            // nothing drops them yet (a later release will, once this has run).
+            // DATA MIGRATION (spec 2.2, section 2.5)
+            // Copies main's settings out of the legacy public tables into the documents and state rows. The source
+            // tables stay; a later release drops them (P-7), and the one chain (C12) keeps that drop after this copy.
             //
-            // Sentinel values used where the source table had no equivalent:
-            //   SetAt  = DateTimeOffset.MinValue ('0001-01-01T00:00:00Z')
-            //   SetBy / ModeratorId = 0 (unknown / system)
+            // Documents: one version-1 document per guild and kind, holding only the values that differ from today's
+            // defaults, so a default stays a default. A document with nothing in it isn't written: a missing document
+            // means all defaults. Ids are strings and durations whole seconds (SettingsJson). A module flag is written
+            // only when it is on.
             //
-            // Module-enabled flags: only insert when true — the Settings layer
-            // treats a missing record as disabled (ParseEnabled returns false
-            // for null CachedSetting).
+            // Sentinels where the source has no equivalent: SetAt = '0001-01-01T00:00:00Z', SetBy/ModeratorId = 0.
             //
-            // Nullable channel/role IDs: only insert where NOT NULL — a missing
-            // row means "use the default" (no channel configured).
+            // Each block checks its source tables exist. They always do once main's migrations have run; the guards
+            // stay as cheap insurance.
             // ================================================================
 
-            // Each block is wrapped in a DO $$ ... $$ guard that checks pg_tables before
-            // reading from the source table. This makes the migration safe to run on a
-            // fresh database (where the public-schema tables do not yet exist) as well as
-            // in test environments that only migrate SettingsDbContext in isolation.
-
-            // ---- GuildSettings: CustomCommandsModuleEnabled ----
+            // ---- Modules: every guild's module flags, in one document (C13) ----
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildCommandsSettings') THEN
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'CustomCommandsModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                        FROM public."GuildCommandsSettings"
-                        WHERE "ModuleEnabled";
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('Guilds', 'GuildLevelSettings', 'GuildUserLogSettings', 'GuildModerationSettings', 'GuildMessageLogSettings', 'GuildCommandsSettings')) = 6 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT g."GuildId", 'Modules', 1, d.doc, 0, '0001-01-01T00:00:00Z'
+                        FROM (SELECT gu."Id"::bigint AS "GuildId", l."ModuleEnabled" AS leveling, u."ModuleEnabled" AS userlog,
+                                     mo."ModuleEnabled" AS moderation, mo."AntiSpamEnabled" AS antispam,
+                                     ml."ModuleEnabled" AS messagelog, c."ModuleEnabled" AS commands
+                              FROM public."Guilds" gu
+                              LEFT JOIN public."GuildLevelSettings" l ON l."GuildId" = gu."Id"
+                              LEFT JOIN public."GuildUserLogSettings" u ON u."GuildId" = gu."Id"
+                              LEFT JOIN public."GuildModerationSettings" mo ON mo."GuildId" = gu."Id"
+                              LEFT JOIN public."GuildMessageLogSettings" ml ON ml."GuildId" = gu."Id"
+                              LEFT JOIN public."GuildCommandsSettings" c ON c."GuildId" = gu."Id") g
+                        CROSS JOIN LATERAL (SELECT jsonb_strip_nulls(jsonb_build_object(
+                            'Leveling', NULLIF(g.leveling, false),
+                            'UserLog', NULLIF(g.userlog, false),
+                            'Moderation', NULLIF(g.moderation, false),
+                            'MessageLog', NULLIF(g.messagelog, false),
+                            'Commands', NULLIF(g.commands, false),
+                            'AntiSpam', NULLIF(g.antispam, false))) AS doc) d
+                        WHERE d.doc <> '{}'::jsonb;
                     END IF;
                 END $$;
                 """);
 
-            // ---- GuildSettings: General channel settings (from Guilds) ----
+            // ---- General: the moderation log and the user command channel ----
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Guilds') THEN
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'ModerationLogChannel', "Id", '0001-01-01T00:00:00Z', 0, 'CustomValue', "ModChannelLog"::text
-                        FROM public."Guilds"
-                        WHERE "ModChannelLog" IS NOT NULL;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'UserCommandChannel', "Id", '0001-01-01T00:00:00Z', 0, 'CustomValue', "UserCommandChannelId"::text
-                        FROM public."Guilds"
-                        WHERE "UserCommandChannelId" IS NOT NULL;
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('Guilds')) = 1 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT g."GuildId", 'General', 1, d.doc, 0, '0001-01-01T00:00:00Z'
+                        FROM (SELECT "Id"::bigint AS "GuildId", * FROM public."Guilds") g
+                        CROSS JOIN LATERAL (SELECT jsonb_strip_nulls(jsonb_build_object(
+                            'ModerationLogChannel', "ModChannelLog"::bigint::text,
+                            'UserCommandChannel', "UserCommandChannelId"::bigint::text)) AS doc) d
+                        WHERE d.doc <> '{}'::jsonb;
                     END IF;
                 END $$;
                 """);
 
-            // ---- GuildSettings: Leveling ----
-            // TextTime is a PostgreSQL interval; convert to C# TimeSpan "c" format (HH:MM:SS).
-            // Hours are written as a total, so a legacy timeout of a day or more reads as e.g. "25:00:00"; main never
-            // limited it. XpTimeoutPeriod.FromDatabase reads that form.
+            // ---- Leveling: defaults are 3 minutes, base 15, modifier 50 and 5 XP ----
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildLevelSettings') THEN
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'LevelingModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                        FROM public."GuildLevelSettings"
-                        WHERE "ModuleEnabled";
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'XpTimeoutPeriod', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue',
-                            lpad(floor(extract(epoch from "TextTime") / 3600)::bigint::text, 2, '0') || ':' ||
-                            lpad((floor(extract(epoch from "TextTime") / 60) % 60)::bigint::text, 2, '0') || ':' ||
-                            lpad((floor(extract(epoch from "TextTime")) % 60)::bigint::text, 2, '0')
-                        FROM public."GuildLevelSettings"
-                        WHERE "TextTime" <> INTERVAL '3 minutes';
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'LevelScalingBase', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Base"::text
-                        FROM public."GuildLevelSettings"
-                        WHERE "Base" <> 15;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'LevelScalingModifier', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Modifier"::text
-                        FROM public."GuildLevelSettings"
-                        WHERE "Modifier" <> 50;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'XpGainAmount', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "Amount"::text
-                        FROM public."GuildLevelSettings"
-                        WHERE "Amount" <> 5;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'LevelingLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "LevelChannelLogId"::text
-                        FROM public."GuildLevelSettings"
-                        WHERE "LevelChannelLogId" IS NOT NULL;
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('GuildLevelSettings')) = 1 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT g."GuildId", 'Leveling', 1, d.doc, 0, '0001-01-01T00:00:00Z'
+                        FROM (SELECT "GuildId"::bigint AS "GuildId", "TextTime", "Base", "Modifier", "Amount", "LevelChannelLogId" FROM public."GuildLevelSettings") g
+                        CROSS JOIN LATERAL (SELECT jsonb_strip_nulls(jsonb_build_object(
+                            'XpTimeoutSeconds', NULLIF(extract(epoch FROM g."TextTime")::bigint, 180),
+                            'LevelScalingBase', NULLIF(g."Base", 15),
+                            'LevelScalingModifier', NULLIF(g."Modifier", 50),
+                            'XpGainAmount', NULLIF(g."Amount", 5),
+                            'LogChannel', g."LevelChannelLogId"::bigint::text)) AS doc) d
+                        WHERE d.doc <> '{}'::jsonb;
                     END IF;
                 END $$;
                 """);
 
-            // ---- GuildSettings: Message log ----
+            // ---- MessageLog: the three log channels ----
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildMessageLogSettings') THEN
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'MessageLogModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                        FROM public."GuildMessageLogSettings"
-                        WHERE "ModuleEnabled";
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'DeleteLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "DeleteChannelLogId"::text
-                        FROM public."GuildMessageLogSettings"
-                        WHERE "DeleteChannelLogId" IS NOT NULL;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'BulkDeleteLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "BulkDeleteChannelLogId"::text
-                        FROM public."GuildMessageLogSettings"
-                        WHERE "BulkDeleteChannelLogId" IS NOT NULL;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'EditLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "EditChannelLogId"::text
-                        FROM public."GuildMessageLogSettings"
-                        WHERE "EditChannelLogId" IS NOT NULL;
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('GuildMessageLogSettings')) = 1 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT g."GuildId", 'MessageLog', 1, d.doc, 0, '0001-01-01T00:00:00Z'
+                        FROM (SELECT "GuildId"::bigint AS "GuildId", "DeleteChannelLogId", "BulkDeleteChannelLogId", "EditChannelLogId" FROM public."GuildMessageLogSettings") g
+                        CROSS JOIN LATERAL (SELECT jsonb_strip_nulls(jsonb_build_object(
+                            'DeleteLogChannel', g."DeleteChannelLogId"::bigint::text,
+                            'BulkDeleteLogChannel', g."BulkDeleteChannelLogId"::bigint::text,
+                            'EditLogChannel', g."EditChannelLogId"::bigint::text)) AS doc) d
+                        WHERE d.doc <> '{}'::jsonb;
                     END IF;
                 END $$;
                 """);
 
-            // ---- GuildSettings: Moderation ----
-            // AutoPardonAfter is an interval that can span multiple days (default 10950 d = 30 yr).
-            // C# TimeSpan "c" format: "d.HH:MM:SS" when days > 0, else "HH:MM:SS".
+            // ---- Moderation: the public log, auto-pardon (default 10,950 days) and the mute role ----
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildModerationSettings') THEN
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'ModerationModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                        FROM public."GuildModerationSettings"
-                        WHERE "ModuleEnabled";
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'AntiSpamModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                        FROM public."GuildModerationSettings"
-                        WHERE "AntiSpamEnabled";
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'PublicModerationLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "PublicBanLog"::text
-                        FROM public."GuildModerationSettings"
-                        WHERE "PublicBanLog" IS NOT NULL;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'SinAutoPardonDuration', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue',
-                            CASE
-                                WHEN extract(epoch from "AutoPardonAfter") >= 86400 THEN
-                                    floor(extract(epoch from "AutoPardonAfter") / 86400)::bigint::text || '.' ||
-                                    lpad((floor(extract(epoch from "AutoPardonAfter") / 3600) % 24)::bigint::text, 2, '0') || ':' ||
-                                    lpad((floor(extract(epoch from "AutoPardonAfter") / 60) % 60)::bigint::text, 2, '0') || ':' ||
-                                    lpad((floor(extract(epoch from "AutoPardonAfter")) % 60)::bigint::text, 2, '0')
-                                ELSE
-                                    lpad(floor(extract(epoch from "AutoPardonAfter") / 3600)::bigint::text, 2, '0') || ':' ||
-                                    lpad((floor(extract(epoch from "AutoPardonAfter") / 60) % 60)::bigint::text, 2, '0') || ':' ||
-                                    lpad((floor(extract(epoch from "AutoPardonAfter")) % 60)::bigint::text, 2, '0')
-                            END
-                        FROM public."GuildModerationSettings"
-                        WHERE "AutoPardonAfter" <> INTERVAL '10950 days';
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'MuteRole', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "MuteRole"::text
-                        FROM public."GuildModerationSettings"
-                        WHERE "MuteRole" IS NOT NULL;
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('GuildModerationSettings')) = 1 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT g."GuildId", 'Moderation', 1, d.doc, 0, '0001-01-01T00:00:00Z'
+                        FROM (SELECT "GuildId"::bigint AS "GuildId", "PublicBanLog", "AutoPardonAfter", "MuteRole" FROM public."GuildModerationSettings") g
+                        CROSS JOIN LATERAL (SELECT jsonb_strip_nulls(jsonb_build_object(
+                            'PublicModerationLogChannel', g."PublicBanLog"::bigint::text,
+                            'AutoPardonAfterSeconds', NULLIF(extract(epoch FROM g."AutoPardonAfter")::bigint, 946080000),
+                            'MuteRole', g."MuteRole"::bigint::text)) AS doc) d
+                        WHERE d.doc <> '{}'::jsonb;
                     END IF;
                 END $$;
                 """);
 
-            // ---- GuildSettings: User log ----
+            // ---- UserLog: the five log channels ----
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'GuildUserLogSettings') THEN
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'UserLogModuleEnabled', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', 'True'
-                        FROM public."GuildUserLogSettings"
-                        WHERE "ModuleEnabled";
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'JoinLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "JoinChannelLogId"::text
-                        FROM public."GuildUserLogSettings"
-                        WHERE "JoinChannelLogId" IS NOT NULL;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'LeaveLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "LeaveChannelLogId"::text
-                        FROM public."GuildUserLogSettings"
-                        WHERE "LeaveChannelLogId" IS NOT NULL;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'UsernameLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "UsernameChannelLogId"::text
-                        FROM public."GuildUserLogSettings"
-                        WHERE "UsernameChannelLogId" IS NOT NULL;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'NicknameLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "NicknameChannelLogId"::text
-                        FROM public."GuildUserLogSettings"
-                        WHERE "NicknameChannelLogId" IS NOT NULL;
-
-                        INSERT INTO "Settings"."GuildSettings" ("Type", "GuildId", "SetAt", "SetBy", "State", "Value")
-                        SELECT 'AvatarLogChannel', "GuildId", '0001-01-01T00:00:00Z', 0, 'CustomValue', "AvatarChannelLogId"::text
-                        FROM public."GuildUserLogSettings"
-                        WHERE "AvatarChannelLogId" IS NOT NULL;
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('GuildUserLogSettings')) = 1 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT g."GuildId", 'UserLog', 1, d.doc, 0, '0001-01-01T00:00:00Z'
+                        FROM (SELECT "GuildId"::bigint AS "GuildId", "JoinChannelLogId", "LeaveChannelLogId", "UsernameChannelLogId", "NicknameChannelLogId", "AvatarChannelLogId" FROM public."GuildUserLogSettings") g
+                        CROSS JOIN LATERAL (SELECT jsonb_strip_nulls(jsonb_build_object(
+                            'JoinLogChannel', g."JoinChannelLogId"::bigint::text,
+                            'LeaveLogChannel', g."LeaveChannelLogId"::bigint::text,
+                            'UsernameLogChannel', g."UsernameChannelLogId"::bigint::text,
+                            'NicknameLogChannel', g."NicknameChannelLogId"::bigint::text,
+                            'AvatarLogChannel', g."AvatarChannelLogId"::bigint::text)) AS doc) d
+                        WHERE d.doc <> '{}'::jsonb;
                     END IF;
                 END $$;
                 """);
@@ -490,40 +406,6 @@ namespace Grimoire.Settings.Migrations
                         INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
                         SELECT "RoleId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredRole'
                         FROM public."IgnoredRoles";
-                    END IF;
-                END $$;
-                """);
-
-            // ---- ChannelLocks (from public.Locks) ----
-            // Old Locks.ModeratorId is nullable; COALESCE to 0 for the sentinel.
-            // Old Locks.Reason is an empty string when not set; NULLIF maps it to NULL.
-            migrationBuilder.Sql("""
-                DO $$
-                BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Locks') THEN
-                        INSERT INTO "Settings"."ChannelLocks"
-                            ("ChannelId", "GuildId", "SetAt", "ModeratorId", "Reason", "EventType",
-                             "PreviouslyAllowed", "PreviouslyDenied", "EndTime")
-                        SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
-                            COALESCE("ModeratorId", 0), NULLIF("Reason", ''), 'Locked',
-                            "PreviouslyAllowed", "PreviouslyDenied", "EndTime"
-                        FROM public."Locks";
-                    END IF;
-                END $$;
-                """);
-
-            // ---- Mutes (from public.Mutes) ----
-            // Old Mutes table has no ModeratorId column; use sentinel 0.
-            // SinId is the PK of the old table and is always non-null, but guard anyway.
-            migrationBuilder.Sql("""
-                DO $$
-                BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Mutes') THEN
-                        INSERT INTO "Settings"."Mutes"
-                            ("UserId", "GuildId", "SetAt", "ModeratorId", "EventType", "SinId", "EndTime")
-                        SELECT "UserId", "GuildId", '0001-01-01T00:00:00Z', 0, 'Added', "SinId", "EndTime"
-                        FROM public."Mutes"
-                        WHERE "SinId" IS NOT NULL;
                     END IF;
                 END $$;
                 """);
@@ -570,6 +452,48 @@ namespace Grimoire.Settings.Migrations
                             CASE "ChannelOption" WHEN 0 THEN 'AlwaysFilter' WHEN 1 THEN 'NeverFilter' ELSE 'Inherit' END,
                             0
                         FROM public."SpamFilterOverrides";
+                    END IF;
+                END $$;
+                """);
+            // ---- ChannelLocks (from public.Locks): each one Active ----
+            // The legacy table has no lock time, so the sentinel stands in. Its ModeratorId is nullable (COALESCE to
+            // the sentinel), and its Reason is an empty string when not set (NULLIF maps it to NULL).
+            migrationBuilder.Sql("""
+                DO $$
+                BEGIN
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('Locks')) = 1 THEN
+                        INSERT INTO "Settings"."ChannelLocks"
+                            ("GuildId", "ChannelId", "Reason", "ModeratorId", "SetAt", "EndTime",
+                             "PreviouslyAllowed", "PreviouslyDenied", "State", "ActivatedAt")
+                        SELECT "GuildId", "ChannelId", NULLIF("Reason", ''), COALESCE("ModeratorId", 0),
+                            '0001-01-01T00:00:00Z', "EndTime", "PreviouslyAllowed", "PreviouslyDenied",
+                            'Active', '0001-01-01T00:00:00Z'
+                        FROM public."Locks";
+                    END IF;
+                END $$;
+                """);
+
+            // ---- Mutes (from public.Mutes): every one Active, in force or overdue (OQ-2) ----
+            // On main a finished mute is deleted, so each row is one or the other. An overdue one expires on the
+            // first poll, which takes the role off if the member still has it. The moderator and time come from the
+            // mute's sin, and the role from the guild's settings, so the expiry removes the role that was given.
+            // main's IX_Mutes_UserId_GuildId (unique since Init) allows one mute per member, so none collides on
+            // IX_Mutes_InForce.
+            migrationBuilder.Sql("""
+                DO $$
+                BEGIN
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('Mutes', 'Sins', 'GuildModerationSettings')) = 3 THEN
+                        INSERT INTO "Settings"."Mutes"
+                            ("GuildId", "UserId", "SinId", "MuteRoleId", "ModeratorId", "SetAt", "EndTime", "State",
+                             "ActivatedAt")
+                        SELECT m."GuildId", m."UserId", m."SinId", ms."MuteRole",
+                            COALESCE(s."ModeratorId", 0), COALESCE(s."SinOn", '0001-01-01T00:00:00Z'), m."EndTime",
+                            'Active', COALESCE(s."SinOn", '0001-01-01T00:00:00Z')
+                        FROM public."Mutes" m
+                        LEFT JOIN public."Sins" s ON s."Id" = m."SinId"
+                        LEFT JOIN public."GuildModerationSettings" ms ON ms."GuildId" = m."GuildId";
                     END IF;
                 END $$;
                 """);

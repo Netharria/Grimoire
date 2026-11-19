@@ -55,22 +55,21 @@ public sealed class UnlockChannel(SettingsModule settingsModule, GuildLog guildL
                     : ctx.ReplyAsync(message: $"{channel.Mention} could not be unlocked"));
     }
 
-    private Task<Fin<ThreadLocked>> TryUnlockThreadAsync(DiscordGuild guild, DiscordChannel channel,
+    private Task<Fin<ThreadLock>> TryUnlockThreadAsync(DiscordGuild guild, DiscordChannel channel,
         ModeratorId moderatorId)
-        => settingsModule.RemoveThreadLock(
-            ThreadUnlocked.Create(moderatorId, channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow));
+        => settingsModule.RemoveThreadLock(channel.GetChannelId(), guild.GetGuildId(), moderatorId);
 
     /// <summary>
     ///     Reverts the channel's permissions first and only then records the unlock. If Discord refuses, the channel is
     ///     still recorded as locked, so it can be unlocked again or the expiry task will finish the job.
     /// </summary>
-    private async Task<Fin<ChannelLocked>> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel,
+    private async Task<Fin<ChannelLock>> TryUnlockChannelAsync(DiscordGuild guild, DiscordChannel channel,
         ModeratorId moderatorId)
         => await (await settingsModule.GetActiveChannelLockAsync(channel.GetChannelId(), guild.GetGuildId()))
             .BindAsync(async activeLock =>
             {
                 await ChannelLockReverter.RevertAsync(channel, guild.EveryoneRole, activeLock);
-                return await settingsModule.RemoveChannelLock(ChannelUnlocked.Create(moderatorId,
-                    channel.GetChannelId(), guild.GetGuildId(), DateTimeOffset.UtcNow));
+                return await settingsModule.RemoveChannelLock(channel.GetChannelId(), guild.GetGuildId(),
+                    moderatorId);
             });
 }

@@ -13,6 +13,8 @@ using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
 namespace Grimoire.IntegrationTests.Moderation;
 
 /// <summary>
@@ -62,7 +64,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         dm.Json!["embeds"]![0]!["description"]!.GetValue<string>().ShouldBe($"Mute on {this.Guild.User1.MemberMention} has expired.");
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"Mute on {this.Guild.User1.MemberMention} has expired.");
-        (await this.RemovalByAsync()).ShouldBe(this.Guild.Bot.Id);
+        (await this.RemovalByAsync()).ShouldBe("Expired");
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
@@ -186,7 +188,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         this.Guild.GetMember(this.Guild.Admin).RoleIds.ShouldNotContain(this._muteRoleId);
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldContain(aboveTheBot);
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteRemoved>().Select(mute => mute.UserId).ToListAsync(TestContext.Current.CancellationToken))
+        (await settingsContext.Mutes.Where(mute => mute.State != "Active").Select(mute => mute.UserId).ToListAsync(TestContext.Current.CancellationToken))
             .ShouldBe([new UserId(this.Guild.Admin.Id)]);
     }
 
@@ -206,7 +208,7 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         this.Guild.GetMember(this.Guild.Admin).RoleIds.ShouldNotContain(this._muteRoleId);
         this.Guild.GetMember(this.Guild.User1).RoleIds.ShouldContain(this._muteRoleId);
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteRemoved>().Select(mute => mute.UserId).ToListAsync(TestContext.Current.CancellationToken))
+        (await settingsContext.Mutes.Where(mute => mute.State != "Active").Select(mute => mute.UserId).ToListAsync(TestContext.Current.CancellationToken))
             .ShouldBe([new UserId(this.Guild.Admin.Id)]);
     }
 
@@ -232,8 +234,8 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         await this._bot.StartBackgroundServiceAsync<MuteBackgroundTasks>();
 
-        (await GrimoireTestBot.EventuallyAsync(this.RemovalByAsync, removedBy => removedBy is not null, TimeSpan.FromSeconds(15)))
-            .ShouldBe(this.Guild.Bot.Id);
+        (await GrimoireTestBot.EventuallyAsync(this.RemovalByAsync, ended => ended is not null, TimeSpan.FromSeconds(15)))
+            .ShouldBe("Expired");
     }
 
     // ── Rejoining ─────────────────────────────────────────────────────────────
@@ -294,8 +296,8 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     {
         var role = roleId ?? this._muteRoleId;
         var now = DateTimeOffset.UtcNow;
-        var mute = MuteAdded.Create(new UserId(user.Id), guildId ?? this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId(1),
-            now.AddMinutes(-10), expired ? now.AddMinutes(-1) : now.AddMinutes(10), new RoleId(role)).ShouldSucceed();
+        var mute = SettingsRows.Mute(new UserId(user.Id), guildId ?? this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId((long)user.Id),
+            now.AddMinutes(-10), expired ? now.AddMinutes(-1) : now.AddMinutes(10), new RoleId(role));
         await using (var settingsContext = database.CreateSettingsDbContext())
         {
             settingsContext.Mutes.Add(mute);
@@ -314,12 +316,12 @@ public sealed class MuteExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         this._bot.MemberJoins(user);
     }
 
-    /// <summary>Who recorded the mute's removal, or null while it isn't removed.</summary>
-    private async Task<ulong?> RemovalByAsync()
+    /// <summary>How the mute ended (Expired, or Removed by a moderator), or null while it is in force (spec 2.2).</summary>
+    private async Task<string?> RemovalByAsync()
     {
         await using var settingsContext = database.CreateSettingsDbContext();
-        return (await settingsContext.Mutes.OfType<MuteRemoved>()
-            .FirstOrDefaultAsync(mute => mute.UserId == new UserId(this.Guild.User1.Id)))?.ModeratorId.Value;
+        return (await settingsContext.Mutes.Where(mute => mute.State != "Active")
+            .FirstOrDefaultAsync(mute => mute.UserId == new UserId(this.Guild.User1.Id)))?.State;
     }
 
     private Func<RecordedRequest, bool> IsRoleRevoke(FakeUser user)

@@ -14,6 +14,8 @@ using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
 namespace Grimoire.IntegrationTests.Shared;
 
 /// <summary>
@@ -157,8 +159,8 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
         {
             var now = DateTimeOffset.UtcNow;
             foreach (var userId in muted)
-                settingsContext.Mutes.Add(MuteAdded.Create(new UserId(userId), this.GuildId, new ModeratorId(this.Guild.Moderator.Id),
-                    new SinId(1), now.AddMinutes(-10), now.AddMinutes(10), null).ShouldSucceed());
+                settingsContext.Mutes.Add(SettingsRows.Mute(new UserId(userId), this.GuildId, new ModeratorId(this.Guild.Moderator.Id),
+                    new SinId((long)(userId % 1_000_000)), now.AddMinutes(-10), now.AddMinutes(10), null));
             await settingsContext.SaveChangesAsync(Token);
         }
 

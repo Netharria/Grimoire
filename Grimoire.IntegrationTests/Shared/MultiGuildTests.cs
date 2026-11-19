@@ -97,7 +97,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
         this.A.GetMember(this.A.User1).RoleIds.ShouldBeEmpty();
         (await this.Settings.GetActiveMute(new UserId(this.B.User1.Id), new GuildId(this.B.Id), Token)).ShouldSucceed();
         (await this.Settings.GetActiveMute(new UserId(this.A.User1.Id), new GuildId(this.A.Id), Token))
-            .ShouldNotBeOfType<Fin<Grimoire.Settings.Domain.MuteAdded>.Succ>();
+            .ShouldNotBeOfType<Fin<Grimoire.Settings.Domain.Mute>.Succ>();
     }
 
     /// <summary>Sins from A don't show in B's sin log.</summary>

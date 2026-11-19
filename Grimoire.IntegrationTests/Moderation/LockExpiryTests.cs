@@ -12,6 +12,10 @@ using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
+using Grimoire.Settings.Rows;
+
 namespace Grimoire.IntegrationTests.Moderation;
 
 /// <summary>
@@ -59,8 +63,8 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
                                                             && request.Path == $"channels/{this.Guild.General.Id}/messages"
                                                             && request.Json?["embeds"]?[0]?["description"]?.GetValue<string>() == expired);
         var unlock = await this.SingleChannelUnlockAsync();
-        unlock.ModeratorId.ShouldBe(new ModeratorId(this.Guild.Bot.Id));
-        unlock.Reason!.Value.Value.ShouldBe("Channel lock expired.");
+        unlock.State.ShouldBe("Expired");
+        unlock.EndedAt.ShouldNotBeNull();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
@@ -78,7 +82,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>() == expired);
         await this._bot.Rest.WaitForRequestAsync(request => request.Method == HttpMethod.Post
                                                             && request.Path == $"channels/{thread.Id}/messages");
-        (await this.SingleThreadUnlockAsync()).Reason!.Value.Value.ShouldBe("Thread lock expired.");
+        (await this.SingleThreadUnlockAsync()).State.ShouldBe("Expired");
     }
 
     /// <summary>MOD-180: a lock already unlocked by hand is left alone at its end time.</summary>
@@ -96,7 +100,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
                 request.Json?["embeds"]?[0]?["description"]?.ToString().EndsWith("has expired.", StringComparison.Ordinal) == true,
             NothingHappensWindow)).ShouldBeFalse();
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await settingsContext.ChannelLocks.CountAsync(row => row.State == "Removed", TestContext.Current.CancellationToken)).ShouldBe(1);
     }
 
     /// <summary>MOD-181: when a newer lock ends later, the channel stays locked past the first end time.</summary>
@@ -111,7 +115,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         this.Guild.OverwriteOf(this.Guild.General.Id, this.Guild.Id).ShouldBe((0UL, TextLock));
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        (await settingsContext.ChannelLocks.AnyAsync(row => row.State == "Expired", TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     /// <summary>MOD-182 and MOD-183: a deleted channel or thread is closed with no messages.</summary>
@@ -136,9 +140,9 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.RunBackgroundTickAsync<LockBackgroundTasks>();
 
         if (kind == "channel")
-            (await this.SingleChannelUnlockAsync()).Reason!.Value.Value.ShouldBe("Channel no longer exists.");
+            (await this.SingleChannelUnlockAsync()).State.ShouldBe("Expired");
         else
-            (await this.SingleThreadUnlockAsync()).Reason!.Value.Value.ShouldBe("Thread no longer exists.");
+            (await this.SingleThreadUnlockAsync()).State.ShouldBe("Expired");
         (await this._bot.Rest.ReceivesRequestWithinAsync(this._bot.IsModLogPost, NothingHappensWindow)).ShouldBeFalse();
     }
 
@@ -157,7 +161,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         await this._bot.RunBackgroundTickAsync<LockBackgroundTasks>();
 
         await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>() == $"Lock on {channel.Mention} has expired.");
-        (await this.SingleChannelUnlockAsync()).Reason!.Value.Value.ShouldBe("Channel lock expired.");
+        (await this.SingleChannelUnlockAsync()).State.ShouldBe("Expired");
         this._bot.Logs.Events.ShouldNotContain(logEvent => logEvent.Exception is ArgumentException);
     }
 
@@ -172,7 +176,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         await this._bot.RunBackgroundTickAsync<LockBackgroundTasks>();
 
-        (await this.SingleChannelUnlockAsync()).Reason!.Value.Value.ShouldBe("Channel lock expired.");
+        (await this.SingleChannelUnlockAsync()).State.ShouldBe("Expired");
         this._bot.Rest.Requests.ShouldNotContain(request =>
             request.Path.StartsWith($"channels/{this.Guild.PublicThread.Id}/permissions/", StringComparison.Ordinal));
         this._bot.Logs.Errors.ShouldBeEmpty();
@@ -198,7 +202,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
             embed["description"]?.GetValue<string>()?.Contains(this.Guild.General.Mention, StringComparison.Ordinal) == true);
         this.Guild.OverwriteOf(this.Guild.General.Id, this.Guild.Id).ShouldBe((0UL, TextLock));
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        (await settingsContext.ChannelLocks.AnyAsync(row => row.State != "Active", TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     /// <summary>MOD-186: with the @everyone overwrite deleted by hand, expiry puts back the recorded state.</summary>
@@ -225,7 +229,7 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
 
         this._bot.Rest.Requests.Count.ShouldBe(requestsBefore);
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        (await settingsContext.ChannelLocks.AnyAsync(row => row.State != "Active", TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     /// <summary>Locks through the command, then moves the end time into the past so the next tick lifts it.</summary>
@@ -236,9 +240,9 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         var past = DateTimeOffset.UtcNow.AddSeconds(-1);
         var token = TestContext.Current.CancellationToken;
         await using var settingsContext = database.CreateSettingsDbContext();
-        await settingsContext.ChannelLocks.OfType<ChannelLocked>().Where(locked => locked.ChannelId == new ChannelId(channel.Id))
+        await settingsContext.ChannelLocks.Where(locked => locked.ChannelId == new ChannelId(channel.Id))
             .ExecuteUpdateAsync(update => update.SetProperty(locked => locked.EndTime, past), token);
-        await settingsContext.ThreadLocks.OfType<ThreadLocked>().Where(locked => locked.ChannelId == new ChannelId(channel.Id))
+        await settingsContext.ThreadLocks.Where(locked => locked.ChannelId == new ChannelId(channel.Id))
             .ExecuteUpdateAsync(update => update.SetProperty(locked => locked.EndTime, past), token);
         return reply;
     }
@@ -251,9 +255,9 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
         bool setOverwrite = true)
     {
         var now = DateTimeOffset.UtcNow;
-        var channelLock = ChannelLocked.Create(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(channel.Id),
+        var channelLock = SettingsRows.ChannelLock(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(channel.Id),
             guildId ?? this.GuildId, now.AddMinutes(-10), new PreviouslyAllowedPermissions((long)previouslyAllowed),
-            new PreviouslyDeniedPermissions(0), now.AddMinutes(-1)).ShouldSucceed();
+            new PreviouslyDeniedPermissions(0), now.AddMinutes(-1));
         await using (var settingsContext = database.CreateSettingsDbContext())
         {
             settingsContext.ChannelLocks.Add(channelLock);
@@ -271,20 +275,23 @@ public sealed class LockExpiryTests(GrimoireCoreFactory database) : IAsyncLifeti
     {
         var now = DateTimeOffset.UtcNow;
         await using var settingsContext = database.CreateSettingsDbContext();
-        settingsContext.ThreadLocks.Add(ThreadLocked.Create(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(thread.Id),
-            this.GuildId, now.AddMinutes(-10), now.AddMinutes(-1)).ShouldSucceed());
+        settingsContext.ThreadLocks.Add(SettingsRows.ThreadLock(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(thread.Id),
+            this.GuildId, now.AddMinutes(-10), now.AddMinutes(-1)));
         await settingsContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
-    private async Task<ChannelUnlocked> SingleChannelUnlockAsync()
+    /// <summary>The one lock row, which the expiry has ended (spec 2.2: Expired, where it was an unlock event).</summary>
+    private async Task<ChannelLockRow> SingleChannelUnlockAsync()
     {
         await using var settingsContext = database.CreateSettingsDbContext();
-        return await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().SingleAsync(TestContext.Current.CancellationToken);
+        return await settingsContext.ChannelLocks.Where(row => row.State != "Active")
+            .SingleAsync(TestContext.Current.CancellationToken);
     }
 
-    private async Task<ThreadUnlocked> SingleThreadUnlockAsync()
+    private async Task<ThreadLockRow> SingleThreadUnlockAsync()
     {
         await using var settingsContext = database.CreateSettingsDbContext();
-        return await settingsContext.ThreadLocks.OfType<ThreadUnlocked>().SingleAsync(TestContext.Current.CancellationToken);
+        return await settingsContext.ThreadLocks.Where(row => row.State != "Active")
+            .SingleAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -1,6 +1,6 @@
 # Domain Model Migration Strategy
 
-> **Partly superseded.** The Settings rules changed: mutes and locks become one-way state rows (design-decisions TD-1, TD-2) and guild settings become versioned JSON documents per module (TD-6). The undeployed migrations are edited in place (Q6), and runtime queries move to Dapper (migration plan C3).
+> **Partly superseded.** The Settings rules changed: mutes and locks become one-way state rows (design-decisions TD-1, TD-2) and guild settings become versioned JSON documents per module (TD-6). The undeployed migrations are edited in place (Q6), and runtime queries move to Dapper (migration plan C3). The Settings schema as built is described in [`../langext-migration/specs/2.2-settings-schema.md`](../langext-migration/specs/2.2-settings-schema.md) and [`../architecture.md`](../architecture.md) section 5.
 
 
 Date: 2026-04-18

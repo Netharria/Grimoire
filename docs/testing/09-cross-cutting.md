@@ -263,7 +263,7 @@ is always on and can't be toggled. Disabling a module never stops timed mutes or
 | XC-79 | Moderation off | `admin` bans `user2` from the Discord client, then unbans | No ban or unban log | No Sin row. **[auto]** `ModuleToggleTests.ModerationOff_ClientBanAndUnban_LeaveNoSinAndNoLog` |
 | XC-80 | Moderation off, `user2` has an active mute | `user2` leaves and rejoins | No mute role given | **[auto]** `MuteExpiryTests.Rejoining_WithoutAnActiveMute_GivesNoRole` (moderation off) |
 | XC-81 | A thread locked, then Moderation off | `user1` posts in the thread | Message stays | **[auto]** `ThreadLockTests.WithModerationDisabled_MessagesInALockedThreadStay` |
-| XC-82 | A 2-minute mute and a 2-minute lock running, then Moderation off | Wait for both to end | Role removed, channel unlocked, "expired" messages posted to the mod log | `MuteRemoved` and `ChannelUnlocked` rows. **[auto]** `ModuleToggleTests.ModerationOff_MutesAndLocksStillExpire` (seeded expired records) |
+| XC-82 | A 2-minute mute and a 2-minute lock running, then Moderation off | Wait for both to end | Role removed, channel unlocked, "expired" messages posted to the mod log | Mute and lock rows `Expired`. **[auto]** `ModuleToggleTests.ModerationOff_MutesAndLocksStillExpire` (seeded expired records) |
 | XC-83 | AntiSpam on, Moderation off, mute role set | `user1` spams **[auto]** `SpamEventsTests.WithModerationOff_SpamIsNeitherMutedNorDeleted` | Nothing happens: no mute, and **the spam is not deleted** either. Record (observation 9) | No Sin row |
 | XC-84 | AntiSpam off | `user1` spams | Nothing happens | **[auto]** `SpamFilterTests.Spam_WithAntiSpamDisabled_IsIgnored` |
 | XC-85 | Commands off, `hello` learned | `user1` sends `!hello`; runs `/Command command_name:hello` | Text trigger posts nothing; slash command refused | No usage row. **[auto]** `ModuleToggleTests.CommandsOff_NeitherTheTextTriggerNorTheSlashCommandAnswers` |
@@ -309,7 +309,7 @@ code any more; `CLAUDE.md` still mentions one under `Logging/`.
 |----|--------------|--------|-------------------------|-------------------|
 | XC-110 | Leveling settings, a log channel and a reward set through commands | Restart | `/LevelSettings View` and `/Rewards View` unchanged | **[auto]** `PersistenceTests.Settings_SurviveARestart` |
 | XC-111 | Several modules toggled | Restart; `/Modules View` | Same states | See GEN-71. **[auto]** `RestartPersistenceTests.ModuleStates_SurviveARestart` |
-| XC-112 | 3-minute mute on `user2` | Restart within the mute; wait | Role removed on schedule, DM and log sent | `MuteRemoved` row. See MOD-99, MOD-195. **[auto]** by seeded records in `MuteExpiryTests` |
+| XC-112 | 3-minute mute on `user2` | Restart within the mute; wait | Role removed on schedule, DM and log sent | Mute row `Expired`. See MOD-99, MOD-195. **[auto]** by seeded records in `MuteExpiryTests` |
 | XC-113 | 2-minute mute; stop the bot for 5 minutes | Start | Mute lifted within the first ticks | See MOD-130 |
 | XC-114 | 3-minute channel lock | Restart within the lock; wait | Overwrite reverted on schedule | See MOD-187. **[auto]** by seeded records in `LockExpiryTests` |
 | XC-115 | Thread locked with no expiry yet | Restart; `user1` posts in the thread | Message deleted (cache rebuilt from DB) | none. **[auto]** `RestartPersistenceTests.ThreadLock_SurvivesARestart` |

@@ -5,6 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
+using Grimoire.Settings.Domain.Documents;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.ModuleState;
 
 [Collection("Settings collection")]
@@ -75,7 +79,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
-            .Where(x => x.GuildId == _guildId && x.Type == GuildSettingType.LevelingModuleEnabled)
+            .Where(x => x.GuildId == _guildId && x.Document == SettingsDocument.Modules)
             .CountAsync(TestContext.Current.CancellationToken);
         count.ShouldBe(1);
     }
@@ -92,9 +96,9 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
-            .Where(x => x.GuildId == _guildId && x.Type == GuildSettingType.LevelingModuleEnabled)
+            .Where(x => x.GuildId == _guildId && x.Document == SettingsDocument.Modules)
             .CountAsync(TestContext.Current.CancellationToken);
-        count.ShouldBe(1);
+        count.ShouldBe(0); // A missing flag is off already (spec 2.2), so neither write stores anything.
     }
 
     [Fact]
@@ -110,12 +114,12 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
 
         var state = await this._sut.GetAllModuleState(_guildId, TestContext.Current.CancellationToken).ShouldSucceed();
 
-        state.LevelingEnabled.ShouldBeTrue();
-        state.UserLogEnabled.ShouldBeTrue();
-        state.MessageLogEnabled.ShouldBeTrue();
-        state.ModerationEnabled.ShouldBeFalse();
-        state.CommandsEnabled.ShouldBeFalse();
-        state.AntiSpamEnabled.ShouldBeFalse();
+        state.Leveling.ShouldBeTrue();
+        state.UserLog.ShouldBeTrue();
+        state.MessageLog.ShouldBeTrue();
+        state.Moderation.ShouldBeFalse();
+        state.Commands.ShouldBeFalse();
+        state.AntiSpam.ShouldBeFalse();
     }
 
     [Fact]
@@ -147,13 +151,9 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     {
         await using var db = factory.CreateDbContext();
         db.GuildSettings.Add(
-            GuildSettingCustomValue.Create(
-                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
-                bool.TrueString).ShouldSucceed());
+            SettingsRows.Document(_guildId, new ModuleStates { Leveling = true }, version: 1, setBy: _modId, setAt: DateTimeOffset.UtcNow.AddHours(-2)));
         db.GuildSettings.Add(
-            GuildSettingDisabled.Create(
-                    GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
-                );
+            SettingsRows.Document(_guildId, ModuleStates.Empty, version: 2, setBy: _modId, setAt: DateTimeOffset.UtcNow.AddHours(-1)));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         (await this._sut.IsModuleEnabled(Module.Leveling, _guildId, TestContext.Current.CancellationToken))
@@ -165,13 +165,9 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
     {
         await using var db = factory.CreateDbContext();
         db.GuildSettings.Add(
-            GuildSettingCustomValue.Create(
-                GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
-                bool.TrueString).ShouldSucceed());
+            SettingsRows.Document(_guildId, new ModuleStates { Leveling = true }, version: 1, setBy: _modId, setAt: DateTimeOffset.UtcNow.AddHours(-2)));
         db.GuildSettings.Add(
-            GuildSettingDisabled.Create(
-                    GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
-                );
+            SettingsRows.Document(_guildId, ModuleStates.Empty, version: 2, setBy: _modId, setAt: DateTimeOffset.UtcNow.AddHours(-1)));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await this._sut.SetModuleState(Module.Leveling, _guildId, _modId, false,
@@ -211,9 +207,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         await using (var db = factory.CreateDbContext())
         {
             db.GuildSettings.Add(
-                GuildSettingCustomValue.Create(
-                    GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-2),
-                    bool.TrueString).ShouldSucceed());
+                SettingsRows.Document(_guildId, new ModuleStates { Leveling = true }, version: 1, setBy: _modId, setAt: DateTimeOffset.UtcNow.AddHours(-2)));
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
@@ -223,9 +217,7 @@ public sealed class SetModuleStateTests(SettingsTestsFactory factory) : IAsyncLi
         await using (var db = factory.CreateDbContext())
         {
             db.GuildSettings.Add(
-                GuildSettingDisabled.Create(
-                        GuildSettingType.LevelingModuleEnabled, _guildId, _modId, DateTimeOffset.UtcNow.AddHours(-1))
-                    );
+                SettingsRows.Document(_guildId, ModuleStates.Empty, version: 2, setBy: _modId, setAt: DateTimeOffset.UtcNow.AddHours(-1)));
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 

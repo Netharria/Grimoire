@@ -12,6 +12,10 @@ using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 using ModuleArgument = Grimoire.Features.Shared.Commands.ModuleCommands.ModuleArguments;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
+using Grimoire.Settings.Domain.Documents;
+
 namespace Grimoire.IntegrationTests.Shared;
 
 /// <summary>
@@ -158,16 +162,14 @@ public sealed class ModuleCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     /// <summary>The newest stored setting for the module: whether it is on, and who set it.</summary>
     private async Task<(bool Enabled, ulong SetBy)> StoredStateAsync(ModuleArgument module)
     {
-        var settingType = Enum.Parse<Module>(module.ToString()).ToGuildSettingType()!.Value;
         await using var dbContext = database.CreateSettingsDbContext();
-        var latest = await dbContext.GuildSettings
-            .Where(setting => setting.GuildId == new GuildId(this.Guild.Id) && setting.Type == settingType)
-            .OrderByDescending(setting => setting.SetAt)
-            .FirstOrDefaultAsync();
-        // A module that was never set has no row and is off.
+        var latest = await SettingsRows.LatestDocument(dbContext, new GuildId(this.Guild.Id), SettingsDocument.Modules,
+            TestContext.Current.CancellationToken);
+        // A guild that never set a module has no Modules document, and every module is off.
         return latest is null
             ? (false, 0)
-            : (latest is GuildSettingCustomValue { Value: var value } && bool.Parse(value), latest.SetBy.Value);
+            : (SettingsJson.Parse<ModuleStates>(latest.Value).IsEnabled(Enum.Parse<Module>(module.ToString())),
+                latest.SetBy.Value);
     }
 
     private async Task<bool> MessageSavedWithinAsync(ulong messageId, TimeSpan window)

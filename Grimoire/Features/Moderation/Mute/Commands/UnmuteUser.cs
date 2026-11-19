@@ -14,6 +14,8 @@ using LanguageExt;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
+using Mute = Grimoire.Settings.Domain.Mute;
+
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
@@ -33,7 +35,7 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
         var guild = ctx.RequiredGuild;
 
         var activeMute = await settingsModule.GetActiveMute(member.GetUserId(), guild.GetGuildId())
-            .Match(mute => (MuteAdded?)mute, _ => null);
+            .Match(mute => (Mute?)mute, _ => null);
         var configuredRoleId = await settingsModule.GetEffectiveMuteRole(guild.GetGuildId())
             .OrNullDuringMigration();
         var muteRole = MuteRoleResolver.Resolve(activeMute?.MuteRoleId, configuredRoleId,
@@ -98,5 +100,5 @@ internal sealed class UnmuteUser(SettingsModule settingsModule, GuildLog guildLo
     /// <summary>NotFound counts as cleared: the mute expired, or someone else cleared it, in the meantime.</summary>
     private async Task<bool> RemoveMuteRecordAsync(CommandContext ctx, DiscordMember member)
         => await settingsModule.RemoveMute(member.GetUserId(), member.Guild.GetGuildId(), ctx.GetModeratorId())
-            is Fin<MuteAdded>.Succ or Fin<MuteAdded>.Fail(NotFound);
+            is Fin<Mute>.Succ or Fin<Mute>.Fail(NotFound);
 }

@@ -7,45 +7,61 @@
 
 namespace Grimoire.Settings.Domain;
 
-public abstract record ChannelLock(
-    ModeratorId ModeratorId,
-    ChannelId ChannelId,
+/// <summary>
+///     A stored channel lock: one row per lock, which moves through <see cref="ItemState" /> (TD-1, spec 2.2). The
+///     permissions are the @everyone overwrite's from before the lock, which the unlock restores. Its key is the
+///     channel and the time it was set.
+/// </summary>
+public sealed record ChannelLock(
     GuildId GuildId,
+    ChannelId ChannelId,
+    ModerationReason? Reason,
+    ModeratorId ModeratorId,
     DateTimeOffset SetAt,
-    ModerationReason? Reason);
-
-public sealed record ChannelLocked : ChannelLock
+    DateTimeOffset EndTime,
+    PreviouslyAllowedPermissions PreviouslyAllowed,
+    PreviouslyDeniedPermissions PreviouslyDenied,
+    ItemState State)
 {
-    private ChannelLocked(
-        ModeratorId moderatorId,
-        ChannelId channelId,
-        GuildId guildId,
-        DateTimeOffset setAt,
-        ModerationReason? reason,
-        PreviouslyAllowedPermissions previouslyAllowed,
-        PreviouslyDeniedPermissions previouslyDenied,
-        DateTimeOffset endTime)
-        : base(moderatorId, channelId, guildId, setAt, reason)
+    public bool InForce => this.State.InForce;
+
+    public Fin<ChannelLock> Activate(DateTimeOffset at)
+        => this.State.Activate(at).Map(state => this with { State = state });
+
+    public Fin<ChannelLock> Expire(DateTimeOffset at)
+        => this.State.Expire(at).Map(state => this with { State = state });
+
+    public Fin<ChannelLock> Remove(ModeratorId by, ModerationReason? reason, DateTimeOffset at)
+        => this.State.Remove(by, reason, at).Map(state => this with { State = state });
+}
+
+/// <summary>A channel lock to record: checked, with no id yet.</summary>
+public sealed record NewChannelLock
+{
+    private NewChannelLock(ModeratorId moderatorId, ModerationReason? reason, ChannelId channelId, GuildId guildId,
+        DateTimeOffset setAt, PreviouslyAllowedPermissions previouslyAllowed,
+        PreviouslyDeniedPermissions previouslyDenied, DateTimeOffset endTime)
     {
-        PreviouslyAllowed = previouslyAllowed;
-        PreviouslyDenied = previouslyDenied;
-        EndTime = endTime;
+        this.ModeratorId = moderatorId;
+        this.Reason = reason;
+        this.ChannelId = channelId;
+        this.GuildId = guildId;
+        this.SetAt = setAt;
+        this.PreviouslyAllowed = previouslyAllowed;
+        this.PreviouslyDenied = previouslyDenied;
+        this.EndTime = endTime;
     }
 
+    public ModeratorId ModeratorId { get; }
+    public ModerationReason? Reason { get; }
+    public ChannelId ChannelId { get; }
+    public GuildId GuildId { get; }
+    public DateTimeOffset SetAt { get; }
     public PreviouslyAllowedPermissions PreviouslyAllowed { get; }
     public PreviouslyDeniedPermissions PreviouslyDenied { get; }
     public DateTimeOffset EndTime { get; }
 
-    /// <summary>
-    ///     When this lock stopped being in force: the time of the next event for the same channel, an end or a newer
-    ///     lock. Null while it is in force. Only the settings module sets it, in the same save as that event, so the
-    ///     expiry polls can read open rows without searching the whole history (review S-13).
-    /// </summary>
-    public DateTimeOffset? ClosedAt { get; private set; }
-
-    internal void Close(DateTimeOffset closedAt) => this.ClosedAt = closedAt;
-
-    public static Validation<Error, ChannelLocked> Create(
+    public static Validation<Error, NewChannelLock> Create(
         ModeratorId moderatorId,
         ModerationReason? reason,
         ChannelId channelId,
@@ -54,39 +70,11 @@ public sealed record ChannelLocked : ChannelLock
         PreviouslyAllowedPermissions previouslyAllowed,
         PreviouslyDeniedPermissions previouslyDenied,
         DateTimeOffset endTime)
-    {
-        if (endTime <= setAt)
-            return new Invalid("End time must be after the lock's set time.");
-        return Success<Error, ChannelLocked>(
-            new ChannelLocked(moderatorId, channelId, guildId, setAt, reason, previouslyAllowed, previouslyDenied,
-                endTime));
-    }
-
-    public ChannelLocked WithPermissions(
-        PreviouslyAllowedPermissions previouslyAllowed,
-        PreviouslyDeniedPermissions previouslyDenied)
-        => new(ModeratorId, ChannelId, GuildId, SetAt, Reason, previouslyAllowed, previouslyDenied, EndTime);
-}
-
-public sealed record ChannelUnlocked : ChannelLock
-{
-    private ChannelUnlocked(
-        ModeratorId moderatorId,
-        ChannelId channelId,
-        GuildId guildId,
-        DateTimeOffset setAt,
-        ModerationReason? reason)
-        : base(moderatorId, channelId, guildId, setAt, reason)
-    {
-    }
-
-    public static ChannelUnlocked Create(
-        ModeratorId moderatorId,
-        ChannelId channelId,
-        GuildId guildId,
-        DateTimeOffset setAt,
-        ModerationReason? reason = null)
-        => new ChannelUnlocked(moderatorId, channelId, guildId, setAt, reason);
+        => endTime <= setAt
+            ? new Invalid("End time must be after the lock's set time.")
+            : Success<Error, NewChannelLock>(new NewChannelLock(moderatorId, reason, channelId, guildId,
+                ItemState.Stored(setAt),
+                previouslyAllowed, previouslyDenied, endTime));
 }
 
 public readonly record struct PreviouslyAllowedPermissions(long Permissions);

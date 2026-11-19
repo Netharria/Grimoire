@@ -58,7 +58,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task SpamFilter_WhenTheMuteCannotBeRecorded_TakesTheMuteRoleBackOff()
     {
-        await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
+        await using (await database.RefuseSettingsInsertsAsync("MuteRow"))
         {
             for (var i = 0; i < 6; i++)
             {
@@ -81,7 +81,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
         this._bot.SetRolesByHand(this.Guild.User1, this._muteRoleId);
 
         FakeReply reply;
-        await using (await database.RefuseSettingsInsertsAsync(nameof(Mute)))
+        await using (await database.RefuseSettingsInsertsAsync("MuteRow"))
             reply = await this._bot.RunSlashCommandAndWaitAsync("unmute", this.Guild.Moderator,
                 SlashOption.User("user", this.Guild.User1));
 

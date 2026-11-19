@@ -6,10 +6,13 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Text.Json.Nodes;
+using Grimoire.Settings.Domain.Documents;
 using Grimoire.Settings.Enums;
+using Grimoire.Settings.Helpers;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Grimoire.IntegrationTests.Shared;
@@ -43,7 +46,10 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task ModulesView_WhenTheModulesCannotBeRead_SaysSoPrivately()
     {
-        var reply = await this.WhileUnreadableAsync("GuildSetting", () =>
+        // The set-up read the Modules document, and a warm cache answers through an outage (spec 2.2), so start cold.
+        await this._bot.Services.GetRequiredService<HybridCache>()
+            .RemoveAsync(CacheKey.Document(SettingsDocument.Modules, this.GuildId), TestContext.Current.CancellationToken);
+        var reply = await this.WhileUnreadableAsync("GuildSettingRow", () =>
             this._bot.RunSlashCommandAndWaitAsync("modules", this.Guild.Admin, SlashOption.Subcommand("view")));
 
         reply.Description.ShouldBe("Could not load the module states. Please try again later.");
@@ -54,7 +60,7 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task LevelSettingsView_WhenTheSettingsCannotBeRead_SaysSoPrivately()
     {
-        var reply = await this.WhileUnreadableAsync("GuildSetting", () =>
+        var reply = await this.WhileUnreadableAsync("GuildSettingRow", () =>
             this._bot.RunSlashCommandAndWaitAsync("level_settings", this.Guild.Admin, SlashOption.Subcommand("view")));
 
         reply.Description.ShouldBe("Could not load the leveling settings. Please try again later.");

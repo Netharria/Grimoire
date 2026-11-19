@@ -1,11 +1,18 @@
-﻿using Grimoire.Settings.Enums;
+// This file is part of the Grimoire Project.
+//
+// Copyright (c) Netharia 2021-Present.
+//
+// All rights reserved.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
+
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.Settings.Helpers;
 
 internal static class CacheKey
 {
-    internal static string GuildSetting(GuildSettingType type, GuildId guildId) => $"{type}_{guildId}";
-    internal static string LevelingSettings(GuildId guildId) => $"LevelingSettings_{guildId}";
+    /// <summary>One entry per guild and document (spec 2.2, C13), so a disabled module's document is never cached.</summary>
+    internal static string Document(SettingsDocument document, GuildId guildId) => $"Settings_{document}_{guildId}";
     internal static string LevelingRewards(GuildId guildId) => $"LevelingRewards_{guildId}";
     internal static string XpIgnoredItems(GuildId guildId) => $"XpIgnoredItems_{guildId}";
     internal static string LogOverride(ChannelId channelId) => $"LogOverrides_{channelId}";

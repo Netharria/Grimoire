@@ -162,6 +162,25 @@ there is one connection pool.
 - **Never catch a constraint exception.** Write the race into the statement (`ON CONFLICT DO NOTHING`, a CTE,
   `INSERT … SELECT … WHERE EXISTS`). A violation that still happens is a defect.
 
+**The Settings schema** (spec 2.2). Its ids are `bigint` (P-9; `public` follows in 2.3).
+
+- **Guild settings are versioned JSON documents** (TD-6, C13): `"Settings"."GuildSettings"` holds one row per
+  `(GuildId, Document, Version)`, with a `jsonb` value and who/when. There are six documents: `Modules`, which holds
+  all six on/off flags, and `General`, `Leveling`, `MessageLog`, `Moderation` and `UserLog`, which each hold only that
+  module's settings. The latest version is in force. A missing document or field is the default, and the
+  default isn't written. The records and their encoding are in `Grimoire.Settings/Domain/Documents`
+  (`SettingsJson`): snowflakes are strings, durations whole seconds. A write applies a pure change to the latest
+  version and inserts the next one only if that is still the latest. A writer that loses the race re-reads and
+  re-applies, up to three times. A change that leaves the document equal stores nothing (`Write.Unchanged`). Each
+  document is cached under its own key, so the module gate reads only `Modules`, and a disabled module's document is
+  never loaded.
+- **Mutes, channel locks and thread locks are one row each** (TD-1, TD-2), whose `State` only moves forward:
+  `Pending` → `Active`, and `Pending` or `Active` → `Expired` or `Removed`. A check constraint requires exactly the
+  fields each state needs. A partial unique index allows one row in force per member or channel. The state is the
+  `ItemState` union in C#, mapped from a flat row (`Grimoire.Settings/Rows`). Each change is an `UPDATE … WHERE
+  "State" IN (…)`, so a race with the expiry poll updates no row and reads as `NotFound`. Until 3.4 and 3.5 add the
+  processors, the commands act first and record `Active`.
+
 **Errors** (`DatabaseErrors.Classify`, the one place a database exception becomes a value):
 
 | Failure | Becomes |

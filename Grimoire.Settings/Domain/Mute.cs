@@ -7,48 +7,58 @@
 
 namespace Grimoire.Settings.Domain;
 
-public abstract record Mute(
-    UserId UserId,
+/// <summary>
+///     A stored mute: one row per mute, which moves through <see cref="ItemState" /> (TD-1, spec 2.2). Its key is its
+///     sin: every mute comes from exactly one.
+/// </summary>
+/// <param name="MuteRoleId">
+///     The role given to the member, so it is the one taken off again even if the server's mute role has changed since.
+///     Empty when it wasn't known: the expiry then uses the server's current role.
+/// </param>
+public sealed record Mute(
     GuildId GuildId,
+    UserId UserId,
+    SinId SinId,
+    RoleId? MuteRoleId,
     ModeratorId ModeratorId,
-    DateTimeOffset SetAt);
-
-public sealed record MuteAdded : Mute
+    DateTimeOffset SetAt,
+    DateTimeOffset EndTime,
+    ItemState State)
 {
-    private MuteAdded(
-        UserId userId,
-        GuildId guildId,
-        ModeratorId moderatorId,
-        SinId sinId,
-        DateTimeOffset setAt,
-        DateTimeOffset endTime,
-        RoleId? muteRoleId)
-        : base(userId, guildId, moderatorId, setAt)
+    public bool InForce => this.State.InForce;
+
+    public Fin<Mute> Activate(DateTimeOffset at) => this.State.Activate(at).Map(state => this with { State = state });
+
+    public Fin<Mute> Expire(DateTimeOffset at) => this.State.Expire(at).Map(state => this with { State = state });
+
+    public Fin<Mute> Remove(ModeratorId by, ModerationReason? reason, DateTimeOffset at)
+        => this.State.Remove(by, reason, at).Map(state => this with { State = state });
+}
+
+/// <summary>A mute to record: checked, with no id yet.</summary>
+public sealed record NewMute
+{
+    private NewMute(UserId userId, GuildId guildId, ModeratorId moderatorId, SinId sinId, DateTimeOffset setAt,
+        DateTimeOffset endTime, RoleId? muteRoleId)
     {
-        SinId = sinId;
-        EndTime = endTime;
-        MuteRoleId = muteRoleId;
+        this.UserId = userId;
+        this.GuildId = guildId;
+        this.ModeratorId = moderatorId;
+        this.SinId = sinId;
+        this.SetAt = setAt;
+        this.EndTime = endTime;
+        this.MuteRoleId = muteRoleId;
     }
 
+    public UserId UserId { get; }
+    public GuildId GuildId { get; }
+    public ModeratorId ModeratorId { get; }
     public SinId SinId { get; }
+    public DateTimeOffset SetAt { get; }
     public DateTimeOffset EndTime { get; }
-
-    /// <summary>
-    ///     The role that was given to the member, so it is the one taken off again even if the server's mute role has
-    ///     changed since. Empty for mutes recorded before this was stored.
-    /// </summary>
     public RoleId? MuteRoleId { get; }
 
-    /// <summary>
-    ///     When this mute stopped being in force: the time of the next event for the same member, an end or a newer
-    ///     mute. Null while it is in force. Only the settings module sets it, in the same save as that event, so the
-    ///     expiry polls can read open rows without searching the whole history (review S-13).
-    /// </summary>
-    public DateTimeOffset? ClosedAt { get; private set; }
-
-    internal void Close(DateTimeOffset closedAt) => this.ClosedAt = closedAt;
-
-    public static Validation<Error, MuteAdded> Create(
+    public static Validation<Error, NewMute> Create(
         UserId userId,
         GuildId guildId,
         ModeratorId moderatorId,
@@ -63,26 +73,7 @@ public sealed record MuteAdded : Mute
             return new Invalid("A moderator cannot mute themselves.");
         if (sinId.Value <= 0)
             return new Invalid("Sin Id must be a positive number.");
-        return Success<Error, MuteAdded>(
-            new MuteAdded(userId, guildId, moderatorId, sinId, setAt, endTime, muteRoleId));
+        return Success<Error, NewMute>(
+            new NewMute(userId, guildId, moderatorId, sinId, ItemState.Stored(setAt), endTime, muteRoleId));
     }
-}
-
-public sealed record MuteRemoved : Mute
-{
-    private MuteRemoved(
-        UserId userId,
-        GuildId guildId,
-        ModeratorId moderatorId,
-        DateTimeOffset setAt)
-        : base(userId, guildId, moderatorId, setAt)
-    {
-    }
-
-    public static MuteRemoved Create(
-        UserId userId,
-        GuildId guildId,
-        ModeratorId moderatorId,
-        DateTimeOffset setAt)
-        => new MuteRemoved(userId, guildId, moderatorId, setAt);
 }

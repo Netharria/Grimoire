@@ -15,7 +15,7 @@ internal static class ChannelLockReverter
     ///     Puts the @everyone overwrite's lock permissions back to what they were before the lock. Shared by the
     ///     unlock command and the expiry task so they cannot disagree.
     /// </summary>
-    public static Task RevertAsync(DiscordChannel channel, DiscordRole everyoneRole, ChannelLocked activeLock)
+    public static Task RevertAsync(DiscordChannel channel, DiscordRole everyoneRole, ChannelLock activeLock)
     {
         // The @everyone overwrite should always exist, but if it does not there is nothing to keep from it.
         var current = channel.PermissionOverwrites.FirstOrDefault(x => x.Id == everyoneRole.Id);

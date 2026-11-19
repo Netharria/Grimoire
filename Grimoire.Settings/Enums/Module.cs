@@ -17,19 +17,3 @@ public enum Module
     General,
     AntiSpam
 }
-
-internal static class ModuleExtensions
-{
-    public static GuildSettingType? ToGuildSettingType(this Module module)
-        => module switch
-        {
-            Module.Commands => GuildSettingType.CustomCommandsModuleEnabled,
-            Module.Leveling => GuildSettingType.LevelingModuleEnabled,
-            Module.MessageLog => GuildSettingType.MessageLogModuleEnabled,
-            Module.Moderation => GuildSettingType.ModerationModuleEnabled,
-            Module.UserLog => GuildSettingType.UserLogModuleEnabled,
-            Module.AntiSpam => GuildSettingType.AntiSpamModuleEnabled,
-            Module.General => null,
-            _ => throw new ArgumentOutOfRangeException(nameof(module), module, null)
-        };
-}

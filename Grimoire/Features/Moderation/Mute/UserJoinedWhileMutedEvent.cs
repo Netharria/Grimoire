@@ -12,13 +12,15 @@ using LanguageExt;
 
 namespace Grimoire.Features.Moderation.Mute;
 
+using Mute = Grimoire.Settings.Domain.Mute;
+
 public sealed class UserJoinedWhileMuted(SettingsModule settingsModule) : IEventHandler<GuildMemberAddedEventArgs>
 {
     public async Task HandleEventAsync(DiscordClient sender, GuildMemberAddedEventArgs args)
     {
         var guildId = args.Guild.GetGuildId();
         if (await settingsModule.GetActiveMute(args.Member.GetUserId(), guildId)
-            is not Fin<MuteAdded>.Succ { Value: var mute } || mute.EndTime <= DateTimeOffset.UtcNow)
+            is not Fin<Mute>.Succ { Value: var mute } || mute.EndTime <= DateTimeOffset.UtcNow)
             return;
         if (!await settingsModule.IsModuleEnabled(Module.Moderation, guildId).OrDefaultDuringMigration(false))
             return;

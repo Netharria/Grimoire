@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Grimoire.Migrations
+namespace Grimoire.Settings.Migrations
 {
     [DbContext(typeof(GrimoireMigrationsDbContext))]
     partial class GrimoireMigrationsDbContextModelSnapshot : ModelSnapshot
@@ -946,52 +946,19 @@ namespace Grimoire.Migrations
                     b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("Grimoire.Settings.Domain.ChannelLock", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<DateTimeOffset>("SetAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)");
-
-                    b.Property<decimal>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.HasKey("ChannelId", "GuildId", "SetAt")
-                        .HasName("PK_ChannelLocks");
-
-                    b.ToTable("ChannelLocks", "Settings");
-
-                    b.HasDiscriminator<string>("EventType").IsComplete(true).HasValue("ChannelLock");
-
-                    b.UseTphMappingStrategy();
-                });
-
             modelBuilder.Entity("Grimoire.Settings.Domain.DiagnosticsIgnoredItem", b =>
                 {
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("SetBy")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("SetBy")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -1008,50 +975,13 @@ namespace Grimoire.Migrations
                     b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("Grimoire.Settings.Domain.GuildSetting", b =>
-                {
-                    b.Property<string>("Type")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<DateTimeOffset>("SetAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("SetBy")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)");
-
-                    b.HasKey("Type", "GuildId", "SetAt")
-                        .HasName("PK_GuildSettings");
-
-                    b.HasIndex("GuildId", "Type", "SetAt")
-                        .IsDescending(false, false, true)
-                        .HasDatabaseName("IX_GuildSettings_GuildId_Type_SetAt");
-
-                    b.ToTable("GuildSettings", "Settings", t =>
-                        {
-                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
-                        });
-
-                    b.HasDiscriminator<string>("State").IsComplete(true).HasValue("GuildSetting");
-
-                    b.UseTphMappingStrategy();
-                });
-
             modelBuilder.Entity("Grimoire.Settings.Domain.MessageLogChannelOverride", b =>
                 {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("ChannelId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
@@ -1061,8 +991,8 @@ namespace Grimoire.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
-                    b.Property<decimal>("SetBy")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("SetBy")
+                        .HasColumnType("bigint");
 
                     b.HasKey("ChannelId", "GuildId", "SetAt")
                         .HasName("PK_MessageLogChannelOverrides");
@@ -1073,42 +1003,13 @@ namespace Grimoire.Migrations
                     b.ToTable("MessageLogChannelOverrides", "Settings");
                 });
 
-            modelBuilder.Entity("Grimoire.Settings.Domain.Mute", b =>
-                {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<DateTimeOffset>("SetAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)");
-
-                    b.Property<decimal>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("UserId", "GuildId", "SetAt")
-                        .HasName("PK_Mutes");
-
-                    b.ToTable("Mutes", "Settings");
-
-                    b.HasDiscriminator<string>("EventType").IsComplete(true).HasValue("Mute");
-
-                    b.UseTphMappingStrategy();
-                });
-
             modelBuilder.Entity("Grimoire.Settings.Domain.Reward", b =>
                 {
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("RoleId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("RoleId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
@@ -1118,8 +1019,8 @@ namespace Grimoire.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("character varying(8)");
 
-                    b.Property<decimal>("SetBy")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("SetBy")
+                        .HasColumnType("bigint");
 
                     b.HasKey("GuildId", "RoleId", "SetAt")
                         .HasName("PK_Rewards");
@@ -1133,11 +1034,11 @@ namespace Grimoire.Migrations
 
             modelBuilder.Entity("Grimoire.Settings.Domain.SpamFilterOverride", b =>
                 {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("ChannelId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
@@ -1147,8 +1048,8 @@ namespace Grimoire.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
-                    b.Property<decimal>("SetBy")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("SetBy")
+                        .HasColumnType("bigint");
 
                     b.HasKey("ChannelId", "GuildId", "SetAt")
                         .HasName("PK_SpamFilterOverrides");
@@ -1159,52 +1060,19 @@ namespace Grimoire.Migrations
                     b.ToTable("SpamFilterOverrides", "Settings");
                 });
 
-            modelBuilder.Entity("Grimoire.Settings.Domain.ThreadLock", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<DateTimeOffset>("SetAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)");
-
-                    b.Property<decimal>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.HasKey("ChannelId", "GuildId", "SetAt")
-                        .HasName("PK_ThreadLocks");
-
-                    b.ToTable("ThreadLocks", "Settings");
-
-                    b.HasDiscriminator<string>("EventType").IsComplete(true).HasValue("ThreadLock");
-
-                    b.UseTphMappingStrategy();
-                });
-
             modelBuilder.Entity("Grimoire.Settings.Domain.XpTrackedItem", b =>
                 {
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("SetBy")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("SetBy")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -1219,6 +1087,218 @@ namespace Grimoire.Migrations
                     b.HasDiscriminator<string>("Type").IsComplete(true).HasValue("XpTrackedItem");
 
                     b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Rows.ChannelLockRow", b =>
+                {
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ChannelId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ModeratorId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PreviouslyAllowed")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PreviouslyDenied")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RemoveReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<long?>("RemovedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("GuildId", "ChannelId", "SetAt")
+                        .HasName("PK_ChannelLocks");
+
+                    b.HasIndex("EndTime")
+                        .HasDatabaseName("IX_ChannelLocks_EndTime")
+                        .HasFilter("\"State\" IN ('Pending', 'Active')");
+
+                    b.HasIndex("GuildId", "ChannelId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ChannelLocks_InForce")
+                        .HasFilter("\"State\" IN ('Pending', 'Active')");
+
+                    b.ToTable("ChannelLocks", "Settings", t =>
+                        {
+                            t.HasCheckConstraint("CK_ChannelLocks_State", "(\"State\" = 'Pending' AND \"ActivatedAt\" IS NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Active' AND \"ActivatedAt\" IS NOT NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Expired' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Removed' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Rows.GuildSettingRow", b =>
+                {
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Document")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("SetBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("GuildId", "Document", "Version")
+                        .HasName("PK_GuildSettings");
+
+                    b.ToTable("GuildSettings", "Settings", t =>
+                        {
+                            t.HasCheckConstraint("CK_GuildSettings_Value", "jsonb_typeof(\"Value\") = 'object'");
+
+                            t.HasCheckConstraint("CK_GuildSettings_Version", "\"Version\" >= 1");
+                        });
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Rows.MuteRow", b =>
+                {
+                    b.Property<long>("SinId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ModeratorId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("MuteRoleId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RemoveReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<long?>("RemovedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("SinId")
+                        .HasName("PK_Mutes");
+
+                    b.HasIndex("EndTime")
+                        .HasDatabaseName("IX_Mutes_EndTime")
+                        .HasFilter("\"State\" IN ('Pending', 'Active')");
+
+                    b.HasIndex("GuildId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Mutes_InForce")
+                        .HasFilter("\"State\" IN ('Pending', 'Active')");
+
+                    b.ToTable("Mutes", "Settings", t =>
+                        {
+                            t.HasCheckConstraint("CK_Mutes_State", "(\"State\" = 'Pending' AND \"ActivatedAt\" IS NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Active' AND \"ActivatedAt\" IS NOT NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Expired' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Removed' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Grimoire.Settings.Rows.ThreadLockRow", b =>
+                {
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ChannelId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ModeratorId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RemoveReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<long?>("RemovedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("GuildId", "ChannelId", "SetAt")
+                        .HasName("PK_ThreadLocks");
+
+                    b.HasIndex("EndTime")
+                        .HasDatabaseName("IX_ThreadLocks_EndTime")
+                        .HasFilter("\"State\" IN ('Pending', 'Active')");
+
+                    b.HasIndex("GuildId", "ChannelId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ThreadLocks_InForce")
+                        .HasFilter("\"State\" IN ('Pending', 'Active')");
+
+                    b.ToTable("ThreadLocks", "Settings", t =>
+                        {
+                            t.HasCheckConstraint("CK_ThreadLocks_State", "(\"State\" = 'Pending' AND \"ActivatedAt\" IS NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Active' AND \"ActivatedAt\" IS NOT NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Expired' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Removed' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Grimoire.Domain.EmbedCustomCommand", b =>
@@ -1322,36 +1402,6 @@ namespace Grimoire.Migrations
                     b.HasDiscriminator().HasValue("Reclaimed");
                 });
 
-            modelBuilder.Entity("Grimoire.Settings.Domain.ChannelLocked", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.ChannelLock");
-
-                    b.Property<DateTimeOffset?>("ClosedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("EndTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("PreviouslyAllowed")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PreviouslyDenied")
-                        .HasColumnType("bigint");
-
-                    b.HasIndex("EndTime")
-                        .HasDatabaseName("IX_ChannelLocks_EndTime")
-                        .HasFilter("\"EventType\" = 'Locked' AND \"ClosedAt\" IS NULL");
-
-                    b.HasDiscriminator().HasValue("Locked");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.ChannelUnlocked", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.ChannelLock");
-
-                    b.HasDiscriminator().HasValue("Unlocked");
-                });
-
             modelBuilder.Entity("Grimoire.Settings.Domain.DiagnosticsIgnoredMember", b =>
                 {
                     b.HasBaseType("Grimoire.Settings.Domain.DiagnosticsIgnoredItem");
@@ -1364,77 +1414,6 @@ namespace Grimoire.Migrations
                     b.HasBaseType("Grimoire.Settings.Domain.DiagnosticsIgnoredItem");
 
                     b.HasDiscriminator().HasValue("Role");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.GuildSettingCustomValue", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.GuildSetting");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.ToTable(t =>
-                        {
-                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
-                        });
-
-                    b.HasDiscriminator().HasValue("CustomValue");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.GuildSettingDefault", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.GuildSetting");
-
-                    b.ToTable(t =>
-                        {
-                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
-                        });
-
-                    b.HasDiscriminator().HasValue("Default");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.GuildSettingDisabled", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.GuildSetting");
-
-                    b.ToTable(t =>
-                        {
-                            t.HasCheckConstraint("CK_GuildSettings_State_Value", "(\"State\" = 'CustomValue' AND \"Value\" IS NOT NULL)\n                OR (\"State\" IN ('Default', 'Disabled') AND \"Value\" IS NULL)");
-                        });
-
-                    b.HasDiscriminator().HasValue("Disabled");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.MuteAdded", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.Mute");
-
-                    b.Property<DateTimeOffset?>("ClosedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("EndTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal?>("MuteRoleId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<long>("SinId")
-                        .HasColumnType("bigint");
-
-                    b.HasIndex("EndTime")
-                        .HasDatabaseName("IX_Mutes_EndTime")
-                        .HasFilter("\"EventType\" = 'Added' AND \"ClosedAt\" IS NULL");
-
-                    b.HasDiscriminator().HasValue("Added");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.MuteRemoved", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.Mute");
-
-                    b.HasDiscriminator().HasValue("Removed");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.RewardAdded", b =>
@@ -1456,30 +1435,6 @@ namespace Grimoire.Migrations
                     b.HasBaseType("Grimoire.Settings.Domain.Reward");
 
                     b.HasDiscriminator().HasValue("Removed");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.ThreadLocked", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.ThreadLock");
-
-                    b.Property<DateTimeOffset?>("ClosedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("EndTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasIndex("EndTime")
-                        .HasDatabaseName("IX_ThreadLocks_EndTime")
-                        .HasFilter("\"EventType\" = 'Locked' AND \"ClosedAt\" IS NULL");
-
-                    b.HasDiscriminator().HasValue("Locked");
-                });
-
-            modelBuilder.Entity("Grimoire.Settings.Domain.ThreadUnlocked", b =>
-                {
-                    b.HasBaseType("Grimoire.Settings.Domain.ThreadLock");
-
-                    b.HasDiscriminator().HasValue("Unlocked");
                 });
 
             modelBuilder.Entity("Grimoire.Settings.Domain.IgnoredChannel", b =>

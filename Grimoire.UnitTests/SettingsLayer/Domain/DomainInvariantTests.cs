@@ -21,7 +21,7 @@ public sealed class DomainInvariantTests
     private static readonly PreviouslyAllowedPermissions _prevAllowed = new(0L);
     private static readonly PreviouslyDeniedPermissions _prevDenied = new(0L);
 
-    // ── MuteAdded ─────────────────────────────────────────────────────────────
+    // ── NewMute ───────────────────────────────────────────────────────────────
 
     private static readonly UserId _userId = new(100UL);
     private static readonly SinId _sinId = new(1L);
@@ -30,111 +30,111 @@ public sealed class DomainInvariantTests
 
     private static readonly RoleId _roleId = new(300UL);
 
-    // ── ChannelLocked ─────────────────────────────────────────────────────────
+    // ── NewChannelLock ────────────────────────────────────────────────────────
 
     [Fact]
-    public void ChannelLocked_EndTimeEqualsSetAt_IsInvalidWithCorrectMessage()
+    public void NewChannelLock_EndTimeEqualsSetAt_IsInvalidWithCorrectMessage()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _now);
+        var result = NewChannelLock.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _now);
         result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the lock's set time.");
     }
 
     [Fact]
-    public void ChannelLocked_EndTimeBeforeSetAt_IsInvalid()
+    public void NewChannelLock_EndTimeBeforeSetAt_IsInvalid()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _past);
+        var result = NewChannelLock.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _past);
         result.ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
-    public void ChannelLocked_EndTimeAfterSetAt_IsValid()
+    public void NewChannelLock_EndTimeAfterSetAt_IsValid()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied,
+        var result = NewChannelLock.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied,
             _future);
-        result.ShouldBeOfType<Validation<Error, ChannelLocked>.Success>();
+        result.ShouldBeOfType<Validation<Error, NewChannelLock>.Success>();
     }
 
-    // ── ThreadLocked ──────────────────────────────────────────────────────────
+    // ── NewThreadLock ─────────────────────────────────────────────────────────
 
     [Fact]
-    public void ThreadLocked_EndTimeEqualsSetAt_IsInvalidWithCorrectMessage()
+    public void NewThreadLock_EndTimeEqualsSetAt_IsInvalidWithCorrectMessage()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        var result = ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _now);
+        var result = NewThreadLock.Create(_modId, reason, _channelId, _guildId, _now, _now);
         result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the lock's set time.");
     }
 
     [Fact]
-    public void ThreadLocked_EndTimeBeforeSetAt_IsInvalid()
+    public void NewThreadLock_EndTimeBeforeSetAt_IsInvalid()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _past)
+        NewThreadLock.Create(_modId, reason, _channelId, _guildId, _now, _past)
             .ShouldFail().ShouldBeOfType<Invalid>();
     }
 
     [Fact]
-    public void ThreadLocked_EndTimeAfterSetAt_IsValid()
+    public void NewThreadLock_EndTimeAfterSetAt_IsValid()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _future)
-            .ShouldBeOfType<Validation<Error, ThreadLocked>.Success>();
+        NewThreadLock.Create(_modId, reason, _channelId, _guildId, _now, _future)
+            .ShouldBeOfType<Validation<Error, NewThreadLock>.Success>();
     }
 
     [Fact]
-    public void MuteAdded_EndTimeEqualsSetAt_IsInvalidWithMessage()
+    public void NewMute_EndTimeEqualsSetAt_IsInvalidWithMessage()
     {
-        var result = MuteAdded.Create(_userId, _guildId, _modId, _sinId, _now, _now);
+        var result = NewMute.Create(_userId, _guildId, _modId, _sinId, _now, _now);
         result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the mute's set time.");
     }
 
     [Fact]
-    public void MuteAdded_EndTimeBeforeSetAt_IsInvalid()
-        => MuteAdded.Create(_userId, _guildId, _modId, _sinId, _now, _past)
+    public void NewMute_EndTimeBeforeSetAt_IsInvalid()
+        => NewMute.Create(_userId, _guildId, _modId, _sinId, _now, _past)
             .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
-    public void MuteAdded_SelfMute_IsInvalidWithMessage()
+    public void NewMute_SelfMute_IsInvalidWithMessage()
     {
         var selfId = new UserId(999UL);
-        var result = MuteAdded.Create(selfId, _guildId, new ModeratorId(999UL), _sinId, _past, _future);
+        var result = NewMute.Create(selfId, _guildId, new ModeratorId(999UL), _sinId, _past, _future);
         result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("A moderator cannot mute themselves.");
     }
 
     [Fact]
-    public void MuteAdded_SinIdZero_IsInvalidWithMessage()
+    public void NewMute_SinIdZero_IsInvalidWithMessage()
     {
-        var result = MuteAdded.Create(_userId, _guildId, _modId, new SinId(0L), _past, _future);
+        var result = NewMute.Create(_userId, _guildId, _modId, new SinId(0L), _past, _future);
         result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Sin Id must be a positive number.");
     }
 
     [Fact]
-    public void MuteAdded_SinIdNegative_IsInvalid()
-        => MuteAdded.Create(_userId, _guildId, _modId, new SinId(-1L), _past, _future)
+    public void NewMute_SinIdNegative_IsInvalid()
+        => NewMute.Create(_userId, _guildId, _modId, new SinId(-1L), _past, _future)
             .ShouldFail().ShouldBeOfType<Invalid>();
 
     [Fact]
-    public void MuteAdded_AllValid_IsValid()
-        => MuteAdded.Create(_userId, _guildId, _modId, _sinId, _past, _future)
-            .ShouldBeOfType<Validation<Error, MuteAdded>.Success>();
+    public void NewMute_AllValid_IsValid()
+        => NewMute.Create(_userId, _guildId, _modId, _sinId, _past, _future)
+            .ShouldBeOfType<Validation<Error, NewMute>.Success>();
 
-    // ── ChannelLocked / ThreadLocked error messages ───────────────────────────
+    // ── NewChannelLock / NewThreadLock error messages ───────────────────────────
 
     [Fact]
-    public void ChannelLocked_InvalidEndTime_ErrorMessageIsNotEmpty()
+    public void NewChannelLock_InvalidEndTime_ErrorMessageIsNotEmpty()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        var result = ChannelLocked.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _now);
+        var result = NewChannelLock.Create(_modId, reason, _channelId, _guildId, _now, _prevAllowed, _prevDenied, _now);
         result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the lock's set time.");
     }
 
     [Fact]
-    public void ThreadLocked_InvalidEndTime_ErrorMessageIsNotEmpty()
+    public void NewThreadLock_InvalidEndTime_ErrorMessageIsNotEmpty()
     {
         var reason = ModerationReason.FromDatabase("reason");
-        var result = ThreadLocked.Create(_modId, reason, _channelId, _guildId, _now, _now);
+        var result = NewThreadLock.Create(_modId, reason, _channelId, _guildId, _now, _now);
         result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("End time must be after the lock's set time.");
     }
 
@@ -165,5 +165,31 @@ public sealed class DomainInvariantTests
         var msg = RewardMessage.Create("Congratulations!").ShouldSucceed();
         RewardAdded.Create(_roleId, _guildId, 10, msg, _modId, _now)
             .ShouldBeOfType<Validation<Error, RewardAdded>.Success>();
+    }
+
+    // ── What the factories hold ───────────────────────────────────────────────
+
+    [Fact]
+    public void TheNewItems_HoldWhatTheyWereGiven()
+    {
+        var reason = ModerationReason.FromDatabase("raid");
+        var role = new RoleId(7UL);
+
+        var mute = NewMute.Create(_userId, _guildId, _modId, _sinId, _past, _future, role).ShouldSucceed();
+        (mute.UserId, mute.GuildId, mute.ModeratorId, mute.SinId, mute.EndTime, mute.MuteRoleId)
+            .ShouldBe((_userId, _guildId, _modId, _sinId, _future, (RoleId?)role));
+        mute.SetAt.ShouldBe(ItemState.Stored(_past));
+
+        var channelLock = NewChannelLock.Create(_modId, reason, _channelId, _guildId, _past,
+            new PreviouslyAllowedPermissions(1), new PreviouslyDeniedPermissions(2), _future).ShouldSucceed();
+        (channelLock.ModeratorId, channelLock.Reason, channelLock.ChannelId, channelLock.GuildId, channelLock.EndTime)
+            .ShouldBe((_modId, (ModerationReason?)reason, _channelId, _guildId, _future));
+        (channelLock.PreviouslyAllowed.Permissions, channelLock.PreviouslyDenied.Permissions).ShouldBe((1L, 2L));
+        channelLock.SetAt.ShouldBe(ItemState.Stored(_past));
+
+        var threadLock = NewThreadLock.Create(_modId, reason, _channelId, _guildId, _past, _future).ShouldSucceed();
+        (threadLock.ModeratorId, threadLock.Reason, threadLock.ChannelId, threadLock.GuildId, threadLock.EndTime)
+            .ShouldBe((_modId, (ModerationReason?)reason, _channelId, _guildId, _future));
+        threadLock.SetAt.ShouldBe(ItemState.Stored(_past));
     }
 }

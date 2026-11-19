@@ -14,6 +14,10 @@ using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 using ModuleArgument = Grimoire.Features.Shared.Commands.ModuleCommands.ModuleArguments;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
+using Grimoire.Settings.Domain.Documents;
+
 namespace Grimoire.IntegrationTests.Shared;
 
 /// <summary>
@@ -104,11 +108,12 @@ public sealed class GeneralLeftoverTests(GrimoireCoreFactory database) : IAsyncL
         await this.SetModuleAsync(ModuleArgument.Leveling, true);
         (await this.ModulesViewAsync()).ShouldContain("**Leveling Enabled:** True");
 
-        var settingType = Module.Leveling.ToGuildSettingType()!.Value;
         await using (var dbContext = database.CreateSettingsDbContext())
-            (await dbContext.GuildSettings.OfType<GuildSettingCustomValue>()
-                .Where(setting => setting.GuildId == new GuildId(this.Guild.Id) && setting.Type == settingType)
-                .ExecuteUpdateAsync(update => update.SetProperty(setting => setting.Value, "False"), Token)).ShouldBe(1);
+        {
+            var guildId = new GuildId(this.Guild.Id);
+            var modules = await SettingsRows.LatestParsed<ModuleStates>(dbContext, guildId, Token);
+            await SettingsRows.AddNextVersion(dbContext, guildId, modules with { Leveling = false }, Token);
+        }
 
         (await this.ModulesViewAsync()).ShouldContain("**Leveling Enabled:** True", customMessage: "the cached value is still read");
 
@@ -144,15 +149,13 @@ public sealed class GeneralLeftoverTests(GrimoireCoreFactory database) : IAsyncL
         var disable = this._bot.RunSlashCommand("modules", this.Guild.Owner, SetOptions(ModuleArgument.Leveling, false));
 
         (await FakeReply.WaitForAsync(this._bot.Rest, enable)).Description.ShouldBe("Enabled Leveling");
-        (await FakeReply.WaitForAsync(this._bot.Rest, disable)).Description.ShouldBe("Disabled Leveling");
+        // A disable that runs before the enable is stored finds Leveling off already (spec 2.2: a missing flag is off).
+        (await FakeReply.WaitForAsync(this._bot.Rest, disable)).Description
+            .ShouldBeOneOf("Disabled Leveling", "The setting was already set to that value.");
 
-        var settingType = Module.Leveling.ToGuildSettingType()!.Value;
         await using var dbContext = database.CreateSettingsDbContext();
-        var newest = await dbContext.GuildSettings
-            .Where(setting => setting.GuildId == new GuildId(this.Guild.Id) && setting.Type == settingType)
-            .OrderByDescending(setting => setting.SetAt)
-            .FirstAsync(Token);
-        var enabled = newest is GuildSettingCustomValue { Value: var value } && bool.Parse(value);
+        var enabled = (await SettingsRows.LatestParsed<ModuleStates>(dbContext, new GuildId(this.Guild.Id), Token))
+            .Leveling;
         (await this.ModulesViewAsync()).ShouldContain($"**Leveling Enabled:** {enabled}");
         this._bot.Logs.Errors.ShouldBeEmpty();
     }

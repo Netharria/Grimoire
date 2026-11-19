@@ -3,57 +3,25 @@
 // Copyright (c) Netharia 2021-Present.
 //
 // All rights reserved.
-// Licensed under the AGPL-3.0 license.See LICENSE file in the project root for full license information.
+// Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Frozen;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
 using Grimoire.Settings.Domain.Values;
 using Grimoire.Settings.Enums;
-using Grimoire.Settings.Helpers;
 
 namespace Grimoire.Settings.Services;
 
 public sealed partial class SettingsModule
 {
-    private static readonly FrozenSet<GuildSettingType> _levelingSettingKeys =
-    [
-        GuildSettingType.XpTimeoutPeriod,
-        GuildSettingType.LevelScalingBase,
-        GuildSettingType.LevelScalingModifier,
-        GuildSettingType.XpGainAmount
-    ];
-
+    /// <summary>
+    ///     The leveling curve and timeout, with defaults for what the guild hasn't set. S-1: stored values are
+    ///     trusted, so a legacy value outside today's limits keeps the guild's curve.
+    /// </summary>
     public Task<Fin<LevelingSettingEntry>> GetLevelingSettings(
         GuildId guildId,
         CancellationToken cancellationToken = default)
-        => ExecuteSafelyAsync(async ct => Fin.Succ<LevelingSettingEntry>(
-                await this._cache.GetOrCreateAsync(
-                    CacheKey.LevelingSettings(guildId),
-                    guildId,
-                    GetLevelingSettingsCacheEntry,
-                    this._cacheEntryOptions,
-                    cancellationToken: ct)), "Could not fetch level settings from cache", cancellationToken);
-
-    private async ValueTask<LevelingSettingEntry> GetLevelingSettingsCacheEntry(
-        GuildId guildId,
-        CancellationToken cancellationToken = default)
-    {
-        var latestByKey =
-            (await GetGuildSettings(guildId, _levelingSettingKeys, cancellationToken))
-                .ToDictionary(x => x.Type, x => x switch
-                {
-                    GuildSettingCustomValue customValue => customValue.Value,
-                    _ => null
-                });
-
-        // S-1: stored values are trusted. A legacy value outside today's limits keeps the guild's curve, where
-        // rejecting it would stop leveling for the whole guild.
-        return new LevelingSettingEntry(
-            XpTimeoutPeriod.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpTimeoutPeriod)),
-            LevelScalingModifier.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingModifier)),
-            LevelScalingBase.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.LevelScalingBase)),
-            XpGainAmount.FromDatabase(latestByKey.GetValueOrDefault(GuildSettingType.XpGainAmount)));
-    }
+        => GetDocument<LevelingConfig>(guildId, cancellationToken).MapFin(leveling => leveling.Resolve());
 
     public Task<Fin<Write<int>>> SetLevelingSettings(
         GuildId guildId,
@@ -61,23 +29,25 @@ public sealed partial class SettingsModule
         LevelSettings settingToChange,
         int newValue,
         CancellationToken cancellationToken = default)
-        => ApplyGuildSetting(CreateLevelingSetting(settingToChange, newValue)
-                .Bind(setting =>
-                    GuildSettingCustomValue.Create(setting.Item1, guildId, setBy, DateTimeOffset.UtcNow, setting.Item2)),
-                cancellationToken)
-            .TapAsync(async _ => await this._cache.RemoveAsync(CacheKey.LevelingSettings(guildId), cancellationToken))
+        => ApplyLevelingSetting(settingToChange, newValue).ToFin()
+            .BindAsync(apply => UpdateDocument<LevelingConfig>(guildId, setBy, leveling => apply(leveling),
+                cancellationToken))
             .MapFin(write => write.Map(_ => newValue));
 
-    private static Validation<Error, (GuildSettingType, string)> CreateLevelingSetting(LevelSettings setting, int value)
+    /// <summary>Checks the new value and gives the change to make to the document.</summary>
+    private static Validation<Error, Func<LevelingConfig, LevelingConfig>> ApplyLevelingSetting(
+        LevelSettings setting, int value)
         => setting switch
         {
-            LevelSettings.Amount => XpGainAmount.Create(value).Map(x => (GuildSettingType.XpGainAmount, x.ToString())),
+            LevelSettings.Amount => XpGainAmount.Create(value)
+                .Map<Func<LevelingConfig, LevelingConfig>>(x => leveling => leveling with { XpGainAmount = x }),
             LevelSettings.Base => LevelScalingBase.Create(value)
-                .Map(x => (GuildSettingType.LevelScalingBase, x.ToString())),
+                .Map<Func<LevelingConfig, LevelingConfig>>(x => leveling => leveling with { LevelScalingBase = x }),
             LevelSettings.Modifier => LevelScalingModifier.Create(value)
-                .Map(x => (GuildSettingType.LevelScalingModifier, x.ToString())),
+                .Map<Func<LevelingConfig, LevelingConfig>>(x =>
+                    leveling => leveling with { LevelScalingModifier = x }),
             LevelSettings.XpTimeoutPeriod => XpTimeoutPeriod.Create(value)
-                .Map(x => (GuildSettingType.XpTimeoutPeriod, x.ToString())),
+                .Map<Func<LevelingConfig, LevelingConfig>>(x => leveling => leveling with { XpTimeout = x }),
             _ => throw new InvariantViolationException()
         };
 }

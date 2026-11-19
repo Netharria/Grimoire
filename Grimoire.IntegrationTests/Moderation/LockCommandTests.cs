@@ -120,7 +120,7 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
 
         this.EveryoneOverwrite(this.Guild.General).ShouldBe((SendMessages, AddReactions | EmbedLinks));
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await settingsContext.ChannelLocks.CountAsync(row => row.State == "Removed", TestContext.Current.CancellationToken)).ShouldBe(1);
         await this._bot.WaitForModLogEmbedAsync(embed => embed["description"]?.GetValue<string>()
             == $"{this.Guild.Moderator.MemberMention} unlocked {this.Guild.General.Mention}");
     }
@@ -412,6 +412,6 @@ public sealed class LockCommandTests(GrimoireCoreFactory database) : IAsyncLifet
         await Task.Delay(TimeSpan.FromMilliseconds(150), TestContext.Current.CancellationToken);
     }
 
-    private async Task<ChannelLocked> ActiveLockAsync(FakeChannel channel)
+    private async Task<ChannelLock> ActiveLockAsync(FakeChannel channel)
         => (await this.Settings.GetActiveChannelLockAsync(new ChannelId(channel.Id), new GuildId(this.Guild.Id))).ShouldSucceed();
 }

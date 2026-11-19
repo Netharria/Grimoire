@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain.Documents;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.Moderation;
 
 [Collection("Settings collection")]
@@ -41,10 +43,8 @@ public sealed class AutoPardonTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         // Store a zero duration directly to simulate a corrupt/zero stored value.
         await using var db = factory.CreateDbContext();
-        db.GuildSettings.Add(
-            GuildSettingCustomValue.Create(
-                GuildSettingType.SinAutoPardonDuration, _guildId, _modId, DateTimeOffset.UtcNow,
-                TimeSpan.Zero.ToString("c")).ShouldSucceed());
+        db.GuildSettings.Add(SettingsRows.Document(_guildId, new ModerationConfig { AutoPardonAfter = TimeSpan.Zero },
+            setBy: _modId));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);

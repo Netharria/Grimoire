@@ -5,6 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain.Documents;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.GuildSettings;
 
 [Collection("Settings collection")]
@@ -64,7 +66,7 @@ public sealed class LogChannelTests(SettingsTestsFactory factory) : IAsyncLifeti
     {
         foreach (var logType in Enum.GetValues<GuildLogType>())
         {
-            var act1 = () => logType.ToGuildSettingType();
+            var act1 = () => logType.Document();
             var act2 = () => logType.GetLogTypeModule();
             act1.ShouldNotThrow();
             act2.ShouldNotThrow();

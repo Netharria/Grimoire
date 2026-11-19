@@ -16,6 +16,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Grimoire.Features.Moderation.Mute.Commands;
 
+using Mute = Grimoire.Settings.Domain.Mute;
+
 [RequireGuild]
 [RequireModuleEnabled(Module.Moderation)]
 [RequireUserGuildPermissions(DiscordPermission.ManageMessages)]
@@ -134,7 +136,7 @@ public sealed partial class MuteUser(
             await dbContext.SaveChangesAsync();
 
             if (await settingsModule.AddMute(member.GetUserId(), member.GetGuildId(), moderatorId, sin.Id,
-                    muteEndTime, muteId) is Fin<MuteAdded>.Succ)
+                    muteEndTime, muteId) is Fin<Mute>.Succ)
                 return true;
 
             // Take the sin back off, so the member's record doesn't show a mute that never happened.

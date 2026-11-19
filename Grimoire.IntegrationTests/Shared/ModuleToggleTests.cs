@@ -15,6 +15,8 @@ using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 using ModuleArgument = Grimoire.Features.Shared.Commands.ModuleCommands.ModuleArguments;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
 namespace Grimoire.IntegrationTests.Shared;
 
 /// <summary>
@@ -168,8 +170,8 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"Lock on {this.Guild.General.Mention} has expired.");
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Mutes.OfType<MuteRemoved>().CountAsync(Token)).ShouldBe(1);
-        (await settingsContext.ChannelLocks.OfType<ChannelUnlocked>().CountAsync(Token)).ShouldBe(1);
+        (await settingsContext.Mutes.Where(mute => mute.State != "Active").CountAsync(Token)).ShouldBe(1);
+        (await settingsContext.ChannelLocks.Where(channelLock => channelLock.State != "Active").CountAsync(Token)).ShouldBe(1);
     }
 
     /// <summary>XC-85: with Commands off, a learned command answers neither its text trigger nor /Command.</summary>
@@ -259,8 +261,8 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
     private async Task SeedExpiredMuteAsync(FakeUser user, ulong roleId)
     {
         var now = DateTimeOffset.UtcNow;
-        var mute = MuteAdded.Create(new UserId(user.Id), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId(1),
-            now.AddMinutes(-10), now.AddMinutes(-1), new RoleId(roleId)).ShouldSucceed();
+        var mute = SettingsRows.Mute(new UserId(user.Id), this.GuildId, new ModeratorId(this.Guild.Moderator.Id), new SinId((long)user.Id),
+            now.AddMinutes(-10), now.AddMinutes(-1), new RoleId(roleId));
         await using (var settingsContext = database.CreateSettingsDbContext())
         {
             settingsContext.Mutes.Add(mute);
@@ -274,9 +276,9 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
     private async Task SeedExpiredChannelLockAsync(FakeChannel channel)
     {
         var now = DateTimeOffset.UtcNow;
-        var channelLock = ChannelLocked.Create(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(channel.Id),
+        var channelLock = SettingsRows.ChannelLock(new ModeratorId(this.Guild.Moderator.Id), null, new ChannelId(channel.Id),
             this.GuildId, now.AddMinutes(-10), new PreviouslyAllowedPermissions(0), new PreviouslyDeniedPermissions(0),
-            now.AddMinutes(-1)).ShouldSucceed();
+            now.AddMinutes(-1));
         await using (var settingsContext = database.CreateSettingsDbContext())
         {
             settingsContext.ChannelLocks.Add(channelLock);

@@ -7,6 +7,8 @@
 
 using Grimoire.Settings.Domain.Values;
 
+using Grimoire.Settings.Domain.Documents;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.Leveling;
 
 [Collection("Settings collection")]
@@ -135,10 +137,11 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
     {
         await using (var dbContext = factory.CreateDbContext())
         {
-            dbContext.GuildSettings.Add(GuildSettingCustomValue.Create(GuildSettingType.LevelScalingBase, _guildId, _modId,
-                DateTimeOffset.UtcNow, "1000").ShouldSucceed());
-            dbContext.GuildSettings.Add(GuildSettingCustomValue.Create(GuildSettingType.XpTimeoutPeriod, _guildId, _modId,
-                DateTimeOffset.UtcNow, "25:00:00").ShouldSucceed());
+            dbContext.GuildSettings.Add(SettingsRows.Document(_guildId, new LevelingConfig
+            {
+                LevelScalingBase = Grimoire.Settings.Domain.Values.LevelScalingBase.FromDatabase(1000),
+                XpTimeout = Grimoire.Settings.Domain.Values.XpTimeoutPeriod.FromDatabase(90_000)
+            }, setBy: _modId));
             await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
@@ -281,7 +284,7 @@ public sealed class LevelingSettingsTests(SettingsTestsFactory factory) : IAsync
 
         await using var db = factory.CreateDbContext();
         var count = await db.GuildSettings
-            .Where(x => x.GuildId == _guildId && x.Type == GuildSettingType.LevelScalingBase)
+            .Where(x => x.GuildId == _guildId && x.Document == SettingsDocument.Leveling)
             .CountAsync(TestContext.Current.CancellationToken);
         count.ShouldBe(1);
     }

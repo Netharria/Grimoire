@@ -10,6 +10,10 @@ using Grimoire.Settings.Enums;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Option = Grimoire.Features.Leveling.Settings.LevelSettingsCommandGroup.LevelSettingsOptions;
 
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+
+using Grimoire.Settings.Domain.Documents;
+
 namespace Grimoire.IntegrationTests.Leveling;
 
 /// <summary>
@@ -56,9 +60,9 @@ public sealed class LevelingCacheTests(GrimoireCoreFactory database) : IAsyncLif
 
         await using (var settings = database.CreateSettingsDbContext())
         {
-            settings.GuildSettings.Add(GuildSettingCustomValue.Create(GuildSettingType.XpGainAmount, this.GuildId,
-                new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow, "40").ShouldSucceed());
-            await settings.SaveChangesAsync(Token);
+            var leveling = await SettingsRows.LatestParsed<LevelingConfig>(settings, this.GuildId, Token);
+            await SettingsRows.AddNextVersion(settings, this.GuildId,
+                leveling with { XpGainAmount = Grimoire.Settings.Domain.Values.XpGainAmount.FromDatabase(40) }, Token);
         }
 
         this._bot.SendMessage(this.Guild.Moderator, this.Guild.General, "still cached");
